@@ -2,12 +2,23 @@ import SubmissionClient from './client';
 import { SubmissionData } from './types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 interface Props {
   params: Promise<{
     submissionId: string;
   }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { submissionId } = await params;
+
+  return {
+    title: `Submission Details | ${submissionId}`,
+    description:
+      'Detailed view of a submission with scores, tests, and criteria evaluation',
+  };
 }
 
 export default async function Page({ params }: Props) {
@@ -19,7 +30,7 @@ export default async function Page({ params }: Props) {
   if (!user) notFound();
 
   try {
-    // Fetch submission data
+    // Fetch submission data with all relationships
     const { data: submission, error } = await sbAdmin
       .from('nova_submissions_with_scores')
       .select(
@@ -30,12 +41,17 @@ export default async function Page({ params }: Props) {
           challenge:nova_challenges(*)
         ),
         user:users(
+          id,
           display_name,
           avatar_url
         ),
         criteria:nova_challenge_criteria(
           *,
           results:nova_submission_criteria(*)
+        ),
+        test_cases:nova_submission_test_cases(
+          *,
+          test_case:nova_problem_test_cases(*)
         )
       `
       )
@@ -47,6 +63,20 @@ export default async function Page({ params }: Props) {
       return notFound();
     }
 
+    // Fetch user's email from user_private_details
+    let userEmail = null;
+    if (submission?.user?.id) {
+      const { data: userPrivate } = await sbAdmin
+        .from('user_private_details')
+        .select('email')
+        .eq('user_id', submission.user.id)
+        .single();
+
+      if (userPrivate?.email) {
+        userEmail = userPrivate.email;
+      }
+    }
+
     // Prepare properly formatted criteria
     const formattedCriteria = submission.criteria.map((criterion: any) => ({
       ...criterion,
@@ -54,6 +84,12 @@ export default async function Page({ params }: Props) {
       result: criterion.results.find(
         (result: any) => result.submission_id === submission.id
       ),
+    }));
+
+    // Prepare formatted test cases
+    const formattedTestCases = submission.test_cases.map((testCase: any) => ({
+      ...testCase,
+      test_case: testCase.test_case,
     }));
 
     // Define default problem structure to match expected type
@@ -88,9 +124,23 @@ export default async function Page({ params }: Props) {
 
     // Define default user structure to match expected type
     const formattedUser = {
+      id: submission.user?.id || '',
       display_name: submission.user?.display_name || '',
       avatar_url: submission.user?.avatar_url || '',
+      email: userEmail,
     };
+
+    // Fetch session data if available
+    let sessionData = null;
+    if (submission.session_id) {
+      const { data: session } = await sbAdmin
+        .from('nova_sessions')
+        .select('*')
+        .eq('id', submission.session_id)
+        .single();
+
+      sessionData = session;
+    }
 
     // Combine the data into our extended submission format
     const submissionData: SubmissionData = {
@@ -110,6 +160,8 @@ export default async function Page({ params }: Props) {
       total_score: submission.total_score || 0,
       problem: formattedProblem,
       user: formattedUser,
+      test_cases: formattedTestCases,
+      session: sessionData,
     };
 
     return <SubmissionClient submission={submissionData} />;

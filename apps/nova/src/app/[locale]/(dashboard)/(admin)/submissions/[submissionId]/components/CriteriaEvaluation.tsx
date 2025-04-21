@@ -1,14 +1,14 @@
-import { ExtendedNovaSubmission } from '../types';
-import ScoreBadge from '@/components/common/ScoreBadge';
+'use client';
+
+import { type ExtendedNovaSubmission } from '../types';
+import { Badge } from '@tuturuuu/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@tuturuuu/ui/table';
-import { Fragment } from 'react';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
 
 interface CriteriaEvaluationProps {
   submission: ExtendedNovaSubmission;
@@ -17,70 +17,73 @@ interface CriteriaEvaluationProps {
 export default function CriteriaEvaluation({
   submission,
 }: CriteriaEvaluationProps) {
+  if (!submission.criteria || submission.criteria.length === 0) {
+    return (
+      <div className="flex h-24 items-center justify-center">
+        <p className="text-muted-foreground">No criteria available</p>
+      </div>
+    );
+  }
+
+  // Sort criteria by score (highest first)
+  const sortedCriteria = [...submission.criteria].sort(
+    (a, b) => (b.result?.score || 0) - (a.result?.score || 0)
+  );
+
   return (
-    <>
-      {submission.criteria.length > 0 ? (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Criteria Score</span>
-            <ScoreBadge
-              score={submission.criteria_score}
-              maxScore={10}
-              className="px-2 py-0"
-            >
-              {submission.criteria_score.toFixed(2)}/10
-            </ScoreBadge>
-          </div>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-24 text-right">Score</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {submission.criteria.map((criterion, idx) => (
-                  <Fragment key={idx}>
-                    <TableRow>
-                      <TableCell className="font-medium">
-                        {criterion.name}
-                      </TableCell>
-                      <TableCell>{criterion.description}</TableCell>
-                      <TableCell className="text-right">
-                        <ScoreBadge
-                          score={criterion.result.score}
-                          maxScore={10}
-                          className="inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium"
-                        >
-                          {criterion.result.score.toFixed(2)}/10
-                        </ScoreBadge>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell colSpan={3} className="space-y-3">
-                        <h4 className="mb-2 text-sm font-medium">
-                          Detailed Feedback
-                        </h4>
-                        <div className="bg-muted rounded-lg p-3">
-                          <div className="whitespace-pre-wrap text-sm">
-                            {criterion.result.feedback}
-                          </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  </Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+    <div className="space-y-4">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="space-y-1">
+          <h3 className="font-medium">Criteria Evaluation</h3>
+          <p className="text-sm text-muted-foreground">
+            {submission.sum_criterion_score.toFixed(1)} of{' '}
+            {submission.total_criteria * 10} possible points
+          </p>
         </div>
-      ) : (
-        <div className="text-muted-foreground py-4 text-center">
-          No evaluation criteria available
-        </div>
-      )}
-    </>
+        <Badge variant="secondary">
+          {submission.criteria_score.toFixed(1)}/10 Score
+        </Badge>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+        {sortedCriteria.map((criterion) => (
+          <Card key={criterion.id} className="overflow-hidden">
+            <div
+              className="h-2 w-full"
+              style={{
+                background: `linear-gradient(90deg, 
+                  hsl(var(--success)) 0%, 
+                  hsl(var(--success)) ${(criterion.result?.score || 0) * 10}%, 
+                  hsl(var(--muted)) ${(criterion.result?.score || 0) * 10}%, 
+                  hsl(var(--muted)) 100%)`,
+              }}
+            />
+            <CardHeader className="pb-2">
+              <div className="flex justify-between">
+                <CardTitle className="text-base">{criterion.name}</CardTitle>
+                <Badge variant="outline">
+                  {criterion.result?.score.toFixed(1) || 0}/10
+                </Badge>
+              </div>
+              <CardDescription>{criterion.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {criterion.result?.feedback ? (
+                <div className="text-sm">
+                  <h4 className="mb-1 font-semibold">Feedback:</h4>
+                  <p className="text-muted-foreground">
+                    {criterion.result.feedback}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  No feedback provided
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -6292,6 +6292,14 @@ export type Database = {
           amount: number;
         }[];
       };
+      get_submission_statistics: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          total_count: number;
+          latest_submission_date: string;
+          unique_users_count: number;
+        }[];
+      };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -6441,6 +6449,10 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_challenge_manager: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      is_nova_role_manager: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };

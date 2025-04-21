@@ -1,13 +1,8 @@
+'use client';
+
 import ScoreBadge from '@/components/common/ScoreBadge';
 import { NovaChallenge, NovaProblem, NovaSubmission } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +42,7 @@ type SubmissionWithDetails = NovaSubmission & {
   user: {
     display_name: string;
     avatar_url: string;
+    email?: string | null;
   };
   total_score: number;
 };
@@ -55,15 +51,16 @@ interface SubmissionTableProps {
   submissions: SubmissionWithDetails[];
   loading: boolean;
   searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  setSearchQuery?: (query: string) => void;
   viewMode: 'table' | 'grid';
   currentPage: number;
-  setCurrentPage: (page: number) => void;
+  setCurrentPage?: (page: number) => void;
   totalPages: number;
   sortField: string;
   sortDirection: 'asc' | 'desc';
-  handleSort: (field: string) => void;
-  formatDate: (dateString: string) => string;
+  handleSort?: (field: string) => void;
+  serverSide?: boolean;
+  showEmail?: boolean;
 }
 
 export function SubmissionTable({
@@ -78,9 +75,22 @@ export function SubmissionTable({
   sortField,
   sortDirection,
   handleSort,
-  formatDate,
+  serverSide = false,
+  showEmail = false,
 }: SubmissionTableProps) {
   const router = useRouter();
+
+  // Format date function for display
+  function formatDate(dateString: string) {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
 
   // Function to calculate which page numbers to show
   const getVisiblePageNumbers = () => {
@@ -128,6 +138,44 @@ export function SubmissionTable({
     return result;
   };
 
+  // Handle page change either via client-side or server-side navigation
+  const handlePageChange = (page: number) => {
+    if (serverSide) {
+      // Use server-side navigation with query params
+      router.push(`/submissions?page=${page}`);
+    } else if (setCurrentPage) {
+      // Use client-side state update
+      setCurrentPage(page);
+    }
+  };
+
+  // Handle sorting either via client-side or server-side navigation
+  const handleSortChange = (field: string) => {
+    if (serverSide) {
+      // Determine new sort direction
+      const newDirection =
+        sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
+      // Use server-side navigation with query params
+      router.push(
+        `/submissions?sortField=${field}&sortDirection=${newDirection}`
+      );
+    } else if (handleSort) {
+      // Use client-side handler
+      handleSort(field);
+    }
+  };
+
+  // Handle clearing search
+  const handleClearSearch = () => {
+    if (serverSide) {
+      // Use server-side navigation without search param
+      router.push('/submissions');
+    } else if (setSearchQuery) {
+      // Use client-side state update
+      setSearchQuery('');
+    }
+  };
+
   return (
     <>
       {viewMode === 'table' && (
@@ -138,8 +186,15 @@ export function SubmissionTable({
                 <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead>
                   <div
-                    className="flex cursor-pointer items-center"
-                    onClick={() => handleSort('user_id')}
+                    className={cn(
+                      'flex items-center',
+                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                    )}
+                    onClick={() =>
+                      !serverSide && handleSort
+                        ? handleSort('user_id')
+                        : handleSortChange('user_id')
+                    }
                   >
                     User
                     {sortField === 'user_id' &&
@@ -153,10 +208,18 @@ export function SubmissionTable({
                     )}
                   </div>
                 </TableHead>
+                {showEmail && <TableHead>Email</TableHead>}
                 <TableHead>
                   <div
-                    className="flex cursor-pointer items-center"
-                    onClick={() => handleSort('problem_id')}
+                    className={cn(
+                      'flex items-center',
+                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                    )}
+                    onClick={() =>
+                      !serverSide && handleSort
+                        ? handleSort('problem_id')
+                        : handleSortChange('problem_id')
+                    }
                   >
                     Problem
                     {sortField === 'problem_id' &&
@@ -172,8 +235,15 @@ export function SubmissionTable({
                 </TableHead>
                 <TableHead>
                   <div
-                    className="flex cursor-pointer items-center"
-                    onClick={() => handleSort('score')}
+                    className={cn(
+                      'flex items-center',
+                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                    )}
+                    onClick={() =>
+                      !serverSide && handleSort
+                        ? handleSort('score')
+                        : handleSortChange('score')
+                    }
                   >
                     Score
                     {sortField === 'score' &&
@@ -189,8 +259,15 @@ export function SubmissionTable({
                 </TableHead>
                 <TableHead>
                   <div
-                    className="flex cursor-pointer items-center"
-                    onClick={() => handleSort('created_at')}
+                    className={cn(
+                      'flex items-center',
+                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                    )}
+                    onClick={() =>
+                      !serverSide && handleSort
+                        ? handleSort('created_at')
+                        : handleSortChange('created_at')
+                    }
                   >
                     Date
                     {sortField === 'created_at' &&
@@ -218,6 +295,11 @@ export function SubmissionTable({
                     <TableCell>
                       <Skeleton className="h-6 w-40" />
                     </TableCell>
+                    {showEmail && (
+                      <TableCell>
+                        <Skeleton className="h-6 w-48" />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Skeleton className="h-6 w-60" />
                     </TableCell>
@@ -235,7 +317,10 @@ export function SubmissionTable({
               ) : submissions.length === 0 ? (
                 // Empty state
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell
+                    colSpan={showEmail ? 7 : 6}
+                    className="h-24 text-center"
+                  >
                     {searchQuery ? (
                       <div className="flex flex-col items-center justify-center space-y-2">
                         <p className="text-muted-foreground">
@@ -244,62 +329,102 @@ export function SubmissionTable({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setSearchQuery('')}
+                          onClick={handleClearSearch}
                         >
                           Clear Search
                         </Button>
                       </div>
                     ) : (
-                      'No submissions found.'
+                      <p className="text-muted-foreground">
+                        No submissions found
+                      </p>
                     )}
                   </TableCell>
                 </TableRow>
               ) : (
-                // Submissions data
+                // Data rows
                 submissions.map((submission) => (
-                  <TableRow key={submission.id}>
-                    <TableCell className="font-medium">
-                      {submission.id}
+                  <TableRow key={submission.id} className="cursor-pointer">
+                    <TableCell
+                      onClick={() =>
+                        router.push(`/submissions/${submission.id}`)
+                      }
+                    >
+                      <span className="font-mono text-xs">
+                        {typeof submission.id === 'string'
+                          ? submission.id.substring(0, 8)
+                          : submission.id}
+                        ...
+                      </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell
+                      onClick={() =>
+                        router.push(`/submissions/${submission.id}`)
+                      }
+                    >
                       <div className="flex items-center gap-2">
                         {submission.user?.avatar_url ? (
                           <img
                             src={submission.user.avatar_url}
-                            alt="User"
+                            alt={submission.user.display_name || 'User'}
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (
-                          <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                             {submission.user?.display_name?.charAt(0) || '?'}
                           </div>
                         )}
                         <span>
-                          {submission.user?.display_name || 'Unknown User'}
+                          {submission.user?.display_name || 'Unknown'}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">
-                          {submission.problem?.title || 'Unknown Problem'}
+                    {showEmail && (
+                      <TableCell
+                        onClick={() =>
+                          router.push(`/submissions/${submission.id}`)
+                        }
+                      >
+                        <span className="text-sm text-muted-foreground">
+                          {submission.user?.email || 'No email available'}
                         </span>
-                        <span className="text-muted-foreground text-xs">
+                      </TableCell>
+                    )}
+                    <TableCell
+                      onClick={() =>
+                        router.push(`/submissions/${submission.id}`)
+                      }
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {submission.problem?.title || 'Unknown Problem'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
                           {submission.problem?.challenge?.title ||
                             'Unknown Challenge'}
-                        </span>
+                        </p>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell
+                      onClick={() =>
+                        router.push(`/submissions/${submission.id}`)
+                      }
+                    >
                       <ScoreBadge
                         score={submission.total_score}
                         maxScore={10}
-                        className="font-medium"
+                        className="text-xs"
                       >
-                        {submission.total_score}/10
+                        {submission.total_score.toFixed(1)}/10
                       </ScoreBadge>
                     </TableCell>
-                    <TableCell>{formatDate(submission.created_at)}</TableCell>
+                    <TableCell
+                      onClick={() =>
+                        router.push(`/submissions/${submission.id}`)
+                      }
+                    >
+                      {formatDate(submission.created_at)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -311,11 +436,22 @@ export function SubmissionTable({
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
                             onClick={() =>
-                              (window.location.href = `/submissions/${submission.id}`)
+                              router.push(`/submissions/${submission.id}`)
                             }
                           >
                             View Details
                           </DropdownMenuItem>
+                          {submission.problem?.challenge?.id && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(
+                                  `/challenges/${submission.problem.challenge.id}/results`
+                                )
+                              }
+                            >
+                              Challenge Results
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -327,145 +463,48 @@ export function SubmissionTable({
         </div>
       )}
 
-      {viewMode === 'grid' && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {loading ? (
-            // Grid loading state
-            Array.from({ length: 6 }).map((_, index) => (
-              <Skeleton key={index} className="h-48 w-full rounded-lg" />
-            ))
-          ) : submissions.length === 0 ? (
-            // Grid empty state
-            <div className="col-span-full flex h-48 flex-col items-center justify-center space-y-4 rounded-lg border">
-              {searchQuery ? (
-                <>
-                  <p className="text-muted-foreground text-center text-lg">
-                    No results found for "{searchQuery}"
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSearchQuery('')}
-                  >
-                    Clear Search
-                  </Button>
-                </>
-              ) : (
-                <p className="text-muted-foreground text-center text-lg">
-                  No submissions found.
-                </p>
-              )}
-            </div>
-          ) : (
-            // Grid view
-            submissions.map((submission) => (
-              <Card
-                key={submission.id}
-                className="hover:bg-accent/50 cursor-pointer transition-colors"
-                onClick={() => router.push(`/submissions/${submission.id}`)}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Submission #{submission.id}</CardTitle>
-                    <ScoreBadge score={submission.total_score} maxScore={10}>
-                      {submission.total_score}/10
-                    </ScoreBadge>
-                  </div>
-                  <CardDescription>
-                    {formatDate(submission.created_at)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      {submission.user?.avatar_url ? (
-                        <img
-                          src={submission.user.avatar_url}
-                          alt="User"
-                          className="h-8 w-8 rounded-full"
-                        />
-                      ) : (
-                        <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
-                          {submission.user?.display_name?.charAt(0) || '?'}
-                        </div>
-                      )}
-                      <span className="truncate font-medium">
-                        {submission.user?.display_name || 'Unknown User'}
-                      </span>
-                    </div>
-
-                    <div>
-                      <p className="line-clamp-1 font-medium">
-                        {submission.problem?.title || 'Unknown Problem'}
-                      </p>
-                      <p className="text-muted-foreground line-clamp-1 text-sm">
-                        {submission.problem?.challenge?.title ||
-                          'Unknown Challenge'}
-                      </p>
-                    </div>
-
-                    <div className="line-clamp-2 text-sm">
-                      <span className="font-medium">Prompt: </span>
-                      {submission.prompt}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
-      )}
-
-      {!loading && totalPages > 1 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
         <div className="mt-4 flex justify-center">
           <Pagination>
             <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage > 1) setCurrentPage(currentPage - 1);
-                  }}
-                  className={cn(
-                    currentPage === 1 && 'pointer-events-none opacity-50'
-                  )}
-                />
-              </PaginationItem>
+              {currentPage > 1 && (
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    className="cursor-pointer"
+                  />
+                </PaginationItem>
+              )}
 
-              {getVisiblePageNumbers().map((pageNum, i) => (
+              {getVisiblePageNumbers().map((item, i) => (
                 <PaginationItem key={i}>
-                  {pageNum === '...' ? (
-                    <span className="px-4 py-2">...</span>
+                  {item === '...' ? (
+                    <span className="flex h-9 w-9 items-center justify-center">
+                      ...
+                    </span>
                   ) : (
                     <PaginationLink
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setCurrentPage(pageNum as number);
-                      }}
-                      isActive={currentPage === pageNum}
+                      className="cursor-pointer"
+                      isActive={currentPage === item}
+                      onClick={() =>
+                        typeof item === 'number' && handlePageChange(item)
+                      }
                     >
-                      {pageNum}
+                      {item}
                     </PaginationLink>
                   )}
                 </PaginationItem>
               ))}
 
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage < totalPages)
-                      setCurrentPage(currentPage + 1);
-                  }}
-                  className={cn(
-                    currentPage === totalPages &&
-                      'pointer-events-none opacity-50'
-                  )}
-                />
-              </PaginationItem>
+              {currentPage < totalPages && (
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    className="cursor-pointer"
+                  />
+                </PaginationItem>
+              )}
             </PaginationContent>
           </Pagination>
         </div>
