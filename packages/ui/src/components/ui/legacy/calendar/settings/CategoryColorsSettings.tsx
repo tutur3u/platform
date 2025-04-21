@@ -351,7 +351,7 @@ export function CategoryColorsSettings({
                                   key={colorKey}
                                   type="button"
                                   className={cn(
-                                    colorInfo.activeBg,
+                                    colorInfo.cbg,
                                     'h-12 w-full rounded-md border transition-all hover:scale-105 hover:shadow-md',
                                     isSelected &&
                                       'ring-offset-background shadow-md ring-2 ring-offset-2'
