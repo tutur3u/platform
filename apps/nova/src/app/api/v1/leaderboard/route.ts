@@ -128,8 +128,10 @@ export async function GET(req: NextRequest) {
       const challengeSessionData = sessionSubmissions[challengeId];
       if (challengeSessionData) {
         const sessionScores = Object.values(challengeSessionData);
-        challenge_scores[challengeId] =
-          sessionScores.length > 0 ? Math.max(...sessionScores) : 0;
+        challenge_scores[challengeId] = sessionScores.reduce(
+          (max, score) => Math.max(max, score),
+          0
+        );
       } else {
         challenge_scores[challengeId] = 0;
       }
