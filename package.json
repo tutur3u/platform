@@ -6,7 +6,7 @@
     "buildx": "pnpm i && bun i && turbo test lint build",
     "dev": "turbo run dev --parallel",
     "devx": "cd apps/db && pnpm supabase stop && pnpm i && pnpm supabase start && cd ../.. && turbo run dev --parallel",
-    "devrs": "cd apps/db && pnpm supabase stop && pnpm i && pnpm supabase start && pnpm sb:reset && cd ../.. && turbo run dev --parallel",
+    "devrs": "cd apps/db && pnpm supabase stop && pnpm i && pnpm supabase start && pnpm sb:reset && pnpm sb:typegen && cd ../.. && turbo run dev --parallel",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
@@ -36,7 +36,7 @@
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "^3.1.1",
+    "@vitest/coverage-v8": "^3.1.2",
     "eslint": "^9.25.0",
     "prettier": "^3.5.3",
     "prettier-eslint": "^16.4.1",
@@ -44,12 +44,12 @@
     "turbo": "^2.5.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.2",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.2"
   },
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "pnpm@10.8.1",
+  "packageManager": "pnpm@10.9.0",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -68,7 +68,8 @@
       "core-js",
       "esbuild",
       "sharp",
-      "supabase"
+      "supabase",
+      "unrs-resolver"
     ]
   }
 }

@@ -51,7 +51,7 @@ export default async function MemberList({
 
   return members.map((member) => (
     <div
-      key={member.id}
+      key={member.id || member.email}
       className={`border-border relative rounded-lg border p-4 ${
         member?.pending
           ? 'border-dashed bg-transparent'

@@ -1,19 +1,14 @@
-'use client';
-
-// Import the components we need for the problem page
 import ProblemComponent from '../../../shared/problem-component';
 import PromptComponent from '../../../shared/prompt-component';
 import TestCaseComponent from '../../../shared/test-case-component';
 import PromptForm from './prompt-form';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 type ExtendedNovaProblem = NovaProblem & {
   test_cases: NovaProblemTestCase[];
@@ -25,46 +20,17 @@ interface Props {
   }>;
 }
 
-export default function Page({ params }: Props) {
-  const router = useRouter();
-
-  const [problem, setProblem] = useState<ExtendedNovaProblem | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchProblem = async () => {
-      setLoading(true);
-      try {
-        const { problemId } = await params;
-        const problemData = await getProblem(problemId);
-        setProblem(problemData);
-      } catch (error) {
-        console.error('Error fetching problem:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProblem();
-  }, [params]);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground text-xl font-semibold">
-          Loading...
-        </p>
-      </div>
-    );
-  }
+export default async function Page({ params }: Props) {
+  const { problemId } = await params;
+  const problem = await getProblem(problemId);
 
   if (!problem) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <p className="text-xl font-semibold">Problem not found</p>
-        <Button onClick={() => router.push('/problems')}>
-          Go back to problems
-        </Button>
+        <Link href="/problems">
+          <Button>Go back to problems</Button>
+        </Link>
       </div>
     );
   }
@@ -117,7 +83,7 @@ export default function Page({ params }: Props) {
 async function getProblem(
   problemId: string
 ): Promise<ExtendedNovaProblem | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     // Fetch problem details
@@ -136,6 +102,7 @@ async function getProblem(
     const { data: testCases, error: testcaseError } = await supabase
       .from('nova_problem_test_cases')
       .select('*')
+      .eq('hidden', false)
       .eq('problem_id', problemId);
 
     if (testcaseError) {

@@ -75,31 +75,67 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const testCaseStrings = testCases
-    .map((testCase) => testCase.input)
-    .join('\n');
+  const { data: challengeCriteria, error: challengeCriteriaError } =
+    await sbAdmin
+      .from('nova_challenge_criteria')
+      .select('*')
+      .eq('challenge_id', problem.challenge_id);
+
+  if (challengeCriteriaError) {
+    return NextResponse.json(
+      { message: 'Error fetching challenge criteria.' },
+      { status: 500 }
+    );
+  }
 
   try {
+    const ctx = {
+      title: problem.title,
+      description: problem.description,
+      exampleInput: problem.example_input,
+      exampleOutput: problem.example_output,
+      testCaseInputs: testCases.map((testCase) => testCase.input),
+      criteria: challengeCriteria.map((criteria) => ({
+        name: criteria.name,
+        description: criteria.description,
+      })),
+      userPrompt: prompt,
+    };
+
+    const exampleResponse = {
+      testCaseEvaluation: [
+        {
+          input: '<test case input>',
+          output: '<your test case output>',
+        },
+      ],
+      criteriaEvaluation: [
+        {
+          name: '<criteria name>',
+          description: '<criteria description>',
+          score: 10,
+          feedback: '<feedback>',
+        },
+      ],
+    };
+
     // System Instruction for Evaluation with strict JSON output
     const systemInstruction = `
       You are an examiner in a prompt engineering competition.
       You will be provided with:
-      - A problem description
-      - One or more test cases
-      - An example input/output (optional)
+      - A problem title and description
+      - An example input/output
+      - Test cases inputs (optional)
+      - Criteria
       - A user's answer or prompt that attempts to solve the problem
 
       Your role is to:
-      1. **Evaluate** how effectively the user's response addresses the problem.
-      2. **Attempt** to apply the user's response to each provided test case (if the response is executable or can be logically applied). 
-      3. **Return** both your evaluation and the results for each test case in a specific JSON format.
+      1. **Attempt** to apply the user's response to each provided test case (if the response is executable or can be logically applied).
+      2. **Evaluate** how effectively the user's response addresses the problem.
+      3. **Return** both your results for each test case and the criteria evaluation in a specific JSON format.
 
       Here is the problem context:
-      Problem: ${problem.description}
-      Test Cases: ${testCaseStrings}
-      Example Input: ${problem.example_input ?? ''}
-      Example Output: ${problem.example_output ?? ''}
-      User's Prompt: ${prompt}
+      ${JSON.stringify(ctx)}
 
       Scoring Criteria:
       - **10**: The user's response perfectly solves the problem or provides a clear and effective prompt that would solve the problem.
@@ -111,15 +147,13 @@ export async function POST(req: Request, { params }: Params) {
       Important Notes:
       1. **If the user's response is an effective prompt** that guides solving the problem (e.g., "Summarize the paragraph in just one sentence"), it should be **scored based on how well it would solve the task**.
       2. Only assign **0** if the response does not attempt to solve the problem or is irrelevant.
-      3. Ensure the feedback clearly explains why the score was assigned, focusing on how well the response addresses the problem.
+      3. Ensure the feedback clearly explains why the score was assigned, focusing on how well the response addresses each criterion.
       4. CRITICAL: You MUST respond with ONLY a valid, properly formatted JSON object without any markdown formatting or code blocks. 
-      5. The score MUST be a single number (not an array).
+      5. The score MUST be from 0 to 10, can be in decimal.
       6. The response MUST use this EXACT format:
-      {
-        "score": 7,
-        "feedback": "Your explanation here"
-      }
+      ${JSON.stringify(exampleResponse)}
     `;
+
     // Get the model
     const aiModel = genAI.getGenerativeModel({ model });
 
@@ -132,16 +166,6 @@ export async function POST(req: Request, { params }: Params) {
         response.replace(/```json\n|\n```/g, '').trim()
       );
 
-      // Validate the response structure
-      if (
-        typeof parsedResponse.score !== 'number' ||
-        typeof parsedResponse.feedback !== 'string' ||
-        parsedResponse.score < 0 ||
-        parsedResponse.score > 10
-      ) {
-        throw new Error('Invalid response format');
-      }
-
       return NextResponse.json({ response: parsedResponse }, { status: 200 });
     } catch (parseError) {
       console.error('Parse error:', parseError);
@@ -149,7 +173,7 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json(
         {
           message:
-            'Invalid response format. Expected JSON with score and feedback.',
+            'Invalid response format. Expected JSON with testCaseEvaluation and criteriaEvaluation.',
         },
         { status: 422 }
       );

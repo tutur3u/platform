@@ -33,6 +33,11 @@ const roundToNearest15Minutes = (date: Date): Date => {
   return roundedDate;
 };
 
+// Function to create a unique signature for an event based on its content
+const createEventSignature = (event: CalendarEvent): string => {
+  return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
+};
+
 // Updated context with improved type definitions
 const CalendarContext = createContext<{
   getEvent: (eventId: string) => CalendarEvent | undefined;
@@ -215,6 +220,95 @@ export const CalendarProvider = ({
     return await response.json();
   };
 
+  // Function to detect and remove duplicate events
+  const removeDuplicateEvents = useCallback(
+    async (eventsData: CalendarEvent[]) => {
+      if (!ws?.id || !eventsData || eventsData.length === 0) return eventsData;
+
+      // Group events by their signature
+      const eventGroups = new Map<string, CalendarEvent[]>();
+
+      eventsData.forEach((event) => {
+        const signature = createEventSignature(event);
+        if (!eventGroups.has(signature)) {
+          eventGroups.set(signature, []);
+        }
+        eventGroups.get(signature)!.push(event);
+      });
+
+      // Find duplicates that need to be removed
+      const eventsToDelete: string[] = [];
+      let deletionPerformed = false;
+
+      eventGroups.forEach((eventGroup, signature) => {
+        if (eventGroup.length > 1) {
+          console.log(
+            `Found ${eventGroup.length} duplicates with signature "${signature}"`
+          );
+
+          // Sort by creation time if available, otherwise by ID
+          // Keep the first/oldest event, delete the rest
+          const sortedEvents = [...eventGroup].sort((a, b) => {
+            // If we have created_at field, use it (check with optional chaining)
+            const aCreatedAt = (a as any)?.created_at;
+            const bCreatedAt = (b as any)?.created_at;
+            if (aCreatedAt && bCreatedAt) {
+              return (
+                new Date(aCreatedAt).getTime() - new Date(bCreatedAt).getTime()
+              );
+            }
+            // Otherwise sort by ID which is often sequential
+            return a.id.localeCompare(b.id);
+          });
+
+          // Keep the first event (oldest), mark the rest for deletion
+          const eventsToRemove = sortedEvents.slice(1);
+          eventsToRemove.forEach((event) => {
+            eventsToDelete.push(event.id);
+          });
+        }
+      });
+
+      // Delete duplicate events if any were found
+      if (eventsToDelete.length > 0) {
+        try {
+          const supabase = createClient();
+          // Delete in batches of 10 to avoid request size limitations
+          const batchSize = 10;
+          for (let i = 0; i < eventsToDelete.length; i += batchSize) {
+            const batch = eventsToDelete.slice(i, i + batchSize);
+            const { error } = await supabase
+              .from('workspace_calendar_events')
+              .delete()
+              .in('id', batch);
+
+            if (error) {
+              console.error('Error deleting duplicate events:', error);
+            } else {
+              deletionPerformed = true;
+              console.log(
+                `Successfully deleted ${batch.length} duplicate events`
+              );
+            }
+          }
+
+          // If events were deleted, refresh to get updated data
+          if (deletionPerformed) {
+            queryClient.invalidateQueries({
+              queryKey: ['calendarEvents', ws?.id],
+            });
+          }
+        } catch (err) {
+          console.error('Failed to delete duplicate events:', err);
+        }
+      }
+
+      // Return the filtered list without duplicates
+      return eventsData.filter((event) => !eventsToDelete.includes(event.id));
+    },
+    [ws?.id, queryClient]
+  );
+
   // Use React Query to fetch and cache the events
   const { data } = useQuery({
     queryKey: [
@@ -228,7 +322,16 @@ export const CalendarProvider = ({
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
   });
 
-  const events = useMemo(() => data?.data ?? [], [data]);
+  // Process events to remove duplicates, then memoize the result
+  const events = useMemo(() => {
+    const eventsData = data?.data ?? [];
+    // Check for duplicates whenever events are loaded or refreshed
+    if (eventsData.length > 0) {
+      // We need to run this asynchronously since it makes API calls
+      removeDuplicateEvents(eventsData);
+    }
+    return eventsData;
+  }, [data, removeDuplicateEvents]);
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
@@ -372,6 +475,29 @@ export const CalendarProvider = ({
 
         let eventColor = event.color || 'BLUE';
 
+        // Create an event signature to check for duplicates
+        const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+
+        // Check existing events for potential duplicates to prevent race condition
+        const duplicates = events.filter((e: CalendarEvent) => {
+          const existingSignature = createEventSignature(e);
+          return existingSignature === newEventSignature;
+        });
+
+        // If duplicates already exist, return the first one
+        if (duplicates.length > 0) {
+          console.log(
+            'Prevented duplicate event creation - matching event already exists'
+          );
+
+          // Clear any pending new event
+          setPendingNewEvent(null);
+
+          // Return the existing event
+          return duplicates[0];
+        }
+
+        // No duplicates, proceed with creating the event
         const { data, error } = await supabase
           .from('workspace_calendar_events')
           .insert({
@@ -405,7 +531,7 @@ export const CalendarProvider = ({
         throw err;
       }
     },
-    [ws, refresh, settings.categoryColors]
+    [ws, refresh, settings.categoryColors, events]
   );
 
   const addEmptyEvent = useCallback(
@@ -555,6 +681,37 @@ export const CalendarProvider = ({
         };
 
         try {
+          // Check for potential duplicates before creating a new event
+          if (updatedEvent.title || pendingNewEvent.title) {
+            const startDate = roundToNearest15Minutes(
+              new Date(newEventData.start_at || new Date())
+            );
+            const endDate = roundToNearest15Minutes(
+              new Date(newEventData.end_at || new Date())
+            );
+
+            const newEventSignature = `${newEventData.title || ''}|${newEventData.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+
+            // Check existing events for potential duplicates
+            const duplicates = events.filter((e: CalendarEvent) => {
+              const existingSignature = createEventSignature(e);
+              return existingSignature === newEventSignature;
+            });
+
+            // If duplicates already exist, return the first one
+            if (duplicates.length > 0) {
+              console.log(
+                'Prevented duplicate event creation during update - matching event already exists'
+              );
+
+              // Clear any pending new event
+              setPendingNewEvent(null);
+
+              // Return the existing event
+              return duplicates[0];
+            }
+          }
+
           // Create a new event instead of updating
           const result = await addEvent(
             newEventData as Omit<CalendarEvent, 'id'>
@@ -600,7 +757,7 @@ export const CalendarProvider = ({
         }, 250); // Reduced from 2000ms to 250ms for better responsiveness
       });
     },
-    [ws, processUpdateQueue, pendingNewEvent, addEvent]
+    [ws, processUpdateQueue, pendingNewEvent, addEvent, events]
   );
 
   const deleteEvent = useCallback(
@@ -688,101 +845,177 @@ export const CalendarProvider = ({
 
   // Automatically fetch Google Calendar events
   const fetchGoogleCalendarEvents = async () => {
-    if (!ws?.id || !enableExperimentalGoogleCalendar) return { events: [] };
-
     const response = await fetch('/api/v1/calendar/auth/fetch');
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        errorData.error || 'Failed to fetch Google Calendar events'
-      );
+      throw new Error('Failed to fetch Google Calendar events');
     }
     return await response.json();
   };
 
-  // Auto query Google Calendar events
+  // Query to fetch Google Calendar events every 30 seconds
   const { data: googleData } = useQuery({
     queryKey: ['googleCalendarEvents', ws?.id],
     queryFn: fetchGoogleCalendarEvents,
     enabled: !!ws?.id && enableExperimentalGoogleCalendar,
-    refetchInterval: 30000,
-    staleTime: 1000 * 60,
+    refetchInterval: 30000, // Fetch every 30 seconds
+    staleTime: 1000 * 60, // Data is considered fresh for 1 minute
   });
-
   const googleEvents = useMemo(() => googleData?.events || [], [googleData]);
 
-  // getting local events from Supabase
-  const fetchLocalEvents = async () => {
-    if (!ws?.id) return [];
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('workspace_calendar_events')
-      .select('*')
-      .eq('ws_id', ws.id);
-    if (error) throw error;
-    return data;
-  };
-
-  const { data: localData } = useQuery({
-    queryKey: ['localCalendarEvents', ws?.id],
-    queryFn: fetchLocalEvents,
-    enabled: !!ws?.id,
-  });
-
-  const localEvents = useMemo(() => localData || [], [localData]);
-
-  // function to sync new events
-  const syncNewEvents = useCallback(async () => {
+  // Function to synchronize local events with Google Calendar
+  const syncEvents = useCallback(async () => {
     if (!googleEvents.length || !enableExperimentalGoogleCalendar) return;
 
-    // find new events that are not in local events
-    const newEvents = googleEvents.filter(
-      (gEvent: any) =>
-        !localEvents.some(
-          (lEvent: any) => lEvent.google_event_id === gEvent.google_event_id
-        )
+    // Get local events that are synced with Google Calendar
+    const localGoogleEvents: CalendarEvent[] = events.filter(
+      (e: CalendarEvent) => e.google_event_id
     );
 
-    if (newEvents.length > 0) {
-      const supabase = createClient();
-      for (const event of newEvents) {
+    // Create a set of google_event_id from Google Calendar events for quick lookup
+    const googleEventIds: Set<string | undefined> = new Set(
+      googleEvents.map((e: { google_event_id?: string }) => e.google_event_id)
+    );
+
+    // Identify events to delete: local events not present in Google Calendar
+    const eventsToDelete = localGoogleEvents.filter(
+      (e) => !googleEventIds.has(e.google_event_id)
+    );
+
+    // Delete events that no longer exist on Google Calendar
+    for (const event of eventsToDelete) {
+      try {
+        const supabase = createClient();
+        await supabase
+          .from('workspace_calendar_events')
+          .delete()
+          .eq('id', event.id);
+      } catch (err) {
+        console.error('Failed to delete event:', err);
+      }
+    }
+
+    // Update or add events from Google Calendar
+    for (const gEvent of googleEvents) {
+      const localEvent: CalendarEvent | undefined = localGoogleEvents.find(
+        (e: CalendarEvent) => e.google_event_id === gEvent.google_event_id
+      );
+      if (localEvent) {
+        // Check if there are any changes in the event details
+        const hasChanges =
+          localEvent.title !== gEvent.title ||
+          localEvent.description !== gEvent.description ||
+          localEvent.start_at !== gEvent.start_at ||
+          localEvent.end_at !== gEvent.end_at ||
+          localEvent.color !== gEvent.color ||
+          localEvent.location !== gEvent.location ||
+          localEvent.priority !== gEvent.priority;
+
+        if (hasChanges) {
+          try {
+            const supabase = createClient();
+            await supabase
+              .from('workspace_calendar_events')
+              .update({
+                title: gEvent.title,
+                description: gEvent.description || '',
+                start_at: gEvent.start_at,
+                end_at: gEvent.end_at,
+                color: gEvent.color || 'BLUE',
+                location: gEvent.location || '',
+                priority: gEvent.priority || 'medium',
+              })
+              .eq('id', localEvent.id);
+          } catch (err) {
+            console.error('Failed to update event:', err);
+          }
+        }
+      } else {
+        // Add new event from Google Calendar
         try {
+          // Check for content-based duplicates (same title, description, dates)
+          // even if google_event_id is different
+          const potentialDuplicates = events.filter(
+            (localEvent: CalendarEvent) => {
+              return (
+                localEvent.title === gEvent.title &&
+                localEvent.description === (gEvent.description || '') &&
+                localEvent.start_at === gEvent.start_at &&
+                localEvent.end_at === gEvent.end_at
+              );
+            }
+          );
+
+          // If we found a duplicate by content, update it with the Google Event ID
+          // instead of creating a new event
+          if (potentialDuplicates.length > 0) {
+            console.log(
+              `Found content duplicate for Google event "${gEvent.title}"`
+            );
+
+            // Update the first duplicate with the Google Event ID
+            const supabase = createClient();
+            const { error: updateError } = await supabase
+              .from('workspace_calendar_events')
+              .update({ google_event_id: gEvent.google_event_id })
+              .eq('id', potentialDuplicates[0].id);
+
+            if (updateError) {
+              console.error(
+                'Failed to update duplicate with Google Event ID:',
+                updateError
+              );
+            } else {
+              console.log(`Updated duplicate event with Google Event ID`);
+            }
+
+            // Skip the insertion below
+            continue;
+          }
+
+          // No duplicate found, proceed with normal insertion
+          const supabase = createClient();
           const { error } = await supabase
             .from('workspace_calendar_events')
             .insert({
-              title: event.title,
-              description: event.description || '',
-              start_at: event.start_at,
-              end_at: event.end_at,
-              color: event.color || 'BLUE',
-              location: event.location || '',
+              title: gEvent.title,
+              description: gEvent.description || '',
+              start_at: gEvent.start_at,
+              end_at: gEvent.end_at,
+              color: gEvent.color || 'BLUE',
+              location: gEvent.location || '',
               ws_id: ws?.id ?? '',
-              google_event_id: event.google_event_id,
-              locked: event.locked || false,
-              priority: event.priority || 'medium',
+              google_event_id: gEvent.google_event_id,
+              locked: gEvent.locked || false,
+              priority: gEvent.priority || 'medium',
             });
 
           if (error) throw error;
         } catch (err) {
-          console.error('Failed to sync event:', err);
+          console.error('Failed to insert event:', err);
         }
       }
-      // update local events in cache
-      queryClient.invalidateQueries(['localCalendarEvents', ws?.id]);
     }
+
+    // Refresh local events by invalidating the query
+    queryClient.invalidateQueries(['calendarEvents', ws?.id]);
   }, [
     googleEvents,
-    localEvents,
+    events,
     ws?.id,
     queryClient,
     enableExperimentalGoogleCalendar,
   ]);
 
-  // run syncNewEvents when googleEvents change
+  // Set up an interval to sync events every 30 seconds
   useEffect(() => {
-    syncNewEvents();
-  }, [googleEvents, syncNewEvents]);
+    if (!enableExperimentalGoogleCalendar || !ws?.id) return;
 
+    const interval = setInterval(() => {
+      syncEvents();
+    }, 30000); // Sync every 30 seconds
+
+    return () => clearInterval(interval); // Clean up interval on unmount
+  }, [enableExperimentalGoogleCalendar, ws?.id, syncEvents]);
   // Google Calendar sync moved to API Route
   const syncWithGoogleCalendar = useCallback(
     async (event: CalendarEvent) => {

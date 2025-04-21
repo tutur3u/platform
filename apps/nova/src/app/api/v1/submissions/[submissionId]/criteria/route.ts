@@ -3,13 +3,16 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
-    outputId: string;
+    submissionId: string;
   }>;
 }
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
+  const { submissionId } = await params;
+  const { searchParams } = new URL(request.url);
+  const criteriaId = searchParams.get('criteriaId');
+
   const supabase = await createClient();
-  const { outputId } = await params;
 
   const {
     data: { user },
@@ -21,27 +24,32 @@ export async function GET(_request: Request, { params }: Params) {
   }
 
   try {
-    const { data: output, error } = await supabase
-      .from('nova_submission_outputs')
+    let query = supabase
+      .from('nova_submission_criteria')
       .select('*')
-      .eq('id', Number(outputId))
-      .single();
+      .eq('submission_id', submissionId);
+
+    if (criteriaId) {
+      query = query.eq('criteria_id', criteriaId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
-      console.error('Database Error: ', error);
+      console.error('Database Error:', error);
       if (error.code === 'PGRST116') {
         return NextResponse.json(
-          { message: 'Output not found' },
+          { message: 'Record not found' },
           { status: 404 }
         );
       }
       return NextResponse.json(
-        { message: 'Error fetching output' },
+        { message: 'Error fetching record' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(output, { status: 200 });
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -52,8 +60,9 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
+  const { submissionId } = await params;
+
   const supabase = await createClient();
-  const { outputId } = await params;
 
   const {
     data: { user },
@@ -64,52 +73,37 @@ export async function PUT(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  let body: {
-    output: string;
-    submissionId?: string;
-  };
-
   try {
-    body = await request.json();
+    const body = await request.json();
+    const { criteriaId, score, feedback } = body;
 
-    // Check if any update data was provided
-    if (Object.keys(body).length === 0) {
+    if (!criteriaId || typeof score !== 'number' || !feedback) {
       return NextResponse.json(
-        { message: 'No update data provided' },
+        { message: 'Invalid request body' },
         { status: 400 }
       );
     }
-  } catch (error) {
-    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
-  }
 
-  try {
-    const updateData: any = {};
-    if (body.output) updateData.output = body.output;
-    if (body.submissionId) updateData.submission_id = body.submissionId;
-
-    const { data: updatedOutput, error: updateError } = await supabase
-      .from('nova_submission_outputs')
-      .update(updateData)
-      .eq('id', Number(outputId))
+    const { data, error } = await supabase
+      .from('nova_submission_criteria')
+      .upsert({
+        submission_id: submissionId,
+        criteria_id: criteriaId,
+        score: score,
+        feedback: feedback,
+      })
       .select()
       .single();
 
-    if (updateError) {
-      console.error('Database Error: ', updateError);
-      if (updateError.code === 'PGRST116') {
-        return NextResponse.json(
-          { message: 'Output not found' },
-          { status: 404 }
-        );
-      }
+    if (error) {
+      console.error('Database Error:', error);
       return NextResponse.json(
-        { message: 'Error updating output' },
+        { message: 'Error saving record' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(updatedOutput, { status: 200 });
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -119,9 +113,12 @@ export async function PUT(request: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(request: Request, { params }: Params) {
+  const { submissionId } = await params;
+  const { searchParams } = new URL(request.url);
+  const criteriaId = searchParams.get('criteriaId');
+
   const supabase = await createClient();
-  const { outputId } = await params;
 
   const {
     data: { user },
@@ -133,21 +130,27 @@ export async function DELETE(_request: Request, { params }: Params) {
   }
 
   try {
-    const { error: deleteError } = await supabase
-      .from('nova_submission_outputs')
+    let query = supabase
+      .from('nova_submission_criteria')
       .delete()
-      .eq('id', Number(outputId));
+      .eq('submission_id', submissionId);
 
-    if (deleteError) {
-      console.error('Database Error: ', deleteError);
+    if (criteriaId) {
+      query = query.eq('criteria_id', criteriaId);
+    }
+
+    const { error } = await query;
+
+    if (error) {
+      console.error('Database Error:', error);
       return NextResponse.json(
-        { message: 'Error deleting output' },
+        { message: 'Error deleting record' },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      { message: 'Output deleted successfully' },
+      { message: 'Record deleted successfully' },
       { status: 200 }
     );
   } catch (error) {

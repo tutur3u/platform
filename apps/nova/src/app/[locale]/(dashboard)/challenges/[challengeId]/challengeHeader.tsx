@@ -1,12 +1,30 @@
+import { ChallengeCriteriaDialog } from './challenge-criteria-dialog';
+import { NovaChallenge } from '@tuturuuu/types/db';
+import { NovaChallengeCriteria } from '@tuturuuu/types/db';
+import { NovaProblem } from '@tuturuuu/types/db';
+import { NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { ChevronLeft, ChevronRight, Clock, LogOut } from '@tuturuuu/ui/icons';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ListChecks,
+  LogOut,
+} from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useRef, useState } from 'react';
 
+type ExtendedNovaChallenge = NovaChallenge & {
+  criteria: NovaChallengeCriteria[];
+  problems: (NovaProblem & {
+    test_cases: NovaProblemTestCase[];
+  })[];
+};
+
 interface Props {
-  className?: string;
+  challenge: ExtendedNovaChallenge;
   problemLength: number;
   currentProblemIndex: number;
   startTime: string;
@@ -19,7 +37,7 @@ interface Props {
 }
 
 export default function ChallengeHeader({
-  className,
+  challenge,
   problemLength,
   currentProblemIndex,
   startTime,
@@ -158,14 +176,9 @@ export default function ChallengeHeader({
   };
 
   return (
-    <div
-      className={cn(
-        'bg-background/80 h-16 border-b backdrop-blur-sm',
-        className
-      )}
-    >
-      <div className="flex h-16 w-full items-center justify-between px-6">
-        <div className="flex w-fit items-center gap-2">
+    <div className="relative flex h-16 items-center justify-between border-b px-6">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
@@ -192,29 +205,37 @@ export default function ChallengeHeader({
           </Button>
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <Clock className={cn('h-4 w-4', getTimeColor())} />
-            <span
-              className={cn('font-mono text-sm font-medium', getTimeColor())}
-            >
-              {String(timeLeft.hours).padStart(2, '0')}:
-              {String(timeLeft.minutes).padStart(2, '0')}:
-              {String(timeLeft.seconds).padStart(2, '0')}
-            </span>
-          </div>{' '}
-          <Progress
-            value={timeLeft.percentage}
-            className="h-2 w-24"
-            indicatorClassName={getProgressColor()}
-          />
-        </div>
-
-        <Button variant="destructive" onClick={onEnd}>
-          <LogOut className="h-4 w-4" />
-          End Challenge
-        </Button>
+        <ChallengeCriteriaDialog
+          trigger={
+            <Button variant="outline" size="sm">
+              <ListChecks className="h-4 w-4" />
+              <span className="hidden xl:block">View challenge criteria</span>
+            </Button>
+          }
+          criteria={challenge.criteria}
+        />
       </div>
+
+      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <Clock className={cn('h-4 w-4', getTimeColor())} />
+          <span className={cn('font-mono text-sm font-medium', getTimeColor())}>
+            {String(timeLeft.hours).padStart(2, '0')}:
+            {String(timeLeft.minutes).padStart(2, '0')}:
+            {String(timeLeft.seconds).padStart(2, '0')}
+          </span>
+        </div>{' '}
+        <Progress
+          value={timeLeft.percentage}
+          className="h-2 w-24"
+          indicatorClassName={getProgressColor()}
+        />
+      </div>
+
+      <Button variant="destructive" onClick={onEnd}>
+        <LogOut className="h-4 w-4" />
+        End Challenge
+      </Button>
     </div>
   );
 }

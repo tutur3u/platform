@@ -70,6 +70,8 @@ export async function POST(request: Request) {
     const testcaseData = {
       problem_id: validatedData.problemId,
       input: validatedData.input,
+      output: validatedData.output,
+      hidden: validatedData.hidden,
     };
 
     const { data: testcase, error: testcaseError } = await supabase
