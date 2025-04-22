@@ -182,14 +182,15 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
       if (!userId || !problemId) return;
 
       // Calculate the score properly according to the formula
-      const hasCriteria = submission.total_criteria > 0;
-      const hasTests = submission.total_tests > 0;
+      const hasCriteria = submission.total_criteria ?? 0 > 0;
+      const hasTests = submission.total_tests ?? 0 > 0;
 
       let criteriaScore = 0;
       if (hasCriteria) {
         const criteriaWeight = hasTests ? 0.5 : 1.0;
         criteriaScore =
-          (submission.sum_criterion_score / (submission.total_criteria * 10)) *
+          ((submission.sum_criterion_score ?? 0) /
+            (submission.total_criteria ?? 0 * 10)) *
           10 *
           criteriaWeight;
       }
@@ -198,7 +199,9 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
       if (hasTests) {
         const testWeight = 0.5;
         testScore =
-          (submission.passed_tests / submission.total_tests) * 10 * testWeight;
+          ((submission.passed_tests ?? 0) / (submission.total_tests ?? 0)) *
+          10 *
+          testWeight;
       }
 
       const correctScore = criteriaScore + testScore;
@@ -338,7 +341,8 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
       title: string;
       score: number;
     }> = [];
-    const teamChallScores = teamChallengeScores.get(actualTeamId) || new Map();
+    const teamChallScores =
+      teamChallengeScores.get(actualTeamId ?? '') || new Map();
 
     // Convert challenge scores to sorted array
     teamChallScores.forEach((score, challengeId) => {

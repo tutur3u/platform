@@ -607,27 +607,33 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
                             <AvatarImage
-                              src={teamData.members[0].avatar_url || ''}
+                              src={teamData?.members?.[0]?.avatar_url || ''}
                             />
                             <AvatarFallback className="text-xs">
-                              {getInitials(teamData.members[0].display_name)}
+                              {getInitials(
+                                teamData?.members?.[0]?.display_name || ''
+                              )}
                             </AvatarFallback>
                           </Avatar>
                           <span className="font-medium">
-                            {teamData.members[0].display_name}
+                            {teamData?.members?.[0]?.display_name || ''}
                           </span>
                         </div>
                         <div className="mt-2 flex items-end gap-2">
                           <span className="text-2xl font-bold text-purple-600">
-                            {teamData.members[0].individual_score.toFixed(1)}
+                            {teamData?.members?.[0]?.individual_score?.toFixed(
+                              1
+                            ) || '0'}
                           </span>
                           <span className="text-sm text-muted-foreground">
                             points
                           </span>
                         </div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          {teamData.members[0].contribution_percentage}% of team
-                          score
+                          {teamData?.members?.[0]?.contribution_percentage?.toFixed(
+                            1
+                          ) || '0'}
+                          % of team score
                         </div>
                       </>
                     )}
