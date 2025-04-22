@@ -73,14 +73,14 @@ export function ApologyModal() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <DialogHeader className="border-b px-6 pt-6 pb-4">
+          <DialogHeader className="border-b px-6 pb-4 pt-6">
             <motion.div
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
               <DialogTitle className="flex items-center gap-2 text-center text-xl font-bold sm:text-left">
-                <AlertTriangle className="h-6 w-6 text-dynamic-red" />
+                <AlertTriangle className="text-dynamic-red h-6 w-6" />
                 {t('title')}
               </DialogTitle>
             </motion.div>
@@ -100,7 +100,7 @@ export function ApologyModal() {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <div className="sticky top-0 z-10 border-b bg-background px-6 pt-4">
+            <div className="bg-background sticky top-0 z-10 border-b px-6 pt-4">
               <TabsList className="mb-4 grid w-full grid-cols-2">
                 <TabsTrigger
                   value="issues"
@@ -110,7 +110,7 @@ export function ApologyModal() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="updates"
-                  className="transition-all duration-200 data-[state=active]:bg-dynamic-green/10"
+                  className="data-[state=active]:bg-dynamic-green/10 transition-all duration-200"
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />{' '}
                   {t('resolution_status')}
@@ -138,13 +138,13 @@ export function ApologyModal() {
                         variants={cardVariants}
                         initial="hidden"
                         animate="visible"
-                        className="overflow-hidden border-dynamic-red/30"
+                        className="border-dynamic-red/30 overflow-hidden"
                       >
                         <CardContent className="space-y-3 p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-2">
-                              <AlertTriangle className="h-5 w-5 shrink-0 text-dynamic-red" />
-                              <h3 className="font-semibold text-dynamic-red">
+                              <AlertTriangle className="text-dynamic-red h-5 w-5 shrink-0" />
+                              <h3 className="text-dynamic-red font-semibold">
                                 {t('ai_scoring_system')}
                               </h3>
                             </div>
@@ -156,13 +156,13 @@ export function ApologyModal() {
                             </Badge>
                           </div>
                           <p>{t('ai_scoring_description')}</p>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-1 text-sm">
                             <Bug className="h-4 w-4" />
                             <span>
                               {t('issue_tracked')}{' '}
                               <a
                                 href="https://github.com/tutur3u/platform/issues/2429"
-                                className="font-semibold underline transition-colors hover:text-primary"
+                                className="hover:text-primary font-semibold underline transition-colors"
                                 target="_blank"
                               >
                                 {t('issue')} #2429
@@ -183,9 +183,9 @@ export function ApologyModal() {
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-2">
                               <div className="relative">
-                                <Trophy className="h-5 w-5 shrink-0 text-dynamic-green" />
+                                <Trophy className="text-dynamic-green h-5 w-5 shrink-0" />
                               </div>
-                              <h3 className="font-semibold text-dynamic-green">
+                              <h3 className="text-dynamic-green font-semibold">
                                 {t('leaderboard_scores')}
                               </h3>
                             </div>
@@ -197,13 +197,13 @@ export function ApologyModal() {
                             </Badge>
                           </div>
                           <p>{t('leaderboard_description')}</p>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <CheckCircle className="h-4 w-4 text-dynamic-green" />
+                          <div className="text-muted-foreground flex items-center gap-1 text-sm">
+                            <CheckCircle className="text-dynamic-green h-4 w-4" />
                             <span>
                               {t('issue_tracked')}{' '}
                               <a
                                 href="https://github.com/tutur3u/platform/issues/2416"
-                                className="inline-flex items-center gap-1 transition-colors hover:text-primary"
+                                className="hover:text-primary inline-flex items-center gap-1 transition-colors"
                                 target="_blank"
                               >
                                 <span className="font-semibold line-through decoration-1">
@@ -211,7 +211,7 @@ export function ApologyModal() {
                                 </span>
                                 <Badge
                                   variant="outline"
-                                  className="ml-1 h-5 border-dynamic-green/30 bg-dynamic-green/10 px-1.5 py-0 text-xs font-normal text-green-600 dark:text-dynamic-green"
+                                  className="border-dynamic-green/30 bg-dynamic-green/10 dark:text-dynamic-green ml-1 h-5 px-1.5 py-0 text-xs font-normal text-green-600"
                                 >
                                   <CheckCircle className="mr-1 h-3 w-3" />
                                   {t('fixed')}
@@ -231,7 +231,7 @@ export function ApologyModal() {
                         <CardContent className="space-y-3 p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-2">
-                              <AlertTriangle className="h-5 w-5 shrink-0 text-dynamic-yellow" />
+                              <AlertTriangle className="text-dynamic-yellow h-5 w-5 shrink-0" />
                               <h3 className="font-semibold">
                                 {t('testcase_criteria')}
                               </h3>
@@ -244,13 +244,13 @@ export function ApologyModal() {
                             </Badge>
                           </div>
                           <p>{t('testcase_description')}</p>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-1 text-sm">
                             <Bug className="h-4 w-4" />
                             <span>
                               {t('issues_tracked')}{' '}
                               <a
                                 href="https://github.com/tutur3u/platform/issues/2428"
-                                className="font-semibold underline transition-colors hover:text-primary"
+                                className="hover:text-primary font-semibold underline transition-colors"
                                 target="_blank"
                               >
                                 {t('issue')} #2428
@@ -258,7 +258,7 @@ export function ApologyModal() {
                               {t('and')}{' '}
                               <a
                                 href="https://github.com/tutur3u/platform/issues/2429"
-                                className="font-semibold underline transition-colors hover:text-primary"
+                                className="hover:text-primary font-semibold underline transition-colors"
                                 target="_blank"
                               >
                                 {t('issue')} #2429
@@ -291,26 +291,26 @@ export function ApologyModal() {
                         transition={{ duration: 0.5, delay: 0.2 }}
                       >
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-dynamic-green" />
+                          <CheckCircle className="text-dynamic-green h-5 w-5" />
                           <span className="font-medium">
                             {t('bugs_identified')}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-dynamic-green" />
+                          <CheckCircle className="text-dynamic-green h-5 w-5" />
                           <span className="font-medium">{t('ai_fix')}</span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-dynamic-green" />
+                          <CheckCircle className="text-dynamic-green h-5 w-5" />
                           <span className="font-medium">
                             {t('testcase_fix')}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-dynamic-green" />
+                          <CheckCircle className="text-dynamic-green h-5 w-5" />
                           <span className="font-medium">
                             {t('leaderboard_fix')}
                           </span>
@@ -337,7 +337,7 @@ export function ApologyModal() {
                           <li>{t('step_1')}</li>
                           <li>{t('step_2')}</li>
                           <li>{t('step_3')}</li>
-                          <li className="font-medium text-dynamic-blue">
+                          <li className="text-dynamic-blue font-medium">
                             {t('step_4')}
                           </li>
                         </ul>
@@ -348,9 +348,9 @@ export function ApologyModal() {
               </div>
             </ScrollArea>
 
-            <div className="flex flex-col items-center justify-between gap-4 border-t bg-muted/10 px-6 py-4 sm:flex-row">
+            <div className="bg-muted/10 flex flex-col items-center justify-between gap-4 border-t px-6 py-4 sm:flex-row">
               <motion.div
-                className="flex items-center gap-1 text-sm text-muted-foreground"
+                className="text-muted-foreground flex items-center gap-1 text-sm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
@@ -359,7 +359,7 @@ export function ApologyModal() {
                 <a
                   href="https://github.com/tutur3u/platform/issues"
                   target="_blank"
-                  className="inline-flex items-center gap-1 text-primary transition-colors hover:underline"
+                  className="text-primary inline-flex items-center gap-1 transition-colors hover:underline"
                   onClick={handleOpenIssue}
                 >
                   {t('github_issues')} <ExternalLink className="h-3 w-3" />
@@ -374,7 +374,7 @@ export function ApologyModal() {
                   <Button
                     variant="outline"
                     onClick={handleOpenIssue}
-                    className="transition-all hover:bg-muted"
+                    className="hover:bg-muted transition-all"
                   >
                     {t('report_issue')}
                   </Button>
