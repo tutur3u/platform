@@ -28,6 +28,7 @@ export type LeaderboardEntry = {
   challenge_scores?: Record<string, number>;
 };
 
+// Page
 export default function Page() {
   const locale = useLocale();
   const [data, setData] = useState<LeaderboardEntry[]>([]);
