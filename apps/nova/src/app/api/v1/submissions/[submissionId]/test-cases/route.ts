@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -12,7 +15,7 @@ export async function GET(request: Request, { params }: Params) {
   const { searchParams } = new URL(request.url);
   const testCaseId = searchParams.get('testCaseId');
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const {
     data: { user },
@@ -62,7 +65,7 @@ export async function GET(request: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   const { submissionId } = await params;
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const {
     data: { user },
@@ -122,7 +125,7 @@ export async function DELETE(request: Request, { params }: Params) {
   const { searchParams } = new URL(request.url);
   const testCaseId = searchParams.get('testCaseId');
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const {
     data: { user },

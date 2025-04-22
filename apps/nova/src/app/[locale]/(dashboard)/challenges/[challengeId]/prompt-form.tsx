@@ -123,7 +123,10 @@ export default function PromptForm({ problem, session }: Props) {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({
+            prompt: prompt,
+            id: problem.id,
+          }),
         }
       );
 
