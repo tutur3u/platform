@@ -1,9 +1,5 @@
-import type { ResponseMode } from '../../../../types';
 import { google } from '@ai-sdk/google';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { generateText } from 'ai';
 import { NextResponse } from 'next/server';
 
@@ -22,7 +18,6 @@ const vertexModel = google(DEFAULT_MODEL_NAME, {
 });
 
 export async function POST(req: Request) {
-  const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
   const { id, prompt, input } = await req.json();
