@@ -11,7 +11,7 @@ interface UserInterface {
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const page = parseInt(searchParams.get('page') || '1');
-  const limit = 20;
+  const limit = 50;
   const offset = (page - 1) * limit;
 
   const sbAdmin = await createAdminClient();

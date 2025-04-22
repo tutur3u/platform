@@ -1,6 +1,7 @@
 'use client';
 
 import LeaderboardPage from './client';
+import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface UserInterface {
@@ -28,6 +29,7 @@ export type LeaderboardEntry = {
 };
 
 export default function Page() {
+  const locale = useLocale();
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [challenges, setChallenges] = useState<{ id: string; title: string }[]>(
     []
@@ -47,8 +49,8 @@ export default function Page() {
 
   const fetchLeaderboard = async (pageNumber: number) => {
     const baseUrl = isChecked
-      ? `/api/v1/leaderboard/team?page=${pageNumber}`
-      : `/api/v1/leaderboard?page=${pageNumber}`;
+      ? `/api/v1/leaderboard/team?page=${pageNumber}&locale=${locale}`
+      : `/api/v1/leaderboard?page=${pageNumber}&locale=${locale}`;
     try {
       const response = await fetch(baseUrl, {
         cache: 'no-store',

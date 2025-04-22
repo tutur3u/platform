@@ -2,6 +2,7 @@ import UserProfileClient from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { Metadata } from 'next';
+import { getLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 // Dynamic metadata for profile pages
@@ -11,6 +12,8 @@ export async function generateMetadata({
   params: Promise<{ userId: string }>;
 }): Promise<Metadata> {
   const { userId: rawUserId } = await params;
+
+  const locale = await getLocale();
   const sbAdmin = await createAdminClient();
 
   const userId = rawUserId
@@ -24,7 +27,8 @@ export async function generateMetadata({
     .eq('id', userId)
     .single();
 
-  const userName = userData?.display_name || generateFunName(userId);
+  const userName =
+    userData?.display_name || generateFunName({ id: userId, locale });
 
   // Construct OG image URL using userId
   const ogImageUrl = new URL(
@@ -55,6 +59,8 @@ export default async function UserProfilePage({
   params: Promise<{ userId: string }>;
 }) {
   const { userId: rawUserId } = await params;
+
+  const locale = await getLocale();
   const sbAdmin = await createAdminClient();
 
   const userId = rawUserId
@@ -188,7 +194,7 @@ export default async function UserProfilePage({
   // Format data for client component
   const profileData = {
     id: userData.id,
-    name: userData.display_name || generateFunName(userData.id),
+    name: userData.display_name || generateFunName({ id: userData.id, locale }),
     avatar: userData.avatar_url || '',
     joinedDate: userData.created_at,
     totalScore,

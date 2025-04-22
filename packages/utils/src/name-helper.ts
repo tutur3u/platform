@@ -40,136 +40,182 @@ export const getInitials = (name?: string | null): string => {
 /**
  * Generates a consistent fun name from a user ID
  */
-export function generateFunName(userId: string): string {
+export function generateFunName({
+  id,
+  locale = 'en',
+}: {
+  id: string;
+  locale?: 'en' | 'vi' | string;
+}): string {
   // List of adjectives and animals for fun names
-  const adjectives = [
-    'Happy',
-    'Silly',
-    'Clever',
-    'Brave',
-    'Curious',
-    'Playful',
-    'Friendly',
-    'Gentle',
-    'Jolly',
-    'Witty',
-    'Mighty',
-    'Dazzling',
-    'Adventurous',
-    'Bouncy',
-    'Cheerful',
-    'Daring',
-    'Energetic',
-    'Fuzzy',
-    'Goofy',
-    'Hilarious',
-    'Intelligent',
-    'Jumpy',
-    'Kind',
-    'Lively',
-    'Magical',
-    'Noble',
-    'Optimistic',
-    'Quirky',
-    'Radiant',
-    'Sassy',
-    'Talented',
-    'Unique',
-    'Vibrant',
-    'Whimsical',
-    'Zealous',
-    'Adorable',
-  ];
+  const adjectives = {
+    en: [
+      'Happy',
+      'Silly',
+      'Clever',
+      'Brave',
+      'Curious',
+      'Playful',
+      'Friendly',
+      'Gentle',
+      'Jolly',
+      'Witty',
+      'Mighty',
+      'Dazzling',
+      'Adventurous',
+      'Bouncy',
+      'Cheerful',
+      'Daring',
+      'Energetic',
+      'Fuzzy',
+      'Goofy',
+      'Hilarious',
+      'Intelligent',
+      'Jumpy',
+      'Kind',
+      'Lively',
+      'Magical',
+      'Noble',
+      'Optimistic',
+      'Quirky',
+      'Radiant',
+      'Sassy',
+      'Talented',
+      'Unique',
+      'Vibrant',
+      'Whimsical',
+      'Zealous',
+      'Adorable',
+    ],
+    vi: [
+      'Vui Vẻ', // Happy
+      'Ngốc Nghếch', // Silly
+      'Thông Minh', // Clever
+      'Dũng Cảm', // Brave
+      'Tò Mò', // Curious
+      'Tinh Nghịch', // Playful
+      'Thân Thiện', // Friendly
+      'Dịu Dàng', // Gentle
+      'Hạnh Phúc', // Jolly
+      'Hóm Hỉnh', // Witty
+      'Mạnh Mẽ', // Mighty
+      'Lấp Lánh', // Dazzling
+      'Phiêu Lưu', // Adventurous
+      'Nhảy Nhót', // Bouncy
+      'Vui Tươi', // Cheerful
+      'Táo Bạo', // Daring
+      'Năng Động', // Energetic
+      'Xù Xì', // Fuzzy
+      'Ngớ Ngẩn', // Goofy
+      'Buồn Cười', // Hilarious
+      'Thông Tuệ', // Intelligent
+      'Nhảy Nhót', // Jumpy
+      'Tốt Bụng', // Kind
+      'Sống Động', // Lively
+      'Kỳ Diệu', // Magical
+      'Cao Quý', // Noble
+      'Lạc Quan', // Optimistic
+      'Kỳ Lạ', // Quirky
+      'Rực Rỡ', // Radiant
+      'Bướng Bỉnh', // Sassy
+      'Tài Năng', // Talented
+      'Độc Đáo', // Unique
+      'Sôi Động', // Vibrant
+      'Kỳ Quặc', // Whimsical
+      'Nhiệt Tình', // Zealous
+      'Đáng Yêu', // Adorable
+    ],
+  };
 
-  const animals = [
-    'Octopus',
-    'Cat',
-    'Penguin',
-    'Fox',
-    'Panda',
-    'Dolphin',
-    'Koala',
-    'Owl',
-    'Tiger',
-    'Rabbit',
-    'Monkey',
-    'Wolf',
-    'Alligator',
-    'Beaver',
-    'Chameleon',
-    'Duck',
-    'Elephant',
-    'Flamingo',
-    'Giraffe',
-    'Hedgehog',
-    'Iguana',
-    'Jellyfish',
-    'Kangaroo',
-    'Lion',
-    'Meerkat',
-    'Narwhal',
-    'Otter',
-    'Peacock',
-    'Quokka',
-    'Raccoon',
-    'Sloth',
-    'Turtle',
-    'Unicorn',
-    'Vulture',
-    'Walrus',
-    'Yak',
-    'Zebra',
-    'Badger',
-    'Cheetah',
-    'Dingo',
-    'Ferret',
-    'Gorilla',
-  ];
-
-  // Matching emojis for each animal
-  const animalEmojis: Record<string, string> = {
-    Octopus: '🐙',
-    Cat: '🐱',
-    Penguin: '🐧',
-    Fox: '🦊',
-    Panda: '🐼',
-    Dolphin: '🐬',
-    Koala: '🐨',
-    Owl: '🦉',
-    Tiger: '🐯',
-    Rabbit: '🐰',
-    Monkey: '🐵',
-    Wolf: '🐺',
-    Alligator: '🐊',
-    Beaver: '🦫',
-    Chameleon: '🦎',
-    Duck: '🦆',
-    Elephant: '🐘',
-    Flamingo: '🦩',
-    Giraffe: '🦒',
-    Hedgehog: '🦔',
-    Iguana: '🦎',
-    Jellyfish: '🪼',
-    Kangaroo: '🦘',
-    Lion: '🦁',
-    Meerkat: '🦝',
-    Narwhal: '🦭',
-    Otter: '🦦',
-    Peacock: '🦚',
-    Quokka: '🦘',
-    Raccoon: '🦝',
-    Sloth: '🦥',
-    Turtle: '🐢',
-    Unicorn: '🦄',
-    Vulture: '🦅',
-    Walrus: '🦭',
-    Yak: '🐃',
-    Zebra: '🦓',
-    Badger: '🦡',
-    Cheetah: '🐆',
-    Dingo: '🐕',
-    Ferret: '🦡',
-    Gorilla: '🦍',
+  const animals = {
+    en: [
+      { name: 'Octopus', emoji: '🐙' },
+      { name: 'Cat', emoji: '🐱' },
+      { name: 'Penguin', emoji: '🐧' },
+      { name: 'Fox', emoji: '🦊' },
+      { name: 'Panda', emoji: '🐼' },
+      { name: 'Dolphin', emoji: '🐬' },
+      { name: 'Koala', emoji: '🐨' },
+      { name: 'Owl', emoji: '🦉' },
+      { name: 'Tiger', emoji: '🐯' },
+      { name: 'Rabbit', emoji: '🐰' },
+      { name: 'Monkey', emoji: '🐵' },
+      { name: 'Wolf', emoji: '🐺' },
+      { name: 'Alligator', emoji: '🐊' },
+      { name: 'Beaver', emoji: '🦫' },
+      { name: 'Chameleon', emoji: '🦎' },
+      { name: 'Duck', emoji: '🦆' },
+      { name: 'Elephant', emoji: '🐘' },
+      { name: 'Flamingo', emoji: '🦩' },
+      { name: 'Giraffe', emoji: '🦒' },
+      { name: 'Hedgehog', emoji: '🦔' },
+      { name: 'Iguana', emoji: '🦎' },
+      { name: 'Jellyfish', emoji: '🪼' },
+      { name: 'Kangaroo', emoji: '🦘' },
+      { name: 'Lion', emoji: '🦁' },
+      { name: 'Meerkat', emoji: '🦝' },
+      { name: 'Narwhal', emoji: '🦭' },
+      { name: 'Otter', emoji: '🦦' },
+      { name: 'Peacock', emoji: '🦚' },
+      { name: 'Quokka', emoji: '🦘' },
+      { name: 'Raccoon', emoji: '🦝' },
+      { name: 'Sloth', emoji: '🦥' },
+      { name: 'Turtle', emoji: '🐢' },
+      { name: 'Unicorn', emoji: '🦄' },
+      { name: 'Vulture', emoji: '🦅' },
+      { name: 'Walrus', emoji: '🦭' },
+      { name: 'Yak', emoji: '🐃' },
+      { name: 'Zebra', emoji: '🦓' },
+      { name: 'Badger', emoji: '🦡' },
+      { name: 'Cheetah', emoji: '🐆' },
+      { name: 'Dingo', emoji: '🐕' },
+      { name: 'Ferret', emoji: '🦡' },
+      { name: 'Gorilla', emoji: '🦍' },
+    ],
+    vi: [
+      { name: 'Bạch Tuộc', emoji: '🐙' },
+      { name: 'Mèo', emoji: '🐱' },
+      { name: 'Chim Cánh Cụt', emoji: '🐧' },
+      { name: 'Cáo', emoji: '🦊' },
+      { name: 'Gấu Trúc', emoji: '🐼' },
+      { name: 'Cá Heo', emoji: '🐬' },
+      { name: 'Gấu Koala', emoji: '🐨' },
+      { name: 'Cú Mèo', emoji: '🦉' },
+      { name: 'Hổ', emoji: '🐯' },
+      { name: 'Thỏ', emoji: '🐰' },
+      { name: 'Khỉ', emoji: '🐵' },
+      { name: 'Sói', emoji: '🐺' },
+      { name: 'Cá Sấu', emoji: '🐊' },
+      { name: 'Hải Ly', emoji: '🦫' },
+      { name: 'Tắc Kè', emoji: '🦎' },
+      { name: 'Vịt', emoji: '🦆' },
+      { name: 'Voi', emoji: '🐘' },
+      { name: 'Hồng Hạc', emoji: '🦩' },
+      { name: 'Hươu Cao Cổ', emoji: '🦒' },
+      { name: 'Nhím', emoji: '🦔' },
+      { name: 'Kỳ Đà', emoji: '🦎' },
+      { name: 'Sứa', emoji: '🪼' },
+      { name: 'Kangaroo', emoji: '🦘' },
+      { name: 'Sư Tử', emoji: '🦁' },
+      { name: 'Cầy Meerkat', emoji: '🦝' },
+      { name: 'Kỳ Lân Biển', emoji: '🦭' },
+      { name: 'Rái Cá', emoji: '🦦' },
+      { name: 'Công', emoji: '🦚' },
+      { name: 'Quokka', emoji: '🦘' },
+      { name: 'Gấu Mèo', emoji: '🦝' },
+      { name: 'Lười', emoji: '🦥' },
+      { name: 'Rùa', emoji: '🐢' },
+      { name: 'Kỳ Lân', emoji: '🦄' },
+      { name: 'Kền Kền', emoji: '🦅' },
+      { name: 'Hải Mã', emoji: '🦭' },
+      { name: 'Bò Yak', emoji: '🐃' },
+      { name: 'Ngựa Vằn', emoji: '🦓' },
+      { name: 'Lửng', emoji: '🦡' },
+      { name: 'Báo', emoji: '🐆' },
+      { name: 'Chó Dingo', emoji: '🐕' },
+      { name: 'Chồn', emoji: '🦡' },
+      { name: 'Khỉ Đột', emoji: '🦍' },
+    ],
   };
 
   // Improved hash function for more randomness
@@ -192,13 +238,28 @@ export function generateFunName(userId: string): string {
     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
   };
 
+  // Use the appropriate language lists
+  const selectedLocale = locale in adjectives ? locale : 'en';
+  const adjectivesList =
+    adjectives?.[selectedLocale as keyof typeof adjectives];
+  const animalsList = animals?.[selectedLocale as keyof typeof animals];
+
   // Generate consistent indices
-  const combinedHash = hash(userId);
-  const adjIndex = combinedHash % adjectives.length;
-  const animalIndex = (combinedHash * 31) % animals.length;
+  const combinedHash = hash(id);
+  const adjIndex = combinedHash % adjectivesList.length;
+  const animalIndex = (combinedHash * 31) % animalsList.length;
 
-  const animal = animals[animalIndex] || 'Mysterious';
-  const emoji = animal in animalEmojis ? animalEmojis[animal] : '❓';
+  const adjective =
+    adjectivesList[adjIndex] || (locale === 'en' ? 'Happy' : 'Vui');
+  const animal = animalsList[animalIndex];
 
-  return `${adjectives[adjIndex]} ${animal} ${emoji}`;
+  if (!animal) {
+    return locale === 'en'
+      ? `${adjective} Mystery ❓`
+      : `${adjective} Kỳ Bí ❓`;
+  }
+
+  return locale === 'vi'
+    ? `${animal.name} ${adjective} ${animal.emoji}`
+    : `${adjective} ${animal.name} ${animal.emoji}`;
 }

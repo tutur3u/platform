@@ -4,8 +4,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
+
+  const locale = searchParams.get('locale') || 'en';
   const page = parseInt(searchParams.get('page') || '1');
-  const limit = 20;
+  const limit = 100;
   const offset = (page - 1) * limit;
 
   const sbAdmin = await createAdminClient();
@@ -294,7 +296,9 @@ export async function GET(req: NextRequest) {
     .map((entry, index) => ({
       id: entry.user_id,
       rank: index + 1,
-      name: entry.users.display_name || generateFunName(entry.user_id),
+      name:
+        entry.users.display_name ||
+        generateFunName({ id: entry.user_id, locale }),
       avatar: entry.users.avatar_url || '',
       score: entry.total_score,
       challenge_scores: entry.challenge_scores || {},
