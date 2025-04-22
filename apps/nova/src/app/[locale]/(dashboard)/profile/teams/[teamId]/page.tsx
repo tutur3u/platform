@@ -182,8 +182,8 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
       if (!userId || !problemId) return;
 
       // Calculate the score properly according to the formula
-      const hasCriteria = submission.total_criteria ?? 0 > 0;
-      const hasTests = submission.total_tests ?? 0 > 0;
+      const hasCriteria = (submission.total_criteria ?? 0) > 0;
+      const hasTests = (submission.total_tests ?? 0) > 0;
 
       let criteriaScore = 0;
       if (hasCriteria) {
