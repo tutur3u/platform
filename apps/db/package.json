@@ -18,7 +18,7 @@
     "sb:typegen": "pnpm supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts"
   },
   "devDependencies": {
-    "supabase": "^2.20.12"
+    "supabase": "^2.22.4"
   },
   "packageManager": "pnpm@10.9.0"
 }
