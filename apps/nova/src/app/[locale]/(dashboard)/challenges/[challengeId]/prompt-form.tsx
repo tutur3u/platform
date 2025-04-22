@@ -29,11 +29,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import React, { useEffect, useState } from 'react';
 
-type TestResult = {
-  input: string;
-  output: string;
-};
-
 interface Props {
   problem: NovaProblem & {
     test_cases: NovaProblemTestCase[];
@@ -43,11 +38,8 @@ interface Props {
 
 export default function PromptForm({ problem, session }: Props) {
   const [prompt, setPrompt] = useState('');
-  const [customTestCase, setCustomTestCase] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [testingCustom, setTestingCustom] = useState(false);
   const [error, setError] = useState('');
-  const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [submissions, setSubmissions] = useState<ExtendedNovaSubmission[]>([]);
   const [currentSessionSubmissions, setCurrentSessionSubmissions] = useState<
     ExtendedNovaSubmission[]
@@ -184,6 +176,7 @@ export default function PromptForm({ problem, session }: Props) {
       const criteriaResponse = await fetch(
         `/api/v1/criteria?challengeId=${problem.challenge_id}`
       );
+
       if (criteriaResponse.ok) {
         const challengeCriteria = await criteriaResponse.json();
 
@@ -208,6 +201,8 @@ export default function PromptForm({ problem, session }: Props) {
             }
           })
         );
+      } else {
+        throw new Error('Failed to fetch criteria');
       }
 
       // Step 5: Refresh the submissions list
@@ -248,47 +243,6 @@ export default function PromptForm({ problem, session }: Props) {
     }
   };
 
-  const handleTestCustomCase = async () => {
-    if (!customTestCase.trim()) {
-      setError('Custom test case cannot be empty.');
-      return;
-    }
-
-    setTestingCustom(true);
-    setError('');
-    setTestResult(null);
-
-    try {
-      const response = await fetch(
-        `/api/v1/problems/${problem.id}/custom-testcase`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt,
-            input: customTestCase,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to test prompt');
-      }
-
-      const data = await response.json();
-
-      setTestResult({
-        input: data.response.input,
-        output: data.response.output,
-      });
-    } catch (error: any) {
-      console.error('Error testing prompt:', error);
-      setError('Failed to test prompt with custom test case');
-    } finally {
-      setTestingCustom(false);
-    }
-  };
-
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto">
@@ -309,7 +263,7 @@ export default function PromptForm({ problem, session }: Props) {
           <TabsContent value="prompt" className="space-y-4">
             <div className="flex h-full flex-col">
               <div className="mb-2 flex items-center justify-between">
-                <div className="text-muted-foreground text-sm">
+                <div className="text-sm text-muted-foreground">
                   Characters: {prompt.length} / {problem.max_prompt_length}
                 </div>
                 <div className="flex items-center gap-2">
@@ -378,60 +332,12 @@ export default function PromptForm({ problem, session }: Props) {
             </div>
           </TabsContent>
 
-          <TabsContent value="test" className="space-y-4">
-            <div className="border-foreground/10 bg-foreground/10 space-y-4 rounded-lg border p-6">
-              <div>
-                <h3 className="mb-2 text-lg font-medium">Custom Test Case</h3>
-                <p className="text-muted-foreground mb-3 text-sm">
-                  Enter a custom test case to see how your prompt would perform
-                  on it. This won't count against your submission attempts.
-                </p>
-                <Textarea
-                  value={customTestCase}
-                  onChange={(e) => setCustomTestCase(e.target.value)}
-                  placeholder="Enter your custom test case here..."
-                  className="min-h-[120px]"
-                />
-                <Button
-                  onClick={handleTestCustomCase}
-                  className="mt-3 gap-2"
-                  disabled={
-                    customTestCase.length === 0 ||
-                    submissions.length === 0 ||
-                    testingCustom
-                  }
-                >
-                  <PlayCircle className="h-4 w-4" />
-                  {testingCustom ? 'Testing...' : 'Test This Case'}
-                </Button>
-              </div>
-
-              {testingCustom && (
-                <div className="flex items-center justify-center py-6">
-                  <LoadingIndicator />
-                </div>
-              )}
-
-              {testResult && (
-                <div className="border-foreground/10 bg-foreground/5 mt-4 rounded-lg border p-4">
-                  <h4 className="mb-2 text-lg font-medium">Test Result</h4>
-                  <div className="space-y-3">
-                    <span className="font-semibold">Output: </span>
-                    <p className="mt-1 whitespace-pre-wrap text-sm">
-                      {testResult.output}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
           <TabsContent value="submissions" className="space-y-4">
             {submissions.length == 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                 <h3 className="text-lg font-medium">No submissions yet</h3>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Your submission history will appear here after you submit your
                   first prompt.
                 </p>
@@ -465,11 +371,11 @@ export default function PromptForm({ problem, session }: Props) {
                   <TabsContent value="current" className="space-y-4">
                     {currentSessionSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                         <h3 className="text-lg font-medium">
                           No submissions in current session
                         </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Submit your first prompt to see results here.
                         </p>
                       </div>
@@ -487,11 +393,11 @@ export default function PromptForm({ problem, session }: Props) {
                   <TabsContent value="past" className="space-y-4">
                     {pastSessionSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                         <h3 className="text-lg font-medium">
                           No submissions from past sessions
                         </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Past session submissions will appear here.
                         </p>
                       </div>
@@ -529,7 +435,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-xs">
+            <span className="text-xs text-muted-foreground">
               <Clock className="mr-1 inline h-3 w-3" />
               {new Date(submission.created_at).toLocaleString()}
             </span>
@@ -553,8 +459,8 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="text-foreground mb-1 text-sm font-medium">Prompt:</h3>
-          <div className="bg-muted rounded-md p-2 text-sm">
+          <h3 className="mb-1 text-sm font-medium text-foreground">Prompt:</h3>
+          <div className="rounded-md bg-muted p-2 text-sm">
             {submission.prompt}
           </div>
         </div>
@@ -563,7 +469,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
         {submission.total_tests > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-muted-foreground text-xs font-medium">
+              <h3 className="text-xs font-medium text-muted-foreground">
                 Test Case Evaluation:
               </h3>
               <ScoreBadge
@@ -600,7 +506,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
         {submission.total_criteria > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-muted-foreground text-xs font-medium">
+              <h3 className="text-xs font-medium text-muted-foreground">
                 Criteria Evaluation:
               </h3>
               <ScoreBadge
@@ -645,7 +551,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
                     <HoverCardContent className="w-80 p-4">
                       <div className="space-y-2">
                         <h4 className="font-medium">Feedback</h4>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                           {cs.result.feedback}
                         </p>
                       </div>
