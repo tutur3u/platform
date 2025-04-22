@@ -1834,10 +1834,15 @@
           "asia": "Asia"
         }
       },
+      "points": "Points",
       "rankings": {
+        "challenge-breakdown": "Challenge Breakdown",
+        "problem-breakdown": "Problem Breakdown",
+        "show-breakdown": "Show Breakdown",
+        "hide-breakdown": "Hide Breakdown",
         "title": "Leaderboard Rankings",
-        "rank": "Hạng",
-        "score": "Điểm",
+        "rank": "Rank",
+        "score": "Score",
         "user": "User",
         "highest-first": "Highest First",
         "lowest-first": "Lowest First",
