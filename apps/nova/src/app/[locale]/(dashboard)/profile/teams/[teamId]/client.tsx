@@ -66,7 +66,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
     return (
       <div className="container max-w-6xl py-16 text-center">
         <h2 className="text-2xl font-semibold">Team not found</h2>
-        <p className="mt-2 text-muted-foreground">
+        <p className="text-muted-foreground mt-2">
           The requested team could not be loaded.
         </p>
         <Button className="mt-4" asChild>
@@ -165,9 +165,9 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
   };
 
   return (
-    <div className="container max-w-6xl pt-8 pb-16">
+    <div className="container max-w-6xl pb-16 pt-8">
       {/* Breadcrumb navigation */}
-      <nav className="mb-8 flex items-center space-x-2 text-sm text-muted-foreground">
+      <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
         <Link href="/home" className="hover:text-foreground">
           Home
         </Link>
@@ -176,7 +176,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
           Teams
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <span className="font-medium text-foreground">{teamInfo?.name}</span>
+        <span className="text-foreground font-medium">{teamInfo?.name}</span>
       </nav>
 
       {/* Team Header */}
@@ -184,7 +184,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="mb-8 overflow-hidden rounded-xl border bg-card/50 p-6 shadow-sm"
+        className="bg-card/50 mb-8 overflow-hidden rounded-xl border p-6 shadow-sm"
       >
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex flex-col items-center gap-4 sm:flex-row">
@@ -193,9 +193,9 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="absolute -inset-0.5 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 blur-md"
+                className="from-primary/30 to-primary/10 absolute -inset-0.5 rounded-full bg-gradient-to-br blur-md"
               />
-              <Avatar className="h-24 w-24 border-2 border-background shadow-md">
+              <Avatar className="border-background h-24 w-24 border-2 shadow-md">
                 <AvatarImage src={undefined} />
                 <AvatarFallback className="text-xl">
                   {getInitials(teamInfo?.name || '')}
@@ -203,7 +203,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
               </Avatar>
 
               {/* Dynamic rank badge */}
-              <div className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-xs font-bold text-white shadow-lg">
+              <div className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-xs font-bold text-white shadow-lg">
                 #{teamData.rank || '?'}
               </div>
             </div>
@@ -226,7 +226,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
 
               {/* Display description if available */}
               {nova_infor.description && (
-                <p className="mt-2 text-muted-foreground">
+                <p className="text-muted-foreground mt-2">
                   {nova_infor.description}
                 </p>
               )}
@@ -281,7 +281,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="rounded-xl border bg-gradient-to-br from-amber-50 via-white to-amber-50 p-6 shadow-sm dark:from-amber-950/20 dark:via-background dark:to-amber-950/20"
+            className="dark:via-background rounded-xl border bg-gradient-to-br from-amber-50 via-white to-amber-50 p-6 shadow-sm dark:from-amber-950/20 dark:to-amber-950/20"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -289,7 +289,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   <Award className="h-5 w-5 text-amber-500" />
                   Team Rank
                 </h3>
-                <p className="mt-1 text-muted-foreground">
+                <p className="text-muted-foreground mt-1">
                   {teamData.rank && teamData.rank <= 50
                     ? 'This team is currently in the top performers'
                     : 'This team is competing in the leaderboard'}
@@ -301,14 +301,14 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   <div className="text-3xl font-bold text-amber-500">
                     #{teamData.rank || '?'}
                   </div>
-                  <div className="text-sm text-muted-foreground">Rank</div>
+                  <div className="text-muted-foreground text-sm">Rank</div>
                 </div>
 
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-500">
                     {teamData.total_score?.toFixed(1) || 0}
                   </div>
-                  <div className="text-sm text-muted-foreground">Points</div>
+                  <div className="text-muted-foreground text-sm">Points</div>
                 </div>
               </div>
             </div>
@@ -336,7 +336,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   </CardHeader>
                   <CardContent>
                     {/* Score Distribution Visualization */}
-                    <div className="mb-6 flex flex-col gap-2 rounded-lg border bg-card/50 p-4">
+                    <div className="bg-card/50 mb-6 flex flex-col gap-2 rounded-lg border p-4">
                       <div className="text-base font-medium">
                         Score Distribution
                       </div>
@@ -402,7 +402,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
 
                     {/* Challenge Details */}
                     <div className="space-y-6">
-                      <div className="flex justify-between border-b pb-2 text-sm font-medium text-muted-foreground">
+                      <div className="text-muted-foreground flex justify-between border-b pb-2 text-sm font-medium">
                         <span>Challenge</span>
                         <div className="flex gap-8">
                           <span>Score</span>
@@ -474,19 +474,19 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Total Members
                   </span>
                   <span className="font-medium">{teamStats.totalMembers}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Active Since
                   </span>
                   <span className="font-medium">{formattedActiveDate}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Activity Status
                   </span>
                   <Badge
@@ -546,8 +546,8 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
               <CardContent>
                 <div className="grid gap-6 sm:grid-cols-3">
                   {/* Average Member Score */}
-                  <div className="flex flex-col rounded-lg border bg-card/50 p-4">
-                    <span className="mb-1 text-xs font-medium text-muted-foreground">
+                  <div className="bg-card/50 flex flex-col rounded-lg border p-4">
+                    <span className="text-muted-foreground mb-1 text-xs font-medium">
                       Average Member Score
                     </span>
                     <div className="flex items-end gap-2">
@@ -555,7 +555,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                         {teamData.stats?.average_member_score?.toFixed(1) ||
                           '0'}
                       </span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-muted-foreground text-sm">
                         points
                       </span>
                     </div>
@@ -572,15 +572,15 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   </div>
 
                   {/* Weekly Activity */}
-                  <div className="flex flex-col rounded-lg border bg-card/50 p-4">
-                    <span className="mb-1 text-xs font-medium text-muted-foreground">
+                  <div className="bg-card/50 flex flex-col rounded-lg border p-4">
+                    <span className="text-muted-foreground mb-1 text-xs font-medium">
                       Weekly Progress
                     </span>
                     <div className="flex items-end gap-2">
                       <span className="text-2xl font-bold text-green-600">
                         {teamData.stats?.weekly_progress?.toFixed(1) || '0'}
                       </span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-muted-foreground text-sm">
                         points this week
                       </span>
                     </div>
@@ -594,15 +594,15 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                           ? 'Active'
                           : 'Inactive'}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         Last 7 days
                       </span>
                     </div>
                   </div>
 
                   {/* Top Contributor */}
-                  <div className="flex flex-col rounded-lg border bg-card/50 p-4">
-                    <span className="mb-1 text-xs font-medium text-muted-foreground">
+                  <div className="bg-card/50 flex flex-col rounded-lg border p-4">
+                    <span className="text-muted-foreground mb-1 text-xs font-medium">
                       Top Contributor
                     </span>
                     {teamData.members?.length > 0 && (
@@ -628,11 +628,11 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                               1
                             ) || '0'}
                           </span>
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground text-sm">
                             points
                           </span>
                         </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground mt-1 text-xs">
                           {teamData?.members?.[0]?.contribution_percentage?.toFixed(
                             1
                           ) || '0'}
@@ -664,10 +664,10 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                     key={member.user_id}
-                    className="group flex flex-col gap-4 rounded-lg border p-4 transition-all hover:bg-muted/50 hover:shadow-md sm:flex-row sm:items-center"
+                    className="hover:bg-muted/50 group flex flex-col gap-4 rounded-lg border p-4 transition-all hover:shadow-md sm:flex-row sm:items-center"
                   >
                     <div className="flex items-center gap-4">
-                      <Avatar className="h-12 w-12 border border-border">
+                      <Avatar className="border-border h-12 w-12 border">
                         <AvatarImage src={member.avatar_url || ''} />
                         <AvatarFallback>
                           {getInitials(member.display_name)}
@@ -685,7 +685,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           Joined{' '}
                           {member.join_date
                             ? new Date(member.join_date).toLocaleDateString(
@@ -701,7 +701,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                       </div>
                     </div>
 
-                    <div className="mt-2 flex flex-col gap-4 sm:mt-0 sm:ml-auto sm:flex-row sm:items-center">
+                    <div className="mt-2 flex flex-col gap-4 sm:ml-auto sm:mt-0 sm:flex-row sm:items-center">
                       <div className="flex items-center gap-3">
                         <div className="rounded-md bg-blue-50 px-2.5 py-1 text-sm font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
                           {member.individual_score.toFixed(1)} pts
@@ -746,45 +746,45 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                 <div className="space-y-8">
                   {/* Performance Summary */}
                   <div className="grid gap-6 md:grid-cols-3">
-                    <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center shadow-sm">
-                      <div className="mb-1 text-sm text-muted-foreground">
+                    <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
+                      <div className="text-muted-foreground mb-1 text-sm">
                         Team Average
                       </div>
                       <div className="text-2xl font-bold text-blue-600">
                         {teamData.stats.average_member_score.toFixed(1)}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         points per member
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center shadow-sm">
-                      <div className="mb-1 text-sm text-muted-foreground">
+                    <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
+                      <div className="text-muted-foreground mb-1 text-sm">
                         Weekly Activity
                       </div>
                       <div className="text-2xl font-bold text-green-600">
                         {teamData.stats.weekly_progress?.toFixed(1) || 0}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         points this week
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center shadow-sm">
-                      <div className="mb-1 text-sm text-muted-foreground">
+                    <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
+                      <div className="text-muted-foreground mb-1 text-sm">
                         Top Member
                       </div>
                       <div className="text-2xl font-bold text-purple-600">
                         {teamData.members[0]?.individual_score.toFixed(1) || 0}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         points by {teamData.members[0]?.display_name}
                       </div>
                     </div>
                   </div>
 
                   {/* Member Contribution Chart */}
-                  <div className="rounded-lg border bg-card p-6 shadow-sm">
+                  <div className="bg-card rounded-lg border p-6 shadow-sm">
                     <h3 className="mb-4 text-lg font-medium">
                       Member Contributions
                     </h3>
@@ -808,7 +808,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                                 {member.display_name}
                               </span>
                             </div>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground text-sm">
                               {member.individual_score.toFixed(1)} pts (
                               {member.contribution_percentage}%)
                             </span>
@@ -834,7 +834,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   {/* Challenge Performance */}
                   {teamData.challenge_details &&
                     teamData.challenge_details.length > 0 && (
-                      <div className="rounded-lg border bg-card p-6 shadow-sm">
+                      <div className="bg-card rounded-lg border p-6 shadow-sm">
                         <h3 className="mb-4 text-lg font-medium">
                           Challenge Performance
                         </h3>
@@ -850,12 +850,12 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                                   duration: 0.3,
                                   delay: 0.05 * index,
                                 }}
-                                className="flex flex-col rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                                className="hover:bg-muted/50 flex flex-col rounded-lg border p-4 transition-colors"
                               >
                                 <div className="text-md font-medium">
                                   {challenge.title}
                                 </div>
-                                <div className="mb-2 text-sm text-muted-foreground">
+                                <div className="text-muted-foreground mb-2 text-sm">
                                   {(
                                     (challenge.score /
                                       (teamData.total_score || 1)) *
@@ -873,7 +873,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                     )}
                 </div>
               ) : (
-                <div className="flex h-24 items-center justify-center text-muted-foreground">
+                <div className="text-muted-foreground flex h-24 items-center justify-center">
                   No recent activity data available
                 </div>
               )}
