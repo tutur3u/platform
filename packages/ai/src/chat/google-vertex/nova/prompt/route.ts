@@ -47,6 +47,13 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!id) {
+      return NextResponse.json(
+        { message: 'Incomplete data provided' },
+        { status: 400 }
+      );
+    }
+
     const { data: problem, error: problemError } = await sbAdmin
       .from('nova_problems')
       .select('*')
