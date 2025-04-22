@@ -7,6 +7,7 @@ import {
   COLOR_OPTIONS,
   DateError,
   EventColorPicker,
+  EventCategoryPicker,
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
@@ -155,6 +156,9 @@ export function UnifiedEventModal({
     priority: 'medium',
     locked: false,
   });
+  
+  // Add state to store category
+  const [eventCategory, setEventCategory] = useState<string>('');
 
   // State for AI event generation
   const [generatedEvents, setGeneratedEvents] = useState<any[]>([]);
@@ -241,6 +245,20 @@ export function UnifiedEventModal({
         priority: eventData.priority || 'medium',
         locked: eventData.locked,
       });
+      
+      // Try to determine category based on color
+      if (settings?.categoryColors?.categories) {
+        const matchingCategory = settings.categoryColors.categories.find(
+          cat => cat.color === eventData.color
+        );
+        
+        if (matchingCategory) {
+          setEventCategory(matchingCategory.name);
+        } else {
+          // If no matching color, try to suggest by title
+          suggestCategory(eventData.title || '');
+        }
+      }
 
       // Check if this is an all-day event (no time component)
       const start = new Date(eventData.start_at);
@@ -285,6 +303,7 @@ export function UnifiedEventModal({
       };
 
       setEvent(newEvent);
+      setEventCategory('');
       setIsAllDay(false);
       setIsMultiDay(false);
 
@@ -295,7 +314,7 @@ export function UnifiedEventModal({
 
     // Clear any error messages
     setDateError(null);
-  }, [activeEvent, isModalOpen]);
+  }, [activeEvent, isModalOpen, settings?.categoryColors?.categories]);
 
   // Function to check for overlapping events
   const checkForOverlaps = (eventToCheck: Partial<CalendarEvent>) => {
@@ -329,6 +348,68 @@ export function UnifiedEventModal({
     setShowOverlapWarning(overlaps.length > 0);
   };
 
+  // Function to suggest category based on event title
+  const suggestCategory = (title: string) => {
+    if (!title || !settings?.categoryColors?.categories) return;
+    
+    const lowercaseTitle = title.toLowerCase();
+    
+    // Define keywords for each category
+    const categoryKeywords: Record<string, string[]> = {
+      'Work': ['work', 'job', 'meeting', 'project', 'deadline', 'presentation', 'interview', 'client', 'report', 'office', 'business'],
+      'Personal': ['personal', 'hobby', 'read', 'watch', 'me time', 'self care', 'shopping'],
+      'Family': ['family', 'kids', 'parent', 'spouse', 'husband', 'wife', 'child', 'son', 'daughter', 'birthday', 'anniversary', 'home'],
+      'Health': ['health', 'workout', 'gym', 'exercise', 'doctor', 'dentist', 'appointment', 'medication', 'therapy', 'yoga', 'meditation', 'run', 'fitness'],
+      'Social': ['social', 'friend', 'party', 'lunch', 'dinner', 'coffee', 'drink', 'hangout', 'date', 'club', 'outing'],
+      'Education': ['education', 'class', 'course', 'study', 'learn', 'lecture', 'school', 'college', 'university', 'homework', 'assignment', 'training'],
+      'Travel': ['travel', 'trip', 'flight', 'vacation', 'hotel', 'booking', 'journey', 'visit', 'tourism'],
+      'Meeting': ['meeting', 'call', 'conference', 'discussion', 'zoom', 'teams', 'webinar', 'board', 'client']
+    };
+    
+    // Check if title contains keywords for any category
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+      if (keywords.some(keyword => lowercaseTitle.includes(keyword))) {
+        // Find corresponding category in settings
+        const matchedCategory = settings.categoryColors.categories.find(
+          cat => cat.name.toLowerCase() === category.toLowerCase()
+        );
+        
+        if (matchedCategory) {
+          setEventCategory(matchedCategory.name);
+          // Set color based on category
+          setEvent(prev => ({
+            ...prev,
+            color: matchedCategory.color
+          }));
+          return;
+        }
+      }
+    }
+  };
+  
+  // Update category when title changes
+  const handleTitleChange = (title: string) => {
+    setEvent(prev => ({ ...prev, title }));
+    suggestCategory(title);
+  };
+  
+  // Handle category change
+  const handleCategoryChange = (categoryName: string) => {
+    setEventCategory(categoryName);
+    
+    // Find color for selected category
+    const selectedCategory = settings?.categoryColors?.categories.find(
+      cat => cat.name === categoryName
+    );
+    
+    if (selectedCategory) {
+      setEvent(prev => ({
+        ...prev,
+        color: selectedCategory.color
+      }));
+    }
+  };
+
   // Handle manual event save
   const handleManualSave = async () => {
     if (!event.start_at || !event.end_at) return;
@@ -350,6 +431,7 @@ export function UnifiedEventModal({
         ...event,
         priority: event.priority || 'medium',
         locked: event.locked || false,
+        metadata: eventCategory ? { category: eventCategory } : undefined,
       };
 
       if (activeEvent?.id === 'new') {
@@ -943,7 +1025,7 @@ export function UnifiedEventModal({
                     <EventTitleInput
                       value={event.title || ''}
                       onEnter={handleManualSave}
-                      onChange={(value) => setEvent({ ...event, title: value })}
+                      onChange={handleTitleChange}
                       disabled={event.locked}
                     />
 
@@ -987,8 +1069,18 @@ export function UnifiedEventModal({
 
                     <Separator />
 
-                    {/* Location and Description */}
+                    {/* Category, Priority, Location and Description */}
                     <div className="space-y-4">
+                      {/* Add Category Picker before Priority */}
+                      {settings?.categoryColors?.categories && settings.categoryColors.categories.length > 0 && (
+                        <EventCategoryPicker
+                          value={eventCategory}
+                          onChange={handleCategoryChange}
+                          categories={settings.categoryColors.categories}
+                          disabled={event.locked}
+                        />
+                      )}
+                      
                       <EventPriorityPicker
                         value={event.priority || 'medium'}
                         onChange={(value) =>
@@ -1469,6 +1561,16 @@ export function UnifiedEventModal({
                               <span className="text-xs text-muted-foreground">
                                 Event will be created unlocked
                               </span>
+                            </div>
+
+                            {/* Add category display if available */}
+                            <div className="flex items-center gap-2">
+                              {generatedEvent.category && (
+                                <div className="flex items-center gap-1 text-sm">
+                                  <span className="text-muted-foreground">Category:</span>
+                                  <span className="font-medium">{generatedEvent.category}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

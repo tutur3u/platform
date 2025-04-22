@@ -17,7 +17,7 @@ import {
 } from '@tuturuuu/ui/hooks/use-view-transition';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { Link, Loader2, PlusIcon, Settings, Sparkles } from 'lucide-react';
+import { Link, Loader2, PlusIcon, Settings, Sparkles, Clock } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { 
   Dialog,
@@ -27,6 +27,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@tuturuuu/ui/dialog';
+import { CategoryTimeConfigDialog } from './CategoryTimeConfigDialog';
 
 // Floating action button for quick event creation
 const CreateEventButton = () => {
@@ -54,7 +55,7 @@ const CreateEventButton = () => {
 // Settings button component
 const SettingsButton = ({
   showSyncButton = false,
-  // initialSettings,
+  initialSettings,
   onSaveSettings,
 }: {
   showSyncButton?: boolean;
@@ -63,6 +64,8 @@ const SettingsButton = ({
 }) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [timeConfigOpen, setTimeConfigOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const { updateSettings, settings, syncAllFromGoogleCalendar } = useCalendar();
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -104,6 +107,32 @@ const SettingsButton = ({
       console.error('Failed to manually save settings to localStorage:', error);
     }
   };
+  
+  // Handling when saving time settings for category
+  const handleSaveCategoryTimeSettings = (timeSettings: any) => {
+    // Update settings with new timeSettings
+    const newSettings = {
+      ...settings,
+      smartScheduling: {
+        ...settings.smartScheduling,
+        categoryTimeSettings: timeSettings
+      }
+    };
+    
+    // Update settings
+    updateSettings(newSettings);
+    
+    toast({
+      title: 'Success',
+      description: 'Category time settings saved successfully',
+    });
+  };
+  
+  // Open the time settings dialog for a specific category
+  const openTimeConfigForCategory = (categoryName: string) => {
+    setSelectedCategory(categoryName);
+    setTimeConfigOpen(true);
+  };
 
   return (
     <div className="fixed right-6 bottom-24 z-10 flex gap-2">
@@ -120,6 +149,20 @@ const SettingsButton = ({
           </Button>
         </TooltipTrigger>
         <TooltipContent>Calendar settings</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 rounded-full shadow-lg"
+            onClick={() => setTimeConfigOpen(true)}
+          >
+            <Clock className="h-5 w-5" />
+            <span className="sr-only">Smart Scheduling Settings</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Smart Scheduling Settings</TooltipContent>
       </Tooltip>
       {showSyncButton && (
         <Tooltip>
@@ -148,6 +191,17 @@ const SettingsButton = ({
         initialSettings={settings}
         onSave={handleSaveSettings}
       />
+      {/* Dialog to set time for each category */}
+      {settings?.categoryColors?.categories && (
+        <CategoryTimeConfigDialog
+          open={timeConfigOpen}
+          onOpenChange={setTimeConfigOpen}
+          categories={settings.categoryColors.categories}
+          currentSettings={settings.smartScheduling?.categoryTimeSettings}
+          onSave={handleSaveCategoryTimeSettings}
+          selectedCategory={selectedCategory}
+        />
+      )}
     </div>
   );
 };
@@ -333,9 +387,21 @@ const CalendarContent = ({
         const fixedEvents = result.filter(event => event.locked || event.priority === 'high');
         const rescheduledEvents = result.filter(event => !event.locked && event.priority !== 'high');
         
+        // Count events for each category
+        const categoryCount: Record<string, number> = {};
+        rescheduledEvents.forEach(event => {
+          const category = event.metadata?.category || 'Work';
+          categoryCount[category] = (categoryCount[category] || 0) + 1;
+        });
+        
+        // Create classified notifications
+        const categoryDetails = Object.entries(categoryCount)
+          .map(([cat, count]) => `${cat}: ${count}`)
+          .join(', ');
+        
         toast({
           title: "AI Schedule completed",
-          description: `Optimized ${rescheduledEvents.length} events, kept ${fixedEvents.length} events with high priority or locked.`,
+          description: `Optimized ${rescheduledEvents.length} event (${categoryDetails}), keep position ${fixedEvents.length}  locked events.`,
         });
       } else {
         toast({
@@ -680,7 +746,7 @@ const CalendarContent = ({
           <div className="absolute inset-0 flex items-center justify-center bg-background/70 z-50">
             <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-background shadow-lg">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm font-medium">Đang tối ưu lịch của bạn...</p>
+              <p className="text-sm font-medium">Optimizing your calendar</p>
             </div>
           </div>
         )}
@@ -698,34 +764,41 @@ const CalendarContent = ({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              Confirm AI Schedule
+              Smart Schedule Confirmation
             </DialogTitle>
             <DialogDescription>
-              AI will automatically rearrange events in the {
+              AI will intelligently rearrange events in your {
                 view === 'day' ? 'day' : 
-                view === '4-days' ? '4 days' : 
-                view === 'week' ? 'week' : 
-                view === 'month' ? 'month' : 'time period'
-              } currently based on priority. 
-              Events with high priority or locked will not be changed.
+                view === '4-days' ? '4-day' : 
+                view === 'week' ? 'weekly' : 
+                view === 'month' ? 'monthly' : 'current'
+              } calendar based on your preferences and event priorities.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-2 pt-4">
-            <p className="text-sm">How it works:</p>
+            <p className="text-sm font-medium">Smart Scheduling Logic:</p>
             <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                <li>Event With <span className="text-red-500 font-medium">High Priority</span> Will Not Be Changed</li>
-              <li>Event with <span className="text-green-500 font-medium">Medium</span> priority will be scheduled in the morning when possible</li>
-              <li>Event with <span className="text-blue-500 font-medium">Low</span> priority will be scheduled in the remaining slots</li>
-              <li>Event with <span className="text-muted-foreground font-medium">Locked</span> will not be changed</li>
+              <li><span className="font-medium">Locked events</span> will not be rescheduled</li>
+              <li>Events will be scheduled according to your <span className="font-medium">preferred times</span> set in Smart Scheduling Settings</li>
+              <li>Events will be optimized based on their <span className="font-medium">category</span> (Work, Social, Health, etc.)</li>
+              <li><span className="text-amber-500 font-medium">High and Medium priority</span> events are given priority to arrange firstly</li>
+              <li><span className="text-blue-500 font-medium">Low priority</span> events are scheduled in remaining slots</li>
             </ul>
+
+            <div className="mt-4 p-3 bg-muted rounded-md">
+              <p className="text-sm flex items-center gap-1.5">
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="font-medium">Tip:</span> Configure optimal hours and preferred days for each category using the Smart Scheduling Settings.
+              </p>
+            </div>
           </div>
           
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setShowAIScheduleConfirmation(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAISchedule} className="gap-1">
+            <Button onClick={handleAISchedule} className="gap-1.5">
               <Sparkles className="h-4 w-4" />
               Optimize Calendar
             </Button>

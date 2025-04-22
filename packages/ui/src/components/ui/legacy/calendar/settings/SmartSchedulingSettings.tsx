@@ -1,325 +1,239 @@
-'use client';
-
+import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { Slider } from '@tuturuuu/ui/slider';
 import { Switch } from '@tuturuuu/ui/switch';
+import React from 'react';
 
 export type SmartSchedulingData = {
-  enableSmartScheduling: boolean;
-  minimumMeetingBuffer: number; // in minutes
-  preferredMeetingTimes: 'morning' | 'afternoon' | 'distributed';
-  avoidBackToBackMeetings: boolean;
-  maximumMeetingsPerDay: number;
-  focusTimeBlocks: {
-    enabled: boolean;
-    duration: number; // in minutes
-    frequency: 'daily' | 'weekly';
-    preferredTime: 'morning' | 'afternoon';
+  enabled: boolean;
+  avoidOverlaps: boolean;
+  respectBlockedTime: boolean;
+  defaultTaskDuration: number; // in minutes
+  focusTimePreferences: {
+    morning: boolean;
+    afternoon: boolean;
+    evening: boolean;
   };
-  productivityScore: number; // 0-100
+  respectWorkingHours: boolean;
+  workingHours: {
+    start: number; // hour of day (0-23)
+    end: number; // hour of day (0-23)
+  };
+  maxTasksPerDay: number;
+  categoryTimeSettings?: Record<string, any>;
 };
 
 export const defaultSmartSchedulingData: SmartSchedulingData = {
-  enableSmartScheduling: true,
-  minimumMeetingBuffer: 15,
-  preferredMeetingTimes: 'afternoon',
-  avoidBackToBackMeetings: true,
-  maximumMeetingsPerDay: 5,
-  focusTimeBlocks: {
-    enabled: true,
-    duration: 120,
-    frequency: 'daily',
-    preferredTime: 'morning',
+  enabled: true,
+  avoidOverlaps: true,
+  respectBlockedTime: true,
+  defaultTaskDuration: 60, // Default to 1 hour
+  focusTimePreferences: {
+    morning: true,
+    afternoon: false,
+    evening: false,
   },
-  productivityScore: 70,
+  respectWorkingHours: true,
+  workingHours: {
+    start: 9, // 9 AM
+    end: 17, // 5 PM
+  },
+  maxTasksPerDay: 5,
+  categoryTimeSettings: {},
 };
 
-type SmartSchedulingSettingsProps = {
+interface SmartSchedulingSettingsProps {
   value: SmartSchedulingData;
   onChange: (value: SmartSchedulingData) => void;
-};
+}
 
-export function SmartSchedulingSettings({
-  value,
-  onChange,
-}: SmartSchedulingSettingsProps) {
-  const handleToggleChange = (
-    field: keyof SmartSchedulingData,
-    checked: boolean
-  ) => {
-    onChange({
-      ...value,
-      [field]: checked,
-    });
+export function SmartSchedulingSettings({ value, onChange }: SmartSchedulingSettingsProps) {
+  const handleToggleChange = (field: keyof SmartSchedulingData, checked: boolean) => {
+    onChange({ ...value, [field]: checked });
   };
 
-  const handleFocusTimeToggle = (checked: boolean) => {
+  const handleFocusTimeChange = (time: keyof typeof value.focusTimePreferences, checked: boolean) => {
     onChange({
       ...value,
-      focusTimeBlocks: {
-        ...value.focusTimeBlocks,
-        enabled: checked,
+      focusTimePreferences: {
+        ...value.focusTimePreferences,
+        [time]: checked,
       },
     });
   };
 
-  const handleFocusTimeChange = (
-    field: keyof Omit<SmartSchedulingData['focusTimeBlocks'], 'enabled'>,
-    newValue: string | number
-  ) => {
+  const handleWorkingHoursChange = (field: keyof typeof value.workingHours, hour: number) => {
     onChange({
       ...value,
-      focusTimeBlocks: {
-        ...value.focusTimeBlocks,
-        [field]: newValue,
+      workingHours: {
+        ...value.workingHours,
+        [field]: hour,
       },
     });
   };
 
-  const handleBufferChange = (buffer: string) => {
-    const bufferMinutes = parseInt(buffer, 10);
-    if (!isNaN(bufferMinutes) && bufferMinutes >= 0) {
-      onChange({
-        ...value,
-        minimumMeetingBuffer: bufferMinutes,
-      });
-    }
-  };
-
-  const handleMaxMeetingsChange = (max: string) => {
-    const maxMeetings = parseInt(max, 10);
-    if (!isNaN(maxMeetings) && maxMeetings > 0) {
-      onChange({
-        ...value,
-        maximumMeetingsPerDay: maxMeetings,
-      });
-    }
-  };
-
-  const handleProductivityScoreChange = (score: number[]) => {
+  const handleSliderChange = (field: 'defaultTaskDuration' | 'maxTasksPerDay', newValue: number[]) => {
     onChange({
       ...value,
-      productivityScore: score[0] ?? value.productivityScore,
+      [field]: newValue[0],
     });
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Label htmlFor="enable-smart-scheduling">Enable smart scheduling</Label>
-        <Switch
-          id="enable-smart-scheduling"
-          checked={value.enableSmartScheduling}
-          onCheckedChange={(checked) =>
-            handleToggleChange('enableSmartScheduling', checked)
-          }
-        />
-      </div>
-
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Meeting Preferences</h3>
+        <h3 className="text-lg font-medium">Smart Scheduling</h3>
+        <p className="text-sm text-muted-foreground">
+          Configure how AI schedules tasks and events on your calendar
+        </p>
 
-        <div className="space-y-2">
-          <Label htmlFor="meeting-buffer">
-            Minimum buffer between meetings
-          </Label>
-          <Select
-            value={value.minimumMeetingBuffer.toString()}
-            onValueChange={handleBufferChange}
-            disabled={!value.enableSmartScheduling}
-          >
-            <SelectTrigger id="meeting-buffer" className="w-full">
-              <SelectValue placeholder="Select buffer time" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0">No buffer</SelectItem>
-              <SelectItem value="5">5 minutes</SelectItem>
-              <SelectItem value="10">10 minutes</SelectItem>
-              <SelectItem value="15">15 minutes</SelectItem>
-              <SelectItem value="30">30 minutes</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="preferred-times">Preferred meeting times</Label>
-          <Select
-            value={value.preferredMeetingTimes}
-            onValueChange={(val) =>
-              onChange({
-                ...value,
-                preferredMeetingTimes:
-                  val as SmartSchedulingData['preferredMeetingTimes'],
-              })
-            }
-            disabled={!value.enableSmartScheduling}
-          >
-            <SelectTrigger id="preferred-times" className="w-full">
-              <SelectValue placeholder="Select preferred times" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="morning">Morning</SelectItem>
-              <SelectItem value="afternoon">Afternoon</SelectItem>
-              <SelectItem value="distributed">
-                Distributed throughout the day
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <Label htmlFor="avoid-back-to-back">
-            Avoid back-to-back meetings
-          </Label>
-          <Switch
-            id="avoid-back-to-back"
-            checked={value.avoidBackToBackMeetings}
-            onCheckedChange={(checked) =>
-              handleToggleChange('avoidBackToBackMeetings', checked)
-            }
-            disabled={!value.enableSmartScheduling}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="max-meetings">Maximum meetings per day</Label>
-          <Select
-            value={value.maximumMeetingsPerDay.toString()}
-            onValueChange={handleMaxMeetingsChange}
-            disabled={!value.enableSmartScheduling}
-          >
-            <SelectTrigger id="max-meetings" className="w-full">
-              <SelectValue placeholder="Select maximum meetings" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="2">2 meetings</SelectItem>
-              <SelectItem value="3">3 meetings</SelectItem>
-              <SelectItem value="4">4 meetings</SelectItem>
-              <SelectItem value="5">5 meetings</SelectItem>
-              <SelectItem value="6">6 meetings</SelectItem>
-              <SelectItem value="8">8 meetings</SelectItem>
-              <SelectItem value="10">10 meetings</SelectItem>
-              <SelectItem value="15">15 meetings</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Focus Time</h3>
-
-        <div className="flex items-center justify-between">
-          <Label htmlFor="enable-focus-time">Schedule focus time blocks</Label>
-          <Switch
-            id="enable-focus-time"
-            checked={value.focusTimeBlocks.enabled}
-            onCheckedChange={handleFocusTimeToggle}
-            disabled={!value.enableSmartScheduling}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="focus-duration">Focus time duration</Label>
-          <Select
-            value={value.focusTimeBlocks.duration.toString()}
-            onValueChange={(val) =>
-              handleFocusTimeChange('duration', parseInt(val, 10))
-            }
-            disabled={
-              !value.enableSmartScheduling || !value.focusTimeBlocks.enabled
-            }
-          >
-            <SelectTrigger id="focus-duration" className="w-full">
-              <SelectValue placeholder="Select duration" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="60">1 hour</SelectItem>
-              <SelectItem value="90">1.5 hours</SelectItem>
-              <SelectItem value="120">2 hours</SelectItem>
-              <SelectItem value="180">3 hours</SelectItem>
-              <SelectItem value="240">4 hours</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="focus-frequency">Focus time frequency</Label>
-          <Select
-            value={value.focusTimeBlocks.frequency}
-            onValueChange={(val) =>
-              handleFocusTimeChange('frequency', val as 'daily' | 'weekly')
-            }
-            disabled={
-              !value.enableSmartScheduling || !value.focusTimeBlocks.enabled
-            }
-          >
-            <SelectTrigger id="focus-frequency" className="w-full">
-              <SelectValue placeholder="Select frequency" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="weekly">Weekly</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="focus-time">Preferred focus time</Label>
-          <Select
-            value={value.focusTimeBlocks.preferredTime}
-            onValueChange={(val) =>
-              handleFocusTimeChange(
-                'preferredTime',
-                val as 'morning' | 'afternoon'
-              )
-            }
-            disabled={
-              !value.enableSmartScheduling || !value.focusTimeBlocks.enabled
-            }
-          >
-            <SelectTrigger id="focus-time" className="w-full">
-              <SelectValue placeholder="Select preferred time" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="morning">Morning</SelectItem>
-              <SelectItem value="afternoon">Afternoon</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Productivity Balance</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="productivity-score">
-              Meeting vs. Focus Time Balance
-            </Label>
-            <span className="text-sm">{value.productivityScore}%</span>
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="enable-smart-scheduling">Enable Smart Scheduling</Label>
+            <Switch
+              id="enable-smart-scheduling"
+              checked={value.enabled}
+              onCheckedChange={(checked) => handleToggleChange('enabled', checked)}
+            />
           </div>
-          <Slider
-            id="productivity-score"
-            min={0}
-            max={100}
-            step={5}
-            value={[value.productivityScore]}
-            onValueChange={handleProductivityScoreChange}
-            disabled={!value.enableSmartScheduling}
-            className="py-4"
-          />
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>More meetings</span>
-            <span>More focus time</span>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="avoid-overlaps">Avoid overlapping events</Label>
+            <Switch
+              id="avoid-overlaps"
+              checked={value.avoidOverlaps}
+              onCheckedChange={(checked) => handleToggleChange('avoidOverlaps', checked)}
+              disabled={!value.enabled}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="respect-blocked">Respect blocked time on calendar</Label>
+            <Switch
+              id="respect-blocked"
+              checked={value.respectBlockedTime}
+              onCheckedChange={(checked) => handleToggleChange('respectBlockedTime', checked)}
+              disabled={!value.enabled}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="respect-working-hours">Respect working hours</Label>
+            <Switch
+              id="respect-working-hours"
+              checked={value.respectWorkingHours}
+              onCheckedChange={(checked) => handleToggleChange('respectWorkingHours', checked)}
+              disabled={!value.enabled}
+            />
           </div>
         </div>
       </div>
+
+      {value.enabled && (
+        <>
+          <div className="space-y-4">
+            <h4 className="text-md font-medium">Working Hours</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="working-start">Start Time</Label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={value.workingHours.start}
+                    onChange={(e) => handleWorkingHoursChange('start', parseInt(e.target.value))}
+                    className="w-16 rounded-md border border-input bg-background px-2 py-1"
+                    disabled={!value.respectWorkingHours}
+                  />
+                  <span>:00</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="working-end">End Time</Label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={value.workingHours.end}
+                    onChange={(e) => handleWorkingHoursChange('end', parseInt(e.target.value))}
+                    className="w-16 rounded-md border border-input bg-background px-2 py-1"
+                    disabled={!value.respectWorkingHours}
+                  />
+                  <span>:00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="text-md font-medium">Focus Time Preferences</h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="focus-morning"
+                  checked={value.focusTimePreferences.morning}
+                  onCheckedChange={(checked) => handleFocusTimeChange('morning', checked)}
+                />
+                <Label htmlFor="focus-morning">Morning</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="focus-afternoon"
+                  checked={value.focusTimePreferences.afternoon}
+                  onCheckedChange={(checked) => handleFocusTimeChange('afternoon', checked)}
+                />
+                <Label htmlFor="focus-afternoon">Afternoon</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="focus-evening"
+                  checked={value.focusTimePreferences.evening}
+                  onCheckedChange={(checked) => handleFocusTimeChange('evening', checked)}
+                />
+                <Label htmlFor="focus-evening">Evening</Label>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="text-md font-medium">Default Task Duration</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Duration</span>
+                <span className="text-sm font-medium">{value.defaultTaskDuration} minutes</span>
+              </div>
+              <Slider
+                defaultValue={[value.defaultTaskDuration]}
+                min={15}
+                max={180}
+                step={15}
+                onValueChange={(val) => handleSliderChange('defaultTaskDuration', val)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="text-md font-medium">Maximum Tasks Per Day</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Max Tasks</span>
+                <span className="text-sm font-medium">{value.maxTasksPerDay}</span>
+              </div>
+              <Slider
+                defaultValue={[value.maxTasksPerDay]}
+                min={1}
+                max={10}
+                step={1}
+                onValueChange={(val) => handleSliderChange('maxTasksPerDay', val)}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
-}
+} 

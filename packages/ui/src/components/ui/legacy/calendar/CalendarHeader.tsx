@@ -123,7 +123,7 @@ export default function CalendarHeader({
             aria-label="AI Schedule"
           >
             <Sparkles className="h-4 w-4" />
-            AI Schedule
+            Smart Schedule
           </Button>
         )}
 

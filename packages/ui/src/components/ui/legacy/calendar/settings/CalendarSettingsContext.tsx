@@ -1,61 +1,160 @@
 'use client';
 
-import { AppearanceData, defaultAppearanceData } from './AppearanceSettings';
 import {
-  CategoryColorsData,
-  defaultCategoryColors,
-} from './CategoryColorsSettings';
-import {
-  NotificationData,
-  defaultNotificationData,
-} from './NotificationSettings';
-import {
-  SmartSchedulingData,
-  defaultSmartSchedulingData,
-} from './SmartSchedulingSettings';
-import { TaskSettingsData, defaultTaskSettings } from './TaskSettings';
-import { WeekTimeRanges, defaultWeekTimeRanges } from './TimeRangePicker';
-import { TimezoneData, defaultTimezoneData } from './TimezoneSettings';
-import {
-  ReactNode,
   createContext,
+  ReactNode,
   useContext,
   useEffect,
   useState,
 } from 'react';
+import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 
-export type CalendarSettings = {
-  firstDayOfWeek: number;
+// Defines the data type for the time setting of each category
+export interface CategoryTimeSetting {
+  startHour: number;
+  endHour: number;
+  optimalHours: number[];
+  preferredDays: string[];
+}
+
+// Defines the data type for all time settings
+export interface CategoryTimeSettings {
+  [category: string]: CategoryTimeSetting;
+}
+
+// Settings for Smart Scheduling
+export interface SmartSchedulingSettings {
+  enabled: boolean;
+  avoidOverlaps: boolean;
+  respectBlockedTime: boolean;
+  defaultTaskDuration: number; // in minutes
+  focusTimePreferences: {
+    morning: boolean;
+    afternoon: boolean;
+    evening: boolean;
+  };
+  respectWorkingHours: boolean;
+  workingHours: {
+    start: number; // hour of day (0-23)
+    end: number; // hour of day (0-23)
+  };
+  maxTasksPerDay: number;
+  categoryTimeSettings?: CategoryTimeSettings;
+}
+
+// Task settings
+export interface TaskSettings {
+  defaultTaskDuration: number; // in minutes
+}
+
+// Calendar appearance settings
+export interface AppearanceSettings {
+  firstDayOfWeek: 'monday' | 'sunday' | 'saturday';
+  timeFormat: '12h' | '24h';
+  defaultView: 'day' | '4-days' | 'week' | 'month';
   showWeekends: boolean;
-  showWeekNumbers: boolean;
-  use24HourFormat: boolean;
-  defaultView: 'day' | 'week' | '4day';
-  categoryColors: CategoryColorsData;
-  personalHours: WeekTimeRanges;
-  workHours: WeekTimeRanges;
-  meetingHours: WeekTimeRanges;
-  timezone: TimezoneData;
-  appearance: AppearanceData;
-  notifications: NotificationData;
-  smartScheduling: SmartSchedulingData;
-  taskSettings: TaskSettingsData;
-};
+  compactView: boolean;
+  showEventTime: boolean;
+  showCurrentTime: boolean;
+  highlightCurrentDay: boolean;
+}
 
+// Category color mapping settings
+export interface CategoryColorSettings {
+  categories: Array<{
+    name: string;
+    color: SupportedColor;
+  }>;
+}
+
+// Calendar settings interface
+export interface CalendarSettings {
+  appearance: AppearanceSettings;
+  categoryColors: CategoryColorSettings;
+  smartScheduling: SmartSchedulingSettings;
+  taskSettings: TaskSettings;
+}
+
+// Default calendar settings
 export const defaultCalendarSettings: CalendarSettings = {
-  firstDayOfWeek: 1, // Monday
-  showWeekends: true,
-  showWeekNumbers: false,
-  use24HourFormat: false,
-  defaultView: 'week',
-  personalHours: defaultWeekTimeRanges,
-  meetingHours: defaultWeekTimeRanges,
-  workHours: defaultWeekTimeRanges,
-  timezone: defaultTimezoneData,
-  appearance: defaultAppearanceData,
-  notifications: defaultNotificationData,
-  categoryColors: defaultCategoryColors,
-  smartScheduling: defaultSmartSchedulingData,
-  taskSettings: defaultTaskSettings,
+  appearance: {
+    firstDayOfWeek: 'monday',
+    timeFormat: '12h',
+    defaultView: 'week',
+    showWeekends: true,
+    compactView: false,
+    showEventTime: true,
+    showCurrentTime: true,
+    highlightCurrentDay: true,
+  },
+  categoryColors: {
+    categories: [
+      { name: 'Work', color: 'BLUE' },
+      { name: 'Personal', color: 'GREEN' },
+      { name: 'Health', color: 'RED' },
+      { name: 'Social', color: 'YELLOW' },
+      { name: 'Family', color: 'PURPLE' },
+      { name: 'Education', color: 'ORANGE' },
+    ],
+  },
+  smartScheduling: {
+    enabled: true,
+    avoidOverlaps: true,
+    respectBlockedTime: true,
+    defaultTaskDuration: 60, // Default to 1 hour
+    focusTimePreferences: {
+      morning: true,
+      afternoon: false,
+      evening: false,
+    },
+    respectWorkingHours: true,
+    workingHours: {
+      start: 9, // 9 AM
+      end: 17, // 5 PM
+    },
+    maxTasksPerDay: 5,
+    categoryTimeSettings: {
+      Work: {
+        startHour: 9,
+        endHour: 17,
+        optimalHours: [9, 10, 11, 14, 15, 16],
+        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+      },
+      Personal: {
+        startHour: 7,
+        endHour: 22,
+        optimalHours: [7, 8, 12, 13, 17, 18, 19, 20],
+        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+      },
+      Health: {
+        startHour: 6,
+        endHour: 10,
+        optimalHours: [6, 7, 8],
+        preferredDays: ['monday', 'wednesday', 'friday']
+      },
+      Social: {
+        startHour: 17,
+        endHour: 22,
+        optimalHours: [18, 19, 20],
+        preferredDays: ['friday', 'saturday', 'sunday']
+      },
+      Family: {
+        startHour: 17,
+        endHour: 22,
+        optimalHours: [18, 19, 20],
+        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+      },
+      Education: {
+        startHour: 9,
+        endHour: 16,
+        optimalHours: [9, 10, 11, 14],
+        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+      }
+    }
+  },
+  taskSettings: {
+    defaultTaskDuration: 60, // Default to 1 hour
+  },
 };
 
 // Helper function to load settings from localStorage

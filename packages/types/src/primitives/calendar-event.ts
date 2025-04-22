@@ -17,6 +17,10 @@ export interface CalendarEvent {
   priority?: EventPriority;
   locked?: boolean;
   google_event_id?: string;
+  metadata?: {
+    category?: string;
+    [key: string]: any;
+  };
 
   // Properties for multi-day events
   _originalId?: string;

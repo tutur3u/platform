@@ -13,8 +13,21 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
-import { AlertCircle, Clock, MapPin } from 'lucide-react';
-import { ReactNode } from 'react';
+import { AlertCircle, Clock, MapPin, ChevronsUpDown, Check } from 'lucide-react';
+import { ReactNode, useState } from 'react';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@tuturuuu/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@tuturuuu/ui/popover';
 
 // Color options aligned with SupportedColor type
 export const COLOR_OPTIONS: {
@@ -451,3 +464,79 @@ export const EventActionButtons = ({
     </div>
   </div>
 );
+
+// Event category picker component
+export function EventCategoryPicker({
+  value,
+  onChange,
+  categories,
+  disabled = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  categories: { name: string; color: SupportedColor }[];
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="category" className="text-sm font-medium">
+        Event Category
+      </Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+            disabled={disabled}
+          >
+            {value
+              ? categories.find((category) => category.name === value)?.name || value
+              : "Select category..."}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0">
+          <Command>
+            <CommandInput placeholder="Search categories..." />
+            <CommandEmpty>No category found.</CommandEmpty>
+            <CommandList>
+              <CommandGroup>
+                {categories.map((category) => {
+                  const { bg, text } = getEventStyles(category.color);
+                  return (
+                    <CommandItem
+                      key={category.name}
+                      value={category.name}
+                      onSelect={() => {
+                        onChange(category.name);
+                        setOpen(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`h-3 w-3 rounded-full ${bg}`}></div>
+                        <span>{category.name}</span>
+                      </div>
+                      <Check
+                        className={cn(
+                          "ml-auto h-4 w-4",
+                          value === category.name ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      <p className="text-xs text-muted-foreground">
+      Select event type will automatically set appropriate color
+      </p>
+    </div>
+  );
+}
