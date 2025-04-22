@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient, createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -14,11 +14,13 @@ export async function GET(request: Request, { params }: Params) {
 
   const supabase = await createClient();
 
+  
+
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
-
+  console.log('GET /criteria: user', user);
   if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -69,7 +71,10 @@ export async function PUT(request: Request, { params }: Params) {
     error: authError,
   } = await supabase.auth.getUser();
 
+  console.log('PUT /criteria: user', user);
+
   if (authError || !user?.id) {
+    console.log('PUT /criteria: Unauthorized', authError);
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -77,6 +82,7 @@ export async function PUT(request: Request, { params }: Params) {
     const body = await request.json();
     const { criteriaId, score, feedback } = body;
 
+    console.log('PUT /criteria: request body', body);
     if (!criteriaId || typeof score !== 'number' || !feedback) {
       return NextResponse.json(
         { message: 'Invalid request body' },
@@ -95,6 +101,7 @@ export async function PUT(request: Request, { params }: Params) {
       .select()
       .single();
 
+    console.log('PUT /criteria: upsert result', { data, error });
     if (error) {
       console.error('Database Error:', error);
       return NextResponse.json(
