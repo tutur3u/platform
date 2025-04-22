@@ -199,48 +199,70 @@ export async function POST(req: Request, { params }: Params) {
 
     // Step 3: Save test case results
     const testCaseEvaluation = parsedResponse.testCaseEvaluation || [];
-    const testCaseInserts = testCaseEvaluation.map((testCase: any) => {
-      // Find matching test case in the problem
-      const matchingTestCase = testCases.find(
-        (tc) => tc.input === testCase.input
-      );
+    const testCaseInserts = testCaseEvaluation
+      .map((testCase: any) => {
+        // Find matching test case in the problem
+        const matchingTestCase = testCases.find(
+          (tc) => tc.input === testCase.input
+        );
 
-      if (matchingTestCase) {
-        return {
-          submission_id: submission.id,
-          test_case_id: matchingTestCase.id,
-          output: testCase.output,
-          matched: matchingTestCase.output === testCase.output,
-        };
-      }
-      return null;
-    });
+        if (matchingTestCase) {
+          return {
+            submission_id: submission.id,
+            test_case_id: matchingTestCase.id,
+            output: testCase.output,
+            matched: matchingTestCase.output === testCase.output,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
 
     if (testCaseInserts.length > 0) {
-      await sbAdmin.from('nova_submission_test_cases').insert(testCaseInserts);
+      const { error: testCaseInsertsError } = await sbAdmin
+        .from('nova_submission_test_cases')
+        .insert(testCaseInserts);
+
+      if (testCaseInsertsError) {
+        return NextResponse.json(
+          { message: 'Failed to create test case results' },
+          { status: 500 }
+        );
+      }
     }
 
     // Step 4: Save criteria evaluations
     const criteriaEvaluation = parsedResponse.criteriaEvaluation || [];
-    const criteriaInserts = criteriaEvaluation.map((criteriaEval: any) => {
-      // Find matching criteria by name
-      const matchingCriteria = challengeCriteria.find(
-        (c) => c.name === criteriaEval.name
-      );
+    const criteriaInserts = criteriaEvaluation
+      .map((criteriaEval: any) => {
+        // Find matching criteria by name
+        const matchingCriteria = challengeCriteria.find(
+          (c) => c.name === criteriaEval.name
+        );
 
-      if (matchingCriteria) {
-        return {
-          submission_id: submission.id,
-          criteria_id: matchingCriteria.id,
-          score: criteriaEval.score,
-          feedback: criteriaEval.feedback,
-        };
-      }
-      return null;
-    });
+        if (matchingCriteria) {
+          return {
+            submission_id: submission.id,
+            criteria_id: matchingCriteria.id,
+            score: criteriaEval.score,
+            feedback: criteriaEval.feedback,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
 
     if (criteriaInserts.length > 0) {
-      await sbAdmin.from('nova_submission_criteria').insert(criteriaInserts);
+      const { error: criteriaInsertsError } = await sbAdmin
+        .from('nova_submission_criteria')
+        .insert(criteriaInserts);
+
+      if (criteriaInsertsError) {
+        return NextResponse.json(
+          { message: 'Failed to create criteria evaluations' },
+          { status: 500 }
+        );
+      }
     }
 
     // Return the evaluation results and submission ID
