@@ -1694,6 +1694,24 @@
         }
       }
     },
+    "invitation-page": {
+      "invitations": "Lời mời",
+      "invitation": "Lời mời",
+      "invitation-description": "Quản lý lời mời tham gia các nhóm khác nhau trên nền tảng.",
+      "no-invitations": "Không có lời mời nhóm",
+      "no-invitations-description": "Bạn không có lời mời nhóm nào đang chờ xử lý. Khi có người mời bạn tham gia nhóm, lời mời sẽ xuất hiện ở đây.",
+      "join-as-team-member": "Tham gia với vai trò thành viên",
+      "invited": "Đã mời ",
+      "accept": "Chấp nhận",
+      "decline": "Từ chối",
+      "accepted-title": "Đã chấp nhận",
+      "accepted-description": "Chấp nhận thành công",
+      "declined-title": "Đã từ chối",
+      "declined-description": "Từ chối thành công",
+      "error-loading-title": "Không thể tải lời mời",
+      "error-loading-description": "Đã xảy ra lỗi khi tải lời mời nhóm. Vui lòng thử lại sau.",
+      "error": "Lỗi"
+    },
     "teams": "Các đội",
     "submissions": "Bài nộp",
     "home": "Trang chủ",
@@ -2169,6 +2187,7 @@
     "delete_error": "Không xóa được nhóm",
     "email_already_invited": "Email đã được mời",
     "invitation_sent": "Lời mời được gửi",
+    "invitation_description": "Quản lý lời mời tham gia các nhóm khác nhau trên nền tảng.",
     "failed_to_invite": "Không mời",
     "invitations": "Lời mời",
     "invited": "Được mời",

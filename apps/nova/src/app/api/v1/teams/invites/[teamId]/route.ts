@@ -31,7 +31,7 @@ export async function GET(
       .maybeSingle();
 
     const isAdmin = adminUser?.allow_challenge_management;
-    // Only team members or admins can view invitations
+    // Only admins can view team invitations
     if (!isAdmin) {
       return NextResponse.json(
         { message: 'You do not have permission to view this team' },

@@ -1694,6 +1694,24 @@
         }
       }
     },
+    "invitation-page": {
+      "invitations": "Invitations",
+      "invitation": "Invitation",
+      "invitation-description": "Manage invitations to join various teams across the platform.",
+      "no-invitations": "No Team Invitations",
+      "no-invitations-description": "You don't have any pending team invitations at this time. When someone invites you to join their team, it will appear here.",
+      "join-as-team-member": "Join as team member",
+      "invited": "Invited ",
+      "accept": "Accept",
+      "decline": "Decline",
+      "accepted-title": "Accepted",
+      "accepted-description": "Accepted successfully",
+      "declined-title": "Declined",
+      "declined-description": "Declined successfully",
+      "error-loading-title": "Unable to Load Invitations",
+      "error-loading-description": "There was a problem loading your team invitations. Please try again later.",
+      "error": "Error"
+    },
     "teams": "Teams",
     "submissions": "Submissions",
     "home": "Home",
@@ -2169,6 +2187,7 @@
     "delete_error": "Failed to delete team",
     "email_already_invited": "Email already invited",
     "invitation_sent": "Invitation sent",
+    "invitation_description": "Manage invitations to join various teams across the platform.",
     "failed_to_invite": "Failed to invite",
     "invitations": "Invitations",
     "invited": "Invited",

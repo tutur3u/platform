@@ -14,11 +14,13 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Check, Inbox, Shield, X } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
-import { useTranslations } from 'next-intl';
+import { enUS, vi } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 
 export const TeamInvitation = () => {
-  const t = useTranslations();
+  const t = useTranslations('nova.invitation-page');
   const queryClient = useQueryClient();
+  const locale = useLocale();
 
   // Fetch invitations
   const {
@@ -39,7 +41,7 @@ export const TeamInvitation = () => {
     },
     onError: (error) => {
       toast({
-        title: t('common.error'),
+        title: t('error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -53,8 +55,8 @@ export const TeamInvitation = () => {
       {
         onSuccess: () => {
           toast({
-            title: 'Accepted',
-            description: 'Accepted successfully',
+            title: t('accept'),
+            description: t('accepted-description'),
           });
         },
       }
@@ -68,8 +70,8 @@ export const TeamInvitation = () => {
       {
         onSuccess: () => {
           toast({
-            title: 'Rejected',
-            description: 'Rejected Successfully',
+            title: t('decline'),
+            description: t('declined-description'),
           });
         },
       }
@@ -83,11 +85,10 @@ export const TeamInvitation = () => {
           <div className="flex flex-col items-center text-center">
             <X className="mb-2 h-12 w-12 text-red-500" />
             <h3 className="text-lg font-semibold">
-              Unable to Load Invitations
+              {t('error-loading-title')}
             </h3>
             <p className="text-muted-foreground">
-              There was a problem loading your team invitations. Please try
-              again later.
+              {t('error-loading-description')}
             </p>
           </div>
         </CardContent>
@@ -118,10 +119,11 @@ export const TeamInvitation = () => {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Inbox className="text-muted-foreground mb-4 h-16 w-16" />
-            <h3 className="mb-2 text-xl font-semibold">No Team Invitations</h3>
+            <h3 className="mb-2 text-xl font-semibold">
+              {t('no-invitations')}
+            </h3>
             <p className="text-muted-foreground max-w-md text-center">
-              You don't have any pending team invitations at this time. When
-              someone invites you to join their team, it will appear here.
+              {t('no-invitations-description')}
             </p>
           </CardContent>
         </Card>
@@ -134,7 +136,7 @@ export const TeamInvitation = () => {
                   <CardTitle>{invitation.nova_teams.name}</CardTitle>
                   <div className="text-muted-foreground flex items-center text-sm">
                     <Shield className="mr-1 h-4 w-4" />
-                    <span>Join as team member</span>
+                    <span>{t('join-as-team-member')}</span>
                   </div>
                 </div>
                 <CardDescription>
@@ -144,9 +146,10 @@ export const TeamInvitation = () => {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="text-muted-foreground text-sm">
-                    {t('teams.invited')}{' '}
+                    {t('invited')}
                     {formatDistanceToNow(new Date(invitation.created_at), {
                       addSuffix: true,
+                      locale: locale === 'vi' ? vi : enUS,
                     })}
                   </div>
                   <div className="flex space-x-2">
@@ -157,7 +160,7 @@ export const TeamInvitation = () => {
                       disabled={isPending}
                     >
                       <X className="mr-2 h-4 w-4" />
-                      Decline
+                      {t('decline')}
                     </Button>
                     <Button
                       size="sm"
@@ -165,7 +168,7 @@ export const TeamInvitation = () => {
                       disabled={isPending}
                     >
                       <Check className="mr-2 h-4 w-4" />
-                      Accept
+                      {t('accept')}
                     </Button>
                   </div>
                 </div>

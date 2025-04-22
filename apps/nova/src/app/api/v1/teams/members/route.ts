@@ -29,7 +29,7 @@ export async function DELETE(request: NextRequest) {
 
     // Handle leaving team (self-removal)
     if (teamId) {
-      const { error: leaveError } = await sbAdmin
+      const { error: leaveError } = await supabase
         .from('nova_team_members')
         .delete()
         .eq('team_id', teamId)
