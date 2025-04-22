@@ -21,11 +21,13 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 const MotionCard = motion(Card);
 
 export function ApologyModal() {
+  const t = useTranslations('nova-apology-modal');
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('issues');
 
@@ -79,7 +81,7 @@ export function ApologyModal() {
             >
               <DialogTitle className="flex items-center gap-2 text-center text-xl font-bold sm:text-left">
                 <AlertTriangle className="h-6 w-6 text-dynamic-red" />
-                Important Notice to NEO League Competition Participants
+                {t('title')}
               </DialogTitle>
             </motion.div>
             <motion.div
@@ -88,8 +90,7 @@ export function ApologyModal() {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <DialogDescription className="mt-2 text-center text-base sm:text-left">
-                The Nova development team wishes to address recent technical
-                issues affecting the competition.
+                {t('description')}
               </DialogDescription>
             </motion.div>
           </DialogHeader>
@@ -105,13 +106,14 @@ export function ApologyModal() {
                   value="issues"
                   className="transition-all duration-200 data-[state=active]:bg-red-500/10"
                 >
-                  <AlertTriangle className="mr-2 h-4 w-4" /> Known Issues
+                  <AlertTriangle className="mr-2 h-4 w-4" /> {t('known_issues')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="updates"
                   className="transition-all duration-200 data-[state=active]:bg-green-500/10"
                 >
-                  <CheckCircle className="mr-2 h-4 w-4" /> Resolution Status
+                  <CheckCircle className="mr-2 h-4 w-4" />{' '}
+                  {t('resolution_status')}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -128,12 +130,7 @@ export function ApologyModal() {
                     transition={{ duration: 0.3 }}
                     className="flex flex-col space-y-5"
                   >
-                    <p className="text-base">
-                      We sincerely apologize to all Nova platform users and
-                      contestants in the NEO League competition. Our team is
-                      working diligently to resolve the following identified
-                      issues:
-                    </p>
+                    <p className="text-base">{t('apology_message')}</p>
 
                     <div className="mt-2 space-y-4">
                       <MotionCard
@@ -148,26 +145,21 @@ export function ApologyModal() {
                             <div className="flex items-center gap-2">
                               <AlertTriangle className="h-5 w-5 shrink-0 text-dynamic-red" />
                               <h3 className="font-semibold text-dynamic-red">
-                                AI-Powered Scoring System
+                                {t('ai_scoring_system')}
                               </h3>
                             </div>
                             <Badge
                               variant="outline"
                               className="border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red"
                             >
-                              Critical
+                              {t('critical')}
                             </Badge>
                           </div>
-                          <p>
-                            The scoring system is currently misconfigured and
-                            will result in giving most users a score of 0. We
-                            have identified the root cause and are implementing
-                            a fix.
-                          </p>
+                          <p>{t('ai_scoring_description')}</p>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Bug className="h-4 w-4" />
                             <span>
-                              Issue tracked in{' '}
+                              {t('issue_tracked')}{' '}
                               <a
                                 href="https://github.com/tutur3u/platform/issues/2429"
                                 className="underline transition-colors hover:text-primary"
@@ -192,26 +184,21 @@ export function ApologyModal() {
                             <div className="flex items-center gap-2">
                               <Trophy className="h-5 w-5 shrink-0 text-dynamic-red" />
                               <h3 className="font-semibold text-dynamic-red">
-                                Leaderboard Score Calculations
+                                {t('leaderboard_scores')}
                               </h3>
                             </div>
                             <Badge
                               variant="outline"
                               className="border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red"
                             >
-                              Critical
+                              {t('critical')}
                             </Badge>
                           </div>
-                          <p>
-                            The leaderboard scores are not calculating
-                            correctly, affecting the competitive ranking
-                            display. Our team has identified the issue and is
-                            implementing a comprehensive fix.
-                          </p>
+                          <p>{t('leaderboard_description')}</p>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Bug className="h-4 w-4" />
                             <span>
-                              Issue tracked in{' '}
+                              {t('issue_tracked')}{' '}
                               <a
                                 href="https://github.com/tutur3u/platform/issues/2416"
                                 className="underline transition-colors hover:text-primary"
@@ -235,25 +222,21 @@ export function ApologyModal() {
                             <div className="flex items-center gap-2">
                               <AlertTriangle className="h-5 w-5 shrink-0 text-dynamic-yellow" />
                               <h3 className="font-semibold">
-                                Testcase & Criteria Handling
+                                {t('testcase_criteria')}
                               </h3>
                             </div>
                             <Badge
                               variant="outline"
                               className="border-border bg-background"
                             >
-                              High
+                              {t('high')}
                             </Badge>
                           </div>
-                          <p>
-                            Non-admin users are currently unable to save
-                            testcases and criteria evaluations. This affects
-                            challenge submission validation and scoring.
-                          </p>
+                          <p>{t('testcase_description')}</p>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Bug className="h-4 w-4" />
                             <span>
-                              Issues tracked in{' '}
+                              {t('issues_tracked')}{' '}
                               <a
                                 href="https://github.com/tutur3u/platform/issues/2428"
                                 className="underline transition-colors hover:text-primary"
@@ -287,12 +270,7 @@ export function ApologyModal() {
                     transition={{ duration: 0.3 }}
                     className="flex flex-col space-y-5"
                   >
-                    <p className="text-base">
-                      The Nova development team is working around the clock to
-                      resolve these issues before the official start of round 1.
-                      We're committed to providing you with the best competition
-                      experience possible.
-                    </p>
+                    <p className="text-base">{t('resolution_message')}</p>
 
                     <div className="space-y-4">
                       <motion.div
@@ -304,30 +282,26 @@ export function ApologyModal() {
                         <div className="flex items-center gap-2">
                           <CheckCircle className="h-5 w-5 text-green-500" />
                           <span className="font-medium">
-                            All critical bugs have been identified and
-                            prioritized
+                            {t('bugs_identified')}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                          <span className="font-medium">{t('ai_fix')}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                          <span className="font-medium">
+                            {t('testcase_fix')}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <CheckCircle className="h-5 w-5 text-green-500" />
                           <span className="font-medium">
-                            Fix for AI scoring system in active development
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                          <span className="font-medium">
-                            Fix for testcase handling in review phase
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                          <span className="font-medium">
-                            Leaderboard score calculation fix in progress (ETA:
-                            before round 1)
+                            {t('leaderboard_fix')}
                           </span>
                         </div>
                       </motion.div>
@@ -337,15 +311,9 @@ export function ApologyModal() {
                       <div className="rounded-lg border bg-blue-50/30 p-4 dark:bg-blue-950/10">
                         <h3 className="mb-2 flex items-center gap-2 font-semibold">
                           <span className="inline-block h-2 w-2 rounded-full bg-blue-500"></span>
-                          Our Commitment
+                          {t('our_commitment')}
                         </h3>
-                        <p className="text-sm">
-                          The Nova development team is fully committed to
-                          resolving these issues before the competition begins.
-                          We appreciate your patience and understanding as we
-                          work to deliver the best possible platform for your
-                          competitive experience.
-                        </p>
+                        <p className="text-sm">{t('commitment_description')}</p>
                       </div>
 
                       <motion.div
@@ -353,13 +321,13 @@ export function ApologyModal() {
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ duration: 0.5, delay: 0.4 }}
                       >
-                        <p className="mb-2 font-medium">Next Steps:</p>
+                        <p className="mb-2 font-medium">{t('next_steps')}</p>
                         <ul className="ml-5 list-disc space-y-1">
-                          <li>Deploy emergency hotfix for scoring system</li>
-                          <li>Fix testcase handling for all users</li>
-                          <li>Address leaderboard score calculation issues</li>
+                          <li>{t('step_1')}</li>
+                          <li>{t('step_2')}</li>
+                          <li>{t('step_3')}</li>
                           <li className="font-medium text-dynamic-blue">
-                            Ensure all systems are ready before round 1 begins
+                            {t('step_4')}
                           </li>
                         </ul>
                       </motion.div>
@@ -376,14 +344,14 @@ export function ApologyModal() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
               >
-                <span>For updates and latest information, visit </span>
+                <span>{t('updates_info')} </span>
                 <a
                   href="https://github.com/tutur3u/platform/issues"
                   target="_blank"
                   className="inline-flex items-center gap-1 text-primary transition-colors hover:underline"
                   onClick={handleOpenIssue}
                 >
-                  GitHub Issues <ExternalLink className="h-3 w-3" />
+                  {t('github_issues')} <ExternalLink className="h-3 w-3" />
                 </a>
               </motion.div>
               <div className="flex gap-3">
@@ -397,7 +365,7 @@ export function ApologyModal() {
                     onClick={handleOpenIssue}
                     className="transition-all hover:bg-muted"
                   >
-                    Report Issue
+                    {t('report_issue')}
                   </Button>
                 </motion.div>
                 <motion.div
@@ -411,7 +379,7 @@ export function ApologyModal() {
                     onClick={handleCloseModal}
                     className="transition-all duration-200"
                   >
-                    I Understand
+                    {t('understand')}
                   </Button>
                 </motion.div>
               </div>

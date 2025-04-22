@@ -1,4 +1,37 @@
 {
+  "nova-apology-modal": {
+    "title": "Important Notice to NEO League Competition Participants",
+    "description": "The Nova development team wishes to address recent technical issues affecting the competition.",
+    "known_issues": "Known Issues",
+    "resolution_status": "Resolution Status",
+    "apology_message": "We sincerely apologize to all Nova platform users and contestants in the NEO League competition. Our team is working diligently to resolve the following identified issues:",
+    "ai_scoring_system": "AI-Powered Scoring System",
+    "ai_scoring_description": "The scoring system is currently misconfigured and will result in giving most users a score of 0. We have identified the root cause and are implementing a fix.",
+    "leaderboard_scores": "Leaderboard Score Calculations",
+    "leaderboard_description": "The leaderboard scores are not calculating correctly, affecting the competitive ranking display. Our team has identified the issue and is implementing a comprehensive fix.",
+    "testcase_criteria": "Testcase & Criteria Handling",
+    "testcase_description": "Non-admin users are currently unable to save testcases and criteria evaluations. This affects challenge submission validation and scoring.",
+    "critical": "Critical",
+    "high": "High",
+    "issue_tracked": "Issue tracked in",
+    "issues_tracked": "Issues tracked in",
+    "resolution_message": "The Nova development team is working around the clock to resolve these issues before the official start of round 1. We're committed to providing you with the best competition experience possible.",
+    "bugs_identified": "All critical bugs have been identified and prioritized",
+    "ai_fix": "Fix for AI scoring system in active development",
+    "testcase_fix": "Fix for testcase handling in review phase",
+    "leaderboard_fix": "Leaderboard score calculation fix in progress (ETA: before round 1)",
+    "our_commitment": "Our Commitment",
+    "commitment_description": "The Nova development team is fully committed to resolving these issues before the competition begins. We appreciate your patience and understanding as we work to deliver the best possible platform for your competitive experience.",
+    "next_steps": "Next Steps:",
+    "step_1": "Deploy emergency hotfix for scoring system",
+    "step_2": "Fix testcase handling for all users",
+    "step_3": "Address leaderboard score calculation issues",
+    "step_4": "Ensure all systems are ready before round 1 begins",
+    "updates_info": "For updates and latest information, visit",
+    "github_issues": "GitHub Issues",
+    "report_issue": "Report Issue",
+    "understand": "I Understand"
+  },
   "ai-prompts-data-table": {
     "id": "ID",
     "name": "Name",
@@ -1617,7 +1650,7 @@
         },
         "student-council": {
           "name": "RMIT Student Council",
-          "description": "Partner of the Neo League - RMIT Vietnam Student Council (SC) is the representative of RMIT Vietnam student bodies. SC is the conduit for communication between students and the University. By listening and considering students’ concerns, SC aims to increase their education experience, personal welfare, social life and cultural activities. "
+          "description": "Partner of the Neo League - RMIT Vietnam Student Council (SC) is the representative of RMIT Vietnam student bodies. SC is the conduit for communication between students and the University. By listening and considering students' concerns, SC aims to increase their education experience, personal welfare, social life and cultural activities. "
         },
         "netcompany": {
           "name": "Netcompany",
