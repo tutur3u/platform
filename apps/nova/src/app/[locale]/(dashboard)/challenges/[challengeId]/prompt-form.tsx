@@ -29,11 +29,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import React, { useEffect, useState } from 'react';
 
-type TestResult = {
-  input: string;
-  output: string;
-};
-
 interface Props {
   problem: NovaProblem & {
     test_cases: NovaProblemTestCase[];
@@ -43,11 +38,8 @@ interface Props {
 
 export default function PromptForm({ problem, session }: Props) {
   const [prompt, setPrompt] = useState('');
-  const [customTestCase, setCustomTestCase] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [testingCustom, setTestingCustom] = useState(false);
   const [error, setError] = useState('');
-  const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [submissions, setSubmissions] = useState<ExtendedNovaSubmission[]>([]);
   const [currentSessionSubmissions, setCurrentSessionSubmissions] = useState<
     ExtendedNovaSubmission[]
@@ -187,6 +179,7 @@ export default function PromptForm({ problem, session }: Props) {
       const criteriaResponse = await fetch(
         `/api/v1/criteria?challengeId=${problem.challenge_id}`
       );
+
       if (criteriaResponse.ok) {
         const challengeCriteria = await criteriaResponse.json();
 
@@ -211,6 +204,8 @@ export default function PromptForm({ problem, session }: Props) {
             }
           })
         );
+      } else {
+        throw new Error('Failed to fetch criteria');
       }
 
       // Step 5: Refresh the submissions list
@@ -248,48 +243,6 @@ export default function PromptForm({ problem, session }: Props) {
       });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleTestCustomCase = async () => {
-    if (!customTestCase.trim()) {
-      setError('Custom test case cannot be empty.');
-      return;
-    }
-
-    setTestingCustom(true);
-    setError('');
-    setTestResult(null);
-
-    try {
-      const response = await fetch(
-        `/api/v1/problems/${problem.id}/custom-testcase`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: problem.id,
-            prompt,
-            input: customTestCase,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to test prompt');
-      }
-
-      const data = await response.json();
-
-      setTestResult({
-        input: data.response.input,
-        output: data.response.output,
-      });
-    } catch (error: any) {
-      console.error('Error testing prompt:', error);
-      setError('Failed to test prompt with custom test case');
-    } finally {
-      setTestingCustom(false);
     }
   };
 
@@ -379,54 +332,6 @@ export default function PromptForm({ problem, session }: Props) {
 
                 {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
               </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="test" className="space-y-4">
-            <div className="border-foreground/10 bg-foreground/10 space-y-4 rounded-lg border p-6">
-              <div>
-                <h3 className="mb-2 text-lg font-medium">Custom Test Case</h3>
-                <p className="text-muted-foreground mb-3 text-sm">
-                  Enter a custom test case to see how your prompt would perform
-                  on it. This won't count against your submission attempts.
-                </p>
-                <Textarea
-                  value={customTestCase}
-                  onChange={(e) => setCustomTestCase(e.target.value)}
-                  placeholder="Enter your custom test case here..."
-                  className="min-h-[120px]"
-                />
-                <Button
-                  onClick={handleTestCustomCase}
-                  className="mt-3 gap-2"
-                  disabled={
-                    customTestCase.length === 0 ||
-                    submissions.length === 0 ||
-                    testingCustom
-                  }
-                >
-                  <PlayCircle className="h-4 w-4" />
-                  {testingCustom ? 'Testing...' : 'Test This Case'}
-                </Button>
-              </div>
-
-              {testingCustom && (
-                <div className="flex items-center justify-center py-6">
-                  <LoadingIndicator />
-                </div>
-              )}
-
-              {testResult && (
-                <div className="border-foreground/10 bg-foreground/5 mt-4 rounded-lg border p-4">
-                  <h4 className="mb-2 text-lg font-medium">Test Result</h4>
-                  <div className="space-y-3">
-                    <span className="font-semibold">Output: </span>
-                    <p className="mt-1 whitespace-pre-wrap text-sm">
-                      {testResult.output}
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           </TabsContent>
 

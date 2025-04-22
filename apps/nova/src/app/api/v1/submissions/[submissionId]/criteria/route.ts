@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -23,8 +26,26 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   try {
-    let query = supabase
+    // Check if submission belongs to user
+    const { error: submissionError } = await sbAdmin
+      .from('nova_submissions')
+      .select('*')
+      .eq('id', submissionId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (submissionError) {
+      console.error('Database Error:', submissionError);
+      return NextResponse.json(
+        { message: 'Error fetching submission' },
+        { status: 500 }
+      );
+    }
+
+    let query = sbAdmin
       .from('nova_submission_criteria')
       .select('*')
       .eq('submission_id', submissionId);
@@ -73,6 +94,8 @@ export async function PUT(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   try {
     const body = await request.json();
     const { criteriaId, score, feedback } = body;
@@ -84,7 +107,23 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const { data, error } = await supabase
+    // Check if submission belongs to user
+    const { error: submissionError } = await sbAdmin
+      .from('nova_submissions')
+      .select('*')
+      .eq('id', submissionId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (submissionError) {
+      console.error('Database Error:', submissionError);
+      return NextResponse.json(
+        { message: 'Error fetching submission' },
+        { status: 500 }
+      );
+    }
+
+    const { data, error } = await sbAdmin
       .from('nova_submission_criteria')
       .upsert({
         submission_id: submissionId,

@@ -26,6 +26,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
+import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -38,16 +39,29 @@ export interface TeamData {
     user_id: string;
     display_name: string;
     avatar_url: string | null;
+    individual_score: number;
+    contribution_percentage: number;
+    join_date?: string;
   }[];
   rank?: number;
   total_score?: number;
   active_since?: string;
+  challenge_scores?: Record<string, number>;
+  challenge_details?: Array<{
+    id: string;
+    title: string;
+    score: number;
+  }>;
   stats?: {
     active_since?: string;
+    average_member_score: number;
+    weekly_progress?: number;
   };
 }
 
 export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
+  const locale = useLocale();
+
   if (!teamData) {
     return (
       <div className="container max-w-6xl py-16 text-center">
@@ -292,13 +306,163 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
 
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-500">
-                    {teamData.total_score || 0}
+                    {teamData.total_score?.toFixed(1) || 0}
                   </div>
                   <div className="text-muted-foreground text-sm">Points</div>
                 </div>
               </div>
             </div>
           </motion.div>
+
+          {/* Challenge Scoring Breakdown */}
+          {teamData.challenge_details &&
+            teamData.challenge_details.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="mb-6"
+              >
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Trophy className="h-5 w-5 text-purple-500" />
+                      Challenge Breakdown
+                    </CardTitle>
+                    <CardDescription>
+                      Detailed breakdown of the team's performance in each
+                      challenge
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Score Distribution Visualization */}
+                    <div className="bg-card/50 mb-6 flex flex-col gap-2 rounded-lg border p-4">
+                      <div className="text-base font-medium">
+                        Score Distribution
+                      </div>
+                      <div className="flex h-8 w-full overflow-hidden rounded-lg">
+                        {teamData.challenge_details.map((challenge, index) => {
+                          const percentage = teamData.total_score
+                            ? (challenge.score / teamData.total_score) * 100
+                            : 0;
+
+                          // Generate gradient colors for segments
+                          const colors = [
+                            'from-blue-500 to-blue-600',
+                            'from-purple-500 to-purple-600',
+                            'from-indigo-500 to-indigo-600',
+                            'from-sky-500 to-sky-600',
+                            'from-emerald-500 to-emerald-600',
+                          ];
+
+                          const colorClass = colors[index % colors.length];
+
+                          return (
+                            <motion.div
+                              key={challenge.id}
+                              className={`relative h-full bg-gradient-to-r ${colorClass}`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percentage}%` }}
+                              transition={{
+                                duration: 0.7,
+                                delay: 0.3 + index * 0.1,
+                              }}
+                              title={`${challenge.title}: ${challenge.score.toFixed(1)} pts (${percentage.toFixed(1)}%)`}
+                            />
+                          );
+                        })}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-3">
+                        {teamData.challenge_details.map((challenge, index) => {
+                          // Use same colors as above
+                          const colors = [
+                            'bg-blue-500',
+                            'bg-purple-500',
+                            'bg-indigo-500',
+                            'bg-sky-500',
+                            'bg-emerald-500',
+                          ];
+
+                          const bgColorClass = colors[index % colors.length];
+
+                          return (
+                            <div
+                              key={challenge.id}
+                              className="flex items-center gap-2 text-sm"
+                            >
+                              <div
+                                className={`h-3 w-3 rounded-full ${bgColorClass}`}
+                              />
+                              <span>{challenge.title}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Challenge Details */}
+                    <div className="space-y-6">
+                      <div className="text-muted-foreground flex justify-between border-b pb-2 text-sm font-medium">
+                        <span>Challenge</span>
+                        <div className="flex gap-8">
+                          <span>Score</span>
+                          <span>Contribution</span>
+                        </div>
+                      </div>
+                      {teamData.challenge_details.map((challenge, index) => {
+                        // Calculate percentage of total score
+                        const percentage = teamData.total_score
+                          ? (challenge.score / teamData.total_score) * 100
+                          : 0;
+
+                        return (
+                          <motion.div
+                            key={challenge.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{
+                              duration: 0.3,
+                              delay: 0.1 + index * 0.05,
+                            }}
+                            className="group space-y-2"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium transition-colors group-hover:text-blue-600">
+                                  {challenge.title}
+                                </h4>
+                              </div>
+                              <div className="flex items-center gap-8">
+                                <Badge
+                                  variant="outline"
+                                  className="min-w-[70px] justify-center border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                                >
+                                  {challenge.score.toFixed(1)} pts
+                                </Badge>
+                                <span className="min-w-[70px] text-right font-medium text-purple-600 dark:text-purple-400">
+                                  {percentage.toFixed(1)}%
+                                </span>
+                              </div>
+                            </div>
+                            <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                              <motion.div
+                                className="absolute left-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${percentage}%` }}
+                                transition={{
+                                  duration: 0.5,
+                                  delay: 0.2 + index * 0.05,
+                                }}
+                              />
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
 
           <div className="grid gap-6 md:grid-cols-2">
             <Card className="border-background/80 bg-card/50">
@@ -362,6 +526,125 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
               </CardContent>
             </Card>
           </div>
+
+          {/* Performance Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Award className="h-5 w-5 text-blue-500" />
+                  Performance Metrics
+                </CardTitle>
+                <CardDescription>
+                  Key performance indicators for this team
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 sm:grid-cols-3">
+                  {/* Average Member Score */}
+                  <div className="bg-card/50 flex flex-col rounded-lg border p-4">
+                    <span className="text-muted-foreground mb-1 text-xs font-medium">
+                      Average Member Score
+                    </span>
+                    <div className="flex items-end gap-2">
+                      <span className="text-2xl font-bold text-blue-600">
+                        {teamData.stats?.average_member_score?.toFixed(1) ||
+                          '0'}
+                      </span>
+                      <span className="text-muted-foreground text-sm">
+                        points
+                      </span>
+                    </div>
+                    <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                      <motion.div
+                        className="h-full bg-blue-500"
+                        initial={{ width: 0 }}
+                        animate={{
+                          width: `${Math.min(100, teamData.stats?.average_member_score ? (teamData.stats.average_member_score / 10) * 100 : 0)}%`,
+                        }}
+                        transition={{ duration: 0.7, delay: 0.4 }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Weekly Activity */}
+                  <div className="bg-card/50 flex flex-col rounded-lg border p-4">
+                    <span className="text-muted-foreground mb-1 text-xs font-medium">
+                      Weekly Progress
+                    </span>
+                    <div className="flex items-end gap-2">
+                      <span className="text-2xl font-bold text-green-600">
+                        {teamData.stats?.weekly_progress?.toFixed(1) || '0'}
+                      </span>
+                      <span className="text-muted-foreground text-sm">
+                        points this week
+                      </span>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <Badge
+                        variant="outline"
+                        className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                      >
+                        {teamData.stats?.weekly_progress &&
+                        teamData.stats.weekly_progress > 0
+                          ? 'Active'
+                          : 'Inactive'}
+                      </Badge>
+                      <span className="text-muted-foreground text-xs">
+                        Last 7 days
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Top Contributor */}
+                  <div className="bg-card/50 flex flex-col rounded-lg border p-4">
+                    <span className="text-muted-foreground mb-1 text-xs font-medium">
+                      Top Contributor
+                    </span>
+                    {teamData.members?.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage
+                              src={teamData?.members?.[0]?.avatar_url || ''}
+                            />
+                            <AvatarFallback className="text-xs">
+                              {getInitials(
+                                teamData?.members?.[0]?.display_name || ''
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">
+                            {teamData?.members?.[0]?.display_name || ''}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-end gap-2">
+                          <span className="text-2xl font-bold text-purple-600">
+                            {teamData?.members?.[0]?.individual_score?.toFixed(
+                              1
+                            ) || '0'}
+                          </span>
+                          <span className="text-muted-foreground text-sm">
+                            points
+                          </span>
+                        </div>
+                        <div className="text-muted-foreground mt-1 text-xs">
+                          {teamData?.members?.[0]?.contribution_percentage?.toFixed(
+                            1
+                          ) || '0'}
+                          % of team score
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </TabsContent>
 
         {/* Members Tab - Enhanced with animations */}
@@ -370,32 +653,77 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
             <CardHeader>
               <CardTitle>Team Members</CardTitle>
               <CardDescription>
-                Active members and their roles in the team
+                Members and their contributions to the team's score
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4">
                 {teamData.members.map((member, index) => (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                     key={member.user_id}
-                    className="hover:bg-muted/50 flex items-center space-x-4 rounded-lg border p-4 transition-all hover:shadow-md"
+                    className="hover:bg-muted/50 group flex flex-col gap-4 rounded-lg border p-4 transition-all hover:shadow-md sm:flex-row sm:items-center"
                   >
-                    <Avatar className="border-border h-12 w-12 border">
-                      <AvatarImage src={member.avatar_url || ''} />
-                      <AvatarFallback>
-                        {getInitials(member.display_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="font-medium">
-                        {member.display_name || generateFunName(member.user_id)}
-                      </p>
-                      <p className="text-muted-foreground text-sm">
-                        {index === 0 ? 'Team Lead' : 'Member'}
-                      </p>
+                    <div className="flex items-center gap-4">
+                      <Avatar className="border-border h-12 w-12 border">
+                        <AvatarImage src={member.avatar_url || ''} />
+                        <AvatarFallback>
+                          {getInitials(member.display_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium transition-colors group-hover:text-blue-600">
+                            {member.display_name ||
+                              generateFunName({ id: member.user_id, locale })}
+                          </p>
+                          {index === 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              Team Lead
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-muted-foreground text-sm">
+                          Joined{' '}
+                          {member.join_date
+                            ? new Date(member.join_date).toLocaleDateString(
+                                'en-US',
+                                {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                }
+                              )
+                            : 'Unknown'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex flex-col gap-4 sm:ml-auto sm:mt-0 sm:flex-row sm:items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-md bg-blue-50 px-2.5 py-1 text-sm font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                          {member.individual_score.toFixed(1)} pts
+                        </div>
+                        <div className="rounded-md bg-purple-50 px-2.5 py-1 text-sm font-medium text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
+                          {member.contribution_percentage}% contribution
+                        </div>
+                      </div>
+
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 sm:w-32 dark:bg-gray-800">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                          initial={{ width: 0 }}
+                          animate={{
+                            width: `${member.contribution_percentage}%`,
+                          }}
+                          transition={{
+                            duration: 0.6,
+                            delay: 0.2 + index * 0.05,
+                          }}
+                        />
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -409,12 +737,146 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
           <Card>
             <CardHeader>
               <CardTitle>Team Activity</CardTitle>
-              <CardDescription>Recent team actions and updates</CardDescription>
+              <CardDescription>
+                Recent team performance and statistics
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-muted-foreground flex h-24 items-center justify-center">
-                No recent activity
-              </div>
+              {teamData.stats?.weekly_progress !== undefined ? (
+                <div className="space-y-8">
+                  {/* Performance Summary */}
+                  <div className="grid gap-6 md:grid-cols-3">
+                    <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
+                      <div className="text-muted-foreground mb-1 text-sm">
+                        Team Average
+                      </div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {teamData.stats.average_member_score.toFixed(1)}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        points per member
+                      </div>
+                    </div>
+
+                    <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
+                      <div className="text-muted-foreground mb-1 text-sm">
+                        Weekly Activity
+                      </div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {teamData.stats.weekly_progress?.toFixed(1) || 0}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        points this week
+                      </div>
+                    </div>
+
+                    <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
+                      <div className="text-muted-foreground mb-1 text-sm">
+                        Top Member
+                      </div>
+                      <div className="text-2xl font-bold text-purple-600">
+                        {teamData.members[0]?.individual_score.toFixed(1) || 0}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        points by {teamData.members[0]?.display_name}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Member Contribution Chart */}
+                  <div className="bg-card rounded-lg border p-6 shadow-sm">
+                    <h3 className="mb-4 text-lg font-medium">
+                      Member Contributions
+                    </h3>
+                    <div className="space-y-4">
+                      {teamData.members.map((member, index) => (
+                        <motion.div
+                          key={member.user_id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: 0.05 * index }}
+                        >
+                          <div className="mb-1 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={member.avatar_url || ''} />
+                                <AvatarFallback className="text-xs">
+                                  {getInitials(member.display_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">
+                                {member.display_name}
+                              </span>
+                            </div>
+                            <span className="text-muted-foreground text-sm">
+                              {member.individual_score.toFixed(1)} pts (
+                              {member.contribution_percentage}%)
+                            </span>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                            <motion.div
+                              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                              initial={{ width: 0 }}
+                              animate={{
+                                width: `${member.contribution_percentage}%`,
+                              }}
+                              transition={{
+                                duration: 0.5,
+                                delay: 0.1 + 0.05 * index,
+                              }}
+                            />
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Challenge Performance */}
+                  {teamData.challenge_details &&
+                    teamData.challenge_details.length > 0 && (
+                      <div className="bg-card rounded-lg border p-6 shadow-sm">
+                        <h3 className="mb-4 text-lg font-medium">
+                          Challenge Performance
+                        </h3>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {teamData.challenge_details
+                            .slice(0, 4)
+                            .map((challenge, index) => (
+                              <motion.div
+                                key={challenge.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{
+                                  duration: 0.3,
+                                  delay: 0.05 * index,
+                                }}
+                                className="hover:bg-muted/50 flex flex-col rounded-lg border p-4 transition-colors"
+                              >
+                                <div className="text-md font-medium">
+                                  {challenge.title}
+                                </div>
+                                <div className="text-muted-foreground mb-2 text-sm">
+                                  {(
+                                    (challenge.score /
+                                      (teamData.total_score || 1)) *
+                                    100
+                                  ).toFixed(1)}
+                                  % of total score
+                                </div>
+                                <div className="text-xl font-bold text-blue-600">
+                                  {challenge.score.toFixed(1)}
+                                </div>
+                              </motion.div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                </div>
+              ) : (
+                <div className="text-muted-foreground flex h-24 items-center justify-center">
+                  No recent activity data available
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

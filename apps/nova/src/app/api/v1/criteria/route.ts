@@ -1,5 +1,8 @@
 import { createCriterionSchema } from '../schemas';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
@@ -17,8 +20,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   try {
-    let query = supabase.from('nova_challenge_criteria').select('*');
+    let query = sbAdmin.from('nova_challenge_criteria').select('*');
     if (challengeId) {
       query = query.eq('challenge_id', challengeId);
     }
