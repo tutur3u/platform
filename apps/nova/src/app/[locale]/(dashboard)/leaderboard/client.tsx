@@ -1,5 +1,3 @@
-'use client';
-
 import BasicInformationComponent from './basic-information-component';
 import {
   Leaderboard,
@@ -32,6 +30,7 @@ export default function LeaderboardPage({
   isChecked,
   onLoadMore,
   hasMore,
+  problems = [],
 }: {
   data: LeaderboardEntry[];
   challenges: { id: string; title: string }[];
@@ -39,6 +38,7 @@ export default function LeaderboardPage({
   isChecked: boolean;
   onLoadMore: () => void;
   hasMore: boolean;
+  problems?: { id: string; title: string; challenge_id: string }[];
 }) {
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -303,6 +303,7 @@ export default function LeaderboardPage({
                 currentUserId={currentUserId}
                 challenges={challenges}
                 selectedChallenge={selectedChallenge}
+                problems={problems}
               />
 
               {hasMore && (

@@ -32,6 +32,9 @@ export default function Page() {
   const [challenges, setChallenges] = useState<{ id: string; title: string }[]>(
     []
   );
+  const [problems, setProblems] = useState<
+    { id: string; title: string; challenge_id: string }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [isChecked, setIsTeamMode] = useState(false);
   const [page, setPage] = useState(1);
@@ -64,6 +67,7 @@ export default function Page() {
       }
 
       setChallenges(json.challenges || []);
+      setProblems(json.problems || []);
       setHasMore(json.hasMore || false);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
@@ -93,6 +97,7 @@ export default function Page() {
       data={data}
       isChecked={isChecked}
       challenges={challenges}
+      problems={problems}
       onLoadMore={handleLoadMore}
       hasMore={hasMore}
     />

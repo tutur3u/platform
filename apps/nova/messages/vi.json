@@ -1834,7 +1834,12 @@
           "asia": "Châu Á"
         }
       },
+      "points": "Điểm",
       "rankings": {
+        "challenge-breakdown": "Chi tiết thử thách",
+        "problem-breakdown": "Chi tiết bài nộp",
+        "show-breakdown": "Hiển thị Chi tiết",
+        "hide-breakdown": "Ẩn Chi tiết",
         "title": "Bảng Xếp Hạng",
         "rank": "Hạng",
         "score": "Điểm",
