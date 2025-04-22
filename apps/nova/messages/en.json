@@ -30,7 +30,10 @@
     "updates_info": "For updates and latest information, visit",
     "github_issues": "GitHub Issues",
     "report_issue": "Report Issue",
-    "understand": "I Understand"
+    "understand": "I Understand",
+    "fixed": "Fixed",
+    "issue": "Issue",
+    "and": "and"
   },
   "ai-prompts-data-table": {
     "id": "ID",

@@ -30,7 +30,10 @@
     "updates_info": "Để cập nhật và thông tin mới nhất, hãy truy cập",
     "github_issues": "GitHub Issues",
     "report_issue": "Báo Cáo Lỗi",
-    "understand": "Tôi Hiểu"
+    "understand": "Tôi Hiểu",
+    "fixed": "Đã sửa",
+    "issue": "Vấn đề",
+    "and": "và"
   },
   "ai-prompts-data-table": {
     "id": "Mã số",
