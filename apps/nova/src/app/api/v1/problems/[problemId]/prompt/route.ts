@@ -21,7 +21,7 @@ export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
 export async function POST(req: Request, { params }: Params) {
-  const { prompt } = await req.json();
+  const { prompt, sessionId } = await req.json();
   const { problemId } = await params;
 
   const supabase = await createClient();
@@ -89,6 +89,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   try {
+    // Step 1: Evaluate the prompt with the AI model
     const ctx = {
       title: problem.title,
       description: problem.description,
@@ -132,7 +133,7 @@ export async function POST(req: Request, { params }: Params) {
       Your role is to:
       1. **Attempt** to apply the user's response to each provided test case (if the response is executable or can be logically applied).
       2. **Evaluate** how effectively the user's response addresses the problem.
-      3. **Return** both your results for each test case and the criteria evaluation in a specific JSON format.
+      3. **Return** both your results for each test case (you must base on example input/output) and the criteria evaluation in a specific JSON format.
 
       Here is the problem context:
       ${JSON.stringify(ctx)}
@@ -142,7 +143,7 @@ export async function POST(req: Request, { params }: Params) {
       - **7-9**: The response mostly solves the problem or gives a good prompt but with minor inefficiencies or missing details.
       - **4-6**: The response shows some understanding but has notable errors, incomplete results, or inefficient approaches.
       - **1-3**: The response attempts to address the problem but is mostly incorrect, irrelevant, or incomplete.
-      - **0**: The response is entirely irrelevant or simply repeats the problem description without guiding towards a solution.
+      - **0**: The response is entirely irrelevant or simply repeats or paraphrase the problem description without guiding towards a solution.
 
       Important Notes:
       1. **If the user's response is an effective prompt** that guides solving the problem (e.g., "Summarize the paragraph in just one sentence"), it should be **scored based on how well it would solve the task**.
@@ -161,15 +162,13 @@ export async function POST(req: Request, { params }: Params) {
     const result = await aiModel.generateContent(systemInstruction);
     const response = result.response.text();
 
+    let parsedResponse;
     try {
-      const parsedResponse = JSON.parse(
+      parsedResponse = JSON.parse(
         response.replace(/```json\n|\n```/g, '').trim()
       );
-
-      return NextResponse.json({ response: parsedResponse }, { status: 200 });
     } catch (parseError) {
       console.error('Parse error:', parseError);
-
       return NextResponse.json(
         {
           message:
@@ -178,12 +177,86 @@ export async function POST(req: Request, { params }: Params) {
         { status: 422 }
       );
     }
+
+    // Step 2: Create the submission record
+    const { data: submission, error: submissionError } = await sbAdmin
+      .from('nova_submissions')
+      .insert({
+        prompt,
+        problem_id: problemId,
+        session_id: sessionId,
+        user_id: user.id,
+      })
+      .select('id')
+      .single();
+
+    if (submissionError) {
+      return NextResponse.json(
+        { message: 'Failed to create submission record' },
+        { status: 500 }
+      );
+    }
+
+    // Step 3: Save test case results
+    const testCaseEvaluation = parsedResponse.testCaseEvaluation || [];
+    const testCaseInserts = testCaseEvaluation.map((testCase: any) => {
+      // Find matching test case in the problem
+      const matchingTestCase = testCases.find(
+        (tc) => tc.input === testCase.input
+      );
+
+      if (matchingTestCase) {
+        return {
+          submission_id: submission.id,
+          test_case_id: matchingTestCase.id,
+          output: testCase.output,
+          matched: matchingTestCase.output === testCase.output,
+        };
+      }
+      return null;
+    });
+
+    if (testCaseInserts.length > 0) {
+      await sbAdmin.from('nova_submission_test_cases').insert(testCaseInserts);
+    }
+
+    // Step 4: Save criteria evaluations
+    const criteriaEvaluation = parsedResponse.criteriaEvaluation || [];
+    const criteriaInserts = criteriaEvaluation.map((criteriaEval: any) => {
+      // Find matching criteria by name
+      const matchingCriteria = challengeCriteria.find(
+        (c) => c.name === criteriaEval.name
+      );
+
+      if (matchingCriteria) {
+        return {
+          submission_id: submission.id,
+          criteria_id: matchingCriteria.id,
+          score: criteriaEval.score,
+          feedback: criteriaEval.feedback,
+        };
+      }
+      return null;
+    });
+
+    if (criteriaInserts.length > 0) {
+      await sbAdmin.from('nova_submission_criteria').insert(criteriaInserts);
+    }
+
+    // Return the evaluation results and submission ID
+    return NextResponse.json(
+      {
+        submissionId: submission.id,
+        response: parsedResponse,
+      },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error('General error:', error);
 
     return NextResponse.json(
       {
-        message: `Can not complete the request.\n\n${error?.stack || error.message}`,
+        message: `Can not complete the request: ${error}`,
       },
       { status: 500 }
     );
