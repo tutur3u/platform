@@ -1418,11 +1418,28 @@
     "dashboard": "Dashboard",
     "problems": "Problems",
     "roles": "Roles",
-    "prompt-engineering-challenges": "Prompt Engineering Challenges",
-    "start-challenge": "Start a Challenge",
-    "create-challenge": "Create Challenge",
     "create-problem": "Create Problem",
     "view-leaderboard": "View leaderboard",
+    "challenges-page": {
+      "prompt-engineering-challenges": "Prompt Engineering Challenges",
+      "start-challenge": "Start a Challenge",
+      "create-challenge": "Create Challenge",
+      "search-placeholder": "Search challenges...",
+      "filters": {
+        "all": "All",
+        "disabled": "Disabled",
+        "upcoming": "Upcoming",
+        "preview": "Preview",
+        "active": "Active",
+        "closed": "Closed"
+      },
+      "no-challenges-found": {
+        "title": "No challenges found",
+        "search-description": "No challenges match your search criteria. Try adjusting your filters or search terms.",
+        "default-description": "There are no challenges available at the moment. Check back later or contact an administrator."
+      },
+      "clear-filters": "Clear filters"
+    },
     "cards": {
       "learn": {
         "title": "Learn",

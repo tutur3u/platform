@@ -1418,11 +1418,28 @@
     "dashboard": "Tổng Quan",
     "problems": "Đề Bài",
     "roles": "Vai Trò",
-    "prompt-engineering-challenges": "Thử thách về kỹ thuật tạo lệnh",
-    "start-challenge": "Bắt đầu thử thách",
-    "create-challenge": "Tạo Thử Thách Mới",
     "create-problem": "Tạo Đề Bài Mới",
     "view-leaderboard": "Xem bảng xếp hạng",
+    "challenges-page": {
+      "prompt-engineering-challenges": "Thử thách về kỹ thuật tạo lệnh",
+      "start-challenge": "Bắt đầu thử thách",
+      "create-challenge": "Tạo Thử Thách Mới",
+      "search-placeholder": "Tìm kiếm thử thách...",
+      "filters": {
+        "all": "Tất cả",
+        "disabled": "Đã vô hiệu hóa",
+        "upcoming": "Sắp diễn ra",
+        "preview": "Xem trước",
+        "active": "Đang hoạt động",
+        "closed": "Đã đóng"
+      },
+      "no-challenges-found": {
+        "title": "Không tìm thấy thử thách",
+        "search-description": "Không có thử thách nào khớp với tiêu chí tìm kiếm của bạn. Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm.",
+        "default-description": "Hiện tại không có thử thách nào. Vui lòng quay lại sau hoặc liên hệ với quản trị viên."
+      },
+      "clear-filters": "Xóa bộ lọc"
+    },
     "cards": {
       "learn": {
         "title": "Học hỏi",
@@ -1922,17 +1939,17 @@
       },
       "achievements": {
         "adopter": "Người Tham Gia Sớm",
-        "adopter-description": "Tham gia từ những ngày đầu của nền tảng",
+        "adopter-description": "Tham chiến ngay từ thời sơ khai",
         "master": "Bậc Thầy Thử Thách",
-        "master-description": "Hoàn thành hơn 5 thử thách khác nhau",
+        "master-description": "Cày xong 5 bài khác nhau, không đùa đâu nha!",
         "high-scorer": "Người Ghi Điểm Cao",
-        "high-scorer-description": "Đạt số điểm trên 500",
+        "high-scorer-description": "Score cháy máy luôn, vượt mốc 500 điểm!",
         "top-rank": "Top Xếp Hạng",
-        "top-rank-description": "Vào top 10 trên bảng xếp hạng",
+        "top-rank-description": "Lọt top 10, đỉnh của chóp!",
         "consistent": "Người Học Kiên Trì",
-        "consistent-description": "Luôn đều đặn nộp lời giải mà không bỏ cuộc.",
+        "consistent-description": "Nộp bài đều như cơm bữa, không lùi bước!",
         "prompt-master": "Bậc Thầy Nhập Lệnh",
-        "prompt-master-description": "Đạt điểm tuyệt đối trong nhiều thử thách"
+        "prompt-master-description": "Chơi prompt đỉnh quá trời, toàn điểm tuyệt đối!"
       }
     },
     "challenge": {
