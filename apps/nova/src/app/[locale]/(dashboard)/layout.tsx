@@ -120,7 +120,7 @@ export default async function RootLayout({
       actions={
         <Suspense
           fallback={
-            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
           }
         >
           <NavbarActions />
@@ -129,7 +129,7 @@ export default async function RootLayout({
       userPopover={
         <Suspense
           fallback={
-            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
           }
         >
           <UserNav hideMetadata />
