@@ -509,7 +509,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-muted-foreground text-xs font-medium">
-                Criteria Evaluation:
+                Criteria Evaluation: (Hover to see Feedback)
               </h3>
               <ScoreBadge
                 score={submission.criteria_score}
