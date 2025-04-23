@@ -33,7 +33,7 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       id={id}
       className={cn(
         'calendar-cell relative transition-colors',
-        hour !== 0 && 'border-border/30 border-t',
+        hour !== 0 && 'border-t border-border/30',
         isHovering ? 'bg-muted/20' : 'hover:bg-muted/10'
       )}
       style={{
@@ -55,14 +55,14 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       >
         {/* Only show time on hover */}
         {isHovering && (
-          <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
+          <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">
             {formatTime(hour)}
           </span>
         )}
       </button>
 
       {/* Half-hour marker */}
-      <div className="border-border/30 absolute left-0 right-0 top-1/2 border-t border-dashed dark:border-zinc-800/50" />
+      <div className="absolute top-1/2 right-0 left-0 border-t border-dashed border-border/30" />
 
       {/* Half-hour clickable area */}
       <button
@@ -72,7 +72,7 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       >
         {/* Only show time on hover */}
         {isHovering && (
-          <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
+          <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">
             {formatTime(hour, 30)}
           </span>
         )}
