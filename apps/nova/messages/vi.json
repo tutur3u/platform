@@ -1423,6 +1423,37 @@
     "create-challenge": "Tạo Thử Thách Mới",
     "create-problem": "Tạo Đề Bài Mới",
     "view-leaderboard": "Xem bảng xếp hạng",
+    "challenges-page": {
+      "prompt-engineering-challenges": "Thử thách về kỹ thuật tạo lệnh",
+      "start-challenge": "Bắt đầu thử thách",
+      "create-challenge": "Tạo Thử Thách Mới",
+      "search-placeholder": "Tìm kiếm thử thách...",
+      "filters": {
+        "all": "Tất cả",
+        "disabled": "Đã vô hiệu hóa",
+        "upcoming": "Sắp diễn ra",
+        "preview": "Xem trước",
+        "active": "Đang hoạt động",
+        "closed": "Đã đóng"
+      },
+      "no-challenges-found": {
+        "title": "Không tìm thấy thử thách",
+        "search-description": "Không có thử thách nào khớp với tiêu chí tìm kiếm của bạn. Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm.",
+        "default-description": "Hiện tại không có thử thách nào. Vui lòng quay lại sau hoặc liên hệ với quản trị viên."
+      },
+      "clear-filters": "Xóa bộ lọc"
+    },
+    "submission-page": {
+      "title": "Bài Nộp",
+      "description": "Quản lý và xem xét bài nộp của người dùng",
+      "total-submissions": "Tổng số bài nộp",
+      "total-submissions-description": "Tất cả bài nộp từ trước đến nay",
+      "unique-users": "Người dùng duy nhất",
+      "unique-users-description": "Người dùng đã nộp bài",
+      "latest-submission": "Bài nộp gần nhất",
+      "latest-submission-description": "Hoạt động gần đây nhất",
+      "no-submissions-yet": "Chưa có bài nộp nào"
+    },
     "cards": {
       "learn": {
         "title": "Học hỏi",
