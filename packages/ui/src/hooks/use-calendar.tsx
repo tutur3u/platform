@@ -45,12 +45,14 @@ const CalendarContext = createContext<{
   getUpcomingEvent: () => CalendarEvent | undefined;
   getEvents: () => CalendarEvent[];
   getEventLevel: (eventId: string) => number;
-  addEvent: (event: Omit<CalendarEvent, 'id'>) => Promise<CalendarEvent>;
+  addEvent: (
+    event: Omit<CalendarEvent, 'id'>
+  ) => Promise<CalendarEvent | undefined>;
   addEmptyEvent: (date: Date) => CalendarEvent;
   updateEvent: (
     eventId: string,
     data: Partial<CalendarEvent>
-  ) => Promise<CalendarEvent>;
+  ) => Promise<CalendarEvent | undefined>;
   deleteEvent: (eventId: string) => Promise<void>;
   isModalOpen: boolean;
   activeEvent: CalendarEvent | undefined;
@@ -324,13 +326,30 @@ export const CalendarProvider = ({
 
   // Process events to remove duplicates, then memoize the result
   const events = useMemo(() => {
-    const eventsData = data?.data ?? [];
+    const eventsWithAllDays: CalendarEvent[] = data?.data ?? [];
+
     // Check for duplicates whenever events are loaded or refreshed
-    if (eventsData.length > 0) {
+    if (eventsWithAllDays.length > 0) {
       // We need to run this asynchronously since it makes API calls
-      removeDuplicateEvents(eventsData);
+      removeDuplicateEvents(eventsWithAllDays);
     }
-    return eventsData;
+
+    const events = eventsWithAllDays.filter((event) => {
+      const start = new Date(event.start_at);
+      const end = new Date(event.end_at);
+      const duration = end.getTime() - start.getTime();
+      // Identify true all-day events
+      const isExactDaySpan =
+        duration === 86400000 &&
+        start.getUTCHours() === 0 &&
+        start.getUTCMinutes() === 0 &&
+        end.getUTCHours() === 0 &&
+        end.getUTCMinutes() === 0;
+      const isTrueAllDay = event.is_all_day === true || isExactDaySpan;
+      // Keep only non–all-day events
+      return !isTrueAllDay;
+    });
+    return events;
   }, [data, removeDuplicateEvents]);
 
   // Invalidate and refetch events
@@ -455,7 +474,8 @@ export const CalendarProvider = ({
 
       const prevEventLevels = prevEvents.map((e: CalendarEvent) =>
         getEventLevel(e.id)
-      );
+      ) as number[];
+
       return Math.max(...prevEventLevels) + 1;
     },
     [events]
@@ -951,6 +971,11 @@ export const CalendarProvider = ({
             console.log(
               `Found content duplicate for Google event "${gEvent.title}"`
             );
+
+            if (!potentialDuplicates[0]) {
+              console.info('No duplicate found');
+              continue;
+            }
 
             // Update the first duplicate with the Google Event ID
             const supabase = createClient();

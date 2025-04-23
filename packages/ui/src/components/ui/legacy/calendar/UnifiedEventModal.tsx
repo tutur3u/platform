@@ -345,7 +345,7 @@ export function UnifiedEventModal({
     setIsSaving(true);
 
     try {
-      let savedEvent: CalendarEvent;
+      let savedEvent: CalendarEvent | undefined;
       const eventData = {
         ...event,
         priority: event.priority || 'medium',
@@ -366,8 +366,9 @@ export function UnifiedEventModal({
       }
 
       const shouldSync = experimentalGoogleCalendarLinked;
+
       // Sync successfully
-      if (shouldSync) {
+      if (shouldSync && savedEvent) {
         await syncWithGoogleCalendar(savedEvent);
         toast({
           title: 'Success',
@@ -475,7 +476,7 @@ export function UnifiedEventModal({
           };
 
           const savedEvent = await addEvent(calendarEvent);
-          savedEvents.push(savedEvent);
+          if (savedEvent) savedEvents.push(savedEvent);
         } catch (error) {
           console.error('Error saving event to calendar:', error);
           failedEvents.push({ event: eventData, error });
@@ -866,10 +867,15 @@ export function UnifiedEventModal({
     setIsSaving(true);
     try {
       const originalId = activeEvent.id;
+
       const updatedEvent = await updateEvent(originalId, {
         ...event,
         locked: checked,
       });
+
+      if (!updatedEvent) {
+        throw new Error('Failed to update event lock status');
+      }
 
       setEvent(updatedEvent);
       toast({
