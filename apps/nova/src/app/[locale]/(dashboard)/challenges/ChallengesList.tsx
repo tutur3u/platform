@@ -8,6 +8,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Clock, Filter, Search } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 interface Props {
@@ -19,6 +20,8 @@ export default function ChallengesList({ isAdmin }: Props) {
   const [filter, setFilter] = useState<
     'disabled' | 'upcoming' | 'preview' | 'active' | 'closed' | 'all'
   >('all');
+
+  const t = useTranslations('nova.challenges-page');
 
   // Use TanStack Query to fetch and cache challenges
   const { data: challenges = [], isLoading } = useQuery({
@@ -133,7 +136,7 @@ export default function ChallengesList({ isAdmin }: Props) {
           <div className="relative flex-1">
             <Search className="text-muted-foreground absolute left-3 top-2.5 h-4 w-4" />
             <Input
-              placeholder="Search challenges..."
+              placeholder={t('search-placeholder')}
               className="pl-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -148,16 +151,22 @@ export default function ChallengesList({ isAdmin }: Props) {
               onValueChange={(v) => setFilter(v as any)}
             >
               <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="all">{t('filters.all')}</TabsTrigger>
                 {isAdmin && (
-                  <TabsTrigger value="disabled">Disabled</TabsTrigger>
+                  <TabsTrigger value="disabled">
+                    {t('filters.disabled')}
+                  </TabsTrigger>
                 )}
                 {isAdmin && (
-                  <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                  <TabsTrigger value="upcoming">
+                    {t('filters.upcoming')}
+                  </TabsTrigger>
                 )}
-                <TabsTrigger value="preview">Preview</TabsTrigger>
-                <TabsTrigger value="active">Active</TabsTrigger>
-                <TabsTrigger value="closed">Closed</TabsTrigger>
+                <TabsTrigger value="preview">
+                  {t('filters.preview')}
+                </TabsTrigger>
+                <TabsTrigger value="active">{t('filters.active')}</TabsTrigger>
+                <TabsTrigger value="closed">{t('filters.closed')}</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -180,11 +189,13 @@ export default function ChallengesList({ isAdmin }: Props) {
       ) : (
         <div className="mt-12 flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
           <Clock className="text-muted-foreground/50 h-12 w-12" />
-          <h3 className="mt-4 text-xl font-medium">No challenges found</h3>
+          <h3 className="mt-4 text-xl font-medium">
+            {t('no-challenges-found.title')}
+          </h3>
           <p className="text-muted-foreground mt-2 max-w-md">
             {searchQuery
-              ? 'No challenges match your search criteria. Try adjusting your filters or search terms.'
-              : 'There are no challenges available at the moment. Check back later or contact an administrator.'}
+              ? t('no-challenges-found.search-description')
+              : t('no-challenges-found.default-description')}
           </p>
           {searchQuery && (
             <Button
@@ -195,7 +206,7 @@ export default function ChallengesList({ isAdmin }: Props) {
                 setFilter('all');
               }}
             >
-              Clear filters
+              {t('clear-filters')}
             </Button>
           )}
         </div>
