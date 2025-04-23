@@ -127,14 +127,10 @@ export default function SessionCard({
             </div>
           </div>
         </div>
-        <CardDescription className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
-          <span className="flex items-center">
-            Started: {startTime.toLocaleString()}
-          </span>
+        <CardDescription className="mt-2 flex flex-col gap-2">
+          <span>Started: {startTime.toLocaleString()}</span>
           {session.end_time && (
-            <span className="flex items-center">
-              Ended: {new Date(session.end_time).toLocaleString()}
-            </span>
+            <span>Ended: {new Date(session.end_time).toLocaleString()}</span>
           )}
         </CardDescription>
       </CardHeader>

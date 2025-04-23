@@ -1,7 +1,4 @@
 import { ExtendedNovaSubmission } from '../types';
-import CriteriaEvaluation from './CriteriaEvaluation';
-import TestCaseEvaluation from './TestCaseEvaluation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 
 interface SubmissionDetailsProps {
   submission: ExtendedNovaSubmission;
@@ -19,24 +16,6 @@ export default function SubmissionDetails({
           {submission.prompt || 'No solution provided'}
         </div>
       </div>
-
-      {/* Tabs for Test Cases and Criteria */}
-      <Tabs defaultValue="test-cases" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="test-cases">Test Case Evaluation</TabsTrigger>
-          <TabsTrigger value="criteria">Criteria Evaluation</TabsTrigger>
-        </TabsList>
-
-        {/* Test Case Evaluation Tab */}
-        <TabsContent value="test-cases">
-          <TestCaseEvaluation submission={submission} />
-        </TabsContent>
-
-        {/* Criteria Evaluation Tab */}
-        <TabsContent value="criteria">
-          <CriteriaEvaluation submission={submission} />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
