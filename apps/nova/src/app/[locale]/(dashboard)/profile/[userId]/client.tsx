@@ -44,6 +44,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -90,6 +91,9 @@ export default function UserProfileClient({
   const [copied, setCopied] = useState(false);
   const [, setActiveTab] = useState('overview');
 
+  const t = useTranslations('nova.profile-page');
+  const locale = useLocale();
+
   useEffect(() => {
     const fetchUser = async () => {
       const {
@@ -129,16 +133,16 @@ export default function UserProfileClient({
   const achievements = [
     {
       id: 'early_adopter',
-      title: 'Early Adopter',
-      description: "Joined during the platform's early days",
+      title: t('achievements.adopter'),
+      description: t('achievements.adopter-description'),
       icon: <Rocket className="h-5 w-5" />,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
     },
     {
       id: 'challenge_master',
-      title: 'Challenge Master',
-      description: 'Completed 5+ different challenges',
+      title: t('achievements.master'),
+      description: t('achievements.master-description'),
       unlocked: profile.challengeCount >= 5,
       icon: <Trophy className="h-5 w-5" />,
       color: 'text-amber-500',
@@ -146,8 +150,8 @@ export default function UserProfileClient({
     },
     {
       id: 'high_scorer',
-      title: 'High Scorer',
-      description: 'Achieved a score over 500 points',
+      title: t('achievements.high-scorer'),
+      description: t('achievements.high-scorer-description'),
       unlocked: profile.totalScore > 500,
       icon: <Target className="h-5 w-5" />,
       color: 'text-green-500',
@@ -155,8 +159,8 @@ export default function UserProfileClient({
     },
     {
       id: 'top_rank',
-      title: 'Top Ranked',
-      description: 'Reached the top 10 on the leaderboard',
+      title: t('achievements.top-rank'),
+      description: t('achievements.top-rank-description'),
       unlocked: profile.rank <= 10,
       icon: <Medal className="h-5 w-5" />,
       color: 'text-purple-500',
@@ -164,8 +168,8 @@ export default function UserProfileClient({
     },
     {
       id: 'consistent',
-      title: 'Consistent Learner',
-      description: 'Submitted solutions regularly',
+      title: t('achievements.consistent'),
+      description: t('achievements.consistent-description'),
       unlocked: profile.recentActivity.length >= 10,
       icon: <Clock className="h-5 w-5" />,
       color: 'text-indigo-500',
@@ -173,8 +177,8 @@ export default function UserProfileClient({
     },
     {
       id: 'prompt_master',
-      title: 'Prompt Master',
-      description: 'Achieved perfect scores in multiple challenges',
+      title: t('achievements.prompt-master'),
+      description: t('achievements.prompt-master-description'),
       unlocked: profile.challenges.some((c) => c.score >= 9.5),
       icon: <Sparkles className="h-5 w-5" />,
       color: 'text-rose-500',
@@ -222,11 +226,11 @@ export default function UserProfileClient({
       {/* Breadcrumb navigation */}
       <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
         <Link href="/home" className="hover:text-foreground">
-          Home
+          {t('breadcrumb.home')}
         </Link>
         <ChevronRight className="h-4 w-4" />
         <Link href="/leaderboard" className="hover:text-foreground">
-          Leaderboard
+          {t('breadcrumb.leaderboard')}
         </Link>
         <ChevronRight className="h-4 w-4" />
         <span className="text-foreground font-medium">{profile.name}</span>
@@ -273,14 +277,14 @@ export default function UserProfileClient({
                 )}
                 <Badge variant="outline" className="bg-card">
                   <Bolt className="mr-1 h-3.5 w-3.5 text-blue-500" />
-                  Level {level}
+                  {t('profile-header.level')} {level}
                 </Badge>
               </div>
 
               <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 <span className="flex items-center">
                   <Calendar className="mr-1.5 h-4 w-4" />
-                  Joined {formattedJoinedDate}
+                  {t('profile-header.joined')} {formattedJoinedDate}
                 </span>
 
                 <span className="hidden sm:inline-block">•</span>
@@ -288,7 +292,7 @@ export default function UserProfileClient({
                 <span className="flex items-center">
                   <Trophy className="mr-1.5 h-4 w-4 text-amber-500" />
                   <span className="text-foreground font-medium">
-                    Rank #{profile.rank}
+                    {t('rank')} {profile.rank}
                   </span>
                 </span>
 
@@ -297,7 +301,9 @@ export default function UserProfileClient({
                 <span className="flex items-center">
                   <Users className="mr-1.5 h-4 w-4" />
                   {profile.challengeCount}{' '}
-                  {profile.challengeCount === 1 ? 'Challenge' : 'Challenges'}
+                  {profile.challengeCount === 1
+                    ? t('challenge')
+                    : t('challenges')}
                 </span>
               </div>
 
@@ -308,7 +314,8 @@ export default function UserProfileClient({
                     className="border-primary/30 bg-primary/5 text-primary"
                   >
                     <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                    {profile.totalScore.toLocaleString()} Points
+                    {profile.totalScore.toLocaleString()}{' '}
+                    {t('profile-header.points')}
                   </Badge>
                 </div>
               )}
@@ -316,17 +323,21 @@ export default function UserProfileClient({
           </div>
 
           <div className="flex flex-wrap gap-2 self-end sm:self-center">
-            {isCurrentUser && <Button variant="outline">Edit Profile</Button>}
+            {isCurrentUser && (
+              <Button variant="outline">
+                {t('profile-header.edit-profile')}
+              </Button>
+            )}
             <Button
               variant="secondary"
               className="flex items-center gap-1"
               onClick={handleShare}
             >
-              {copied ? 'Copied!' : 'Share'}
+              {copied ? t('profile-header.copied') : t('profile-header.share')}
               <Share2 className="ml-1.5 h-4 w-4" />
             </Button>
             <Button onClick={() => router.push('/leaderboard')}>
-              View Leaderboard
+              {t('profile-header.view-leaderboard')}
               <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
             </Button>
           </div>
@@ -335,9 +346,12 @@ export default function UserProfileClient({
         {/* Level progress bar */}
         <div className="mt-6">
           <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Level {level}</span>
             <span className="text-muted-foreground">
-              {Math.round(levelProgress)}% to Level {nextLevel}
+              {t('profile-header.level')} {level}
+            </span>
+            <span className="text-muted-foreground">
+              {Math.round(levelProgress)}% {t('profile-header.level-progress')}{' '}
+              {nextLevel}
             </span>
           </div>
           <Progress value={levelProgress} className="bg-primary/10 h-2" />
@@ -354,7 +368,7 @@ export default function UserProfileClient({
         <Card className="border-background/80 bg-card/50 overflow-hidden">
           <CardContent className="flex flex-col items-center justify-center p-0">
             <div className="bg-primary/5 text-primary w-full py-2 text-center text-xs font-medium">
-              SCORE
+              {t('info-tiles.score')}
             </div>
             <div className="flex h-24 w-full flex-col items-center justify-center">
               <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full">
@@ -370,7 +384,7 @@ export default function UserProfileClient({
         <Card className="border-background/80 bg-card/50 overflow-hidden">
           <CardContent className="flex flex-col items-center justify-center p-0">
             <div className="w-full bg-amber-500/5 py-2 text-center text-xs font-medium text-amber-600 dark:text-amber-400">
-              RANK
+              {t('info-tiles.rank')}
             </div>
             <div className="flex h-24 w-full flex-col items-center justify-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
@@ -384,7 +398,7 @@ export default function UserProfileClient({
         <Card className="border-background/80 bg-card/50 overflow-hidden">
           <CardContent className="flex flex-col items-center justify-center p-0">
             <div className="w-full bg-indigo-500/5 py-2 text-center text-xs font-medium text-indigo-600 dark:text-indigo-400">
-              CHALLENGES
+              {t('info-tiles.challenges')}
             </div>
             <div className="flex h-24 w-full flex-col items-center justify-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-500">
@@ -400,7 +414,7 @@ export default function UserProfileClient({
         <Card className="border-background/80 bg-card/50 overflow-hidden">
           <CardContent className="flex flex-col items-center justify-center p-0">
             <div className="w-full bg-green-500/5 py-2 text-center text-xs font-medium text-green-600 dark:text-green-400">
-              ACHIEVEMENTS
+              {t('info-tiles.achievements')}
             </div>
             <div className="flex h-24 w-full flex-col items-center justify-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10 text-green-500">
@@ -421,13 +435,15 @@ export default function UserProfileClient({
         onValueChange={setActiveTab}
       >
         <TabsList className="mb-8 grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="challenges">Challenges</TabsTrigger>
+          <TabsTrigger value="overview">{t('overview-tab.name')}</TabsTrigger>
+          <TabsTrigger value="challenges">
+            {t('challenges-tab.name')}
+          </TabsTrigger>
           <TabsTrigger value="achievements" ref={achievementsTabRef}>
-            Achievements
+            {t('achievements-tab.name')}
           </TabsTrigger>
           <TabsTrigger value="activity" ref={activityTabRef}>
-            Activity
+            {t('activity-tab.name')}
           </TabsTrigger>
         </TabsList>
 
@@ -439,13 +455,13 @@ export default function UserProfileClient({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Info className="h-5 w-5 text-blue-500" />
-                  Activity Summary
+                  {t('overview-tab.summary-title')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
-                    Submissions
+                    {t('overview-tab.summary-submissions')}
                   </span>
                   <span className="font-medium">
                     {activityStats.totalSubmissions}
@@ -453,7 +469,7 @@ export default function UserProfileClient({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
-                    Average Score
+                    {t('overview-tab.summary-average-score')}
                   </span>
                   <span className="font-medium">
                     {activityStats.avgScore.toFixed(1)}
@@ -461,7 +477,7 @@ export default function UserProfileClient({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
-                    Best Score
+                    {t('overview-tab.summary-best-score')}
                   </span>
                   <span className="font-medium">
                     {activityStats.bestScore.toFixed(1)}
@@ -477,16 +493,21 @@ export default function UserProfileClient({
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <Trophy className="h-5 w-5 text-amber-500" />
-                      Best Challenge Performance
+                      {t('overview-tab.challenge-title')}
                     </CardTitle>
                     <Badge className="bg-primary/20 text-primary">
                       <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                      Top Score: {bestChallenge.score}
+                      {t('overview-tab.challenge-top-score')}{' '}
+                      {bestChallenge.score}
                     </Badge>
                   </div>
                   <CardDescription>
-                    Highest scoring challenge completed by{' '}
-                    {isCurrentUser ? 'you' : profile.name}
+                    {t('overview-tab.challenge-description')}{' '}
+                    {isCurrentUser
+                      ? locale === 'vi'
+                        ? 'bạn'
+                        : 'you'
+                      : profile.name}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -499,7 +520,7 @@ export default function UserProfileClient({
                     </p>
                     <div className="mt-4">
                       <div className="mb-2 flex items-center justify-between text-sm">
-                        <span>Performance</span>
+                        <span>{t('overview-tab.challenge-performance')}</span>
                         <span className="font-medium">
                           {Math.min(
                             100,
@@ -528,7 +549,7 @@ export default function UserProfileClient({
                       }
                     }}
                   >
-                    View All Challenges
+                    {t('overview-tab.challenge-view-all')}
                     <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 </CardFooter>
@@ -542,10 +563,10 @@ export default function UserProfileClient({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Award className="h-5 w-5 text-green-500" />
-                  Recent Achievements
+                  {t('overview-tab.achievements-title')}
                 </CardTitle>
                 <CardDescription>
-                  Unlocked badges and accomplishments
+                  {t('overview-tab.achievements-description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -573,7 +594,7 @@ export default function UserProfileClient({
                       }
                     }}
                   >
-                    View All Achievements
+                    {t('overview-tab.achievements-view-all')}
                     <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 )}
@@ -587,10 +608,10 @@ export default function UserProfileClient({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-blue-500" />
-                  Recent Activity
+                  {t('overview-tab.activity-title')}
                 </CardTitle>
                 <CardDescription>
-                  Latest prompt engineering submissions
+                  {t('overview-tab.activity-description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -629,7 +650,7 @@ export default function UserProfileClient({
                           }
                           className="flex-shrink-0"
                         >
-                          Score: {activity.score}
+                          {t('score')}: {activity.score}
                         </Badge>
                       </div>
                     </motion.li>
@@ -645,7 +666,7 @@ export default function UserProfileClient({
                       }
                     }}
                   >
-                    View All Activity
+                    {t('overview-tab.activity-view-all')}
                     <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 )}
@@ -658,9 +679,9 @@ export default function UserProfileClient({
         <TabsContent value="challenges" className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Challenge Performance</CardTitle>
+              <CardTitle>{t('challenges-tab.title')}</CardTitle>
               <CardDescription>
-                All completed challenges with scores
+                {t('challenges-tab.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -695,7 +716,7 @@ export default function UserProfileClient({
                           {challenge.score >= 9.5 && (
                             <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                           )}
-                          Score: {challenge.score}
+                          {t('score')}: {challenge.score}
                         </Badge>
                       </div>
                       <p className="text-muted-foreground mb-3 line-clamp-2 text-sm">
@@ -703,7 +724,7 @@ export default function UserProfileClient({
                       </p>
                       <div className="mt-2">
                         <div className="mb-1 flex items-center justify-between text-xs">
-                          <span>Progress</span>
+                          <span>{t('challenges-tab.progress')}</span>
                           <span>
                             {Math.min(
                               100,
@@ -731,7 +752,7 @@ export default function UserProfileClient({
               ) : (
                 <div className="flex h-24 items-center justify-center">
                   <p className="text-muted-foreground text-center">
-                    No challenges completed yet
+                    {t('challenges-tab.no-challenges')}
                   </p>
                 </div>
               )}
@@ -743,9 +764,9 @@ export default function UserProfileClient({
         <TabsContent value="achievements" className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Achievements Showcase</CardTitle>
+              <CardTitle>{t('achievements-tab.title')}</CardTitle>
               <CardDescription>
-                Badges and accomplishments earned
+                {t('achievements-tab.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -787,13 +808,13 @@ export default function UserProfileClient({
                         className={cn('bg-primary/10 mt-3', achievement.color)}
                       >
                         <Sparkles className="mr-1 h-3 w-3" />
-                        Unlocked
+                        {t('achievements-tab.unlocked')}
                       </Badge>
                     )}
                     {!achievement.unlocked && (
                       <Badge variant="outline" className="mt-3">
                         <Lock className="mr-1 h-3 w-3" />
-                        Locked
+                        {t('achievements-tab.locked')}
                       </Badge>
                     )}
                   </motion.div>
@@ -807,10 +828,8 @@ export default function UserProfileClient({
         <TabsContent value="activity" className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Latest prompt engineering attempts and submissions
-              </CardDescription>
+              <CardTitle>{t('activity-tab.title')}</CardTitle>
+              <CardDescription>{t('activity-tab.description')}</CardDescription>
             </CardHeader>
             <CardContent>
               {profile.recentActivity.length > 0 ? (
@@ -849,7 +868,7 @@ export default function UserProfileClient({
                       </div>
                       <div className="flex items-center justify-between">
                         <p className="text-muted-foreground text-sm">
-                          Submitted a solution
+                          {t('activity-tab.submitted-solution')}
                         </p>
                         <Badge
                           variant={
@@ -860,7 +879,7 @@ export default function UserProfileClient({
                                 : 'outline'
                           }
                         >
-                          Score: {activity.score}
+                          {t('score')}: {activity.score}
                         </Badge>
                       </div>
                     </motion.div>
@@ -869,7 +888,7 @@ export default function UserProfileClient({
               ) : (
                 <div className="flex h-24 items-center justify-center">
                   <p className="text-muted-foreground text-center">
-                    No recent activity
+                    {t('activity-tab.no-activity')}
                   </p>
                 </div>
               )}
