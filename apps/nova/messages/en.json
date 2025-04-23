@@ -1418,9 +1418,6 @@
     "dashboard": "Dashboard",
     "problems": "Problems",
     "roles": "Roles",
-    "prompt-engineering-challenges": "Prompt Engineering Challenges",
-    "start-challenge": "Start a Challenge",
-    "create-challenge": "Create Challenge",
     "create-problem": "Create Problem",
     "view-leaderboard": "View leaderboard",
     "challenges-page": {
