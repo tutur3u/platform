@@ -1419,11 +1419,28 @@
     "dashboard": "Dashboard",
     "problems": "Problems",
     "roles": "Roles",
-    "prompt-engineering-challenges": "Prompt Engineering Challenges",
-    "start-challenge": "Start a Challenge",
-    "create-challenge": "Create Challenge",
     "create-problem": "Create Problem",
     "view-leaderboard": "View leaderboard",
+    "challenges-page": {
+      "prompt-engineering-challenges": "Prompt Engineering Challenges",
+      "start-challenge": "Start a Challenge",
+      "create-challenge": "Create Challenge",
+      "search-placeholder": "Search challenges...",
+      "filters": {
+        "all": "All",
+        "disabled": "Disabled",
+        "upcoming": "Upcoming",
+        "preview": "Preview",
+        "active": "Active",
+        "closed": "Closed"
+      },
+      "no-challenges-found": {
+        "title": "No challenges found",
+        "search-description": "No challenges match your search criteria. Try adjusting your filters or search terms.",
+        "default-description": "There are no challenges available at the moment. Check back later or contact an administrator."
+      },
+      "clear-filters": "Clear filters"
+    },
     "cards": {
       "learn": {
         "title": "Learn",
@@ -1873,6 +1890,85 @@
         "hover-info": "Click to change sort order",
         "no-entries-found": "No entries found",
         "first-join": "Be the first to join the competition!"
+      }
+    },
+    "profile-page": {
+      "breadcrumb": {
+        "home": "Home",
+        "leaderboard": "Leaderboard"
+      },
+      "rank": "Rank #",
+      "challenge": "Challenge",
+      "challenges": "Challenges",
+      "score": "Score",
+      "profile-header": {
+        "joined": "Joined",
+        "points": "Points",
+        "level": "Level ",
+        "level-progress": "to Level",
+        "edit-profile": "Edit Profile",
+        "share": "Share",
+        "copied": "Copied!",
+        "view-leaderboard": "View Leaderboard"
+      },
+      "info-tiles": {
+        "score": "SCORE",
+        "rank": "RANK",
+        "challenges": "CHALLENGES",
+        "achievements": "ACHIEVEMENTS"
+      },
+      "overview-tab": {
+        "name": "Overview",
+        "summary-title": "Activity Summary",
+        "summary-submissions": "Submissions",
+        "summary-average-score": "Average Score",
+        "summary-best-score": "Best Score",
+        "challenge-title": "Best Challenge Performance",
+        "challenge-description": "Highest scoring challenge completed by ",
+        "challenge-top-score": "Top Score",
+        "challenge-performance": "Performance",
+        "challenge-view-all": "View All Challenges",
+        "achievements-title": "Recent Achievements",
+        "achievements-description": "Unlocked badges and accomplishments",
+        "achievements-view-all": "View All Achievements",
+        "activity-title": "Recent Activity",
+        "activity-description": "Latest prompt engineering submissions",
+        "activity-view-all": "View All Activity"
+      },
+      "challenges-tab": {
+        "name": "Challenges",
+        "title": "Challenge Performance",
+        "description": "All completed challenges with scores",
+        "progress": "Progress",
+        "no-challenges": "No challenges completed yet"
+      },
+      "achievements-tab": {
+        "name": "Achievements",
+        "title": "Achievements Showcase",
+        "description": "Badges and achievements earned",
+        "locked": "Locked",
+        "unlocked": "Unlocked"
+      },
+      "activity-tab": {
+        "name": "Activity",
+        "title": "Recent Activity",
+        "description": "Latest prompt engineering attempts and submissions",
+        "submitted-solution": "Submitted a solution",
+        "no-activity": "No recent activity"
+      },
+      "achievements": {
+        "adopter": "Early Adopter",
+        "adopter-description": "Joined during the platform's early days",
+        "master": "Challenge Master",
+        "master-description": "Completed 5+ different challenges",
+        "high-scorer": "High Scorer",
+        "high-scorer-description": "Achieved a score over 500 points",
+        "top-rank": "Top Ranked",
+        "top-rank-description": "Reached the top 10 on the leaderboard",
+        "consistent": "Consistent Learner",
+        "consistent-description": "Submitted solutions regularly",
+        "prompt-master": "Prompt Master",
+        "prompt-master-description": "Achieved perfect scores in multiple challenges"
       }
     },
     "challenge": {

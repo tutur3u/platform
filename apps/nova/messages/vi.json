@@ -1419,11 +1419,28 @@
     "dashboard": "Tổng Quan",
     "problems": "Đề Bài",
     "roles": "Vai Trò",
-    "prompt-engineering-challenges": "Thử thách về kỹ thuật tạo lệnh",
-    "start-challenge": "Bắt đầu thử thách",
-    "create-challenge": "Tạo Thử Thách Mới",
     "create-problem": "Tạo Đề Bài Mới",
     "view-leaderboard": "Xem bảng xếp hạng",
+    "challenges-page": {
+      "prompt-engineering-challenges": "Thử thách về kỹ thuật tạo lệnh",
+      "start-challenge": "Bắt đầu thử thách",
+      "create-challenge": "Tạo Thử Thách Mới",
+      "search-placeholder": "Tìm kiếm thử thách...",
+      "filters": {
+        "all": "Tất cả",
+        "disabled": "Đã vô hiệu hóa",
+        "upcoming": "Sắp diễn ra",
+        "preview": "Xem trước",
+        "active": "Đang hoạt động",
+        "closed": "Đã đóng"
+      },
+      "no-challenges-found": {
+        "title": "Không tìm thấy thử thách",
+        "search-description": "Không có thử thách nào khớp với tiêu chí tìm kiếm của bạn. Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm.",
+        "default-description": "Hiện tại không có thử thách nào. Vui lòng quay lại sau hoặc liên hệ với quản trị viên."
+      },
+      "clear-filters": "Xóa bộ lọc"
+    },
     "cards": {
       "learn": {
         "title": "Học hỏi",
@@ -1873,6 +1890,85 @@
         "hover-info": "Nhấn để thay đổi thứ tự sắp xếp",
         "no-entries-found": "Không tìm thấy mục nào",
         "first-join": "Hãy là người đầu tiên tham gia cuộc thi!"
+      }
+    },
+    "profile-page": {
+      "breadcrumb": {
+        "home": "Trang chủ",
+        "leaderboard": "Bảng xếp hạng"
+      },
+      "rank": "Hạng #",
+      "challenge": "Thử thách",
+      "challenges": "Thử thách",
+      "score": "Điểm",
+      "profile-header": {
+        "joined": "Tham gia",
+        "points": "Điểm",
+        "level": "Cấp độ",
+        "level-progress": "đến cấp độ",
+        "edit-profile": "Sửa hồ sơ",
+        "share": "Chia sẻ",
+        "copied": "Đã sao chép!",
+        "view-leaderboard": "Xem bảng xếp hạng"
+      },
+      "info-tiles": {
+        "score": "ĐIỂM SỐ",
+        "rank": "XẾP HẠNG",
+        "challenges": "THỬ THÁCH",
+        "achievements": "THÀNH TỰU"
+      },
+      "overview-tab": {
+        "name": "Tổng Quan",
+        "summary-title": "Tóm tắt hoạt động",
+        "summary-submissions": "Lượt nộp bài",
+        "summary-average-score": "Điểm trung bình",
+        "summary-best-score": "Điểm cao nhất",
+        "challenge-title": "Thử Thách Xuất Sắc",
+        "challenge-description": "Thử thách có điểm cao nhất được hoàn thành bởi ",
+        "challenge-top-score": "Điểm cao nhất",
+        "challenge-performance": "Hiệu suất",
+        "challenge-view-all": "Xem Tất Cả Thử Thách",
+        "achievements-title": "Thành Tựu Gần Đây",
+        "achievements-description": "Huy hiệu và thành tựu đã đạt được",
+        "achievements-view-all": "Xem Tất Cả Thành Tựu",
+        "activity-title": "Hoạt Động Gần Đây",
+        "activity-description": "Các bài nộp gần đây",
+        "activity-view-all": "Xem tất cả hoạt động"
+      },
+      "challenges-tab": {
+        "name": "Thử Thách",
+        "title": "Hiệu suất thử thách",
+        "description": "Tất cả các thử thách đã hoàn thành với điểm số",
+        "progress": "Tiến Độ",
+        "no-challenges": "Chưa hoàn thành thử thách nào"
+      },
+      "achievements-tab": {
+        "name": "Thành Tựu",
+        "title": "Trưng bày thành tựu",
+        "description": "Huy hiệu và thành tựu đã đạt được",
+        "locked": "Chưa Mở Khoá",
+        "unlocked": "Đã Mở Khoá"
+      },
+      "activity-tab": {
+        "name": "Hoạt Động",
+        "title": "Hoạt động gần đây",
+        "description": "Các bài nộp và thử nghiệm gần đây",
+        "submitted-solution": "Đã nộp lời giải",
+        "no-activity": "Chưa có hoạt động nào gần đây"
+      },
+      "achievements": {
+        "adopter": "Người Tham Gia Sớm",
+        "adopter-description": "Tham chiến ngay từ thời sơ khai",
+        "master": "Bậc Thầy Thử Thách",
+        "master-description": "Cày xong 5 bài khác nhau, không đùa đâu nha!",
+        "high-scorer": "Người Ghi Điểm Cao",
+        "high-scorer-description": "Score cháy máy luôn, vượt mốc 500 điểm!",
+        "top-rank": "Top Xếp Hạng",
+        "top-rank-description": "Lọt top 10, đỉnh của chóp!",
+        "consistent": "Người Học Kiên Trì",
+        "consistent-description": "Nộp bài đều như cơm bữa, không lùi bước!",
+        "prompt-master": "Bậc Thầy Nhập Lệnh",
+        "prompt-master-description": "Chơi prompt đỉnh quá trời, toàn điểm tuyệt đối!"
       }
     },
     "challenge": {

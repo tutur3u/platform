@@ -28,6 +28,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 type ExtendedNovaProblem = NovaProblem & {
+  challenge: {
+    title: string;
+  };
   test_cases: NovaProblemTestCase[];
 };
 
@@ -77,12 +80,10 @@ export default function ProblemCard({ problem }: ProblemCardProps) {
               <span className="text-sm font-medium">Max Prompt Length:</span>
               <span className="ml-2 text-sm">{problem.max_prompt_length}</span>
             </div>
-            {problem.challenge_id && (
-              <div>
-                <span className="text-sm font-medium">Challenge ID:</span>
-                <span className="ml-2 text-sm">{problem.challenge_id}</span>
-              </div>
-            )}
+            <div>
+              <span className="text-sm font-medium">Challenge:</span>
+              <span className="ml-2 text-sm">{problem.challenge.title}</span>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">

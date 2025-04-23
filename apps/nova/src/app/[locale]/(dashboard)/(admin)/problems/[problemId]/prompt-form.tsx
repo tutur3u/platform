@@ -72,13 +72,16 @@ export default function PromptForm({ problem }: Props) {
     setIsSubmitting(true);
 
     try {
-      // Step 1: Get evaluation results from the problem API
+      // Call the API endpoint which now handles evaluation, submission creation, and saving results
       const promptResponse = await fetch(
         `/api/v1/problems/${problem.id}/prompt`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({
+            prompt,
+            sessionId: null,
+          }),
         }
       );
 
@@ -86,86 +89,7 @@ export default function PromptForm({ problem }: Props) {
         throw new Error('Failed to process prompt');
       }
 
-      const promptData = await promptResponse.json();
-      const testCaseEvaluation = promptData.response.testCaseEvaluation || [];
-      const criteriaEvaluation = promptData.response.criteriaEvaluation || [];
-
-      // Step 2: Create the submission record
-      const submissionResponse = await fetch(`/api/v1/submissions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt,
-          problemId: problem.id,
-          sessionId: null,
-        }),
-      });
-
-      if (!submissionResponse.ok) {
-        const errorData = await submissionResponse.json();
-        throw new Error(
-          errorData.message || 'Failed to submit prompt. Please try again.'
-        );
-      }
-
-      // Get the newly created submission ID
-      const submissionData = await submissionResponse.json();
-      const submissionId = submissionData.id;
-
-      // Step 3: Save test case results
-      await Promise.allSettled(
-        testCaseEvaluation.map(async (testCase: any) => {
-          // Find matching test case in the problem
-          const matchingTestCase = problem.test_cases.find(
-            (tc) => tc.input === testCase.input
-          );
-
-          if (matchingTestCase) {
-            await fetch(`/api/v1/submissions/${submissionId}/test-cases`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                testCaseId: matchingTestCase.id,
-                output: testCase.output,
-                matched: matchingTestCase.output === testCase.output,
-              }),
-            });
-          }
-        })
-      );
-
-      // Step 4: Save criteria evaluations
-      // First, fetch the challenge criteria to get IDs
-      const criteriaResponse = await fetch(
-        `/api/v1/criteria?challengeId=${problem.challenge_id}`
-      );
-      if (criteriaResponse.ok) {
-        const challengeCriteria = await criteriaResponse.json();
-
-        // Then save each criteria evaluation with proper ID mapping
-        await Promise.allSettled(
-          criteriaEvaluation.map(async (criteriaEval: any) => {
-            // Find matching criteria by name
-            const matchingCriteria = challengeCriteria.find(
-              (c: any) => c.name === criteriaEval.name
-            );
-
-            if (matchingCriteria) {
-              await fetch(`/api/v1/submissions/${submissionId}/criteria`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  criteriaId: matchingCriteria.id,
-                  score: criteriaEval.score,
-                  feedback: criteriaEval.feedback,
-                }),
-              });
-            }
-          })
-        );
-      }
-
-      // Step 5: Refresh the submissions list
+      // Refresh the submissions list
       const submissions = await fetchSubmissions(problem.id);
       setSubmissions(submissions);
 

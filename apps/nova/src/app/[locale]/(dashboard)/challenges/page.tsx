@@ -42,20 +42,19 @@ export default async function Page() {
     <div className="container mx-auto p-6">
       <div className="mb-8 flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <h1 className="text-3xl font-bold">
-          {t('prompt-engineering-challenges')}
+          {t('challenges-page.prompt-engineering-challenges')}
         </h1>
         {canCreateChallenges && (
           <CreateChallengeDialog
             trigger={
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                {t('create-challenge')}
+                {t('challenges-page.create-challenge')}
               </Button>
             }
           />
         )}
       </div>
-
       <ChallengesList isAdmin={isAdmin} />
     </div>
   );
