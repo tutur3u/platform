@@ -229,79 +229,85 @@ export async function POST(
       );
     }
 
-    // Step 3: Save test case results
-    const testCaseEvaluation = parsedResponse.testCaseEvaluation || [];
-    const testCaseInserts = testCaseEvaluation
-      .map((testCase: any) => {
-        // Find matching test case in the problem
-        const matchingTestCase = testCases.find(
-          (tc) => tc.input === testCase.input
-        );
+    try {
+      // Step 3: Save test case results
+      const testCaseEvaluation = parsedResponse.testCaseEvaluation || [];
+      const testCaseInserts = testCaseEvaluation
+        .map((testCase: any) => {
+          // Find matching test case in the problem
+          const matchingTestCase = testCases.find(
+            (tc) => tc.input === testCase.input
+          );
 
-        if (matchingTestCase) {
-          return {
-            submission_id: submission.id,
-            test_case_id: matchingTestCase.id,
-            output: testCase.output,
-            matched: matchingTestCase.output === testCase.output,
-          };
+          if (matchingTestCase) {
+            return {
+              submission_id: submission.id,
+              test_case_id: matchingTestCase.id,
+              output: testCase.output,
+              matched: matchingTestCase.output === testCase.output,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      if (testCaseInserts.length > 0) {
+        const { error: testCaseInsertsError } = await sbAdmin
+          .from('nova_submission_test_cases')
+          .insert(testCaseInserts);
+
+        if (testCaseInsertsError) {
+          return NextResponse.json(
+            { message: 'Failed to create test case results' },
+            { status: 500 }
+          );
         }
-        return null;
-      })
-      .filter(Boolean);
-
-    if (testCaseInserts.length > 0) {
-      const { error: testCaseInsertsError } = await sbAdmin
-        .from('nova_submission_test_cases')
-        .insert(testCaseInserts);
-
-      if (testCaseInsertsError) {
-        return NextResponse.json(
-          { message: 'Failed to create test case results' },
-          { status: 500 }
-        );
       }
-    }
 
-    // Step 4: Save criteria evaluations
-    const criteriaEvaluation = parsedResponse.criteriaEvaluation || [];
-    const criteriaInserts = criteriaEvaluation
-      .map((criteriaEval: any) => {
-        // Find matching criteria by name
-        const matchingCriteria = challengeCriteria.find(
-          (c) => c.name === criteriaEval.name
-        );
+      // Step 4: Save criteria evaluations
+      const criteriaEvaluation = parsedResponse.criteriaEvaluation || [];
+      const criteriaInserts = criteriaEvaluation
+        .map((criteriaEval: any) => {
+          // Find matching criteria by name
+          const matchingCriteria = challengeCriteria.find(
+            (c) => c.name === criteriaEval.name
+          );
 
-        if (matchingCriteria) {
-          return {
-            submission_id: submission.id,
-            criteria_id: matchingCriteria.id,
-            score: criteriaEval.score,
-            feedback: criteriaEval.feedback,
-          };
+          if (matchingCriteria) {
+            return {
+              submission_id: submission.id,
+              criteria_id: matchingCriteria.id,
+              score: criteriaEval.score,
+              feedback: criteriaEval.feedback,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      if (criteriaInserts.length > 0) {
+        const { error: criteriaInsertsError } = await sbAdmin
+          .from('nova_submission_criteria')
+          .insert(criteriaInserts);
+
+        if (criteriaInsertsError) {
+          return NextResponse.json(
+            { message: 'Failed to create criteria evaluations' },
+            { status: 500 }
+          );
         }
-        return null;
-      })
-      .filter(Boolean);
-
-    if (criteriaInserts.length > 0) {
-      const { error: criteriaInsertsError } = await sbAdmin
-        .from('nova_submission_criteria')
-        .insert(criteriaInserts);
-
-      if (criteriaInsertsError) {
-        return NextResponse.json(
-          { message: 'Failed to create criteria evaluations' },
-          { status: 500 }
-        );
       }
-    }
 
-    // Return the evaluation results and submission ID
-    return NextResponse.json(
-      { submissionId: submission.id, response: parsedResponse },
-      { status: 200 }
-    );
+      // Return the evaluation results and submission ID
+      return NextResponse.json(
+        { submissionId: submission.id, response: parsedResponse },
+        { status: 200 }
+      );
+    } catch (error) {
+      // Delete submission on any other error
+      await sbAdmin.from('nova_submissions').delete().eq('id', submission.id);
+      throw error;
+    }
   } catch (error) {
     console.error('🚨 Server error:', error);
     return NextResponse.json(
