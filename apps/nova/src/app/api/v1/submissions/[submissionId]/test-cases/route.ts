@@ -83,7 +83,7 @@ export async function GET(request: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   const { submissionId } = await params;
 
-  const supabase = await createAdminClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -161,7 +161,7 @@ export async function DELETE(request: Request, { params }: Params) {
   const { searchParams } = new URL(request.url);
   const testCaseId = searchParams.get('testCaseId');
 
-  const supabase = await createAdminClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
