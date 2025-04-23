@@ -26,6 +26,12 @@ import {
   Users,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { type Variants, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
@@ -320,14 +326,23 @@ export default function MarketingPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Link href="https://forms.office.com/r/RuLSL21iTV">
-                      <Button size="lg">
-                        <span className="relative z-10 flex items-center gap-2">
-                          {t('register')}
-                          <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        </span>
-                      </Button>
-                    </Link>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link href="">
+                            <Button disabled={true} size="lg">
+                              <span className="relative z-10 flex items-center gap-2">
+                                {t('register')}
+                                <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                              </span>
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Closed</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </motion.div>
                   <motion.div
                     className="mt-12 text-center"
