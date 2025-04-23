@@ -1856,6 +1856,85 @@
         "first-join": "Hãy là người đầu tiên tham gia cuộc thi!"
       }
     },
+    "profile-page": {
+      "breadcrumb": {
+        "home": "Trang chủ",
+        "leaderboard": "Bảng xếp hạng"
+      },
+      "rank": "Hạng #",
+      "challenge": "Thử thách",
+      "challenges": "Thử thách",
+      "score": "Điểm",
+      "profile-header": {
+        "joined": "Tham gia",
+        "points": "Điểm",
+        "level": "Cấp độ",
+        "level-progress": "đến cấp độ",
+        "edit-profile": "Sửa hồ sơ",
+        "share": "Chia sẻ",
+        "copied": "Đã sao chép!",
+        "view-leaderboard": "Xem bảng xếp hạng"
+      },
+      "info-tiles": {
+        "score": "ĐIỂM SỐ",
+        "rank": "XẾP HẠNG",
+        "challenges": "THỬ THÁCH",
+        "achievements": "THÀNH TỰU"
+      },
+      "overview-tab": {
+        "name": "Tổng Quan",
+        "summary-title": "Tóm tắt hoạt động",
+        "summary-submissions": "Lượt nộp bài",
+        "summary-average-score": "Điểm trung bình",
+        "summary-best-score": "Điểm cao nhất",
+        "challenge-title": "Thử Thách Xuất Sắc",
+        "challenge-description": "Thử thách có điểm cao nhất được hoàn thành bởi ",
+        "challenge-top-score": "Điểm cao nhất",
+        "challenge-performance": "Hiệu suất",
+        "challenge-view-all": "Xem Tất Cả Thử Thách",
+        "achievements-title": "Thành Tựu Gần Đây",
+        "achievements-description": "Huy hiệu và thành tựu đã đạt được",
+        "achievements-view-all": "Xem Tất Cả Thành Tựu",
+        "activity-title": "Hoạt Động Gần Đây",
+        "activity-description": "Các bài nộp gần đây",
+        "activity-view-all": "Xem tất cả hoạt động"
+      },
+      "challenges-tab": {
+        "name": "Thử Thách",
+        "title": "Hiệu suất thử thách",
+        "description": "Tất cả các thử thách đã hoàn thành với điểm số",
+        "progress": "Tiến Độ",
+        "no-challenges": "Chưa hoàn thành thử thách nào"
+      },
+      "achievements-tab": {
+        "name": "Thành Tựu",
+        "title": "Trưng bày thành tựu",
+        "description": "Huy hiệu và thành tựu đã đạt được",
+        "locked": "Chưa Mở Khoá",
+        "unlocked": "Đã Mở Khoá"
+      },
+      "activity-tab": {
+        "name": "Hoạt Động",
+        "title": "Hoạt động gần đây",
+        "description": "Các bài nộp và thử nghiệm gần đây",
+        "submitted-solution": "Đã nộp lời giải",
+        "no-activity": "Chưa có hoạt động nào gần đây"
+      },
+      "achievements": {
+        "adopter": "Người Tham Gia Sớm",
+        "adopter-description": "Tham gia từ những ngày đầu của nền tảng",
+        "master": "Bậc Thầy Thử Thách",
+        "master-description": "Hoàn thành hơn 5 thử thách khác nhau",
+        "high-scorer": "Người Ghi Điểm Cao",
+        "high-scorer-description": "Đạt số điểm trên 500",
+        "top-rank": "Top Xếp Hạng",
+        "top-rank-description": "Vào top 10 trên bảng xếp hạng",
+        "consistent": "Người Học Kiên Trì",
+        "consistent-description": "Luôn đều đặn nộp lời giải mà không bỏ cuộc.",
+        "prompt-master": "Bậc Thầy Nhập Lệnh",
+        "prompt-master-description": "Đạt điểm tuyệt đối trong nhiều thử thách"
+      }
+    },
     "challenge": {
       "edit": "Chỉnh sửa thử thách",
       "update": "Cập nhật thử thách",
