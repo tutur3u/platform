@@ -62,7 +62,7 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       </button>
 
       {/* Half-hour marker */}
-      <div className="border-border/30 absolute left-0 right-0 top-1/2 border-t border-dashed dark:border-zinc-800/50" />
+      <div className="border-border/30 absolute left-0 right-0 top-1/2 border-t border-dashed" />
 
       {/* Half-hour clickable area */}
       <button
