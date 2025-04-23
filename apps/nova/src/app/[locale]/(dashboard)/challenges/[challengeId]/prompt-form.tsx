@@ -41,10 +41,10 @@ export default function PromptForm({ problem, session }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [submissions, setSubmissions] = useState<ExtendedNovaSubmission[]>([]);
-  const [currentSessionSubmissions, setCurrentSessionSubmissions] = useState<
+  const [currentSubmissions, setCurrentSubmissions] = useState<
     ExtendedNovaSubmission[]
   >([]);
-  const [pastSessionSubmissions, setPastSessionSubmissions] = useState<
+  const [pastSubmissions, setPastSubmissions] = useState<
     ExtendedNovaSubmission[]
   >([]);
   const [attempts, setAttempts] = useState(0);
@@ -68,8 +68,8 @@ export default function PromptForm({ problem, session }: Props) {
           (s) => s.session_id !== session.id
         );
 
-        setCurrentSessionSubmissions(current);
-        setPastSessionSubmissions(past);
+        setCurrentSubmissions(current);
+        setPastSubmissions(past);
         setAttempts(current.length);
       }
     };
@@ -109,7 +109,7 @@ export default function PromptForm({ problem, session }: Props) {
     setError('');
 
     try {
-      // Step 1: Get evaluation results from the problem API
+      // Call the API endpoint which now handles evaluation, submission creation, and saving results
       const promptResponse = await fetch(
         `/api/v1/problems/${problem.id}/prompt`,
         {
@@ -117,6 +117,7 @@ export default function PromptForm({ problem, session }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt,
+            sessionId: session.id,
           }),
         }
       );
@@ -125,101 +126,16 @@ export default function PromptForm({ problem, session }: Props) {
         throw new Error('Failed to process prompt');
       }
 
-      const promptData = await promptResponse.json();
-      const testCaseEvaluation = promptData.response.testCaseEvaluation || [];
-      const criteriaEvaluation = promptData.response.criteriaEvaluation || [];
-
-      // Step 2: Create the submission record
-      const submissionResponse = await fetch(`/api/v1/submissions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt,
-          problemId: problem.id,
-          sessionId: session.id,
-        }),
-      });
-
-      if (!submissionResponse.ok) {
-        const errorData = await submissionResponse.json();
-        throw new Error(
-          errorData.message || 'Failed to submit prompt. Please try again.'
-        );
-      }
-
-      // Get the newly created submission ID
-      const submissionData = await submissionResponse.json();
-      const submissionId = submissionData.id;
-
-      // Step 3: Save test case results
-      await Promise.allSettled(
-        testCaseEvaluation.map(async (testCase: any) => {
-          // Find matching test case in the problem
-          const matchingTestCase = problem.test_cases.find(
-            (tc) => tc.input === testCase.input
-          );
-
-          if (matchingTestCase) {
-            await fetch(`/api/v1/submissions/${submissionId}/test-cases`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                testCaseId: matchingTestCase.id,
-                output: testCase.output,
-                matched: matchingTestCase.output === testCase.output,
-              }),
-            });
-          }
-        })
-      );
-
-      // Step 4: Save criteria evaluations
-      // First, fetch the challenge criteria to get IDs
-      const criteriaResponse = await fetch(
-        `/api/v1/criteria?challengeId=${problem.challenge_id}`
-      );
-
-      if (criteriaResponse.ok) {
-        const challengeCriteria = await criteriaResponse.json();
-
-        // Then save each criteria evaluation with proper ID mapping
-        await Promise.allSettled(
-          criteriaEvaluation.map(async (criteriaEval: any) => {
-            // Find matching criteria by name
-            const matchingCriteria = challengeCriteria.find(
-              (c: any) => c.name === criteriaEval.name
-            );
-
-            if (matchingCriteria) {
-              await fetch(`/api/v1/submissions/${submissionId}/criteria`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  criteriaId: matchingCriteria.id,
-                  score: criteriaEval.score,
-                  feedback: criteriaEval.feedback,
-                }),
-              });
-            }
-          })
-        );
-      } else {
-        throw new Error('Failed to fetch criteria');
-      }
-
-      // Step 5: Refresh the submissions list
-      const submissions = await fetchSubmissions(
-        problem.id
-        // , session.id
-      );
+      // Refresh the submissions list
+      const submissions = await fetchSubmissions(problem.id);
       setSubmissions(submissions);
 
       // Split submissions between current and past sessions
       const current = submissions.filter((s) => s.session_id === session.id);
       const past = submissions.filter((s) => s.session_id !== session.id);
 
-      setCurrentSessionSubmissions(current);
-      setPastSessionSubmissions(past);
+      setCurrentSubmissions(current);
+      setPastSubmissions(past);
       setAttempts(current.length);
 
       // Reset prompt and show success message
@@ -354,24 +270,24 @@ export default function PromptForm({ problem, session }: Props) {
                   <TabsList className="mb-4 grid w-full grid-cols-2">
                     <TabsTrigger value="current" className="relative">
                       Current Session
-                      {currentSessionSubmissions.length > 0 && (
+                      {currentSubmissions.length > 0 && (
                         <Badge variant="secondary" className="ml-2">
-                          {currentSessionSubmissions.length}
+                          {currentSubmissions.length}
                         </Badge>
                       )}
                     </TabsTrigger>
                     <TabsTrigger value="past" className="relative">
                       Past Sessions
-                      {pastSessionSubmissions.length > 0 && (
+                      {pastSubmissions.length > 0 && (
                         <Badge variant="secondary" className="ml-2">
-                          {pastSessionSubmissions.length}
+                          {pastSubmissions.length}
                         </Badge>
                       )}
                     </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="current" className="space-y-4">
-                    {currentSessionSubmissions.length === 0 ? (
+                    {currentSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                         <Clock className="text-muted-foreground mb-2 h-10 w-10" />
                         <h3 className="text-lg font-medium">
@@ -382,7 +298,7 @@ export default function PromptForm({ problem, session }: Props) {
                         </p>
                       </div>
                     ) : (
-                      currentSessionSubmissions.map((submission) => (
+                      currentSubmissions.map((submission) => (
                         <SubmissionCard
                           key={submission.id}
                           submission={submission}
@@ -393,7 +309,7 @@ export default function PromptForm({ problem, session }: Props) {
                   </TabsContent>
 
                   <TabsContent value="past" className="space-y-4">
-                    {pastSessionSubmissions.length === 0 ? (
+                    {pastSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                         <Clock className="text-muted-foreground mb-2 h-10 w-10" />
                         <h3 className="text-lg font-medium">
@@ -404,7 +320,7 @@ export default function PromptForm({ problem, session }: Props) {
                         </p>
                       </div>
                     ) : (
-                      pastSessionSubmissions.map((submission) => (
+                      pastSubmissions.map((submission) => (
                         <SubmissionCard
                           key={submission.id}
                           submission={submission}

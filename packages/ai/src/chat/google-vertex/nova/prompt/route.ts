@@ -1,7 +1,7 @@
-import type { ResponseMode } from '../../../../types';
 import { google } from '@ai-sdk/google';
 import { vertex } from '@ai-sdk/google-vertex/edge';
 import type { SafetySetting } from '@google/generative-ai';
+import type { ResponseMode } from '@tuturuuu/ai/types';
 import {
   createAdminClient,
   createClient,
@@ -44,10 +44,11 @@ export async function POST(
   const supabase = createClient();
   const sbAdmin = await createAdminClient();
 
-  const { prompt } = (await req.json()) as {
+  const { prompt, sessionId } = (await req.json()) as {
     id?: string;
     model?: string;
     prompt?: string;
+    sessionId?: string;
     mode?: ResponseMode;
   };
 
@@ -121,6 +122,7 @@ export async function POST(
       );
     }
 
+    // Step 1: Evaluate the prompt with the AI model
     const ctx = {
       title: problem.title,
       description: problem.description,
@@ -151,8 +153,9 @@ export async function POST(
       ],
     };
 
+    // System Instruction for Evaluation with strict JSON output
     const systemInstruction = `
- You are an examiner in a prompt engineering competition.
+      You are an examiner in a prompt engineering competition.
       You will be provided with:
       - A problem title and description
       - An example input/output
@@ -179,7 +182,7 @@ export async function POST(
       5. The score MUST be from 0 to 10, can be in decimal.
       6. The response MUST use this EXACT format:
       ${JSON.stringify(exampleResponse)}
-`;
+    `;
 
     const res = await generateText({
       model: vertexModel,
@@ -188,14 +191,14 @@ export async function POST(
         { role: 'user', content: prompt },
       ],
     });
-
     const response = res.steps[0]?.text;
+
+    let parsedResponse;
     try {
-      const parsedResponse = JSON.parse(
+      parsedResponse = JSON.parse(
         (response ?? '').replace(/```json\n|\n```/g, '').trim()
       );
       console.log(parsedResponse);
-      return NextResponse.json({ response: parsedResponse }, { status: 200 });
     } catch (parseError) {
       console.error('Parse error:', parseError);
       return NextResponse.json(
@@ -205,6 +208,105 @@ export async function POST(
         },
         { status: 422 }
       );
+    }
+
+    // Step 2: Create the submission record
+    const { data: submission, error: submissionError } = await sbAdmin
+      .from('nova_submissions')
+      .insert({
+        prompt,
+        problem_id: problemId,
+        session_id: sessionId,
+        user_id: user.id,
+      })
+      .select('id')
+      .single();
+
+    if (submissionError) {
+      return NextResponse.json(
+        { message: 'Failed to create submission record' },
+        { status: 500 }
+      );
+    }
+
+    try {
+      // Step 3: Save test case results
+      const testCaseEvaluation = parsedResponse.testCaseEvaluation || [];
+      const testCaseInserts = testCaseEvaluation
+        .map((testCase: any) => {
+          // Find matching test case in the problem
+          const matchingTestCase = testCases.find(
+            (tc) => tc.input === testCase.input
+          );
+
+          if (matchingTestCase) {
+            return {
+              submission_id: submission.id,
+              test_case_id: matchingTestCase.id,
+              output: testCase.output,
+              matched: matchingTestCase.output === testCase.output,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      if (testCaseInserts.length > 0) {
+        const { error: testCaseInsertsError } = await sbAdmin
+          .from('nova_submission_test_cases')
+          .insert(testCaseInserts);
+
+        if (testCaseInsertsError) {
+          return NextResponse.json(
+            { message: 'Failed to create test case results' },
+            { status: 500 }
+          );
+        }
+      }
+
+      // Step 4: Save criteria evaluations
+      const criteriaEvaluation = parsedResponse.criteriaEvaluation || [];
+      const criteriaInserts = criteriaEvaluation
+        .map((criteriaEval: any) => {
+          // Find matching criteria by name
+          const matchingCriteria = challengeCriteria.find(
+            (c) => c.name === criteriaEval.name
+          );
+
+          if (matchingCriteria) {
+            return {
+              submission_id: submission.id,
+              criteria_id: matchingCriteria.id,
+              score: criteriaEval.score,
+              feedback: criteriaEval.feedback,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      if (criteriaInserts.length > 0) {
+        const { error: criteriaInsertsError } = await sbAdmin
+          .from('nova_submission_criteria')
+          .insert(criteriaInserts);
+
+        if (criteriaInsertsError) {
+          return NextResponse.json(
+            { message: 'Failed to create criteria evaluations' },
+            { status: 500 }
+          );
+        }
+      }
+
+      // Return the evaluation results and submission ID
+      return NextResponse.json(
+        { submissionId: submission.id, response: parsedResponse },
+        { status: 200 }
+      );
+    } catch (error) {
+      // Delete submission on any other error
+      await sbAdmin.from('nova_submissions').delete().eq('id', submission.id);
+      throw error;
     }
   } catch (error) {
     console.error('🚨 Server error:', error);
