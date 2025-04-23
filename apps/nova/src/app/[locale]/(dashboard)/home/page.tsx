@@ -79,7 +79,7 @@ export default async function HomePage() {
       <div className="flex flex-wrap justify-center gap-4">
         <Link href="/challenges">
           <Button size="lg" className="gap-2">
-            {t('start-challenge')} <ArrowRight className="h-4 w-4" />
+            {t('challenge.cards.start-challenge')} <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>
         <Link href="/leaderboard">
