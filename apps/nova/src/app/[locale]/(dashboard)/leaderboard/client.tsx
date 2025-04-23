@@ -2,9 +2,9 @@ import BasicInformationComponent from './basic-information-component';
 import {
   Leaderboard,
   LeaderboardEntry,
-} from '@/app/[locale]/(dashboard)/leaderboard/leaderboard';
-import { LeaderboardFilters } from '@/app/[locale]/(dashboard)/leaderboard/leaderboard-filters';
-import { TopThreeCards } from '@/app/[locale]/(dashboard)/leaderboard/top-three-cards';
+} from '@/components/leaderboard/leaderboard';
+import { LeaderboardFilters } from '@/components/leaderboard/leaderboard-filters';
+import { TopThreeCards } from '@/components/leaderboard/top-three-cards';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
