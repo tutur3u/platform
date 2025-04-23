@@ -338,9 +338,17 @@ export const CalendarProvider = ({
       const start = new Date(event.start_at);
       const end = new Date(event.end_at);
       const duration = end.getTime() - start.getTime();
-      return duration % 86400000 !== 0;
+      // Identify true all-day events
+      const isExactDaySpan =
+        duration === 86400000 &&
+        start.getUTCHours() === 0 &&
+        start.getUTCMinutes() === 0 &&
+        end.getUTCHours() === 0 &&
+        end.getUTCMinutes() === 0;
+      const isTrueAllDay = event.is_all_day === true || isExactDaySpan;
+      // Keep only non–all-day events
+      return !isTrueAllDay;
     });
-
     return events;
   }, [data, removeDuplicateEvents]);
 
