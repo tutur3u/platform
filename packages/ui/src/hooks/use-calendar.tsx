@@ -324,13 +324,22 @@ export const CalendarProvider = ({
 
   // Process events to remove duplicates, then memoize the result
   const events = useMemo(() => {
-    const eventsData = data?.data ?? [];
+    const eventsWithAllDays: CalendarEvent[] = data?.data ?? [];
+
     // Check for duplicates whenever events are loaded or refreshed
-    if (eventsData.length > 0) {
+    if (eventsWithAllDays.length > 0) {
       // We need to run this asynchronously since it makes API calls
-      removeDuplicateEvents(eventsData);
+      removeDuplicateEvents(eventsWithAllDays);
     }
-    return eventsData;
+
+    const events = eventsWithAllDays.filter((event) => {
+      const start = new Date(event.start_at);
+      const end = new Date(event.end_at);
+      const duration = end.getTime() - start.getTime();
+      return duration % 86400000 !== 0;
+    });
+
+    return events;
   }, [data, removeDuplicateEvents]);
 
   // Invalidate and refetch events
