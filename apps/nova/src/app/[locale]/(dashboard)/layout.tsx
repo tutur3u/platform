@@ -1,5 +1,6 @@
 import NavbarActions from '../(marketing)/navbar-actions';
 import { UserNav } from '../(marketing)/user-nav';
+import { ApologyModal } from '@/components/common/ApologyModal';
 import Structure from '@/components/layout/structure';
 import {
   MAIN_CONTENT_SIZE_COOKIE_NAME,
@@ -137,6 +138,7 @@ export default async function RootLayout({
         </Suspense>
       }
     >
+      <ApologyModal />
       {children}
     </Structure>
   );

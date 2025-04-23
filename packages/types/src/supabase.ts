@@ -6324,6 +6324,14 @@ export type Database = {
           amount: number;
         }[];
       };
+      get_submission_statistics: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          total_count: number;
+          latest_submission_date: string;
+          unique_users_count: number;
+        }[];
+      };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
         Returns: {

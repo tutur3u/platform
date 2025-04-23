@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 
 interface Props {
   data: ResultsData;
@@ -35,7 +36,7 @@ export default function ResultClient({ data }: Props) {
   const MAX_SCORE_PER_PROBLEM = 10;
 
   // Calculate overall challenge stats
-  const calculateOverallStats = () => {
+  const stats = useMemo(() => {
     if (data.sessions.length === 0)
       return {
         score: 0,
@@ -48,34 +49,31 @@ export default function ResultClient({ data }: Props) {
     const totalProblems = data.sessions[0]?.problems.length || 0;
     const maxPossibleScore = totalProblems * MAX_SCORE_PER_PROBLEM;
 
-    let bestTotalScore = 0;
+    let maxTotalScore = 0;
     const problemsAttempted = new Set();
 
     data.sessions.forEach((session) => {
+      let totalScore = 0;
       session.problems.forEach((problem, index) => {
         if (problem.submissions.length > 0) {
           problemsAttempted.add(index);
-
           const bestScore = Math.max(
-            ...problem.submissions.map((s) => s.total_score || 0),
-            bestTotalScore > 0 ? bestTotalScore / totalProblems : 0
+            ...problem.submissions.map((s) => s.total_score)
           );
-
-          bestTotalScore = Math.max(bestTotalScore, bestScore * totalProblems);
+          totalScore += bestScore;
         }
       });
+      maxTotalScore = Math.max(maxTotalScore, totalScore);
     });
 
     return {
-      score: bestTotalScore,
+      score: maxTotalScore,
       maxScore: maxPossibleScore,
-      percentage: (bestTotalScore / maxPossibleScore) * 100,
+      percentage: (maxTotalScore / maxPossibleScore) * 100,
       problemsAttempted: problemsAttempted.size,
       totalProblems,
     };
-  };
-
-  const stats = calculateOverallStats();
+  }, [data]);
 
   // Get status text and color based on percentage
   const getChallengeStatus = (percentage: number) => {

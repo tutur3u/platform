@@ -10,6 +10,7 @@ export async function GET(
 ) {
   try {
     const { userId: rawUserId } = await params;
+
     const sbAdmin = await createAdminClient();
 
     // remove all dashes, then re-add them in the format of UUID
@@ -28,7 +29,8 @@ export async function GET(
       return new Response('User not found', { status: 404 });
     }
 
-    const userName = userData.display_name || generateFunName(userData.id);
+    const userName =
+      userData.display_name || generateFunName({ id: userData.id });
 
     // Fetch user's total score
     const { data: submissionsData = [], error: submissionsError } =

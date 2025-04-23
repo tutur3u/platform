@@ -1,4 +1,40 @@
 {
+  "nova-apology-modal": {
+    "title": "Thông Báo Quan Trọng Đến Người Tham Gia Cuộc Thi NEO League",
+    "description": "Đội phát triển Nova muốn thông báo về các vấn đề kỹ thuật gần đây ảnh hưởng đến cuộc thi.",
+    "known_issues": "Lỗi Đã Biết",
+    "resolution_status": "Trạng Thái Giải Quyết",
+    "apology_message": "Chúng tôi xin chân thành xin lỗi tất cả người dùng nền tảng Nova và thí sinh tham gia cuộc thi NEO League. Đội ngũ của chúng tôi đang nỗ lực khắc phục các vấn đề sau đây:",
+    "ai_scoring_system": "Hệ Thống Chấm Điểm AI",
+    "ai_scoring_description": "Hệ thống chấm điểm hiện đang cấu hình sai và sẽ dẫn đến việc hầu hết người dùng nhận điểm 0. Chúng tôi đã xác định nguyên nhân gốc rễ và đang triển khai sửa chữa.",
+    "leaderboard_scores": "Tính Toán Điểm Bảng Xếp Hạng",
+    "leaderboard_description": "Điểm số trên bảng xếp hạng đang không tính toán chính xác, ảnh hưởng đến hiển thị thứ hạng trong cuộc thi. Đội ngũ của chúng tôi đã xác định vấn đề và đang triển khai sửa chữa toàn diện.",
+    "testcase_criteria": "Xử Lý Testcase & Tiêu Chí",
+    "testcase_description": "Người dùng không phải admin hiện không thể lưu testcase và đánh giá tiêu chí. Điều này ảnh hưởng đến việc xác thực và chấm điểm bài nộp.",
+    "critical": "Nghiêm trọng",
+    "high": "Cao",
+    "issue_tracked": "Vấn đề được theo dõi tại",
+    "issues_tracked": "Vấn đề được theo dõi tại",
+    "resolution_message": "Đội phát triển Nova đang làm việc không ngừng nghỉ để giải quyết các vấn đề này trước khi vòng 1 chính thức bắt đầu. Chúng tôi cam kết mang đến cho bạn trải nghiệm thi đấu tốt nhất có thể.",
+    "bugs_identified": "Tất cả lỗi nghiêm trọng đã được xác định và ưu tiên",
+    "ai_fix": "Đang phát triển bản sửa cho hệ thống chấm điểm AI",
+    "testcase_fix": "Đã sửa xử lý testcase trong giai đoạn đánh giá",
+    "leaderboard_fix": "Đang tiến hành sửa tính toán điểm bảng xếp hạng (dự kiến: trước vòng 1)",
+    "our_commitment": "Cam Kết Của Chúng Tôi",
+    "commitment_description": "Đội phát triển Nova cam kết hoàn toàn sẽ giải quyết các vấn đề này trước khi cuộc thi bắt đầu. Chúng tôi đánh giá cao sự kiên nhẫn và thông cảm của bạn khi chúng tôi nỗ lực cung cấp nền tảng tốt nhất có thể cho trải nghiệm thi đấu của bạn.",
+    "next_steps": "Các Bước Tiếp Theo:",
+    "step_1": "Triển khai bản vá khẩn cấp cho hệ thống chấm điểm",
+    "step_2": "Sửa xử lý testcase cho tất cả người dùng",
+    "step_3": "Giải quyết vấn đề tính toán điểm bảng xếp hạng",
+    "step_4": "Đảm bảo tất cả hệ thống sẵn sàng trước khi vòng 1 bắt đầu",
+    "updates_info": "Để cập nhật và thông tin mới nhất, hãy truy cập",
+    "github_issues": "GitHub Issues",
+    "report_issue": "Báo Cáo Lỗi",
+    "understand": "Tôi Hiểu",
+    "fixed": "Đã sửa",
+    "issue": "Vấn đề",
+    "and": "và"
+  },
   "ai-prompts-data-table": {
     "id": "Mã số",
     "name": "Tên",
@@ -1574,7 +1610,7 @@
             "name": "Ngô Văn Tài",
             "role": "Kỹ Sư Fullstack",
             "organization": "RMIT SGS Neo Culture Tech",
-            "bio": "Chịu trách nhiệm Việt hóa nền tảng Neo League, đảm bảo tính dễ đọc và khả năng tiếp cận."
+            "bio": "Củng cố nền tảng Neo League thông qua phát triển backend, bảo trì hệ thống và hỗ trợ cải tiến nền tảng."
           },
           "huynh-thai-duong": {
             "name": "Huỳnh Thái Dương",
@@ -1820,7 +1856,12 @@
           "asia": "Châu Á"
         }
       },
+      "points": "Điểm",
       "rankings": {
+        "challenge-breakdown": "Chi tiết thử thách",
+        "problem-breakdown": "Chi tiết bài nộp",
+        "show-breakdown": "Hiển thị Chi tiết",
+        "hide-breakdown": "Ẩn Chi tiết",
         "title": "Bảng Xếp Hạng",
         "rank": "Hạng",
         "score": "Điểm",

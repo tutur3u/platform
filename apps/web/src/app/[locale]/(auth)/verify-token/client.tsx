@@ -12,10 +12,8 @@ export function BasicTokenVerifier() {
     const handleUser = async () => {
       const nextUrl = searchParams.get('nextUrl');
 
-      if (nextUrl) {
-        router.push(nextUrl || '/onboarding');
-        return;
-      }
+      router.push(nextUrl || '/onboarding');
+      return;
     };
     handleUser();
   }, [searchParams]);
