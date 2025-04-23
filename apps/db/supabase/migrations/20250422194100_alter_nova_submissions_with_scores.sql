@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS nova_submissions_with_scores;
+
 CREATE OR REPLACE VIEW nova_submissions_with_scores AS
 WITH problem_test_counts AS (
   SELECT 
