@@ -7,6 +7,7 @@ const CalendarBaseMatrix = ({ dates }: { dates: Date[] }) => {
         <CalendarColumn
           key={`cal-col-${index}`}
           date={dates[index]!.toISOString().split('T')[0] as string}
+          last={index === dates.length - 1}
         />
       ))}
     </>
