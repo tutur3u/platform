@@ -53,8 +53,8 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   return (
     <div className="flex">
       {/* Label column */}
-      <div className="flex w-16 items-center justify-center border-b border-l bg-muted/30 p-2 font-medium">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
+      <div className="bg-muted/30 flex w-16 items-center justify-center border-b border-l p-2 font-medium">
+        <Calendar className="text-muted-foreground h-4 w-4" />
       </div>
 
       {/* All-day event columns */}
@@ -71,7 +71,7 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           return (
             <div
               key={`all-day-${date.toISOString()}`}
-              className="group mr-[1px] flex h-full flex-col justify-center gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r hover:bg-muted/20"
+              className="hover:bg-muted/20 group mr-[1px] flex h-full flex-col justify-center gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r"
             >
               {dateEvents.map((event) => (
                 <div
