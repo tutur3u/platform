@@ -37,19 +37,10 @@ export async function GET(req: NextRequest) {
   const { data: submissionsData, error: submissionsError } = await sbAdmin.from(
     'nova_submissions_with_scores'
   ).select(`
-    id, 
-    user_id, 
+    user_id,
     problem_id,
-    session_id,
-    total_tests,
-    passed_tests,
-    test_case_score,
-    total_criteria,
-    sum_criterion_score,
-    criteria_score,
     total_score,
-    nova_sessions(challenge_id),
-    nova_problems(challenge_id)
+    session_id
   `);
 
   if (submissionsError) {
@@ -127,31 +118,10 @@ export async function GET(req: NextRequest) {
       const problemId = submission.problem_id;
       if (!problemId) return;
 
-      // Recalculate the score properly according to the formula
-      // (sum of criterion scores * weight) + (test case pass ratio * weight)
-      const hasCriteria = (submission.total_criteria || 0) > 0;
-      const hasTests = (submission.total_tests || 0) > 0;
+      const sessionId = submission.session_id;
+      if (!sessionId) return;
 
-      let criteriaScore = 0;
-      if (hasCriteria) {
-        const criteriaWeight = hasTests ? 0.5 : 1.0;
-        criteriaScore =
-          ((submission.sum_criterion_score || 0) /
-            ((submission.total_criteria || 0) * 10)) *
-          10 *
-          criteriaWeight;
-      }
-
-      let testScore = 0;
-      if (hasTests) {
-        const testWeight = 0.5;
-        testScore =
-          ((submission.passed_tests || 0) / (submission.total_tests || 0)) *
-          10 *
-          testWeight;
-      }
-
-      const correctScore = criteriaScore + testScore;
+      const correctScore = submission.total_score || 0;
 
       // Keep only the best submission for each problem
       if (
@@ -168,12 +138,44 @@ export async function GET(req: NextRequest) {
           challengeId: problemChallengeMap.get(problemId),
           score: correctScore,
           title: problemTitle,
+          sessionId,
         });
       }
     });
 
-    // Now group by challenge and sum problem scores
+    // Group problems by session and challenge for accurate scoring
+    const sessionScores = new Map(); // Map<session_id, score>
+    const challengeSessions = new Map(); // Map<challenge_id, Set<session_id>>
+
+    // Calculate session scores (sum of problem scores in each session)
+    bestProblemSubmissions.forEach((problem) => {
+      const { sessionId, score, challengeId } = problem;
+
+      if (sessionId && challengeId) {
+        // Add to session score
+        sessionScores.set(
+          sessionId,
+          (sessionScores.get(sessionId) || 0) + score
+        );
+
+        // Track which sessions belong to which challenge
+        if (!challengeSessions.has(challengeId)) {
+          challengeSessions.set(challengeId, new Set());
+        }
+        challengeSessions.get(challengeId).add(sessionId);
+      }
+    });
+
+    // Find max session score for each challenge
     const challenge_scores: Record<string, number> = {};
+    challengeSessions.forEach((sessions, challengeId) => {
+      let maxSessionScore = 0;
+      sessions.forEach((sessionId: string) => {
+        const sessionScore = sessionScores.get(sessionId) || 0;
+        maxSessionScore = Math.max(maxSessionScore, sessionScore);
+      });
+      challenge_scores[challengeId] = maxSessionScore;
+    });
 
     // Track individual problem scores for each challenge
     const problem_scores: Record<
@@ -181,14 +183,10 @@ export async function GET(req: NextRequest) {
       Array<{ id: string; title: string; score: number }>
     > = {};
 
-    // Sum the best problem scores for each challenge
+    // Group problem scores by challenge
     bestProblemSubmissions.forEach((problem) => {
       const { challengeId, score, problemId, title } = problem;
       if (challengeId) {
-        // Add to challenge total score
-        challenge_scores[challengeId] =
-          (challenge_scores[challengeId] || 0) + score;
-
         // Add to problem scores by challenge
         if (!problem_scores[challengeId]) {
           problem_scores[challengeId] = [];
@@ -202,7 +200,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Total score is the sum of challenge scores
+    // Total score is the sum of challenge scores (max session score per challenge)
     const total_score = Object.values(challenge_scores).reduce(
       (sum, score) => sum + score,
       0
@@ -278,18 +276,6 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Fetch all problems with titles for reference
-  const { data: problemsWithTitles } = await sbAdmin
-    .from('nova_problems')
-    .select('id, title, challenge_id');
-
-  const problemsForUI =
-    problemsWithTitles?.map((problem) => ({
-      id: problem.id,
-      title: problem.title,
-      challenge_id: problem.challenge_id,
-    })) || [];
-
   // Sort by total score (highest first) and assign ranks
   const sortedData = groupedData
     .sort((a, b) => b.total_score - a.total_score)
@@ -312,7 +298,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     data: paginatedData,
     challenges: challenges || [],
-    problems: problemsForUI,
+    problems: problemsData,
     hasMore,
   });
 }

@@ -43,10 +43,8 @@ export async function GET(req: NextRequest) {
     id, 
     user_id, 
     problem_id,
-    total_tests,
-    passed_tests,
-    total_criteria,
-    sum_criterion_score,
+    total_score,
+    session_id,
     nova_sessions!inner(challenge_id)
   `);
 
@@ -96,30 +94,7 @@ export async function GET(req: NextRequest) {
       const problemId = submission.problem_id;
       if (!userId || !problemId) continue;
 
-      // Calculate the score properly according to the formula
-      const hasCriteria = (submission.total_criteria || 0) > 0;
-      const hasTests = (submission.total_tests || 0) > 0;
-
-      let criteriaScore = 0;
-      if (hasCriteria) {
-        const criteriaWeight = hasTests ? 0.5 : 1.0;
-        criteriaScore =
-          ((submission.sum_criterion_score || 0) /
-            ((submission.total_criteria || 0) * 10)) *
-          10 *
-          criteriaWeight;
-      }
-
-      let testScore = 0;
-      if (hasTests) {
-        const testWeight = 0.5;
-        testScore =
-          ((submission.passed_tests || 0) / (submission.total_tests || 0)) *
-          10 *
-          testWeight;
-      }
-
-      const correctScore = criteriaScore + testScore;
+      const correctScore = submission.total_score || 0;
 
       // Initialize user's map if not exists
       if (!userProblemBestScores.has(userId)) {
@@ -193,14 +168,6 @@ export async function GET(req: NextRequest) {
   const { data: challenges } = await sbAdmin
     .from('nova_challenges')
     .select('id, title');
-
-  // Get all problems for UI
-  const problemsForUI =
-    problemsData?.map((problem) => ({
-      id: problem.id || '',
-      title: problem.title || '',
-      challenge_id: problem.challenge_id || '',
-    })) || [];
 
   for (const member of teamData) {
     const teamId = member.team_id;
@@ -284,7 +251,7 @@ export async function GET(req: NextRequest) {
       if (!problemScores) continue;
 
       // Create a Map to consolidate scores by problem ID
-      const consolidatedScores = new Map<
+      const bestScores = new Map<
         string,
         { id: string; title: string; score: number }
       >();
@@ -292,21 +259,26 @@ export async function GET(req: NextRequest) {
       problemScores.forEach((problem) => {
         if (!problem || !problem.id) return;
 
-        if (!consolidatedScores.has(problem.id)) {
-          consolidatedScores.set(problem.id, { ...problem });
-        } else {
-          const existing = consolidatedScores.get(problem.id);
-          if (existing) {
-            existing.score += problem.score;
-          }
+        if (
+          !bestScores.has(problem.id) ||
+          bestScores.get(problem.id)!.score < problem.score
+        ) {
+          bestScores.set(problem.id, { ...problem });
         }
       });
 
       // Replace the array with the consolidated scores
-      team.problem_scores[challengeId] = Array.from(
-        consolidatedScores.values()
-      );
+      team.problem_scores[challengeId] = Array.from(bestScores.values());
+
+      team.challenge_scores[challengeId] = Array.from(
+        bestScores.values()
+      ).reduce((sum, problem) => sum + problem.score, 0);
     }
+
+    team.score = Object.values(team.challenge_scores).reduce(
+      (sum, score) => sum + score,
+      0
+    );
   }
 
   // Convert the Map to an array for the final response
@@ -334,7 +306,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     data: paginatedTeams,
     challenges: challenges || [],
-    problems: problemsForUI,
+    problems: problemsData,
     hasMore,
   });
 }
