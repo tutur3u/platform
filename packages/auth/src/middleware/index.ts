@@ -49,43 +49,48 @@ export function createCentralizedAuthMiddleware(
   return async function authMiddleware(
     req: NextRequest
   ): Promise<NextResponse> {
-    // Make sure user session is always refreshed
-    const { res, user } = await updateSession(req);
+    try {
+      // Make sure user session is always refreshed
+      const { res, user } = await updateSession(req);
 
-    // If we should skip API routes and the current path starts with /api, return without redirecting
-    if (skipApiRoutes && req.nextUrl.pathname.startsWith('/api')) {
-      // console.log('Skipping API route:', req.nextUrl.pathname);
+      // If we should skip API routes and the current path starts with /api, return without redirecting
+      if (skipApiRoutes && req.nextUrl.pathname.startsWith('/api')) {
+        // console.log('Skipping API route:', req.nextUrl.pathname);
+        return res;
+      } else {
+        // console.log('Not skipping API route:', req.nextUrl.pathname);
+      }
+
+      // Determine if the current path is public
+      const isPublic =
+        (!excludeRootPath && req.nextUrl.pathname === '/') ||
+        publicPaths.some((path) => req.nextUrl.pathname.startsWith(path)) ||
+        (isPublicPath && isPublicPath(req.nextUrl.pathname));
+
+      // If the user is not authenticated and the path is not public, redirect to the central login page
+      if (!user && !isPublic) {
+        const reqOrigin = req.nextUrl.origin;
+        const path = req.nextUrl.pathname;
+
+        // Encode the full returnUrl to redirect back after login
+        const returnUrl = encodeURIComponent(
+          `${reqOrigin}/verify-token?nextUrl=${path}`
+        );
+
+        // Redirect to the central login page with the returnUrl as a query parameter
+        const loginUrl = `${webAppUrl}/login?returnUrl=${returnUrl}`;
+
+        console.log('Redirecting to:', loginUrl);
+        const redirectResponse = NextResponse.redirect(loginUrl);
+
+        return redirectResponse;
+      }
+
       return res;
-    } else {
-      // console.log('Not skipping API route:', req.nextUrl.pathname);
+    } catch (error) {
+      console.error('Error updating session:', error);
+      return NextResponse.redirect(new URL('/', req.nextUrl));
     }
-
-    // Determine if the current path is public
-    const isPublic =
-      (!excludeRootPath && req.nextUrl.pathname === '/') ||
-      publicPaths.some((path) => req.nextUrl.pathname.startsWith(path)) ||
-      (isPublicPath && isPublicPath(req.nextUrl.pathname));
-
-    // If the user is not authenticated and the path is not public, redirect to the central login page
-    if (!user && !isPublic) {
-      const reqOrigin = req.nextUrl.origin;
-      const path = req.nextUrl.pathname;
-
-      // Encode the full returnUrl to redirect back after login
-      const returnUrl = encodeURIComponent(
-        `${reqOrigin}/verify-token?nextUrl=${path}`
-      );
-
-      // Redirect to the central login page with the returnUrl as a query parameter
-      const loginUrl = `${webAppUrl}/login?returnUrl=${returnUrl}`;
-
-      console.log('Redirecting to:', loginUrl);
-      const redirectResponse = NextResponse.redirect(loginUrl);
-
-      return redirectResponse;
-    }
-
-    return res;
   };
 }
 
