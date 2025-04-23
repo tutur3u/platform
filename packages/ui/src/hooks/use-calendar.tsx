@@ -45,12 +45,14 @@ const CalendarContext = createContext<{
   getUpcomingEvent: () => CalendarEvent | undefined;
   getEvents: () => CalendarEvent[];
   getEventLevel: (eventId: string) => number;
-  addEvent: (event: Omit<CalendarEvent, 'id'>) => Promise<CalendarEvent>;
+  addEvent: (
+    event: Omit<CalendarEvent, 'id'>
+  ) => Promise<CalendarEvent | undefined>;
   addEmptyEvent: (date: Date) => CalendarEvent;
   updateEvent: (
     eventId: string,
     data: Partial<CalendarEvent>
-  ) => Promise<CalendarEvent>;
+  ) => Promise<CalendarEvent | undefined>;
   deleteEvent: (eventId: string) => Promise<void>;
   isModalOpen: boolean;
   activeEvent: CalendarEvent | undefined;
@@ -464,7 +466,8 @@ export const CalendarProvider = ({
 
       const prevEventLevels = prevEvents.map((e: CalendarEvent) =>
         getEventLevel(e.id)
-      );
+      ) as number[];
+
       return Math.max(...prevEventLevels) + 1;
     },
     [events]
@@ -960,6 +963,11 @@ export const CalendarProvider = ({
             console.log(
               `Found content duplicate for Google event "${gEvent.title}"`
             );
+
+            if (!potentialDuplicates[0]) {
+              console.info('No duplicate found');
+              continue;
+            }
 
             // Update the first duplicate with the Google Event ID
             const supabase = createClient();
