@@ -1,30 +1,50 @@
 import type { ResponseMode } from '../../../../types';
 import { google } from '@ai-sdk/google';
+import { vertex } from '@ai-sdk/google-vertex/edge';
+import type { SafetySetting } from '@google/generative-ai';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { generateText } from 'ai';
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
+
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const vertexModel = google(DEFAULT_MODEL_NAME, {
-  safetySettings: [
-    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-  ],
-});
+const modelSafetySettings = [
+  { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+  {
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE',
+  },
+] as SafetySetting[];
 
-export async function POST(req: Request) {
-  const sbAdmin = await createAdminClient();
+const vertexModel =
+  process.env.NODE_ENV === 'production'
+    ? vertex(DEFAULT_MODEL_NAME, {
+        safetySettings: modelSafetySettings,
+      })
+    : google(DEFAULT_MODEL_NAME, {
+        safetySettings: modelSafetySettings,
+      });
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ problemId: string }> }
+) {
   const supabase = createClient();
-  const { id, prompt } = (await req.json()) as {
+  const sbAdmin = await createAdminClient();
+
+  const { prompt } = (await req.json()) as {
     id?: string;
     model?: string;
     prompt?: string;
@@ -47,7 +67,9 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!id) {
+    const { problemId } = await params;
+
+    if (!problemId) {
       return NextResponse.json(
         { message: 'Incomplete data provided' },
         { status: 400 }
@@ -57,7 +79,7 @@ export async function POST(req: Request) {
     const { data: problem, error: problemError } = await sbAdmin
       .from('nova_problems')
       .select('*')
-      .eq('id', id || '')
+      .eq('id', problemId)
       .single();
 
     if (problemError) {
@@ -77,7 +99,7 @@ export async function POST(req: Request) {
     const { data: testCases, error: testCaseError } = await sbAdmin
       .from('nova_problem_test_cases')
       .select('*')
-      .eq('problem_id', id || '');
+      .eq('problem_id', problemId);
     console.log(testCases);
     if (testCaseError) {
       return NextResponse.json(
