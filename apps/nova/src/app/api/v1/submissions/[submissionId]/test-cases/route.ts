@@ -1,4 +1,7 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -12,7 +15,7 @@ export async function GET(request: Request, { params }: Params) {
   const { searchParams } = new URL(request.url);
   const testCaseId = searchParams.get('testCaseId');
 
-  const supabase = await createAdminClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
