@@ -374,17 +374,15 @@ const CalendarContent = ({
         periodEnd.setHours(23, 59, 59, 999);
       }
       
-      console.log('📆 AI Schedule cho khoảng thời gian:', {
+      console.log('AI Schedule for the period:', {
         view,
         start: periodStart.toISOString(),
         end: periodEnd.toISOString()
       });
       
-      console.log('⏳ Gọi hàm rescheduleEvents từ hook useCalendar...');
       const result = await rescheduleEvents(periodStart, periodEnd, view);
       
       if (result) {
-        console.log('✅ Nhận được kết quả từ rescheduleEvents:', result.length, 'sự kiện');
         // Analyze results
         const fixedEvents = result.filter(event => event.locked || event.priority === 'high');
         const rescheduledEvents = result.filter(event => !event.locked && event.priority !== 'high');
@@ -401,7 +399,7 @@ const CalendarContent = ({
           .map(([cat, count]) => `${cat}: ${count}`)
           .join(', ');
         
-        console.log('📊 Phân tích kết quả:', {
+        console.log('Analyzed results:', {
           fixedEvents: fixedEvents.length,
           rescheduledEvents: rescheduledEvents.length,
           categoryCount
@@ -412,14 +410,14 @@ const CalendarContent = ({
           description: `Optimized ${rescheduledEvents.length} event (${categoryDetails}), keep position ${fixedEvents.length}  locked events.`,
         });
       } else {
-        console.log('⚠️ Không nhận được kết quả từ rescheduleEvents');
+        console.log('Done');
         toast({
           title: "AI Schedule completed",
           description: "Your calendar has been optimized based on event priority",
         });
       }
     } catch (error) {
-      console.error('❌ Lỗi trong quá trình AI scheduling:', error);
+      console.error('Error in AI scheduling:', error);
       toast({
         title: "AI Schedule failed",
           description: "An error occurred while optimizing your calendar",
@@ -427,7 +425,7 @@ const CalendarContent = ({
       });
     } finally {
       setIsAIScheduling(false);
-      console.log('🏁 Kết thúc quá trình AI Scheduling');
+      console.log('Done');
     }
   };
 
