@@ -260,6 +260,70 @@ async function generateFlashcards(workspaceId: string, context: string) {
 
 Tuturuuu's AI features are tightly integrated with Supabase for several purposes:
 
+### TypeScript Types
+
+Supabase-generated TypeScript types are available at `packages/types/src/supabase.ts`. These types are automatically generated when you run `pnpm sb:typegen` or `pnpm sb:reset` and are accessible to all apps that have the `@tuturuuu/types` package installed.
+
+You can use these types to ensure type safety when working with Supabase data in your AI features:
+
+```typescript
+import type { Database } from '@tuturuuu/types/supabase';
+
+// Type-safe access to workspace_secrets table
+const { data, error } = await supabase
+  .from<
+    Database['public']['Tables']['workspace_secrets']['Row']
+  >('workspace_secrets')
+  .select('*')
+  .eq('ws_id', wsId)
+  .eq('name', 'ENABLE_AI');
+
+// Type-safe access to specific columns
+const { data: workspace } = await supabase
+  .from('workspaces')
+  .select('id, name, handle')
+  .eq('id', wsId)
+  .single();
+
+// TypeScript knows the structure of 'workspace' with proper types
+const workspaceName: string = workspace?.name;
+```
+
+### Short-hand Type Access
+
+For more convenient access to common table types in your AI features, Tuturuuu also provides short-hand type definitions in `packages/types/src/db.ts`. These are easier to use and remember than the full database type paths:
+
+```typescript
+import type { AIChat, AIPrompt, WorkspaceDocument } from '@tuturuuu/types/db';
+
+// Use short-hand types directly for AI-related tables
+const { data: chats } = await supabase
+  .from('ai_chats')
+  .select('*')
+  .eq('creator_id', user.id);
+
+// Types are properly inferred
+chats?.forEach((chat: AIChat) => {
+  console.log(chat.id, chat.title);
+});
+
+// Store AI-generated content with proper types
+const document: WorkspaceDocument = {
+  id: uuidv4(),
+  ws_id: wsId,
+  name: 'AI Generated Document',
+  content: generatedContent,
+  created_at: new Date().toISOString(),
+  creator_id: user.id,
+};
+
+await supabase.from('workspace_documents').insert(document);
+```
+
+The short-hand types can also include extended client-side properties that aren't in the database schema, making them perfect for your AI feature implementations.
+
+This ensures that your AI features correctly interact with the database schema, reducing runtime errors and improving development experience.
+
 ### Authentication and Authorization
 
 Before making AI requests, ensure the user is authenticated and authorized to use the feature:

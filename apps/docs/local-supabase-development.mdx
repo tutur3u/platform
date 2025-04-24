@@ -158,6 +158,67 @@ pnpm typegen
   useful when catching up with a new branch's schema.
 </Info>
 
+### Using Generated TypeScript Types
+
+The Supabase-generated TypeScript types are available at `packages/types/src/supabase.ts`. These types are accessible to all apps that have the `@tuturuuu/types` package installed.
+
+You can use these types to ensure type safety when working with Supabase data:
+
+```typescript
+import type { Database } from '@tuturuuu/types/supabase';
+
+// Type-safe access to tables
+const { data, error } = await supabase
+  .from<
+    Database['public']['Tables']['workspace_members']['Row']
+  >('workspace_members')
+  .select('*')
+  .eq('ws_id', workspaceId);
+
+// Type-safe access to specific columns
+const { data: workspace } = await supabase
+  .from('workspaces')
+  .select('id, name, handle')
+  .eq('id', workspaceId)
+  .single();
+
+// TypeScript knows the structure of 'workspace' with proper types
+const workspaceName: string = workspace?.name;
+```
+
+### Short-hand Type Access
+
+For more convenient access to common table types, Tuturuuu also provides short-hand type definitions in `packages/types/src/db.ts`. These are easier to use and remember than the full database type paths:
+
+```typescript
+import type { WorkspaceCourse, WorkspaceRole } from '@tuturuuu/types/db';
+
+// Use short-hand types directly
+const { data: roles } = await supabase
+  .from('workspace_roles')
+  .select('*')
+  .eq('ws_id', workspaceId);
+
+// Type is now WorkspaceRole[]
+roles?.forEach((role: WorkspaceRole) => {
+  console.log(role.name, role.permissions);
+});
+
+// Short-hand types can also include extended properties
+const course: WorkspaceCourse = {
+  id: 'course-id',
+  ws_id: 'workspace-id',
+  name: 'Course Name',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  href: '/courses/course-id', // Extended property not in the database
+};
+```
+
+You can add your own short-hand types to `db.ts` for tables you frequently work with. This is especially useful for tables that have complex structures or need additional client-side properties.
+
+This ensures that your code correctly interacts with the database schema, reducing runtime errors and improving development experience.
+
 ## Migration Files
 
 All migration files are stored in `apps/db/supabase/migrations`. These files:
@@ -763,7 +824,6 @@ export async function POST(req: Request) {
   const { wsId, context } = await req.json();
 
   // Validate user and workspace permissions
-  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
