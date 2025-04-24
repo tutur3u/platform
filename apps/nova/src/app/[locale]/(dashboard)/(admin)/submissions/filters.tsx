@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 
 interface ChallengeOption {
@@ -53,6 +54,7 @@ export function SubmissionFilters({
 }: SubmissionFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('nova.submission-page.filters');
 
   // Handle challenge change
   const onChallengeChange = (value: string) => {
@@ -111,7 +113,7 @@ export function SubmissionFilters({
               <SelectValue placeholder="Filter by Challenge" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Challenges</SelectItem>
+              <SelectItem value="all">{t('title')}</SelectItem>
               {challenges.map((challenge) => (
                 <SelectItem key={challenge.id} value={challenge.id}>
                   {challenge.title}
@@ -128,7 +130,7 @@ export function SubmissionFilters({
               <SelectValue placeholder="Filter by Problem" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Problems</SelectItem>
+              <SelectItem value="all">{t('all-problems')}</SelectItem>
               {filteredProblems.map((problem) => (
                 <SelectItem key={problem.id} value={problem.id}>
                   {problem.title}
@@ -144,7 +146,7 @@ export function SubmissionFilters({
                 onClick={onClearFilters}
                 className="whitespace-nowrap"
               >
-                Clear Filters
+                {t('clear-filters')}
               </Button>
             )}
 

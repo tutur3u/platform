@@ -1440,6 +1440,42 @@
       },
       "clear-filters": "Clear filters"
     },
+    "submission-page": {
+      "title": "Submissions",
+      "description": "Manage and review user submissions",
+      "total-submissions": "Total Submissions",
+      "total-submissions-description": "All time submissions",
+      "unique-users": "Unique Users",
+      "unique-users-description": "Users who have submitted",
+      "latest-submission": "Latest Submission",
+      "latest-submission-description": "Most recent activity",
+      "no-submissions-yet": "No submissions yet",
+      "filters": {
+        "title": "All Challenges",
+        "all-problems": "All Problems",
+        "filter-challenges": "Filter by Challenge",
+        "filter-problems": "Filter by Problem",
+        "clear-filters": "Clear Filters"
+      },
+      "submission-table": {
+        "headers": {
+          "user": "User",
+          "problem": "Problem",
+          "score": "Score",
+          "date": "Date",
+          "actions": "Actions"
+        },
+        "empty-state": {
+          "no-results": "No results found for",
+          "no-submissions": "No submissions found",
+          "clear-search": "Clear Search"
+        },
+        "actions": {
+          "view-details": "View Details",
+          "challenge-results": "Challenge Results"
+        }
+      }
+    },
     "cards": {
       "learn": {
         "title": "Learn",

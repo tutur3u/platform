@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Clock, Users } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 
 interface SubmissionStatsProps {
   stats: {
@@ -12,8 +13,10 @@ interface SubmissionStatsProps {
 }
 
 export function SubmissionOverview({ stats }: SubmissionStatsProps) {
+  const t = useTranslations('nova.submission-page');
+
   function formatDate(dateString: string) {
-    if (!dateString) return 'No submissions yet';
+    if (!dateString) return t('no-submissions-yet');
     return new Date(dateString).toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -28,7 +31,7 @@ export function SubmissionOverview({ stats }: SubmissionStatsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-            Total Submissions
+            {t('total-submissions')}
           </CardTitle>
           <Users className="text-muted-foreground h-4 w-4" />
         </CardHeader>
@@ -36,21 +39,8 @@ export function SubmissionOverview({ stats }: SubmissionStatsProps) {
           <div className="text-2xl font-bold">
             {stats.totalCount.toLocaleString()}
           </div>
-          <p className="text-muted-foreground text-xs">All time submissions</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Unique Users</CardTitle>
-          <Users className="text-muted-foreground h-4 w-4" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {stats.uniqueUsersCount.toLocaleString()}
-          </div>
           <p className="text-muted-foreground text-xs">
-            Users who have submitted
+            {t('total-submissions-description')}
           </p>
         </CardContent>
       </Card>
@@ -58,7 +48,24 @@ export function SubmissionOverview({ stats }: SubmissionStatsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-            Latest Submission
+            {t('unique-users')}
+          </CardTitle>
+          <Users className="text-muted-foreground h-4 w-4" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {stats.uniqueUsersCount.toLocaleString()}
+          </div>
+          <p className="text-muted-foreground text-xs">
+            {t('unique-users-description')}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">
+            {t('latest-submission')}
           </CardTitle>
           <Clock className="text-muted-foreground h-4 w-4" />
         </CardHeader>
@@ -66,7 +73,9 @@ export function SubmissionOverview({ stats }: SubmissionStatsProps) {
           <div className="text-md font-bold">
             {formatDate(stats.latestSubmissionDate)}
           </div>
-          <p className="text-muted-foreground text-xs">Most recent activity</p>
+          <p className="text-muted-foreground text-xs">
+            {t('latest-submission-description')}
+          </p>
         </CardContent>
       </Card>
     </div>
