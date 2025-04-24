@@ -67,10 +67,10 @@ interface Props {
 // Skeleton component for session loading
 const SessionDetailsSkeleton = () => (
   <div className="animate-pulse">
-    <div className="mb-4 rounded-lg bg-muted p-4">
-      <div className="mb-3 h-5 w-32 rounded bg-muted-foreground/20"></div>
-      <div className="mb-2 h-4 w-48 rounded bg-muted-foreground/20"></div>
-      <div className="h-4 w-44 rounded bg-muted-foreground/20"></div>
+    <div className="bg-muted mb-4 rounded-lg p-4">
+      <div className="bg-muted-foreground/20 mb-3 h-5 w-32 rounded"></div>
+      <div className="bg-muted-foreground/20 mb-2 h-4 w-48 rounded"></div>
+      <div className="bg-muted-foreground/20 h-4 w-44 rounded"></div>
     </div>
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {Array(2)
@@ -79,14 +79,14 @@ const SessionDetailsSkeleton = () => (
           <div key={i} className="h-40 rounded-lg border p-4">
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-muted-foreground/20"></div>
-                <div className="h-5 w-20 rounded bg-muted-foreground/20"></div>
+                <div className="bg-muted-foreground/20 h-6 w-6 rounded-full"></div>
+                <div className="bg-muted-foreground/20 h-5 w-20 rounded"></div>
               </div>
-              <div className="h-5 w-14 rounded-full bg-muted-foreground/20"></div>
+              <div className="bg-muted-foreground/20 h-5 w-14 rounded-full"></div>
             </div>
-            <div className="mb-2 h-4 w-3/4 rounded bg-muted-foreground/20"></div>
-            <div className="mb-6 h-4 w-1/2 rounded bg-muted-foreground/20"></div>
-            <div className="h-14 rounded bg-muted-foreground/20"></div>
+            <div className="bg-muted-foreground/20 mb-2 h-4 w-3/4 rounded"></div>
+            <div className="bg-muted-foreground/20 mb-6 h-4 w-1/2 rounded"></div>
+            <div className="bg-muted-foreground/20 h-14 rounded"></div>
           </div>
         ))}
     </div>
@@ -217,7 +217,7 @@ export default function ResultClient({
   }, [stats, error, isValidScore]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 px-4 py-8 sm:px-6">
+    <div className="from-background to-muted/20 min-h-screen bg-gradient-to-b px-4 py-8 sm:px-6">
       <div className="mx-auto flex min-h-full max-w-6xl flex-col">
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="mb-4 flex items-center gap-4 md:mb-0">
@@ -231,7 +231,7 @@ export default function ResultClient({
             </Button>
             <div>
               <h1 className="text-3xl font-bold">{challenge.title}</h1>
-              <p className="mt-1 text-muted-foreground">
+              <p className="text-muted-foreground mt-1">
                 {challenge.description || 'Challenge Results'}
               </p>
             </div>
@@ -284,7 +284,7 @@ export default function ResultClient({
           <div className="flex flex-1 items-center justify-center">
             <Card className="max-w-md">
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <div className="bg-muted text-muted-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
                   <BookOpen className="h-10 w-10" />
                 </div>
                 <CardTitle>No data available</CardTitle>
@@ -317,7 +317,7 @@ export default function ResultClient({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
-                                className="flex cursor-pointer items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
+                                className="bg-primary/10 text-primary flex cursor-pointer items-center rounded-full px-3 py-1 text-sm font-medium"
                                 onClick={() =>
                                   setShowScoreBreakdown(!showScoreBreakdown)
                                 }
@@ -363,7 +363,7 @@ export default function ResultClient({
                         }
                       />
                       <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           You've attempted {stats.problemsAttempted || 0} out of{' '}
                           {stats.totalProblems || 0} problems
                         </p>
@@ -373,7 +373,7 @@ export default function ResultClient({
                       </div>
 
                       {showScoreBreakdown && (
-                        <div className="mt-4 rounded-lg bg-muted/30 p-3 text-sm">
+                        <div className="bg-muted/30 mt-4 rounded-lg p-3 text-sm">
                           <h4 className="mb-2 font-medium">Score Breakdown</h4>
                           <div className="grid grid-cols-2 gap-2">
                             <div>
@@ -415,10 +415,10 @@ export default function ResultClient({
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
-                    <div className="flex flex-col rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+                    <div className="bg-card text-card-foreground flex flex-col rounded-lg border p-4 shadow-sm">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="rounded-full bg-primary/10 p-2 text-primary">
+                          <div className="bg-primary/10 text-primary rounded-full p-2">
                             <Target className="h-5 w-5" />
                           </div>
                           <h4 className="font-medium">Total Score</h4>
@@ -434,7 +434,7 @@ export default function ResultClient({
                           <Trophy className="h-4 w-4" />
                           {status.text}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           {stats.problemsAttempted > 0 ? (
                             <>
                               You scored {stats.score.toFixed(1)} out of a
@@ -445,7 +445,7 @@ export default function ResultClient({
                           )}
                         </div>
                       </div>
-                      <div className="mt-2 text-sm text-muted-foreground">
+                      <div className="text-muted-foreground mt-2 text-sm">
                         Last attempt:{' '}
                         {sessionSummaries[0]?.created_at
                           ? formatDistanceToNow(
@@ -510,10 +510,10 @@ export default function ResultClient({
                           value={session.id}
                           className="border-b last:border-b-0"
                         >
-                          <AccordionTrigger className="relative px-4 py-3 hover:bg-muted/50">
+                          <AccordionTrigger className="hover:bg-muted/50 relative px-4 py-3">
                             {loadingSessions[session.id] && (
-                              <div className="absolute top-1/2 right-12 -translate-y-1/2">
-                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                              <div className="absolute right-12 top-1/2 -translate-y-1/2">
+                                <Loader2 className="text-primary h-4 w-4 animate-spin" />
                               </div>
                             )}
                             <div className="flex w-full items-center justify-between pr-4">
@@ -523,7 +523,7 @@ export default function ResultClient({
                                   session.created_at
                                 ).toLocaleDateString()}
                               </span>
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-muted-foreground text-sm">
                                 {formatDistanceToNow(
                                   new Date(session.created_at),
                                   { addSuffix: true }
@@ -531,12 +531,12 @@ export default function ResultClient({
                               </span>
                             </div>
                           </AccordionTrigger>
-                          <AccordionContent className="px-4 pt-0 pb-4">
+                          <AccordionContent className="px-4 pb-4 pt-0">
                             {loadingSessions[session.id] ? (
                               <SessionDetailsSkeleton />
                             ) : loadedSessions[session.id] ? (
                               <div className="transition-all duration-200 ease-in-out">
-                                <div className="mb-4 rounded-lg bg-muted p-4">
+                                <div className="bg-muted mb-4 rounded-lg p-4">
                                   <div className="text-sm">
                                     <div className="mb-1 font-medium">
                                       Session {index + 1}
@@ -576,7 +576,7 @@ export default function ResultClient({
                                 </div>
                               </div>
                             ) : (
-                              <div className="py-4 text-center text-muted-foreground">
+                              <div className="text-muted-foreground py-4 text-center">
                                 No data available for this session
                               </div>
                             )}
@@ -609,14 +609,14 @@ export default function ResultClient({
                             >
                               <div className="mb-2 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <div className="h-6 w-6 rounded-full bg-muted-foreground/20"></div>
-                                  <div className="h-5 w-24 rounded bg-muted-foreground/20"></div>
+                                  <div className="bg-muted-foreground/20 h-6 w-6 rounded-full"></div>
+                                  <div className="bg-muted-foreground/20 h-5 w-24 rounded"></div>
                                 </div>
-                                <div className="h-5 w-14 rounded-full bg-muted-foreground/20"></div>
+                                <div className="bg-muted-foreground/20 h-5 w-14 rounded-full"></div>
                               </div>
-                              <div className="mb-2 h-4 w-3/4 rounded bg-muted-foreground/20"></div>
-                              <div className="mb-6 h-4 w-1/2 rounded bg-muted-foreground/20"></div>
-                              <div className="h-14 rounded bg-muted-foreground/20"></div>
+                              <div className="bg-muted-foreground/20 mb-2 h-4 w-3/4 rounded"></div>
+                              <div className="bg-muted-foreground/20 mb-6 h-4 w-1/2 rounded"></div>
+                              <div className="bg-muted-foreground/20 h-14 rounded"></div>
                             </div>
                           ))}
                       </div>
@@ -632,7 +632,7 @@ export default function ResultClient({
                         ))}
                       </div>
                     ) : (
-                      <div className="py-4 text-center text-muted-foreground">
+                      <div className="text-muted-foreground py-4 text-center">
                         No problem data available
                       </div>
                     )}
