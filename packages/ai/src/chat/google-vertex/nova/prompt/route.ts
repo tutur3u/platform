@@ -44,15 +44,17 @@ export async function POST(
   const supabase = createClient();
   const sbAdmin = await createAdminClient();
 
-  const { prompt, sessionId } = (await req.json()) as {
-    id?: string;
-    model?: string;
-    prompt?: string;
-    sessionId?: string;
-    mode?: ResponseMode;
-  };
+  let submissionId: string | null = null;
 
   try {
+    const { prompt, sessionId } = (await req.json()) as {
+      id?: string;
+      model?: string;
+      prompt?: string;
+      sessionId?: string;
+      mode?: ResponseMode;
+    };
+
     const {
       data: { user },
     } = await (await supabase).auth.getUser();
@@ -101,7 +103,7 @@ export async function POST(
       .from('nova_problem_test_cases')
       .select('*')
       .eq('problem_id', problemId);
-    console.log(testCases);
+
     if (testCaseError) {
       return NextResponse.json(
         { message: 'Error fetching test cases' },
@@ -198,7 +200,6 @@ export async function POST(
       parsedResponse = JSON.parse(
         (response ?? '').replace(/```json\n|\n```/g, '').trim()
       );
-      console.log(parsedResponse);
     } catch (parseError) {
       console.error('Parse error:', parseError);
       return NextResponse.json(
@@ -229,87 +230,87 @@ export async function POST(
       );
     }
 
-    try {
-      // Step 3: Save test case results
-      const testCaseEvaluation = parsedResponse.testCaseEvaluation || [];
-      const testCaseInserts = testCaseEvaluation
-        .map((testCase: any) => {
-          // Find matching test case in the problem
-          const matchingTestCase = testCases.find(
-            (tc) => tc.input === testCase.input
-          );
+    submissionId = submission.id;
 
-          if (matchingTestCase) {
-            return {
-              submission_id: submission.id,
-              test_case_id: matchingTestCase.id,
-              output: testCase.output,
-              matched: matchingTestCase.output === testCase.output,
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
+    // Step 3: Save test case results
+    const testCaseEvaluation = parsedResponse.testCaseEvaluation || [];
+    const testCaseInserts = testCaseEvaluation
+      .map((testCase: any) => {
+        // Find matching test case in the problem
+        const matchingTestCase = testCases.find(
+          (tc) => tc.input === testCase.input
+        );
 
-      if (testCaseInserts.length > 0) {
-        const { error: testCaseInsertsError } = await sbAdmin
-          .from('nova_submission_test_cases')
-          .insert(testCaseInserts);
-
-        if (testCaseInsertsError) {
-          return NextResponse.json(
-            { message: 'Failed to create test case results' },
-            { status: 500 }
-          );
+        if (matchingTestCase) {
+          return {
+            submission_id: submission.id,
+            test_case_id: matchingTestCase.id,
+            output: testCase.output,
+            matched: matchingTestCase.output === testCase.output,
+          };
         }
+        return null;
+      })
+      .filter(Boolean);
+
+    if (testCaseInserts.length > 0) {
+      const { error: testCaseInsertsError } = await sbAdmin
+        .from('nova_submission_test_cases')
+        .insert(testCaseInserts);
+
+      if (testCaseInsertsError) {
+        throw new Error('Failed to create test case results');
       }
-
-      // Step 4: Save criteria evaluations
-      const criteriaEvaluation = parsedResponse.criteriaEvaluation || [];
-      const criteriaInserts = criteriaEvaluation
-        .map((criteriaEval: any) => {
-          // Find matching criteria by name
-          const matchingCriteria = challengeCriteria.find(
-            (c) => c.name === criteriaEval.name
-          );
-
-          if (matchingCriteria) {
-            return {
-              submission_id: submission.id,
-              criteria_id: matchingCriteria.id,
-              score: criteriaEval.score,
-              feedback: criteriaEval.feedback,
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
-
-      if (criteriaInserts.length > 0) {
-        const { error: criteriaInsertsError } = await sbAdmin
-          .from('nova_submission_criteria')
-          .insert(criteriaInserts);
-
-        if (criteriaInsertsError) {
-          return NextResponse.json(
-            { message: 'Failed to create criteria evaluations' },
-            { status: 500 }
-          );
-        }
-      }
-
-      // Return the evaluation results and submission ID
-      return NextResponse.json(
-        { submissionId: submission.id, response: parsedResponse },
-        { status: 200 }
-      );
-    } catch (error) {
-      // Delete submission on any other error
-      await sbAdmin.from('nova_submissions').delete().eq('id', submission.id);
-      throw error;
     }
+
+    // Step 4: Save criteria evaluations
+    const criteriaEvaluation = parsedResponse.criteriaEvaluation || [];
+    const criteriaInserts = criteriaEvaluation
+      .map((criteriaEval: any) => {
+        // Find matching criteria by name
+        const matchingCriteria = challengeCriteria.find(
+          (c) => c.name === criteriaEval.name
+        );
+
+        if (matchingCriteria) {
+          return {
+            submission_id: submission.id,
+            criteria_id: matchingCriteria.id,
+            score: criteriaEval.score,
+            feedback: criteriaEval.feedback,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    if (criteriaInserts.length > 0) {
+      const { error: criteriaInsertsError } = await sbAdmin
+        .from('nova_submission_criteria')
+        .insert(criteriaInserts);
+
+      if (criteriaInsertsError) {
+        throw new Error('Failed to create criteria evaluations');
+      }
+    }
+
+    // Return the evaluation results and submission ID
+    return NextResponse.json(
+      { submissionId: submission.id, response: parsedResponse },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('🚨 Server error:', error);
+
+    // Delete the submission if it was created
+    if (submissionId) {
+      try {
+        await sbAdmin.from('nova_submissions').delete().eq('id', submissionId);
+      } catch (deleteError) {
+        console.error('Failed to delete submission:', deleteError);
+      }
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
