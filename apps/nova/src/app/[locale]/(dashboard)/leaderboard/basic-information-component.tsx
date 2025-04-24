@@ -1,4 +1,4 @@
-import { LeaderboardEntry } from './page';
+import { LeaderboardEntry } from './leaderboard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { CardContent } from '@tuturuuu/ui/card';
