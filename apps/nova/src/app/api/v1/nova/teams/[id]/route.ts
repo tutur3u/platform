@@ -36,31 +36,6 @@ export async function GET(
   }
 }
 
-export async function DELETE(
-  _: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const supabase = await createClient();
-
-    const { id } = await params;
-
-    const { error } = await supabase.from('nova_teams').delete().eq('id', id);
-
-    if (error) {
-      throw error;
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting team:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete team' },
-      { status: 500 }
-    );
-  }
-}
-
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -94,6 +69,31 @@ export async function PATCH(
     console.error('Error updating team:', error);
     return NextResponse.json(
       { error: 'Failed to update team' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createClient();
+
+    const { id } = await params;
+
+    const { error } = await supabase.from('nova_teams').delete().eq('id', id);
+
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting team:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete team' },
       { status: 500 }
     );
   }
