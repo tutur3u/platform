@@ -1,13 +1,18 @@
 import { google } from '@ai-sdk/google';
 import { vertex } from '@ai-sdk/google-vertex/edge';
 import type { SafetySetting } from '@google/generative-ai';
-import type { ResponseMode } from '@tuturuuu/ai/types';
+import type {
+  NovaSubmissionCriteria,
+  NovaSubmissionTestCase,
+  ResponseMode,
+} from '@tuturuuu/ai/types';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { generateText } from 'ai';
+import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 
@@ -154,6 +159,26 @@ export async function POST(
         },
       ],
     };
+    const EvaluationSchema = z.object({
+      testCaseEvaluation: z
+        .array(
+          z.object({
+            input: z.string().describe('The input for the test case'),
+            output: z.string().describe('The output for the test case'),
+          })
+        )
+        .describe('Array of test case evaluations'),
+      criteriaEvaluation: z
+        .array(
+          z.object({
+            name: z.string().describe('Name of the evaluation criterion'),
+            description: z.string().describe('Description of the criterion'),
+            score: z.number().min(0).max(10).describe('Score out of 10'),
+            feedback: z.string().describe('Feedback for the criterion'),
+          })
+        )
+        .describe('Array of criteria evaluations'),
+    });
 
     // System Instruction for Evaluation with strict JSON output
     const systemInstruction = `
@@ -186,32 +211,25 @@ export async function POST(
       ${JSON.stringify(exampleResponse)}
     `;
 
-    const res = await generateText({
-      model: vertexModel,
-      messages: [
-        { role: 'system', content: systemInstruction },
-        { role: 'user', content: prompt },
-      ],
-    });
-    const response = res.steps[0]?.text;
-
-    let parsedResponse;
+    let evaluation;
     try {
-      parsedResponse = JSON.parse(
-        (response ?? '').replace(/```json\n|\n```/g, '').trim()
-      );
-    } catch (parseError) {
-      console.error('Parse error:', parseError);
+      const { object } = await generateObject({
+        model: vertexModel,
+        schema: EvaluationSchema,
+        prompt,
+        system: systemInstruction,
+      });
+      evaluation = object;
+      console.log('AI response:', evaluation);
+    } catch (error) {
+      console.error('AI evaluation error:', error);
       return NextResponse.json(
-        {
-          message:
-            'Invalid response format. Expected JSON with testCaseEvaluation and criteriaEvaluation.',
-        },
-        { status: 422 }
+        { message: 'Failed to evaluate prompt' },
+        { status: 500 }
       );
     }
 
-    // Step 2: Create the submission record
+    // Step 3: Create the submission record
     const { data: submission, error: submissionError } = await sbAdmin
       .from('nova_submissions')
       .insert({
@@ -232,26 +250,28 @@ export async function POST(
 
     submissionId = submission.id;
 
-    // Step 3: Save test case results
-    const testCaseEvaluation = parsedResponse.testCaseEvaluation || [];
-    const testCaseInserts = testCaseEvaluation
-      .map((testCase: any) => {
-        // Find matching test case in the problem
+    // Step 4: Save test case results
+    const testCaseEvaluation = evaluation.testCaseEvaluation || [];
+    const testCaseInserts: NovaSubmissionTestCase[] = testCaseEvaluation
+      .map((testCase) => {
         const matchingTestCase = testCases.find(
           (tc) => tc.input === testCase.input
         );
-
         if (matchingTestCase) {
+          const matched = matchingTestCase.output === testCase.output;
+          console.log(
+            `Test case input: ${testCase.input}, AI output: ${testCase.output}, Expected output: ${matchingTestCase.output}, Matched: ${matched}`
+          );
           return {
             submission_id: submission.id,
             test_case_id: matchingTestCase.id,
             output: testCase.output,
-            matched: matchingTestCase.output === testCase.output,
+            matched,
           };
         }
         return null;
       })
-      .filter(Boolean);
+      .filter((item): item is NovaSubmissionTestCase => item !== null);
 
     if (testCaseInserts.length > 0) {
       const { error: testCaseInsertsError } = await sbAdmin
@@ -263,15 +283,13 @@ export async function POST(
       }
     }
 
-    // Step 4: Save criteria evaluations
-    const criteriaEvaluation = parsedResponse.criteriaEvaluation || [];
-    const criteriaInserts = criteriaEvaluation
-      .map((criteriaEval: any) => {
-        // Find matching criteria by name
+    // Step 5: Save criteria evaluations
+    const criteriaEvaluation = evaluation.criteriaEvaluation || [];
+    const criteriaInserts: NovaSubmissionCriteria[] = criteriaEvaluation
+      .map((criteriaEval) => {
         const matchingCriteria = challengeCriteria.find(
           (c) => c.name === criteriaEval.name
         );
-
         if (matchingCriteria) {
           return {
             submission_id: submission.id,
@@ -282,7 +300,7 @@ export async function POST(
         }
         return null;
       })
-      .filter(Boolean);
+      .filter((item): item is NovaSubmissionCriteria => item !== null);
 
     if (criteriaInserts.length > 0) {
       const { error: criteriaInsertsError } = await sbAdmin
@@ -294,12 +312,12 @@ export async function POST(
       }
     }
 
-    // Return the evaluation results and submission ID
+    // Step 6: Return the evaluation results and submission ID
     return NextResponse.json(
-      { submissionId: submission.id, response: parsedResponse },
+      { submissionId: submission.id, response: evaluation },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('🚨 Server error:', error);
 
     // Delete the submission if it was created
@@ -312,7 +330,7 @@ export async function POST(
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { message: `Internal server error: ${error.message}` },
       { status: 500 }
     );
   }
