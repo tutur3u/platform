@@ -1,7 +1,7 @@
 import TeamClient from './client-page';
 import { getTeamColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -51,7 +51,7 @@ async function getTeamsData({
   pageSize = '100',
   retry = true,
 }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}) {
-  const supabase = await createAdminClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('nova_teams')
@@ -83,7 +83,7 @@ async function getTeamsData({
 
   // Get invitation counts for all teams at once
   const { data: allInvites, error: inviteError } = await supabase
-    .from('nova_team_invites')
+    .from('nova_team_emails')
     .select('team_id')
     .in('team_id', teamIds);
 

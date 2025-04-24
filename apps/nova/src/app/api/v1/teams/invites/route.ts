@@ -1,14 +1,10 @@
 import { isEmail } from '@/utils/email-helper';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 //Get all invitation for the current user
 export async function GET() {
   const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
 
   // Get authenticated user
   const {
@@ -22,13 +18,10 @@ export async function GET() {
 
   try {
     // Use the simplest possible select statement
-    const { data: invites, error } = await sbAdmin
-      .from('nova_team_invites')
-      .select(
-        `team_id, email, status,created_at, nova_teams(id, name, description)`
-      )
-      .eq('email', user.email)
-      .eq('status', 'pending');
+    const { data: invites, error } = await supabase
+      .from('nova_team_emails')
+      .select(`team_id, email, created_at, nova_teams(id, name, description)`)
+      .eq('email', user.email);
 
     if (error) {
       console.error('Error fetching invitations:', error);
@@ -51,7 +44,6 @@ export async function GET() {
 // Create a new team invitation
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
 
   // Get authenticated user (teh inviter)
   const {
@@ -82,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if team exists
-    const { data: team, error: teamError } = await sbAdmin
+    const { data: team, error: teamError } = await supabase
       .from('nova_teams')
       .select('id')
       .eq('id', teamId)
@@ -94,48 +86,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if invitation already exists
-    const { data: existingInvite } = await sbAdmin
-      .from('nova_team_invites')
-      .select('status')
+    const { data: existingInvite } = await supabase
+      .from('nova_team_emails')
+      .select('email')
       .eq('team_id', teamId)
       .eq('email', email)
       .maybeSingle();
 
     if (existingInvite) {
-      if (existingInvite.status === 'pending') {
-        return NextResponse.json(
-          { message: 'Invitation already sent and pending' },
-          { status: 400 }
-        );
-      } else if (existingInvite.status === 'declined') {
-        // Update the declined invitation to pending
-        const { error: updateError } = await sbAdmin
-          .from('nova_team_invites')
-          .update({
-            status: 'pending',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('team_id', teamId)
-          .eq('email', email);
-
-        if (updateError) {
-          console.error('Error updating invitation:', updateError);
-          throw updateError;
-        }
-
-        return NextResponse.json({
-          message: 'Invitation resent successfully',
-        });
-      }
+      return NextResponse.json(
+        { message: 'Invitation already exists' },
+        { status: 400 }
+      );
     }
 
     // Create new invitation
-    const { error: inviteError } = await sbAdmin
-      .from('nova_team_invites')
+    const { error: inviteError } = await supabase
+      .from('nova_team_emails')
       .insert({
         team_id: teamId,
         email: email,
-        status: 'pending',
       });
 
     if (inviteError) {
@@ -160,7 +130,6 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
 
   // Get authenticated user
   const {
@@ -185,25 +154,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Check admin
-    const { data: adminUser } = await sbAdmin
-      .from('nova_roles')
-      .select('*')
-      .eq('email', user.email)
-      .eq('allow_challenge_management', true);
-
-    const isAdmin = adminUser && adminUser.length > 0;
-
-    if (!isAdmin) {
-      return NextResponse.json(
-        { message: 'You do not have permission to delete invitations' },
-        { status: 403 }
-      );
-    }
-
     // Check if invitation exists
-    const { data: invitation, error: inviteCheckError } = await sbAdmin
-      .from('nova_team_invites')
+    const { data: invitation, error: inviteCheckError } = await supabase
+      .from('nova_team_emails')
       .select('*')
       .eq('team_id', teamId)
       .eq('email', email)
@@ -216,8 +169,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
     // Delete the invitation
-    const { error: deleteError } = await sbAdmin
-      .from('nova_team_invites')
+    const { error: deleteError } = await supabase
+      .from('nova_team_emails')
       .delete()
       .eq('team_id', teamId)
       .eq('email', email);
@@ -245,7 +198,6 @@ export async function DELETE(request: NextRequest) {
 // Accept/decline invitation
 export async function PATCH(request: NextRequest) {
   const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
 
   // Get authenticated user
   const {
@@ -268,12 +220,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Check if invitation exists and is for this user
-    const { data: invite, error: inviteError } = await sbAdmin
-      .from('nova_team_invites')
+    const { data: invite, error: inviteError } = await supabase
+      .from('nova_team_emails')
       .select('*')
       .eq('team_id', teamId)
       .eq('email', user.email)
-      .eq('status', 'pending')
       .single();
 
     if (inviteError || !invite) {
@@ -285,11 +236,18 @@ export async function PATCH(request: NextRequest) {
 
     //Use transaction to ensure data consistency
     if (action === 'accept') {
-      // Update invite status
+      // Add user to team members
+      const { error: memberError } = await supabase
+        .from('nova_team_members')
+        .insert({
+          team_id: teamId,
+          user_id: user.id,
+        });
 
-      const { error: updateError } = await sbAdmin
-        .from('nova_team_invites')
-        .update({ status: 'accepted', updated_at: new Date().toISOString() })
+      // Update invite status
+      const { error: updateError } = await supabase
+        .from('nova_team_emails')
+        .delete()
         .eq('team_id', teamId)
         .eq('email', user.email);
 
@@ -298,22 +256,12 @@ export async function PATCH(request: NextRequest) {
         throw updateError;
       }
 
-      // Add user to team members
-
-      const { error: memberError } = await sbAdmin
-        .from('nova_team_members')
-        .insert({
-          team_id: teamId,
-          user_id: user.id,
-        });
-
       if (memberError) {
         // Rollback invite status if member creation fails
-        await sbAdmin
-          .from('nova_team_invites')
-          .update({ status: 'pending', updated_at: new Date().toISOString() })
-          .eq('team_id', teamId)
-          .eq('email', user.email);
+        await supabase.from('nova_team_emails').insert({
+          team_id: teamId,
+          email: user.email,
+        });
 
         console.error('Error adding user to team:', memberError);
         throw memberError;
@@ -321,9 +269,9 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ message: 'Invitation accepted successfully' });
     } else {
       // Decline invitation
-      const { error: declineError } = await sbAdmin
-        .from('nova_team_invites')
-        .update({ status: 'declined', updated_at: new Date().toISOString() })
+      const { error: declineError } = await supabase
+        .from('nova_team_emails')
+        .delete()
         .eq('team_id', teamId)
         .eq('email', user.email);
 

@@ -2565,38 +2565,6 @@ export type Database = {
           },
         ];
       };
-      nova_team_invites: {
-        Row: {
-          created_at: string;
-          email: string;
-          status: Database['public']['Enums']['invitation_status'];
-          team_id: string;
-          updated_at: string;
-        };
-        Insert: {
-          created_at?: string;
-          email: string;
-          status: Database['public']['Enums']['invitation_status'];
-          team_id?: string;
-          updated_at?: string;
-        };
-        Update: {
-          created_at?: string;
-          email?: string;
-          status?: Database['public']['Enums']['invitation_status'];
-          team_id?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_team_invites_team_id_fkey';
-            columns: ['team_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_teams';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       nova_team_members: {
         Row: {
           created_at: string;
@@ -6585,7 +6553,6 @@ export type Database = {
         | 'flashcards';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       dataset_type: 'excel' | 'csv' | 'html';
-      invitation_status: 'pending' | 'accepted' | 'declined' | 'expired';
       workspace_role_permission:
         | 'view_infrastructure'
         | 'manage_workspace_secrets'
@@ -6736,7 +6703,6 @@ export const Constants = {
       ],
       chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
       dataset_type: ['excel', 'csv', 'html'],
-      invitation_status: ['pending', 'accepted', 'declined', 'expired'],
       workspace_role_permission: [
         'view_infrastructure',
         'manage_workspace_secrets',

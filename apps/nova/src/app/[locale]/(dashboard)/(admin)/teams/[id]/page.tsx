@@ -117,7 +117,7 @@ async function getTeamInvitationsData(id: string) {
   const sbAdmin = await createAdminClient();
 
   const { data, error } = await sbAdmin
-    .from('nova_team_invites')
+    .from('nova_team_emails')
     .select('*')
     .eq('team_id', id)
     .order('created_at', { ascending: false });

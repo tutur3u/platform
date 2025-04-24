@@ -41,7 +41,7 @@ export async function GET(
 
     // Fetch invitations for the team
     const { data: invitations, error: inviteError } = await sbAdmin
-      .from('nova_team_invites')
+      .from('nova_team_emails')
       .select('*')
       .eq('team_id', teamId);
 
