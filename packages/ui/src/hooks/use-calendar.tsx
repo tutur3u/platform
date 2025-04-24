@@ -49,6 +49,7 @@ const CalendarContext = createContext<{
     event: Omit<CalendarEvent, 'id'>
   ) => Promise<CalendarEvent | undefined>;
   addEmptyEvent: (date: Date) => CalendarEvent;
+  addEmptyEventWithDuration: (startDate: Date, endDate: Date) => CalendarEvent;
   updateEvent: (
     eventId: string,
     data: Partial<CalendarEvent>
@@ -77,6 +78,7 @@ const CalendarContext = createContext<{
   getEventLevel: () => 0,
   addEvent: () => Promise.resolve({} as CalendarEvent),
   addEmptyEvent: () => ({}) as CalendarEvent,
+  addEmptyEventWithDuration: () => ({}) as CalendarEvent,
   updateEvent: () => Promise.resolve({} as CalendarEvent),
   deleteEvent: () => Promise.resolve(),
   isModalOpen: false,
@@ -594,6 +596,40 @@ export const CalendarProvider = ({
       return newEvent as CalendarEvent;
     },
     [ws?.id, settings.taskSettings, settings.categoryColors]
+  );
+
+  const addEmptyEventWithDuration = useCallback(
+    (startDate: Date, endDate: Date) => {
+      // Round start and end times to nearest 15-minute interval
+      const roundedStartDate = roundToNearest15Minutes(startDate);
+      const roundedEndDate = roundToNearest15Minutes(endDate);
+
+      // Use default color from settings
+      const defaultColor =
+        settings.categoryColors.categories[0]?.color || 'BLUE';
+
+      // Create a new event with default values
+      const newEvent: CalendarEvent = {
+        id: 'new',
+        title: '',
+        description: '',
+        start_at: roundedStartDate.toISOString(),
+        end_at: roundedEndDate.toISOString(),
+        color: defaultColor,
+        ws_id: ws?.id || '',
+      };
+
+      // Store the pending new event
+      setPendingNewEvent(newEvent);
+      setActiveEventId('new');
+
+      // Open the modal with the pending event
+      setModalHidden(false);
+
+      // Return the pending event object
+      return newEvent as CalendarEvent;
+    },
+    [ws?.id, settings.categoryColors]
   );
 
   // Process the update queue
@@ -1179,6 +1215,7 @@ export const CalendarProvider = ({
 
     addEvent,
     addEmptyEvent,
+    addEmptyEventWithDuration,
     updateEvent,
     deleteEvent,
 
