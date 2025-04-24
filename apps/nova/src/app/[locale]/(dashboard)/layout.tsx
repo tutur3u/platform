@@ -1,8 +1,8 @@
 import NavbarActions from '../(marketing)/navbar-actions';
 import { UserNav } from '../(marketing)/user-nav';
-import { ApologyModal } from '@/components/common/ApologyModal';
 import Structure from '@/components/layout/structure';
 import {
+  DEV_MODE,
   MAIN_CONTENT_SIZE_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
   SIDEBAR_SIZE_COOKIE_NAME,
@@ -84,11 +84,15 @@ export default async function RootLayout({
       icon: <Box className="h-4 w-4" />,
       requiresChallengeManagement: true,
     },
-    {
-      name: t('leaderboard'),
-      href: '/leaderboard',
-      icon: <Trophy className="h-4 w-4" />,
-    },
+    ...(DEV_MODE
+      ? [
+          {
+            name: t('leaderboard'),
+            href: '/leaderboard',
+            icon: <Trophy className="h-4 w-4" />,
+          },
+        ]
+      : []),
     {
       name: t('invitations'),
       href: '/invitation',
@@ -138,7 +142,7 @@ export default async function RootLayout({
         </Suspense>
       }
     >
-      <ApologyModal />
+      {/* <ApologyModal /> */}
       {children}
     </Structure>
   );

@@ -1441,6 +1441,42 @@
       },
       "clear-filters": "Xóa bộ lọc"
     },
+    "submission-page": {
+      "title": "Bài Nộp",
+      "description": "Quản lý và xem xét bài nộp của người dùng",
+      "total-submissions": "Tổng số bài nộp",
+      "total-submissions-description": "Tất cả bài nộp từ trước đến nay",
+      "unique-users": "Người dùng duy nhất",
+      "unique-users-description": "Người dùng đã nộp bài",
+      "latest-submission": "Bài nộp gần nhất",
+      "latest-submission-description": "Hoạt động gần đây nhất",
+      "no-submissions-yet": "Chưa có bài nộp nào",
+      "filters": {
+        "title": "Tất cả thử thách",
+        "filter-challenges": "Lọc theo thử thách",
+        "filter-problems": "Lọc theo vấn đề",
+        "all-problems": "Tất cả vấn đề",
+        "clear-filters": "Xóa bộ lọc"
+      },
+      "submission-table": {
+        "headers": {
+          "user": "Người dùng",
+          "problem": "Đề Bài",
+          "score": "Điểm",
+          "date": "Ngày",
+          "actions": "Hành động"
+        },
+        "empty-state": {
+          "no-results": "Không tìm thấy kết quả nào cho",
+          "no-submissions": "Không có bài nộp nào",
+          "clear-search": "Xóa tìm kiếm"
+        },
+        "actions": {
+          "view-details": "Xem chi tiết",
+          "challenge-results": "Kết quả thử thách"
+        }
+      }
+    },
     "cards": {
       "learn": {
         "title": "Học hỏi",
