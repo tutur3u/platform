@@ -3,14 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  ArrowDownUp,
-  Crown,
-  Medal,
-  Sparkles,
-  Star,
-  TrendingUp,
-} from '@tuturuuu/ui/icons';
+import { ArrowDownUp, Crown, Medal, Sparkles } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Table,
@@ -31,6 +24,13 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React, { useState } from 'react';
+
+export interface UserInterface {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+}
 
 export type LeaderboardEntry = {
   id: string;
@@ -60,12 +60,6 @@ interface LeaderboardProps {
   problems?: { id: string; title: string; challenge_id: string }[];
 }
 
-interface UserInterface {
-  id: string;
-  name: string;
-  avatar: string;
-  role: string;
-}
 export function Leaderboard({
   data,
   isLoading = false,
@@ -88,9 +82,6 @@ export function Leaderboard({
       return <Medal className="h-4 w-4 text-gray-400 dark:text-gray-300" />;
     if (rank === 3)
       return <Medal className="h-4 w-4 text-amber-700 dark:text-amber-500" />;
-    if (rank <= 10)
-      return <Star className="h-4 w-4 text-green-600 dark:text-green-500" />;
-    return <TrendingUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />;
   };
 
   const toggleSortOrder = () => {
@@ -296,9 +287,7 @@ export function Leaderboard({
                                     ? 'linear-gradient(180deg, #E0E0E0, #A0A0A0)'
                                     : entry.rank === 3
                                       ? 'linear-gradient(180deg, #CD7F32, #8B4513)'
-                                      : entry.rank <= 10
-                                        ? 'linear-gradient(180deg, #4ADE80, #16A34A)'
-                                        : '#f1f5f9 dark:#334155',
+                                      : 'none',
                             }}
                           />
 

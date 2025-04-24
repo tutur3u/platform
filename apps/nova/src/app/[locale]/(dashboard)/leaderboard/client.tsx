@@ -1,10 +1,9 @@
+'use client';
+
 import BasicInformationComponent from './basic-information-component';
-import {
-  Leaderboard,
-  LeaderboardEntry,
-} from '@/app/[locale]/(dashboard)/leaderboard/leaderboard';
-import { LeaderboardFilters } from '@/app/[locale]/(dashboard)/leaderboard/leaderboard-filters';
-import { TopThreeCards } from '@/app/[locale]/(dashboard)/leaderboard/top-three-cards';
+import { Leaderboard, LeaderboardEntry } from './leaderboard';
+import { LeaderboardFilters } from './leaderboard-filters';
+import { TopThreeCards } from './top-three-cards';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -21,33 +20,35 @@ import {
 import { Switch } from '@tuturuuu/ui/switch';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function LeaderboardPage({
+export default function LeaderboardClient({
   data,
   challenges,
-  onTeamModeChange,
-  isChecked,
-  onLoadMore,
-  hasMore,
   problems = [],
+  hasMore,
+  isChecked = false,
+  initialPage = 1,
 }: {
   data: LeaderboardEntry[];
   challenges: { id: string; title: string }[];
-  onTeamModeChange?: (isTeamMode: boolean) => void;
-  isChecked: boolean;
-  onLoadMore: () => void;
-  hasMore: boolean;
   problems?: { id: string; title: string; challenge_id: string }[];
+  hasMore: boolean;
+  isChecked?: boolean;
+  initialPage?: number;
 }) {
-  const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>([]);
+  const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>(data);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedChallenge, setSelectedChallenge] = useState<string>('all');
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(
     undefined
   );
-  const [_isCheck, setChecked] = useState(false);
+  const [teamMode, setTeamMode] = useState(isChecked);
+  const [page, setPage] = useState(initialPage);
   const t = useTranslations('nova.leaderboard-page');
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const supabase = createClient();
 
@@ -95,8 +96,32 @@ export default function LeaderboardPage({
     setFilteredData(filtered);
   }, [searchQuery, selectedChallenge, data]);
 
+  const handleTeamModeChange = (checked: boolean) => {
+    setTeamMode(checked);
+
+    // Update URL to reflect team mode change
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('isTeamMode', checked.toString());
+    params.set('page', '1'); // Reset to page 1 when changing modes
+
+    // Use router.replace to update URL without reloading the page
+    router.replace(`?${params.toString()}`);
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+
+    // Update URL to reflect page change
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', nextPage.toString());
+
+    // Use router.replace to update URL without reloading the page
+    router.replace(`?${params.toString()}`);
+  };
+
   let yourRank = 0;
-  if (isChecked) {
+  if (teamMode) {
     const userTeam = filteredData.find((team) =>
       team.member?.some((member) => member.id === currentUserId)
     );
@@ -126,25 +151,10 @@ export default function LeaderboardPage({
           yourRank={yourRank}
           totalParticipants={totalParticipants}
           topScore={topScore || 0}
-          isChecked={isChecked}
+          isChecked={teamMode}
           filteredData={filteredData}
         />
         <div className="mb-8">
-          <div className="mb-6 flex items-center justify-end gap-2">
-            <span className="text-md font-medium text-slate-600 dark:text-slate-300">
-              {t('individual')}
-            </span>
-            <Switch
-              className="h-8 w-14 p-3 data-[state=checked]:bg-purple-600"
-              onCheckedChange={(checked) => {
-                setChecked(checked);
-                onTeamModeChange?.(checked);
-              }}
-            />
-            <span className="text-md font-medium text-slate-600 dark:text-slate-300">
-              {t('team')}
-            </span>
-          </div>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -172,18 +182,24 @@ export default function LeaderboardPage({
               )}
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex gap-1.5 border-slate-700 bg-slate-800/60 text-xs text-slate-300 transition-all duration-200 hover:scale-105 hover:bg-slate-700 hover:text-slate-100"
-            >
-              <Share className="h-3.5 w-3.5" /> {t('share')}
-            </Button>
+            <div className="flex items-center gap-2">
+              <span className="text-md font-medium text-slate-600 dark:text-slate-300">
+                {t('individual')}
+              </span>
+              <Switch
+                className="h-8 w-14 p-3 data-[state=checked]:bg-purple-600"
+                checked={teamMode}
+                onCheckedChange={handleTeamModeChange}
+              />
+              <span className="text-md font-medium text-slate-600 dark:text-slate-300">
+                {t('team')}
+              </span>
+            </div>
           </div>
           <TopThreeCards
             data={filteredData}
             isLoading={false}
-            isTeam={isChecked}
+            isTeam={teamMode}
           />
 
           <div className="relative my-8 h-px w-full overflow-hidden">
@@ -298,7 +314,7 @@ export default function LeaderboardPage({
             >
               <Leaderboard
                 data={filteredData}
-                isChecked={isChecked}
+                isChecked={teamMode}
                 isLoading={false}
                 currentUserId={currentUserId}
                 challenges={challenges}
@@ -310,10 +326,9 @@ export default function LeaderboardPage({
                 <div className="mt-4 flex justify-center">
                   <Button
                     variant="outline"
-                    onClick={onLoadMore}
+                    onClick={handleLoadMore}
                     className="gap-2"
                   >
-                    {/* Load More */}
                     {t('load-more')}
                   </Button>
                 </div>

@@ -15,8 +15,17 @@ import { cn } from '@tuturuuu/utils/format';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+interface RandomValues {
+  width: number;
+  height: number;
+  left: string;
+  top: string;
+  delay: number;
+  duration: number;
+  xOffset: number;
+}
 interface TopThreeCardsProps {
   data: LeaderboardEntry[];
   isLoading?: boolean;
@@ -32,6 +41,23 @@ export function TopThreeCards({
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
   const t = useTranslations('nova.leaderboard-page');
+
+  const [randomValues, setRandomValues] = useState<RandomValues[]>([]);
+
+  // Only run this on the client side
+  useEffect(() => {
+    setRandomValues(
+      [...Array(6)].map(() => ({
+        width: Math.random() * 6 + 2,
+        height: Math.random() * 6 + 2,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: Math.random() * 2,
+        duration: Math.random() * 3 + 2,
+        xOffset: Math.random() * 10 - 5,
+      }))
+    );
+  }, []);
 
   if (isLoading) {
     return (
@@ -203,29 +229,29 @@ export function TopThreeCards({
               {/* Floating particles */}
               {!prefersReducedMotion && (
                 <>
-                  {[...Array(6)].map((_, i) => (
+                  {randomValues.map((value, i) => (
                     <motion.div
                       key={i}
                       className="absolute rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-70"
                       style={{
-                        width: Math.random() * 6 + 2,
-                        height: Math.random() * 6 + 2,
+                        width: value.width,
+                        height: value.height,
                         background:
                           styles.particleColors[
                             i % styles.particleColors.length
                           ],
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
+                        left: value.left,
+                        top: value.top,
                       }}
                       animate={{
                         y: [0, -20, 0],
-                        x: [0, Math.random() * 10 - 5, 0],
+                        x: [0, value.xOffset, 0],
                         scale: [1, Math.random() * 0.5 + 0.8, 1],
                       }}
                       transition={{
-                        duration: Math.random() * 3 + 2,
+                        duration: value.duration,
                         repeat: Infinity,
-                        delay: Math.random() * 2,
+                        delay: value.delay,
                         ease: 'easeInOut',
                       }}
                     />
