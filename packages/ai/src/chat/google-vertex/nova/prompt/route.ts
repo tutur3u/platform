@@ -3,6 +3,10 @@ import { vertex } from '@ai-sdk/google-vertex/edge';
 import type { SafetySetting } from '@google/generative-ai';
 import type { ResponseMode } from '@tuturuuu/ai/types';
 import {
+  NovaSubmissionCriteria,
+  NovaSubmissionTestCase,
+} from '@tuturuuu/ai/types';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
@@ -15,20 +19,6 @@ const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
-
-interface NovaSubmissionCriteria {
-  submission_id: string;
-  criteria_id: string;
-  score: number;
-  feedback: string;
-}
-
-interface NovaSubmissionTestCase {
-  submission_id: string;
-  test_case_id: string;
-  output: string;
-  matched: boolean;
-}
 
 const modelSafetySettings = [
   { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
