@@ -1,9 +1,9 @@
 'use client';
 
-import BasicInformationComponent from './components/basic-information-component';
-import { Leaderboard, LeaderboardEntry } from './components/leaderboard';
-import { LeaderboardFilters } from './components/leaderboard-filters';
-import { TopThreeCards } from './components/top-three-cards';
+import BasicInformationComponent from '../components/basic-information-component';
+import { Leaderboard, LeaderboardEntry } from '../components/leaderboard';
+import { LeaderboardFilters } from '../components/leaderboard-filters';
+import { TopThreeCards } from '../components/top-three-cards';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -11,6 +11,7 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
   Award,
   Clock,
+  Link,
   Medal,
   Share,
   Sparkles,
@@ -19,7 +20,6 @@ import {
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -105,8 +105,14 @@ export default function LeaderboardClient({
     router.replace(`?${params.toString()}`);
   };
 
-  const yourRank =
-    filteredData.findIndex((entry) => entry.id === currentUserId) + 1;
+  let yourRank = 0;
+  const userTeam = filteredData.find((team) =>
+    team.member?.some((member) => member.id === currentUserId)
+  );
+
+  if (userTeam) {
+    yourRank = filteredData.findIndex((team) => team.id === userTeam.id) + 1;
+  }
   const topScore = filteredData.length > 0 ? filteredData[0]?.score : 0;
   const totalParticipants = filteredData.length;
 
@@ -125,7 +131,7 @@ export default function LeaderboardClient({
           yourRank={yourRank}
           totalParticipants={totalParticipants}
           topScore={topScore || 0}
-          teamMode={false}
+          teamMode={true}
           filteredData={filteredData}
         />
         <div className="mb-8">
@@ -156,13 +162,13 @@ export default function LeaderboardClient({
               )}
             </div>
 
-            <Link href="/leaderboard/teams">
+            <Link href="/leaderboard">
               <Button variant="outline" size="sm">
-                {t('team')}
+                {t('individual')}
               </Button>
             </Link>
           </div>
-          <TopThreeCards data={filteredData} teamMode={false} />
+          <TopThreeCards data={filteredData} teamMode={true} />
 
           <div className="relative my-8 h-px w-full overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
@@ -276,7 +282,7 @@ export default function LeaderboardClient({
             >
               <Leaderboard
                 data={filteredData}
-                teamMode={false}
+                teamMode={true}
                 currentUserId={currentUserId}
                 challenges={challenges}
                 selectedChallenge={selectedChallenge}

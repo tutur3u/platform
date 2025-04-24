@@ -22,7 +22,7 @@ interface Props {
   yourRank: number;
   totalParticipants: number;
   topScore: number;
-  isChecked: boolean;
+  teamMode: boolean;
   filteredData: LeaderboardEntry[];
 }
 export default function BasicInformationComponent({
@@ -31,7 +31,7 @@ export default function BasicInformationComponent({
   yourRank,
   totalParticipants,
   topScore,
-  isChecked,
+  teamMode,
   filteredData,
 }: Props) {
   const t = useTranslations('nova.leaderboard-page');
@@ -197,7 +197,7 @@ export default function BasicInformationComponent({
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                {isChecked
+                {teamMode
                   ? t('statistics.total.teams')
                   : t('statistics.total.player')}
               </p>

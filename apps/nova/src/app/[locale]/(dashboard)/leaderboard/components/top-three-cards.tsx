@@ -10,7 +10,6 @@ import {
   Sparkles,
   Trophy,
 } from '@tuturuuu/ui/icons';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
@@ -28,15 +27,10 @@ interface RandomValues {
 }
 interface TopThreeCardsProps {
   data: LeaderboardEntry[];
-  isLoading?: boolean;
-  isTeam?: boolean;
+  teamMode?: boolean;
 }
 
-export function TopThreeCards({
-  data,
-  isLoading = false,
-  isTeam = false,
-}: TopThreeCardsProps) {
+export function TopThreeCards({ data, teamMode = false }: TopThreeCardsProps) {
   const topThree = data.slice(0, 3);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
@@ -58,33 +52,6 @@ export function TopThreeCards({
       }))
     );
   }, []);
-
-  if (isLoading) {
-    return (
-      <div className="mb-8 grid grid-cols-3 gap-4 sm:gap-8">
-        {[...Array(3)].map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              'flex justify-center',
-              i === 1
-                ? 'col-span-3 sm:order-1 sm:col-span-1'
-                : i === 0
-                  ? 'col-span-3 sm:order-2 sm:col-span-1'
-                  : 'col-span-3 sm:order-3 sm:col-span-1'
-            )}
-          >
-            <Skeleton
-              className={cn(
-                'h-72 w-full rounded-xl bg-gray-200 dark:bg-slate-800/50',
-                i === 0 ? 'sm:h-80' : ''
-              )}
-            />
-          </div>
-        ))}
-      </div>
-    );
-  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -530,7 +497,7 @@ export function TopThreeCards({
 
               {/* View profile button */}
               <Link
-                href={`/${isTeam ? 'profile/teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
+                href={`/${teamMode ? 'profile/teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
                 className="mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 transition-opacity hover:bg-gray-200 group-hover:opacity-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 {t('view-profile')} <ExternalLink className="ml-1 h-3 w-3" />
