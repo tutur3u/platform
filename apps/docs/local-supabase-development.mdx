@@ -709,3 +709,196 @@ For Tuturuuu development, we recommend:
 4. Edit the generated SQL to keep only what you need
 5. Update the main `seed.sql` file with your changes
 6. Test by running `pnpm sb:reset` again
+
+## AI Integration with Vercel AI SDK
+
+Tuturuuu uses Vercel's AI SDK for its AI features, utilizing structured data generation capabilities that integrate with Supabase. This section covers how to work with AI features in the development workflow.
+
+### Overview of AI SDK in Tuturuuu
+
+The AI SDK standardizes integrating various AI models across supported providers into Tuturuuu applications. It enables structured data generation, tool calling, and streaming responses to create rich AI-powered features.
+
+The main libraries used are:
+
+- `ai` - Core Vercel AI SDK package
+- `@ai-sdk/google` - Provider-specific integration for Google models
+- `@tuturuuu/supabase` - Supabase client with Tuturuuu-specific utilities
+
+### Generating Structured Data
+
+Tuturuuu uses the AI SDK's structured data generation capabilities to create typed responses from AI models. This approach ensures type safety and consistent data structures for features like:
+
+- Flashcards generation
+- Quiz generation
+- Learning plans
+- Task management
+
+#### Example: Flashcard Generation
+
+The structured data pattern used in Tuturuuu follows this workflow:
+
+1. Define a schema using Zod
+2. Connect to Supabase for authentication and workspace validation
+3. Generate structured data using the AI SDK
+4. Stream the response to the client
+
+Here's an example from Tuturuuu's codebase:
+
+```typescript
+// 1. Define the schema
+import { z } from 'zod';
+
+export const flashcardSchema = z.object({
+  flashcards: z.array(
+    z.object({
+      front: z.string().describe('Question. Do not use emojis or links.'),
+      back: z.string().describe('Answer. Do not use emojis or links.'),
+    })
+  ),
+});
+
+// 2. Setup API endpoint
+export async function POST(req: Request) {
+  const sbAdmin = await createAdminClient();
+  const { wsId, context } = await req.json();
+
+  // Validate user and workspace permissions
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return new Response('Unauthorized', { status: 401 });
+
+  // Check workspace feature flag
+  const { count, error } = await sbAdmin
+    .from('workspace_secrets')
+    .select('*', { count: 'exact', head: true })
+    .eq('ws_id', wsId)
+    .eq('name', 'ENABLE_CHAT')
+    .eq('value', 'true');
+
+  if (error) return new Response(error.message, { status: 500 });
+  if (count === 0)
+    return new Response('You are not allowed to use this feature.', {
+      status: 401,
+    });
+
+  // 3. Generate structured data using AI SDK
+  const result = streamObject({
+    model: google('gemini-2.0-flash-001', {
+      safetySettings: [
+        // Safety settings configuration...
+      ],
+    }),
+    prompt: `Generate 10 flashcards with the following context: ${context}`,
+    schema: flashcardSchema,
+  });
+
+  // 4. Stream the response to the client
+  return result.toTextStreamResponse();
+}
+```
+
+### Available Models
+
+Tuturuuu supports multiple AI models through Vercel AI SDK. You can define which models are available in your application by updating the `models.ts` file in the `packages/ai` directory:
+
+```typescript
+export const models = [
+  {
+    value: 'gemini-2.0-flash-001',
+    label: 'gemini-2.0-flash',
+    provider: 'Google',
+    description: 'Gemini 2.0 Flash delivers next-gen features...',
+    context: 1000000,
+  },
+  // Add other models here...
+];
+
+export const defaultModel = models.find(
+  (model) =>
+    model.value === 'gemini-2.0-flash-001' && model.provider === 'Google Vertex'
+);
+```
+
+### Creating Custom Schema Types
+
+To create new structured data types for AI generation, add your schema definition to the `packages/ai/src/object/types.ts` file:
+
+```typescript
+export const myNewSchema = z.object({
+  items: z.array(
+    z.object({
+      name: z.string().describe('Name of the item'),
+      description: z.string().describe('Description of the item'),
+      priority: z.enum(['high', 'medium', 'low']).describe('Priority level'),
+    })
+  ),
+});
+```
+
+### Integration with Supabase
+
+Tuturuuu's AI features leverage Supabase for:
+
+1. **Authentication** - Validating users before making AI requests
+2. **Authorization** - Checking workspace permissions via `workspace_secrets`
+3. **Feature Flags** - Using `workspace_secrets` to enable/disable AI features per workspace
+4. **Storage** - Storing AI-generated content for later use
+
+To enable AI features for a workspace, ensure the appropriate flags are set in the `workspace_secrets` table:
+
+```sql
+-- Enable AI chat features for a workspace
+INSERT INTO public.workspace_secrets (ws_id, name, value)
+VALUES ('your-workspace-id', 'ENABLE_CHAT', 'true');
+
+-- Enable AI document features for a workspace
+INSERT INTO public.workspace_secrets (ws_id, name, value)
+VALUES ('your-workspace-id', 'ENABLE_DOCS', 'true');
+```
+
+### Testing AI Features Locally
+
+When testing AI features in your local environment:
+
+1. Ensure you have the required API keys set in your `.env.local` file:
+
+   ```
+   GOOGLE_GENERATIVE_AI_API_KEY=your-api-key
+   ```
+
+2. Verify the workspace has the necessary feature flags enabled in your local database
+
+   ```sql
+   SELECT * FROM workspace_secrets WHERE ws_id = 'your-workspace-id' AND name = 'ENABLE_CHAT';
+   ```
+
+3. Use the AI-enabled accounts from the seed data (`local@tuturuuu.com`) as they often have additional permissions
+
+### Error Handling
+
+When integrating AI features, implement proper error handling to account for:
+
+1. Missing API keys
+2. Model unavailability
+3. Invalid user input
+4. Exceeded token limits
+
+Example error handling pattern used in Tuturuuu:
+
+```typescript
+try {
+  // AI SDK code here
+} catch (error: any) {
+  console.log(error);
+  return NextResponse.json(
+    {
+      message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+    },
+    {
+      status: 200,
+    }
+  );
+}
+```

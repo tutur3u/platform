@@ -51,6 +51,12 @@
       ]
     },
     {
+      "group": "AI Features",
+      "pages": [
+        "ai-structured-data"
+      ]
+    },
+    {
       "group": "Personalization",
       "pages": [
         "personalization/themes",
