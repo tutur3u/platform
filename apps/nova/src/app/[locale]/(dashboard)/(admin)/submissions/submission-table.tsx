@@ -33,6 +33,7 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 type SubmissionWithDetails = NovaSubmission & {
@@ -79,6 +80,7 @@ export function SubmissionTable({
   showEmail = false,
 }: SubmissionTableProps) {
   const router = useRouter();
+  const t = useTranslations('nova.submission-page.submission-table');
 
   // Format date function for display
   function formatDate(dateString: string) {
@@ -221,7 +223,7 @@ export function SubmissionTable({
                         : handleSortChange('problem_id')
                     }
                   >
-                    Problem
+                    {t('headers.problem')}
                     {sortField === 'problem_id' &&
                       (sortDirection === 'asc' ? (
                         <ArrowUp className="ml-1 h-4 w-4" />
@@ -245,7 +247,7 @@ export function SubmissionTable({
                         : handleSortChange('score')
                     }
                   >
-                    Score
+                    {t('headers.score')}
                     {sortField === 'score' &&
                       (sortDirection === 'asc' ? (
                         <ArrowUp className="ml-1 h-4 w-4" />
@@ -281,7 +283,9 @@ export function SubmissionTable({
                     )}
                   </div>
                 </TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">
+                  {t('headers.actions')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -324,19 +328,19 @@ export function SubmissionTable({
                     {searchQuery ? (
                       <div className="flex flex-col items-center justify-center space-y-2">
                         <p className="text-muted-foreground">
-                          No results found for "{searchQuery}"
+                          {t('empty-state.no-results')} " {searchQuery}"
                         </p>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={handleClearSearch}
                         >
-                          Clear Search
+                          {t('empty-state.clear-search')}
                         </Button>
                       </div>
                     ) : (
                       <p className="text-muted-foreground">
-                        No submissions found
+                        {t('empty-state.no-submissions')}
                       </p>
                     )}
                   </TableCell>
@@ -439,7 +443,7 @@ export function SubmissionTable({
                               router.push(`/submissions/${submission.id}`)
                             }
                           >
-                            View Details
+                            {t('actions.view-details')}
                           </DropdownMenuItem>
                           {submission.problem?.challenge?.id && (
                             <DropdownMenuItem
@@ -449,7 +453,7 @@ export function SubmissionTable({
                                 )
                               }
                             >
-                              Challenge Results
+                              {t('actions.challenge-results')}
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
