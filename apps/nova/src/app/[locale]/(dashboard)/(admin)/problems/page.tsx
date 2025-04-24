@@ -51,7 +51,11 @@ async function fetchProblems() {
   const database = await createClient();
   const { data: problems, error } = await database
     .from('nova_problems')
-    .select('*, test_cases:nova_problem_test_cases(*)')
+    .select(
+      `*,
+      test_cases:nova_problem_test_cases(*),
+      challenge:nova_challenges(title)`
+    )
     .order('created_at', { ascending: false });
 
   if (error) {

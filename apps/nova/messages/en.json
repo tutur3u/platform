@@ -1909,6 +1909,85 @@
         "first-join": "Be the first to join the competition!"
       }
     },
+    "profile-page": {
+      "breadcrumb": {
+        "home": "Home",
+        "leaderboard": "Leaderboard"
+      },
+      "rank": "Rank #",
+      "challenge": "Challenge",
+      "challenges": "Challenges",
+      "score": "Score",
+      "profile-header": {
+        "joined": "Joined",
+        "points": "Points",
+        "level": "Level ",
+        "level-progress": "to Level",
+        "edit-profile": "Edit Profile",
+        "share": "Share",
+        "copied": "Copied!",
+        "view-leaderboard": "View Leaderboard"
+      },
+      "info-tiles": {
+        "score": "SCORE",
+        "rank": "RANK",
+        "challenges": "CHALLENGES",
+        "achievements": "ACHIEVEMENTS"
+      },
+      "overview-tab": {
+        "name": "Overview",
+        "summary-title": "Activity Summary",
+        "summary-submissions": "Submissions",
+        "summary-average-score": "Average Score",
+        "summary-best-score": "Best Score",
+        "challenge-title": "Best Challenge Performance",
+        "challenge-description": "Highest scoring challenge completed by ",
+        "challenge-top-score": "Top Score",
+        "challenge-performance": "Performance",
+        "challenge-view-all": "View All Challenges",
+        "achievements-title": "Recent Achievements",
+        "achievements-description": "Unlocked badges and accomplishments",
+        "achievements-view-all": "View All Achievements",
+        "activity-title": "Recent Activity",
+        "activity-description": "Latest prompt engineering submissions",
+        "activity-view-all": "View All Activity"
+      },
+      "challenges-tab": {
+        "name": "Challenges",
+        "title": "Challenge Performance",
+        "description": "All completed challenges with scores",
+        "progress": "Progress",
+        "no-challenges": "No challenges completed yet"
+      },
+      "achievements-tab": {
+        "name": "Achievements",
+        "title": "Achievements Showcase",
+        "description": "Badges and achievements earned",
+        "locked": "Locked",
+        "unlocked": "Unlocked"
+      },
+      "activity-tab": {
+        "name": "Activity",
+        "title": "Recent Activity",
+        "description": "Latest prompt engineering attempts and submissions",
+        "submitted-solution": "Submitted a solution",
+        "no-activity": "No recent activity"
+      },
+      "achievements": {
+        "adopter": "Early Adopter",
+        "adopter-description": "Joined during the platform's early days",
+        "master": "Challenge Master",
+        "master-description": "Completed 5+ different challenges",
+        "high-scorer": "High Scorer",
+        "high-scorer-description": "Achieved a score over 500 points",
+        "top-rank": "Top Ranked",
+        "top-rank-description": "Reached the top 10 on the leaderboard",
+        "consistent": "Consistent Learner",
+        "consistent-description": "Submitted solutions regularly",
+        "prompt-master": "Prompt Master",
+        "prompt-master-description": "Achieved perfect scores in multiple challenges"
+      }
+    },
     "challenge": {
       "edit": "Edit Challenge",
       "update": "Update Challenge",
