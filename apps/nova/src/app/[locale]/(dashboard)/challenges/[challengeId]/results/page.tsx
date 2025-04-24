@@ -1,5 +1,4 @@
 import ResultClient from './client';
-import { ExtendedNovaSubmission, ResultsData } from './types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
@@ -28,73 +27,64 @@ export default async function Page({ params }: Props) {
     }
 
     // Get sessions
-    const { data: sessions } = await sbAdmin
+    const { data: sessionSummaries } = await sbAdmin
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-    if (!sessions) {
+    if (!sessionSummaries) {
       throw new Error('Sessions not found');
     }
 
-    // Query problems with submissions from the view
-    const { data: problems } = await sbAdmin
+    // Get problem count for this challenge
+    const { count: problemCount } = await sbAdmin
       .from('nova_problems')
-      .select(
-        `
-        *,
-        submissions:nova_submissions_with_scores(
-          *,
-          criteria:nova_challenge_criteria(
-            *,
-            results:nova_submission_criteria(*)
-          )
-        )
-      `
-      )
+      .select('*', { count: 'exact', head: true })
       .eq('challenge_id', challengeId);
 
-    // Transform the data to match the expected structure
-    const data: ResultsData = {
-      challenge,
-      sessions: sessions.map((session) => ({
-        ...session,
-        problems:
-          problems?.map((problem) => {
-            return {
-              ...problem,
-              submissions: problem.submissions
-                .filter((submission) => submission.session_id === session.id)
-                .map((submission) => {
-                  // Map criteria to expected format
-                  const criteria = submission.criteria.map((criterion) => ({
-                    ...criterion,
-                    results: undefined,
-                    result: criterion.results.find(
-                      (result) => result.submission_id === submission.id
-                    ),
-                  }));
+    const { data: challengeStats, error: statsError } = await sbAdmin.rpc(
+      'get_challenge_stats',
+      {
+        challenge_id_param: challengeId,
+        user_id_param: user.id,
+      }
+    );
 
-                  // Return properly typed submission
-                  return {
-                    ...submission,
-                    total_tests: submission.total_tests || 0,
-                    passed_tests: submission.passed_tests || 0,
-                    test_case_score: submission.test_case_score || 0,
-                    criteria,
-                    total_criteria: submission.total_criteria || 0,
-                    sum_criterion_score: submission.sum_criterion_score || 0,
-                    criteria_score: submission.criteria_score || 0,
-                    total_score: submission.total_score || 0,
-                  } as ExtendedNovaSubmission;
-                }),
-            };
-          }) || [],
-      })),
+    if (statsError) {
+      throw new Error('Error from fetching stats');
+    }
+
+    // Extract the first (and only) row from the results array
+    const statsRow = challengeStats?.[0];
+
+    // Calculate overall statistics
+    const totalScore = statsRow?.total_score || 0;
+    const maxPossibleScore = (problemCount || 0) * 10; // Assuming 10 points per problem
+    const percentage =
+      maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
+    const problemsAttempted = statsRow?.problems_attempted || 0;
+
+    const stats = {
+      score: totalScore,
+      maxScore: maxPossibleScore,
+      percentage,
+      problemsAttempted,
+      totalProblems: problemCount || 0,
     };
 
-    return <ResultClient data={data} />;
+    console.log('stat', stats);
+
+    return (
+      <ResultClient
+        challengeId={challengeId}
+        challenge={challenge}
+        sessionSummaries={sessionSummaries}
+        stats={stats}
+        userId={user.id}
+      />
+    );
   } catch (error) {
     console.error('Error fetching data:', error);
     redirect('/challenges');

@@ -98,7 +98,7 @@ export default function SessionCard({
     problemsAttempted > 0 ? totalScore / problemsAttempted : 0;
 
   return (
-    <Card className="mb-4 overflow-hidden border">
+    <Card className="mb-4 overflow-hidden border-none">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">

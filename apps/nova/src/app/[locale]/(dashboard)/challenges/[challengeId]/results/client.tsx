@@ -1,8 +1,14 @@
 'use client';
 
+import { fetchAllProblems, fetchSessionDetails } from './actions';
 import ProblemCard from './components/ProblemCard';
 import SessionCard from './components/SessionCard';
-import { ResultsData } from './types';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -12,9 +18,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { ArrowLeft, BookOpen, RefreshCcw, Trophy } from '@tuturuuu/ui/icons';
+import {
+  ArrowLeft,
+  BookOpen,
+  Loader2,
+  RefreshCcw,
+  Target,
+  Trophy,
+} from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
-import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import {
   Tooltip,
@@ -22,58 +34,52 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
+import { useState } from 'react';
 
-interface Props {
-  data: ResultsData;
+// Maximum score constant - each problem is worth 10 points
+const MAX_SCORE_PER_PROBLEM = 10;
+
+interface SessionSummary {
+  id: string;
+  created_at: string;
+  updated_at?: string;
+  end_time: string | null;
 }
 
-export default function ResultClient({ data }: Props) {
+interface Stats {
+  score: number;
+  maxScore: number;
+  percentage: number;
+  problemsAttempted: number;
+  totalProblems: number;
+}
+
+interface Props {
+  challengeId: string;
+  challenge: any;
+  sessionSummaries: SessionSummary[];
+  stats: Stats;
+  userId: string;
+}
+
+export default function ResultClient({
+  challengeId,
+  challenge,
+  sessionSummaries,
+  stats,
+  userId,
+}: Props) {
   const router = useRouter();
-
-  // Maximum score constant - each problem is worth 10 points
-  const MAX_SCORE_PER_PROBLEM = 10;
-
-  // Calculate overall challenge stats
-  const stats = useMemo(() => {
-    if (data.sessions.length === 0)
-      return {
-        score: 0,
-        maxScore: 0,
-        percentage: 0,
-        problemsAttempted: 0,
-        totalProblems: 0,
-      };
-
-    const totalProblems = data.sessions[0]?.problems.length || 0;
-    const maxPossibleScore = totalProblems * MAX_SCORE_PER_PROBLEM;
-
-    let maxTotalScore = 0;
-    const problemsAttempted = new Set();
-
-    data.sessions.forEach((session) => {
-      let totalScore = 0;
-      session.problems.forEach((problem, index) => {
-        if (problem.submissions.length > 0) {
-          problemsAttempted.add(index);
-          const bestScore = Math.max(
-            ...problem.submissions.map((s) => s.total_score)
-          );
-          totalScore += bestScore;
-        }
-      });
-      maxTotalScore = Math.max(maxTotalScore, totalScore);
-    });
-
-    return {
-      score: maxTotalScore,
-      maxScore: maxPossibleScore,
-      percentage: (maxTotalScore / maxPossibleScore) * 100,
-      problemsAttempted: problemsAttempted.size,
-      totalProblems,
-    };
-  }, [data]);
+  const [expandedSessions, setExpandedSessions] = useState<string[]>([]);
+  const [loadedSessions, setLoadedSessions] = useState<Record<string, any>>({});
+  const [loadingSessions, setLoadingSessions] = useState<
+    Record<string, boolean>
+  >({});
+  const [_activeTab, setActiveTab] = useState('sessions');
+  const [loadingAllProblems, setLoadingAllProblems] = useState(false);
+  const [allProblems, setAllProblems] = useState<any[] | null>(null);
 
   // Get status text and color based on percentage
   const getChallengeStatus = (percentage: number) => {
@@ -88,8 +94,61 @@ export default function ResultClient({ data }: Props) {
 
   const status = getChallengeStatus(stats.percentage);
 
+  // Load session data when an accordion item is expanded
+  const handleAccordionValueChange = async (value: string[]) => {
+    // Find which session was just expanded
+    const newlyExpanded = value.find((id) => !expandedSessions.includes(id));
+
+    if (
+      newlyExpanded &&
+      !loadedSessions[newlyExpanded] &&
+      !loadingSessions[newlyExpanded]
+    ) {
+      // Start loading the session
+      setLoadingSessions((prev) => ({ ...prev, [newlyExpanded]: true }));
+
+      try {
+        const sessionData = await fetchSessionDetails(
+          newlyExpanded,
+          challengeId
+        );
+        setLoadedSessions((prev) => ({
+          ...prev,
+          [newlyExpanded]: sessionData,
+        }));
+
+        console.log('fetch new ss data', sessionData);
+      } catch (error) {
+        console.error('Error loading session:', error);
+      } finally {
+        setLoadingSessions((prev) => ({ ...prev, [newlyExpanded]: false }));
+      }
+    }
+
+    setExpandedSessions(value);
+  };
+
+  const handleTabChange = async (value: string) => {
+    setActiveTab(value);
+
+    // If switching to problems tab and we haven't loaded them yet
+    if (value === 'problems' && !allProblems && !loadingAllProblems) {
+      setLoadingAllProblems(true);
+      try {
+        const result = await fetchAllProblems(challengeId, userId);
+        setAllProblems(result.problems);
+
+        console.log('res', result);
+      } catch (error) {
+        console.error('Error loading all problems:', error);
+      } finally {
+        setLoadingAllProblems(false);
+      }
+    }
+  };
+
   return (
-    <div className="from-background to-muted/20 bg-gradient-to-b px-4 py-8 sm:px-6">
+    <div className="from-background to-muted/20 min-h-screen bg-gradient-to-b px-4 py-8 sm:px-6">
       <div className="mx-auto flex min-h-full max-w-6xl flex-col">
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="mb-4 flex items-center gap-4 md:mb-0">
@@ -102,14 +161,14 @@ export default function ResultClient({ data }: Props) {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">{data.challenge.title}</h1>
+              <h1 className="text-3xl font-bold">{challenge.title}</h1>
               <p className="text-muted-foreground mt-1">
-                {data.challenge.description || 'Challenge Results'}
+                {challenge.description || 'Challenge Results'}
               </p>
             </div>
           </div>
           <Button
-            onClick={() => router.push(`/challenges/${data.challenge.id}`)}
+            onClick={() => router.push(`/challenges/${challengeId}`)}
             variant="outline"
             className="gap-2"
           >
@@ -118,7 +177,7 @@ export default function ResultClient({ data }: Props) {
           </Button>
         </div>
 
-        {data.sessions.length === 0 ? (
+        {sessionSummaries.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
             <Card className="max-w-md">
               <CardHeader className="text-center">
@@ -198,7 +257,7 @@ export default function ResultClient({ data }: Props) {
                           Sessions
                         </div>
                         <div className="mt-1 text-2xl font-bold">
-                          {data.sessions.length}
+                          {sessionSummaries.length}
                         </div>
                       </div>
                       <div className="bg-card/50 hover:bg-card/80 rounded-lg border p-3 text-center transition-colors">
@@ -206,7 +265,7 @@ export default function ResultClient({ data }: Props) {
                           Problems
                         </div>
                         <div className="mt-1 text-2xl font-bold">
-                          {data.sessions[0]?.problems.length || 0}
+                          {stats.totalProblems}
                         </div>
                       </div>
                       <div className="bg-card/50 hover:bg-card/80 rounded-lg border p-3 text-center transition-colors">
@@ -280,71 +339,128 @@ export default function ResultClient({ data }: Props) {
               </CardContent>
             </Card>
 
-            <Tabs defaultValue="sessions" className="mb-8 w-full">
+            <Tabs
+              defaultValue="sessions"
+              className="mb-8 w-full"
+              onValueChange={handleTabChange}
+            >
               <TabsList className="mb-4">
                 <TabsTrigger value="sessions">
-                  Sessions ({data.sessions.length})
+                  Sessions ({sessionSummaries.length})
                 </TabsTrigger>
                 <TabsTrigger value="problems">
-                  All Problems ({data.sessions[0]?.problems.length || 0})
+                  All Problems ({stats.totalProblems})
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="sessions">
-                {data.sessions.map((session, sessionIndex) => (
-                  <div
-                    key={sessionIndex}
-                    className="animate-in fade-in-50 slide-in-from-bottom-3 mb-8 duration-500"
-                  >
-                    <SessionCard
-                      session={session}
-                      sessionIndex={sessionIndex}
-                    />
+                <Accordion
+                  type="multiple"
+                  value={expandedSessions}
+                  className="w-full"
+                  onValueChange={handleAccordionValueChange}
+                >
+                  {sessionSummaries.map((session, sessionIndex) => (
+                    <AccordionItem
+                      key={session.id}
+                      value={session.id}
+                      className="animate-in fade-in-50 slide-in-from-bottom-3 bg-card/50 mb-4 rounded-lg border duration-500"
+                    >
+                      <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                        <div className="flex w-full items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-primary/10 flex h-9 w-9 items-center justify-center rounded-full">
+                              <Target className="text-primary h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold">
+                                Session {sessionIndex + 1}
+                              </h3>
+                              <p className="text-muted-foreground text-sm">
+                                {formatDistanceToNow(
+                                  new Date(session.created_at),
+                                  { addSuffix: true }
+                                )}
+                                {session.end_time &&
+                                  ` • ${Math.floor(
+                                    (new Date(session.end_time).getTime() -
+                                      new Date(session.created_at).getTime()) /
+                                      60000
+                                  )} min`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      {/* <AccordionTrigger className="w-full px-4 text-lg hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                        Session {sessionIndex + 1}
+                      </AccordionTrigger> */}
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                      {session.problems.map((problem, problemIndex) => (
-                        <ProblemCard
-                          key={problemIndex}
-                          problem={problem}
-                          problemIndex={problemIndex}
-                          sessionIndex={sessionIndex}
-                        />
-                      ))}
-                    </div>
-
-                    {sessionIndex < data.sessions.length - 1 && (
-                      <div className="col-span-full mt-8 w-full">
-                        <Separator />
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      <AccordionContent className="pb-6 pt-0">
+                        {loadingSessions[session.id] ? (
+                          <div className="flex items-center justify-center py-12">
+                            <Loader2 className="text-primary h-8 w-8 animate-spin" />
+                          </div>
+                        ) : loadedSessions[session.id] ? (
+                          <div>
+                            <SessionCard
+                              session={loadedSessions[session.id]}
+                              sessionIndex={sessionIndex}
+                            />
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                              {loadedSessions[session.id].problems.map(
+                                (problem: any, problemIndex: number) => (
+                                  <ProblemCard
+                                    key={problemIndex}
+                                    problem={problem}
+                                    problemIndex={problemIndex}
+                                    sessionIndex={sessionIndex}
+                                  />
+                                )
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="py-4 text-center">
+                            Failed to load session data
+                          </div>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </TabsContent>
 
               <TabsContent value="problems">
-                <div className="animate-in fade-in-50 slide-in-from-bottom-3 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 2xl:grid-cols-3">
-                  {data.sessions[0]?.problems.map((problem, problemIndex) => {
-                    // Combine submissions from all sessions for this problem
-                    const allSubmissions = data.sessions.flatMap(
-                      (session) =>
-                        session.problems[problemIndex]?.submissions || []
-                    );
-
-                    const combinedProblem = {
-                      ...problem,
-                      submissions: allSubmissions,
-                    };
-
-                    return (
+                {loadingAllProblems ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="text-primary h-8 w-8 animate-spin" />
+                  </div>
+                ) : allProblems ? (
+                  <div className="animate-in fade-in-50 slide-in-from-bottom-3 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 2xl:grid-cols-3">
+                    {allProblems.map((problem, problemIndex) => (
                       <ProblemCard
                         key={problemIndex}
-                        problem={combinedProblem}
+                        problem={problem}
                         problemIndex={problemIndex}
                         sessionIndex={-1} // Special marker for "all sessions" view
                       />
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-card/50 rounded-lg border p-12 text-center">
+                    <p className="text-muted-foreground mb-2">
+                      Click to view all problems across sessions
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleTabChange('problems')}
+                      className="mt-2"
+                    >
+                      Load Problems
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </>

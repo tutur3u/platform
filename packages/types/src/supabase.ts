@@ -6166,6 +6166,13 @@ export type Database = {
             };
         Returns: string;
       };
+      get_challenge_stats: {
+        Args: { challenge_id_param: string; user_id_param: string };
+        Returns: {
+          total_score: number;
+          problems_attempted: number;
+        }[];
+      };
       get_daily_income_expense: {
         Args: { _ws_id: string; past_days?: number };
         Returns: {
