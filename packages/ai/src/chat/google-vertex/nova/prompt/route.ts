@@ -6,7 +6,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { generateObject, generateText } from 'ai';
+import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -221,7 +221,7 @@ export async function POST(
       ${JSON.stringify(exampleResponse)}
     `;
 
-     let evaluation;
+    let evaluation;
     try {
       const { object } = await generateObject({
         model: vertexModel,
