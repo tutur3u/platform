@@ -21,6 +21,7 @@ const CalendarColumn = ({ date, last }: CalendarColumnProps) => {
         minWidth: '120px',
         height: `${DAY_HEIGHT}px`, // 24 hours * 80px = 1920px
       }}
+      data-column-date={date}
     >
       {hours.map((hour) => (
         <CalendarCell key={`${date}-${hour}`} date={date} hour={hour} />
