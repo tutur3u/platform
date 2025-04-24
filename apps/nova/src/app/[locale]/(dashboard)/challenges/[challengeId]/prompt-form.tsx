@@ -122,6 +122,7 @@ export default function PromptForm({ problem, session }: Props) {
       // Reset prompt and show success message
       setPrompt('');
       setActiveTab('submissions');
+      setSubmissionsTab('current');
 
       toast({
         title: 'Prompt submitted successfully',
