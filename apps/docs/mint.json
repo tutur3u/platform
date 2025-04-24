@@ -37,15 +37,25 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["introduction", "development", "documenting"]
+      "pages": [
+        "introduction",
+        "development",
+        "local-supabase-development",
+        "documenting"
+      ]
     },
     {
       "group": "Features",
-      "pages": ["features/meet-together"]
+      "pages": [
+        "features/meet-together"
+      ]
     },
     {
       "group": "Personalization",
-      "pages": ["personalization/themes", "personalization/language"]
+      "pages": [
+        "personalization/themes",
+        "personalization/language"
+      ]
     },
     {
       "group": "Experiments",
