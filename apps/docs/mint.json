@@ -37,11 +37,22 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["introduction", "development", "documenting"]
+      "pages": [
+        "introduction",
+        "development",
+        "local-supabase-development",
+        "monorepo-architecture",
+        "ci-cd-pipelines",
+        "documenting"
+      ]
     },
     {
       "group": "Features",
       "pages": ["features/meet-together"]
+    },
+    {
+      "group": "AI Features",
+      "pages": ["ai-structured-data"]
     },
     {
       "group": "Personalization",
