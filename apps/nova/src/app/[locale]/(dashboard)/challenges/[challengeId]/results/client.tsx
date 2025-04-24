@@ -89,7 +89,7 @@ export default function ResultClient({ data }: Props) {
   const status = getChallengeStatus(stats.percentage);
 
   return (
-    <div className="from-background to-muted/20 min-h-screen bg-gradient-to-b px-4 py-8 sm:px-6">
+    <div className="from-background to-muted/20 bg-gradient-to-b px-4 py-8 sm:px-6">
       <div className="mx-auto flex min-h-full max-w-6xl flex-col">
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="mb-4 flex items-center gap-4 md:mb-0">
