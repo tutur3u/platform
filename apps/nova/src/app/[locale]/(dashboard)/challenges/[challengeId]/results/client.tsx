@@ -392,9 +392,6 @@ export default function ResultClient({
                           </div>
                         </div>
                       </AccordionTrigger>
-                      {/* <AccordionTrigger className="w-full px-4 text-lg hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                        Session {sessionIndex + 1}
-                      </AccordionTrigger> */}
 
                       <AccordionContent className="pb-6 pt-0">
                         {loadingSessions[session.id] ? (
@@ -407,7 +404,7 @@ export default function ResultClient({
                               session={loadedSessions[session.id]}
                               sessionIndex={sessionIndex}
                             />
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-4 px-6 md:grid-cols-2 2xl:grid-cols-3">
                               {loadedSessions[session.id].problems.map(
                                 (problem: any, problemIndex: number) => (
                                   <ProblemCard
