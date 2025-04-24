@@ -1,10 +1,10 @@
 import { google } from '@ai-sdk/google';
 import { vertex } from '@ai-sdk/google-vertex/edge';
 import type { SafetySetting } from '@google/generative-ai';
-import type { ResponseMode } from '@tuturuuu/ai/types';
-import {
+import type {
   NovaSubmissionCriteria,
   NovaSubmissionTestCase,
+  ResponseMode,
 } from '@tuturuuu/ai/types';
 import {
   createAdminClient,
