@@ -95,39 +95,44 @@ export async function fetchSessionDetails(
     }
 
     // Step 6: Map the data into the expected structure
-    const problemsWithSubmissions = problems.map((problem) => {
-      // Find submissions for this problem
-      const problemSubmissions =
-        submissions
-          ?.filter((sub) => sub.problem_id === problem.id)
-          .map((submission) => {
-            // Find criteria results for this submission
-            const submissionCriteria =
-              criteria?.map((criterion) => {
-                const result = criteriaResults?.find(
-                  (result) =>
-                    result.criteria_id === criterion.id &&
-                    result.submission_id === submission.id
-                );
+// one-time map: submission_id → criteriaResults[]
+const resultsBySubmission = new Map<string, typeof criteriaResults>();
+criteriaResults?.forEach(r => {
+  if (!resultsBySubmission.has(r.submission_id)) resultsBySubmission.set(r.submission_id, []);
+  resultsBySubmission.get(r.submission_id)!.push(r);
+});
 
-                return {
-                  ...criterion,
-                  result,
-                };
-              }) || [];
-
+const problemsWithSubmissions = problems.map((problem) => {
+  // Find submissions for this problem
+  const problemSubmissions =
+    submissions
+      ?.filter((sub) => sub.problem_id === problem.id)
+      .map((submission) => {
+        // Find criteria results for this submission
+        const submissionCriteria =
+          criteria?.map((criterion) => {
+            const result = resultsBySubmission
+              .get(submission.id)
+              ?.find((r) => r.criteria_id === criterion.id);
             return {
-              ...submission,
-              criteria: submissionCriteria,
-              total_tests: submission.total_tests || 0,
-              passed_tests: submission.passed_tests || 0,
-              test_case_score: submission.test_case_score || 0,
-              total_criteria: submission.total_criteria || 0,
-              sum_criterion_score: submission.sum_criterion_score || 0,
-              criteria_score: submission.criteria_score || 0,
-              total_score: submission.total_score || 0,
+              ...criterion,
+              result,
             };
           }) || [];
+
+        return {
+          ...submission,
+          criteria: submissionCriteria,
+          total_tests: submission.total_tests || 0,
+          passed_tests: submission.passed_tests || 0,
+          test_case_score: submission.test_case_score || 0,
+          total_criteria: submission.total_criteria || 0,
+          sum_criterion_score: submission.sum_criterion_score || 0,
+          criteria_score: submission.criteria_score || 0,
+          total_score: submission.total_score || 0,
+        };
+      }) || [];
+});
 
       return {
         ...problem,
