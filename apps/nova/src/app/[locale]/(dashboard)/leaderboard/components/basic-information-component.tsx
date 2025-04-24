@@ -2,15 +2,7 @@ import { LeaderboardEntry } from './leaderboard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { CardContent } from '@tuturuuu/ui/card';
-import {
-  Crown,
-  Rocket,
-  Sparkles,
-  Star,
-  Trophy,
-  Users,
-  Zap,
-} from '@tuturuuu/ui/icons';
+import { Rocket, Sparkles, Star, Trophy, Users, Zap } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
@@ -91,51 +83,6 @@ export default function BasicInformationComponent({
               {t('description')}
             </p>
           </div>
-
-          {yourRank > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="flex-shrink-0"
-            >
-              <Card className="overflow-hidden border-blue-200 bg-white shadow-md dark:border-blue-500/20 dark:bg-slate-900/80 dark:shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="relative flex h-14 w-14 items-center justify-center">
-                      <div className="hex-shape absolute inset-0 h-full w-full bg-blue-100 dark:bg-blue-500/10" />
-                      <Crown className="relative z-10 h-6 w-6 text-blue-600 dark:text-blue-400" />
-                      <motion.div
-                        className="hex-shape-outline absolute -inset-1 z-0 border-blue-300 dark:border-blue-500/30"
-                        animate={{
-                          opacity: [0.5, 1, 0.5],
-                          scale: [1, 1.05, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                          {t('current-rank')}
-                        </p>
-                      </div>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        #{yourRank}{' '}
-                        <span className="text-sm font-normal text-gray-400 dark:text-slate-500">
-                          of {totalParticipants}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
         </div>
       </motion.div>
 

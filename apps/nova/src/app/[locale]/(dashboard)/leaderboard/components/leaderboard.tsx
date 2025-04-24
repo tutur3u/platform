@@ -70,7 +70,6 @@ export function Leaderboard({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [showDebugInfo, setShowDebugInfo] = useState(false);
   const t = useTranslations('nova.leaderboard-page.rankings');
 
   const getRankIcon = (rank: number) => {
@@ -158,41 +157,24 @@ export function Leaderboard({
         <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
           {t('title')}
         </h3>
-        <div className="flex items-center gap-2">
-          {selectedChallenge !== 'all' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowDebugInfo(!showDebugInfo)}
-              className="h-6 gap-1 text-xs text-gray-500 transition-all duration-200 hover:bg-gray-100 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
-            >
-              {showDebugInfo ? 'Hide Debug' : 'Debug Info'}
-            </Button>
-          )}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleSortOrder}
-                  className="h-8 gap-1 text-xs text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
-                >
-                  <ArrowDownUp className="h-3.5 w-3.5" />
-                  {sortOrder === 'desc'
-                    ? t('highest-first')
-                    : t('lowest-first')}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="left"
-                className="border-gray-200 bg-white text-xs dark:border-slate-700 dark:bg-slate-800"
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSortOrder}
+                className="h-8 gap-1 text-xs text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
               >
-                <p>{t('hover-info')}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+                <ArrowDownUp className="h-3.5 w-3.5" />
+                {sortOrder === 'desc' ? t('highest-first') : t('lowest-first')}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="border-gray-200 bg-white text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <p>{t('hover-info')}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700 overflow-auto">
@@ -453,37 +435,6 @@ export function Leaderboard({
                         transition={{ duration: 0.3, delay: 0.1 }}
                         className="space-y-3"
                       >
-                        {showDebugInfo && selectedChallenge !== 'all' && (
-                          <div className="mb-4 rounded border border-amber-200 bg-amber-50 p-2 text-xs dark:border-amber-800 dark:bg-amber-900/20">
-                            <h5 className="mb-1 font-medium text-amber-700 dark:text-amber-400">
-                              Debug Info
-                            </h5>
-                            <p className="text-amber-600 dark:text-amber-300">
-                              Challenge: {selectedChallenge}
-                            </p>
-                            <p className="text-amber-600 dark:text-amber-300">
-                              Has problem scores:{' '}
-                              {entry.problem_scores?.[selectedChallenge]
-                                ? 'Yes'
-                                : 'No'}
-                            </p>
-                            {entry.problem_scores?.[selectedChallenge] && (
-                              <p className="text-amber-600 dark:text-amber-300">
-                                Problem scores count:{' '}
-                                {entry.problem_scores[selectedChallenge].length}
-                              </p>
-                            )}
-                            <pre className="mt-2 max-h-32 overflow-auto rounded bg-amber-100/50 p-1 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                              {JSON.stringify(
-                                entry.problem_scores?.[selectedChallenge] ||
-                                  'No data',
-                                null,
-                                2
-                              )}
-                            </pre>
-                          </div>
-                        )}
-
                         <h4 className="text-xs font-medium text-gray-500 dark:text-slate-400">
                           {selectedChallenge !== 'all'
                             ? t('problem-breakdown')

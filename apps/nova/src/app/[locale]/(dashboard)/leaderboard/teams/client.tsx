@@ -11,15 +11,14 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
   Award,
   Clock,
-  Link,
   Medal,
-  Share,
   Sparkles,
   Target,
   Trophy,
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -179,85 +178,6 @@ export default function LeaderboardClient({
             />
           </div>
         </div>
-
-        {selectedChallenge !== 'all' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="my-6"
-          >
-            <Card className="overflow-hidden border-purple-200 bg-white shadow-md dark:border-purple-500/20 dark:bg-slate-900/80">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-                      <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                      <motion.div
-                        className="absolute -inset-1 rounded-full opacity-0 blur-sm"
-                        style={{
-                          background:
-                            'linear-gradient(to right, #8B5CF6, #6366F1)',
-                        }}
-                        animate={{ opacity: [0.2, 0.4, 0.2] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">
-                        {selectedChallengeTitle}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-slate-400">
-                        {t('filter-challenges.specific-challenge-title')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 border-gray-200 bg-white text-xs text-gray-700 transition-all duration-200 hover:scale-105 hover:bg-gray-50 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                      onClick={() => setSelectedChallenge('all')}
-                    >
-                      {t('filter-challenges.view-all-challenges')}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div className="rounded-lg bg-purple-50 p-4 transition-all duration-200 hover:bg-purple-100/50 hover:shadow-md dark:bg-purple-900/10 dark:hover:bg-purple-900/20">
-                    <h4 className="text-sm font-medium text-purple-700 dark:text-purple-400">
-                      {t('filter-challenges.total-participants')}
-                    </h4>
-                    <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">
-                      {totalParticipants}
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg bg-blue-50 p-4 transition-all duration-200 hover:bg-blue-100/50 hover:shadow-md dark:bg-blue-900/10 dark:hover:bg-blue-900/20">
-                    <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                      {t('filter-challenges.highest-score')}
-                    </h4>
-                    <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">
-                      {(topScore || 0).toLocaleString()}
-                    </p>
-                  </div>
-
-                  {yourRank > 0 && (
-                    <div className="rounded-lg bg-green-50 p-4 transition-all duration-200 hover:bg-green-100/50 hover:shadow-md dark:bg-green-900/10 dark:hover:bg-green-900/20">
-                      <h4 className="text-sm font-medium text-green-700 dark:text-green-400">
-                        {t('filter-challenges.your-rank')}
-                      </h4>
-                      <p className="text-2xl font-bold text-green-800 dark:text-green-300">
-                        #{yourRank}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
 
         <div className="flex flex-col gap-6 md:flex-row md:items-start">
           <div className="flex w-full flex-grow flex-col gap-6">
@@ -424,18 +344,6 @@ export default function LeaderboardClient({
                         </div>
                       </li>
                     </ul>
-                  </CardContent>
-                </Card>
-
-                <Card className="overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-                  <CardContent className="p-6">
-                    <Button
-                      className="w-full gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 text-white hover:from-blue-700 hover:to-indigo-800 dark:from-blue-500 dark:to-indigo-600 dark:hover:from-blue-600 dark:hover:to-indigo-700"
-                      size="lg"
-                    >
-                      <Share className="h-4 w-4" />
-                      {t('share-leaderboard')}
-                    </Button>
                   </CardContent>
                 </Card>
               </div>

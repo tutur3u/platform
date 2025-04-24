@@ -3,13 +3,7 @@
 import { LeaderboardEntry } from './leaderboard';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
-import {
-  ExternalLink,
-  Medal,
-  Share,
-  Sparkles,
-  Trophy,
-} from '@tuturuuu/ui/icons';
+import { ExternalLink, Medal, Sparkles, Trophy } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
@@ -225,29 +219,6 @@ export function TopThreeCards({ data, teamMode = false }: TopThreeCardsProps) {
                   ))}
                 </>
               )}
-
-              {/* Prize ribbon with enhanced animation */}
-              <div
-                className={cn(
-                  'absolute -right-8 top-5 rotate-45 bg-blue-50 px-10 py-1 text-center text-xs font-semibold shadow-lg transition-all duration-300 group-hover:shadow-xl dark:bg-blue-950/80',
-                  styles.badgeClass
-                )}
-              >
-                <motion.span
-                  animate={hoveredCard === index ? { scale: [1, 1.1, 1] } : {}}
-                  transition={{ duration: 0.5 }}
-                >
-                  {styles.prize}
-                </motion.span>
-              </div>
-
-              {/* Share button */}
-              <button
-                className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-500 opacity-0 transition-opacity hover:bg-gray-200 hover:text-gray-700 group-hover:opacity-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
-                aria-label="Share profile"
-              >
-                <Share className="h-3.5 w-3.5" />
-              </button>
 
               {/* Glowing border */}
               <motion.div
