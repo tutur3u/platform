@@ -55,6 +55,8 @@ export default async function Page({ params }: Props) {
       }
     );
 
+    console.log('Challenge stats:', challengeStats);
+
     if (statsError) {
       console.error('Stats error:', statsError);
       throw new Error('Error fetching challenge statistics');
@@ -75,8 +77,11 @@ export default async function Page({ params }: Props) {
     const statsRow = challengeStats?.[0];
 
     // Calculate overall statistics
+    // Total score should be the sum of best scores for each attempted problem
     const totalScore = statsRow?.total_score || 0;
-    const maxPossibleScore = (problemCount || 0) * 10; // Each problem is worth 10 points
+    // Each problem is worth 10 points maximum
+    const maxPossibleScore = (problemCount || 0) * 10;
+    // Calculate percentage based on maximum possible score from all problems
     const percentage =
       maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
     const problemsAttempted = statsRow?.problems_attempted || 0;
@@ -88,6 +93,8 @@ export default async function Page({ params }: Props) {
       problemsAttempted,
       totalProblems: problemCount || 0,
     };
+
+    console.log('Stats:', stats);
 
     return (
       <ResultClient

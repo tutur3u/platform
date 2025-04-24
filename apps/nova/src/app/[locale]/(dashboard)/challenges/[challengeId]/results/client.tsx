@@ -24,6 +24,7 @@ import {
   RefreshCcw,
   Target,
   Trophy,
+  XCircle,
 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -35,7 +36,7 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // Maximum score constant - each problem is worth 10 points
 const MAX_SCORE_PER_PROBLEM = 10;
@@ -109,6 +110,7 @@ export default function ResultClient({
   const [loadingAllProblems, setLoadingAllProblems] = useState(false);
   const [allProblems, setAllProblems] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
 
   // Get status text and color based on percentage
   const getChallengeStatus = (percentage: number) => {
@@ -194,6 +196,26 @@ export default function ResultClient({
     }
   };
 
+  const refreshPageData = () => {
+    window.location.reload();
+  };
+
+  // Check if stats look valid
+  const isValidScore =
+    stats.score >= 0 &&
+    stats.maxScore > 0 &&
+    stats.percentage >= 0 &&
+    stats.percentage <= 100;
+
+  // If scores don't look valid, show an error
+  useEffect(() => {
+    if (!isValidScore && !error) {
+      setError(
+        'Some score calculations appear to be incorrect. This may be due to a temporary issue with our scoring system.'
+      );
+    }
+  }, [stats, error, isValidScore]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 px-4 py-8 sm:px-6">
       <div className="mx-auto flex min-h-full max-w-6xl flex-col">
@@ -226,7 +248,35 @@ export default function ResultClient({
 
         {error && (
           <div className="mb-4 rounded-md bg-red-50 p-4 text-red-700">
-            <p className="text-sm">{error}</p>
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <XCircle className="h-5 w-5 text-red-400" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Error loading data
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{error}</p>
+                  <p className="mt-1">
+                    This could be due to a temporary issue with score
+                    calculation. Try refreshing the page or click the refresh
+                    button.
+                  </p>
+                </div>
+                <div className="mt-4">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={refreshPageData}
+                    className="border-red-300 text-red-800 hover:bg-red-50"
+                  >
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Refresh Page
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -266,16 +316,35 @@ export default function ResultClient({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              <div
+                                className="flex cursor-pointer items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
+                                onClick={() =>
+                                  setShowScoreBreakdown(!showScoreBreakdown)
+                                }
+                              >
                                 <Trophy className="mr-1 h-4 w-4" />
                                 {stats.score.toFixed(1)}/{stats.maxScore}
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">
-                                Maximum score: {MAX_SCORE_PER_PROBLEM} points
-                                per problem
+                            <TooltipContent className="w-[250px] p-3">
+                              <p className="mb-1 text-xs font-medium">
+                                Score Calculation Explanation:
                               </p>
+                              <ul className="space-y-1 text-xs">
+                                <li>
+                                  • Each problem is worth{' '}
+                                  {MAX_SCORE_PER_PROBLEM} points maximum
+                                </li>
+                                <li>
+                                  • Your score is the sum of your best attempt
+                                  for each problem
+                                </li>
+                                <li>
+                                  • Tests and criteria are weighted equally when
+                                  both exist
+                                </li>
+                                <li>• Click to see detailed breakdown</li>
+                              </ul>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -302,6 +371,47 @@ export default function ResultClient({
                           {status.text}
                         </p>
                       </div>
+
+                      {showScoreBreakdown && (
+                        <div className="mt-4 rounded-lg bg-muted/30 p-3 text-sm">
+                          <h4 className="mb-2 font-medium">Score Breakdown</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <p className="text-muted-foreground">
+                                Problems Attempted:
+                              </p>
+                              <p className="font-medium">
+                                {stats.problemsAttempted} /{' '}
+                                {stats.totalProblems}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">
+                                Completion:
+                              </p>
+                              <p className="font-medium">
+                                {stats.percentage.toFixed(1)}%
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">
+                                Your Score:
+                              </p>
+                              <p className="font-medium">
+                                {stats.score.toFixed(1)} points
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">
+                                Max Possible:
+                              </p>
+                              <p className="font-medium">
+                                {stats.maxScore} points
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
@@ -316,6 +426,24 @@ export default function ResultClient({
                         <p className="text-2xl font-bold">
                           {stats.percentage.toFixed(0)}%
                         </p>
+                      </div>
+                      <div className="mt-4">
+                        <div
+                          className={`text-sm ${status.color} mb-1 flex items-center gap-1 font-medium`}
+                        >
+                          <Trophy className="h-4 w-4" />
+                          {status.text}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {stats.problemsAttempted > 0 ? (
+                            <>
+                              You scored {stats.score.toFixed(1)} out of a
+                              possible {stats.maxScore} points
+                            </>
+                          ) : (
+                            <>No problems attempted yet</>
+                          )}
+                        </div>
                       </div>
                       <div className="mt-2 text-sm text-muted-foreground">
                         Last attempt:{' '}

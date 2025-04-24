@@ -83,7 +83,7 @@ export async function fetchSessionDetails(
       submissions?.filter((s) => s.id !== null).map((s) => s.id as string) ||
       [];
     const { data: criteriaResults, error: resultsError } = submissionIds.length
-      ? await supabase
+      ? await sbAdmin
           .from('nova_submission_criteria')
           .select('*')
           .in('submission_id', submissionIds)
@@ -201,7 +201,7 @@ export async function fetchAllProblems(
 
     // Step 3: Get all submissions for these sessions
     const sessionIds = sessions.map((s) => s.id);
-    const { data: allSubmissions, error: submissionsError } = await supabase
+    const { data: allSubmissions, error: submissionsError } = await sbAdmin
       .from('nova_submissions_with_scores')
       .select('*')
       .in('session_id', sessionIds);
@@ -234,7 +234,7 @@ export async function fetchAllProblems(
       allSubmissions?.filter((s) => s.id !== null).map((s) => s.id as string) ||
       [];
     const { data: criteriaResults, error: resultsError } = submissionIds.length
-      ? await supabase
+      ? await sbAdmin
           .from('nova_submission_criteria')
           .select('*')
           .in('submission_id', submissionIds)
