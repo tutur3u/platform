@@ -22,7 +22,7 @@ import { CheckCircle2, Clock, PlayCircle, XCircle } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 type TestResult = {
   input: string;
@@ -45,22 +45,19 @@ export default function PromptForm({ problem }: Props) {
   const [submissions, setSubmissions] = useState<ExtendedNovaSubmission[]>([]);
   const [activeTab, setActiveTab] = useState('prompt');
 
-  useEffect(() => {
-    // Load submission history when component mounts
-    const getSubmissions = async () => {
-      try {
-        const submissions = await fetchSubmissions(problem.id);
-        setSubmissions(submissions);
-      } catch (error) {
-        console.error('Failed to fetch submissions:', error);
-      }
-    };
-
-    getSubmissions();
+  const getSubmissions = useCallback(async () => {
+    const submissions = await fetchSubmissions(problem.id);
+    if (submissions.length > 0) {
+      setSubmissions(submissions);
+    }
   }, [problem.id]);
 
+  useEffect(() => {
+    getSubmissions();
+  }, [getSubmissions]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && e.ctrlKey) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSend();
     }
@@ -89,10 +86,6 @@ export default function PromptForm({ problem }: Props) {
         throw new Error('Failed to process prompt');
       }
 
-      // Refresh the submissions list
-      const submissions = await fetchSubmissions(problem.id);
-      setSubmissions(submissions);
-
       // Reset prompt and show success message
       setPrompt('');
       setActiveTab('submissions');
@@ -112,6 +105,7 @@ export default function PromptForm({ problem }: Props) {
         variant: 'destructive',
       });
     } finally {
+      getSubmissions();
       setIsSubmitting(false);
     }
   };

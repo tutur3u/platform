@@ -4,6 +4,7 @@ import { Countdown } from './Countdown';
 import { TimeProgress } from './TimeProgress';
 import { ConfirmDialog } from './confirmDialog';
 import EditChallengeDialog from './editChallengeDialog';
+import { DEV_MODE } from '@/constants/common';
 import { useQueryClient } from '@tanstack/react-query';
 import type {
   NovaChallenge,
@@ -405,13 +406,15 @@ export default function ChallengeCard({
                 </Button>
               ))}
 
-            <Button
-              onClick={handleViewResults}
-              className="w-full gap-2"
-              variant="secondary"
-            >
-              {t('view-results')} <ArrowRight className="h-4 w-4" />
-            </Button>
+            {DEV_MODE && (
+              <Button
+                onClick={handleViewResults}
+                className="w-full gap-2"
+                variant="secondary"
+              >
+                {t('view-results')} <ArrowRight className="h-4 w-4" />
+              </Button>
+            )}
           </>
         );
       }

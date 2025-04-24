@@ -27,7 +27,7 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 interface Props {
   problem: NovaProblem & {
@@ -51,34 +51,27 @@ export default function PromptForm({ problem, session }: Props) {
   const [activeTab, setActiveTab] = useState('prompt');
   const [submissionsTab, setSubmissionsTab] = useState('current');
 
-  useEffect(() => {
-    const getSubmissions = async () => {
-      const fetchedSubmissions = await fetchSubmissions(
-        problem.id
-        // , session.id
-      );
-      if (fetchedSubmissions) {
-        setSubmissions(fetchedSubmissions);
+  const getSubmissions = useCallback(async () => {
+    const submissions = await fetchSubmissions(problem.id);
+    if (submissions.length > 0) {
+      setSubmissions(submissions);
 
-        // Split submissions between current and past sessions
-        const current = fetchedSubmissions.filter(
-          (s) => s.session_id === session.id
-        );
-        const past = fetchedSubmissions.filter(
-          (s) => s.session_id !== session.id
-        );
+      // Split submissions between current and past sessions
+      const current = submissions.filter((s) => s.session_id === session.id);
+      const past = submissions.filter((s) => s.session_id !== session.id);
 
-        setCurrentSubmissions(current);
-        setPastSubmissions(past);
-        setAttempts(current.length);
-      }
-    };
-
-    getSubmissions();
+      setCurrentSubmissions(current);
+      setPastSubmissions(past);
+      setAttempts(current.length);
+    }
   }, [problem.id, session.id]);
 
+  useEffect(() => {
+    getSubmissions();
+  }, [getSubmissions]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSend();
     }
@@ -126,21 +119,10 @@ export default function PromptForm({ problem, session }: Props) {
         throw new Error('Failed to process prompt');
       }
 
-      // Refresh the submissions list
-      const submissions = await fetchSubmissions(problem.id);
-      setSubmissions(submissions);
-
-      // Split submissions between current and past sessions
-      const current = submissions.filter((s) => s.session_id === session.id);
-      const past = submissions.filter((s) => s.session_id !== session.id);
-
-      setCurrentSubmissions(current);
-      setPastSubmissions(past);
-      setAttempts(current.length);
-
       // Reset prompt and show success message
       setPrompt('');
       setActiveTab('submissions');
+      setSubmissionsTab('current');
 
       toast({
         title: 'Prompt submitted successfully',
@@ -157,6 +139,7 @@ export default function PromptForm({ problem, session }: Props) {
         variant: 'destructive',
       });
     } finally {
+      getSubmissions();
       setIsSubmitting(false);
     }
   };

@@ -1,3 +1,4 @@
+import { DEV_MODE } from '@/constants/common';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -8,7 +9,13 @@ interface UserInterface {
   role: string;
 }
 
+const DISABLE_ACCESS = !DEV_MODE;
+
 export async function GET(req: NextRequest) {
+  if (DISABLE_ACCESS) {
+    return NextResponse.json({ error: 'Not allowed' }, { status: 405 });
+  }
+
   const searchParams = req.nextUrl.searchParams;
   const page = parseInt(searchParams.get('page') || '1');
   const limit = 50;
