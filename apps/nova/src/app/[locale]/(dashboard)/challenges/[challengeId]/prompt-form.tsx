@@ -114,7 +114,7 @@ export default function PromptForm({ problem, session }: Props) {
           }),
         }
       );
-      
+
       if (!promptResponse.ok) {
         throw new Error('Failed to process prompt');
       }

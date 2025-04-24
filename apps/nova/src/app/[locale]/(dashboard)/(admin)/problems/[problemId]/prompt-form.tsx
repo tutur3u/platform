@@ -81,7 +81,6 @@ export default function PromptForm({ problem }: Props) {
           }),
         }
       );
-    
 
       if (!promptResponse.ok) {
         throw new Error('Failed to process prompt');
