@@ -1,5 +1,8 @@
 import ResultClient from './client';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 
@@ -9,42 +12,42 @@ interface Props {
 
 export default async function Page({ params }: Props) {
   const { challengeId } = await params;
+
   const sbAdmin = await createAdminClient();
+  const supabase = await createClient();
+
   const user = await getCurrentSupabaseUser();
 
   if (!user) redirect('/dashboard');
 
   try {
-    // Get challenge
-    const { data: challenge } = await sbAdmin
+    // Get challenge - using the regular client since users can view their challenges
+    const { data: challenge, error: challengeError } = await sbAdmin
       .from('nova_challenges')
       .select('*')
       .eq('id', challengeId)
       .single();
 
-    if (!challenge) {
+    if (challengeError || !challenge) {
+      console.error('Challenge fetch error:', challengeError);
       throw new Error('Challenge not found');
     }
 
-    // Get sessions
-    const { data: sessionSummaries } = await sbAdmin
+    // Get sessions using regular client (user has permissions to their own sessions)
+    const { data: sessionSummaries, error: sessionsError } = await supabase
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (!sessionSummaries) {
-      throw new Error('Sessions not found');
+    if (sessionsError) {
+      console.error('Sessions fetch error:', sessionsError);
+      throw new Error('Error fetching sessions');
     }
 
-    // Get problem count for this challenge
-    const { count: problemCount } = await sbAdmin
-      .from('nova_problems')
-      .select('*', { count: 'exact', head: true })
-      .eq('challenge_id', challengeId);
-
-    const { data: challengeStats, error: statsError } = await sbAdmin.rpc(
+    // Get challenge stats for this user through RPC (respect permissions)
+    const { data: challengeStats, error: statsError } = await supabase.rpc(
       'get_challenge_stats',
       {
         challenge_id_param: challengeId,
@@ -53,7 +56,19 @@ export default async function Page({ params }: Props) {
     );
 
     if (statsError) {
-      throw new Error('Error from fetching stats');
+      console.error('Stats error:', statsError);
+      throw new Error('Error fetching challenge statistics');
+    }
+
+    // Get problem count using the count parameter (more efficient)
+    const { count: problemCount, error: countError } = await sbAdmin
+      .from('nova_problems')
+      .select('*', { count: 'exact', head: true })
+      .eq('challenge_id', challengeId);
+
+    if (countError) {
+      console.error('Problem count error:', countError);
+      throw new Error('Error counting problems');
     }
 
     // Extract the first (and only) row from the results array
@@ -61,7 +76,7 @@ export default async function Page({ params }: Props) {
 
     // Calculate overall statistics
     const totalScore = statsRow?.total_score || 0;
-    const maxPossibleScore = (problemCount || 0) * 10; // Assuming 10 points per problem
+    const maxPossibleScore = (problemCount || 0) * 10; // Each problem is worth 10 points
     const percentage =
       maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
     const problemsAttempted = statsRow?.problems_attempted || 0;
@@ -74,13 +89,11 @@ export default async function Page({ params }: Props) {
       totalProblems: problemCount || 0,
     };
 
-    console.log('stat', stats);
-
     return (
       <ResultClient
         challengeId={challengeId}
         challenge={challenge}
-        sessionSummaries={sessionSummaries}
+        sessionSummaries={sessionSummaries || []}
         stats={stats}
         userId={user.id}
       />

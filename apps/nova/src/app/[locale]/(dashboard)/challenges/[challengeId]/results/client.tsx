@@ -2,7 +2,6 @@
 
 import { fetchAllProblems, fetchSessionDetails } from './actions';
 import ProblemCard from './components/ProblemCard';
-import SessionCard from './components/SessionCard';
 import {
   Accordion,
   AccordionContent,
@@ -64,6 +63,35 @@ interface Props {
   userId: string;
 }
 
+// Skeleton component for session loading
+const SessionDetailsSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="mb-4 rounded-lg bg-muted p-4">
+      <div className="mb-3 h-5 w-32 rounded bg-muted-foreground/20"></div>
+      <div className="mb-2 h-4 w-48 rounded bg-muted-foreground/20"></div>
+      <div className="h-4 w-44 rounded bg-muted-foreground/20"></div>
+    </div>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {Array(2)
+        .fill(0)
+        .map((_, i) => (
+          <div key={i} className="h-40 rounded-lg border p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6 rounded-full bg-muted-foreground/20"></div>
+                <div className="h-5 w-20 rounded bg-muted-foreground/20"></div>
+              </div>
+              <div className="h-5 w-14 rounded-full bg-muted-foreground/20"></div>
+            </div>
+            <div className="mb-2 h-4 w-3/4 rounded bg-muted-foreground/20"></div>
+            <div className="mb-6 h-4 w-1/2 rounded bg-muted-foreground/20"></div>
+            <div className="h-14 rounded bg-muted-foreground/20"></div>
+          </div>
+        ))}
+    </div>
+  </div>
+);
+
 export default function ResultClient({
   challengeId,
   challenge,
@@ -77,9 +105,10 @@ export default function ResultClient({
   const [loadingSessions, setLoadingSessions] = useState<
     Record<string, boolean>
   >({});
-  const [_activeTab, setActiveTab] = useState('sessions');
+  const [activeTab, setActiveTab] = useState('sessions');
   const [loadingAllProblems, setLoadingAllProblems] = useState(false);
   const [allProblems, setAllProblems] = useState<any[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Get status text and color based on percentage
   const getChallengeStatus = (percentage: number) => {
@@ -106,20 +135,21 @@ export default function ResultClient({
     ) {
       // Start loading the session
       setLoadingSessions((prev) => ({ ...prev, [newlyExpanded]: true }));
+      setError(null);
 
       try {
         const sessionData = await fetchSessionDetails(
           newlyExpanded,
           challengeId
         );
+
         setLoadedSessions((prev) => ({
           ...prev,
           [newlyExpanded]: sessionData,
         }));
-
-        console.log('fetch new ss data', sessionData);
       } catch (error) {
         console.error('Error loading session:', error);
+        setError('Failed to load session details. Please try again later.');
       } finally {
         setLoadingSessions((prev) => ({ ...prev, [newlyExpanded]: false }));
       }
@@ -130,6 +160,7 @@ export default function ResultClient({
 
   const handleTabChange = async (value: string) => {
     setActiveTab(value);
+    setError(null);
 
     // If switching to problems tab and we haven't loaded them yet
     if (value === 'problems' && !allProblems && !loadingAllProblems) {
@@ -137,10 +168,26 @@ export default function ResultClient({
       try {
         const result = await fetchAllProblems(challengeId, userId);
         setAllProblems(result.problems);
-
-        console.log('res', result);
       } catch (error) {
         console.error('Error loading all problems:', error);
+        setError('Failed to load problem details. Please try again later.');
+      } finally {
+        setLoadingAllProblems(false);
+      }
+    }
+  };
+
+  const refreshProblemDetails = async () => {
+    if (activeTab === 'problems') {
+      setLoadingAllProblems(true);
+      setError(null);
+
+      try {
+        const result = await fetchAllProblems(challengeId, userId);
+        setAllProblems(result.problems);
+      } catch (error) {
+        console.error('Error refreshing problems:', error);
+        setError('Failed to refresh problem data. Please try again later.');
       } finally {
         setLoadingAllProblems(false);
       }
@@ -148,7 +195,7 @@ export default function ResultClient({
   };
 
   return (
-    <div className="from-background to-muted/20 min-h-screen bg-gradient-to-b px-4 py-8 sm:px-6">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 px-4 py-8 sm:px-6">
       <div className="mx-auto flex min-h-full max-w-6xl flex-col">
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="mb-4 flex items-center gap-4 md:mb-0">
@@ -162,7 +209,7 @@ export default function ResultClient({
             </Button>
             <div>
               <h1 className="text-3xl font-bold">{challenge.title}</h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="mt-1 text-muted-foreground">
                 {challenge.description || 'Challenge Results'}
               </p>
             </div>
@@ -177,11 +224,17 @@ export default function ResultClient({
           </Button>
         </div>
 
+        {error && (
+          <div className="mb-4 rounded-md bg-red-50 p-4 text-red-700">
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
         {sessionSummaries.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
             <Card className="max-w-md">
               <CardHeader className="text-center">
-                <div className="bg-muted text-muted-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
                   <BookOpen className="h-10 w-10" />
                 </div>
                 <CardTitle>No data available</CardTitle>
@@ -213,7 +266,7 @@ export default function ResultClient({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="bg-primary/10 text-primary flex items-center rounded-full px-3 py-1 text-sm font-medium">
+                              <div className="flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
                                 <Trophy className="mr-1 h-4 w-4" />
                                 {stats.score.toFixed(1)}/{stats.maxScore}
                               </div>
@@ -241,7 +294,7 @@ export default function ResultClient({
                         }
                       />
                       <div className="flex items-center justify-between">
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                           You've attempted {stats.problemsAttempted || 0} out of{' '}
                           {stats.totalProblems || 0} problems
                         </p>
@@ -250,88 +303,28 @@ export default function ResultClient({
                         </p>
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                      <div className="bg-card/50 hover:bg-card/80 rounded-lg border p-3 text-center transition-colors">
-                        <div className="text-muted-foreground text-xs uppercase">
-                          Sessions
-                        </div>
-                        <div className="mt-1 text-2xl font-bold">
-                          {sessionSummaries.length}
-                        </div>
-                      </div>
-                      <div className="bg-card/50 hover:bg-card/80 rounded-lg border p-3 text-center transition-colors">
-                        <div className="text-muted-foreground text-xs uppercase">
-                          Problems
-                        </div>
-                        <div className="mt-1 text-2xl font-bold">
-                          {stats.totalProblems}
-                        </div>
-                      </div>
-                      <div className="bg-card/50 hover:bg-card/80 rounded-lg border p-3 text-center transition-colors">
-                        <div className="text-muted-foreground text-xs uppercase">
-                          Total Score
-                        </div>
-                        <div className="mt-1 flex items-center justify-center">
-                          <span
-                            className={`text-2xl font-bold ${
-                              stats.percentage >= 80
-                                ? 'text-green-600'
-                                : stats.percentage >= 60
-                                  ? 'text-yellow-600'
-                                  : stats.percentage >= 40
-                                    ? 'text-orange-600'
-                                    : 'text-red-600'
-                            }`}
-                          >
-                            {stats.percentage.toFixed(0)}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
-
-                  <div className="bg-primary/5 flex flex-col items-center justify-center rounded-lg p-5">
-                    <div className="text-center">
-                      <div className="text-muted-foreground mb-2 text-sm">
-                        Challenge Completed
-                      </div>
-                      <div className="relative flex items-center justify-center">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-4xl font-bold">
-                            {stats.percentage.toFixed(0)}%
+                  <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
+                    <div className="flex flex-col rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="rounded-full bg-primary/10 p-2 text-primary">
+                            <Target className="h-5 w-5" />
                           </div>
+                          <h4 className="font-medium">Total Score</h4>
                         </div>
-                        <svg className="h-32 w-32" viewBox="0 0 100 100">
-                          <circle
-                            className="text-muted-foreground/20"
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            stroke="currentColor"
-                            strokeWidth="10"
-                            fill="none"
-                          />
-                          <circle
-                            className="text-primary"
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            stroke="currentColor"
-                            strokeWidth="10"
-                            fill="none"
-                            strokeDasharray="251.2"
-                            strokeDashoffset={
-                              251.2 - (251.2 * stats.percentage) / 100
-                            }
-                            transform="rotate(-90 50 50)"
-                          />
-                        </svg>
+                        <p className="text-2xl font-bold">
+                          {stats.percentage.toFixed(0)}%
+                        </p>
                       </div>
-                      <div className="mt-2">
-                        <span className={`text-sm font-medium ${status.color}`}>
-                          {status.text}
-                        </span>
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        Last attempt:{' '}
+                        {sessionSummaries[0]?.created_at
+                          ? formatDistanceToNow(
+                              new Date(sessionSummaries[0].created_at),
+                              { addSuffix: true }
+                            )
+                          : 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -341,123 +334,182 @@ export default function ResultClient({
 
             <Tabs
               defaultValue="sessions"
-              className="mb-8 w-full"
+              value={activeTab}
               onValueChange={handleTabChange}
+              className="w-full"
             >
-              <TabsList className="mb-4">
-                <TabsTrigger value="sessions">
-                  Sessions ({sessionSummaries.length})
-                </TabsTrigger>
-                <TabsTrigger value="problems">
-                  All Problems ({stats.totalProblems})
-                </TabsTrigger>
-              </TabsList>
+              <div className="mb-4 flex items-center justify-between">
+                <TabsList className="grid w-full max-w-md grid-cols-2">
+                  <TabsTrigger value="sessions">Session History</TabsTrigger>
+                  <TabsTrigger value="problems">Problem Summary</TabsTrigger>
+                </TabsList>
+                {activeTab === 'problems' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshProblemDetails}
+                    disabled={loadingAllProblems}
+                    className="ml-2"
+                  >
+                    {loadingAllProblems ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCcw className="mr-2 h-4 w-4" />
+                    )}
+                    Refresh
+                  </Button>
+                )}
+              </div>
 
-              <TabsContent value="sessions">
-                <Accordion
-                  type="multiple"
-                  value={expandedSessions}
-                  className="w-full"
-                  onValueChange={handleAccordionValueChange}
-                >
-                  {sessionSummaries.map((session, sessionIndex) => (
-                    <AccordionItem
-                      key={session.id}
-                      value={session.id}
-                      className="animate-in fade-in-50 slide-in-from-bottom-3 bg-card/50 mb-4 rounded-lg border duration-500"
+              <TabsContent value="sessions" className="w-full">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Session History</CardTitle>
+                    <CardDescription>
+                      View your past attempts for this challenge
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Accordion
+                      type="multiple"
+                      value={expandedSessions}
+                      onValueChange={handleAccordionValueChange}
+                      className="w-full"
                     >
-                      <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                        <div className="flex w-full items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="bg-primary/10 flex h-9 w-9 items-center justify-center rounded-full">
-                              <Target className="text-primary h-5 w-5" />
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-semibold">
-                                Session {sessionIndex + 1}
-                              </h3>
-                              <p className="text-muted-foreground text-sm">
+                      {sessionSummaries.map((session, index) => (
+                        <AccordionItem
+                          key={session.id}
+                          value={session.id}
+                          className="border-b last:border-b-0"
+                        >
+                          <AccordionTrigger className="relative px-4 py-3 hover:bg-muted/50">
+                            {loadingSessions[session.id] && (
+                              <div className="absolute top-1/2 right-12 -translate-y-1/2">
+                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                              </div>
+                            )}
+                            <div className="flex w-full items-center justify-between pr-4">
+                              <span>
+                                Session from{' '}
+                                {new Date(
+                                  session.created_at
+                                ).toLocaleDateString()}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
                                 {formatDistanceToNow(
                                   new Date(session.created_at),
                                   { addSuffix: true }
                                 )}
-                                {session.end_time &&
-                                  ` • ${Math.floor(
-                                    (new Date(session.end_time).getTime() -
-                                      new Date(session.created_at).getTime()) /
-                                      60000
-                                  )} min`}
-                              </p>
+                              </span>
                             </div>
-                          </div>
-                        </div>
-                      </AccordionTrigger>
-
-                      <AccordionContent className="pb-6 pt-0">
-                        {loadingSessions[session.id] ? (
-                          <div className="flex items-center justify-center py-12">
-                            <Loader2 className="text-primary h-8 w-8 animate-spin" />
-                          </div>
-                        ) : loadedSessions[session.id] ? (
-                          <div>
-                            <SessionCard
-                              session={loadedSessions[session.id]}
-                              sessionIndex={sessionIndex}
-                            />
-                            <div className="grid grid-cols-1 gap-4 px-6 md:grid-cols-2 2xl:grid-cols-3">
-                              {loadedSessions[session.id].problems.map(
-                                (problem: any, problemIndex: number) => (
-                                  <ProblemCard
-                                    key={problemIndex}
-                                    problem={problem}
-                                    problemIndex={problemIndex}
-                                    sessionIndex={sessionIndex}
-                                  />
-                                )
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="py-4 text-center">
-                            Failed to load session data
-                          </div>
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pt-0 pb-4">
+                            {loadingSessions[session.id] ? (
+                              <SessionDetailsSkeleton />
+                            ) : loadedSessions[session.id] ? (
+                              <div className="transition-all duration-200 ease-in-out">
+                                <div className="mb-4 rounded-lg bg-muted p-4">
+                                  <div className="text-sm">
+                                    <div className="mb-1 font-medium">
+                                      Session {index + 1}
+                                    </div>
+                                    <div className="text-muted-foreground">
+                                      Started:{' '}
+                                      {new Date(
+                                        loadedSessions[
+                                          session.id
+                                        ].session.created_at
+                                      ).toLocaleString()}
+                                    </div>
+                                    {loadedSessions[session.id].session
+                                      .end_time && (
+                                      <div className="text-muted-foreground">
+                                        Ended:{' '}
+                                        {new Date(
+                                          loadedSessions[
+                                            session.id
+                                          ].session.end_time
+                                        ).toLocaleString()}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                  {loadedSessions[session.id].problems.map(
+                                    (problem: any, problemIndex: number) => (
+                                      <ProblemCard
+                                        key={problem.id}
+                                        problem={problem}
+                                        problemIndex={problemIndex}
+                                        sessionIndex={index}
+                                      />
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="py-4 text-center text-muted-foreground">
+                                No data available for this session
+                              </div>
+                            )}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
-              <TabsContent value="problems">
-                {loadingAllProblems ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="text-primary h-8 w-8 animate-spin" />
-                  </div>
-                ) : allProblems ? (
-                  <div className="animate-in fade-in-50 slide-in-from-bottom-3 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 2xl:grid-cols-3">
-                    {allProblems.map((problem, problemIndex) => (
-                      <ProblemCard
-                        key={problemIndex}
-                        problem={problem}
-                        problemIndex={problemIndex}
-                        sessionIndex={-1} // Special marker for "all sessions" view
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-card/50 rounded-lg border p-12 text-center">
-                    <p className="text-muted-foreground mb-2">
-                      Click to view all problems across sessions
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleTabChange('problems')}
-                      className="mt-2"
-                    >
-                      Load Problems
-                    </Button>
-                  </div>
-                )}
+              <TabsContent value="problems" className="w-full">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Problem Summary</CardTitle>
+                    <CardDescription>
+                      View your performance across all problems in this
+                      challenge
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingAllProblems ? (
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {Array(4)
+                          .fill(0)
+                          .map((_, i) => (
+                            <div
+                              key={i}
+                              className="h-40 animate-pulse rounded-lg border p-4"
+                            >
+                              <div className="mb-2 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-6 w-6 rounded-full bg-muted-foreground/20"></div>
+                                  <div className="h-5 w-24 rounded bg-muted-foreground/20"></div>
+                                </div>
+                                <div className="h-5 w-14 rounded-full bg-muted-foreground/20"></div>
+                              </div>
+                              <div className="mb-2 h-4 w-3/4 rounded bg-muted-foreground/20"></div>
+                              <div className="mb-6 h-4 w-1/2 rounded bg-muted-foreground/20"></div>
+                              <div className="h-14 rounded bg-muted-foreground/20"></div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : allProblems ? (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {allProblems.map((problem, index) => (
+                          <ProblemCard
+                            key={problem.id}
+                            problem={problem}
+                            problemIndex={index}
+                            sessionIndex={-1}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-4 text-center text-muted-foreground">
+                        No problem data available
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </>
