@@ -356,14 +356,9 @@ export function UnifiedEventModal({
     
     // Define keywords for each category
     const categoryKeywords: Record<string, string[]> = {
-      'Work': ['work', 'job', 'meeting', 'project', 'deadline', 'presentation', 'interview', 'client', 'report', 'office', 'business'],
-      'Personal': ['personal', 'hobby', 'read', 'watch', 'me time', 'self care', 'shopping'],
-      'Family': ['family', 'kids', 'parent', 'spouse', 'husband', 'wife', 'child', 'son', 'daughter', 'birthday', 'anniversary', 'home'],
-      'Health': ['health', 'workout', 'gym', 'exercise', 'doctor', 'dentist', 'appointment', 'medication', 'therapy', 'yoga', 'meditation', 'run', 'fitness'],
-      'Social': ['social', 'friend', 'party', 'lunch', 'dinner', 'coffee', 'drink', 'hangout', 'date', 'club', 'outing'],
-      'Education': ['education', 'class', 'course', 'study', 'learn', 'lecture', 'school', 'college', 'university', 'homework', 'assignment', 'training'],
-      'Travel': ['travel', 'trip', 'flight', 'vacation', 'hotel', 'booking', 'journey', 'visit', 'tourism'],
-      'Meeting': ['meeting', 'call', 'conference', 'discussion', 'zoom', 'teams', 'webinar', 'board', 'client']
+      'Work': ['work', 'job', 'project', 'client', 'report', 'deadline', 'task', 'office', 'business', 'colleague', 'planning', 'product', 'code', 'develop', 'development', 'design', 'document'],
+      'Meeting': ['meeting', 'conference', 'call', 'zoom', 'teams', 'interview', '1:1', '1-1', 'one-on-one', 'huddle', 'standup', 'catch-up', 'debrief', 'review', 'sync', 'check-in', 'touch-base', 'brainstorm', 'workshop', 'presentation', 'demo'],
+      'Personal': ['personal', 'health', 'family', 'social', 'leisure', 'hobby', 'shopping', 'errand', 'appointment', 'rest', 'break', 'recreation', 'relax', 'movie', 'entertainment', 'travel', 'trip', 'vacation', 'holiday', 'concert', 'show', 'gym', 'workout', 'exercise', 'doctor', 'dentist', 'lunch', 'dinner', 'coffee', 'friend', 'party']
     };
     
     // Check if title contains keywords for any category

@@ -90,11 +90,8 @@ export const defaultCalendarSettings: CalendarSettings = {
   categoryColors: {
     categories: [
       { name: 'Work', color: 'BLUE' },
+      { name: 'Meeting', color: 'CYAN' },
       { name: 'Personal', color: 'GREEN' },
-      { name: 'Health', color: 'RED' },
-      { name: 'Social', color: 'YELLOW' },
-      { name: 'Family', color: 'PURPLE' },
-      { name: 'Education', color: 'ORANGE' },
     ],
   },
   smartScheduling: {
@@ -120,35 +117,17 @@ export const defaultCalendarSettings: CalendarSettings = {
         optimalHours: [9, 10, 11, 14, 15, 16],
         preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
       },
+      Meeting: {
+        startHour: 10,
+        endHour: 16,
+        optimalHours: [10, 11, 14, 15],
+        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+      },
       Personal: {
         startHour: 7,
         endHour: 22,
         optimalHours: [7, 8, 12, 13, 17, 18, 19, 20],
         preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-      },
-      Health: {
-        startHour: 6,
-        endHour: 10,
-        optimalHours: [6, 7, 8],
-        preferredDays: ['monday', 'wednesday', 'friday']
-      },
-      Social: {
-        startHour: 17,
-        endHour: 22,
-        optimalHours: [18, 19, 20],
-        preferredDays: ['friday', 'saturday', 'sunday']
-      },
-      Family: {
-        startHour: 17,
-        endHour: 22,
-        optimalHours: [18, 19, 20],
-        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-      },
-      Education: {
-        startHour: 9,
-        endHour: 16,
-        optimalHours: [9, 10, 11, 14],
-        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
       }
     }
   },

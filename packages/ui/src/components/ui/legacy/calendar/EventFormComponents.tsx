@@ -478,6 +478,39 @@ export function EventCategoryPicker({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  
+  // Required categories
+  const REQUIRED_CATEGORIES = ['Work', 'Meeting', 'Personal'];
+  
+  console.log('Original categories:', categories);
+  
+  // Create map of categories for easier lookup
+  const categoryMap = new Map(
+    categories.map(cat => [cat.name.toLowerCase(), cat])
+  );
+  
+  // Create display list ensuring always 3 categories
+  const displayCategories = REQUIRED_CATEGORIES.map(requiredName => {
+    // Find in existing categories (case insensitive)
+    const existingCategory = categories.find(
+      cat => cat.name.toLowerCase() === requiredName.toLowerCase()
+    );
+    
+    // If found, use it, otherwise create default
+    if (existingCategory) {
+      return existingCategory;
+    } else {
+      // Create default color for each category type
+      let defaultColor: SupportedColor = 'BLUE';
+      if (requiredName === 'Meeting') defaultColor = 'CYAN';
+      if (requiredName === 'Work') defaultColor = 'GREEN';
+      if (requiredName === 'Personal') defaultColor = 'GREEN';
+      
+      return { name: requiredName, color: defaultColor };
+    }
+  });
+  
+  console.log('Display categories:', displayCategories);
 
   return (
     <div className="space-y-2">
@@ -494,7 +527,7 @@ export function EventCategoryPicker({
             disabled={disabled}
           >
             {value
-              ? categories.find((category) => category.name === value)?.name || value
+              ? displayCategories.find((category) => category.name.toLowerCase() === value.toLowerCase())?.name || value
               : "Select category..."}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -505,7 +538,7 @@ export function EventCategoryPicker({
             <CommandEmpty>No category found.</CommandEmpty>
             <CommandList>
               <CommandGroup>
-                {categories.map((category) => {
+                {displayCategories.map((category) => {
                   const { bg, text } = getEventStyles(category.color);
                   return (
                     <CommandItem
@@ -523,7 +556,7 @@ export function EventCategoryPicker({
                       <Check
                         className={cn(
                           "ml-auto h-4 w-4",
-                          value === category.name ? "opacity-100" : "opacity-0"
+                          value.toLowerCase() === category.name.toLowerCase() ? "opacity-100" : "opacity-0"
                         )}
                       />
                     </CommandItem>
