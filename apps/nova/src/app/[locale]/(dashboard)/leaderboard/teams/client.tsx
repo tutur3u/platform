@@ -32,6 +32,7 @@ export default function LeaderboardClient({
   problems = [],
   hasMore,
   initialPage = 1,
+  calculationDate,
 }: {
   data: LeaderboardEntry[];
   topThree: LeaderboardEntry[];
@@ -40,6 +41,7 @@ export default function LeaderboardClient({
   problems?: { id: string; title: string; challenge_id: string }[];
   hasMore: boolean;
   initialPage?: number;
+  calculationDate: Date;
 }) {
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>(data);
   const [filteredInfo, setFilteredInfo] = useState<BasicInformation>(basicInfo);
@@ -380,7 +382,16 @@ export default function LeaderboardClient({
 
         <div className="mt-8 text-center text-sm text-slate-500">
           <p>
-            {t('last-updated')} {new Date().toLocaleDateString()}
+            {t('last-updated')}{' '}
+            {new Date(calculationDate).toLocaleString('vi-VN', {
+              timeZone: 'Asia/Ho_Chi_Minh',
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })}
           </p>
         </div>
       </div>

@@ -1,9 +1,11 @@
 'use server';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NovaChallengeCriteria } from '@tuturuuu/types/db';
-import { NovaSubmission } from '@tuturuuu/types/db';
-import { NovaSubmissionCriteria } from '@tuturuuu/types/db';
+import {
+  NovaChallengeCriteria,
+  NovaSubmission,
+  NovaSubmissionCriteria,
+} from '@tuturuuu/types/db';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 
 export type ExtendedNovaSubmission = NovaSubmission & {
@@ -61,6 +63,7 @@ export async function fetchSubmissions(
       // Return properly typed submission
       return {
         ...submission,
+        overall_assessment: '',
         total_tests: submission.total_tests || 0,
         passed_tests: submission.passed_tests || 0,
         test_case_score: submission.test_case_score || 0,
