@@ -1,38 +1,30 @@
-import { LeaderboardEntry } from './page';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { CardContent } from '@tuturuuu/ui/card';
-import {
-  Crown,
-  Rocket,
-  Sparkles,
-  Star,
-  Trophy,
-  Users,
-  Zap,
-} from '@tuturuuu/ui/icons';
+import { Rocket, Sparkles, Star, Trophy, Users, Zap } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
+export interface BasicInformation {
+  currentRank: number;
+  topScore: number;
+  archiverName: string;
+  totalParticipants: number;
+}
+
 interface Props {
+  basicInfo: BasicInformation;
   selectedChallenge: string;
   selectedChallengeTitle: string;
-  yourRank: number;
-  totalParticipants: number;
-  topScore: number;
-  isChecked: boolean;
-  filteredData: LeaderboardEntry[];
+  teamMode?: boolean;
 }
 export default function BasicInformationComponent({
+  basicInfo,
   selectedChallenge,
   selectedChallengeTitle,
-  yourRank,
-  totalParticipants,
-  topScore,
-  isChecked,
-  filteredData,
+  teamMode = false,
 }: Props) {
   const t = useTranslations('nova.leaderboard-page');
 
@@ -91,51 +83,6 @@ export default function BasicInformationComponent({
               {t('description')}
             </p>
           </div>
-
-          {yourRank > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="flex-shrink-0"
-            >
-              <Card className="overflow-hidden border-blue-200 bg-white shadow-md dark:border-blue-500/20 dark:bg-slate-900/80 dark:shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="relative flex h-14 w-14 items-center justify-center">
-                      <div className="hex-shape absolute inset-0 h-full w-full bg-blue-100 dark:bg-blue-500/10" />
-                      <Crown className="relative z-10 h-6 w-6 text-blue-600 dark:text-blue-400" />
-                      <motion.div
-                        className="hex-shape-outline absolute -inset-1 z-0 border-blue-300 dark:border-blue-500/30"
-                        animate={{
-                          opacity: [0.5, 1, 0.5],
-                          scale: [1, 1.05, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                          {t('current-rank')}
-                        </p>
-                      </div>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        #{yourRank}{' '}
-                        <span className="text-sm font-normal text-gray-400 dark:text-slate-500">
-                          of {totalParticipants}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
         </div>
       </motion.div>
 
@@ -148,15 +95,17 @@ export default function BasicInformationComponent({
                 {t('statistics.position.title')}
               </p>
               <h3 className="text-2xl font-bold text-gray-800 dark:text-slate-100">
-                #{yourRank}
+                #{basicInfo.currentRank}
               </h3>
-              <p className="text-xs text-gray-500 dark:text-slate-500">
-                {yourRank <= 10
-                  ? t('statistics.position.top-position')
-                  : yourRank <= 30
-                    ? t('statistics.position.rising-position')
-                    : t('statistics.position.normal-position')}
-              </p>
+              {basicInfo.currentRank > 0 && (
+                <p className="text-xs text-gray-500 dark:text-slate-500">
+                  {basicInfo.currentRank <= 10
+                    ? t('statistics.position.top-position')
+                    : basicInfo.currentRank <= 30
+                      ? t('statistics.position.rising-position')
+                      : t('statistics.position.normal-position')}
+                </p>
+              )}
             </div>
             <div className="relative">
               <div className="absolute inset-0 -z-10 rounded-full bg-blue-100 blur-sm dark:bg-blue-500/10" />
@@ -175,11 +124,11 @@ export default function BasicInformationComponent({
                 {t('statistics.highest-score.title')}
               </p>
               <h3 className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                {topScore?.toLocaleString()}
+                {basicInfo.topScore?.toLocaleString()}
               </h3>
               <p className="text-xs text-gray-500 dark:text-slate-500">
-                {filteredData.length > 0
-                  ? `${t('statistics.highest-score.description')} ${filteredData[0]?.name}`
+                {basicInfo.topScore > 0
+                  ? `${t('statistics.highest-score.description')} ${basicInfo.archiverName}`
                   : t('statistics.highest-score.no-participant')}
               </p>
             </div>
@@ -197,15 +146,15 @@ export default function BasicInformationComponent({
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                {isChecked
+                {teamMode
                   ? t('statistics.total.teams')
                   : t('statistics.total.player')}
               </p>
               <h3 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                {totalParticipants}
+                {basicInfo.totalParticipants}
               </h3>
               <p className="text-xs text-gray-500 dark:text-slate-500">
-                {totalParticipants > 50
+                {basicInfo.totalParticipants > 50
                   ? t('statistics.total.heating-up')
                   : t('statistics.total.join-now')}
               </p>

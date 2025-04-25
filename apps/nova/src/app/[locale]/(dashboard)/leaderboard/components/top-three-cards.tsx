@@ -3,62 +3,51 @@
 import { LeaderboardEntry } from './leaderboard';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
-import {
-  ExternalLink,
-  Medal,
-  Share,
-  Sparkles,
-  Trophy,
-} from '@tuturuuu/ui/icons';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { ExternalLink, Medal, Sparkles, Trophy } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+interface RandomValues {
+  width: number;
+  height: number;
+  left: string;
+  top: string;
+  delay: number;
+  duration: number;
+  xOffset: number;
+}
 interface TopThreeCardsProps {
-  data: LeaderboardEntry[];
-  isLoading?: boolean;
-  isTeam?: boolean;
+  topThree: LeaderboardEntry[];
+  teamMode?: boolean;
 }
 
 export function TopThreeCards({
-  data,
-  isLoading = false,
-  isTeam = false,
+  topThree,
+  teamMode = false,
 }: TopThreeCardsProps) {
-  const topThree = data.slice(0, 3);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
   const t = useTranslations('nova.leaderboard-page');
 
-  if (isLoading) {
-    return (
-      <div className="mb-8 grid grid-cols-3 gap-4 sm:gap-8">
-        {[...Array(3)].map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              'flex justify-center',
-              i === 1
-                ? 'col-span-3 sm:order-1 sm:col-span-1'
-                : i === 0
-                  ? 'col-span-3 sm:order-2 sm:col-span-1'
-                  : 'col-span-3 sm:order-3 sm:col-span-1'
-            )}
-          >
-            <Skeleton
-              className={cn(
-                'h-72 w-full rounded-xl bg-gray-200 dark:bg-slate-800/50',
-                i === 0 ? 'sm:h-80' : ''
-              )}
-            />
-          </div>
-        ))}
-      </div>
+  const [randomValues, setRandomValues] = useState<RandomValues[]>([]);
+
+  // Only run this on the client side
+  useEffect(() => {
+    setRandomValues(
+      [...Array(6)].map(() => ({
+        width: Math.random() * 6 + 2,
+        height: Math.random() * 6 + 2,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: Math.random() * 2,
+        duration: Math.random() * 3 + 2,
+        xOffset: Math.random() * 10 - 5,
+      }))
     );
-  }
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -203,29 +192,29 @@ export function TopThreeCards({
               {/* Floating particles */}
               {!prefersReducedMotion && (
                 <>
-                  {[...Array(6)].map((_, i) => (
+                  {randomValues.map((value, i) => (
                     <motion.div
                       key={i}
                       className="absolute rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-70"
                       style={{
-                        width: Math.random() * 6 + 2,
-                        height: Math.random() * 6 + 2,
+                        width: value.width,
+                        height: value.height,
                         background:
                           styles.particleColors[
                             i % styles.particleColors.length
                           ],
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
+                        left: value.left,
+                        top: value.top,
                       }}
                       animate={{
                         y: [0, -20, 0],
-                        x: [0, Math.random() * 10 - 5, 0],
+                        x: [0, value.xOffset, 0],
                         scale: [1, Math.random() * 0.5 + 0.8, 1],
                       }}
                       transition={{
-                        duration: Math.random() * 3 + 2,
+                        duration: value.duration,
                         repeat: Infinity,
-                        delay: Math.random() * 2,
+                        delay: value.delay,
                         ease: 'easeInOut',
                       }}
                     />
@@ -233,34 +222,11 @@ export function TopThreeCards({
                 </>
               )}
 
-              {/* Prize ribbon with enhanced animation */}
-              <div
-                className={cn(
-                  'absolute -right-8 top-5 rotate-45 bg-blue-50 px-10 py-1 text-center text-xs font-semibold shadow-lg transition-all duration-300 group-hover:shadow-xl dark:bg-blue-950/80',
-                  styles.badgeClass
-                )}
-              >
-                <motion.span
-                  animate={hoveredCard === index ? { scale: [1, 1.1, 1] } : {}}
-                  transition={{ duration: 0.5 }}
-                >
-                  {styles.prize}
-                </motion.span>
-              </div>
-
-              {/* Share button */}
-              <button
-                className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-500 opacity-0 transition-opacity hover:bg-gray-200 hover:text-gray-700 group-hover:opacity-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
-                aria-label="Share profile"
-              >
-                <Share className="h-3.5 w-3.5" />
-              </button>
-
               {/* Glowing border */}
               <motion.div
                 className="absolute inset-0 -z-10 rounded-xl opacity-0 dark:opacity-50"
                 style={{
-                  background: `linear-gradient(45deg, ${styles.glow}, transparent, ${styles.glow})`,
+                  backgroundImage: `linear-gradient(45deg, ${styles.glow}, transparent, ${styles.glow})`,
                   backgroundSize: '200% 200%',
                 }}
                 animate={
@@ -504,7 +470,7 @@ export function TopThreeCards({
 
               {/* View profile button */}
               <Link
-                href={`/${isTeam ? 'profile/teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
+                href={`/${teamMode ? 'profile/teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
                 className="mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 transition-opacity hover:bg-gray-200 group-hover:opacity-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 {t('view-profile')} <ExternalLink className="ml-1 h-3 w-3" />
