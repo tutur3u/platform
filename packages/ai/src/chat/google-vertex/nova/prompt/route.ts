@@ -332,7 +332,6 @@ ${JSON.stringify(ctx)}
         session_id: sessionId,
         user_id: user.id,
         overall_assessment: evaluation.overallAssessment || '',
-        total_score: evaluation.totalScore || 0,
       })
       .select('id')
       .single();
