@@ -16,6 +16,13 @@ import { z } from 'zod';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 
+// Add a simple round-robin selection function that favors Google
+function getModelProvider() {
+  // Use timestamp to create simple round-robin with 70% preference for Google
+  const timestamp = Date.now();
+  return timestamp % 10 < 7 ? 'google' : 'vertex';
+}
+
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
@@ -35,9 +42,13 @@ const modelSafetySettings = [
 
 const vertexModel =
   process.env.NODE_ENV === 'production'
-    ? vertex(DEFAULT_MODEL_NAME, {
-        safetySettings: modelSafetySettings,
-      })
+    ? getModelProvider() === 'vertex'
+      ? vertex(DEFAULT_MODEL_NAME, {
+          safetySettings: modelSafetySettings,
+        })
+      : google(DEFAULT_MODEL_NAME, {
+          safetySettings: modelSafetySettings,
+        })
     : google(DEFAULT_MODEL_NAME, {
         safetySettings: modelSafetySettings,
       });
