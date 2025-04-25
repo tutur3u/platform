@@ -250,9 +250,9 @@ export default function UserProfileClient({
   const overallStatus = getProgressStatus(profile.problemsAttemptedPercentage);
 
   return (
-    <div className="container max-w-6xl pt-8 pb-16">
+    <div className="container max-w-6xl pb-16 pt-8">
       {/* Breadcrumb navigation */}
-      <nav className="mb-8 flex items-center space-x-2 text-sm text-muted-foreground">
+      <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
         <Link href="/home" className="hover:text-foreground">
           {t('breadcrumb.home')}
         </Link>
@@ -261,7 +261,7 @@ export default function UserProfileClient({
           {t('breadcrumb.leaderboard')}
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <span className="font-medium text-foreground">{profile.name}</span>
+        <span className="text-foreground font-medium">{profile.name}</span>
       </nav>
 
       {/* Profile Header */}
@@ -269,7 +269,7 @@ export default function UserProfileClient({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="mb-8 overflow-hidden rounded-xl border bg-card/50 p-6 shadow-sm"
+        className="bg-card/50 mb-8 overflow-hidden rounded-xl border p-6 shadow-sm"
       >
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex flex-col items-center gap-4 sm:flex-row">
@@ -280,7 +280,7 @@ export default function UserProfileClient({
                 transition={{ delay: 0.2 }}
                 className="relative"
               >
-                <Avatar className="h-20 w-20 ring-2 ring-primary ring-offset-2 ring-offset-background sm:h-24 sm:w-24">
+                <Avatar className="ring-primary ring-offset-background h-20 w-20 ring-2 ring-offset-2 sm:h-24 sm:w-24">
                   <AvatarImage src={profile.avatar} alt={profile.name} />
                   <AvatarFallback className="text-lg">
                     {profile.name
@@ -289,8 +289,8 @@ export default function UserProfileClient({
                       .join('')}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute -top-1 -right-1 rounded-full border border-background bg-background p-1 shadow-md dark:bg-card">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold text-primary">
+                <div className="border-background bg-background dark:bg-card absolute -right-1 -top-1 rounded-full border p-1 shadow-md">
+                  <div className="text-primary flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold">
                     {level}
                   </div>
                 </div>
@@ -300,20 +300,20 @@ export default function UserProfileClient({
               <h1 className="text-3xl font-bold">{profile.name}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 {formattedJoinedDate && (
-                  <div className="flex items-center text-sm text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center text-sm">
                     <Calendar className="mr-1 h-4 w-4" />
                     {t('joined')}: {formattedJoinedDate}
                   </div>
                 )}
-                <div className="flex items-center text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center text-sm">
                   <Trophy className="mr-1 h-4 w-4" />
                   {t('rank')}: #{profile.rank}
                 </div>
-                <div className="flex items-center text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center text-sm">
                   <Target className="mr-1 h-4 w-4" />
                   {t('score')}: {profile.totalScore.toFixed(1)}
                 </div>
-                <div className="flex items-center text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center text-sm">
                   <BookOpen className="mr-1 h-4 w-4" />
                   {t('challenges.title')}: {profile.challengeCount}
                 </div>
@@ -363,7 +363,7 @@ export default function UserProfileClient({
             <div className="text-sm font-medium">
               {t('level')} {level}
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               {profile.totalScore.toFixed(1)} / {nextLevel * 500} {t('points')}
             </div>
           </div>
@@ -384,7 +384,7 @@ export default function UserProfileClient({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-primary" />
+                  <Target className="text-primary h-5 w-5" />
                   {t('stats.title')}
                 </CardTitle>
                 <CardDescription>{t('stats.description')}</CardDescription>
@@ -392,7 +392,7 @@ export default function UserProfileClient({
               <CardContent className="grid gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {t('stats.total-score')}
                     </span>
                     <span className="text-2xl font-bold">
@@ -400,13 +400,13 @@ export default function UserProfileClient({
                     </span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {t('stats.rank')}
                     </span>
                     <span className="text-2xl font-bold">#{profile.rank}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {t('stats.problems-attempted')}
                     </span>
                     <span className="text-2xl font-bold">
@@ -414,7 +414,7 @@ export default function UserProfileClient({
                     </span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {t('stats.challenges')}
                     </span>
                     <span className="text-2xl font-bold">
@@ -440,7 +440,7 @@ export default function UserProfileClient({
                       value={profile.problemsAttemptedPercentage}
                       className="h-2"
                     />
-                    <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-1 flex justify-between text-xs">
                       <span>
                         {profile.problemCount} /{' '}
                         {profile.totalAvailableProblems} {t('stats.problems')}
@@ -458,7 +458,7 @@ export default function UserProfileClient({
                     <h4 className="mb-2 text-sm font-medium">
                       {t('stats.leaderboard-position')}
                     </h4>
-                    <div className="space-y-2 rounded-md bg-muted/30 p-2">
+                    <div className="bg-muted/30 space-y-2 rounded-md p-2">
                       {profile.nearbyRanks.map((rank, index) => {
                         const rankNumber =
                           profile.rank -
@@ -507,7 +507,7 @@ export default function UserProfileClient({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-primary" />
+                  <Award className="text-primary h-5 w-5" />
                   {t('achievements.title')}
                 </CardTitle>
                 <CardDescription>
@@ -544,13 +544,13 @@ export default function UserProfileClient({
                       </div>
                     </div>
                     <div>
-                      <div className="leading-none font-medium">
+                      <div className="font-medium leading-none">
                         {achievement.title}
                         {!achievement.unlocked && (
-                          <Lock className="ml-1 inline h-3 w-3 text-muted-foreground" />
+                          <Lock className="text-muted-foreground ml-1 inline h-3 w-3" />
                         )}
                       </div>
-                      <div className="mt-1 text-sm text-muted-foreground">
+                      <div className="text-muted-foreground mt-1 text-sm">
                         {achievement.description}
                       </div>
                     </div>
@@ -588,7 +588,7 @@ export default function UserProfileClient({
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-dynamic-yellow" />
+                        <Sparkles className="text-dynamic-yellow h-5 w-5" />
                         {t('overview.best-performance')}
                       </CardTitle>
                     </CardHeader>
@@ -598,12 +598,12 @@ export default function UserProfileClient({
                           <h3 className="text-lg font-medium">
                             {bestChallenge.title}
                           </h3>
-                          <p className="mt-1 text-sm text-muted-foreground">
+                          <p className="text-muted-foreground mt-1 text-sm">
                             {bestChallenge.description}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center text-xl font-bold text-dynamic-yellow">
+                          <div className="text-dynamic-yellow flex items-center text-xl font-bold">
                             {bestChallenge.score.toFixed(1)}
                             <Trophy className="ml-1 h-5 w-5" />
                           </div>
@@ -642,7 +642,7 @@ export default function UserProfileClient({
                   <CardContent>
                     <div className="grid gap-6 sm:grid-cols-2">
                       <div className="flex flex-col gap-2">
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           {t('overview.problem-submissions')}
                         </div>
                         <div className="text-3xl font-bold">
@@ -650,7 +650,7 @@ export default function UserProfileClient({
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           {t('overview.avg-score')}
                         </div>
                         <div className="text-3xl font-bold">
@@ -658,7 +658,7 @@ export default function UserProfileClient({
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           {t('overview.best-score')}
                         </div>
                         <div className="text-3xl font-bold">
@@ -666,7 +666,7 @@ export default function UserProfileClient({
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           {t('overview.last-active')}
                         </div>
                         <div className="text-xl font-bold">
@@ -697,7 +697,7 @@ export default function UserProfileClient({
                           .map((problem, i) => (
                             <div
                               key={problem.id}
-                              className="flex items-center justify-between rounded-md bg-muted/30 p-2 text-sm"
+                              className="bg-muted/30 flex items-center justify-between rounded-md p-2 text-sm"
                             >
                               <div className="flex items-center gap-2">
                                 <Badge
@@ -746,7 +746,7 @@ export default function UserProfileClient({
                           <CardContent>
                             <div className="mb-2 flex items-center justify-between">
                               <div className="flex items-center gap-1.5">
-                                <ScrollText className="h-4 w-4 text-muted-foreground" />
+                                <ScrollText className="text-muted-foreground h-4 w-4" />
                                 <span className="text-sm">
                                   {challenge.attemptedProblems} /{' '}
                                   {challenge.problemCount}{' '}
@@ -775,11 +775,11 @@ export default function UserProfileClient({
                   </div>
                 ) : (
                   <div className="p-10 text-center">
-                    <ScrollText className="mx-auto h-10 w-10 text-muted-foreground" />
+                    <ScrollText className="text-muted-foreground mx-auto h-10 w-10" />
                     <h3 className="mt-4 text-lg font-medium">
                       {t('challenges.no-challenges')}
                     </h3>
-                    <p className="mt-2 text-muted-foreground">
+                    <p className="text-muted-foreground mt-2">
                       {t('challenges.no-challenges-description')}
                     </p>
                     <Button className="mt-4" asChild>
@@ -796,7 +796,7 @@ export default function UserProfileClient({
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-primary" />
+                      <Clock className="text-primary h-5 w-5" />
                       {t('activity.recent')}
                     </CardTitle>
                     <CardDescription>
@@ -815,7 +815,7 @@ export default function UserProfileClient({
                               <div className="font-medium">
                                 {activity.problemTitle}
                               </div>
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-muted-foreground text-sm">
                                 {format(new Date(activity.date), 'PPP p')}
                               </div>
                             </div>
@@ -849,11 +849,11 @@ export default function UserProfileClient({
                       </div>
                     ) : (
                       <div className="p-6 text-center">
-                        <Clock className="mx-auto h-10 w-10 text-muted-foreground" />
+                        <Clock className="text-muted-foreground mx-auto h-10 w-10" />
                         <h3 className="mt-4 text-lg font-medium">
                           {t('activity.no-activity')}
                         </h3>
-                        <p className="mt-2 text-muted-foreground">
+                        <p className="text-muted-foreground mt-2">
                           {t('activity.no-activity-description')}
                         </p>
                       </div>
