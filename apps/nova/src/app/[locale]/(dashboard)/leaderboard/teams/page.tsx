@@ -1,7 +1,10 @@
 import { BasicInformation } from '../components/basic-information-component';
 import { LeaderboardEntry, UserInterface } from '../components/leaderboard';
 import LeaderboardClient from './client';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 
 export const revalidate = 60;
 
@@ -320,9 +323,31 @@ async function fetchLeaderboard(page: number = 1) {
 
   const topThree = rankedTeams.slice(0, 3);
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let currentRank = 0;
+
+  if (user?.id) {
+    const { data: teamMember } = await supabase
+      .from('nova_team_members')
+      .select('team_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (teamMember?.team_id) {
+      const currentTeam = rankedTeams.find(
+        (team) => team.id === teamMember.team_id
+      );
+      currentRank = currentTeam?.rank || 0;
+    }
+  }
+
   // Get basic info
   const basicInfo: BasicInformation = {
-    currentRank: rankedTeams[0]?.rank || 0,
+    currentRank: currentRank,
     topScore: rankedTeams[0]?.score || 0,
     archiverName: rankedTeams[0]?.name || '',
     totalParticipants: rankedTeams.length,

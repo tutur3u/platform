@@ -1,6 +1,9 @@
 import LeaderboardClient from './client';
 import { BasicInformation } from './components/basic-information-component';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 
 export const revalidate = 60;
@@ -335,9 +338,16 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
 
   const topThree = rankedData.slice(0, 3);
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const currentUser = rankedData.find((entry) => entry.id === user?.id);
+
   // Get basic info
   const basicInfo: BasicInformation = {
-    currentRank: rankedData[0]?.rank || 0,
+    currentRank: currentUser?.rank || 0,
     topScore: rankedData[0]?.score || 0,
     archiverName: rankedData[0]?.name || '',
     totalParticipants: rankedData.length,

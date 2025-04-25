@@ -60,14 +60,23 @@ export default function LeaderboardClient({
   const supabase = createClient();
 
   useEffect(() => {
-    const getUserId = async () => {
+    const getUserTeam = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      setCurrentTeamId(user?.id);
+
+      if (user?.id) {
+        const { data: teamMember } = await supabase
+          .from('nova_team_members')
+          .select('team_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        setCurrentTeamId(teamMember?.team_id);
+      }
     };
 
-    getUserId();
+    getUserTeam();
   }, [supabase]);
 
   useEffect(() => {
