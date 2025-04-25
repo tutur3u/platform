@@ -7,6 +7,7 @@ import {
 import type {
   NovaProblem,
   NovaSession,
+  NovaSubmissionCriteria,
   NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
 
@@ -28,6 +29,20 @@ export async function fetchSessionDetails(
   const sbAdmin = await createAdminClient();
 
   try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) {
+      console.error('User fetch error:', userError);
+      throw new Error('User not found');
+    }
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
     // Step 1: Get session data using regular client (user has permissions for their own sessions)
     const { data: session, error: sessionError } = await supabase
       .from('nova_sessions')
@@ -52,10 +67,11 @@ export async function fetchSessionDetails(
     }
 
     // Step 3: Get all submissions for this session (user has permissions)
-    const { data: submissions, error: submissionsError } = await supabase
+    const { data: submissions, error: submissionsError } = await sbAdmin
       .from('nova_submissions_with_scores')
       .select('*')
-      .eq('session_id', sessionId);
+      .eq('session_id', sessionId)
+      .eq('user_id', user.id);
 
     if (submissionsError) {
       console.error('Submissions fetch error:', submissionsError);
@@ -87,7 +103,7 @@ export async function fetchSessionDetails(
           .from('nova_submission_criteria')
           .select('*')
           .in('submission_id', submissionIds)
-      : { data: [], error: null };
+      : { data: [] as NovaSubmissionCriteria[], error: null };
 
     if (resultsError) {
       console.error('Criteria results fetch error:', resultsError);
@@ -112,6 +128,14 @@ export async function fetchSessionDetails(
             // Find criteria results for this submission
             const submissionCriteria =
               criteria?.map((criterion) => {
+                if (!submission.id) {
+                  console.warn('Found submission without id:', submission);
+                  return {
+                    ...criterion,
+                    result: null,
+                  };
+                }
+
                 const result = resultsBySubmission
                   .get(submission.id)
                   ?.find((r) => r.criteria_id === criterion.id);
