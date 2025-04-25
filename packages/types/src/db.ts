@@ -93,3 +93,12 @@ export type NovaSubmissionWithScores =
   Tables<'nova_submissions_with_scores'> & {
     criteria: NovaChallengeCriteria[];
   };
+export type NovaExtendedChallenge = NovaChallenge & {
+  criteria?: NovaChallengeCriteria[];
+  whitelists?: NovaChallengeWhitelistedEmail[];
+  managingAdmins?: string[];
+  canManage?: boolean;
+  lastSession: NovaSession | null;
+  total_sessions?: number;
+  daily_sessions?: number;
+};

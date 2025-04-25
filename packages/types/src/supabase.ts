@@ -6491,6 +6491,22 @@ export type Database = {
         Args: { _user_id: string; _task_id: string };
         Returns: boolean;
       };
+      nova_get_all_challenges_with_user_stats: {
+        Args: { user_id: string };
+        Returns: Json;
+      };
+      nova_get_challenge_with_user_stats: {
+        Args: { challenge_id: string; user_id: string };
+        Returns: Json;
+      };
+      nova_get_user_daily_sessions: {
+        Args: { challenge_id: string; user_id: string };
+        Returns: number;
+      };
+      nova_get_user_total_sessions: {
+        Args: { challenge_id: string; user_id: string };
+        Returns: number;
+      };
       revoke_all_cross_app_tokens: {
         Args: { p_user_id: string };
         Returns: undefined;

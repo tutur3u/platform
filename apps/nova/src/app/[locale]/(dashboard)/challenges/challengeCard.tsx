@@ -6,12 +6,7 @@ import { ConfirmDialog } from './confirmDialog';
 import EditChallengeDialog from './editChallengeDialog';
 import { DEV_MODE } from '@/constants/common';
 import { useQueryClient } from '@tanstack/react-query';
-import type {
-  NovaChallenge,
-  NovaChallengeCriteria,
-  NovaChallengeWhitelistedEmail,
-  NovaSession,
-} from '@tuturuuu/types/db';
+import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,14 +54,9 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-type ExtendedNovaChallenge = NovaChallenge & {
-  criteria: NovaChallengeCriteria[];
-  whitelists: NovaChallengeWhitelistedEmail[];
-};
-
 interface Props {
   isAdmin: boolean;
-  challenge: ExtendedNovaChallenge;
+  challenge: NovaExtendedChallenge;
   canManage: boolean;
 }
 
@@ -78,37 +68,11 @@ export default function ChallengeCard({
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [session, setSession] = useState<NovaSession | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [totalSessions, setTotalSessions] = useState(0);
-  const [dailySessions, setDailySessions] = useState(0);
   const [status, setStatus] = useState<
     'disabled' | 'upcoming' | 'preview' | 'active' | 'closed'
   >('disabled');
   const t = useTranslations('nova.challenge.cards');
-  const fetchSession = useCallback(async () => {
-    const response = await fetch(
-      `/api/v1/sessions?challengeId=${challenge.id}`
-    );
-    if (!response.ok) return null;
-    const data = await response.json();
-    setSession(data[0]);
-  }, [challenge]);
-
-  const fetchSessionCounts = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `/api/v1/sessions/count?challengeId=${challenge.id}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setTotalSessions(data.total || 0);
-        setDailySessions(data.daily || 0);
-      }
-    } catch (error) {
-      console.error('Error fetching session counts:', error);
-    }
-  }, [challenge]);
 
   const updateStatus = useCallback(() => {
     if (!challenge.enabled) {
@@ -195,31 +159,31 @@ export default function ChallengeCard({
   }, [challenge]);
 
   useEffect(() => {
-    fetchSession();
-    fetchSessionCounts();
     updateStatus();
-  }, [fetchSession, fetchSessionCounts, updateStatus]);
+  }, [updateStatus]);
 
   const handleViewResults = async () => {
     router.push(`/challenges/${challenge.id}/results`);
   };
 
   const handleEndChallenge = async () => {
-    const response = await fetch(`/api/v1/sessions/${session?.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        endTime: new Date(
-          new Date(session?.start_time || '').getTime() +
-            challenge.duration * 1000
-        ).toISOString(),
-        status: 'ENDED',
-      }),
-    });
+    const response = await fetch(
+      `/api/v1/sessions/${challenge.lastSession?.id}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endTime: new Date(
+            new Date(challenge.lastSession?.start_time || '').getTime() +
+              challenge.duration * 1000
+          ).toISOString(),
+          status: 'ENDED',
+        }),
+      }
+    );
 
     if (response.ok) {
-      fetchSession();
-    } else {
+      router.refresh();
       toast({
         title: 'Error',
         description: 'Failed to end challenge',
@@ -325,16 +289,17 @@ export default function ChallengeCard({
   };
 
   const renderSessionStatus = () => {
-    if (!session) return null;
+    if (!challenge.lastSession) return null;
 
-    const startTime = new Date(session.start_time);
-    const endTime = session.end_time
-      ? new Date(session.end_time)
+    const startTime = new Date(challenge.lastSession.start_time);
+    const endTime = challenge.lastSession.end_time
+      ? new Date(challenge.lastSession.end_time)
       : new Date(
-          new Date(session.start_time).getTime() + challenge.duration * 1000
+          new Date(challenge.lastSession.start_time).getTime() +
+            challenge.duration * 1000
         );
 
-    if (session.status === 'IN_PROGRESS') {
+    if (challenge.lastSession.status === 'IN_PROGRESS') {
       return (
         <div className="mt-4 rounded-md border border-dashed p-3">
           <div className="mb-2 flex items-center justify-between">
@@ -345,7 +310,7 @@ export default function ChallengeCard({
           </div>
 
           <div className="flex flex-col items-center justify-center">
-            <div className="text-muted-foreground flex items-center text-xs">
+            <div className="flex items-center text-xs text-muted-foreground">
               <Clock className="mr-1 h-3 w-3" /> {t('time-remaining')}:
             </div>
             <Countdown
@@ -360,7 +325,7 @@ export default function ChallengeCard({
             className="mb-2"
           />
 
-          <div className="text-muted-foreground mt-2 text-xs">
+          <div className="mt-2 text-xs text-muted-foreground">
             <div className="flex items-center">
               <span>
                 {' '}
@@ -382,10 +347,11 @@ export default function ChallengeCard({
 
   const renderActionButton = () => {
     if (isAdmin || status === 'active') {
-      if (session?.status === 'ENDED') {
-        const hasRemainingAttempts = totalSessions < challenge.max_attempts;
+      if (challenge.lastSession?.status === 'ENDED') {
+        const hasRemainingAttempts =
+          (challenge.total_sessions || 0) < challenge.max_attempts;
         const hasRemainingDailyAttempts =
-          dailySessions < challenge.max_daily_attempts;
+          (challenge.daily_sessions || 0) < challenge.max_daily_attempts;
 
         return (
           <>
@@ -401,7 +367,7 @@ export default function ChallengeCard({
                   }
                 />
               ) : (
-                <Button disabled className="w-full gap-2">
+                <Button className="w-full gap-2" disabled>
                   {t('comeback-tomorrow')}
                 </Button>
               ))}
@@ -419,7 +385,7 @@ export default function ChallengeCard({
         );
       }
 
-      if (session?.status === 'IN_PROGRESS') {
+      if (challenge.lastSession?.status === 'IN_PROGRESS') {
         return (
           <ConfirmDialog
             mode="resume"
@@ -519,12 +485,12 @@ export default function ChallengeCard({
           )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="text-muted-foreground mb-4">{challenge.description}</p>
+          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
 
           <div className="grid gap-2">
             <div className="flex items-center">
-              <Clock className="text-primary h-4 w-4 flex-shrink-0" />
-              <span className="text-muted-foreground ml-2 text-sm">
+              <Clock className="h-4 w-4 flex-shrink-0 text-primary" />
+              <span className="ml-2 text-sm text-muted-foreground">
                 {t('duration')}: {formatDuration(challenge.duration)}
               </span>
             </div>
@@ -535,8 +501,8 @@ export default function ChallengeCard({
               status === 'upcoming' ? (
                 <div className="flex items-center">
                   <AlertCircle className="h-4 w-4 text-indigo-500" />
-                  <span className="text-muted-foreground ml-2 text-sm">
-                    {t('total-attempts')}: {totalSessions}/
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    {t('total-attempts')}: {challenge.total_sessions || 0}/
                     {challenge.max_attempts}
                   </span>
                 </div>
@@ -551,8 +517,8 @@ export default function ChallengeCard({
               status === 'upcoming' ? (
                 <div className="flex items-center">
                   <AlertCircle className="h-4 w-4 text-violet-500" />
-                  <span className="text-muted-foreground ml-2 text-sm">
-                    {t('daily-attempts')}: {dailySessions}/
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    {t('daily-attempts')}: {challenge.daily_sessions || 0}/
                     {challenge.max_daily_attempts}
                   </span>
                 </div>
@@ -564,7 +530,7 @@ export default function ChallengeCard({
               {status === 'upcoming' && challenge.previewable_at ? (
                 <div className="mt-2 flex items-center">
                   <Eye className="h-4 w-4 text-amber-500" />
-                  <span className="text-muted-foreground ml-2 text-sm">
+                  <span className="ml-2 text-sm text-muted-foreground">
                     {t('preview-available')}:{' '}
                     {formatDistanceToNow(new Date(challenge.previewable_at), {
                       addSuffix: true,
