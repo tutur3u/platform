@@ -40,28 +40,31 @@ export default function PromptForm({ problem, session }: Props) {
   const [prompt, setPrompt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [submissions, setSubmissions] = useState<ExtendedNovaSubmission[]>([]);
-  const [currentSubmissions, setCurrentSubmissions] = useState<
-    ExtendedNovaSubmission[]
-  >([]);
-  const [pastSubmissions, setPastSubmissions] = useState<
-    ExtendedNovaSubmission[]
-  >([]);
-  const [attempts, setAttempts] = useState(0);
+  const [submissions, setSubmissions] = useState<
+    ExtendedNovaSubmission[] | undefined
+  >();
   const [activeTab, setActiveTab] = useState('prompt');
   const [submissionsTab, setSubmissionsTab] = useState('current');
+
+  // Split submissions between current and past sessions
+  const currentSubmissions = submissions?.filter(
+    (s) => s.session_id === session.id
+  );
+
+  const pastSubmissions = submissions?.filter(
+    (s) => s.session_id !== session.id
+  );
+
+  const attempts =
+    currentSubmissions === undefined
+      ? null
+      : currentSubmissions.length > 3
+        ? 0
+        : 3 - currentSubmissions.length;
 
   const getSubmissions = useCallback(async () => {
     const submissions = await fetchSubmissions(problem.id);
     setSubmissions(submissions);
-
-    // Split submissions between current and past sessions
-    const current = submissions.filter((s) => s.session_id === session.id);
-    const past = submissions.filter((s) => s.session_id !== session.id);
-
-    setCurrentSubmissions(current);
-    setPastSubmissions(past);
-    setAttempts(current.length);
   }, [problem.id, session.id]);
 
   useEffect(() => {
@@ -83,6 +86,11 @@ export default function PromptForm({ problem, session }: Props) {
 
     if (prompt.length > problem.max_prompt_length) {
       setError('Prompt length exceeds the maximum allowed length.');
+      return;
+    }
+
+    if (attempts === null) {
+      setError('The server is loading...');
       return;
     }
 
@@ -150,7 +158,7 @@ export default function PromptForm({ problem, session }: Props) {
             <TabsTrigger value="prompt">Prompt</TabsTrigger>
             <TabsTrigger value="submissions">
               Submissions
-              {submissions.length > 0 && (
+              {submissions && submissions.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
                   {submissions.length}
                 </Badge>
@@ -161,28 +169,30 @@ export default function PromptForm({ problem, session }: Props) {
           <TabsContent value="prompt" className="space-y-4">
             <div className="flex h-full flex-col">
               <div className="mb-2 flex items-center justify-between">
-                <div className="text-muted-foreground text-sm">
+                <div className="text-sm text-muted-foreground">
                   Characters: {prompt.length} / {problem.max_prompt_length}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={attempts >= 3 ? 'destructive' : 'outline'}
-                    className="px-3 py-1"
-                  >
-                    {3 - attempts} attempts remaining
-                  </Badge>
-                  <Progress
-                    value={(prompt.length / problem.max_prompt_length) * 100}
-                    className="h-1 w-24"
-                    indicatorClassName={
-                      attempts >= 3
-                        ? 'bg-destructive'
-                        : attempts >= 2
-                          ? 'bg-amber-500'
-                          : 'bg-emerald-500'
-                    }
-                  />
-                </div>
+                {attempts && (
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={attempts >= 3 ? 'destructive' : 'outline'}
+                      className="px-3 py-1"
+                    >
+                      {3 - attempts} attempts remaining
+                    </Badge>
+                    <Progress
+                      value={(prompt.length / problem.max_prompt_length) * 100}
+                      className="h-1 w-24"
+                      indicatorClassName={
+                        attempts >= 3
+                          ? 'bg-destructive'
+                          : attempts >= 2
+                            ? 'bg-amber-500'
+                            : 'bg-emerald-500'
+                      }
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-1 flex-col pb-4">
@@ -197,20 +207,25 @@ export default function PromptForm({ problem, session }: Props) {
                       onChange={(e) => setPrompt(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder={
-                        attempts >= 3
-                          ? 'Maximum attempts reached'
-                          : 'Write your prompt here...'
+                        attempts
+                          ? attempts >= 3
+                            ? 'Maximum attempts reached'
+                            : 'Write your prompt here...'
+                          : 'The server is loading...'
                       }
                       className="min-h-[200px] flex-1 resize-none"
                       maxLength={problem.max_prompt_length}
-                      disabled={attempts >= 3}
+                      disabled={attempts === null || attempts >= 3}
                     />
 
                     <div className="mt-4 flex justify-end">
                       <Button
                         onClick={handleSend}
                         disabled={
-                          !prompt.trim() || isSubmitting || attempts >= 3
+                          !prompt.trim() ||
+                          isSubmitting ||
+                          attempts === null ||
+                          attempts >= 3
                         }
                         className="gap-2"
                       >
@@ -231,11 +246,11 @@ export default function PromptForm({ problem, session }: Props) {
           </TabsContent>
 
           <TabsContent value="submissions" className="space-y-4">
-            {submissions.length == 0 ? (
+            {submissions && submissions.length == 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                 <h3 className="text-lg font-medium">No submissions yet</h3>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Your submission history will appear here after you submit your
                   first prompt.
                 </p>
@@ -250,7 +265,7 @@ export default function PromptForm({ problem, session }: Props) {
                   <TabsList className="mb-4 grid w-full grid-cols-2">
                     <TabsTrigger value="current" className="relative">
                       Current Session
-                      {currentSubmissions.length > 0 && (
+                      {currentSubmissions && currentSubmissions.length > 0 && (
                         <Badge variant="secondary" className="ml-2">
                           {currentSubmissions.length}
                         </Badge>
@@ -258,7 +273,7 @@ export default function PromptForm({ problem, session }: Props) {
                     </TabsTrigger>
                     <TabsTrigger value="past" className="relative">
                       Past Sessions
-                      {pastSubmissions.length > 0 && (
+                      {pastSubmissions && pastSubmissions.length > 0 && (
                         <Badge variant="secondary" className="ml-2">
                           {pastSubmissions.length}
                         </Badge>
@@ -267,18 +282,18 @@ export default function PromptForm({ problem, session }: Props) {
                   </TabsList>
 
                   <TabsContent value="current" className="space-y-4">
-                    {currentSubmissions.length === 0 ? (
+                    {currentSubmissions && currentSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                         <h3 className="text-lg font-medium">
                           No submissions in current session
                         </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Submit your first prompt to see results here.
                         </p>
                       </div>
                     ) : (
-                      currentSubmissions.map((submission) => (
+                      currentSubmissions?.map((submission) => (
                         <SubmissionCard
                           key={submission.id}
                           submission={submission}
@@ -289,18 +304,18 @@ export default function PromptForm({ problem, session }: Props) {
                   </TabsContent>
 
                   <TabsContent value="past" className="space-y-4">
-                    {pastSubmissions.length === 0 ? (
+                    {pastSubmissions && pastSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                         <h3 className="text-lg font-medium">
                           No submissions from past sessions
                         </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Past session submissions will appear here.
                         </p>
                       </div>
                     ) : (
-                      pastSubmissions.map((submission) => (
+                      pastSubmissions?.map((submission) => (
                         <SubmissionCard
                           key={submission.id}
                           submission={submission}
@@ -333,7 +348,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-xs">
+            <span className="text-xs text-muted-foreground">
               <Clock className="mr-1 inline h-3 w-3" />
               {new Date(submission.created_at).toLocaleString()}
             </span>
@@ -357,8 +372,8 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="text-foreground mb-1 text-sm font-medium">Prompt:</h3>
-          <div className="bg-muted rounded-md p-2 text-sm">
+          <h3 className="mb-1 text-sm font-medium text-foreground">Prompt:</h3>
+          <div className="rounded-md bg-muted p-2 text-sm">
             {submission.prompt}
           </div>
         </div>
@@ -367,7 +382,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
         {submission.total_tests > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-muted-foreground text-xs font-medium">
+              <h3 className="text-xs font-medium text-muted-foreground">
                 Test Case Evaluation:
               </h3>
               <ScoreBadge
@@ -404,7 +419,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
         {submission.total_criteria > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-muted-foreground text-xs font-medium">
+              <h3 className="text-xs font-medium text-muted-foreground">
                 Criteria Evaluation: (Hover to see Feedback)
               </h3>
               <ScoreBadge
@@ -449,7 +464,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
                     <HoverCardContent className="w-80 p-4">
                       <div className="space-y-2">
                         <h4 className="font-medium">Feedback</h4>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                           {cs.result.feedback}
                         </p>
                       </div>

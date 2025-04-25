@@ -3,7 +3,6 @@ import { BasicInformation } from './components/basic-information-component';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 
-export const dynamic = 'force-static';
 export const revalidate = 60;
 
 interface Props {

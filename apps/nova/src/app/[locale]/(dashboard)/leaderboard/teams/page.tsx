@@ -3,7 +3,6 @@ import { LeaderboardEntry, UserInterface } from '../components/leaderboard';
 import LeaderboardClient from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
-export const dynamic = 'force-static';
 export const revalidate = 60;
 
 interface Props {
