@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import {
   Box,
+  Calculator,
   Code,
   Home,
   List,
@@ -82,6 +83,11 @@ export default async function RootLayout({
       href: '/submissions',
       icon: <Box className="h-4 w-4" />,
       requiresChallengeManagement: true,
+    },
+    {
+      name: t('score-calculator'),
+      href: '/score-calculator',
+      icon: <Calculator className="h-4 w-4" />,
     },
     ...(DEV_MODE
       ? [

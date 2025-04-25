@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { calculatePercentage } from '@tuturuuu/utils/nova/scores/calculate';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 
@@ -82,8 +83,7 @@ export default async function Page({ params }: Props) {
     // Each problem is worth 10 points maximum
     const maxPossibleScore = (problemCount || 0) * 10;
     // Calculate percentage based on maximum possible score from all problems
-    const percentage =
-      maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
+    const percentage = calculatePercentage(totalScore, maxPossibleScore);
     const problemsAttempted = statsRow?.problems_attempted || 0;
 
     const stats = {
