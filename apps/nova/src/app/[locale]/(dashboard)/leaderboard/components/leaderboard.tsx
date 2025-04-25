@@ -221,8 +221,8 @@ export function Leaderboard({
                               ? 'text-black dark:text-black'
                               : entry.rank === 3
                                 ? 'text-white dark:text-white'
-                                : entry.rank <= 10
-                                  ? 'text-white dark:text-white'
+                                : currentUserId === entry.id
+                                  ? 'text-blue-600 dark:text-blue-400'
                                   : 'text-gray-500 dark:text-slate-400'
                         )}
                       >
