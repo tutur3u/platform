@@ -256,39 +256,6 @@ export async function POST(
 
     submissionId = submission.id;
 
-    // Step 4: Save test case results
-    // const testCaseEvaluation = evaluation.testCaseEvaluation || [];
-    // const testCaseInserts: NovaSubmissionTestCase[] = testCaseEvaluation
-    //   .map((testCase) => {
-    //     const matchingTestCase = testCases.find(
-    //       (tc) => tc.input === testCase.input
-    //     );
-    //     if (matchingTestCase) {
-    //       const matched = matchingTestCase.output === testCase.output;
-    //       console.log(
-    //         `Test case input: ${testCase.input}, AI output: ${testCase.output}, Expected output: ${matchingTestCase.output}, Matched: ${matched}`
-    //       );
-    //       return {
-    //         submission_id: submission.id,
-    //         test_case_id: matchingTestCase.id,
-    //         output: testCase.output,
-    //         matched,
-    //       };
-    //     }
-    //     return null;
-    //   })
-    //   .filter((item): item is NovaSubmissionTestCase => item !== null);
-
-    // if (testCaseInserts.length > 0) {
-    //   const { error: testCaseInsertsError } = await sbAdmin
-    //     .from('nova_submission_test_cases')
-    //     .insert(testCaseInserts);
-
-    //   if (testCaseInsertsError) {
-    //     throw new Error('Failed to create test case results');
-    //   }
-    // }
-
     // Step 4: Save test case results (MODIFIED)
     const testCaseEvaluation = evaluation.testCaseEvaluation || [];
     const testCaseInserts: NovaSubmissionTestCase[] = [];
