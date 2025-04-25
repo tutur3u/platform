@@ -24,6 +24,8 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
 
+// Maximum score constant - each problem is worth 10 points
+const MAX_SCORE_PER_PROBLEM = 10;
 interface SessionCardProps {
   session: NovaSession & {
     problems: (NovaProblem & {
@@ -37,9 +39,6 @@ export default function SessionCard({
   session,
   sessionIndex,
 }: SessionCardProps) {
-  // Maximum score constant - each problem is worth 10 points
-  const MAX_SCORE_PER_PROBLEM = 10;
-
   // Calculate total score, problems attempted, and total submissions
   const totalScore = session.problems.reduce((sum, problem) => {
     const bestScore =

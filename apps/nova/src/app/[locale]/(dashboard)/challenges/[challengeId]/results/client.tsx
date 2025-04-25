@@ -2,6 +2,7 @@
 
 import { fetchAllProblems, fetchSessionDetails } from './actions';
 import ProblemCard from './components/ProblemCard';
+import SessionCard from './components/SessionCard';
 import {
   Accordion,
   AccordionContent,
@@ -217,7 +218,7 @@ export default function ResultClient({
   }, [stats, error, isValidScore]);
 
   return (
-    <div className="from-background to-muted/20 min-h-screen bg-gradient-to-b px-4 py-8 sm:px-6">
+    <div className="from-background to-muted/20 min-h-screen px-4 py-8 sm:px-6">
       <div className="mx-auto flex min-h-full max-w-6xl flex-col">
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="mb-4 flex items-center gap-4 md:mb-0">
@@ -531,38 +532,21 @@ export default function ResultClient({
                               </span>
                             </div>
                           </AccordionTrigger>
-                          <AccordionContent className="px-4 pb-4 pt-0">
+                          <AccordionContent className="px-0 pb-4 pt-0">
                             {loadingSessions[session.id] ? (
                               <SessionDetailsSkeleton />
                             ) : loadedSessions[session.id] ? (
                               <div className="transition-all duration-200 ease-in-out">
-                                <div className="bg-muted mb-4 rounded-lg p-4">
-                                  <div className="text-sm">
-                                    <div className="mb-1 font-medium">
-                                      Session {index + 1}
-                                    </div>
-                                    <div className="text-muted-foreground">
-                                      Started:{' '}
-                                      {new Date(
-                                        loadedSessions[
-                                          session.id
-                                        ].session.created_at
-                                      ).toLocaleString()}
-                                    </div>
-                                    {loadedSessions[session.id].session
-                                      .end_time && (
-                                      <div className="text-muted-foreground">
-                                        Ended:{' '}
-                                        {new Date(
-                                          loadedSessions[
-                                            session.id
-                                          ].session.end_time
-                                        ).toLocaleString()}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <SessionCard
+                                  session={{
+                                    ...loadedSessions[session.id].session,
+                                    problems:
+                                      loadedSessions[session.id].problems,
+                                  }}
+                                  sessionIndex={index}
+                                />
+
+                                <div className="grid grid-cols-1 gap-4 px-6 md:grid-cols-2">
                                   {loadedSessions[session.id].problems.map(
                                     (problem: any, problemIndex: number) => (
                                       <ProblemCard
