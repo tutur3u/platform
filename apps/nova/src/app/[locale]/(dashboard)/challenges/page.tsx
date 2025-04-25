@@ -1,4 +1,5 @@
 import ChallengesList from './ChallengesList';
+import { fetchChallenges } from './actions';
 import CreateChallengeDialog from './createChallengeDialog';
 import {
   createAdminClient,
@@ -38,6 +39,8 @@ export default async function Page() {
       whitelisted?.allow_role_management
   );
 
+  const challenges = await fetchChallenges();
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8 flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
@@ -55,7 +58,7 @@ export default async function Page() {
           />
         )}
       </div>
-      <ChallengesList isAdmin={isAdmin} />
+      <ChallengesList isAdmin={isAdmin} challenges={challenges} />
     </div>
   );
 }

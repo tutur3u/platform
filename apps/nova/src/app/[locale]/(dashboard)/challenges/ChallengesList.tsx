@@ -1,9 +1,7 @@
 'use client';
 
-import ChallengeCardSkeleton from './ChallengeCardSkeleton';
-import { fetchChallenges } from './actions';
 import ChallengeCard from './challengeCard';
-import { useQuery } from '@tanstack/react-query';
+import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Clock, Filter, Search } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -13,23 +11,16 @@ import { useMemo, useState } from 'react';
 
 interface Props {
   isAdmin: boolean;
+  challenges: NovaExtendedChallenge[];
 }
 
-export default function ChallengesList({ isAdmin }: Props) {
+export default function ChallengesList({ isAdmin, challenges }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<
     'disabled' | 'upcoming' | 'preview' | 'active' | 'closed' | 'all'
   >('all');
 
   const t = useTranslations('nova.challenges-page');
-
-  // Use TanStack Query to fetch and cache challenges
-  const { data: challenges = [], isLoading } = useQuery({
-    queryKey: ['challenges'],
-    queryFn: fetchChallenges,
-    refetchOnWindowFocus: true,
-    refetchInterval: 60000, // Refetch every minute
-  });
 
   const filteredChallenges = useMemo(() => {
     // Apply filtering and search
@@ -173,16 +164,14 @@ export default function ChallengesList({ isAdmin }: Props) {
         </div>
       </div>
 
-      {isLoading ? (
-        <ChallengeCardSkeleton />
-      ) : filteredChallenges.length > 0 ? (
+      {filteredChallenges.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredChallenges.map((challenge) => (
             <ChallengeCard
               isAdmin={isAdmin}
               key={challenge.id}
               challenge={challenge}
-              canManage={challenge.canManage}
+              canManage={challenge.canManage ?? false}
             />
           ))}
         </div>
