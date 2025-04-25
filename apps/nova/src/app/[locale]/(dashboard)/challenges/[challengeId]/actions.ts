@@ -71,6 +71,7 @@ export async function fetchSubmissions(
       // Return properly typed submission
       return {
         ...submission,
+        overall_assessment: '',
         total_tests: submission.total_tests || 0,
         passed_tests: submission.passed_tests || 0,
         test_case_score: submission.test_case_score || 0,

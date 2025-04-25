@@ -2403,21 +2403,27 @@ export type Database = {
           created_at: string;
           criteria_id: string;
           feedback: string;
+          improvements: string[] | null;
           score: number;
+          strengths: string[] | null;
           submission_id: string;
         };
         Insert: {
           created_at?: string;
           criteria_id: string;
           feedback: string;
+          improvements?: string[] | null;
           score: number;
+          strengths?: string[] | null;
           submission_id: string;
         };
         Update: {
           created_at?: string;
           criteria_id?: string;
           feedback?: string;
+          improvements?: string[] | null;
           score?: number;
+          strengths?: string[] | null;
           submission_id?: string;
         };
         Relationships: [
@@ -2446,23 +2452,29 @@ export type Database = {
       };
       nova_submission_test_cases: {
         Row: {
+          confidence: number | null;
           created_at: string;
           matched: boolean;
           output: string;
+          reasoning: string | null;
           submission_id: string;
           test_case_id: string;
         };
         Insert: {
+          confidence?: number | null;
           created_at?: string;
           matched?: boolean;
           output: string;
+          reasoning?: string | null;
           submission_id: string;
           test_case_id: string;
         };
         Update: {
+          confidence?: number | null;
           created_at?: string;
           matched?: boolean;
           output?: string;
+          reasoning?: string | null;
           submission_id?: string;
           test_case_id?: string;
         };
@@ -2494,6 +2506,7 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
+          overall_assessment: string | null;
           problem_id: string;
           prompt: string;
           session_id: string | null;
@@ -2502,6 +2515,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
+          overall_assessment?: string | null;
           problem_id: string;
           prompt: string;
           session_id?: string | null;
@@ -2510,6 +2524,7 @@ export type Database = {
         Update: {
           created_at?: string;
           id?: string;
+          overall_assessment?: string | null;
           problem_id?: string;
           prompt?: string;
           session_id?: string | null;

@@ -14,6 +14,8 @@ export interface NovaSubmissionCriteria {
   criteria_id: string;
   score: number;
   feedback: string;
+  strengths?: string[];
+  improvements?: string[];
 }
 
 export interface NovaSubmissionTestCase {
@@ -21,4 +23,6 @@ export interface NovaSubmissionTestCase {
   test_case_id: string;
   output: string;
   matched: boolean;
+  confidence?: number;
+  reasoning?: string;
 }
