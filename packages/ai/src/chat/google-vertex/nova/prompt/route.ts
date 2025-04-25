@@ -104,6 +104,43 @@ export async function POST(
       );
     }
 
+    // Add plagiarism detection check against problem description
+    const plagiarismSchema = z.object({
+      similarity_score: z.number().min(0).max(1),
+      is_plagiarism: z.boolean(),
+      reasoning: z.string(),
+    });
+
+    let plagiarismResults = null;
+    try {
+      const { object: plagiarismCheck } = await generateObject({
+        model: vertexModel,
+        schema: plagiarismSchema,
+        prompt: `
+Task: Determine if the user's submitted prompt is substantially similar to the problem description, examples, or expected outputs.
+
+Problem Description: """${problem.description}"""
+Example Input: """${problem.example_input}"""
+Example Output: """${problem.example_output}"""
+User Prompt: """${prompt}"""
+
+Return a JSON object with:
+- similarity_score: a number between 0 (completely different) and 1 (identical or nearly identical)
+- is_plagiarism: boolean, true if this appears to be a direct copy with minimal modification
+- reasoning: brief explanation of your assessment
+
+Be lenient in this evaluation - it's acceptable for submissions to incorporate elements from the problem description as long as they add meaningful prompt engineering value. Only flag submissions as plagiarism if they are nearly identical copies with little to no original contribution.
+`,
+        temperature: 0.1,
+      });
+
+      plagiarismResults = plagiarismCheck;
+      console.log('Plagiarism check results:', plagiarismResults);
+    } catch (error) {
+      console.error('Error during plagiarism check:', error);
+      // Continue with evaluation even if plagiarism check fails
+    }
+
     const { data: testCases, error: testCaseError } = await sbAdmin
       .from('nova_problem_test_cases')
       .select('*')
@@ -141,6 +178,7 @@ export async function POST(
         description: criteria.description,
       })),
       userPrompt: prompt,
+      plagiarismCheck: plagiarismResults,
     };
 
     const testCaseSchema = z.object({
@@ -222,18 +260,25 @@ Follow this systematic approach:
    - Identify core objectives and constraints
    - Note any edge cases or special considerations
 
-2. **Process Test Cases**: For each test case:
+2. **Similarity Consideration**: Be aware that for short or straightforward problems, similarity to the problem description is expected
+   - Do NOT penalize users for necessary inclusion of problem elements
+   - Focus on evaluating the effectiveness of the prompt rather than its originality
+   - Only consider similarity problematic if the submission adds no instructional value
+
+3. **Process Test Cases**: For each test case:
    - Apply the user's prompt/solution to generate an appropriate output
    - Document your reasoning process
    - Record both the generated output and your reasoning
+   - IMPORTANT: Evaluate whether the prompt effectively guides an AI to produce correct outputs
 
-3. **Evaluate Against Criteria**: For each criterion:
+4. **Evaluate Against Criteria**: For each criterion:
    - Assess how effectively the submission addresses the specific criterion
    - Provide a score from 0-10 (decimal values allowed)
    - Give detailed feedback with specific examples from the submission
    - Identify key strengths and suggest specific improvements
+   - Ensure the prompt provides useful guidance for generating correct outputs
 
-4. **Multi-language Considerations**:
+5. **Multi-language Considerations**:
    - Evaluate the solution's effectiveness regardless of language
    - Focus on functionality and approach, not linguistic elements
    - Consider cultural/regional context when relevant
@@ -247,7 +292,7 @@ Follow this systematic approach:
 | 5-6.9 | Adequate: The submission demonstrates basic understanding with some effective elements but has notable limitations or inefficiencies. Core requirements are met, but implementation could be significantly improved. |
 | 3-4.9 | Limited: The submission shows partial understanding but has significant gaps, errors, or inefficient approaches. It addresses some aspects but misses key components. |
 | 1-2.9 | Minimal: The submission attempts to address the problem but is mostly incorrect or ineffective. Major misconceptions or fundamental errors are present. |
-| 0-0.9 | Insufficient: The submission is entirely off-topic, irrelevant, or simply restates the problem without providing a solution approach. |
+| 0-0.9 | Insufficient: The submission is entirely off-topic, irrelevant, or simply restates the problem without providing any solution approach. |
 
 ## Output Format Requirements
 - Structure your evaluation according to the JSON schema provided
@@ -287,6 +332,7 @@ ${JSON.stringify(ctx)}
         session_id: sessionId,
         user_id: user.id,
         overall_assessment: evaluation.overallAssessment || '',
+        total_score: evaluation.totalScore || 0,
       })
       .select('id')
       .single();
@@ -301,6 +347,7 @@ ${JSON.stringify(ctx)}
           problem_id: problemId,
           session_id: sessionId,
           user_id: user.id,
+          overall_assessment: evaluation.overallAssessment || '',
         })
         .select('id')
         .single();
@@ -339,13 +386,14 @@ ${JSON.stringify(ctx)}
         const evaluationPrompt = `
 # Output Evaluation Task
 
-You are tasked with evaluating whether a language model's output matches the expected output for a prompt engineering problem. This is a critical evaluation that requires careful analysis.
+You are tasked with evaluating whether a language model's output matches the expected output for a prompt engineering problem. This evaluation is critical for determining the effectiveness of a user's prompt.
 
 ## Context
-- **Problem Description**: ${problem.description}
-- **Input**: ${testCase.input}
-- **Expected Output**: ${matchingTestCase.output}
-- **Model Output**: ${testCase.output}
+- **Problem Description**: """${problem.description}"""
+- **Input**: """${testCase.input}"""
+- **Expected Output**: """${matchingTestCase.output}"""
+- **Model Output**: """${testCase.output}"""
+- **User's Prompt that generated this output**: """${prompt}"""
 
 ## Evaluation Instructions
 
@@ -358,20 +406,31 @@ You are tasked with evaluating whether a language model's output matches the exp
 2. **Contextual Appropriateness**:
    - Assess if both outputs satisfy the requirements specified in the problem description
    - Consider whether differences affect functionality or are merely stylistic
+   - Verify that the output provides a correct solution to the specific input
 
 3. **Language Considerations**:
    - If outputs are in different languages, focus on whether they convey equivalent information
    - Account for cultural or linguistic variations in expression
 
+4. **Strictness of Evaluation**:
+   - Be strict with correctness - the model output must correctly address the input
+   - Minor formatting differences are acceptable, but logical/functional correctness is essential
+   - Focus particularly on whether the user's prompt effectively guided the AI to generate the correct output
+
+5. **Prompt Effectiveness Analysis**:
+   - Consider whether the user's prompt effectively guided the model to produce a correct output
+   - Look for clear, specific instructions in the prompt that helped the model understand what was needed
+   - Note if the prompt fails to provide sufficient guidance or merely copies problem information
+
 ## Decision Framework
-- **Match (true)**: Outputs are functionally equivalent despite stylistic differences
-- **No Match (false)**: Outputs differ in meaningful ways that affect their function or accuracy
+- **Match (true)**: Outputs are functionally equivalent and correctly solve the problem
+- **No Match (false)**: Outputs differ in meaningful ways that affect their function, accuracy or correctness
 
 ## Required Response Format
 Provide your evaluation as a JSON object with three fields:
 - **matched**: boolean (true/false) indicating semantic equivalence
 - **confidence**: number (0-1) indicating your confidence level
-- **reasoning**: brief explanation of your assessment
+- **reasoning**: brief explanation of your assessment, including specific differences if not matched
 
 Focus on objective assessment rather than subjective judgment.
 `;
@@ -390,19 +449,19 @@ Focus on objective assessment rather than subjective judgment.
           isMatch = object.matched;
           confidence = object.confidence || 0;
           reasoning = object.reasoning || '';
+
+          testCaseInserts.push({
+            submission_id: submissionId,
+            test_case_id: matchingTestCase.id,
+            output: testCase.output,
+            matched: isMatch,
+            confidence,
+            reasoning,
+          });
         } catch (error) {
           console.error('Error evaluating test case with LLM:', error);
           isMatch = false;
         }
-
-        testCaseInserts.push({
-          submission_id: submissionId,
-          test_case_id: matchingTestCase.id,
-          output: testCase.output,
-          matched: isMatch,
-          confidence,
-          reasoning,
-        });
       }
     }
 
