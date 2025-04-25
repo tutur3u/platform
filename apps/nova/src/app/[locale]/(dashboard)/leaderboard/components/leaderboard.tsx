@@ -51,7 +51,7 @@ export type LeaderboardEntry = {
 
 interface LeaderboardProps {
   data: LeaderboardEntry[];
-  currentUserId?: string;
+  currentEntryId?: string;
   teamMode?: boolean;
   challenges?: { id: string; title: string }[];
   selectedChallenge?: string;
@@ -61,7 +61,7 @@ interface LeaderboardProps {
 export function Leaderboard({
   data,
   teamMode,
-  currentUserId,
+  currentEntryId,
   challenges = [],
   selectedChallenge = 'all',
   problems = [],
@@ -203,7 +203,7 @@ export function Leaderboard({
                   transition={{ duration: 0.2, delay: index * 0.05 }}
                   className={cn(
                     'group border-b border-gray-200 transition-all hover:bg-gray-50 dark:border-slate-800/30 dark:hover:bg-slate-800/30',
-                    currentUserId === entry.id &&
+                    currentEntryId === entry.id &&
                       'bg-blue-50/50 hover:bg-blue-50/80 dark:bg-blue-900/20 dark:hover:bg-blue-900/30',
                     hoveredRow === entry.id &&
                       'bg-gray-50 dark:bg-slate-800/40',
@@ -223,7 +223,7 @@ export function Leaderboard({
                               ? 'text-black dark:text-black'
                               : entry.rank === 3
                                 ? 'text-white dark:text-white'
-                                : currentUserId === entry.id
+                                : currentEntryId === entry.id
                                   ? 'text-blue-600 dark:text-blue-400'
                                   : 'text-gray-500 dark:text-slate-400'
                         )}
@@ -285,7 +285,7 @@ export function Leaderboard({
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         {/* Glowing effect behind avatar for top ranks */}
-                        {(entry.rank <= 3 || currentUserId === entry.id) &&
+                        {(entry.rank <= 3 || currentEntryId === entry.id) &&
                           !prefersReducedMotion && (
                             <motion.div
                               className={cn(
@@ -334,7 +334,7 @@ export function Leaderboard({
                           href={`/${teamMode ? 'profile/teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
                           className={cn(
                             'font-medium text-gray-800 transition-all duration-300 group-hover:translate-x-1 dark:text-slate-200',
-                            currentUserId === entry.id &&
+                            currentEntryId === entry.id &&
                               'font-bold text-blue-600 dark:text-blue-400',
                             entry.rank <= 3 && 'font-bold',
                             entry.rank === 1 &&
@@ -348,7 +348,7 @@ export function Leaderboard({
                           {entry.name}
                         </Link>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          {currentUserId === entry.id && (
+                          {currentEntryId === entry.id && (
                             <Badge
                               variant="outline"
                               className="w-fit border-blue-200 bg-blue-50 text-xs text-blue-600 dark:border-blue-500/30 dark:bg-blue-950/60 dark:text-blue-400"
@@ -395,7 +395,7 @@ export function Leaderboard({
                           ? 'text-gray-600 dark:text-gray-300'
                           : entry.rank === 3
                             ? 'text-amber-700 dark:text-amber-400'
-                            : currentUserId === entry.id
+                            : currentEntryId === entry.id
                               ? 'text-blue-600 dark:text-blue-400'
                               : 'text-gray-700 dark:text-slate-200'
                     )}
@@ -410,7 +410,7 @@ export function Leaderboard({
                               ? 'bg-gray-50 dark:bg-gray-500/10'
                               : entry.rank === 3
                                 ? 'bg-amber-50 dark:bg-amber-500/10'
-                                : currentUserId === entry.id
+                                : currentEntryId === entry.id
                                   ? 'bg-blue-50 dark:bg-blue-500/10'
                                   : 'bg-gray-50 dark:bg-slate-700/20'
                         )}

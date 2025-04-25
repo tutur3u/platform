@@ -20,12 +20,14 @@ interface RandomValues {
   xOffset: number;
 }
 interface TopThreeCardsProps {
-  data: LeaderboardEntry[];
+  topThree: LeaderboardEntry[];
   teamMode?: boolean;
 }
 
-export function TopThreeCards({ data, teamMode = false }: TopThreeCardsProps) {
-  const topThree = data.slice(0, 3);
+export function TopThreeCards({
+  topThree,
+  teamMode = false,
+}: TopThreeCardsProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
   const t = useTranslations('nova.leaderboard-page');

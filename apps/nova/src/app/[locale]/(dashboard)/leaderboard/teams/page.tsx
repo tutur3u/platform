@@ -1,3 +1,4 @@
+import { BasicInformation } from '../components/basic-information-component';
 import { LeaderboardEntry, UserInterface } from '../components/leaderboard';
 import LeaderboardClient from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -13,12 +14,14 @@ export default async function Page({ searchParams }: Props) {
   const { page = '1' } = await searchParams;
   const pageNumber = parseInt(page, 10);
 
-  const { data, challenges, problems, hasMore } =
+  const { data, topThree, basicInfo, challenges, problems, hasMore } =
     await fetchLeaderboard(pageNumber);
 
   return (
     <LeaderboardClient
       data={data}
+      topThree={topThree}
+      basicInfo={basicInfo}
       challenges={challenges}
       problems={problems}
       hasMore={hasMore}
@@ -34,8 +37,21 @@ export default async function Page({ searchParams }: Props) {
 // These best problem scores become the "official" problem scores for the team
 // Challenge scores are calculated by summing the official problem scores for that challenge
 // The total team score is the sum of all challenge scores
-
 async function fetchLeaderboard(page: number = 1) {
+  const defaultData = {
+    data: [],
+    topThree: [],
+    basicInfo: {
+      currentRank: 0,
+      topScore: 0,
+      archiverName: '',
+      totalParticipants: 0,
+    },
+    challenges: [],
+    problems: [],
+    hasMore: false,
+  };
+
   const limit = 50;
   const sbAdmin = await createAdminClient();
 
@@ -57,7 +73,7 @@ async function fetchLeaderboard(page: number = 1) {
 
   if (teamError) {
     console.error('Error fetching team data:', teamError.message);
-    return { data: [], challenges: [], problems: [], hasMore: false };
+    return defaultData;
   }
 
   // 2. Get all scores with detail for proper calculation
@@ -74,7 +90,7 @@ async function fetchLeaderboard(page: number = 1) {
 
   if (submissionsError) {
     console.error('Error fetching submissions:', submissionsError.message);
-    return { data: [], challenges: [], problems: [], hasMore: false };
+    return defaultData;
   }
 
   // Fetch all problems to get challenge association
@@ -84,7 +100,7 @@ async function fetchLeaderboard(page: number = 1) {
 
   if (problemsError) {
     console.error('Error fetching problems:', problemsError.message);
-    return { data: [], challenges: [], problems: [], hasMore: false };
+    return defaultData;
   }
 
   // Create a map of problem_id to challenge_id for easy lookup
@@ -286,7 +302,12 @@ async function fetchLeaderboard(page: number = 1) {
   }
 
   // Sort by total score
-  const sortedTeams = teamsArray.sort((a, b) => b.score - a.score);
+  const sortedTeams = teamsArray.sort((a, b) => {
+    if (b.score === a.score) {
+      return b.name.localeCompare(a.name);
+    }
+    return b.score - a.score;
+  });
 
   // Add ranks
   const rankedTeams = sortedTeams.map((team, index) => ({
@@ -294,11 +315,28 @@ async function fetchLeaderboard(page: number = 1) {
     rank: index + 1,
   }));
 
+  const topThree = rankedTeams.slice(0, 3);
+
+  // Get basic info
+  const basicInfo: BasicInformation = {
+    currentRank: rankedTeams[0]?.rank || 0,
+    topScore: rankedTeams[0]?.score || 0,
+    archiverName: rankedTeams[0]?.name || '',
+    totalParticipants: rankedTeams.length,
+  };
+
   // Paginate
   const paginatedTeams = rankedTeams.slice((page - 1) * limit, page * limit);
 
   return {
     data: paginatedTeams,
+    topThree,
+    basicInfo: basicInfo || {
+      currentRank: 0,
+      topScore: 0,
+      archiverName: '',
+      totalParticipants: 0,
+    },
     challenges: challenges || [],
     problems: problemsData || [],
     hasMore: rankedTeams.length > page * limit,

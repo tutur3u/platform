@@ -1,4 +1,5 @@
 import LeaderboardClient from './client';
+import { BasicInformation } from './components/basic-information-component';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 
@@ -13,14 +14,14 @@ export default async function Page({ searchParams }: Props) {
   const { locale = 'en', page = '1' } = await searchParams;
   const pageNumber = parseInt(page, 10);
 
-  const { data, challenges, problems, hasMore } = await fetchLeaderboard(
-    locale,
-    pageNumber
-  );
+  const { data, topThree, basicInfo, challenges, problems, hasMore } =
+    await fetchLeaderboard(locale, pageNumber);
 
   return (
     <LeaderboardClient
       data={data}
+      topThree={topThree}
+      basicInfo={basicInfo}
       challenges={challenges}
       problems={problems}
       hasMore={hasMore}
@@ -34,6 +35,20 @@ export default async function Page({ searchParams }: Props) {
 // Then the official challenge score for each user is the maximum challenge score from any session
 // The leaderboard score for each user is the sum of the official challenge scores for all challenges
 async function fetchLeaderboard(locale: string, page: number = 1) {
+  const defaultData = {
+    data: [],
+    topThree: [],
+    basicInfo: {
+      currentRank: 0,
+      topScore: 0,
+      archiverName: '',
+      totalParticipants: 0,
+    },
+    challenges: [],
+    problems: [],
+    hasMore: false,
+  };
+
   const limit = 100;
   const sbAdmin = await createAdminClient();
 
@@ -56,7 +71,7 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
 
   if (sessionError) {
     console.error('Error fetching sessions:', sessionError.message);
-    return { data: [], challenges: [], problems: [], hasMore: false };
+    return defaultData;
   }
 
   // Fetch all scores from submissions with more detail
@@ -71,7 +86,7 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
 
   if (submissionsError) {
     console.error('Error fetching submissions:', submissionsError.message);
-    return { data: [], challenges: [], problems: [], hasMore: false };
+    return defaultData;
   }
 
   // Fetch all problems to get challenge association
@@ -81,7 +96,7 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
 
   if (problemsError) {
     console.error('Error fetching problems:', problemsError.message);
-    return { data: [], challenges: [], problems: [], hasMore: false };
+    return defaultData;
   }
 
   // Create a map of problem_id to challenge_id for easy lookup
@@ -106,7 +121,7 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
 
   if (whitelistError) {
     console.error('Error fetching whitelisted users:', whitelistError.message);
-    return { data: [], challenges: [], problems: [], hasMore: false };
+    return defaultData;
   }
 
   // Group sessions by user
@@ -302,7 +317,12 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
   }
 
   // Sort by score
-  const sortedData = groupedData.sort((a, b) => b.score - a.score);
+  const sortedData = groupedData.sort((a, b) => {
+    if (b.score === a.score) {
+      return b.name.localeCompare(a.name);
+    }
+    return b.score - a.score;
+  });
 
   // Add rank
   const rankedData = sortedData.map((entry, index) => ({
@@ -310,11 +330,23 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
     rank: index + 1,
   }));
 
+  const topThree = rankedData.slice(0, 3);
+
+  // Get basic info
+  const basicInfo: BasicInformation = {
+    currentRank: rankedData[0]?.rank || 0,
+    topScore: rankedData[0]?.score || 0,
+    archiverName: rankedData[0]?.name || '',
+    totalParticipants: rankedData.length,
+  };
+
   // Paginate
   const paginatedData = rankedData.slice((page - 1) * limit, page * limit);
 
   return {
     data: paginatedData,
+    topThree,
+    basicInfo,
     challenges: challenges || [],
     problems: problemsData || [],
     hasMore: rankedData.length > page * limit,

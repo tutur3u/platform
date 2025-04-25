@@ -1,6 +1,8 @@
 'use client';
 
-import BasicInformationComponent from '../components/basic-information-component';
+import BasicInformationComponent, {
+  BasicInformation,
+} from '../components/basic-information-component';
 import { Leaderboard, LeaderboardEntry } from '../components/leaderboard';
 import { LeaderboardFilters } from '../components/leaderboard-filters';
 import { TopThreeCards } from '../components/top-three-cards';
@@ -24,21 +26,28 @@ import { useEffect, useState } from 'react';
 
 export default function LeaderboardClient({
   data,
+  topThree,
+  basicInfo,
   challenges,
   problems = [],
   hasMore,
   initialPage = 1,
 }: {
   data: LeaderboardEntry[];
+  topThree: LeaderboardEntry[];
+  basicInfo: BasicInformation;
   challenges: { id: string; title: string }[];
   problems?: { id: string; title: string; challenge_id: string }[];
   hasMore: boolean;
   initialPage?: number;
 }) {
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>(data);
+  const [filteredInfo, setFilteredInfo] = useState<BasicInformation>(basicInfo);
+  const [filteredTopThree, setFilteredTopThree] =
+    useState<LeaderboardEntry[]>(topThree);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedChallenge, setSelectedChallenge] = useState<string>('all');
-  const [currentUserId, setCurrentUserId] = useState<string | undefined>(
+  const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
     undefined
   );
   const [page, setPage] = useState(initialPage);
@@ -53,7 +62,7 @@ export default function LeaderboardClient({
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id);
+      setCurrentTeamId(user?.id);
     };
 
     getUserId();
@@ -80,6 +89,22 @@ export default function LeaderboardClient({
         ...entry,
         rank: index + 1,
       }));
+
+      const topThree = filtered.slice(0, 3);
+      setFilteredTopThree(topThree);
+
+      // Update basic info based on filtered data
+      const currentTeam = filtered.find((entry) => entry.id === currentTeamId);
+      const newBasicInfo = {
+        currentRank: currentTeam?.rank || 0,
+        topScore: filtered.length > 0 ? filtered[0]?.score || 0 : 0,
+        archiverName: filtered.length > 0 ? filtered[0]?.name || '' : '',
+        totalParticipants: filtered.length,
+      };
+      setFilteredInfo(newBasicInfo);
+    } else {
+      setFilteredTopThree(topThree);
+      setFilteredInfo(basicInfo);
     }
 
     // Filter by search query
@@ -90,7 +115,14 @@ export default function LeaderboardClient({
     }
 
     setFilteredData(filtered);
-  }, [searchQuery, selectedChallenge, data]);
+  }, [
+    searchQuery,
+    selectedChallenge,
+    data,
+    basicInfo,
+    currentTeamId,
+    topThree,
+  ]);
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -104,17 +136,6 @@ export default function LeaderboardClient({
     router.replace(`?${params.toString()}`);
   };
 
-  let yourRank = 0;
-  const userTeam = filteredData.find((team) =>
-    team.member?.some((member) => member.id === currentUserId)
-  );
-
-  if (userTeam) {
-    yourRank = filteredData.findIndex((team) => team.id === userTeam.id) + 1;
-  }
-  const topScore = filteredData.length > 0 ? filteredData[0]?.score : 0;
-  const totalParticipants = filteredData.length;
-
   const selectedChallengeTitle =
     selectedChallenge !== 'all'
       ? challenges.find((c) => c.id === selectedChallenge)?.title ||
@@ -127,11 +148,8 @@ export default function LeaderboardClient({
         <BasicInformationComponent
           selectedChallenge={selectedChallenge}
           selectedChallengeTitle={selectedChallengeTitle}
-          yourRank={yourRank}
-          totalParticipants={totalParticipants}
-          topScore={topScore || 0}
+          basicInfo={filteredInfo}
           teamMode={true}
-          filteredData={filteredData}
         />
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">
@@ -167,7 +185,7 @@ export default function LeaderboardClient({
               </Button>
             </Link>
           </div>
-          <TopThreeCards data={filteredData} teamMode={true} />
+          <TopThreeCards topThree={filteredTopThree} teamMode={true} />
 
           <div className="relative my-8 h-px w-full overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
@@ -203,7 +221,7 @@ export default function LeaderboardClient({
               <Leaderboard
                 data={filteredData}
                 teamMode={true}
-                currentUserId={currentUserId}
+                currentEntryId={currentTeamId}
                 challenges={challenges}
                 selectedChallenge={selectedChallenge}
                 problems={problems}
