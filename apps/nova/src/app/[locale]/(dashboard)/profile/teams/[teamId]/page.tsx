@@ -190,7 +190,7 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
         const criteriaWeight = hasTests ? 0.5 : 1.0;
         criteriaScore =
           ((submission.sum_criterion_score ?? 0) /
-            (submission.total_criteria ?? 0 * 10)) *
+            ((submission.total_criteria ?? 0) * 10)) *
           10 *
           criteriaWeight;
       }
