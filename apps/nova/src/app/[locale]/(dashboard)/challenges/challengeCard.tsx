@@ -52,7 +52,7 @@ import { formatDuration } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface Props {
   isAdmin: boolean;
@@ -74,6 +74,17 @@ export default function ChallengeCard({
   >('disabled');
   const t = useTranslations('nova.challenge.cards');
 
+  // Memoize attempt calculations
+  const hasRemainingAttempts = useMemo(
+    () => (challenge.total_sessions || 0) < challenge.max_attempts,
+    [challenge.total_sessions, challenge.max_attempts]
+  );
+
+  const hasRemainingDailyAttempts = useMemo(
+    () => (challenge.daily_sessions || 0) < challenge.max_daily_attempts,
+    [challenge.daily_sessions, challenge.max_daily_attempts]
+  );
+
   const updateStatus = useCallback(() => {
     if (!challenge.enabled) {
       setStatus('disabled');
@@ -87,74 +98,18 @@ export default function ChallengeCard({
     const openAt = challenge.open_at ? new Date(challenge.open_at) : null;
     const closeAt = challenge.close_at ? new Date(challenge.close_at) : null;
 
-    if (!previewableAt && !openAt && !closeAt) {
+    // Use a more structured approach to determine status
+    if (closeAt && now >= closeAt) {
+      setStatus('closed');
+    } else if (openAt && now >= openAt) {
       setStatus('active');
-    }
-
-    if (previewableAt && !openAt && !closeAt) {
-      if (now < previewableAt) {
-        setStatus('upcoming');
-      } else {
-        setStatus('preview');
-      }
-    }
-
-    if (!previewableAt && openAt && !closeAt) {
-      if (now < openAt) {
-        setStatus('preview');
-      } else {
-        setStatus('active');
-      }
-    }
-
-    if (!previewableAt && !openAt && closeAt) {
-      if (now < closeAt) {
-        setStatus('upcoming');
-      } else {
-        setStatus('closed');
-      }
-    }
-
-    if (previewableAt && openAt && !closeAt) {
-      if (now < previewableAt) {
-        setStatus('upcoming');
-      } else if (now < openAt) {
-        setStatus('preview');
-      } else {
-        setStatus('active');
-      }
-    }
-
-    if (previewableAt && !openAt && closeAt) {
-      if (now < previewableAt) {
-        setStatus('upcoming');
-      } else if (now < closeAt) {
-        setStatus('preview');
-      } else {
-        setStatus('closed');
-      }
-    }
-
-    if (!previewableAt && openAt && closeAt) {
-      if (now < openAt) {
-        setStatus('preview');
-      } else if (now < closeAt) {
-        setStatus('active');
-      } else {
-        setStatus('closed');
-      }
-    }
-
-    if (previewableAt && openAt && closeAt) {
-      if (now < previewableAt) {
-        setStatus('upcoming');
-      } else if (now < openAt) {
-        setStatus('preview');
-      } else if (now < closeAt) {
-        setStatus('active');
-      } else {
-        setStatus('closed');
-      }
+    } else if (previewableAt && now >= previewableAt) {
+      setStatus('preview');
+    } else if (previewableAt || openAt || closeAt) {
+      setStatus('upcoming');
+    } else {
+      // No time constraints
+      setStatus('active');
     }
   }, [challenge]);
 
@@ -288,16 +243,22 @@ export default function ChallengeCard({
     }
   };
 
-  const renderSessionStatus = () => {
+  // Memoize session time calculations
+  const sessionTimes = useMemo(() => {
     if (!challenge.lastSession) return null;
 
     const startTime = new Date(challenge.lastSession.start_time);
     const endTime = challenge.lastSession.end_time
       ? new Date(challenge.lastSession.end_time)
-      : new Date(
-          new Date(challenge.lastSession.start_time).getTime() +
-            challenge.duration * 1000
-        );
+      : new Date(startTime.getTime() + challenge.duration * 1000);
+
+    return { startTime, endTime };
+  }, [challenge.lastSession, challenge.duration]);
+
+  const renderSessionStatus = () => {
+    if (!challenge.lastSession || !sessionTimes) return null;
+
+    const { startTime, endTime } = sessionTimes;
 
     if (challenge.lastSession.status === 'IN_PROGRESS') {
       return (
@@ -348,11 +309,6 @@ export default function ChallengeCard({
   const renderActionButton = () => {
     if (isAdmin || status === 'active') {
       if (challenge.lastSession?.status === 'ENDED') {
-        const hasRemainingAttempts =
-          (challenge.total_sessions || 0) < challenge.max_attempts;
-        const hasRemainingDailyAttempts =
-          (challenge.daily_sessions || 0) < challenge.max_daily_attempts;
-
         return (
           <>
             {hasRemainingAttempts &&
@@ -412,39 +368,35 @@ export default function ChallengeCard({
       );
     }
 
-    if (status === 'disabled') {
-      return (
-        <Button disabled className="w-full gap-2">
-          {t('not-available')}
-        </Button>
-      );
+    // For other statuses, use a switch statement for better readability
+    switch (status) {
+      case 'disabled':
+        return (
+          <Button disabled className="w-full gap-2">
+            {t('not-available')}
+          </Button>
+        );
+      case 'upcoming':
+        return (
+          <Button disabled className="w-full gap-2">
+            {t('available-soon')}
+          </Button>
+        );
+      case 'preview':
+        return (
+          <Button disabled className="w-full gap-2">
+            {t('not-yet-opened')}
+          </Button>
+        );
+      case 'closed':
+        return (
+          <Button disabled className="w-full gap-2">
+            {t('closed')}
+          </Button>
+        );
+      default:
+        return null;
     }
-
-    if (status === 'upcoming') {
-      return (
-        <Button disabled className="w-full gap-2">
-          {t('available-soon')}
-        </Button>
-      );
-    }
-
-    if (status === 'preview') {
-      return (
-        <Button disabled className="w-full gap-2">
-          {t('not-yet-opened')}
-        </Button>
-      );
-    }
-
-    if (status === 'closed') {
-      return (
-        <Button disabled className="w-full gap-2">
-          {t('closed')}
-        </Button>
-      );
-    }
-
-    return null;
   };
 
   return (
@@ -495,37 +447,37 @@ export default function ChallengeCard({
               </span>
             </div>
 
-            <div className="flex h-6 items-center">
-              {status === 'preview' ||
-              status === 'active' ||
-              status === 'upcoming' ? (
-                <div className="flex items-center">
-                  <AlertCircle className="h-4 w-4 text-indigo-500" />
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    {t('total-attempts')}: {challenge.total_sessions || 0}/
-                    {challenge.max_attempts}
-                  </span>
+            {['preview', 'active', 'upcoming'].includes(status) && (
+              <>
+                <div className="flex h-6 items-center">
+                  <div className="flex items-center">
+                    <AlertCircle className="h-4 w-4 text-indigo-500" />
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      {t('total-attempts')}: {challenge.total_sessions || 0}/
+                      {challenge.max_attempts}
+                    </span>
+                  </div>
                 </div>
-              ) : (
-                <div className="h-4" />
-              )}
-            </div>
 
-            <div className="flex h-6 items-center">
-              {status === 'preview' ||
-              status === 'active' ||
-              status === 'upcoming' ? (
-                <div className="flex items-center">
-                  <AlertCircle className="h-4 w-4 text-violet-500" />
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    {t('daily-attempts')}: {challenge.daily_sessions || 0}/
-                    {challenge.max_daily_attempts}
-                  </span>
+                <div className="flex h-6 items-center">
+                  <div className="flex items-center">
+                    <AlertCircle className="h-4 w-4 text-violet-500" />
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      {t('daily-attempts')}: {challenge.daily_sessions || 0}/
+                      {challenge.max_daily_attempts}
+                    </span>
+                  </div>
                 </div>
-              ) : (
-                <div className="h-4" />
-              )}
-            </div>
+              </>
+            )}
+
+            {!['preview', 'active', 'upcoming'].includes(status) && (
+              <>
+                <div className="h-6" />
+                <div className="h-6" />
+              </>
+            )}
+
             <div className="flex h-6 items-center">
               {status === 'upcoming' && challenge.previewable_at ? (
                 <div className="mt-2 flex items-center">
