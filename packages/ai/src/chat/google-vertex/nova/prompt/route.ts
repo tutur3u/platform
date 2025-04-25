@@ -115,7 +115,7 @@ export async function POST(
         { status: 500 }
       );
     }
-    console.log('first, teast case ', testCases);
+
     const { data: challengeCriteria, error: challengeCriteriaError } =
       await sbAdmin
         .from('nova_challenge_criteria')
@@ -273,6 +273,7 @@ export async function POST(
         const evaluationPrompt = `
           You are an expert judge evaluating the output of a language model against an expected answer for a prompt engineering problem.
 
+          Here is the input: ${testCase.input}
           Problem Description: ${problem.description}
           Expected Output: ${matchingTestCase.output}
           Language Model Output: ${testCase.output}
@@ -287,16 +288,13 @@ export async function POST(
           const { object } = await generateObject({
             model: vertexModel,
             schema: testCaseSchema,
-            prompt,
-            system: evaluationPrompt,
+            prompt: evaluationPrompt,
           });
           isMatch = object.matched;
         } catch (error) {
           console.error('Error evaluating test case with LLM:', error);
-          // Handle evaluation errors gracefully - maybe default to false or log for review
           isMatch = false;
         }
-        // --- End LLM-based evaluation ---
 
         testCaseInserts.push({
           submission_id: submission.id,
