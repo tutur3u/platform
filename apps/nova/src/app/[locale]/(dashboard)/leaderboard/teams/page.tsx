@@ -27,6 +27,14 @@ export default async function Page({ searchParams }: Props) {
   );
 }
 
+// For each user, I track their scores by mapping user → problem → session → score
+// For each team, I find the best score per problem across all team members by:
+// - Taking the highest score for each problem from any session for each user
+// - Then taking the highest of those scores across all team members
+// These best problem scores become the "official" problem scores for the team
+// Challenge scores are calculated by summing the official problem scores for that challenge
+// The total team score is the sum of all challenge scores
+
 async function fetchLeaderboard(page: number = 1) {
   const limit = 50;
   const sbAdmin = await createAdminClient();
@@ -94,78 +102,54 @@ async function fetchLeaderboard(page: number = 1) {
     }
   });
 
-  // 3. Group submissions by user and calculate proper scores
-  const userChallengeScores: Record<string, Record<string, number>> = {};
-  // Track user problem scores by problem ID
-  const userProblemScores: Record<
-    string,
-    Record<string, { id: string; title: string; score: number }>
-  > = {};
+  // Get all challenges
+  const { data: challenges } = await sbAdmin
+    .from('nova_challenges')
+    .select('id, title');
 
-  // First process all submissions to get best scores per problem per user
-  const userProblemBestScores = new Map<string, Map<string, number>>();
+  // Process submissions to get best scores per problem per user and session
+  // A map of user_id -> problem_id -> session_id -> score
+  const userProblemSessionScores = new Map<
+    string,
+    Map<string, Map<string, number>>
+  >();
 
   if (submissionsData) {
     for (const submission of submissionsData) {
       const userId = submission.user_id;
       const problemId = submission.problem_id;
-      if (!userId || !problemId) continue;
+      const sessionId = submission.session_id;
 
-      const correctScore = submission.total_score || 0;
+      if (!userId || !problemId || !sessionId) continue;
 
-      // Initialize user's map if not exists
-      if (!userProblemBestScores.has(userId)) {
-        userProblemBestScores.set(userId, new Map());
+      const score = submission.total_score || 0;
+
+      // Initialize maps if they don't exist
+      if (!userProblemSessionScores.has(userId)) {
+        userProblemSessionScores.set(userId, new Map());
       }
 
-      const userScores = userProblemBestScores.get(userId);
+      const userScores = userProblemSessionScores.get(userId);
       if (!userScores) continue;
 
-      // Keep only the best score for each problem
+      if (!userScores.has(problemId)) {
+        userScores.set(problemId, new Map());
+      }
+
+      const problemSessions = userScores.get(problemId);
+      if (!problemSessions) continue;
+
+      // Update the score for this session if it's higher
       if (
-        !userScores.has(problemId) ||
-        (userScores.get(problemId) || 0) < correctScore
+        !problemSessions.has(sessionId) ||
+        problemSessions.get(sessionId)! < score
       ) {
-        userScores.set(problemId, correctScore);
-
-        // Get problem title
-        const problemTitle =
-          problemTitleMap.get(problemId) ||
-          `Problem ${problemId.substring(0, 8)}`;
-
-        // Get challenge ID
-        const challengeId = problemChallengeMap.get(problemId);
-        if (!challengeId) continue;
-
-        // Initialize problem scores for user if not exists
-        if (!userProblemScores[userId]) {
-          userProblemScores[userId] = {};
-        }
-
-        // Store problem score with details
-        userProblemScores[userId][problemId] = {
-          id: problemId,
-          title: problemTitle,
-          score: correctScore,
-        };
+        problemSessions.set(sessionId, score);
       }
     }
   }
 
-  // Now aggregate problem scores by challenge for each user
-  for (const [userId, problemScores] of userProblemBestScores.entries()) {
-    userChallengeScores[userId] = {};
-
-    for (const [problemId, score] of problemScores.entries()) {
-      const challengeId = problemChallengeMap.get(problemId);
-      if (challengeId) {
-        userChallengeScores[userId][challengeId] =
-          (userChallengeScores[userId][challengeId] || 0) + score;
-      }
-    }
-  }
-
-  // 4. Group data by team
+  // Group data by team
   const teamsMap = new Map<
     string,
     {
@@ -181,11 +165,7 @@ async function fetchLeaderboard(page: number = 1) {
     }
   >();
 
-  // Get all challenges
-  const { data: challenges } = await sbAdmin
-    .from('nova_challenges')
-    .select('id, title');
-
+  // Organize teams
   for (const member of teamData) {
     const teamId = member.team_id;
     const teamName = member.nova_teams?.name || '';
@@ -216,90 +196,83 @@ async function fetchLeaderboard(page: number = 1) {
       role: 'member',
     });
 
-    // Add user's challenge scores to team's challenge scores
-    if (userChallengeScores[userId]) {
-      for (const [challengeId, score] of Object.entries(
-        userChallengeScores[userId]
-      )) {
-        team.challenge_scores[challengeId] =
-          (team.challenge_scores[challengeId] || 0) + score;
-      }
-    }
-
     if (avatarUrl) {
       team.avatars.push(avatarUrl);
     }
-
-    // Collect user's problem scores by challenge
-    if (userProblemScores[userId]) {
-      for (const [problemId, problemScore] of Object.entries(
-        userProblemScores[userId]
-      )) {
-        if (!problemScore || !problemId) continue;
-
-        const challengeId = problemChallengeMap.get(problemId);
-        if (!challengeId) continue;
-
-        if (!team.problem_scores[challengeId]) {
-          team.problem_scores[challengeId] = [];
-        }
-
-        // Add the problem to the team's list for this challenge
-        team.problem_scores[challengeId].push({
-          id: problemId,
-          title: problemScore.title,
-          score: problemScore.score,
-        });
-      }
-    }
   }
 
-  // Calculate total score from challenge scores
-  const teamsArray: LeaderboardEntry[] = [];
-  for (const [teamId, team] of teamsMap.entries()) {
-    // Calculate total score
-    team.score = Object.values(team.challenge_scores).reduce(
-      (sum, score) => sum + score,
-      0
-    );
+  // Calculate team scores based on the best score per problem across all members
+  for (const [_teamId, team] of teamsMap.entries()) {
+    // Track the best score per problem across all team members
+    const teamBestProblemScores = new Map<string, number>();
 
-    // Consolidate problem scores to prevent duplicates
-    for (const challengeId in team.problem_scores) {
-      const problemScores = team.problem_scores[challengeId];
-      if (!problemScores) continue;
+    // For each team member
+    for (const member of team.members) {
+      const userId = member.id;
+      const userScores = userProblemSessionScores.get(userId);
+      if (!userScores) continue;
 
-      // Create a Map to consolidate scores by problem ID
-      const bestScores = new Map<
-        string,
-        { id: string; title: string; score: number }
-      >();
-
-      problemScores.forEach((problem) => {
-        if (!problem || !problem.id) return;
-
-        if (
-          !bestScores.has(problem.id) ||
-          bestScores.get(problem.id)!.score < problem.score
-        ) {
-          bestScores.set(problem.id, { ...problem });
+      // For each problem the user has scores for
+      for (const [problemId, sessionScores] of userScores.entries()) {
+        // Calculate the best score across all sessions for this problem
+        let bestProblemScore = 0;
+        for (const score of sessionScores.values()) {
+          bestProblemScore = Math.max(bestProblemScore, score);
         }
-      });
 
-      // Replace the array with the consolidated scores
-      team.problem_scores[challengeId] = Array.from(bestScores.values());
-
-      // Recalculate challenge scores based on consolidated problem scores
-      team.challenge_scores[challengeId] = Array.from(
-        bestScores.values()
-      ).reduce((sum, problem) => sum + problem.score, 0);
+        // Update the team's best score for this problem if this user's score is higher
+        const currentBest = teamBestProblemScores.get(problemId) || 0;
+        if (bestProblemScore > currentBest) {
+          teamBestProblemScores.set(problemId, bestProblemScore);
+        }
+      }
     }
 
-    // Recalculate total score after consolidation
-    team.score = Object.values(team.challenge_scores).reduce(
+    // Calculate challenge scores based on the best problem scores
+    const challengeScores: Record<string, number> = {};
+    const problemScoresRecord: Record<
+      string,
+      Array<{ id: string; title: string; score: number }>
+    > = {};
+
+    // Organize problems by challenge and calculate challenge scores
+    for (const [problemId, score] of teamBestProblemScores.entries()) {
+      const challengeId = problemChallengeMap.get(problemId);
+      if (!challengeId) continue;
+
+      // Add to challenge score
+      challengeScores[challengeId] =
+        (challengeScores[challengeId] || 0) + score;
+
+      // Add to problem scores for this challenge
+      if (!problemScoresRecord[challengeId]) {
+        problemScoresRecord[challengeId] = [];
+      }
+
+      problemScoresRecord[challengeId].push({
+        id: problemId,
+        title:
+          problemTitleMap.get(problemId) ||
+          `Problem ${problemId.substring(0, 8)}`,
+        score: score,
+      });
+    }
+
+    // Calculate total score as sum of all challenge scores
+    const totalScore = Object.values(challengeScores).reduce(
       (sum, score) => sum + score,
       0
     );
 
+    // Update the team record
+    team.challenge_scores = challengeScores;
+    team.problem_scores = problemScoresRecord;
+    team.score = totalScore;
+  }
+
+  // Convert teams to array and format for LeaderboardEntry
+  const teamsArray: LeaderboardEntry[] = [];
+  for (const [teamId, team] of teamsMap.entries()) {
     teamsArray.push({
       id: teamId,
       name: team.teamName,
