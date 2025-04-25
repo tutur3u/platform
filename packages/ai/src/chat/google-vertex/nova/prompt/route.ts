@@ -290,14 +290,6 @@ export async function POST(
             prompt,
             system: evaluationPrompt,
           });
-          // const { content: evaluationResult } = await vertexModel.generateContent(
-          //   evaluationPrompt
-          // );
-          // const textResult = evaluationResult?.parts?.[0]?.text
-          //   ?.toLowerCase()
-          //   .trim();
-          // isMatch = textResult === 'true'; // Adjust based on your desired response format
-          console.log(`Evaluation Result: ${JSON.stringify(isMatch)}`);
           isMatch = object.matched;
         } catch (error) {
           console.error('Error evaluating test case with LLM:', error);
@@ -325,10 +317,6 @@ export async function POST(
       }
     }
 
-    // const testCaseEvaluation = evaluation.testCaseEvaluation || [];
-    // const testCaseInserts: NovaSubmissionTestCase[] = [];
-
-    // for(const testcase of )
     // Step 5: Save criteria evaluations
     const criteriaEvaluation = evaluation.criteriaEvaluation || [];
     const criteriaInserts: NovaSubmissionCriteria[] = criteriaEvaluation
