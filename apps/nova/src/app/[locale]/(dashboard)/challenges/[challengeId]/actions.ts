@@ -41,7 +41,8 @@ export async function fetchSubmissions(
       )
     `
     )
-    .eq('problem_id', problemId);
+    .eq('problem_id', problemId)
+    .eq('user_id', user.id);
 
   if (sessionId) {
     queryBuilder.eq('session_id', sessionId);
