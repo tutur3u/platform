@@ -1833,6 +1833,7 @@
       "statistics": {
         "position": {
           "title": "Your Position",
+          "not-ranked": "Not Ranked Yet",
           "top-position": "Top tier competitor!",
           "rising-position": "Rising through the ranks!",
           "normal-position": "Keep improving!"

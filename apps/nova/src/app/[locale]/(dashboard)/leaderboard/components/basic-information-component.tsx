@@ -95,7 +95,9 @@ export default function BasicInformationComponent({
                 {t('statistics.position.title')}
               </p>
               <h3 className="text-2xl font-bold text-gray-800 dark:text-slate-100">
-                #{basicInfo.currentRank}
+                {basicInfo.currentRank > 0
+                  ? `#${basicInfo.currentRank}`
+                  : t('statistics.position.not-ranked')}
               </h3>
               {basicInfo.currentRank > 0 && (
                 <p className="text-xs text-gray-500 dark:text-slate-500">

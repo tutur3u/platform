@@ -1833,6 +1833,7 @@
       "statistics": {
         "position": {
           "title": "Vị Trí Của Bạn",
+          "not-ranked": "Chưa xếp hạng",
           "top-position": "Đối thủ hàng đầu!",
           "rising-position": "Đang thăng hạng!",
           "normal-position": "Tiếp tục cố gắng nhé!"
