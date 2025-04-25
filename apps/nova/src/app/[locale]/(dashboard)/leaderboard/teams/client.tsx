@@ -11,7 +11,10 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
+  ArrowLeftToLine,
   Award,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Medal,
   Sparkles,
@@ -42,6 +45,7 @@ export default function LeaderboardClient({
   hasMore: boolean;
   initialPage?: number;
   calculationDate: Date;
+  totalPages?: number;
 }) {
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>(data);
   const [filteredInfo, setFilteredInfo] = useState<BasicInformation>(basicInfo);
@@ -135,16 +139,17 @@ export default function LeaderboardClient({
     topThree,
   ]);
 
-  const handleLoadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1) return;
+
+    setPage(newPage);
 
     // Update URL to reflect page change
     const params = new URLSearchParams(searchParams.toString());
-    params.set('page', nextPage.toString());
+    params.set('page', newPage.toString());
 
-    // Use router.replace to update URL without reloading the page
-    router.replace(`?${params.toString()}`);
+    // Use router.push to navigate to the new page
+    router.push(`?${params.toString()}`);
   };
 
   const selectedChallengeTitle =
@@ -238,17 +243,43 @@ export default function LeaderboardClient({
                 problems={problems}
               />
 
-              {hasMore && (
-                <div className="mt-4 flex justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={handleLoadMore}
-                    className="gap-2"
-                  >
-                    {t('load-more')}
-                  </Button>
+              <div className="mt-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-foreground/[0.025] px-4 py-2 text-center backdrop-blur-xl dark:bg-foreground/5">
+                  <div className="flex-none text-sm text-muted-foreground"></div>
+
+                  <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        className="hidden h-8 w-8 p-0 lg:flex"
+                        onClick={() => handlePageChange(1)}
+                        disabled={page <= 1}
+                      >
+                        <span className="sr-only">Go to first page</span>
+                        <ArrowLeftToLine className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handlePageChange(page - 1)}
+                        disabled={page <= 1}
+                      >
+                        <span className="sr-only">Go to previous page</span>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handlePageChange(page + 1)}
+                        disabled={!hasMore}
+                      >
+                        <span className="sr-only">Go to next page</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              )}
+              </div>
             </motion.div>
           </div>
 

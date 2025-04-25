@@ -1,26 +1,52 @@
 import { BasicInformation } from '../components/basic-information-component';
 import { LeaderboardEntry, UserInterface } from '../components/leaderboard';
 import LeaderboardClient from './client';
+import TeamsLeaderboardFallback from './fallback';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { Suspense } from 'react';
 
 export const revalidate = 60;
 
-interface Props {
+export default async function Page({
+  searchParams,
+}: {
   searchParams: Promise<{
     page?: string;
     locale?: string;
   }>;
+}) {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <Suspense fallback={<TeamsLeaderboardFallback />}>
+        <TeamsLeaderboardContent searchParams={searchParams} />
+      </Suspense>
+    </div>
+  );
 }
 
-export default async function Page({ searchParams }: Props) {
+async function TeamsLeaderboardContent({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    locale?: string;
+  }>;
+}) {
   const { page = '1' } = await searchParams;
   const pageNumber = parseInt(page, 10);
 
-  const { data, topThree, basicInfo, challenges, problems, hasMore } =
-    await fetchLeaderboard(pageNumber);
+  const {
+    data,
+    topThree,
+    basicInfo,
+    challenges,
+    problems,
+    hasMore,
+    totalPages,
+  } = await fetchLeaderboard(pageNumber);
 
   return (
     <LeaderboardClient
@@ -32,6 +58,7 @@ export default async function Page({ searchParams }: Props) {
       hasMore={hasMore}
       initialPage={pageNumber}
       calculationDate={new Date()}
+      totalPages={totalPages}
     />
   );
 }
@@ -56,6 +83,7 @@ async function fetchLeaderboard(page: number = 1) {
     challenges: [],
     problems: [],
     hasMore: false,
+    totalPages: 0,
   };
 
   const limit = 20;
@@ -355,6 +383,7 @@ async function fetchLeaderboard(page: number = 1) {
 
   // Paginate
   const paginatedTeams = rankedTeams.slice((page - 1) * limit, page * limit);
+  const totalPages = Math.ceil(rankedTeams.length / limit);
 
   return {
     data: paginatedTeams,
@@ -368,5 +397,6 @@ async function fetchLeaderboard(page: number = 1) {
     challenges: challenges || [],
     problems: problemsData || [],
     hasMore: rankedTeams.length > page * limit,
+    totalPages,
   };
 }
