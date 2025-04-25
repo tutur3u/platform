@@ -412,11 +412,20 @@ Focus on objective assessment rather than subjective judgment.
           .from('nova_submission_test_cases')
           .insert(
             testCaseInserts.map(
-              ({ submission_id, test_case_id, output, matched }) => ({
+              ({
                 submission_id,
                 test_case_id,
                 output,
                 matched,
+                confidence,
+                reasoning,
+              }) => ({
+                submission_id,
+                test_case_id,
+                output,
+                matched,
+                confidence,
+                reasoning,
               })
             )
           );
@@ -460,11 +469,20 @@ Focus on objective assessment rather than subjective judgment.
           .from('nova_submission_criteria')
           .insert(
             criteriaInserts.map(
-              ({ submission_id, criteria_id, score, feedback }) => ({
+              ({
                 submission_id,
                 criteria_id,
                 score,
                 feedback,
+                strengths,
+                improvements,
+              }) => ({
+                submission_id,
+                criteria_id,
+                score,
+                feedback,
+                strengths,
+                improvements,
               })
             )
           );
