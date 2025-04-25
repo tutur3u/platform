@@ -1,4 +1,40 @@
 {
+  "score-calculator": {
+    "test_formula": "(Số Bài Đạt / Tổng Số Bài Kiểm Tra) × 10 × Trọng Số",
+    "criteria_formula": "(Tổng Điểm Tiêu Chí / (Tổng Số Tiêu Chí × 10)) × 10 × Trọng Số",
+    "final_formula": "Điểm Kiểm Tra + Điểm Tiêu Chí",
+    "weight": "Trọng Số",
+    "title": "Máy Tính Điểm",
+    "subtitle": "Tính toán điểm bài nộp của bạn dựa trên kết quả bài kiểm tra và đánh giá tiêu chí",
+    "input_metrics": "Các Chỉ Số Đầu Vào",
+    "test_results": "Kết Quả Kiểm Tra",
+    "total_tests": "Tổng Số Bài Kiểm Tra",
+    "total_tests_description": "Tổng số trường hợp kiểm tra",
+    "passed_tests": "Số Bài Đạt",
+    "passed_tests_description": "Số trường hợp kiểm tra đạt yêu cầu",
+    "criteria_evaluation": "Đánh Giá Tiêu Chí",
+    "total_criteria": "Tổng Số Tiêu Chí",
+    "total_criteria_description": "Số tiêu chí đánh giá",
+    "sum_criterion_score": "Tổng Điểm Tiêu Chí",
+    "sum_criterion_score_description": "Tổng điểm của tất cả các tiêu chí",
+    "score_calculation": "Tính Toán Điểm",
+    "no_calculation_yet": "Chưa có tính toán",
+    "fill_form_realtime": "Điền thông tin vào biểu mẫu để xem kết quả được cập nhật theo thời gian thực",
+    "final_score": "Điểm Cuối Cùng",
+    "of_maximum_score": "trong tổng số điểm tối đa",
+    "calculation_breakdown": "Chi Tiết Tính Toán",
+    "test_score_component": "Thành Phần Điểm Kiểm Tra",
+    "criteria_score_component": "Thành Phần Điểm Tiêu Chí",
+    "final_score_calculation": "Điểm Cuối Cùng",
+    "points": "điểm",
+    "scoring_rules": "Quy Tắc Tính Điểm",
+    "rule_1": "Mỗi bài nộp có thể đạt tối đa 10 điểm",
+    "rule_2": "Nếu có cả kiểm tra và tiêu chí, mỗi loại đóng góp 50% vào điểm cuối cùng",
+    "rule_3": "Nếu chỉ có kiểm tra, chúng đóng góp 100% vào điểm cuối cùng",
+    "rule_4": "Nếu chỉ có tiêu chí, chúng đóng góp 100% vào điểm cuối cùng",
+    "rule_5": "Mỗi tiêu chí được chấm điểm trên thang điểm từ 0-10",
+    "max": "tối đa"
+  },
   "nova-apology-modal": {
     "title": "Thông Báo Quan Trọng Đến Người Tham Gia Cuộc Thi NEO League",
     "description": "Đội phát triển Nova muốn thông báo về các vấn đề kỹ thuật gần đây ảnh hưởng đến cuộc thi.",
@@ -2157,7 +2193,8 @@
         "delete-challenge-description": "Bạn có chắc chắn muốn xóa thử thách này không? Hành động này không thể hoàn tác.",
         "cancel": "Hủy"
       }
-    }
+    },
+    "score-calculator": "Công cụ tính điểm"
   },
   "onboarding": {
     "just-a-moment": "Bước cuối cùng!",

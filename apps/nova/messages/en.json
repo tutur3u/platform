@@ -1,4 +1,40 @@
 {
+  "score-calculator": {
+    "title": "Score Calculator",
+    "subtitle": "Calculate your submission score based on test results and criteria evaluation",
+    "input_metrics": "Input Metrics",
+    "test_results": "Test Results",
+    "total_tests": "Total Tests",
+    "total_tests_description": "Total number of test cases",
+    "passed_tests": "Passed Tests",
+    "passed_tests_description": "Number of passing test cases",
+    "criteria_evaluation": "Criteria Evaluation",
+    "total_criteria": "Total Criteria",
+    "total_criteria_description": "Number of evaluation criteria",
+    "sum_criterion_score": "Sum of Criterion Scores",
+    "sum_criterion_score_description": "Total sum of all criteria scores",
+    "score_calculation": "Score Calculation",
+    "no_calculation_yet": "No calculation yet",
+    "fill_form_realtime": "Fill in the form to see your results updated in real-time",
+    "final_score": "Final Score",
+    "of_maximum_score": "of maximum score",
+    "calculation_breakdown": "Calculation Breakdown",
+    "test_score_component": "Test Score Component",
+    "criteria_score_component": "Criteria Score Component",
+    "final_score_calculation": "Final Score",
+    "points": "points",
+    "scoring_rules": "Scoring Rules",
+    "rule_1": "Each submission can score up to 10 points",
+    "rule_2": "If both tests and criteria are present, each contributes 50% to the final score",
+    "rule_3": "If only tests exist, they contribute 100% of the final score",
+    "rule_4": "If only criteria exist, they contribute 100% of the final score",
+    "rule_5": "Each criterion is scored on a scale of 0-10",
+    "max": "max",
+    "test_formula": "(Passed Tests / Total Tests) × 10 × Weight",
+    "criteria_formula": "(Sum of Criterion Scores / (Total Criteria × 10)) × 10 × Weight",
+    "final_formula": "Test Score + Criteria Score",
+    "weight": "Weight"
+  },
   "nova-apology-modal": {
     "title": "Important Notice to NEO League Competition Participants",
     "description": "The Nova development team wishes to address recent technical issues affecting the competition.",
@@ -2159,7 +2195,8 @@
         "delete-challenge-description": "Are you sure you want to delete this challenge? This action cannot be undone.",
         "cancel": "Cancel"
       }
-    }
+    },
+    "score-calculator": "Score Calculator"
   },
   "onboarding": {
     "just-a-moment": "Just a moment...",
