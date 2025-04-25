@@ -3,6 +3,7 @@
 import { ExtendedNovaSubmission, fetchSubmissions } from './actions';
 import ScoreBadge from '@/components/common/ScoreBadge';
 import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -47,9 +48,7 @@ export default function PromptForm({ problem }: Props) {
 
   const getSubmissions = useCallback(async () => {
     const submissions = await fetchSubmissions(problem.id);
-    if (submissions.length > 0) {
-      setSubmissions(submissions);
-    }
+    setSubmissions(submissions);
   }, [problem.id]);
 
   useEffect(() => {
@@ -216,7 +215,14 @@ export default function PromptForm({ problem }: Props) {
       <TabsList className="mb-4 grid w-full grid-cols-3">
         <TabsTrigger value="prompt">Prompt</TabsTrigger>
         <TabsTrigger value="test">Test</TabsTrigger>
-        <TabsTrigger value="submissions">Submissions</TabsTrigger>
+        <TabsTrigger value="submissions">
+          Submissions
+          {submissions.length > 0 && (
+            <Badge variant="secondary" className="ml-2">
+              {submissions.length}
+            </Badge>
+          )}
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="prompt" className="space-y-4">
