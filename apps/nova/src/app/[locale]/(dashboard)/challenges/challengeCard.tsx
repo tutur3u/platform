@@ -270,7 +270,7 @@ export default function ChallengeCard({
           </div>
 
           <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center text-xs">
               <Clock className="mr-1 h-3 w-3" /> {t('time-remaining')}:
             </div>
             <Countdown
@@ -285,7 +285,7 @@ export default function ChallengeCard({
             className="mb-2"
           />
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
               <span>
                 {' '}
@@ -434,12 +434,12 @@ export default function ChallengeCard({
           )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
+          <p className="text-muted-foreground mb-4">{challenge.description}</p>
 
           <div className="grid gap-2">
             <div className="flex items-center">
-              <Clock className="h-4 w-4 flex-shrink-0 text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">
+              <Clock className="text-primary h-4 w-4 flex-shrink-0" />
+              <span className="text-muted-foreground ml-2 text-sm">
                 {t('duration')}: {formatDuration(challenge.duration)}
               </span>
             </div>
@@ -449,7 +449,7 @@ export default function ChallengeCard({
                 <div className="flex h-6 items-center">
                   <div className="flex items-center">
                     <AlertCircle className="h-4 w-4 text-indigo-500" />
-                    <span className="ml-2 text-sm text-muted-foreground">
+                    <span className="text-muted-foreground ml-2 text-sm">
                       {t('total-attempts')}: {challenge.total_sessions || 0}/
                       {challenge.max_attempts}
                     </span>
@@ -459,7 +459,7 @@ export default function ChallengeCard({
                 <div className="flex h-6 items-center">
                   <div className="flex items-center">
                     <AlertCircle className="h-4 w-4 text-violet-500" />
-                    <span className="ml-2 text-sm text-muted-foreground">
+                    <span className="text-muted-foreground ml-2 text-sm">
                       {t('daily-attempts')}: {challenge.daily_sessions || 0}/
                       {challenge.max_daily_attempts}
                     </span>
@@ -479,7 +479,7 @@ export default function ChallengeCard({
               {status === 'upcoming' && challenge.previewable_at ? (
                 <div className="mt-2 flex items-center">
                   <Eye className="h-4 w-4 text-amber-500" />
-                  <span className="ml-2 text-sm text-muted-foreground">
+                  <span className="text-muted-foreground ml-2 text-sm">
                     {t('preview-available')}:{' '}
                     {formatDistanceToNow(new Date(challenge.previewable_at), {
                       addSuffix: true,
