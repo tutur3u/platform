@@ -3,6 +3,9 @@ import { LeaderboardEntry, UserInterface } from '../components/leaderboard';
 import LeaderboardClient from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
+export const dynamic = 'force-static';
+export const revalidate = 60;
+
 interface Props {
   searchParams: Promise<{
     page?: string;
@@ -26,6 +29,7 @@ export default async function Page({ searchParams }: Props) {
       problems={problems}
       hasMore={hasMore}
       initialPage={pageNumber}
+      calculationDate={new Date()}
     />
   );
 }
@@ -52,7 +56,7 @@ async function fetchLeaderboard(page: number = 1) {
     hasMore: false,
   };
 
-  const limit = 50;
+  const limit = 20;
   const sbAdmin = await createAdminClient();
 
   // 1. Get all team members + their teams

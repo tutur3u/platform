@@ -2,7 +2,6 @@ import NavbarActions from '../(marketing)/navbar-actions';
 import { UserNav } from '../(marketing)/user-nav';
 import Structure from '@/components/layout/structure';
 import {
-  DEV_MODE,
   MAIN_CONTENT_SIZE_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
   SIDEBAR_SIZE_COOKIE_NAME,
@@ -89,15 +88,11 @@ export default async function RootLayout({
       href: '/score-calculator',
       icon: <Calculator className="h-4 w-4" />,
     },
-    ...(DEV_MODE
-      ? [
-          {
-            name: t('leaderboard'),
-            href: '/leaderboard',
-            icon: <Trophy className="h-4 w-4" />,
-          },
-        ]
-      : []),
+    {
+      name: t('leaderboard'),
+      href: '/leaderboard',
+      icon: <Trophy className="h-4 w-4" />,
+    },
     {
       name: t('teams'),
       href: '/teams',
@@ -126,7 +121,7 @@ export default async function RootLayout({
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -135,7 +130,7 @@ export default async function RootLayout({
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />

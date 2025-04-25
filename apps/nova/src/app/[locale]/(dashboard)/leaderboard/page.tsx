@@ -3,6 +3,9 @@ import { BasicInformation } from './components/basic-information-component';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 
+export const dynamic = 'force-static';
+export const revalidate = 60;
+
 interface Props {
   searchParams: Promise<{
     page?: string;
@@ -26,6 +29,7 @@ export default async function Page({ searchParams }: Props) {
       problems={problems}
       hasMore={hasMore}
       initialPage={pageNumber}
+      calculationDate={new Date()}
     />
   );
 }
@@ -49,7 +53,7 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
     hasMore: false,
   };
 
-  const limit = 100;
+  const limit = 20;
   const sbAdmin = await createAdminClient();
 
   // Fetch user sessions data
