@@ -138,8 +138,10 @@ export function Leaderboard({
         <motion.div
           className="absolute inset-0 rounded-xl opacity-0 dark:opacity-30"
           style={{
-            background: 'linear-gradient(45deg, #3B82F6, #8B5CF6, #EC4899)',
+            backgroundImage:
+              'linear-gradient(45deg, #3B82F6, #8B5CF6, #EC4899)',
             backgroundSize: '200% 200%',
+            backgroundPosition: '0% 0%',
           }}
           animate={{
             backgroundPosition: ['0% 0%', '100% 100%'],
@@ -237,7 +239,7 @@ export function Leaderboard({
                               entry.rank <= 3
                                 ? 'drop-shadow(0 0 6px rgba(249, 115, 22, 0.3))'
                                 : 'none',
-                            background:
+                            backgroundImage:
                               entry.rank === 1
                                 ? 'linear-gradient(180deg, #FFD700, #FFA500)'
                                 : entry.rank === 2

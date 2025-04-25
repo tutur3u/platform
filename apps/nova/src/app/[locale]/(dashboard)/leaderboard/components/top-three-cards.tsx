@@ -224,7 +224,7 @@ export function TopThreeCards({ data, teamMode = false }: TopThreeCardsProps) {
               <motion.div
                 className="absolute inset-0 -z-10 rounded-xl opacity-0 dark:opacity-50"
                 style={{
-                  background: `linear-gradient(45deg, ${styles.glow}, transparent, ${styles.glow})`,
+                  backgroundImage: `linear-gradient(45deg, ${styles.glow}, transparent, ${styles.glow})`,
                   backgroundSize: '200% 200%',
                 }}
                 animate={
