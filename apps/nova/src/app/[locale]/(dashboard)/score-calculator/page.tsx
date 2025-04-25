@@ -153,12 +153,12 @@ export default function ScoreCalculatorPage() {
           <Calculator className="h-7 w-7" />
           {t('title')}
         </h1>
-        <p className="mt-2 text-muted-foreground">{t('subtitle')}</p>
+        <p className="text-muted-foreground mt-2">{t('subtitle')}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border-dynamic-blue/20 shadow-sm transition-all duration-200 hover:shadow-md md:sticky md:top-6 md:self-start">
-          <CardHeader className="rounded-t-lg border-b border-dynamic-blue/10 bg-dynamic-blue/5">
+          <CardHeader className="border-dynamic-blue/10 bg-dynamic-blue/5 rounded-t-lg border-b">
             <CardTitle className="text-dynamic-blue">
               {t('input_metrics')}
             </CardTitle>
@@ -166,19 +166,19 @@ export default function ScoreCalculatorPage() {
           <CardContent className="p-6">
             <Form {...form}>
               <div className="space-y-6">
-                <div className="rounded-lg border border-dynamic-sky/20 bg-dynamic-sky/5 p-5">
-                  <h3 className="flex items-center gap-2 text-lg font-medium text-dynamic-sky">
+                <div className="border-dynamic-sky/20 bg-dynamic-sky/5 rounded-lg border p-5">
+                  <h3 className="text-dynamic-sky flex items-center gap-2 text-lg font-medium">
                     <CheckCircle2 className="h-5 w-5" />
                     {t('test_results')}
                   </h3>
-                  <Separator className="my-3 bg-dynamic-sky/20" />
+                  <Separator className="bg-dynamic-sky/20 my-3" />
                   <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       control={form.control}
                       name="total_tests"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-medium text-dynamic-sky">
+                          <FormLabel className="text-dynamic-sky font-medium">
                             {t('total_tests')}
                           </FormLabel>
                           <FormControl>
@@ -202,7 +202,7 @@ export default function ScoreCalculatorPage() {
                       name="passed_tests"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-medium text-dynamic-sky">
+                          <FormLabel className="text-dynamic-sky font-medium">
                             {t('passed_tests')}
                           </FormLabel>
                           <div className="relative">
@@ -210,7 +210,7 @@ export default function ScoreCalculatorPage() {
                               <Input
                                 placeholder="0"
                                 type="number"
-                                className="border-dynamic-sky/30 pr-14 focus-visible:ring-dynamic-sky/30"
+                                className="border-dynamic-sky/30 focus-visible:ring-dynamic-sky/30 pr-14"
                                 {...field}
                                 min={0}
                                 max={formValues.total_tests || 0}
@@ -218,7 +218,7 @@ export default function ScoreCalculatorPage() {
                               />
                             </FormControl>
                             {formValues.total_tests ? (
-                              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-muted-foreground">
+                              <div className="text-muted-foreground absolute inset-y-0 right-0 flex items-center pr-3 text-xs">
                                 {t('max')}: {formValues.total_tests || 0}
                               </div>
                             ) : null}
@@ -233,19 +233,19 @@ export default function ScoreCalculatorPage() {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-5">
-                  <h3 className="flex items-center gap-2 text-lg font-medium text-dynamic-purple">
+                <div className="border-dynamic-purple/20 bg-dynamic-purple/5 rounded-lg border p-5">
+                  <h3 className="text-dynamic-purple flex items-center gap-2 text-lg font-medium">
                     <AlertCircle className="h-5 w-5" />
                     {t('criteria_evaluation')}
                   </h3>
-                  <Separator className="my-3 bg-dynamic-purple/20" />
+                  <Separator className="bg-dynamic-purple/20 my-3" />
                   <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       control={form.control}
                       name="total_criteria"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-medium text-dynamic-purple">
+                          <FormLabel className="text-dynamic-purple font-medium">
                             {t('total_criteria')}
                           </FormLabel>
                           <FormControl>
@@ -269,7 +269,7 @@ export default function ScoreCalculatorPage() {
                       name="sum_criterion_score"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-medium text-dynamic-purple">
+                          <FormLabel className="text-dynamic-purple font-medium">
                             {t('sum_criterion_score')}
                           </FormLabel>
                           <div className="relative">
@@ -277,7 +277,7 @@ export default function ScoreCalculatorPage() {
                               <Input
                                 placeholder="0"
                                 type="number"
-                                className="border-dynamic-purple/30 pr-14 focus-visible:ring-dynamic-purple/30"
+                                className="border-dynamic-purple/30 focus-visible:ring-dynamic-purple/30 pr-14"
                                 {...field}
                                 min={0}
                                 max={
@@ -289,7 +289,7 @@ export default function ScoreCalculatorPage() {
                               />
                             </FormControl>
                             {formValues.total_criteria ? (
-                              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-muted-foreground">
+                              <div className="text-muted-foreground absolute inset-y-0 right-0 flex items-center pr-3 text-xs">
                                 {t('max')}: {formValues.total_criteria * 10}
                               </div>
                             ) : null}
@@ -309,7 +309,7 @@ export default function ScoreCalculatorPage() {
         </Card>
 
         <Card className="border-dynamic-green/20 shadow-sm md:sticky md:top-6 md:self-start">
-          <CardHeader className="rounded-t-lg border-b border-dynamic-green/10 bg-dynamic-green/5">
+          <CardHeader className="border-dynamic-green/10 bg-dynamic-green/5 rounded-t-lg border-b">
             <CardTitle className="text-dynamic-green">
               {t('score_calculation')}
             </CardTitle>
@@ -317,7 +317,7 @@ export default function ScoreCalculatorPage() {
           <CardContent className="p-6">
             {!result ? (
               <div className="flex h-[300px] flex-col items-center justify-center gap-4 text-center">
-                <HelpCircle className="h-16 w-16 text-dynamic-gray/50" />
+                <HelpCircle className="text-dynamic-gray/50 h-16 w-16" />
                 <div>
                   <p className="text-lg font-medium">
                     {t('no_calculation_yet')}
@@ -341,7 +341,7 @@ export default function ScoreCalculatorPage() {
                     <span className={`text-dynamic-${scoreColor}`}>
                       {formatScore(result.score, 1)}
                     </span>
-                    <span className="text-xl text-muted-foreground">/10</span>
+                    <span className="text-muted-foreground text-xl">/10</span>
                   </div>
                   <p className={`mt-2 font-medium text-dynamic-${scoreColor}`}>
                     {result.percentage.toFixed(1)}% {t('of_maximum_score')}
@@ -349,25 +349,25 @@ export default function ScoreCalculatorPage() {
                 </div>
 
                 <div>
-                  <h3 className="mb-2 text-lg font-medium text-dynamic-green">
+                  <h3 className="text-dynamic-green mb-2 text-lg font-medium">
                     {t('calculation_breakdown')}
                   </h3>
-                  <Separator className="my-2 bg-dynamic-green/20" />
+                  <Separator className="bg-dynamic-green/20 my-2" />
 
                   <div className="mt-4 space-y-4">
                     {result.testScore > 0 && (
                       <div className="space-y-1">
-                        <p className="font-medium text-dynamic-sky">
+                        <p className="text-dynamic-sky font-medium">
                           {t('test_score_component')}:
                         </p>
-                        <div className="rounded-md border border-dynamic-sky/20 bg-dynamic-sky/5 p-3 text-sm shadow-sm">
+                        <div className="border-dynamic-sky/20 bg-dynamic-sky/5 rounded-md border p-3 text-sm shadow-sm">
                           <p>{t('test_formula')}</p>
                           <p className="mt-1">
                             = ({formValues.passed_tests || 0} /{' '}
                             {formValues.total_tests || 0}) × 10 ×{' '}
                             {result.testWeight}
                           </p>
-                          <p className="mt-1 font-medium text-dynamic-sky">
+                          <p className="text-dynamic-sky mt-1 font-medium">
                             = {formatScore(result.testScore, 2)} {t('points')}
                           </p>
                         </div>
@@ -376,17 +376,17 @@ export default function ScoreCalculatorPage() {
 
                     {result.criteriaScore > 0 && (
                       <div className="space-y-1">
-                        <p className="font-medium text-dynamic-purple">
+                        <p className="text-dynamic-purple font-medium">
                           {t('criteria_score_component')}:
                         </p>
-                        <div className="rounded-md border border-dynamic-purple/20 bg-dynamic-purple/5 p-3 text-sm shadow-sm">
+                        <div className="border-dynamic-purple/20 bg-dynamic-purple/5 rounded-md border p-3 text-sm shadow-sm">
                           <p>{t('criteria_formula')}</p>
                           <p className="mt-1">
                             = ({formValues.sum_criterion_score || 0} / (
                             {formValues.total_criteria || 0} × 10)) × 10 ×{' '}
                             {result.criteriaWeight}
                           </p>
-                          <p className="mt-1 font-medium text-dynamic-purple">
+                          <p className="text-dynamic-purple mt-1 font-medium">
                             = {formatScore(result.criteriaScore, 2)}{' '}
                             {t('points')}
                           </p>
@@ -395,16 +395,16 @@ export default function ScoreCalculatorPage() {
                     )}
 
                     <div className="space-y-1">
-                      <p className="font-medium text-dynamic-green">
+                      <p className="text-dynamic-green font-medium">
                         {t('final_score_calculation')}:
                       </p>
-                      <div className="rounded-md border border-dynamic-green/20 bg-dynamic-green/5 p-3 text-sm shadow-sm">
+                      <div className="border-dynamic-green/20 bg-dynamic-green/5 rounded-md border p-3 text-sm shadow-sm">
                         <p>{t('final_formula')}</p>
                         <p className="mt-1">
                           = {formatScore(result.testScore, 2)} +{' '}
                           {formatScore(result.criteriaScore, 2)}
                         </p>
-                        <p className="mt-1 font-medium text-dynamic-green">
+                        <p className="text-dynamic-green mt-1 font-medium">
                           = {formatScore(result.score, 2)} {t('points')}
                         </p>
                       </div>
@@ -413,11 +413,11 @@ export default function ScoreCalculatorPage() {
                 </div>
 
                 <div>
-                  <h3 className="mb-2 text-lg font-medium text-dynamic-green">
+                  <h3 className="text-dynamic-green mb-2 text-lg font-medium">
                     {t('scoring_rules')}
                   </h3>
-                  <Separator className="my-2 bg-dynamic-green/20" />
-                  <ul className="list-inside list-disc space-y-2 rounded-md border border-dynamic-green/10 bg-dynamic-green/5 p-4 text-sm">
+                  <Separator className="bg-dynamic-green/20 my-2" />
+                  <ul className="border-dynamic-green/10 bg-dynamic-green/5 list-inside list-disc space-y-2 rounded-md border p-4 text-sm">
                     <li>{t('rule_1')}</li>
                     <li>{t('rule_2')}</li>
                     <li>{t('rule_3')}</li>
