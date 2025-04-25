@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Form,
@@ -11,6 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import {
   AlertCircle,
   Calculator,
@@ -18,15 +18,14 @@ import {
   HelpCircle,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-// Import the score calculation functions
 import {
   calculatePercentage,
   formatScore,
 } from '@tuturuuu/utils/nova/scores/calculate';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 const ScoreSchema = z.object({
@@ -118,7 +117,8 @@ export default function ScoreCalculatorPage() {
     if (
       totalTests !== undefined &&
       passedTests !== undefined &&
-      parseInt(passedTests) > parseInt(totalTests)
+      parseInt(passedTests as unknown as string) >
+        parseInt(totalTests as unknown as string)
     ) {
       form.setValue('passed_tests', totalTests);
     }
@@ -129,7 +129,8 @@ export default function ScoreCalculatorPage() {
     if (
       totalCriteria !== undefined &&
       sumCriterionScore !== undefined &&
-      parseInt(sumCriterionScore) > parseInt(totalCriteria) * 10
+      parseInt(sumCriterionScore as unknown as string) >
+        parseInt(totalCriteria as unknown as string) * 10
     ) {
       form.setValue('sum_criterion_score', totalCriteria * 10);
     }
