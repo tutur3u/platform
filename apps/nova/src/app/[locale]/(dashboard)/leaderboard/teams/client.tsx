@@ -244,8 +244,8 @@ export default function LeaderboardClient({
               />
 
               <div className="mt-6">
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-foreground/[0.025] px-4 py-2 text-center backdrop-blur-xl dark:bg-foreground/5">
-                  <div className="flex-none text-sm text-muted-foreground"></div>
+                <div className="bg-foreground/[0.025] dark:bg-foreground/5 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-2 text-center backdrop-blur-xl">
+                  <div className="text-muted-foreground flex-none text-sm"></div>
 
                   <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
                     <div className="flex items-center space-x-2">
