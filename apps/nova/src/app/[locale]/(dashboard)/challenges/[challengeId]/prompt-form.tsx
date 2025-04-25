@@ -53,17 +53,15 @@ export default function PromptForm({ problem, session }: Props) {
 
   const getSubmissions = useCallback(async () => {
     const submissions = await fetchSubmissions(problem.id);
-    if (submissions.length > 0) {
-      setSubmissions(submissions);
+    setSubmissions(submissions);
 
-      // Split submissions between current and past sessions
-      const current = submissions.filter((s) => s.session_id === session.id);
-      const past = submissions.filter((s) => s.session_id !== session.id);
+    // Split submissions between current and past sessions
+    const current = submissions.filter((s) => s.session_id === session.id);
+    const past = submissions.filter((s) => s.session_id !== session.id);
 
-      setCurrentSubmissions(current);
-      setPastSubmissions(past);
-      setAttempts(current.length);
-    }
+    setCurrentSubmissions(current);
+    setPastSubmissions(past);
+    setAttempts(current.length);
   }, [problem.id, session.id]);
 
   useEffect(() => {
@@ -150,8 +148,7 @@ export default function PromptForm({ problem, session }: Props) {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-4 grid w-full grid-cols-2">
             <TabsTrigger value="prompt">Prompt</TabsTrigger>
-            {/* <TabsTrigger value="test">Test</TabsTrigger> */}
-            <TabsTrigger value="submissions" className="relative">
+            <TabsTrigger value="submissions">
               Submissions
               {submissions.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
