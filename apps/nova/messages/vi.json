@@ -1916,8 +1916,64 @@
       },
       "rank": "Hạng #",
       "challenge": "Thử thách",
-      "challenges": "Thử thách",
+      "challenges": {
+        "title": "Thử thách",
+        "problems": "bài",
+        "no-challenges": "Chưa hoàn thành thử thách nào",
+        "no-challenges-description": "Bạn chưa thử thách nào cả. Khám phá thử thách để bắt đầu!",
+        "browse-challenges": "Khám phá thử thách"
+      },
       "score": "Điểm",
+      "joined": "Tham gia",
+      "level": "Cấp độ",
+      "points": "điểm",
+      "share-profile": "Chia sẻ hồ sơ",
+      "edit-profile": "Chỉnh sửa hồ sơ",
+      "tabs": {
+        "overview": "Tổng quan",
+        "challenges": "Thử thách",
+        "activity": "Hoạt động"
+      },
+      "progress": {
+        "excellent": "Xuất sắc",
+        "great": "Rất tốt",
+        "good": "Tốt",
+        "progress": "Tiếp tục cố gắng",
+        "started": "Mới bắt đầu"
+      },
+      "stats": {
+        "title": "Thống kê",
+        "description": "Tổng quan về hiệu suất của bạn",
+        "total-score": "Tổng điểm",
+        "rank": "Xếp hạng",
+        "problems-attempted": "Bài đã thử",
+        "challenges": "Thử thách",
+        "overall-progress": "Tiến độ tổng thể",
+        "problems": "bài",
+        "leaderboard-position": "Vị trí trên bảng xếp hạng"
+      },
+      "overview": {
+        "best-performance": "Thử thách hay nhất",
+        "recent-activity": "Hoạt động gần đây",
+        "problem-submissions": "Số lần nộp bài",
+        "avg-score": "Điểm trung bình",
+        "best-score": "Điểm cao nhất",
+        "last-active": "Hoạt động gần đây",
+        "top-problems": "Điểm cao nhất theo bài",
+        "top-problems-description": "Những bài giải xuất sắc nhất của bạn",
+        "problems": "bài",
+        "view-challenge": "Xem thử thách"
+      },
+      "activity": {
+        "recent": "Hoạt động gần đây",
+        "description": "Các bài nộp gần đây của bạn",
+        "excellent": "Xuất sắc",
+        "good": "Tốt",
+        "average": "Trung bình",
+        "needs-work": "Cần cải thiện",
+        "no-activity": "Không có hoạt động gần đây",
+        "no-activity-description": "Bạn chưa nộp bài nào gần đây."
+      },
       "profile-header": {
         "joined": "Tham gia",
         "points": "Điểm",

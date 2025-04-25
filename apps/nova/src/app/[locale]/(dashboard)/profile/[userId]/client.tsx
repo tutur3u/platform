@@ -1,6 +1,5 @@
 'use client';
 
-import { ThumbnailGrid } from './thumbnail-grid';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -22,7 +21,6 @@ import {
   ChevronRight,
   Clock,
   ExternalLink,
-  Info,
   Lock,
   Medal,
   Rocket,
@@ -31,7 +29,6 @@ import {
   Sparkles,
   Target,
   Trophy,
-  Users,
 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -44,10 +41,10 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface RecentActivity {
   id: string;
@@ -62,6 +59,20 @@ interface Challenge {
   title: string;
   description: string;
   score: number;
+  problemCount: number;
+  attemptedProblems: number;
+}
+
+interface BestProblemScore {
+  id: string;
+  score: number;
+  challengeId: string;
+}
+
+interface NearbyRank {
+  id: string;
+  score: number;
+  isCurrentUser: boolean;
 }
 
 interface ProfileData {
@@ -73,6 +84,12 @@ interface ProfileData {
   rank: number;
   challengeCount: number;
   challengeScores: Record<string, number>;
+  // Additional fields for improved UI
+  problemCount: number;
+  totalAvailableProblems: number;
+  problemsAttemptedPercentage: number;
+  bestProblemScores: BestProblemScore[];
+  nearbyRanks: NearbyRank[];
   recentActivity: RecentActivity[];
   challenges: Challenge[];
 }
@@ -84,15 +101,11 @@ export default function UserProfileClient({
 }) {
   const supabase = createClient();
   const router = useRouter();
-  const achievementsTabRef = useRef<HTMLButtonElement>(null);
-  const activityTabRef = useRef<HTMLButtonElement>(null);
 
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [copied, setCopied] = useState(false);
-  const [, setActiveTab] = useState('overview');
 
   const t = useTranslations('nova.profile-page');
-  const locale = useLocale();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -136,8 +149,8 @@ export default function UserProfileClient({
       title: t('achievements.adopter'),
       description: t('achievements.adopter-description'),
       icon: <Rocket className="h-5 w-5" />,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
+      color: 'text-dynamic-blue',
+      bgColor: 'bg-dynamic-blue/10',
     },
     {
       id: 'challenge_master',
@@ -145,8 +158,8 @@ export default function UserProfileClient({
       description: t('achievements.master-description'),
       unlocked: profile.challengeCount >= 5,
       icon: <Trophy className="h-5 w-5" />,
-      color: 'text-amber-500',
-      bgColor: 'bg-amber-500/10',
+      color: 'text-dynamic-yellow',
+      bgColor: 'bg-dynamic-yellow/10',
     },
     {
       id: 'high_scorer',
@@ -154,8 +167,8 @@ export default function UserProfileClient({
       description: t('achievements.high-scorer-description'),
       unlocked: profile.totalScore > 500,
       icon: <Target className="h-5 w-5" />,
-      color: 'text-green-500',
-      bgColor: 'bg-green-500/10',
+      color: 'text-dynamic-green',
+      bgColor: 'bg-dynamic-green/10',
     },
     {
       id: 'top_rank',
@@ -163,8 +176,8 @@ export default function UserProfileClient({
       description: t('achievements.top-rank-description'),
       unlocked: profile.rank <= 10,
       icon: <Medal className="h-5 w-5" />,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
+      color: 'text-dynamic-purple',
+      bgColor: 'bg-dynamic-purple/10',
     },
     {
       id: 'consistent',
@@ -172,8 +185,8 @@ export default function UserProfileClient({
       description: t('achievements.consistent-description'),
       unlocked: profile.recentActivity.length >= 10,
       icon: <Clock className="h-5 w-5" />,
-      color: 'text-indigo-500',
-      bgColor: 'bg-indigo-500/10',
+      color: 'text-dynamic-indigo',
+      bgColor: 'bg-dynamic-indigo/10',
     },
     {
       id: 'prompt_master',
@@ -181,8 +194,8 @@ export default function UserProfileClient({
       description: t('achievements.prompt-master-description'),
       unlocked: profile.challenges.some((c) => c.score >= 9.5),
       icon: <Sparkles className="h-5 w-5" />,
-      color: 'text-rose-500',
-      bgColor: 'bg-rose-500/10',
+      color: 'text-dynamic-pink',
+      bgColor: 'bg-dynamic-pink/10',
     },
   ];
 
@@ -221,10 +234,25 @@ export default function UserProfileClient({
   const nextLevel = level + 1;
   const levelProgress = ((profile.totalScore % 500) / 500) * 100;
 
+  // Get status text and color based on overall progress
+  const getProgressStatus = (percentage: number) => {
+    if (percentage >= 90)
+      return { text: t('progress.excellent'), color: 'text-dynamic-blue' };
+    if (percentage >= 75)
+      return { text: t('progress.great'), color: 'text-dynamic-green' };
+    if (percentage >= 60)
+      return { text: t('progress.good'), color: 'text-dynamic-yellow' };
+    if (percentage >= 40)
+      return { text: t('progress.progress'), color: 'text-dynamic-orange' };
+    return { text: t('progress.started'), color: 'text-dynamic-red' };
+  };
+
+  const overallStatus = getProgressStatus(profile.problemsAttemptedPercentage);
+
   return (
-    <div className="container max-w-6xl pb-16 pt-8">
+    <div className="container max-w-6xl pt-8 pb-16">
       {/* Breadcrumb navigation */}
-      <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
+      <nav className="mb-8 flex items-center space-x-2 text-sm text-muted-foreground">
         <Link href="/home" className="hover:text-foreground">
           {t('breadcrumb.home')}
         </Link>
@@ -233,7 +261,7 @@ export default function UserProfileClient({
           {t('breadcrumb.leaderboard')}
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <span className="text-foreground font-medium">{profile.name}</span>
+        <span className="font-medium text-foreground">{profile.name}</span>
       </nav>
 
       {/* Profile Header */}
@@ -241,7 +269,7 @@ export default function UserProfileClient({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-card/50 mb-8 overflow-hidden rounded-xl border p-6 shadow-sm"
+        className="mb-8 overflow-hidden rounded-xl border bg-card/50 p-6 shadow-sm"
       >
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex flex-col items-center gap-4 sm:flex-row">
@@ -250,652 +278,593 @@ export default function UserProfileClient({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="from-primary/30 to-primary/10 absolute -inset-0.5 rounded-full bg-gradient-to-br blur-md"
-              />
-              <Avatar className="border-background h-24 w-24 border-2 shadow-md">
-                <AvatarImage src={profile.avatar} alt={profile.name} />
-                <AvatarFallback className="text-xl">
-                  {profile.name.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-
-              {profile.rank <= 3 && (
-                <div className="absolute -right-1 -top-1 flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg">
-                  <Trophy className="h-4 w-4" />
+                className="relative"
+              >
+                <Avatar className="h-20 w-20 ring-2 ring-primary ring-offset-2 ring-offset-background sm:h-24 sm:w-24">
+                  <AvatarImage src={profile.avatar} alt={profile.name} />
+                  <AvatarFallback className="text-lg">
+                    {profile.name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -top-1 -right-1 rounded-full border border-background bg-background p-1 shadow-md dark:bg-card">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold text-primary">
+                    {level}
+                  </div>
                 </div>
-              )}
+              </motion.div>
             </div>
-
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-3xl font-bold">{profile.name}</h1>
-                {profile.rank <= 10 && (
-                  <Badge className="bg-amber-500/20 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
-                    <Trophy className="mr-1 h-3.5 w-3.5" />
-                    Top {profile.rank <= 3 ? profile.rank : 10}
-                  </Badge>
+              <h1 className="text-3xl font-bold">{profile.name}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                {formattedJoinedDate && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Calendar className="mr-1 h-4 w-4" />
+                    {t('joined')}: {formattedJoinedDate}
+                  </div>
                 )}
-                <Badge variant="outline" className="bg-card">
-                  <Bolt className="mr-1 h-3.5 w-3.5 text-blue-500" />
-                  {t('profile-header.level')} {level}
-                </Badge>
-              </div>
-
-              <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <span className="flex items-center">
-                  <Calendar className="mr-1.5 h-4 w-4" />
-                  {t('profile-header.joined')} {formattedJoinedDate}
-                </span>
-
-                <span className="hidden sm:inline-block">•</span>
-
-                <span className="flex items-center">
-                  <Trophy className="mr-1.5 h-4 w-4 text-amber-500" />
-                  <span className="text-foreground font-medium">
-                    {t('rank')} {profile.rank}
-                  </span>
-                </span>
-
-                <span className="hidden sm:inline-block">•</span>
-
-                <span className="flex items-center">
-                  <Users className="mr-1.5 h-4 w-4" />
-                  {profile.challengeCount}{' '}
-                  {profile.challengeCount === 1
-                    ? t('challenge')
-                    : t('challenges')}
-                </span>
-              </div>
-
-              {profile.totalScore > 0 && (
-                <div className="mt-3">
-                  <Badge
-                    variant="outline"
-                    className="border-primary/30 bg-primary/5 text-primary"
-                  >
-                    <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                    {profile.totalScore.toLocaleString()}{' '}
-                    {t('profile-header.points')}
-                  </Badge>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Trophy className="mr-1 h-4 w-4" />
+                  {t('rank')}: #{profile.rank}
                 </div>
-              )}
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Target className="mr-1 h-4 w-4" />
+                  {t('score')}: {profile.totalScore.toFixed(1)}
+                </div>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <BookOpen className="mr-1 h-4 w-4" />
+                  {t('challenges.title')}: {profile.challengeCount}
+                </div>
+              </div>
             </div>
           </div>
-
-          <div className="flex flex-wrap gap-2 self-end sm:self-center">
+          <div className="flex items-center gap-2 self-end">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleShare}
+                    size="icon"
+                    variant="outline"
+                    className="rounded-full"
+                  >
+                    {copied ? (
+                      <motion.span
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                      >
+                        ✓
+                      </motion.span>
+                    ) : (
+                      <Share2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('share-profile')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             {isCurrentUser && (
-              <Button variant="outline">
-                {t('profile-header.edit-profile')}
+              <Button
+                onClick={() => router.push('/settings/profile')}
+                variant="outline"
+                className="gap-2 rounded-full"
+              >
+                <span>{t('edit-profile')}</span>
               </Button>
             )}
-            <Button
-              variant="secondary"
-              className="flex items-center gap-1"
-              onClick={handleShare}
-            >
-              {copied ? t('profile-header.copied') : t('profile-header.share')}
-              <Share2 className="ml-1.5 h-4 w-4" />
-            </Button>
-            <Button onClick={() => router.push('/leaderboard')}>
-              {t('profile-header.view-leaderboard')}
-              <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-            </Button>
           </div>
         </div>
 
-        {/* Level progress bar */}
+        {/* Level Progress */}
         <div className="mt-6">
-          <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">
-              {t('profile-header.level')} {level}
-            </span>
-            <span className="text-muted-foreground">
-              {Math.round(levelProgress)}% {t('profile-header.level-progress')}{' '}
-              {nextLevel}
-            </span>
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-sm font-medium">
+              {t('level')} {level}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {profile.totalScore.toFixed(1)} / {nextLevel * 500} {t('points')}
+            </div>
           </div>
-          <Progress value={levelProgress} className="bg-primary/10 h-2" />
+          <Progress value={levelProgress} className="h-2" />
         </div>
       </motion.div>
 
-      {/* Engagement stats bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4"
-      >
-        <Card className="border-background/80 bg-card/50 overflow-hidden">
-          <CardContent className="flex flex-col items-center justify-center p-0">
-            <div className="bg-primary/5 text-primary w-full py-2 text-center text-xs font-medium">
-              {t('info-tiles.score')}
-            </div>
-            <div className="flex h-24 w-full flex-col items-center justify-center">
-              <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full">
-                <Trophy className="h-5 w-5" />
-              </div>
-              <p className="mt-1 text-2xl font-bold">
-                {profile.totalScore.toLocaleString()}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-background/80 bg-card/50 overflow-hidden">
-          <CardContent className="flex flex-col items-center justify-center p-0">
-            <div className="w-full bg-amber-500/5 py-2 text-center text-xs font-medium text-amber-600 dark:text-amber-400">
-              {t('info-tiles.rank')}
-            </div>
-            <div className="flex h-24 w-full flex-col items-center justify-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
-                <Medal className="h-5 w-5" />
-              </div>
-              <p className="mt-1 text-2xl font-bold">#{profile.rank}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-background/80 bg-card/50 overflow-hidden">
-          <CardContent className="flex flex-col items-center justify-center p-0">
-            <div className="w-full bg-indigo-500/5 py-2 text-center text-xs font-medium text-indigo-600 dark:text-indigo-400">
-              {t('info-tiles.challenges')}
-            </div>
-            <div className="flex h-24 w-full flex-col items-center justify-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-500">
-                <BookOpen className="h-5 w-5" />
-              </div>
-              <p className="mt-1 text-2xl font-bold">
-                {profile.challengeCount}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-background/80 bg-card/50 overflow-hidden">
-          <CardContent className="flex flex-col items-center justify-center p-0">
-            <div className="w-full bg-green-500/5 py-2 text-center text-xs font-medium text-green-600 dark:text-green-400">
-              {t('info-tiles.achievements')}
-            </div>
-            <div className="flex h-24 w-full flex-col items-center justify-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10 text-green-500">
-                <Award className="h-5 w-5" />
-              </div>
-              <p className="mt-1 text-2xl font-bold">
-                {unlockedAchievements.length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Profile Content */}
-      <Tabs
-        defaultValue="overview"
-        className="w-full"
-        onValueChange={setActiveTab}
-      >
-        <TabsList className="mb-8 grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="overview">{t('overview-tab.name')}</TabsTrigger>
-          <TabsTrigger value="challenges">
-            {t('challenges-tab.name')}
-          </TabsTrigger>
-          <TabsTrigger value="achievements" ref={achievementsTabRef}>
-            {t('achievements-tab.name')}
-          </TabsTrigger>
-          <TabsTrigger value="activity" ref={activityTabRef}>
-            {t('activity-tab.name')}
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-8">
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Stats card */}
-            <Card className="border-background/80 bg-card/50 md:col-span-1">
+      {/* Main Content */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* Left Column - Stats and Achievements */}
+        <div className="flex flex-col gap-6 lg:col-span-1">
+          {/* Stats Overview Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Info className="h-5 w-5 text-blue-500" />
-                  {t('overview-tab.summary-title')}
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  {t('stats.title')}
                 </CardTitle>
+                <CardDescription>{t('stats.description')}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
-                    {t('overview-tab.summary-submissions')}
-                  </span>
-                  <span className="font-medium">
-                    {activityStats.totalSubmissions}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
-                    {t('overview-tab.summary-average-score')}
-                  </span>
-                  <span className="font-medium">
-                    {activityStats.avgScore.toFixed(1)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
-                    {t('overview-tab.summary-best-score')}
-                  </span>
-                  <span className="font-medium">
-                    {activityStats.bestScore.toFixed(1)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Best challenge */}
-            {bestChallenge && (
-              <Card className="border-primary/10 bg-card/50 overflow-hidden md:col-span-2">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Trophy className="h-5 w-5 text-amber-500" />
-                      {t('overview-tab.challenge-title')}
-                    </CardTitle>
-                    <Badge className="bg-primary/20 text-primary">
-                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                      {t('overview-tab.challenge-top-score')}{' '}
-                      {bestChallenge.score}
-                    </Badge>
+              <CardContent className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm text-muted-foreground">
+                      {t('stats.total-score')}
+                    </span>
+                    <span className="text-2xl font-bold">
+                      {profile.totalScore.toFixed(1)}
+                    </span>
                   </div>
-                  <CardDescription>
-                    {t('overview-tab.challenge-description')}{' '}
-                    {isCurrentUser
-                      ? locale === 'vi'
-                        ? 'bạn'
-                        : 'you'
-                      : profile.name}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold">
-                      {bestChallenge.title}
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {bestChallenge.description}
-                    </p>
-                    <div className="mt-4">
-                      <div className="mb-2 flex items-center justify-between text-sm">
-                        <span>{t('overview-tab.challenge-performance')}</span>
-                        <span className="font-medium">
-                          {Math.min(
-                            100,
-                            Math.round((bestChallenge.score / 10) * 100)
-                          )}
-                          %
-                        </span>
-                      </div>
-                      <Progress
-                        value={Math.min(
-                          100,
-                          Math.round((bestChallenge.score / 10) * 100)
-                        )}
-                        className="h-2"
-                      />
+                  <div className="flex flex-col">
+                    <span className="text-sm text-muted-foreground">
+                      {t('stats.rank')}
+                    </span>
+                    <span className="text-2xl font-bold">#{profile.rank}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-muted-foreground">
+                      {t('stats.problems-attempted')}
+                    </span>
+                    <span className="text-2xl font-bold">
+                      {profile.problemCount}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-muted-foreground">
+                      {t('stats.challenges')}
+                    </span>
+                    <span className="text-2xl font-bold">
+                      {profile.challengeCount}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Overall Progress */}
+                <div className="mt-2">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      {t('stats.overall-progress')}
+                    </span>
+                    <span
+                      className={`text-sm font-medium ${overallStatus.color}`}
+                    >
+                      {overallStatus.text}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Progress
+                      value={profile.problemsAttemptedPercentage}
+                      className="h-2"
+                    />
+                    <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                      <span>
+                        {profile.problemCount} /{' '}
+                        {profile.totalAvailableProblems} {t('stats.problems')}
+                      </span>
+                      <span>
+                        {Math.round(profile.problemsAttemptedPercentage)}%
+                      </span>
                     </div>
                   </div>
-                </CardContent>
-                <CardFooter className="bg-muted/10 border-t px-6 py-3">
-                  <Button
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-foreground ml-auto text-sm"
-                    onClick={() => {
-                      if (achievementsTabRef.current) {
-                        achievementsTabRef.current.click();
-                      }
-                    }}
-                  >
-                    {t('overview-tab.challenge-view-all')}
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            )}
-          </div>
-
-          {/* Achievement thumbnails */}
-          {unlockedAchievements.length > 0 && (
-            <Card className="border-accent/10 bg-card/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-green-500" />
-                  {t('overview-tab.achievements-title')}
-                </CardTitle>
-                <CardDescription>
-                  {t('overview-tab.achievements-description')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ThumbnailGrid
-                  items={unlockedAchievements
-                    .slice(0, 6)
-                    .map((achievement) => ({
-                      id: achievement.id,
-                      title: achievement.title,
-                      description: achievement.description,
-                      icon: achievement.icon,
-                      color: achievement.color,
-                      bgColor: achievement.bgColor,
-                    }))}
-                  columns={{ sm: 2, md: 3 }}
-                />
-
-                {unlockedAchievements.length > 6 && (
-                  <Button
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-foreground mt-4 w-full"
-                    onClick={() => {
-                      if (achievementsTabRef.current) {
-                        achievementsTabRef.current.click();
-                      }
-                    }}
-                  >
-                    {t('overview-tab.achievements-view-all')}
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Recent activity summary */}
-          {profile.recentActivity.length > 0 && (
-            <Card className="border-accent/10 bg-card/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-500" />
-                  {t('overview-tab.activity-title')}
-                </CardTitle>
-                <CardDescription>
-                  {t('overview-tab.activity-description')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-4">
-                  {profile.recentActivity.slice(0, 3).map((activity, index) => (
-                    <motion.li
-                      key={activity.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className="bg-card/50 hover:bg-card/80 overflow-hidden rounded-lg border shadow-sm transition-all"
-                    >
-                      <div className="flex items-center justify-between gap-4 p-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
-                            <ScrollText className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="font-medium">
-                              {activity.problemTitle}
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                              {formatDistanceToNow(new Date(activity.date), {
-                                addSuffix: true,
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge
-                          variant={
-                            activity.score >= 8
-                              ? 'success'
-                              : activity.score >= 5
-                                ? 'default'
-                                : 'outline'
-                          }
-                          className="flex-shrink-0"
-                        >
-                          {t('score')}: {activity.score}
-                        </Badge>
-                      </div>
-                    </motion.li>
-                  ))}
-                </ul>
-                {profile.recentActivity.length > 3 && (
-                  <Button
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-foreground mt-4 w-full"
-                    onClick={() => {
-                      if (activityTabRef.current) {
-                        activityTabRef.current.click();
-                      }
-                    }}
-                  >
-                    {t('overview-tab.activity-view-all')}
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Challenges Tab */}
-        <TabsContent value="challenges" className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('challenges-tab.title')}</CardTitle>
-              <CardDescription>
-                {t('challenges-tab.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {profile.challenges.length > 0 ? (
-                <ul className="space-y-4">
-                  {profile.challenges.map((challenge, index) => (
-                    <motion.li
-                      key={challenge.id}
-                      className="hover:bg-accent/5 rounded-lg border p-4 transition-colors"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                    >
-                      <div className="mb-2 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">
-                          {challenge.title}
-                        </h3>
-                        <Badge
-                          variant={
-                            challenge.score >= 80
-                              ? 'success'
-                              : challenge.score >= 50
-                                ? 'default'
-                                : 'outline'
-                          }
-                          className={cn(
-                            'transition-all',
-                            challenge.score >= 9.5 &&
-                              'border-transparent bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:from-amber-500 hover:to-orange-600'
-                          )}
-                        >
-                          {challenge.score >= 9.5 && (
-                            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                          )}
-                          {t('score')}: {challenge.score}
-                        </Badge>
-                      </div>
-                      <p className="text-muted-foreground mb-3 line-clamp-2 text-sm">
-                        {challenge.description}
-                      </p>
-                      <div className="mt-2">
-                        <div className="mb-1 flex items-center justify-between text-xs">
-                          <span>{t('challenges-tab.progress')}</span>
-                          <span>
-                            {Math.min(
-                              100,
-                              Math.floor((challenge.score / 10) * 100)
-                            )}
-                            %
-                          </span>
-                        </div>
-                        <Progress
-                          value={Math.min(
-                            100,
-                            Math.floor((challenge.score / 10) * 100)
-                          )}
-                          className={cn(
-                            'h-2',
-                            challenge.score >= 9.5
-                              ? 'bg-gradient-to-r from-amber-200 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30'
-                              : ''
-                          )}
-                        />
-                      </div>
-                    </motion.li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="flex h-24 items-center justify-center">
-                  <p className="text-muted-foreground text-center">
-                    {t('challenges-tab.no-challenges')}
-                  </p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Achievements Tab */}
-        <TabsContent value="achievements" className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('achievements-tab.title')}</CardTitle>
-              <CardDescription>
-                {t('achievements-tab.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                {achievements.map((achievement, index) => (
-                  <motion.div
+                {/* Nearby Ranks */}
+                {profile.nearbyRanks.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="mb-2 text-sm font-medium">
+                      {t('stats.leaderboard-position')}
+                    </h4>
+                    <div className="space-y-2 rounded-md bg-muted/30 p-2">
+                      {profile.nearbyRanks.map((rank, index) => {
+                        const rankNumber =
+                          profile.rank -
+                          (profile.nearbyRanks.findIndex(
+                            (r) => r.isCurrentUser
+                          ) -
+                            index);
+                        return (
+                          <div
+                            key={rank.id}
+                            className={`flex items-center justify-between rounded-md p-2 text-sm ${
+                              rank.isCurrentUser
+                                ? 'bg-primary/10 font-medium'
+                                : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">
+                                #{rankNumber}
+                              </span>
+                              {rank.isCurrentUser ? (
+                                <span>{profile.name}</span>
+                              ) : (
+                                <span>User</span>
+                              )}
+                            </div>
+                            <span className="font-medium">
+                              {rank.score.toFixed(1)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Achievements Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5 text-primary" />
+                  {t('achievements.title')}
+                </CardTitle>
+                <CardDescription>
+                  {unlockedAchievements.length} {t('achievements.unlocked')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                {achievements.map((achievement) => (
+                  <div
                     key={achievement.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
                     className={cn(
-                      'relative rounded-lg border p-4 transition-all',
+                      'flex items-start gap-3 rounded-lg p-3 transition-colors',
                       achievement.unlocked
-                        ? 'border-primary/20 bg-primary/5'
-                        : 'border-dashed opacity-50'
+                        ? achievement.bgColor
+                        : 'bg-muted/30 opacity-70 saturate-0'
                     )}
                   >
                     <div
                       className={cn(
-                        'mb-3 flex h-12 w-12 items-center justify-center rounded-full',
+                        'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
                         achievement.unlocked
                           ? achievement.bgColor
-                          : 'bg-muted/20',
-                        achievement.unlocked
-                          ? achievement.color
-                          : 'text-muted-foreground'
+                          : 'bg-muted/50'
                       )}
                     >
-                      {achievement.icon}
-                    </div>
-                    <h3 className="text-lg font-semibold">
-                      {achievement.title}
-                    </h3>
-                    <p className="text-muted-foreground text-sm">
-                      {achievement.description}
-                    </p>
-                    {achievement.unlocked && (
-                      <Badge
-                        className={cn('bg-primary/10 mt-3', achievement.color)}
+                      <div
+                        className={cn(
+                          achievement.unlocked
+                            ? achievement.color
+                            : 'text-muted-foreground'
+                        )}
                       >
-                        <Sparkles className="mr-1 h-3 w-3" />
-                        {t('achievements-tab.unlocked')}
-                      </Badge>
-                    )}
-                    {!achievement.unlocked && (
-                      <Badge variant="outline" className="mt-3">
-                        <Lock className="mr-1 h-3 w-3" />
-                        {t('achievements-tab.locked')}
-                      </Badge>
-                    )}
-                  </motion.div>
+                        {achievement.icon}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="leading-none font-medium">
+                        {achievement.title}
+                        {!achievement.unlocked && (
+                          <Lock className="ml-1 inline h-3 w-3 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="mt-1 text-sm text-muted-foreground">
+                        {achievement.description}
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
 
-        {/* Activity Tab */}
-        <TabsContent value="activity" className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('activity-tab.title')}</CardTitle>
-              <CardDescription>{t('activity-tab.description')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {profile.recentActivity.length > 0 ? (
-                <div className="space-y-8">
-                  {profile.recentActivity.map((activity, index) => (
-                    <motion.div
-                      key={activity.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="hover:bg-accent/5 relative ml-6 rounded-lg border p-4 transition-colors"
-                    >
-                      <div className="bg-primary/10 text-primary absolute -left-10 flex h-8 w-8 items-center justify-center rounded-full">
-                        <Clock className="h-4 w-4" />
+        {/* Right Column - Tabs for Challenges, Activity, etc */}
+        <div className="lg:col-span-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="mb-4 grid h-auto w-full grid-cols-3">
+                <TabsTrigger value="overview">
+                  <Bolt className="mr-2 h-4 w-4" /> {t('tabs.overview')}
+                </TabsTrigger>
+                <TabsTrigger value="challenges">
+                  <Trophy className="mr-2 h-4 w-4" /> {t('tabs.challenges')}
+                </TabsTrigger>
+                <TabsTrigger value="activity">
+                  <Clock className="mr-2 h-4 w-4" /> {t('tabs.activity')}
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-6">
+                {/* Best Performance */}
+                {bestChallenge && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-dynamic-yellow" />
+                        {t('overview.best-performance')}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <h3 className="text-lg font-medium">
+                            {bestChallenge.title}
+                          </h3>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {bestChallenge.description}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center text-xl font-bold text-dynamic-yellow">
+                            {bestChallenge.score.toFixed(1)}
+                            <Trophy className="ml-1 h-5 w-5" />
+                          </div>
+                          <div className="text-sm">
+                            {bestChallenge.attemptedProblems} /{' '}
+                            {bestChallenge.problemCount}{' '}
+                            {t('overview.problems')}
+                          </div>
+                        </div>
                       </div>
-                      <div className="mb-2 flex items-center justify-between">
-                        <h3 className="font-semibold">
-                          {activity.problemTitle}
-                        </h3>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <p className="text-muted-foreground text-xs">
+                    </CardContent>
+                    <CardFooter className="pt-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="ml-auto"
+                        asChild
+                      >
+                        <Link href={`/challenges/${bestChallenge.id}`}>
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          {t('overview.view-challenge')}
+                        </Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                )}
+
+                {/* Recent Activity Summary */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-blue-500" />
+                      {t('overview.recent-activity')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-6 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2">
+                        <div className="text-sm text-muted-foreground">
+                          {t('overview.problem-submissions')}
+                        </div>
+                        <div className="text-3xl font-bold">
+                          {activityStats.totalSubmissions}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <div className="text-sm text-muted-foreground">
+                          {t('overview.avg-score')}
+                        </div>
+                        <div className="text-3xl font-bold">
+                          {activityStats.avgScore.toFixed(1)}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <div className="text-sm text-muted-foreground">
+                          {t('overview.best-score')}
+                        </div>
+                        <div className="text-3xl font-bold">
+                          {activityStats.bestScore.toFixed(1)}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <div className="text-sm text-muted-foreground">
+                          {t('overview.last-active')}
+                        </div>
+                        <div className="text-xl font-bold">
+                          {activityStats.lastActive}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Top Problem Scores */}
+                {profile.bestProblemScores.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="h-5 w-5 text-violet-500" />
+                        {t('overview.top-problems')}
+                      </CardTitle>
+                      <CardDescription>
+                        {t('overview.top-problems-description')}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {profile.bestProblemScores
+                          .sort((a, b) => b.score - a.score)
+                          .slice(0, 5)
+                          .map((problem, i) => (
+                            <div
+                              key={problem.id}
+                              className="flex items-center justify-between rounded-md bg-muted/30 p-2 text-sm"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    i === 0
+                                      ? 'border-dynamic-yellow/10 bg-dynamic-yellow/10 text-dynamic-yellow'
+                                      : i === 1
+                                        ? 'border-dynamic-yellow/10 bg-dynamic-yellow/10 text-dynamic-yellow'
+                                        : i === 2
+                                          ? 'border-dynamic-yellow/10 bg-dynamic-yellow/10 text-dynamic-yellow'
+                                          : 'bg-muted/30'
+                                  )}
+                                >
+                                  #{i + 1}
+                                </Badge>
+                                <span>Problem</span>
+                              </div>
+                              <div className="font-medium">
+                                {problem.score.toFixed(1)} / 10
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              {/* Challenges Tab */}
+              <TabsContent value="challenges" className="space-y-6">
+                {profile.challenges.length > 0 ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {profile.challenges
+                      .sort((a, b) => b.score - a.score)
+                      .map((challenge) => (
+                        <Card key={challenge.id} className="overflow-hidden">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="truncate text-lg">
+                              {challenge.title}
+                            </CardTitle>
+                            <CardDescription className="line-clamp-2">
+                              {challenge.description}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="mb-2 flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <ScrollText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">
+                                  {challenge.attemptedProblems} /{' '}
+                                  {challenge.problemCount}{' '}
+                                  {t('challenges.problems')}
+                                </span>
+                              </div>
+                              <div className="text-xl font-bold">
+                                {challenge.score.toFixed(1)}
+                              </div>
+                            </div>
+
+                            {/* Progress bar for challenge completion */}
+                            <div className="mt-2">
+                              <Progress
+                                value={
+                                  (challenge.attemptedProblems /
+                                    Math.max(1, challenge.problemCount)) *
+                                  100
+                                }
+                                className="h-2"
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="p-10 text-center">
+                    <ScrollText className="mx-auto h-10 w-10 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-medium">
+                      {t('challenges.no-challenges')}
+                    </h3>
+                    <p className="mt-2 text-muted-foreground">
+                      {t('challenges.no-challenges-description')}
+                    </p>
+                    <Button className="mt-4" asChild>
+                      <Link href="/challenges">
+                        {t('challenges.browse-challenges')}
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Activity Tab */}
+              <TabsContent value="activity">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-primary" />
+                      {t('activity.recent')}
+                    </CardTitle>
+                    <CardDescription>
+                      {t('activity.description')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {profile.recentActivity.length > 0 ? (
+                      <div className="space-y-4">
+                        {profile.recentActivity.map((activity) => (
+                          <div
+                            key={activity.id}
+                            className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <div>
+                              <div className="font-medium">
+                                {activity.problemTitle}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
                                 {format(new Date(activity.date), 'PPP p')}
-                              </p>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>
-                                {formatDistanceToNow(new Date(activity.date), {
-                                  addSuffix: true,
-                                })}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+                              <div className="text-2xl font-bold">
+                                {activity.score.toFixed(1)}
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  activity.score >= 9
+                                    ? 'border-dynamic-green/10 bg-dynamic-green/10 text-dynamic-green'
+                                    : activity.score >= 7
+                                      ? 'border-dynamic-blue/10 bg-dynamic-blue/10 text-dynamic-blue'
+                                      : activity.score >= 5
+                                        ? 'border-dynamic-yellow/10 bg-dynamic-yellow/10 text-dynamic-yellow'
+                                        : 'border-dynamic-red/10 bg-dynamic-red/10 text-dynamic-red'
+                                }
+                              >
+                                {activity.score >= 9
+                                  ? t('activity.excellent')
+                                  : activity.score >= 7
+                                    ? t('activity.good')
+                                    : activity.score >= 5
+                                      ? t('activity.average')
+                                      : t('activity.needs-work')}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-muted-foreground text-sm">
-                          {t('activity-tab.submitted-solution')}
+                    ) : (
+                      <div className="p-6 text-center">
+                        <Clock className="mx-auto h-10 w-10 text-muted-foreground" />
+                        <h3 className="mt-4 text-lg font-medium">
+                          {t('activity.no-activity')}
+                        </h3>
+                        <p className="mt-2 text-muted-foreground">
+                          {t('activity.no-activity-description')}
                         </p>
-                        <Badge
-                          variant={
-                            activity.score >= 8
-                              ? 'success'
-                              : activity.score >= 5
-                                ? 'default'
-                                : 'outline'
-                          }
-                        >
-                          {t('score')}: {activity.score}
-                        </Badge>
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex h-24 items-center justify-center">
-                  <p className="text-muted-foreground text-center">
-                    {t('activity-tab.no-activity')}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
 }

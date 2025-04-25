@@ -1916,8 +1916,64 @@
       },
       "rank": "Rank #",
       "challenge": "Challenge",
-      "challenges": "Challenges",
+      "challenges": {
+        "title": "Challenges",
+        "problems": "problems",
+        "no-challenges": "No Challenges Yet",
+        "no-challenges-description": "You haven't attempted any challenges yet. Browse available challenges to get started.",
+        "browse-challenges": "Browse Challenges"
+      },
       "score": "Score",
+      "joined": "Joined",
+      "level": "Level",
+      "points": "points",
+      "share-profile": "Share profile",
+      "edit-profile": "Edit profile",
+      "tabs": {
+        "overview": "Overview",
+        "challenges": "Challenges",
+        "activity": "Activity"
+      },
+      "progress": {
+        "excellent": "Excellent",
+        "great": "Great job",
+        "good": "Good progress",
+        "progress": "Keep going",
+        "started": "Just started"
+      },
+      "stats": {
+        "title": "Statistics",
+        "description": "Your performance at a glance",
+        "total-score": "Total Score",
+        "rank": "Rank",
+        "problems-attempted": "Problems Attempted",
+        "challenges": "Challenges",
+        "overall-progress": "Overall Progress",
+        "problems": "problems",
+        "leaderboard-position": "Leaderboard Position"
+      },
+      "overview": {
+        "best-performance": "Best Challenge Performance",
+        "recent-activity": "Recent Activity",
+        "problem-submissions": "Problem Submissions",
+        "avg-score": "Average Score",
+        "best-score": "Best Score",
+        "last-active": "Last Active",
+        "top-problems": "Top Problem Scores",
+        "top-problems-description": "Your highest-scoring problem solutions",
+        "problems": "problems",
+        "view-challenge": "View Challenge"
+      },
+      "activity": {
+        "recent": "Recent Activity",
+        "description": "Your latest prompt engineering submissions",
+        "excellent": "Excellent",
+        "good": "Good",
+        "average": "Average",
+        "needs-work": "Needs Work",
+        "no-activity": "No Recent Activity",
+        "no-activity-description": "You haven't submitted any solutions recently."
+      },
       "profile-header": {
         "joined": "Joined",
         "points": "Points",
@@ -1974,6 +2030,8 @@
         "no-activity": "No recent activity"
       },
       "achievements": {
+        "title": "Achievements",
+        "unlocked": "unlocked",
         "adopter": "Early Adopter",
         "adopter-description": "Joined during the platform's early days",
         "master": "Challenge Master",
