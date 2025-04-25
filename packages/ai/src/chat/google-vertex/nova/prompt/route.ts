@@ -115,7 +115,7 @@ export async function POST(
         { status: 500 }
       );
     }
-
+    console.log('first, teast case ', testCases);
     const { data: challengeCriteria, error: challengeCriteriaError } =
       await sbAdmin
         .from('nova_challenge_criteria')
@@ -159,6 +159,9 @@ export async function POST(
         },
       ],
     };
+    const testCaseSchema = z.object({
+      matched: z.boolean().describe('The output if they are likely matched'),
+    });
     const EvaluationSchema = z.object({
       testCaseEvaluation: z
         .array(
@@ -180,7 +183,6 @@ export async function POST(
         .describe('Array of criteria evaluations'),
     });
 
-    // System Instruction for Evaluation with strict JSON output
     const systemInstruction = `
   You are an examiner in a prompt engineering competition.
   You will be provided with:
@@ -224,7 +226,7 @@ export async function POST(
         system: systemInstruction,
       });
       evaluation = object;
-      console.log(object);
+      // console.log(object);
     } catch (error) {
       console.error('AI evaluation error:', error);
       return NextResponse.json(
@@ -255,27 +257,96 @@ export async function POST(
     submissionId = submission.id;
 
     // Step 4: Save test case results
+    // const testCaseEvaluation = evaluation.testCaseEvaluation || [];
+    // const testCaseInserts: NovaSubmissionTestCase[] = testCaseEvaluation
+    //   .map((testCase) => {
+    //     const matchingTestCase = testCases.find(
+    //       (tc) => tc.input === testCase.input
+    //     );
+    //     if (matchingTestCase) {
+    //       const matched = matchingTestCase.output === testCase.output;
+    //       console.log(
+    //         `Test case input: ${testCase.input}, AI output: ${testCase.output}, Expected output: ${matchingTestCase.output}, Matched: ${matched}`
+    //       );
+    //       return {
+    //         submission_id: submission.id,
+    //         test_case_id: matchingTestCase.id,
+    //         output: testCase.output,
+    //         matched,
+    //       };
+    //     }
+    //     return null;
+    //   })
+    //   .filter((item): item is NovaSubmissionTestCase => item !== null);
+
+    // if (testCaseInserts.length > 0) {
+    //   const { error: testCaseInsertsError } = await sbAdmin
+    //     .from('nova_submission_test_cases')
+    //     .insert(testCaseInserts);
+
+    //   if (testCaseInsertsError) {
+    //     throw new Error('Failed to create test case results');
+    //   }
+    // }
+
+    // Step 4: Save test case results (MODIFIED)
     const testCaseEvaluation = evaluation.testCaseEvaluation || [];
-    const testCaseInserts: NovaSubmissionTestCase[] = testCaseEvaluation
-      .map((testCase) => {
-        const matchingTestCase = testCases.find(
-          (tc) => tc.input === testCase.input
+    const testCaseInserts: NovaSubmissionTestCase[] = [];
+
+    for (const testCase of testCaseEvaluation) {
+      const matchingTestCase = testCases.find(
+        (tc) => tc.input === testCase.input
+      );
+      if (matchingTestCase) {
+        console.log(
+          `Evaluating test case - Input: ${testCase.input}, AI Output: ${testCase.output}, Expected: ${matchingTestCase.output}`
         );
-        if (matchingTestCase) {
-          const matched = matchingTestCase.output === testCase.output;
-          console.log(
-            `Test case input: ${testCase.input}, AI output: ${testCase.output}, Expected output: ${matchingTestCase.output}, Matched: ${matched}`
-          );
-          return {
-            submission_id: submission.id,
-            test_case_id: matchingTestCase.id,
-            output: testCase.output,
-            matched,
-          };
+
+        // --- LLM-based evaluation ---
+        const evaluationPrompt = `
+          You are an expert judge evaluating the output of a language model against an expected answer for a prompt engineering problem.
+
+          Problem Description: ${problem.description}
+          Expected Output: ${matchingTestCase.output}
+          Language Model Output: ${testCase.output}
+
+          Based on the problem description and the expected output, determine if the language model's output is semantically equivalent or sufficiently similar to be considered correct. Consider synonyms, paraphrasing, and different ways of expressing the same information.
+
+          Respond with "true" if the outputs are likely a match, and "false" otherwise. Justification (optional, but helpful for debugging): <your justification>
+        `;
+
+        let isMatch = false;
+        try {
+          const { object } = await generateObject({
+            model: vertexModel,
+            schema: testCaseSchema,
+            prompt,
+            system: evaluationPrompt,
+          });
+          // const { content: evaluationResult } = await vertexModel.generateContent(
+          //   evaluationPrompt
+          // );
+          // const textResult = evaluationResult?.parts?.[0]?.text
+          //   ?.toLowerCase()
+          //   .trim();
+          // isMatch = textResult === 'true'; // Adjust based on your desired response format
+          console.log(`Evaluation Result: ${JSON.stringify(isMatch)}`);
+          isMatch = object.matched;
+        } catch (error) {
+          console.error('Error evaluating test case with LLM:', error);
+          // Handle evaluation errors gracefully - maybe default to false or log for review
+          isMatch = false;
         }
-        return null;
-      })
-      .filter((item): item is NovaSubmissionTestCase => item !== null);
+        // --- End LLM-based evaluation ---
+
+        testCaseInserts.push({
+          submission_id: submission.id,
+          test_case_id: matchingTestCase.id,
+          output: testCase.output,
+          matched: isMatch,
+        });
+      }
+    }
 
     if (testCaseInserts.length > 0) {
       const { error: testCaseInsertsError } = await sbAdmin
@@ -287,6 +358,10 @@ export async function POST(
       }
     }
 
+    // const testCaseEvaluation = evaluation.testCaseEvaluation || [];
+    // const testCaseInserts: NovaSubmissionTestCase[] = [];
+
+    // for(const testcase of )
     // Step 5: Save criteria evaluations
     const criteriaEvaluation = evaluation.criteriaEvaluation || [];
     const criteriaInserts: NovaSubmissionCriteria[] = criteriaEvaluation
