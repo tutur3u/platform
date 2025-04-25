@@ -29,6 +29,10 @@ export default async function Page({ searchParams }: Props) {
   );
 }
 
+// The problem's score for each session is the maximum score of user's submissions for that problem in that session
+// The challenge's score for each session is the sum of the problem's scores for that challenge in that session
+// Then the official challenge score for each user is the maximum challenge score from any session
+// The leaderboard score for each user is the sum of the official challenge scores for all challenges
 async function fetchLeaderboard(locale: string, page: number = 1) {
   const limit = 100;
   const sbAdmin = await createAdminClient();
