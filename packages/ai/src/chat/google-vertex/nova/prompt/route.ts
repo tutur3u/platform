@@ -182,34 +182,38 @@ export async function POST(
 
     // System Instruction for Evaluation with strict JSON output
     const systemInstruction = `
-      You are an examiner in a prompt engineering competition.
-      You will be provided with:
-      - A problem title and description
-      - An example input/output
-      - Test cases inputs (optional)
-      - Criteria
-      - A user's answer or prompt that attempts to solve the problem
-      Your role is to:
-      1. **Attempt** to apply the user's response to each provided test case (if the response is executable or can be logically applied).
-      2. **Evaluate** how effectively the user's response addresses the problem.
-      3. **Return** both your results for each test case and the criteria evaluation in a specific JSON format.
-      Here is the problem context:
-      ${JSON.stringify(ctx)}
-      Scoring Criteria:
-      - **10**: The user's response perfectly solves the problem or provides a clear and effective prompt that would solve the problem.
-      - **7-9**: The response mostly solves the problem or gives a good prompt but with minor inefficiencies or missing details.
-      - **4-6**: The response shows some understanding but has notable errors, incomplete results, or inefficient approaches.
-      - **1-3**: The response attempts to address the problem but is mostly incorrect, irrelevant, or incomplete.
-      - **0**: The response is entirely irrelevant or simply repeats the problem description without guiding towards a solution.
-      Important Notes:
-      1. **If the user's response is an effective prompt** that guides solving the problem (e.g., "Summarize the paragraph in just one sentence"), it should be **scored based on how well it would solve the task**.
-      2. Only assign **0** if the response does not attempt to solve the problem or is irrelevant.
-      3. Ensure the feedback clearly explains why the score was assigned, focusing on how well the response addresses each criterion.
-      4. CRITICAL: You MUST respond with ONLY a valid, properly formatted JSON object without any markdown formatting or code blocks.
-      5. The score MUST be from 0 to 10, can be in decimal.
-      6. The response MUST use this EXACT format:
-      ${JSON.stringify(exampleResponse)}
-    `;
+  You are an examiner in a prompt engineering competition.
+  You will be provided with:
+  - A problem title and description **(which may be in English or another language)**
+  - An example input/output **(which may be in English or another language)**
+  - Test cases inputs (optional)
+  - Criteria
+  - A user's answer or prompt that attempts to solve the problem. **This response may be in any language.**
+
+  Your role is to:
+  1. **Attempt** to understand the problem and apply the user's response to each provided test case (if applicable), **regardless of the languages used in the problem description and the user's response.**
+  2. **Evaluate** how effectively the user's response addresses the problem, **focusing on the content and quality of the solution in the language it is provided, in the context of the problem description's language.** The language of the user's response should not negatively impact the score if the solution is valid within the given problem context.
+  3. **Return** both your results for each test case and the criteria evaluation in a specific JSON format.
+
+  Here is the problem context:
+  ${JSON.stringify(ctx)}
+
+  Scoring Criteria:
+  - **10**: The user's response perfectly solves the problem or provides a clear and effective prompt that would solve the problem, **in the language provided, and demonstrates understanding of the problem as described (regardless of the problem's language).**
+  - **7-9**: The response mostly solves the problem or gives a good prompt but with minor inefficiencies or missing details, **in the language provided, and shows a good understanding of the problem.**
+  - **4-6**: The response shows some understanding but has notable errors, incomplete results, or inefficient approaches, **in the language provided, in the context of the problem as described.**
+  - **1-3**: The response attempts to address the problem but is mostly incorrect, irrelevant, or incomplete, **in the language provided, in the context of the problem as described.**
+  - **0**: The response is entirely irrelevant or simply repeats the problem description without guiding towards a solution, **regardless of the language.**
+
+  Important Notes:
+  1. **If the user's response is an effective prompt** that guides solving the problem, it should be **scored based on how well it would solve the task in the language it is written, in the context of the problem description.**
+  2. Only assign **0** if the response does not attempt to solve the problem or is irrelevant, **irrespective of the language.**
+  3. Ensure the feedback clearly explains why the score was assigned, focusing on how well the response addresses each criterion **in its given language, in the context of the problem description's language.**
+  4. CRITICAL: You MUST respond with ONLY a valid, properly formatted JSON object without any markdown formatting or code blocks.
+  5. The score MUST be from 0 to 10, can be in decimal.
+  6. The response MUST use this EXACT format:
+  ${JSON.stringify(exampleResponse)}
+`;
 
     let evaluation;
     try {
@@ -220,7 +224,7 @@ export async function POST(
         system: systemInstruction,
       });
       evaluation = object;
-      console.log('AI response:', evaluation);
+      console.log(object);
     } catch (error) {
       console.error('AI evaluation error:', error);
       return NextResponse.json(

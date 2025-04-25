@@ -6166,6 +6166,13 @@ export type Database = {
             };
         Returns: string;
       };
+      get_challenge_stats: {
+        Args: { challenge_id_param: string; user_id_param: string };
+        Returns: {
+          total_score: number;
+          problems_attempted: number;
+        }[];
+      };
       get_daily_income_expense: {
         Args: { _ws_id: string; past_days?: number };
         Returns: {
@@ -6483,6 +6490,22 @@ export type Database = {
       is_user_task_in_board: {
         Args: { _user_id: string; _task_id: string };
         Returns: boolean;
+      };
+      nova_get_all_challenges_with_user_stats: {
+        Args: { user_id: string };
+        Returns: Json;
+      };
+      nova_get_challenge_with_user_stats: {
+        Args: { challenge_id: string; user_id: string };
+        Returns: Json;
+      };
+      nova_get_user_daily_sessions: {
+        Args: { challenge_id: string; user_id: string };
+        Returns: number;
+      };
+      nova_get_user_total_sessions: {
+        Args: { challenge_id: string; user_id: string };
+        Returns: number;
       };
       revoke_all_cross_app_tokens: {
         Args: { p_user_id: string };

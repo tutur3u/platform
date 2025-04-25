@@ -2,11 +2,7 @@
 
 import ChallengeForm, { ChallengeFormValues } from './challengeForm';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  NovaChallenge,
-  NovaChallengeCriteria,
-  NovaChallengeWhitelistedEmail,
-} from '@tuturuuu/types/db';
+import { type NovaExtendedChallenge } from '@tuturuuu/types/db';
 import {
   Dialog,
   DialogContent,
@@ -19,14 +15,8 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
-type ExtendedNovaChallenge = NovaChallenge & {
-  criteria: NovaChallengeCriteria[];
-  whitelists: NovaChallengeWhitelistedEmail[];
-  managingAdmins?: string[];
-};
-
 interface Props {
-  challenge: ExtendedNovaChallenge;
+  challenge: NovaExtendedChallenge;
   trigger: React.ReactNode;
 }
 
@@ -45,16 +35,17 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       description: challenge.description,
       maxAttempts: challenge.max_attempts,
       maxDailyAttempts: challenge.max_daily_attempts,
-      criteria: challenge.criteria.map((c) => ({
-        id: c.id,
-        name: c.name,
-        description: c.description,
-      })),
+      criteria:
+        challenge.criteria?.map((c) => ({
+          id: c.id,
+          name: c.name,
+          description: c.description,
+        })) || [],
       duration: challenge.duration,
       enablePassword: challenge.password_hash !== null,
       enabled: challenge.enabled,
       whitelistedOnly: challenge.whitelisted_only,
-      whitelistedEmails: challenge.whitelists.map((w) => w.email),
+      whitelistedEmails: challenge.whitelists?.map((w) => w.email) || [],
       managingAdmins: challenge.managingAdmins || [],
       openAt: challenge.open_at ? new Date(challenge.open_at) : null,
       closeAt: challenge.close_at ? new Date(challenge.close_at) : null,
@@ -96,9 +87,8 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
 
       // Criteria to delete (IDs that exist in old but not in new)
       const newCriteriaIds = new Set(values.criteria.map((c) => c.id));
-      const criteriaToDelete = challenge.criteria.filter(
-        (c) => !newCriteriaIds.has(c.id)
-      );
+      const criteriaToDelete =
+        challenge.criteria?.filter((c) => !newCriteriaIds.has(c.id)) || [];
 
       // Handle all criteria operations
       await Promise.allSettled([
@@ -135,12 +125,13 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       ]);
 
       const emailsToCreate = values.whitelistedEmails.filter(
-        (email) => !challenge.whitelists.map((w) => w.email).includes(email)
+        (email) => !challenge.whitelists?.map((w) => w.email).includes(email)
       );
 
-      const emailsToDelete = challenge.whitelists
-        .filter((w) => !values.whitelistedEmails.includes(w.email))
-        .map((w) => w.email);
+      const emailsToDelete =
+        challenge.whitelists
+          ?.filter((w) => !values.whitelistedEmails.includes(w.email))
+          .map((w) => w.email) || [];
 
       await Promise.allSettled([
         ...emailsToCreate.map((email) =>

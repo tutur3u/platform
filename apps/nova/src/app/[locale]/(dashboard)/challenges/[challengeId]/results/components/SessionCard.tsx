@@ -24,6 +24,8 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
 
+// Maximum score constant - each problem is worth 10 points
+const MAX_SCORE_PER_PROBLEM = 10;
 interface SessionCardProps {
   session: NovaSession & {
     problems: (NovaProblem & {
@@ -37,9 +39,6 @@ export default function SessionCard({
   session,
   sessionIndex,
 }: SessionCardProps) {
-  // Maximum score constant - each problem is worth 10 points
-  const MAX_SCORE_PER_PROBLEM = 10;
-
   // Calculate total score, problems attempted, and total submissions
   const totalScore = session.problems.reduce((sum, problem) => {
     const bestScore =
@@ -98,7 +97,7 @@ export default function SessionCard({
     problemsAttempted > 0 ? totalScore / problemsAttempted : 0;
 
   return (
-    <Card className="mb-4 overflow-hidden border">
+    <Card className="mb-4 overflow-hidden border-none">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -127,14 +126,10 @@ export default function SessionCard({
             </div>
           </div>
         </div>
-        <CardDescription className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
-          <span className="flex items-center">
-            Started: {startTime.toLocaleString()}
-          </span>
+        <CardDescription className="mt-2 flex flex-col gap-2">
+          <span>Started: {startTime.toLocaleString()}</span>
           {session.end_time && (
-            <span className="flex items-center">
-              Ended: {new Date(session.end_time).toLocaleString()}
-            </span>
+            <span>Ended: {new Date(session.end_time).toLocaleString()}</span>
           )}
         </CardDescription>
       </CardHeader>

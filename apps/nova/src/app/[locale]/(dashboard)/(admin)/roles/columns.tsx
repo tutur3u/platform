@@ -178,7 +178,8 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
                   email,
                   enabled,
                   allow_challenge_management: checked,
-                  allow_manage_all_challenges: allowManageAllChallenges,
+                  allow_manage_all_challenges:
+                    checked && allowManageAllChallenges,
                   allow_role_management: allowRoleManagement,
                 })
               }
@@ -230,7 +231,7 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
                   allow_role_management: allowRoleManagement,
                 })
               }
-              disabled={isLoading}
+              disabled={isLoading || !allowChallengeManagement}
             />
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
           </div>

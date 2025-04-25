@@ -1,5 +1,7 @@
 import { ExtendedNovaSubmission } from '../types';
+import CriteriaEvaluation from './CriteriaEvaluation';
 import SubmissionDetails from './SubmissionDetails';
+import TestCaseEvaluation from './TestCaseEvaluation';
 import ScoreBadge from '@/components/common/ScoreBadge';
 import {
   Accordion,
@@ -8,16 +10,7 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  CheckCircle2,
-  Clock,
-  Code,
-  Crown,
-  FileText,
-  TrendingUp,
-  XCircle,
-} from '@tuturuuu/ui/icons';
+import { CheckCircle2, Clock, Code, Crown, XCircle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
@@ -46,16 +39,8 @@ export default function SubmissionAccordion({
           submission.total_tests > 0
             ? submission.passed_tests / submission.total_tests
             : 0;
-        const testPassPercentage = testPassRatio * 100;
 
         const isBest = subIndex === 0;
-
-        // Score improvement compared to previous submission
-        const prevScore =
-          subIndex < submissions.length - 1
-            ? submissions[subIndex + 1]?.total_score || 0
-            : 0;
-        const scoreImprovement = (submission.total_score || 0) - prevScore;
 
         return (
           <AccordionItem
@@ -95,16 +80,6 @@ export default function SubmissionAccordion({
                           Best
                         </Badge>
                       )}
-                      {scoreImprovement > 0 &&
-                        subIndex !== submissions.length - 1 && (
-                          <Badge
-                            variant="outline"
-                            className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green text-xs"
-                          >
-                            <TrendingUp className="mr-1 h-3 w-3" />+
-                            {scoreImprovement.toFixed(1)}
-                          </Badge>
-                        )}
                     </div>
                     <span className="text-muted-foreground text-xs">
                       {timeAgo}
@@ -136,18 +111,9 @@ export default function SubmissionAccordion({
             <AccordionContent className="overflow-hidden px-0 pb-0 pt-0">
               <Separator />
               <div className="p-4">
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="text-muted-foreground flex items-center text-sm">
-                    <Clock className="mr-1.5 h-4 w-4" />
-                    Submitted on {createdAt.toLocaleString()}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="h-8 gap-1">
-                      <FileText className="h-3.5 w-3.5" />
-                      View Code
-                    </Button>
-                  </div>
+                <div className="text-muted-foreground mb-4 flex items-center text-sm">
+                  <Clock className="mr-1.5 h-4 w-4" />
+                  Submitted on {createdAt.toLocaleString()}
                 </div>
 
                 <Tabs defaultValue="details" className="w-full">
@@ -168,77 +134,11 @@ export default function SubmissionAccordion({
                   </TabsContent>
 
                   <TabsContent value="tests">
-                    <div className="rounded-md border p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <h4 className="font-medium">Test Results</h4>
-                        <Badge
-                          variant={testPassRatio >= 0.8 ? 'success' : 'warning'}
-                        >
-                          {testPassPercentage.toFixed(0)}% Passed
-                        </Badge>
-                      </div>
-
-                      <div className="text-muted-foreground space-y-1 text-sm">
-                        <div className="flex items-center justify-between">
-                          <span>Total Tests:</span>
-                          <span className="font-medium">
-                            {submission.total_tests}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Passed Tests:</span>
-                          <span className="font-medium text-green-600">
-                            {submission.passed_tests}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Failed Tests:</span>
-                          <span className="font-medium text-red-500">
-                            {submission.total_tests - submission.passed_tests}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Test Score:</span>
-                          <span className="font-medium">
-                            {submission.test_case_score.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    <TestCaseEvaluation submission={submission} />
                   </TabsContent>
 
                   <TabsContent value="criteria">
-                    <div className="rounded-md border p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <h4 className="font-medium">Evaluation Criteria</h4>
-                        <Badge>
-                          {submission.criteria_score.toFixed(1)} points
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-3">
-                        {submission.criteria.map((criterion, index) => (
-                          <div key={index} className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">
-                                {criterion.name}
-                              </span>
-                              <Badge variant="outline">
-                                {criterion.result?.score.toFixed(1)}
-                              </Badge>
-                            </div>
-                            <p className="text-muted-foreground text-xs">
-                              {criterion.description}
-                            </p>
-                            {criterion.result?.feedback && (
-                              <div className="bg-muted/50 rounded-sm p-2 text-xs">
-                                {criterion.result.feedback}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <CriteriaEvaluation submission={submission} />
                   </TabsContent>
                 </Tabs>
               </div>

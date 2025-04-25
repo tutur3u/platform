@@ -1,6 +1,8 @@
 import ResultClient from './client';
-import { ExtendedNovaSubmission, ResultsData } from './types';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 
@@ -10,91 +12,99 @@ interface Props {
 
 export default async function Page({ params }: Props) {
   const { challengeId } = await params;
+
   const sbAdmin = await createAdminClient();
+  const supabase = await createClient();
+
   const user = await getCurrentSupabaseUser();
 
   if (!user) redirect('/dashboard');
 
   try {
-    // Get challenge
-    const { data: challenge } = await sbAdmin
+    // Get challenge - using the regular client since users can view their challenges
+    const { data: challenge, error: challengeError } = await sbAdmin
       .from('nova_challenges')
       .select('*')
       .eq('id', challengeId)
       .single();
 
-    if (!challenge) {
+    if (challengeError || !challenge) {
+      console.error('Challenge fetch error:', challengeError);
       throw new Error('Challenge not found');
     }
 
-    // Get sessions
-    const { data: sessions } = await sbAdmin
+    // Get sessions using regular client (user has permissions to their own sessions)
+    const { data: sessionSummaries, error: sessionsError } = await supabase
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-    if (!sessions) {
-      throw new Error('Sessions not found');
+    if (sessionsError) {
+      console.error('Sessions fetch error:', sessionsError);
+      throw new Error('Error fetching sessions');
     }
 
-    // Query problems with submissions from the view
-    const { data: problems } = await sbAdmin
+    // Get challenge stats for this user through RPC (respect permissions)
+    const { data: challengeStats, error: statsError } = await supabase.rpc(
+      'get_challenge_stats',
+      {
+        challenge_id_param: challengeId,
+        user_id_param: user.id,
+      }
+    );
+
+    console.log('Challenge stats:', challengeStats);
+
+    if (statsError) {
+      console.error('Stats error:', statsError);
+      throw new Error('Error fetching challenge statistics');
+    }
+
+    // Get problem count using the count parameter (more efficient)
+    const { count: problemCount, error: countError } = await sbAdmin
       .from('nova_problems')
-      .select(
-        `
-        *,
-        submissions:nova_submissions_with_scores(
-          *,
-          criteria:nova_challenge_criteria(
-            *,
-            results:nova_submission_criteria(*)
-          )
-        )
-      `
-      )
+      .select('*', { count: 'exact', head: true })
       .eq('challenge_id', challengeId);
 
-    // Transform the data to match the expected structure
-    const data: ResultsData = {
-      challenge,
-      sessions: sessions.map((session) => ({
-        ...session,
-        problems:
-          problems?.map((problem) => {
-            return {
-              ...problem,
-              submissions: problem.submissions
-                .filter((submission) => submission.session_id === session.id)
-                .map((submission) => {
-                  // Map criteria to expected format
-                  const criteria = submission.criteria.map((criterion) => ({
-                    ...criterion,
-                    results: undefined,
-                    result: criterion.results.find(
-                      (result) => result.submission_id === submission.id
-                    ),
-                  }));
+    if (countError) {
+      console.error('Problem count error:', countError);
+      throw new Error('Error counting problems');
+    }
 
-                  // Return properly typed submission
-                  return {
-                    ...submission,
-                    total_tests: submission.total_tests || 0,
-                    passed_tests: submission.passed_tests || 0,
-                    test_case_score: submission.test_case_score || 0,
-                    criteria,
-                    total_criteria: submission.total_criteria || 0,
-                    sum_criterion_score: submission.sum_criterion_score || 0,
-                    criteria_score: submission.criteria_score || 0,
-                    total_score: submission.total_score || 0,
-                  } as ExtendedNovaSubmission;
-                }),
-            };
-          }) || [],
-      })),
+    // Extract the first (and only) row from the results array
+    const statsRow = challengeStats?.[0];
+
+    // Calculate overall statistics
+    // Total score should be the sum of best scores for each attempted problem
+    const totalScore = statsRow?.total_score || 0;
+    // Each problem is worth 10 points maximum
+    const maxPossibleScore = (problemCount || 0) * 10;
+    // Calculate percentage based on maximum possible score from all problems
+    const percentage =
+      maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
+    const problemsAttempted = statsRow?.problems_attempted || 0;
+
+    const stats = {
+      score: totalScore,
+      maxScore: maxPossibleScore,
+      percentage,
+      problemsAttempted,
+      totalProblems: problemCount || 0,
     };
 
-    return <ResultClient data={data} />;
+    console.log('Stats:', stats);
+
+    return (
+      <ResultClient
+        challengeId={challengeId}
+        challenge={challenge}
+        sessionSummaries={sessionSummaries || []}
+        stats={stats}
+        userId={user.id}
+      />
+    );
   } catch (error) {
     console.error('Error fetching data:', error);
     redirect('/challenges');
