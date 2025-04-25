@@ -145,6 +145,7 @@ export default async function Page({ params }: Props) {
     // Combine the data into our extended submission format
     const submissionData: SubmissionData = {
       id: submission.id || '',
+      overall_assessment: '',
       created_at: submission.created_at || '',
       problem_id: submission.problem_id || '',
       prompt: submission.prompt || '',
