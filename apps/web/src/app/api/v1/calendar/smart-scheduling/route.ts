@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { prompt, apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY } = body;
 
-    // Kiểm tra xem có prompt hay không
+    // Checking prompt
     if (!prompt) {
       return NextResponse.json(
         { error: 'Prompt is required' },
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Tăng cường prompt với hướng dẫn phong cách Reclaim AI
+    // Try to enhance prompt with Gemini
     const enhancedPrompt = `${prompt}
 
 ADDITIONAL SCHEDULING INSTRUCTIONS:
@@ -87,14 +87,14 @@ Please format your response exactly as requested, containing only the JSON array
       const rawText = data.candidates[0].content.parts[0].text;
       
       try {
-        // Cải tiến xử lý JSON
-        // Loại bỏ các ký tự không phải JSON và tìm phần JSON chính
+        // Enhace to processing json
+        // Remove non-JSON characters and find the main JSON part
         let jsonText = rawText.trim();
         
         // Xóa các markdown code block nếu có
         jsonText = jsonText.replace(/^```json\n|\n```$/gm, '');
         
-        // Nếu không có [] bao quanh, tìm mảng JSON
+        // If there is no [] around, find JSON array
         if (!jsonText.startsWith('[') && !jsonText.endsWith(']')) {
           const arrMatch = jsonText.match(/\[\s*\{.*\}\s*\]/s);
           if (arrMatch) {
@@ -108,14 +108,14 @@ Please format your response exactly as requested, containing only the JSON array
           throw new Error('Expected JSON array response');
         }
         
-        // Xác thực và hoàn thiện dữ liệu
+        // Validate and complete data
         const validatedData = parsedData.map(item => {
-          // Đảm bảo mỗi item có đầy đủ các trường cần thiết
+          // Make sure each item has all the necessary fields
           if (!item.id || !item.newStart || !item.newEnd) {
             throw new Error('Missing required fields in response items');
           }
           
-          // Đảm bảo changed là boolean
+          // Make sure changed is a boolean
           if (typeof item.changed !== 'boolean') {
             item.changed = item.newStart !== item.originalStart;
           }
