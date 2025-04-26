@@ -186,7 +186,10 @@ Be lenient in this evaluation - it's acceptable for submissions to incorporate e
       description: problem.description,
       exampleInput: problem.example_input,
       exampleOutput: problem.example_output,
-      testCaseInputs: testCases.map((testCase) => testCase.input),
+      testCaseInputs: testCases.map((testCase) => ({
+        id: testCase.id,
+        input: testCase.input,
+      })),
       criteria: challengeCriteria.map((criteria) => ({
         name: criteria.name,
         description: criteria.description,
@@ -215,6 +218,12 @@ Be lenient in this evaluation - it's acceptable for submissions to incorporate e
       testCaseEvaluation: z
         .array(
           z.object({
+            id: z
+              .string()
+              .optional()
+              .describe(
+                'The ID of the test case (DO NOT HALLUCINATE IF NOT PRESENT)'
+              ),
             input: z.string().describe('The input for the test case'),
             output: z.string().describe('The output for the test case'),
             reasoning: z
@@ -387,9 +396,7 @@ ${JSON.stringify(ctx)}
     > = [];
 
     for (const testCase of testCaseEvaluation) {
-      const matchingTestCase = testCases.find(
-        (tc) => tc.input === testCase.input
-      );
+      const matchingTestCase = testCases.find((tc) => tc.id === testCase.id);
       if (matchingTestCase) {
         console.log(
           `Evaluating test case - Input: ${testCase.input}, AI Output: ${testCase.output}, Expected: ${matchingTestCase.output}`
