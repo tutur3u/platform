@@ -19,16 +19,16 @@ export type ExtendedNovaSubmission = NovaSubmission & {
   sum_criterion_score: number;
   criteria_score: number;
   total_score: number;
+  overall_assessment: string;
 };
 
 export async function fetchSubmissions(
-  problemId: string,
-  sessionId?: string
+  problemId: string
 ): Promise<ExtendedNovaSubmission[]> {
   const sbAdmin = await createAdminClient();
   const user = await getCurrentSupabaseUser();
 
-  if (!user) return [];
+  if (!user) throw new Error('User not found');
 
   const queryBuilder = sbAdmin
     .from('nova_submissions_with_scores')
@@ -44,14 +44,7 @@ export async function fetchSubmissions(
     .eq('problem_id', problemId)
     .eq('user_id', user.id);
 
-  if (sessionId) {
-    queryBuilder.eq('session_id', sessionId);
-  }
-
-  const { data: submissions, error } = await queryBuilder.eq(
-    'user_id',
-    user.id
-  );
+  const { data: submissions, error } = await queryBuilder;
 
   if (error) {
     console.error('Error fetching submissions:', error);

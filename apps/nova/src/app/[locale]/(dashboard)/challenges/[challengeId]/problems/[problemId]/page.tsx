@@ -65,7 +65,12 @@ export default async function Page({ params }: Props) {
 
     const currentProblem = problems.find((p) => p.id === problemId);
     const currentProblemIndex = problems.findIndex((p) => p.id === problemId);
-    const submissions = await fetchSubmissions(problemId, session?.id);
+
+    if (!session) {
+      redirect('/challenges');
+    }
+
+    const submissions = await fetchSubmissions(problemId);
 
     return (
       <ChallengeClient

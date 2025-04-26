@@ -14,11 +14,6 @@ import {
 } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@tuturuuu/ui/hover-card';
 import { CheckCircle2, Clock, PlayCircle, XCircle } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -228,7 +223,7 @@ export default function PromptForm({ problem }: Props) {
       <TabsContent value="prompt" className="space-y-4">
         <div className="flex h-full flex-col">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-muted-foreground text-sm">
+            <div className="text-sm text-muted-foreground">
               Characters: {prompt.length} / {problem.max_prompt_length}
             </div>
             <Progress
@@ -301,7 +296,7 @@ export default function PromptForm({ problem }: Props) {
               {testResult && (
                 <div className="mt-4">
                   <h3 className="mb-2 text-sm font-medium">Output:</h3>
-                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                  <div className="rounded-md bg-muted p-3 font-mono text-sm">
                     {testResult.output}
                   </div>
                 </div>
@@ -339,11 +334,11 @@ export default function PromptForm({ problem }: Props) {
                     <h3 className="text-sm font-medium">
                       Test Case {index + 1}:
                     </h3>
-                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                    <div className="rounded-md bg-muted p-3 font-mono text-sm">
                       {result.input}
                     </div>
                     <h3 className="text-sm font-medium">Output:</h3>
-                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                    <div className="rounded-md bg-muted p-3 font-mono text-sm">
                       {result.output}
                     </div>
                   </div>
@@ -357,148 +352,196 @@ export default function PromptForm({ problem }: Props) {
       <TabsContent value="submissions" className="space-y-4">
         {submissions.length == 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-            <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+            <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
             <h3 className="text-lg font-medium">No submissions yet</h3>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="mt-1 text-sm text-muted-foreground">
               Your submission history will appear here after you submit your
               first prompt.
             </p>
           </div>
         ) : (
-          submissions.map((submission) => (
-            <Card key={submission.id} className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-xs">
-                    <Clock className="mr-1 inline h-3 w-3" />
-                    {new Date(submission.created_at).toLocaleString()}
-                  </span>
+          <>
+            {/* Group by session_id or show independently */}
+            {(() => {
+              // Group submissions by session_id (null ones are grouped separately)
+              const groupedBySession = submissions.reduce(
+                (acc, submission) => {
+                  const key = submission.session_id || 'standalone';
+                  if (!acc[key]) acc[key] = [];
+                  acc[key].push(submission);
+                  return acc;
+                },
+                {} as Record<string, ExtendedNovaSubmission[]>
+              );
 
-                  <ScoreBadge
-                    score={submission.total_score}
-                    maxScore={10}
-                    className="px-2 py-0"
-                  >
-                    {submission.total_score.toFixed(2)}/10
-                  </ScoreBadge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-foreground mb-1 text-sm font-medium">
-                    Prompt:
-                  </h3>
-                  <div className="bg-muted rounded-md p-2 text-sm">
-                    {submission.prompt}
-                  </div>
-                </div>
-
-                {/* Test Case Evaluation */}
-                {submission.total_tests > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-muted-foreground text-xs font-medium">
-                        Test Case Evaluation:
-                      </h3>
-                      <ScoreBadge
-                        score={submission.test_case_score}
-                        maxScore={10}
-                        className="px-2 py-0"
-                      >
-                        {submission.test_case_score.toFixed(2)}/10
-                      </ScoreBadge>
-                    </div>
-                    <div className="space-y-2 rounded-md border p-4">
-                      <div>
-                        <span className="text-sm">
-                          Passed {submission.passed_tests} of{' '}
-                          {submission.total_tests} test cases
-                        </span>
+              return Object.entries(groupedBySession).map(
+                ([sessionKey, groupedSubmissions]) => (
+                  <div key={sessionKey} className="mb-6">
+                    {sessionKey !== 'standalone' && (
+                      <div className="mb-2 flex items-center">
+                        <Badge variant="outline" className="mb-2">
+                          Session ID: {sessionKey}
+                        </Badge>
                       </div>
-                      <Progress
-                        value={
-                          (submission.passed_tests / submission.total_tests) *
-                          100
-                        }
-                        className="h-2 w-full"
-                        indicatorClassName={
-                          submission.test_case_score >= 8
-                            ? 'bg-emerald-500'
-                            : submission.test_case_score >= 5
-                              ? 'bg-amber-500'
-                              : 'bg-red-500'
-                        }
-                      />
-                    </div>
-                  </div>
-                )}
+                    )}
 
-                {/* Criteria Evaluation */}
-                {submission.total_criteria > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-muted-foreground text-xs font-medium">
-                        Criteria Evaluation:
-                      </h3>
-                      <ScoreBadge
-                        score={submission.criteria_score}
-                        maxScore={10}
-                        className="px-2 py-0"
-                      >
-                        {submission.criteria_score.toFixed(2)}/10
-                      </ScoreBadge>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {submission.criteria.map((cs) => {
-                        if (!cs || !cs.result) return null;
+                    <div className="space-y-4">
+                      {groupedSubmissions.map((submission) => (
+                        <Card key={submission.id} className="overflow-hidden">
+                          <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                <Clock className="mr-1 inline h-3 w-3" />
+                                {new Date(
+                                  submission.created_at
+                                ).toLocaleString()}
+                              </span>
 
-                        return (
-                          <HoverCard key={cs.id}>
-                            <HoverCardTrigger asChild>
-                              <div
-                                className={`flex cursor-pointer items-center justify-between rounded-md border p-2 ${
-                                  cs.result.score >= 8
-                                    ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
-                                    : cs.result.score >= 5
-                                      ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'
-                                      : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
-                                }`}
+                              <ScoreBadge
+                                score={submission.total_score}
+                                maxScore={10}
+                                className="px-2 py-0"
                               >
-                                <div className="flex items-center gap-2">
-                                  {cs.result.score >= 8 ? (
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                                  ) : cs.result.score >= 5 ? (
-                                    <Clock className="h-4 w-4 text-amber-500" />
-                                  ) : (
-                                    <XCircle className="h-4 w-4 text-red-500" />
-                                  )}
-                                  <span className="text-sm">{cs.name}</span>
-                                </div>
-                                <ScoreBadge
-                                  score={cs.result.score}
-                                  maxScore={10}
-                                >
-                                  {cs.result.score}/10
-                                </ScoreBadge>
+                                {submission.total_score.toFixed(2)}/10
+                              </ScoreBadge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-6">
+                            <div>
+                              <h3 className="mb-1 text-sm font-medium text-foreground">
+                                Prompt:
+                              </h3>
+                              <div className="rounded-md bg-muted p-2 text-sm">
+                                {submission.prompt}
                               </div>
-                            </HoverCardTrigger>
-                            <HoverCardContent className="w-80 p-4">
+                            </div>
+
+                            {/* Overall Assessment - moved to top for better visibility */}
+                            {submission.overall_assessment && (
                               <div className="space-y-2">
-                                <h4 className="font-medium">Feedback</h4>
-                                <p className="text-muted-foreground text-sm">
-                                  {cs.result.feedback}
-                                </p>
+                                <h3 className="mb-1 text-sm font-medium text-foreground">
+                                  Overall Assessment:
+                                </h3>
+                                <div className="rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30">
+                                  <p className="text-sm">
+                                    {submission.overall_assessment}
+                                  </p>
+                                </div>
                               </div>
-                            </HoverCardContent>
-                          </HoverCard>
-                        );
-                      })}
+                            )}
+
+                            {/* Test Case Evaluation */}
+                            {submission.total_tests > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <h3 className="text-xs font-medium text-muted-foreground">
+                                    Test Case Evaluation:
+                                  </h3>
+                                  <ScoreBadge
+                                    score={submission.test_case_score}
+                                    maxScore={10}
+                                    className="px-2 py-0"
+                                  >
+                                    {submission.test_case_score.toFixed(2)}/10
+                                  </ScoreBadge>
+                                </div>
+                                <div className="space-y-2 rounded-md border p-4">
+                                  <div>
+                                    <span className="text-sm">
+                                      Passed {submission.passed_tests} of{' '}
+                                      {submission.total_tests} test cases
+                                    </span>
+                                  </div>
+                                  <Progress
+                                    value={
+                                      (submission.passed_tests /
+                                        submission.total_tests) *
+                                      100
+                                    }
+                                    className="h-2 w-full"
+                                    indicatorClassName={
+                                      submission.test_case_score >= 8
+                                        ? 'bg-emerald-500'
+                                        : submission.test_case_score >= 5
+                                          ? 'bg-amber-500'
+                                          : 'bg-red-500'
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Criteria Evaluation */}
+                            {submission.total_criteria > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <h3 className="text-xs font-medium text-muted-foreground">
+                                    Criteria Evaluation:
+                                  </h3>
+                                  <ScoreBadge
+                                    score={submission.criteria_score}
+                                    maxScore={10}
+                                    className="px-2 py-0"
+                                  >
+                                    {submission.criteria_score.toFixed(2)}/10
+                                  </ScoreBadge>
+                                </div>
+                                <div className="grid gap-4">
+                                  {submission.criteria.map((cs) => {
+                                    if (!cs || !cs.result) return null;
+
+                                    return (
+                                      <div
+                                        key={cs.id}
+                                        className={`rounded-md border p-3 ${
+                                          cs.result.score >= 8
+                                            ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
+                                            : cs.result.score >= 5
+                                              ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'
+                                              : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
+                                        }`}
+                                      >
+                                        <div className="mb-2 flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            {cs.result.score >= 8 ? (
+                                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                            ) : cs.result.score >= 5 ? (
+                                              <Clock className="h-4 w-4 text-amber-500" />
+                                            ) : (
+                                              <XCircle className="h-4 w-4 text-red-500" />
+                                            )}
+                                            <span className="text-sm font-medium">
+                                              {cs.name}
+                                            </span>
+                                          </div>
+                                          <ScoreBadge
+                                            score={cs.result.score}
+                                            maxScore={10}
+                                          >
+                                            {cs.result.score}/10
+                                          </ScoreBadge>
+                                        </div>
+
+                                        <div className="mt-1 rounded border bg-background/50 p-2">
+                                          <p className="text-sm text-muted-foreground">
+                                            {cs.result.feedback}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
+                )
+              );
+            })()}
+          </>
         )}
       </TabsContent>
     </Tabs>
