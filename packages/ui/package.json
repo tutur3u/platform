@@ -83,7 +83,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/lodash": "^4.17.16",
-    "@types/node": "^22.15.1",
+    "@types/node": "^22.15.2",
     "@types/react": "^19.1.2",
     "@types/react-resizable": "^3.0.8",
     "@types/react-syntax-highlighter": "^15.5.13",
