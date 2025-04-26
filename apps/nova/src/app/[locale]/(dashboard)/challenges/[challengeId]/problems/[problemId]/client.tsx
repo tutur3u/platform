@@ -164,9 +164,7 @@ export default function ChallengeClient({
 
       if (!isNavigationConfirmed) {
         e.preventDefault();
-
         anchor.dataset.pendingHref = href;
-
         setShowModel(true);
       }
     };
