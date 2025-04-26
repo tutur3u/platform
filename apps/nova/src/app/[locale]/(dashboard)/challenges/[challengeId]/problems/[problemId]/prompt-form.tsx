@@ -38,6 +38,8 @@ interface Props {
   submissions: ExtendedNovaSubmission[];
 }
 
+const MAX_ATTEMPTS = 5;
+
 export default function PromptForm({ problem, session, submissions }: Props) {
   const router = useRouter();
 
@@ -59,9 +61,9 @@ export default function PromptForm({ problem, session, submissions }: Props) {
   const remainingAttempts =
     currentSubmissions === undefined
       ? null
-      : currentSubmissions.length > 3
+      : currentSubmissions.length > MAX_ATTEMPTS
         ? 0
-        : 3 - currentSubmissions.length;
+        : MAX_ATTEMPTS - currentSubmissions.length;
 
   const getSubmissions = useCallback(async () => {
     router.refresh();
@@ -95,7 +97,9 @@ export default function PromptForm({ problem, session, submissions }: Props) {
     }
 
     if (remainingAttempts === 0) {
-      setError('You have reached the maximum number of attempts (3).');
+      setError(
+        `You have reached the maximum number of attempts (${MAX_ATTEMPTS}).`
+      );
       return;
     }
 
