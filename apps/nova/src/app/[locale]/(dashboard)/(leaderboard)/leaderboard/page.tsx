@@ -1,5 +1,6 @@
 import LeaderboardClient from './client';
 import { BasicInformation } from './components/basic-information-component';
+import { LeaderboardEntry } from './components/leaderboard';
 import LeaderboardFallback from './fallback';
 import {
   createAdminClient,
@@ -92,44 +93,18 @@ async function fetchLeaderboard(
   const limit = 20;
   const sbAdmin = await createAdminClient();
 
-  // Fetch user sessions data
-  const { data: sessionsData, error: sessionError } = await sbAdmin.from(
-    'nova_sessions'
-  ).select(`
-    id,
-    user_id,
-    challenge_id,
-    users!inner(
-      display_name,
-      avatar_url
-    ),
-    nova_challenges(
-      id,
-      title
-    )
-  `);
+  // Fetch all challenges for filter options
+  const { data: challenges, error: challengesError } = await sbAdmin
+    .from('nova_challenges')
+    .select('id, title')
+    .order('title', { ascending: true });
 
-  if (sessionError) {
-    console.error('Error fetching sessions:', sessionError.message);
+  if (challengesError) {
+    console.error('Error fetching challenges:', challengesError.message);
     return defaultData;
   }
 
-  // Fetch all scores from submissions with more detail
-  const { data: submissionsData, error: submissionsError } = await sbAdmin.from(
-    'nova_submissions_with_scores'
-  ).select(`
-    user_id,
-    problem_id,
-    total_score,
-    session_id
-  `);
-
-  if (submissionsError) {
-    console.error('Error fetching submissions:', submissionsError.message);
-    return defaultData;
-  }
-
-  // Fetch all problems to get challenge association
+  // Fetch problems
   const { data: problemsData, error: problemsError } = await sbAdmin
     .from('nova_problems')
     .select('id, challenge_id, title');
@@ -139,19 +114,75 @@ async function fetchLeaderboard(
     return defaultData;
   }
 
-  // Create a map of problem_id to challenge_id for easy lookup
-  const problemChallengeMap = new Map<string, string>();
-  problemsData?.forEach((problem) => {
-    if (problem.id && problem.challenge_id) {
-      problemChallengeMap.set(problem.id, problem.challenge_id);
-    }
-  });
+  // Filter problems if a specific challenge is selected
+  let filteredProblems = problemsData;
+  if (challengeId !== 'all') {
+    filteredProblems = problemsData.filter(
+      (problem) => problem.challenge_id === challengeId
+    );
+  }
 
-  // Fetch all challenges for filtering options
-  const { data: challenges } = await sbAdmin
-    .from('nova_challenges')
-    .select('id, title')
-    .order('title', { ascending: true });
+  let rankedData: LeaderboardEntry[] = [];
+  if (challengeId === 'all') {
+    // Fetch user data from the user leaderboard view
+    const { data: leaderboardData, error: leaderboardError } = await sbAdmin
+      .from('nova_user_leaderboard')
+      .select('*');
+
+    if (leaderboardError) {
+      console.error('Error fetching leaderboard:', leaderboardError.message);
+      return defaultData;
+    }
+
+    // Transform data to match expected format
+    rankedData = leaderboardData.map((entry, index) => ({
+      id: entry.user_id || '',
+      rank: index + 1,
+      name: entry.name || generateFunName({ id: entry.user_id || '', locale }),
+      avatar: entry.avatar || '',
+      score: entry.score || 0,
+      challenge_scores:
+        (entry.challenge_scores as Record<string, number>) || {},
+    }));
+  } else {
+    // Fetch user data for a specific challenge
+    const { data: challengeLeaderboardData, error: challengeLeaderboardError } =
+      await sbAdmin
+        .from('nova_user_challenge_leaderboard')
+        .select('*')
+        .eq('challenge_id', challengeId);
+
+    if (challengeLeaderboardError) {
+      console.error(
+        'Error fetching challenge leaderboard:',
+        challengeLeaderboardError.message
+      );
+      return defaultData;
+    }
+
+    // Transform data to match expected format
+    rankedData = challengeLeaderboardData.map((entry, index) => {
+      const problem_scores: Record<
+        string,
+        { id: string; title: string; score: number }[]
+      > = {};
+      problem_scores[challengeId] = (entry.problem_scores || []) as {
+        id: string;
+        title: string;
+        score: number;
+      }[];
+
+      return {
+        id: entry.user_id || '',
+        rank: index + 1,
+        name:
+          entry.name || generateFunName({ id: entry.user_id || '', locale }),
+        avatar: entry.avatar || '',
+        score: entry.score || 0,
+        problem_scores,
+      };
+    });
+  }
 
   // Fetch whitelisted users
   const { data: whitelistedData, error: whitelistError } = await sbAdmin
@@ -164,145 +195,9 @@ async function fetchLeaderboard(
     return defaultData;
   }
 
-  // Group sessions by user
-  const userSessions: Record<string, any> = sessionsData.reduce(
-    (acc: Record<string, any>, session: any) => {
-      if (!acc[session.user_id]) {
-        acc[session.user_id] = {
-          id: session.id,
-          user_id: session.user_id,
-          users: session.users,
-          nova_challenges: session.nova_challenges,
-          sessions: [],
-        };
-      }
-      acc[session.user_id].sessions.push({
-        id: session.id,
-        challenge_id: session.challenge_id,
-      });
-      return acc;
-    },
-    {}
-  );
-
-  // Calculate scores from submissions and associate with sessions
-  const groupedData = Object.values(userSessions).map((user: any) => {
-    const userSubmissions = submissionsData.filter(
-      (s) => s.user_id === user.user_id
-    );
-
-    // First, group submissions by problem_id to find the best submission for each problem
-    const bestProblemSubmissions = new Map<string, any>();
-
-    userSubmissions.forEach((submission) => {
-      const problemId = submission.problem_id;
-      if (!problemId) return;
-
-      const sessionId = submission.session_id;
-      if (!sessionId) return;
-
-      const correctScore = submission.total_score || 0;
-
-      // Keep only the best submission for each problem
-      if (
-        !bestProblemSubmissions.has(problemId) ||
-        bestProblemSubmissions.get(problemId).score < correctScore
-      ) {
-        // Get problem title from problemsData
-        const problemTitle =
-          problemsData.find((p) => p.id === problemId)?.title ||
-          `Problem ${problemId.substring(0, 8)}`;
-
-        bestProblemSubmissions.set(problemId, {
-          problemId,
-          challengeId: problemChallengeMap.get(problemId),
-          score: correctScore,
-          title: problemTitle,
-          sessionId,
-        });
-      }
-    });
-
-    // Group problems by session and challenge for accurate scoring
-    const sessionScores = new Map<string, number>(); // Map<session_id, score>
-    const challengeSessions = new Map<string, Set<string>>(); // Map<challenge_id, Set<session_id>>
-
-    // Calculate session scores (sum of problem scores in each session)
-    bestProblemSubmissions.forEach((problem) => {
-      const { sessionId, score, challengeId } = problem;
-
-      if (sessionId && challengeId) {
-        // Add to session score
-        sessionScores.set(
-          sessionId,
-          (sessionScores.get(sessionId) || 0) + score
-        );
-
-        // Track which sessions belong to which challenge
-        if (!challengeSessions.has(challengeId)) {
-          challengeSessions.set(challengeId, new Set());
-        }
-        challengeSessions.get(challengeId)?.add(sessionId);
-      }
-    });
-
-    // Find max session score for each challenge
-    const challenge_scores: Record<string, number> = {};
-    challengeSessions.forEach((sessions, challengeId) => {
-      let maxSessionScore = 0;
-      sessions.forEach((sessionId: string) => {
-        const sessionScore = sessionScores.get(sessionId) || 0;
-        maxSessionScore = Math.max(maxSessionScore, sessionScore);
-      });
-      challenge_scores[challengeId] = maxSessionScore;
-    });
-
-    // Track individual problem scores for each challenge
-    const problem_scores: Record<
-      string,
-      Array<{ id: string; title: string; score: number }>
-    > = {};
-
-    // Group problem scores by challenge
-    bestProblemSubmissions.forEach((problem) => {
-      const { challengeId, score, problemId, title } = problem;
-      if (challengeId) {
-        // Add to problem scores by challenge
-        if (!problem_scores[challengeId]) {
-          problem_scores[challengeId] = [];
-        }
-
-        problem_scores[challengeId].push({
-          id: problemId,
-          title,
-          score,
-        });
-      }
-    });
-
-    // Total score is the sum of challenge scores (max session score per challenge)
-    const total_score = Object.values(challenge_scores).reduce(
-      (sum, score) => sum + score,
-      0
-    );
-
-    return {
-      id: user.user_id,
-      name:
-        user.users?.display_name ||
-        generateFunName({ id: user.user_id, locale }),
-      avatar: user.users?.avatar_url || null,
-      score: total_score,
-      challenge_scores,
-      problem_scores,
-    };
-  });
-
-  // Get existing user IDs for checking whitelisted users
-  const existingUserIds = groupedData.map((entry) => entry.id);
-
-  // Add whitelisted users (similar to route.ts implementation)
+  // Add whitelisted users to leaderboard if they don't exist
   if (whitelistedData?.length > 0) {
+    const existingUserIds = rankedData.map((entry) => entry.id);
     const whitelistedEmails = whitelistedData
       .filter((user) => user.email)
       .map((user) => user.email);
@@ -334,18 +229,19 @@ async function fetchLeaderboard(
           userProfileMap.set(profile.id, profile);
         });
 
-        // Add whitelisted users to grouped data
+        // Add whitelisted users to rankedData
         userDataBatch?.forEach((userData) => {
           if (userData.user_id && !existingUserIds.includes(userData.user_id)) {
             const userProfile = userProfileMap.get(userData.user_id);
             if (userProfile) {
-              groupedData.push({
+              rankedData.push({
                 id: userData.user_id,
                 name:
                   userProfile.display_name ||
                   generateFunName({ id: userData.user_id, locale }),
                 avatar: userProfile.avatar_url || null,
                 score: 0,
+                rank: rankedData.length + 1,
                 challenge_scores: {},
                 problem_scores: {},
               });
@@ -356,88 +252,39 @@ async function fetchLeaderboard(
     }
   }
 
-  // Sort by score
-  const sortedData = groupedData.sort((a, b) => {
+  // Sort by score if we modified the data (e.g. added whitelisted users)
+  rankedData.sort((a, b) => {
     if (b.score === a.score) {
-      return b.name.localeCompare(a.name);
+      return a.name.localeCompare(b.name);
     }
-    return b.score - a.score;
+    return (b.score || 0) - (a.score || 0);
   });
 
-  // Add rank
-  const rankedData = sortedData.map((entry, index) => ({
-    ...entry,
-    rank: index + 1,
-  }));
+  // Update ranks after sorting
+  rankedData.forEach((entry, index) => {
+    entry.rank = index + 1;
+  });
 
-  // Filter by challenge if specified
-  let filteredRankedData = rankedData;
-  let filteredProblems = problemsData;
-
-  if (challengeId !== 'all') {
-    // Filter problems to include only those for the specified challenge
-    filteredProblems = problemsData.filter(
-      (problem) => problem.challenge_id === challengeId
-    );
-
-    // Filter and recalculate scores based on the selected challenge
-    filteredRankedData = rankedData
-      .map((entry) => {
-        const challengeScore = entry.challenge_scores?.[challengeId] || 0;
-
-        // Keep only the problem scores for this challenge
-        const filteredProblemScores: Record<
-          string,
-          Array<{ id: string; title: string; score: number }>
-        > = {};
-        if (entry.problem_scores && entry.problem_scores[challengeId]) {
-          filteredProblemScores[challengeId] =
-            entry.problem_scores[challengeId];
-        }
-
-        return {
-          ...entry,
-          score: challengeScore,
-          problem_scores: filteredProblemScores,
-        };
-      })
-      .sort((a, b) => {
-        if (b.score === a.score) {
-          return a.name.localeCompare(b.name);
-        }
-        return b.score - a.score;
-      });
-
-    // Recalculate ranks after sorting
-    filteredRankedData = filteredRankedData.map((entry, index) => ({
-      ...entry,
-      rank: index + 1,
-    }));
-  }
-
-  const topThree = filteredRankedData.slice(0, 3);
+  const topThree = rankedData.slice(0, 3);
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const currentUser = filteredRankedData.find((entry) => entry.id === user?.id);
+  const currentUser = rankedData.find((entry) => entry.id === user?.id);
 
   // Get basic info
   const basicInfo: BasicInformation = {
     currentRank: currentUser?.rank || 0,
-    topScore: filteredRankedData[0]?.score || 0,
-    archiverName: filteredRankedData[0]?.name || '',
-    totalParticipants: filteredRankedData.length,
+    topScore: rankedData[0]?.score || 0,
+    archiverName: rankedData[0]?.name || '',
+    totalParticipants: rankedData.length,
   };
 
   // Paginate
-  const paginatedData = filteredRankedData.slice(
-    (page - 1) * limit,
-    page * limit
-  );
-  const totalPages = Math.ceil(filteredRankedData.length / limit);
+  const paginatedData = rankedData.slice((page - 1) * limit, page * limit);
+  const totalPages = Math.ceil(rankedData.length / limit);
 
   return {
     data: paginatedData,
@@ -445,7 +292,7 @@ async function fetchLeaderboard(
     basicInfo,
     challenges: challenges || [],
     problems: filteredProblems,
-    hasMore: filteredRankedData.length > page * limit,
+    hasMore: rankedData.length > page * limit,
     totalPages,
   };
 }
