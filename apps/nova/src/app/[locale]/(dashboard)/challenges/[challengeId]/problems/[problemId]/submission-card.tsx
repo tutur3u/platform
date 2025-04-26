@@ -21,7 +21,7 @@ export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               <Clock className="mr-1 inline h-3 w-3" />
               {submission.created_at
                 ? new Date(submission.created_at).toLocaleString()
@@ -47,8 +47,8 @@ export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="mb-1 text-sm font-medium text-foreground">Prompt:</h3>
-          <div className="rounded-md bg-muted p-2 text-sm">
+          <h3 className="text-foreground mb-1 text-sm font-medium">Prompt:</h3>
+          <div className="bg-muted rounded-md p-2 text-sm">
             {submission.prompt}
           </div>
         </div>
@@ -57,7 +57,7 @@ export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
         {submission.total_tests && submission.total_tests > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-medium text-muted-foreground">
+              <h3 className="text-muted-foreground text-xs font-medium">
                 Test Case Evaluation:
               </h3>
               <ScoreBadge
@@ -96,7 +96,7 @@ export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
         {submission.total_criteria && submission.total_criteria > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-medium text-muted-foreground">
+              <h3 className="text-muted-foreground text-xs font-medium">
                 Criteria Evaluation
                 {isCurrent ? '' : ': (Hover to see Feedback)'}
               </h3>
@@ -142,7 +142,7 @@ export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
                     <HoverCardContent className="w-80 p-4">
                       <div className="space-y-2">
                         <h4 className="font-medium">Feedback</h4>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           {cs.result.feedback}
                         </p>
                       </div>

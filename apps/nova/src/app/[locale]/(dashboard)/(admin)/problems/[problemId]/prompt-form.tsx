@@ -106,7 +106,7 @@ export default function PromptForm({ problem }: Props) {
       <TabsContent value="prompt" className="space-y-4">
         <div className="flex h-full flex-col">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               Characters: {prompt.length} / {problem.max_prompt_length}
             </div>
             <Progress
@@ -144,9 +144,9 @@ export default function PromptForm({ problem }: Props) {
       <TabsContent value="submissions" className="space-y-4">
         {submissions.length == 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-            <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
+            <Clock className="text-muted-foreground mb-2 h-10 w-10" />
             <h3 className="text-lg font-medium">No submissions yet</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-1 text-sm">
               Your submission history will appear here after you submit your
               first prompt.
             </p>
@@ -182,7 +182,7 @@ export default function PromptForm({ problem }: Props) {
                         <Card key={submission.id} className="overflow-hidden">
                           <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-muted-foreground text-xs">
                                 <Clock className="mr-1 inline h-3 w-3" />
                                 {new Date(
                                   submission.created_at
@@ -200,10 +200,10 @@ export default function PromptForm({ problem }: Props) {
                           </CardHeader>
                           <CardContent className="space-y-6">
                             <div>
-                              <h3 className="mb-1 text-sm font-medium text-foreground">
+                              <h3 className="text-foreground mb-1 text-sm font-medium">
                                 Prompt:
                               </h3>
-                              <div className="rounded-md bg-muted p-2 text-sm">
+                              <div className="bg-muted rounded-md p-2 text-sm">
                                 {submission.prompt}
                               </div>
                             </div>
@@ -211,7 +211,7 @@ export default function PromptForm({ problem }: Props) {
                             {/* Overall Assessment - moved to top for better visibility */}
                             {submission.overall_assessment && (
                               <div className="space-y-2">
-                                <h3 className="mb-1 text-sm font-medium text-foreground">
+                                <h3 className="text-foreground mb-1 text-sm font-medium">
                                   Overall Assessment:
                                 </h3>
                                 <div className="rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30">
@@ -226,7 +226,7 @@ export default function PromptForm({ problem }: Props) {
                             {submission.total_tests > 0 && (
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <h3 className="text-xs font-medium text-muted-foreground">
+                                  <h3 className="text-muted-foreground text-xs font-medium">
                                     Test Case Evaluation:
                                   </h3>
                                   <ScoreBadge
@@ -267,7 +267,7 @@ export default function PromptForm({ problem }: Props) {
                             {submission.total_criteria > 0 && (
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <h3 className="text-xs font-medium text-muted-foreground">
+                                  <h3 className="text-muted-foreground text-xs font-medium">
                                     Criteria Evaluation:
                                   </h3>
                                   <ScoreBadge
@@ -314,8 +314,8 @@ export default function PromptForm({ problem }: Props) {
                                           </ScoreBadge>
                                         </div>
 
-                                        <div className="mt-1 rounded border bg-background/50 p-2">
-                                          <p className="text-sm text-muted-foreground">
+                                        <div className="bg-background/50 mt-1 rounded border p-2">
+                                          <p className="text-muted-foreground text-sm">
                                             {cs.result.feedback}
                                           </p>
                                         </div>
