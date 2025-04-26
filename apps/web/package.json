@@ -29,7 +29,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.796.0",
+    "@aws-sdk/client-ses": "^3.797.0",
     "@deepgram/sdk": "^3.12.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -115,7 +115,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
-    "framer-motion": "^12.9.1",
+    "framer-motion": "^12.9.2",
     "google-auth-library": "^9.15.1",
     "googleapis": "^148.0.0",
     "highlight.js": "^11.11.1",
@@ -177,7 +177,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.16",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.15.1",
+    "@types/node": "^22.15.2",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@types/uuid": "^10.0.0",
