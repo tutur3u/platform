@@ -4,6 +4,8 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_MIRA_PROJECT_ID }}
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  GOOGLE_VERTEX_PROJECT: ${{ secrets.GOOGLE_VERTEX_PROJECT }}
+  GOOGLE_VERTEX_LOCATION: ${{ secrets.GOOGLE_VERTEX_LOCATION }}
 on:
   push:
     branches-ignore:

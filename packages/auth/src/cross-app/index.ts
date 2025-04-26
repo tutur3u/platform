@@ -10,7 +10,7 @@ export * from './navigation';
 /**
  * Generates a cross-app authentication token for a user
  * @param supabase The Supabase client
- * @param targetApp The target app identifier (e.g., 'nova', 'mira', 'rewise')
+ * @param targetApp The target app identifier (e.g., 'nova', 'rewise')
  * @param originApp The origin app identifier (e.g., 'web')
  * @param expirySeconds Token expiry in seconds (default: 300 seconds / 5 minutes)
  * @returns The generated token or null if generation failed
