@@ -13,8 +13,6 @@
     "preview": "next build && cd ../upskii && next start -p 7806 --turbopack",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "stop": "cd ../db && pnpm supabase stop",
     "sb:status": "cd ../db && pnpm supabase status",
     "sb:start": "cd ../db && pnpm supabase start",
