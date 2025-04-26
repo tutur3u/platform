@@ -220,9 +220,8 @@ Be lenient in this evaluation - it's acceptable for submissions to incorporate e
           z.object({
             id: z
               .string()
-              .optional()
               .describe(
-                'The ID of the test case (DO NOT HALLUCINATE IF NOT PRESENT)'
+                'The ID of the original test case from the context (DO NOT HALLUCINATE)'
               ),
             input: z.string().describe('The input for the test case'),
             output: z.string().describe('The output for the test case'),

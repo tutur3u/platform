@@ -21,7 +21,7 @@
     "apps/web/messages",
     "apps/rewise/messages",
     "apps/nova/messages",
-    "apps/mira/messages"
+    "apps/upskii/messages"
   ],
   "i18n-ally.keystyle": "nested",
   "[xml]": {
