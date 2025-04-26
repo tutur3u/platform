@@ -1,6 +1,6 @@
 'use client';
 
-import { ExtendedNovaSubmission, fetchSubmissions } from './actions';
+import { ExtendedNovaSubmission } from './actions';
 import ScoreBadge from '@/components/common/ScoreBadge';
 import {
   NovaProblem,
@@ -27,6 +27,7 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 
 interface Props {
@@ -34,15 +35,17 @@ interface Props {
     test_cases: NovaProblemTestCase[];
   };
   session: NovaSession;
+  submissions: ExtendedNovaSubmission[];
 }
 
-export default function PromptForm({ problem, session }: Props) {
+const MAX_ATTEMPTS = 3;
+
+export default function PromptForm({ problem, session, submissions }: Props) {
+  const router = useRouter();
+
   const [prompt, setPrompt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [submissions, setSubmissions] = useState<
-    ExtendedNovaSubmission[] | undefined
-  >();
   const [activeTab, setActiveTab] = useState('prompt');
   const [submissionsTab, setSubmissionsTab] = useState('current');
 
@@ -58,13 +61,12 @@ export default function PromptForm({ problem, session }: Props) {
   const remainingAttempts =
     currentSubmissions === undefined
       ? null
-      : currentSubmissions.length > 3
+      : currentSubmissions.length > MAX_ATTEMPTS
         ? 0
-        : 3 - currentSubmissions.length;
+        : MAX_ATTEMPTS - currentSubmissions.length;
 
   const getSubmissions = useCallback(async () => {
-    const submissions = await fetchSubmissions(problem.id);
-    setSubmissions(submissions);
+    router.refresh();
   }, [problem.id, session.id]);
 
   useEffect(() => {
@@ -95,7 +97,9 @@ export default function PromptForm({ problem, session }: Props) {
     }
 
     if (remainingAttempts === 0) {
-      setError('You have reached the maximum number of attempts (3).');
+      setError(
+        `You have reached the maximum number of attempts (${MAX_ATTEMPTS}).`
+      );
       return;
     }
 

@@ -1,8 +1,9 @@
 'use client';
 
-import ProblemComponent from '../../shared/problem-component';
-import PromptComponent from '../../shared/prompt-component';
-import TestCaseComponent from '../../shared/test-case-component';
+import ProblemComponent from '../../../../shared/problem-component';
+import PromptComponent from '../../../../shared/prompt-component';
+import TestCaseComponent from '../../../../shared/test-case-component';
+import type { ExtendedNovaSubmission } from './actions';
 import ChallengeHeader from './challengeHeader';
 import PromptForm from './prompt-form';
 import {
@@ -36,28 +37,46 @@ type ExtendedNovaChallenge = NovaChallenge & {
 };
 
 interface Props {
+  currentProblemIndex: number;
+  problem: NovaProblem & { test_cases: NovaProblemTestCase[] };
   challenge: ExtendedNovaChallenge;
   session: NovaSession;
+  submissions: ExtendedNovaSubmission[];
 }
 
-export default function ChallengeClient({ challenge, session }: Props) {
-  const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
-  const [showEndDialog, setShowEndDialog] = useState(false);
-
+export default function ChallengeClient({
+  currentProblemIndex,
+  problem: currentProblem,
+  challenge,
+  session,
+  submissions,
+}: Props) {
   const router = useRouter();
 
-  const currentProblem =
-    challenge.problems[currentProblemIndex] ||
-    ({} as NovaProblem & { test_cases: NovaProblemTestCase[] });
+  const [showEndDialog, setShowEndDialog] = useState(false);
 
   const nextProblem = () => {
-    setCurrentProblemIndex((prev) =>
-      prev < challenge.problems.length - 1 ? prev + 1 : prev
-    );
+    const nextProblemId =
+      challenge.problems.length > currentProblemIndex + 1
+        ? challenge.problems[currentProblemIndex + 1]?.id
+        : null;
+
+    if (nextProblemId) {
+      router.push(`/challenges/${challenge.id}/problems/${nextProblemId}`);
+      router.refresh();
+    }
   };
 
   const prevProblem = () => {
-    setCurrentProblemIndex((prev) => (prev > 0 ? prev - 1 : prev));
+    const prevProblemId =
+      currentProblemIndex > 0
+        ? challenge.problems[currentProblemIndex - 1]?.id
+        : null;
+
+    if (prevProblemId) {
+      router.push(`/challenges/${challenge.id}/problems/${prevProblemId}`);
+      router.refresh();
+    }
   };
 
   const handleEndChallenge = async () => {
@@ -133,7 +152,11 @@ export default function ChallengeClient({ challenge, session }: Props) {
 
           <div className="relative flex h-full w-full flex-col gap-4 overflow-hidden">
             <PromptComponent>
-              <PromptForm problem={currentProblem} session={session} />
+              <PromptForm
+                problem={currentProblem}
+                session={session}
+                submissions={submissions}
+              />
             </PromptComponent>
           </div>
         </div>

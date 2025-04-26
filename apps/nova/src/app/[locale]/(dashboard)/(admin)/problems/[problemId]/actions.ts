@@ -19,6 +19,7 @@ export type ExtendedNovaSubmission = NovaSubmission & {
   sum_criterion_score: number;
   criteria_score: number;
   total_score: number;
+  overall_assessment: string;
 };
 
 export async function fetchSubmissions(
@@ -49,7 +50,6 @@ export async function fetchSubmissions(
   }
 
   return submissions
-    .filter((submission) => submission.session_id === null)
     .map((submission) => {
       // Map criteria to expected format
       const criteria = submission.criteria.map((criterion) => ({
