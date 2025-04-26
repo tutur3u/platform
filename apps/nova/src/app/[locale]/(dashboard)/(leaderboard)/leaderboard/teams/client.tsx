@@ -3,23 +3,21 @@
 import BasicInformationComponent, {
   BasicInformation,
 } from '../components/basic-information-component';
+import Guider from '../components/guider';
 import { Leaderboard, LeaderboardEntry } from '../components/leaderboard';
 import { LeaderboardFilters } from '../components/leaderboard-filters';
+import Rewards from '../components/rewards';
 import { TopThreeCards } from '../components/top-three-cards';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
   ArrowLeftToLine,
-  Award,
+  ArrowRightToLine,
   ChevronLeft,
   ChevronRight,
-  Clock,
   Medal,
   Sparkles,
-  Target,
-  Trophy,
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
@@ -35,6 +33,7 @@ export default function LeaderboardClient({
   problems = [],
   hasMore,
   initialPage = 1,
+  totalPages = 1,
   calculationDate,
 }: {
   data: LeaderboardEntry[];
@@ -48,11 +47,7 @@ export default function LeaderboardClient({
   totalPages?: number;
 }) {
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>(data);
-  const [filteredInfo, setFilteredInfo] = useState<BasicInformation>(basicInfo);
-  const [filteredTopThree, setFilteredTopThree] =
-    useState<LeaderboardEntry[]>(topThree);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedChallenge, setSelectedChallenge] = useState<string>('all');
   const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(
     undefined
   );
@@ -61,10 +56,13 @@ export default function LeaderboardClient({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Get the selected challenge from URL params
+  const selectedChallenge = searchParams.get('challenge') || 'all';
+
   const supabase = createClient();
 
   useEffect(() => {
-    const getUserTeam = async () => {
+    const getTeam = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -80,47 +78,11 @@ export default function LeaderboardClient({
       }
     };
 
-    getUserTeam();
+    getTeam();
   }, [supabase]);
 
   useEffect(() => {
     let filtered = [...data];
-
-    if (selectedChallenge !== 'all') {
-      filtered = filtered
-        .map((entry) => {
-          const challengeScore =
-            entry.challenge_scores?.[selectedChallenge] || 0;
-          return {
-            ...entry,
-            score: challengeScore,
-          };
-        })
-        .filter((entry) => entry.score > 0);
-
-      // Re-rank the filtered entries
-      filtered.sort((a, b) => b.score - a.score);
-      filtered = filtered.map((entry, index) => ({
-        ...entry,
-        rank: index + 1,
-      }));
-
-      const topThree = filtered.slice(0, 3);
-      setFilteredTopThree(topThree);
-
-      // Update basic info based on filtered data
-      const currentTeam = filtered.find((entry) => entry.id === currentTeamId);
-      const newBasicInfo = {
-        currentRank: currentTeam?.rank || 0,
-        topScore: filtered.length > 0 ? filtered[0]?.score || 0 : 0,
-        archiverName: filtered.length > 0 ? filtered[0]?.name || '' : '',
-        totalParticipants: filtered.length,
-      };
-      setFilteredInfo(newBasicInfo);
-    } else {
-      setFilteredTopThree(topThree);
-      setFilteredInfo(basicInfo);
-    }
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -130,25 +92,38 @@ export default function LeaderboardClient({
     }
 
     setFilteredData(filtered);
-  }, [
-    searchQuery,
-    selectedChallenge,
-    data,
-    basicInfo,
-    currentTeamId,
-    topThree,
-  ]);
+  }, [searchQuery, data, currentTeamId]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1) return;
 
     setPage(newPage);
 
-    // Update URL to reflect page change
+    // Update URL to reflect page change while preserving challenge
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', newPage.toString());
 
+    // Keep the challenge parameter if it exists
+    if (selectedChallenge !== 'all') {
+      params.set('challenge', selectedChallenge);
+    }
+
     // Use router.push to navigate to the new page
+    router.push(`?${params.toString()}`);
+  };
+
+  const handleChallengeChange = (challengeId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (challengeId === 'all') {
+      params.delete('challenge');
+    } else {
+      params.set('challenge', challengeId);
+    }
+
+    // Reset to page 1 when changing challenge
+    params.set('page', '1');
+
     router.push(`?${params.toString()}`);
   };
 
@@ -164,7 +139,7 @@ export default function LeaderboardClient({
         <BasicInformationComponent
           selectedChallenge={selectedChallenge}
           selectedChallengeTitle={selectedChallengeTitle}
-          basicInfo={filteredInfo}
+          basicInfo={basicInfo}
           teamMode={true}
         />
         <div className="mb-8">
@@ -201,7 +176,7 @@ export default function LeaderboardClient({
               </Button>
             </Link>
           </div>
-          <TopThreeCards topThree={filteredTopThree} teamMode={true} />
+          <TopThreeCards topThree={topThree} teamMode={true} />
 
           <div className="relative my-8 h-px w-full overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
@@ -224,7 +199,7 @@ export default function LeaderboardClient({
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 selectedChallenge={selectedChallenge}
-                setSelectedChallenge={setSelectedChallenge}
+                setSelectedChallenge={handleChallengeChange}
                 challenges={challenges}
               />
             </motion.div>
@@ -245,9 +220,24 @@ export default function LeaderboardClient({
 
               <div className="mt-6">
                 <div className="bg-foreground/[0.025] dark:bg-foreground/5 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-2 text-center backdrop-blur-xl">
-                  <div className="text-muted-foreground flex-none text-sm"></div>
+                  <div className="text-muted-foreground flex-none text-sm">
+                    <span className="text-primary font-semibold">
+                      {basicInfo.totalParticipants}
+                    </span>{' '}
+                    participant(s)
+                  </div>
 
                   <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
+                    <div className="text-muted-foreground w-fit text-sm">
+                      Page{' '}
+                      <span className="text-primary font-semibold">{page}</span>{' '}
+                      of{' '}
+                      <span className="text-primary font-semibold">
+                        {totalPages ||
+                          Math.ceil(basicInfo.totalParticipants / 20)}
+                      </span>
+                    </div>
+
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="outline"
@@ -276,6 +266,20 @@ export default function LeaderboardClient({
                         <span className="sr-only">Go to next page</span>
                         <ChevronRight className="h-4 w-4" />
                       </Button>
+                      <Button
+                        variant="outline"
+                        className="hidden h-8 w-8 p-0 lg:flex"
+                        onClick={() =>
+                          handlePageChange(
+                            totalPages ||
+                              Math.ceil(basicInfo.totalParticipants / 20)
+                          )
+                        }
+                        disabled={!hasMore}
+                      >
+                        <span className="sr-only">Go to last page</span>
+                        <ArrowRightToLine className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -290,122 +294,8 @@ export default function LeaderboardClient({
               transition={{ duration: 0.5, delay: 0.4 }}
             >
               <div className="relative space-y-6">
-                <Card className="overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-                  <CardContent className="p-6">
-                    <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
-                      {t('tutorials.title')}
-                    </h3>
-                    <ul className="space-y-3 text-sm text-gray-600 dark:text-slate-400">
-                      <li className="flex items-start gap-2">
-                        <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
-                          1
-                        </span>
-                        <span>{t('tutorials.step-1')}</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
-                          2
-                        </span>
-                        <span>{t('tutorials.step-2')}</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
-                          3
-                        </span>
-                        <span>{t('tutorials.step-3')}</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
-
-                <Card className="overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-yellow-400 to-yellow-600" />
-                  <CardContent className="p-6">
-                    <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
-                      {t('rewards.current-rewards')}
-                    </h3>
-                    <ul className="space-y-3">
-                      <li className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                          <Trophy className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-slate-200">
-                            {t('rewards.1st-place')}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-slate-400">
-                            {t('rewards.1st-place-reward')}
-                          </p>
-                        </div>
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                          <Medal className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-slate-200">
-                            {t('rewards.2nd-place')}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-slate-400">
-                            {t('rewards.2nd-place-reward')}
-                          </p>
-                        </div>
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-                          <Medal className="h-4 w-4 text-amber-700 dark:text-amber-500" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-slate-200">
-                            {t('rewards.3rd-place')}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-slate-400">
-                            {t('rewards.3rd-place-reward')}
-                          </p>
-                        </div>
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-                          <Award className="h-4 w-4 text-purple-700 dark:text-purple-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-slate-200">
-                            {t('rewards.top-5')}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-slate-400">
-                            {t('rewards.top-5-reward')}
-                          </p>
-                        </div>
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-900/30">
-                          <Target className="h-4 w-4 text-pink-700 dark:text-pink-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-slate-200">
-                            {t('rewards.top-16')}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-slate-400">
-                            {t('rewards.top-16-reward')}
-                          </p>
-                        </div>
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                          <Clock className="h-4 w-4 text-blue-700 dark:text-blue-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-slate-200">
-                            {t('rewards.first-45-teams')}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-slate-400">
-                            {t('rewards.first-45-teams-reward')}
-                          </p>
-                        </div>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
+                <Guider />
+                <Rewards />
               </div>
             </motion.div>
           </div>

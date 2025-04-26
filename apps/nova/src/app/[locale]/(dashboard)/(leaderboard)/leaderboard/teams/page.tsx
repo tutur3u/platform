@@ -33,9 +33,10 @@ async function TeamsLeaderboardContent({
   searchParams: Promise<{
     page?: string;
     locale?: string;
+    challenge?: string;
   }>;
 }) {
-  const { page = '1' } = await searchParams;
+  const { page = '1', challenge = 'all' } = await searchParams;
   const pageNumber = parseInt(page, 10);
 
   const {
@@ -46,7 +47,7 @@ async function TeamsLeaderboardContent({
     problems,
     hasMore,
     totalPages,
-  } = await fetchLeaderboard(pageNumber);
+  } = await fetchLeaderboard(pageNumber, challenge);
 
   return (
     <LeaderboardClient
@@ -57,8 +58,8 @@ async function TeamsLeaderboardContent({
       problems={problems}
       hasMore={hasMore}
       initialPage={pageNumber}
-      calculationDate={new Date()}
       totalPages={totalPages}
+      calculationDate={new Date()}
     />
   );
 }
@@ -70,7 +71,7 @@ async function TeamsLeaderboardContent({
 // These best problem scores become the "official" problem scores for the team
 // Challenge scores are calculated by summing the official problem scores for that challenge
 // The total team score is the sum of all challenge scores
-async function fetchLeaderboard(page: number = 1) {
+async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
   const defaultData = {
     data: [],
     topThree: [],
@@ -349,7 +350,51 @@ async function fetchLeaderboard(page: number = 1) {
     rank: index + 1,
   }));
 
-  const topThree = rankedTeams.slice(0, 3);
+  // Filter by challenge if specified
+  let filteredRankedTeams = rankedTeams;
+  let filteredProblems = problemsData;
+
+  if (challengeId !== 'all') {
+    // Filter problems to include only those for the specified challenge
+    filteredProblems = problemsData.filter(
+      (problem) => problem.challenge_id === challengeId
+    );
+
+    // Filter and recalculate scores based on the selected challenge
+    filteredRankedTeams = rankedTeams
+      .map((team) => {
+        const challengeScore = team.challenge_scores?.[challengeId] || 0;
+
+        // Keep only the problem scores for this challenge
+        const filteredProblemScores: Record<
+          string,
+          Array<{ id: string; title: string; score: number }>
+        > = {};
+        if (team.problem_scores && team.problem_scores[challengeId]) {
+          filteredProblemScores[challengeId] = team.problem_scores[challengeId];
+        }
+
+        return {
+          ...team,
+          score: challengeScore,
+          problem_scores: filteredProblemScores,
+        };
+      })
+      .sort((a, b) => {
+        if (b.score === a.score) {
+          return a.name.localeCompare(b.name);
+        }
+        return b.score - a.score;
+      });
+
+    // Recalculate ranks after sorting
+    filteredRankedTeams = filteredRankedTeams.map((team, index) => ({
+      ...team,
+      rank: index + 1,
+    }));
+  }
+
+  const topThree = filteredRankedTeams.slice(0, 3);
 
   const supabase = await createClient();
   const {
@@ -366,7 +411,7 @@ async function fetchLeaderboard(page: number = 1) {
       .maybeSingle();
 
     if (teamMember?.team_id) {
-      const currentTeam = rankedTeams.find(
+      const currentTeam = filteredRankedTeams.find(
         (team) => team.id === teamMember.team_id
       );
       currentRank = currentTeam?.rank || 0;
@@ -376,14 +421,17 @@ async function fetchLeaderboard(page: number = 1) {
   // Get basic info
   const basicInfo: BasicInformation = {
     currentRank: currentRank,
-    topScore: rankedTeams[0]?.score || 0,
-    archiverName: rankedTeams[0]?.name || '',
-    totalParticipants: rankedTeams.length,
+    topScore: filteredRankedTeams[0]?.score || 0,
+    archiverName: filteredRankedTeams[0]?.name || '',
+    totalParticipants: filteredRankedTeams.length,
   };
 
   // Paginate
-  const paginatedTeams = rankedTeams.slice((page - 1) * limit, page * limit);
-  const totalPages = Math.ceil(rankedTeams.length / limit);
+  const paginatedTeams = filteredRankedTeams.slice(
+    (page - 1) * limit,
+    page * limit
+  );
+  const totalPages = Math.ceil(filteredRankedTeams.length / limit);
 
   return {
     data: paginatedTeams,
@@ -395,8 +443,8 @@ async function fetchLeaderboard(page: number = 1) {
       totalParticipants: 0,
     },
     challenges: challenges || [],
-    problems: problemsData || [],
-    hasMore: rankedTeams.length > page * limit,
+    problems: filteredProblems,
+    hasMore: filteredRankedTeams.length > page * limit,
     totalPages,
   };
 }

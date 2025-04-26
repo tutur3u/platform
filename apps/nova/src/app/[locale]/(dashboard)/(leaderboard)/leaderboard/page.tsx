@@ -16,6 +16,7 @@ export default async function Page({
   searchParams: Promise<{
     page?: string;
     locale?: string;
+    challenge?: string;
   }>;
 }) {
   return (
@@ -33,9 +34,10 @@ async function LeaderboardContent({
   searchParams: Promise<{
     page?: string;
     locale?: string;
+    challenge?: string;
   }>;
 }) {
-  const { locale = 'en', page = '1' } = await searchParams;
+  const { locale = 'en', page = '1', challenge = 'all' } = await searchParams;
   const pageNumber = parseInt(page, 10);
 
   const {
@@ -46,7 +48,7 @@ async function LeaderboardContent({
     problems,
     hasMore,
     totalPages,
-  } = await fetchLeaderboard(locale, pageNumber);
+  } = await fetchLeaderboard(locale, pageNumber, challenge);
 
   return (
     <LeaderboardClient
@@ -57,8 +59,8 @@ async function LeaderboardContent({
       problems={problems}
       hasMore={hasMore}
       initialPage={pageNumber}
-      calculationDate={new Date()}
       totalPages={totalPages}
+      calculationDate={new Date()}
     />
   );
 }
@@ -67,7 +69,11 @@ async function LeaderboardContent({
 // The challenge's score for each session is the sum of the problem's scores for that challenge in that session
 // Then the official challenge score for each user is the maximum challenge score from any session
 // The leaderboard score for each user is the sum of the official challenge scores for all challenges
-async function fetchLeaderboard(locale: string, page: number = 1) {
+async function fetchLeaderboard(
+  locale: string,
+  page: number = 1,
+  challengeId: string = 'all'
+) {
   const defaultData = {
     data: [],
     topThree: [],
@@ -364,34 +370,82 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
     rank: index + 1,
   }));
 
-  const topThree = rankedData.slice(0, 3);
+  // Filter by challenge if specified
+  let filteredRankedData = rankedData;
+  let filteredProblems = problemsData;
+
+  if (challengeId !== 'all') {
+    // Filter problems to include only those for the specified challenge
+    filteredProblems = problemsData.filter(
+      (problem) => problem.challenge_id === challengeId
+    );
+
+    // Filter and recalculate scores based on the selected challenge
+    filteredRankedData = rankedData
+      .map((entry) => {
+        const challengeScore = entry.challenge_scores?.[challengeId] || 0;
+
+        // Keep only the problem scores for this challenge
+        const filteredProblemScores: Record<
+          string,
+          Array<{ id: string; title: string; score: number }>
+        > = {};
+        if (entry.problem_scores && entry.problem_scores[challengeId]) {
+          filteredProblemScores[challengeId] =
+            entry.problem_scores[challengeId];
+        }
+
+        return {
+          ...entry,
+          score: challengeScore,
+          problem_scores: filteredProblemScores,
+        };
+      })
+      .sort((a, b) => {
+        if (b.score === a.score) {
+          return a.name.localeCompare(b.name);
+        }
+        return b.score - a.score;
+      });
+
+    // Recalculate ranks after sorting
+    filteredRankedData = filteredRankedData.map((entry, index) => ({
+      ...entry,
+      rank: index + 1,
+    }));
+  }
+
+  const topThree = filteredRankedData.slice(0, 3);
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const currentUser = rankedData.find((entry) => entry.id === user?.id);
+  const currentUser = filteredRankedData.find((entry) => entry.id === user?.id);
 
   // Get basic info
   const basicInfo: BasicInformation = {
     currentRank: currentUser?.rank || 0,
-    topScore: rankedData[0]?.score || 0,
-    archiverName: rankedData[0]?.name || '',
-    totalParticipants: rankedData.length,
+    topScore: filteredRankedData[0]?.score || 0,
+    archiverName: filteredRankedData[0]?.name || '',
+    totalParticipants: filteredRankedData.length,
   };
 
   // Paginate
-  const paginatedData = rankedData.slice((page - 1) * limit, page * limit);
-  const totalPages = Math.ceil(rankedData.length / limit);
+  const paginatedData = filteredRankedData.slice(
+    (page - 1) * limit,
+    page * limit
+  );
+  const totalPages = Math.ceil(filteredRankedData.length / limit);
 
   return {
     data: paginatedData,
     topThree,
     basicInfo,
     challenges: challenges || [],
-    problems: problemsData || [],
-    hasMore: rankedData.length > page * limit,
+    problems: filteredProblems,
+    hasMore: filteredRankedData.length > page * limit,
     totalPages,
   };
 }
