@@ -19,8 +19,11 @@ const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 // Add a simple round-robin selection function that favors Google
 function getModelProvider() {
   // Use timestamp to create simple round-robin with 70% preference for Google
-  const timestamp = Date.now();
-  return timestamp % 10 < 7 ? 'google' : 'vertex';
+  // const timestamp = Date.now();
+  // return timestamp % 10 < 7 ? 'google' : 'vertex';
+
+  // Always use Google (higher rate limit)
+  return 'google';
 }
 
 export const runtime = 'edge';
