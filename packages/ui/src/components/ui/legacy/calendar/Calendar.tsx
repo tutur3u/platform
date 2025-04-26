@@ -7,7 +7,7 @@ import CalendarViewWithTrail from './CalendarViewWithTrail';
 import MonthCalendar from './MonthCalendar';
 import { UnifiedEventModal } from './UnifiedEventModal';
 import WeekdayBar from './WeekdayBar';
-import { CalendarSettings } from './settings/CalendarSettingsContext';
+import { CalendarSettings, CategoryTimeSetting, CategoryTimeSettings } from './settings/CalendarSettingsContext';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Button } from '@tuturuuu/ui/button';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
@@ -109,7 +109,17 @@ const SettingsButton = ({
   };
   
   // Handling when saving time settings for category
-  const handleSaveCategoryTimeSettings = (timeSettings: any) => {
+  const handleSaveCategoryTimeSettings = (timeSettings: CategoryTimeSettings) => {
+    if (!timeSettings) {
+      console.error('Invalid category time settings:', timeSettings);
+      toast({
+        title: 'Error',
+        description: 'Invalid category time settings',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     // Update settings with new timeSettings
     const newSettings = {
       ...settings,
@@ -121,6 +131,9 @@ const SettingsButton = ({
     
     // Update settings
     updateSettings(newSettings);
+    
+    // Log successful update for debugging
+    console.log('Updated categoryTimeSettings:', timeSettings);
     
     toast({
       title: 'Success',
@@ -321,7 +334,7 @@ const CalendarContent = ({
     
     try {
       setIsAIScheduling(true);
-      console.log("🚀 Bắt đầu quá trình AI Scheduling...");
+      console.log("🚀 Starting AI Scheduling process...");
       
       // Calculate the period based on the view
       let periodStart: Date;
@@ -407,20 +420,20 @@ const CalendarContent = ({
         
         toast({
           title: "AI Schedule completed",
-          description: `Optimized ${rescheduledEvents.length} event (${categoryDetails}), keep position ${fixedEvents.length}  locked events.`,
+          description: `Optimized ${rescheduledEvents.length} events (${categoryDetails}), preserved ${fixedEvents.length} locked events.`,
         });
       } else {
         console.log('Done');
         toast({
           title: "AI Schedule completed",
-          description: "Your calendar has been optimized based on event priority",
+          description: "Your calendar has been optimized based on event priorities and preferences.",
         });
       }
     } catch (error) {
       console.error('Error in AI scheduling:', error);
       toast({
         title: "AI Schedule failed",
-          description: "An error occurred while optimizing your calendar",
+        description: "An error occurred while optimizing your calendar",
         variant: "destructive",
       });
     } finally {
@@ -772,33 +785,47 @@ const CalendarContent = ({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              Smart Schedule Confirmation
+              Intelligent Calendar Optimization
             </DialogTitle>
             <DialogDescription>
-              AI will intelligently rearrange events in your {
-                view === 'day' ? 'day' : 
-                view === '4-days' ? '4-day' : 
-                view === 'week' ? 'weekly' : 
-                view === 'month' ? 'monthly' : 'current'
-              } calendar based on your preferences and event priorities.
+              Our AI will analyze your schedule and optimize event placement based on your configured time preferences, event priorities, and productivity patterns.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-2 pt-4">
-            <p className="text-sm font-medium">Smart Scheduling Logic:</p>
+            <p className="text-sm font-medium">How Smart Scheduling Works:</p>
             <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-              <li><span className="font-medium">Locked events</span> will not be rescheduled</li>
-              <li>Events will be scheduled according to your <span className="font-medium">preferred times</span> set in Smart Scheduling Settings</li>
-              <li>Events will be optimized based on their <span className="font-medium">category</span> (Work, Social, Health, etc.)</li>
-              <li><span className="text-amber-500 font-medium">High and Medium priority</span> events are given priority to arrange firstly</li>
-              <li><span className="text-blue-500 font-medium">Low priority</span> events are scheduled in remaining slots</li>
+              <li><span className="font-medium">Preserves locked events</span> - Events marked as locked or high priority remain unchanged</li>
+              <li><span className="font-medium">Respects time slots</span> - Events are placed within your defined category time slots</li>
+              <li><span className="font-medium">Prioritizes important work</span> - Higher priority events get scheduled first</li>
+              <li><span className="font-medium">Prevents overlaps</span> - Ensures no double-booking in your schedule</li>
+              <li><span className="font-medium">Maintains same-day scheduling</span> - Events stay on their original day</li>
             </ul>
 
             <div className="mt-4 p-3 bg-muted rounded-md">
               <p className="text-sm flex items-center gap-1.5">
                 <Clock className="h-4 w-4 text-primary" />
-                <span className="font-medium">Tip:</span> Configure optimal hours and preferred days for each category using the Smart Scheduling Settings.
+                <span className="font-medium">Important:</span> For best results, configure time slots for each category in Settings → Smart Scheduling.
               </p>
+            </div>
+            
+            <div className="mt-2 text-sm text-muted-foreground">
+              <p>Smart Scheduling will:</p>
+              <ol className="pl-5 mt-1 list-decimal space-y-1">
+                <li>Check each event's category (Work, Personal, etc.)</li>
+                <li>Place events in their category's configured time slots</li>
+                <li>Schedule higher priority events first, then lower priority</li>
+                <li>Keep events on their original day</li>
+                <li>Update your database immediately after scheduling</li>
+              </ol>
+            </div>
+            
+            <div className="mt-2 text-sm bg-blue-50 dark:bg-blue-950 p-2 rounded-md">
+              <p className="flex items-center gap-1.5 text-blue-700 dark:text-blue-300 font-medium">
+                <Sparkles className="h-4 w-4" />
+                Event Priority Tip
+              </p>
+              <p className="mt-1 text-blue-600 dark:text-blue-400">Set event priority to control scheduling preference: High priority events are scheduled first in optimal slots.</p>
             </div>
           </div>
           
@@ -806,7 +833,7 @@ const CalendarContent = ({
             <Button variant="outline" onClick={() => setShowAIScheduleConfirmation(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAISchedule} className="gap-1.5">
+            <Button onClick={handleAISchedule} className="gap-1.5 bg-primary hover:bg-primary/90">
               <Sparkles className="h-4 w-4" />
               Optimize Calendar
             </Button>

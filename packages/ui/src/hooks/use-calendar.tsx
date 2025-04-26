@@ -5,6 +5,8 @@ import { CalendarEvent, EventPriority } from '@tuturuuu/types/primitives/calenda
 import {
   CalendarSettings,
   defaultCalendarSettings,
+  CategoryTimeSetting as SettingsContextCategoryTimeSetting,
+  CategoryTimeSettings as SettingsContextCategoryTimeSettings
 } from '@tuturuuu/ui/legacy/calendar/settings/CalendarSettingsContext';
 import dayjs from 'dayjs';
 import moment from 'moment';
@@ -104,41 +106,6 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
   _reject?: (reason: any) => void;
 }
 
-// Utility function to fetch data from Gemini API
-const callGeminiAPI = async (prompt: string, apiKey: string): Promise<any> => {
-  try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 1024,
-        }
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error calling Gemini API:', error);
-    throw error;
-  }
-};
-
 // Add geminiApiKey to SmartSchedulingSettings type if it doesn't exist
 declare module '@tuturuuu/ui/legacy/calendar/settings/CalendarSettingsContext' {
   interface SmartSchedulingSettings {
@@ -147,24 +114,96 @@ declare module '@tuturuuu/ui/legacy/calendar/settings/CalendarSettingsContext' {
   }
 }
 
-// Interface for TimeSlot
+// Cập nhật định nghĩa TimeSlot để phù hợp với định nghĩa trong CategoryTimeConfigDialog.tsx
 export interface TimeSlot {
   id: string;
   startHour: number;
   endHour: number;
 }
 
-// Interface for CategoryTimeSetting
-export interface CategoryTimeSetting {
-  timeSlots: Record<string, TimeSlot[]>; // key is day of week, value is array of time slots
-  preferredDays: string[];
-  optimalHours: number[]; // Keep for backward compatibility
-  startHour: number;      // Keep for backward compatibility
-  endHour: number;        // Keep for backward compatibility
+// Cập nhật định nghĩa CategoryTimeSetting để mở rộng từ định nghĩa trong context
+export interface CategoryTimeSetting extends SettingsContextCategoryTimeSetting {
+  timeSlots: Record<string, TimeSlot[]>; // Đảm bảo timeSlots không undefined
 }
 
-// Type alias for the entire settings object
+// Cập nhật kiểu CategoryTimeSettings
 export type CategoryTimeSettings = Record<string, CategoryTimeSetting>;
+
+// Cập nhật hàm migrateTimeSettings để đảm bảo tính nhất quán
+const migrateTimeSettings = (oldSettings: SettingsContextCategoryTimeSettings): CategoryTimeSettings => {
+  const newSettings: CategoryTimeSettings = { ...oldSettings as any };
+  
+  // Loop through each category
+  Object.keys(newSettings).forEach(category => {
+    const setting = newSettings[category];
+    
+    if (setting) {
+      // If timeSlots doesn't exist or is empty, create it
+      if (!setting.timeSlots || Object.keys(setting.timeSlots).length === 0) {
+        setting.timeSlots = {};
+        
+        // For each preferred day, create a time slot with the start and end hours
+        (setting.preferredDays || []).forEach(day => {
+          setting.timeSlots[day] = [
+            { 
+              id: Math.random().toString(36).substring(2, 15), 
+              startHour: setting.startHour || 9, 
+              endHour: setting.endHour || 17 
+            }
+          ];
+        });
+      } else {
+        // Ensure all time slots have proper IDs
+        Object.keys(setting.timeSlots).forEach(day => {
+          const slots = setting.timeSlots[day];
+          if (slots && slots.length > 0) {
+            slots.forEach(slot => {
+              if (!slot.id) {
+                slot.id = Math.random().toString(36).substring(2, 15);
+              }
+            });
+          }
+        });
+      }
+
+      // Ensure all preferred days have time slots
+      (setting.preferredDays || []).forEach(day => {
+        if (!setting.timeSlots[day] || setting.timeSlots[day].length === 0) {
+          setting.timeSlots[day] = [
+            { 
+              id: Math.random().toString(36).substring(2, 15), 
+              startHour: setting.startHour || 9, 
+              endHour: setting.endHour || 17 
+            }
+          ];
+        }
+      });
+
+      // Update optimalHours based on time slots
+      let allHours: number[] = [];
+      Object.values(setting.timeSlots).forEach(slots => {
+        slots.forEach(slot => {
+          // Add all hours within the slot's range
+          for (let hour = slot.startHour; hour <= slot.endHour; hour++) {
+            if (!allHours.includes(hour)) {
+              allHours.push(hour);
+            }
+          }
+        });
+      });
+
+      // Sort hours and update optimalHours
+      if (allHours.length > 0) {
+        allHours.sort((a, b) => a - b);
+        setting.optimalHours = allHours;
+        setting.startHour = allHours[0] || 9;
+        setting.endHour = allHours[allHours.length - 1] || 17;
+      }
+    }
+  });
+  
+  return newSettings;
+};
 
 export const CalendarProvider = ({
   ws,
@@ -602,6 +641,9 @@ export const CalendarProvider = ({
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
       if (!ws) throw new Error('No workspace selected');
 
+      // Tạo một bản ghi log để debug
+      console.log(`🔄 Updating event ${eventId} with:`, eventUpdates);
+
       // Round start and end times to nearest 15-minute interval if they exist
       const updatedEvent = { ...eventUpdates };
       if (updatedEvent.start_at) {
@@ -966,289 +1008,627 @@ export const CalendarProvider = ({
     const event2Start = new Date(event2.start_at).getTime();
     const event2End = new Date(event2.end_at).getTime();
 
-    return event1Start < event2End && event1End > event2Start;
+    const doOverlap = event1Start < event2End && event1End > event2Start;
+    
+    if (doOverlap) {
+      console.log(`⚠️ Overlap detected between "${event1.title}" and "${event2.title}"`);
+      console.log(`  Event 1: ${new Date(event1.start_at).toLocaleString()} - ${new Date(event1.end_at).toLocaleString()}`);
+      console.log(`  Event 2: ${new Date(event2.start_at).toLocaleString()} - ${new Date(event2.end_at).toLocaleString()}`);
+    }
+    
+    return doOverlap;
   };
 
-  // Define the smartScheduleWithGemini function
-  const smartScheduleWithGemini = useCallback(async (
-    events: CalendarEvent[],
-    startDate: Date,
-    endDate: Date,
-    apiKey: string
-  ) => {
-    // Implementation will be added in future
-    console.log('Smart scheduling with Gemini is not implemented yet');
-    return events;
-  }, []);
-
-  // Enhancement: use the user's preferred timeSettings from CategoryTimeConfigDialog
-  const enhancedRescheduleEvents = useCallback(async (
-    events: CalendarEvent[], 
-    startDate: Date, 
-    endDate: Date,
-    categoryTimeSettings: Record<string, any>
-  ) => {
-    console.log("🔄 enhancedRescheduleEvents được gọi với:", {
-      eventsCount: events.length,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      settingsCount: Object.keys(categoryTimeSettings).length
-    });
+  // Helper function to get priority value
+  const getPriorityValue = (priority?: EventPriority | null): number => {
+    if (!priority) return 1; // Default to medium
     
-    try {
-      // Sort events by priority and then by duration (longer events first)
-      const sortedEvents = [...events].sort((a, b) => {
-        // First by priority
-        const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
-        const aPriority = a.priority || 'medium';
-        const bPriority = b.priority || 'medium';
-        
-        const aPriorityValue = priorityOrder[aPriority as keyof typeof priorityOrder] || 1;
-        const bPriorityValue = priorityOrder[bPriority as keyof typeof priorityOrder] || 1;
-        
-        if (aPriorityValue !== bPriorityValue) {
-          return aPriorityValue - bPriorityValue;
-        }
-        
-        // Then by duration (longer events first)
-        const aDuration = new Date(a.end_at).getTime() - new Date(a.start_at).getTime();
-        const bDuration = new Date(b.end_at).getTime() - new Date(b.start_at).getTime();
-        return bDuration - aDuration;
-      });
+    switch (priority) {
+      case 'high': return 2;
+      case 'medium': return 1;
+      case 'low': return 0;
+      default: return 1;
+    }
+  };
+
+  // Helper function to get duration in minutes
+  const getDurationInMinutes = (event: CalendarEvent): number => {
+    const start = new Date(event.start_at);
+    const end = new Date(event.end_at);
+    return Math.max(30, Math.round((end.getTime() - start.getTime()) / (60 * 1000)));
+  };
+
+  // Sửa lại enhancedRescheduleEvents để chỉ di chuyển sự kiện trong cùng ngày
+  const enhancedRescheduleEvents = useCallback(
+    async (
+      events: CalendarEvent[],
+      startDate: Date,
+      endDate: Date,
+      categoryTimeSettings: Record<string, CategoryTimeSetting>
+    ) => {
+      console.log('⚙️ Starting enhancedRescheduleEvents with', events.length, 'events');
+      console.log('📅 Start date:', startDate.toISOString(), '- End date:', endDate.toISOString());
+      console.log('📝 Category time settings:', JSON.stringify(categoryTimeSettings, null, 2));
+      console.log('⚡ Mode: same day only (events will stay on their original day)');
       
-      console.log("🔄 Sự kiện đã sắp xếp theo ưu tiên:", sortedEvents.map(e => ({
-        title: e.title,
-        priority: e.priority || 'medium',
-        duration: (new Date(e.end_at).getTime() - new Date(e.start_at).getTime()) / (1000 * 60) + ' minutes'
-      })));
+      // Create an object to track scheduled time slots
+      const scheduledTimeSlots: Record<string, boolean> = {};
       
-      // Keep track of scheduled events and time slots that have been used
-      const scheduledEvents: CalendarEvent[] = [];
-      const occupiedSlots: Set<string> = new Set();
-      
-      // Group events by category
-      const eventsByCategory: Record<string, CalendarEvent[]> = {};
-      for (const event of sortedEvents) {
-        let category = event.metadata?.category || '';
-        
-        // Try to infer category from title if not set
-        if (!category) {
-          const title = event.title?.toLowerCase() || '';
-          if (title.includes('meeting') || title.includes('họp')) {
-            category = 'Meeting';
-          } else if (title.includes('work') || title.includes('công việc')) {
-            category = 'Work';
-          } else {
-            category = 'Personal';
-          }
-        }
-        
-        // Initialize the array if it doesn't exist
-        if (!eventsByCategory[category]) {
-          eventsByCategory[category] = [];
-        }
-        
-        // Now we know for sure the array exists
-        (eventsByCategory[category] as CalendarEvent[]).push(event);
+      // Create an array of all days in the period - for tracking
+      const daysInPeriod: Date[] = [];
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        daysInPeriod.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
       }
       
-      console.log("📊 Sự kiện theo danh mục:", Object.fromEntries(
-        Object.entries(eventsByCategory).map(([category, events]) => 
-          [category, events.length]
-        )
-      ));
+      console.log('📅 Days in period:', daysInPeriod.map(d => d.toLocaleDateString()));
       
-      // Process each category
-      for (const [category, categoryEvents] of Object.entries(eventsByCategory)) {
-        console.log(`🔄 Xử lý danh mục: ${category} (${categoryEvents.length} sự kiện)`);
+      // Sort events by priority
+      const sortedEvents = [...events].sort((a, b) => {
+        const priorityA = getPriorityValue(a.priority);
+        const priorityB = getPriorityValue(b.priority);
         
+        if (priorityA !== priorityB) {
+          return priorityB - priorityA; // Higher priority first
+        }
+        
+        // For same priority, sort by duration (longer first)
+        const durationA = getDurationInMinutes(a);
+        const durationB = getDurationInMinutes(b);
+        return durationB - durationA;
+      });
+      
+      // Create results array
+      const scheduledEvents: CalendarEvent[] = [];
+      
+      // Schedule each event
+      for (const event of sortedEvents) {
+        const category = event.metadata?.category || 'Work';
         const categorySettings = categoryTimeSettings[category];
         
         if (!categorySettings) {
-          console.log(`⚠️ Không có cài đặt cho danh mục: ${category}, giữ nguyên thời gian gốc`);
-          // Keep original times if no settings exist
-          categoryEvents.forEach(e => scheduledEvents.push(e));
+          console.log(`⚠️ No settings for category "${category}", keeping original time for event "${event.title}"`);
+          scheduledEvents.push(event);
           continue;
         }
         
-        console.log(`ℹ️ Cài đặt cho danh mục ${category}:`, {
-          preferredDays: categorySettings.preferredDays,
-          startHour: categorySettings.startHour,
-          endHour: categorySettings.endHour,
-          hasTimeSlots: !!categorySettings.timeSlots && Object.keys(categorySettings.timeSlots).length > 0
-        });
+        // Get the original date details
+        const originalStartDate = new Date(event.start_at);
+        const originalEndDate = new Date(event.end_at);
+        const eventDurationMinutes = getDurationInMinutes(event);
         
-        // Create an array of all days in the period
-        const allDays: Date[] = [];
-        let currentDay = new Date(startDate);
-        while (currentDay <= endDate) {
-          allDays.push(new Date(currentDay));
-          currentDay.setDate(currentDay.getDate() + 1);
+        // Flag to mark if the event has been scheduled
+        let eventScheduled = false;
+        
+        // Get the original day of the event
+        const originalDay = new Date(originalStartDate);
+        originalDay.setHours(0, 0, 0, 0);
+        
+        // Check if this day is within the selected time range
+        if (originalDay < startDate || originalDay > endDate) {
+          console.log(`⚠️ Original day ${originalDay.toLocaleDateString()} not in selected range for "${event.title}", keeping original time`);
+          scheduledEvents.push(event);
+          continue;
         }
         
-        // Process each event in this category
-        for (const event of categoryEvents) {
-          const eventDuration = new Date(event.end_at).getTime() - new Date(event.start_at).getTime();
-          const eventDurationHours = eventDuration / (1000 * 60 * 60);
+        // Get the day of week of the original day
+        const originalDayOfWeek = getDayOfWeek(originalDay).toLowerCase();
+        console.log(`🔍 Event "${event.title}" is on ${originalDayOfWeek} (${originalDay.toLocaleDateString()})`);
+        
+        // Check preferred days for this category
+        const preferredDays = categorySettings.preferredDays || [];
+        
+        // Only proceed if the original day is a preferred day
+        if (!preferredDays.includes(originalDayOfWeek)) {
+          console.log(`⚠️ Original day ${originalDayOfWeek} not in preferred days for category "${category}", keeping original time`);
+          scheduledEvents.push(event);
+          continue;
+        }
+        
+        // Get time slots for this day
+        const timeSlots = categorySettings.timeSlots?.[originalDayOfWeek] || [];
+        
+        if (timeSlots.length === 0) {
+          console.log(`⚠️ No time slots defined for ${originalDayOfWeek} for category "${category}", keeping original time`);
+          scheduledEvents.push(event);
+          continue;
+        }
+        
+        // Sort time slots by start hour
+        const sortedTimeSlots = [...timeSlots].sort((a, b) => a.startHour - b.startHour);
+        
+        // Try each time slot
+        for (const timeSlot of sortedTimeSlots) {
+          const slotStartHour = timeSlot.startHour;
+          const slotEndHour = timeSlot.endHour;
           
-          // Skip events that are too long (more than 24 hours)
-          if (eventDurationHours > 24) {
-            scheduledEvents.push(event);
+          console.log(`🕒 Trying time slot ${slotStartHour}:00-${slotEndHour}:00 on ${originalDay.toLocaleDateString()} for "${event.title}"`);
+          
+          // Calculate hours available in this slot
+          const availableHours = slotEndHour - slotStartHour;
+          const requiredHours = Math.ceil(eventDurationMinutes / 60);
+          
+          if (availableHours < requiredHours) {
+            console.log(`⏱️ Event requires ${requiredHours} hours, but slot only has ${availableHours} hours`);
             continue;
           }
           
-          // Find all possible time slots for this event
-          const potentialSlots: Array<{
-            day: Date;
-            startHour: number;
-            score: number;
-          }> = [];
-          
-          // Look at each day
-          for (const day of allDays) {
-            const dayOfWeekIndex = day.getDay();
-            const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeekIndex];
-            const isPreferredDay = categorySettings.preferredDays?.includes(dayOfWeek) || false;
+          // Try each hour in the time slot
+          for (let hour = slotStartHour; hour <= slotEndHour - requiredHours; hour++) {
+            // Create new start date - USING ORIGINAL DAY
+            const newStartDate = new Date(originalDay);
+            newStartDate.setHours(hour, 0, 0, 0);
             
-            // Skip non-preferred days unless no preferred days are specified
-            if (!isPreferredDay && categorySettings.preferredDays?.length > 0) {
-              continue;
-            }
+            // Debug log to check new date and time
+            console.log(`🔄 Trying to schedule "${event.title}" at:`, {
+              originalDate: originalStartDate.toLocaleDateString(),
+              newDate: newStartDate.toLocaleDateString(),
+              time: `${hour}:00`,
+              fullDateTime: newStartDate.toLocaleString(),
+              day: originalDay.toDateString(),
+              dayOfWeek: originalDayOfWeek
+            });
             
-            // Check if we have specific time slots for this day
-            let timeSlots: Array<{startHour: number, endHour: number}> = [];
+            // Create new end date
+            const newEndDate = new Date(newStartDate);
+            newEndDate.setMinutes(newStartDate.getMinutes() + eventDurationMinutes);
             
-            // Try to get time slots from the categorySettings
-            if (categorySettings.timeSlots && 
-                typeof categorySettings.timeSlots === 'object' && 
-                dayOfWeek && 
-                categorySettings.timeSlots[dayOfWeek] && 
-                Array.isArray(categorySettings.timeSlots[dayOfWeek])) {
-              // We have specific time slots for this day
-              timeSlots = categorySettings.timeSlots[dayOfWeek];
-            } else if (categorySettings.startHour !== undefined && categorySettings.endHour !== undefined) {
-              // Use default start/end hours if specific slots aren't available
-              timeSlots = [{
-                startHour: categorySettings.startHour,
-                endHour: categorySettings.endHour
-              }];
-            }
+            // Debug log to check both start and end times
+            console.log(`  ⏰ Duration: ${eventDurationMinutes} minutes, End time: ${newEndDate.toLocaleString()}`);
             
-            // Process each time slot
-            for (const slot of timeSlots) {
-              const { startHour, endHour } = slot;
-              
-              // Skip slots that are too short
-              if (endHour - startHour < eventDurationHours) {
-                continue;
-              }
-              
-              // Loop through possible start times within this slot (in 30 min increments)
-              for (let hour = startHour; hour <= endHour - eventDurationHours; hour += 0.5) {
-                // Build a unique slot ID
-                const slotKey = `${day.toISOString().split('T')[0]}-${hour.toString()}`;
-                
-                // Skip if this slot is already occupied
-                if (occupiedSlots.has(slotKey)) {
-                  continue;
-                }
-                
-                // Calculate a score for this slot
-                let score = 1000; // Base score
-                
-                // Preferred day bonus
-                if (isPreferredDay) {
-                  score += 500;
-                }
-                
-                // Optimal hour bonus (if the hour falls within optimal hours)
-                if (categorySettings.optimalHours && 
-                    Array.isArray(categorySettings.optimalHours) && 
-                    categorySettings.optimalHours.includes(Math.floor(hour))) {
-                  score += 200;
-                }
-                
-                // Custom time slot bonus (if this slot is from a custom time slot definition)
-                if (categorySettings.timeSlots && 
-                    typeof categorySettings.timeSlots === 'object' && 
-                    dayOfWeek && 
-                    categorySettings.timeSlots[dayOfWeek]) {
-                  score += 300;
-                }
-                
-                // Add this potential slot
-                potentialSlots.push({
-                  day,
-                  startHour: hour,
-                  score
-                });
+            // Check if this time overlaps with any already scheduled events
+            let hasOverlap = false;
+            
+            // Check against all scheduled events
+            for (const scheduledEvent of scheduledEvents) {
+              if (eventsOverlap(
+                {
+                  ...event,
+                  start_at: newStartDate.toISOString(),
+                  end_at: newEndDate.toISOString()
+                },
+                scheduledEvent
+              )) {
+                hasOverlap = true;
+                break;
               }
             }
-          }
-          
-          // If we found potential slots, pick the best one
-          if (potentialSlots.length > 0) {
-            // Sort by score (highest first)
-            potentialSlots.sort((a, b) => b.score - a.score);
             
-            // Take the highest scoring slot
-            const bestSlot = potentialSlots[0];
-            
-            if (bestSlot) {
-              // Create the new start and end times
-              const hourParts = bestSlot.startHour.toString().split('.');
-              const startHours = parseInt(hourParts[0] || '0');
-              const startMinutes = hourParts.length > 1 ? parseInt(hourParts[1] || '0') * 60 : 0;
-              
-              const newStartTime = new Date(bestSlot.day);
-              newStartTime.setHours(startHours, startMinutes, 0, 0);
-              
-              const newEndTime = new Date(newStartTime);
-              newEndTime.setTime(newStartTime.getTime() + eventDuration);
-              
-              // Update the event
-              const updatedEvent = {
+            if (!hasOverlap) {
+              // Update event time
+              const scheduledEvent = {
                 ...event,
-                start_at: newStartTime.toISOString(),
-                end_at: newEndTime.toISOString(),
+                start_at: newStartDate.toISOString(),
+                end_at: newEndDate.toISOString(),
                 metadata: {
-                  ...event.metadata || {},
-                  category,
-                  auto_scheduled: true,
-                  scheduling_score: bestSlot.score,
-                  last_rescheduled: new Date().toISOString()
+                  ...event.metadata,
+                  last_scheduled: new Date().toISOString(),
+                  scheduling_day: originalDay.toLocaleDateString(),
+                  scheduling_slot: `${hour}:00-${newEndDate.getHours()}:${newEndDate.getMinutes()}`
                 }
               };
               
-              // Mark this slot as occupied
-              occupiedSlots.add(`${bestSlot.day.toISOString().split('T')[0]}-${bestSlot.startHour.toString()}`);
+              console.log(`✅ SUCCESSFULLY SCHEDULED "${event.title}" on ${originalDay.toLocaleDateString()} at ${hour}:00-${newEndDate.getHours()}:${newEndDate.getMinutes()}`);
+              console.log(`   From: ${new Date(event.start_at).toLocaleString()} → To: ${newStartDate.toLocaleString()}`);
               
-              // Add this updated event to the scheduled events
-              scheduledEvents.push(updatedEvent);
+              // Add to the list of scheduled events
+              scheduledEvents.push(scheduledEvent);
+              eventScheduled = true;
+              
+              // Mark this time slot as used
+              for (let h = hour; h < newEndDate.getHours(); h++) {
+                scheduledTimeSlots[`${originalDayOfWeek}-${h}`] = true;
+              }
+              
+              break;
             } else {
-              // No suitable slot found, keep original time
-              scheduledEvents.push(event);
+              console.log(`❌ Time ${hour}:00 on ${originalDay.toLocaleDateString()} overlaps with existing events for "${event.title}"`);
             }
-          } else {
-            // No suitable slot found, keep original time
-            scheduledEvents.push(event);
           }
+          
+          if (eventScheduled) break;
+        }
+        
+        // If the event couldn't be scheduled, keep the original time
+        if (!eventScheduled) {
+          console.log(`⚠️ Could not find suitable time for "${event.title}" on ${originalDay.toLocaleDateString()}, keeping original time`);
+          scheduledEvents.push(event);
         }
       }
       
+      console.log(`✅ Scheduling complete with ${scheduledEvents.length} events (${scheduledEvents.filter(e => e.metadata?.last_scheduled).length} rescheduled)`);
       return scheduledEvents;
-    } catch (error) {
-      console.error('Error in enhanced reschedule events:', error);
-      return events;
-    }
-  }, [updateEvent]);
+    },
+    [getDurationInMinutes, getPriorityValue, eventsOverlap]
+  );
   
-  // Enhanced version of rescheduleEvents that uses Gemini if API key is available
+  // Thêm lại hàm callGeminiAPI
+  const callGeminiAPI = async (prompt: string, apiKey?: string): Promise<any> => {
+    try {
+      console.log('🤖 Gửi yêu cầu đến API lịch thông minh...');
+      
+      // Sử dụng API endpoint mới thay vì gọi trực tiếp đến Gemini
+      // Thêm origin vào URL để đảm bảo gọi đúng endpoint
+      let apiUrl = '/api/v1/calendar/smart-scheduling';
+      
+      // Nếu đang ở môi trường client, thử lấy origin
+      if (typeof window !== 'undefined') {
+        const origin = window.location.origin;
+        apiUrl = `${origin}/api/v1/calendar/smart-scheduling`;
+      }
+      
+      console.log('📝 Calling API at:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          apiKey, // Sẽ sử dụng API key từ môi trường nếu không được cung cấp
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Lỗi API lịch thông minh:', errorText);
+        throw new Error(`Lỗi API lịch thông minh: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      
+      // Kiểm tra kết quả
+      if (!result.success) {
+        console.error('❌ Lỗi khi lập lịch thông minh:', result.error || 'Không xác định');
+        throw new Error(`Lỗi khi lập lịch thông minh: ${result.error || 'Không xác định'}`);
+      }
+      
+      // Trả về dữ liệu phân tích
+      if (result.data) {
+        return {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify(result.data)
+                  }
+                ]
+              }
+            }
+          ]
+        };
+      } else if (result.rawText) {
+        // Fallback nếu không thể phân tích dữ liệu ở API
+        return {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: result.rawText
+                  }
+                ]
+              }
+            }
+          ]
+        };
+        } else {
+        throw new Error('Không nhận được dữ liệu hợp lệ từ API lịch thông minh');
+      }
+    } catch (error) {
+      console.error('❌ Lỗi khi gọi API lịch thông minh:', error);
+      throw error;
+    }
+  };
+
+  // Định nghĩa lại hàm smartScheduleWithGemini
+  const smartScheduleWithGemini = useCallback(
+    async (
+      events: CalendarEvent[],
+      startDate: Date,
+      endDate: Date,
+      apiKey?: string,
+      categoryTimeSettings: Record<string, CategoryTimeSetting> = {}
+    ) => {
+      console.log('🧠 Smart scheduling with Gemini (Reclaim AI style)...');
+      
+      try {
+        // Create list of days in the period
+        const daysInPeriod: Date[] = [];
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+          daysInPeriod.push(new Date(currentDate));
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        console.log('📅 Days in period:', daysInPeriod.map(d => d.toLocaleDateString()));
+        
+        // Categorize events
+        const fixedEvents = events.filter(e => e.locked || e.priority === 'high');
+        const eventsToReschedule = events.filter(e => !e.locked && e.priority !== 'high')
+          // Sort events by priority and length
+          .sort((a, b) => {
+            const priorityDiff = getPriorityValue(b.priority) - getPriorityValue(a.priority);
+            if (priorityDiff !== 0) return priorityDiff;
+            
+            // If same priority, sort by duration (longer first)
+            const durationA = getDurationInMinutes(a);
+            const durationB = getDurationInMinutes(b);
+            return durationB - durationA;
+          });
+        
+        console.log(`🔍 Found ${fixedEvents.length} fixed events and ${eventsToReschedule.length} events to reschedule`);
+        
+        if (eventsToReschedule.length === 0) {
+          console.log('⚠️ No events to reschedule');
+          return events;
+        }
+        
+        // Extract current user's working hours
+        const workingHours = {
+          start: 9, // Default 9 AM
+          end: 17, // Default 5 PM
+          // Add logic to detect working hours from user's calendar if possible
+        };
+        
+        // Calculate time blocks already used (from fixed events)
+        const usedTimeBlocks = fixedEvents.map(event => ({
+          start: new Date(event.start_at),
+          end: new Date(event.end_at),
+          title: event.title
+        }));
+        
+        // Analyze user's calendar organization patterns
+        const userCalendarPatterns = analyzeUserCalendarPatterns(events);
+        
+        // Convert category time settings to a format that's easier for Gemini to understand
+        const formattedSettings: Record<string, any> = {};
+        
+        for (const [category, settings] of Object.entries(categoryTimeSettings)) {
+          formattedSettings[category] = {
+            preferredDays: settings.preferredDays,
+            timeSlots: {},
+            focusTime: true, // Default consider as focus time
+            bufferBefore: 15, // Add buffer before important events
+            bufferAfter: 15, // Add buffer after important events
+          };
+          
+          // Convert time slots
+          for (const [day, slots] of Object.entries(settings.timeSlots || {})) {
+            if (slots && slots.length > 0) {
+              formattedSettings[category].timeSlots[day] = slots.map(slot => ({
+                start: slot.startHour,
+                end: slot.endHour,
+                productivity: calculateProductivityScore(slot.startHour, slot.endHour, userCalendarPatterns)
+              }));
+            }
+          }
+        }
+        
+        // Convert events for Gemini to understand
+        const formattedEvents = events.map(event => ({
+          id: event.id,
+          title: event.title || 'Untitled',
+          description: event.description,
+          category: event.metadata?.category || 'Work',
+          priority: event.priority || 'medium',
+          isFixed: event.locked || event.priority === 'high',
+          duration: getDurationInMinutes(event),
+          currentStart: new Date(event.start_at).toISOString(),
+          currentEnd: new Date(event.end_at).toISOString(),
+          originalDay: new Date(event.start_at).toLocaleDateString(),
+          deadline: event.metadata?.deadline || null,
+          isRecurring: Boolean(event.metadata?.recurrence),
+          timePreference: event.metadata?.timePreference || null, // Add preferred time option if available
+          energyLevel: calculateRequiredEnergyLevel(event) // Energy level required for the event
+        }));
+        
+        // Create prompt for Gemini
+        const prompt = `
+You are Reclaim AI, an advanced intelligent calendar assistant that perfectly balances work and life. Your task is to optimize users' schedules to maximize productivity and well-being.
+
+# Calendar Input:
+- Time period: ${startDate.toISOString()} to ${endDate.toISOString()}
+- Working hours: ${workingHours.start}:00 to ${workingHours.end}:00
+- Number of events: ${events.length} (${fixedEvents.length} fixed, ${eventsToReschedule.length} to reschedule)
+- User patterns: ${JSON.stringify(userCalendarPatterns, null, 2)}
+
+# Category Settings (with preferred times):
+${JSON.stringify(formattedSettings, null, 2)}
+
+# Events to reschedule:
+${JSON.stringify(eventsToReschedule.map(e => ({
+  id: e.id,
+  title: e.title,
+  category: e.metadata?.category || 'Work',
+  priority: e.priority || 'medium',
+  duration: getDurationInMinutes(e),
+  currentStart: new Date(e.start_at).toISOString(),
+  originalDay: new Date(e.start_at).toLocaleDateString(),
+  deadline: e.metadata?.deadline || null
+})), null, 2)}
+
+# Fixed events (for reference - do not reschedule these):
+${JSON.stringify(fixedEvents.map(e => ({
+  id: e.id,
+  title: e.title,
+  start: new Date(e.start_at).toISOString(),
+  end: new Date(e.end_at).toISOString()
+})), null, 2)}
+
+# Reclaim AI Scheduling Algorithm Rules:
+1. Try to keep events on their original day when possible
+2. If an event cannot fit on its original day, intelligently move it to the next available day with suitable time slots
+3. Apply "Task Batching" - group similar categories of work together when possible
+4. Honor the "Biological Prime Time" - schedule high-energy tasks during user's peak productivity hours
+5. Place "Deep Work" activities in longer uninterrupted blocks, preferably morning
+6. Schedule buffer time between meetings (15-30 minutes) to prevent back-to-back fatigue
+7. Prioritize events in order: Critical (P1) > High (P2) > Medium (P3) > Low (P4)
+8. Place longer duration events earlier in the day when possible
+9. Ensure work-life balance by properly distributing work and personal events
+10. For tasks with deadlines, prioritize those with closer due dates
+11. Leave some "flexible slack" in the schedule for unexpected work
+12. Use the 52/17 rule: aim for focused 52-minute work blocks followed by 17-minute breaks
+13. Protect focus time by grouping meetings together rather than spreading them throughout day
+14. If a time slot has multiple candidates, place the event with higher "energy required" during higher productivity periods
+15. Events with deadlines should be scheduled earlier to provide buffer for unexpected delays
+16. Consider the context switching cost when scheduling different categories back-to-back
+
+# Output Format:
+Return a JSON array of rescheduled events, using this exact format:
+[
+  {
+    "id": "event1",
+    "newStart": "2023-08-01T09:00:00.000Z", 
+    "newEnd": "2023-08-01T10:00:00.000Z",
+    "changed": true,
+    "reason": "Scheduled during morning focus time for optimal productivity"
+  },
+  {
+    "id": "event2",
+    "newStart": "2023-08-01T14:00:00.000Z",
+    "newEnd": "2023-08-01T15:30:00.000Z", 
+    "changed": true,
+    "reason": "Grouped with other meetings to protect focus time"
+  }
+]
+
+You MUST return ONLY the JSON array with no additional text or explanation.
+`;
+
+        console.log('📝 Sending prompt to Gemini...');
+        
+        // Call Gemini API
+        const response = await callGeminiAPI(prompt, apiKey);
+        
+        if (!response || !response.candidates || response.candidates.length === 0) {
+          console.error('❌ No response from Gemini API');
+          return events;
+        }
+        
+        // Get results from Gemini
+        const responseText = response.candidates[0].content.parts[0].text;
+        console.log('✅ Received response from Gemini:', responseText.substring(0, 100) + '...');
+        
+        // Parse JSON results
+        let scheduledEventsData;
+        try {
+          // Filter out any non-JSON content
+          const jsonString = responseText.replace(/^```json\n|\n```$/g, '').trim();
+          scheduledEventsData = JSON.parse(jsonString);
+          
+          if (!Array.isArray(scheduledEventsData)) {
+            throw new Error('Expected array, got ' + typeof scheduledEventsData);
+          }
+        } catch (error) {
+          console.error('❌ Failed to parse Gemini response as JSON:', error);
+          console.log('Raw response:', responseText);
+          return events;
+        }
+        
+        console.log('📊 Parsed scheduled events:', scheduledEventsData);
+        
+        // Update times for events
+        const result = events.map(event => {
+          const scheduledEvent = scheduledEventsData.find(e => e.id === event.id);
+          
+          if (scheduledEvent && scheduledEvent.changed) {
+            console.log(`🔄 Updating event "${event.title}" from ${new Date(event.start_at).toLocaleString()} to ${new Date(scheduledEvent.newStart).toLocaleString()}`);
+            console.log(`   Reason: ${scheduledEvent.reason || 'Optimized scheduling'}`);
+            
+            return {
+          ...event,
+              start_at: scheduledEvent.newStart,
+              end_at: scheduledEvent.newEnd,
+              metadata: {
+                ...event.metadata,
+                last_scheduled: new Date().toISOString(),
+                scheduled_by: 'reclaim',
+                scheduling_reason: scheduledEvent.reason || 'Optimized scheduling'
+              }
+            };
+          }
+          
+          return event;
+        });
+        
+        console.log('✅ Scheduling complete.');
+        return result;
+      } catch (error) {
+        console.error('❌ Error in smartScheduleWithGemini:', error);
+        return events;
+      }
+    },
+    [getDurationInMinutes, getPriorityValue]
+  );
+  
+  // Hàm phụ trợ để phân tích mẫu lịch của người dùng
+  const analyzeUserCalendarPatterns = (events: CalendarEvent[]) => {
+    // Tạo mẫu giả để minh họa, trong thực tế sẽ phân tích sự kiện thực
+    const productiveHours = {
+      morning: true, // Người dùng có xu hướng năng suất vào buổi sáng
+      afternoon: false,
+      evening: false
+    };
+    
+    const meetingPreference = {
+      preferredDays: ['Monday', 'Wednesday', 'Thursday'],
+      preferredTimes: ['10:00', '14:00', '16:00']
+    };
+    
+    return {
+      productiveHours,
+      meetingPreference,
+      averageMeetingDuration: 45, // phút
+      breakFrequency: 'medium', // low, medium, high
+      workStartTime: '09:00', 
+      workEndTime: '18:00'
+    };
+  };
+  
+  // Hàm tính toán điểm năng suất dựa trên khung giờ và mẫu người dùng
+  const calculateProductivityScore = (
+    startHour: number, 
+    endHour: number, 
+    userPatterns: any
+  ): number => {
+    // Logic mẫu để đánh giá khung giờ dựa trên mẫu người dùng
+    if (startHour >= 8 && startHour <= 11 && userPatterns.productiveHours.morning) {
+      return 10; // Điểm cao cho buổi sáng nếu người dùng năng suất vào buổi sáng
+    } else if (startHour >= 14 && startHour <= 16 && userPatterns.productiveHours.afternoon) {
+      return 8; // Điểm khá cao cho buổi chiều nếu người dùng năng suất vào buổi chiều
+    } else if (startHour >= 17) {
+      return 3; // Điểm thấp cho buổi tối
+    } else {
+      return 5; // Điểm trung bình cho các khung giờ khác
+    }
+  };
+  
+  // Hàm tính toán mức năng lượng cần thiết cho sự kiện
+  const calculateRequiredEnergyLevel = (event: CalendarEvent): 'high' | 'medium' | 'low' => {
+    // Xác định mức năng lượng dựa trên loại sự kiện, thời lượng, và các thuộc tính khác
+    const duration = getDurationInMinutes(event);
+    const priority = event.priority || 'medium';
+    const hasKeywords = (event.title || '').match(/(meeting|presentation|interview|review)/i);
+    
+    if (priority === 'high' || duration > 60 || (event.title || '').includes('presentation')) {
+      return 'high';
+    } else if (priority === 'medium' || hasKeywords || duration > 30) {
+      return 'medium';
+    } else {
+      return 'low';
+    }
+  };
+
+  // Cập nhật hàm rescheduleEvents để sử dụng Gemini nếu có API key
   const rescheduleEvents = useCallback(async (startDate?: Date, endDate?: Date, viewMode: 'day' | '4-days' | 'week' | 'month' = 'week') => {
-    console.log("🔍 rescheduleEvents được gọi với:", { startDate, endDate, viewMode });
+    console.log("🔍 rescheduleEvents called with:", { startDate, endDate, viewMode });
     
     if (!ws?.id) {
-      console.error("❌ Không có workspace ID, không thể lên lịch");
+      console.error("❌ No workspace ID, cannot schedule");
       return;
     }
     
@@ -1291,7 +1671,7 @@ export const CalendarProvider = ({
       }
     }
     
-    console.log("📅 Khoảng thời gian sắp xếp:", {
+    console.log("📅 Time period to schedule:", {
       periodStart: periodStart.toISOString(),
       periodEnd: periodEnd.toISOString()
     });
@@ -1302,16 +1682,61 @@ export const CalendarProvider = ({
       return eventStart >= periodStart && eventStart <= periodEnd;
     });
     
-    console.log(`📋 Đã tìm thấy ${allEvents.length} sự kiện trong khoảng thời gian đã chọn`);
+    console.log(`📋 Found ${allEvents.length} events in the selected time period`);
     
-    // Check if Gemini API key is available in settings
+    // Check if Gemini API key is available
     const geminiApiKey = settings?.smartScheduling?.geminiApiKey;
     
-    if (geminiApiKey) {
-      console.log('🤖 Sử dụng Gemini 2.0 Flash cho lập lịch thông minh');
-      return await smartScheduleWithGemini(allEvents, periodStart, periodEnd, geminiApiKey);
-    } else {
-      console.log('⚙️ Sử dụng phương pháp lập lịch nâng cao');
+    // Get the user's category time settings
+    let userCategoryTimeSettings = settings?.smartScheduling?.categoryTimeSettings || {};
+    
+    // Ensure the time settings are in the new format with timeSlots
+    userCategoryTimeSettings = migrateTimeSettings(userCategoryTimeSettings);
+    
+    if (Object.keys(userCategoryTimeSettings).length === 0) {
+      console.log('⚠️ No category time settings found, using default ones');
+      
+      // Generate default settings for basic categories
+      const defaultTimeSettings: Record<string, CategoryTimeSetting> = {
+        'Work': {
+          preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+          optimalHours: [9, 10, 11, 14, 15, 16],
+          startHour: 9,
+          endHour: 17,
+          timeSlots: {
+            'monday': [{ id: 'monday-work', startHour: 9, endHour: 17 }],
+            'tuesday': [{ id: 'tuesday-work', startHour: 9, endHour: 17 }],
+            'wednesday': [{ id: 'wednesday-work', startHour: 9, endHour: 17 }],
+            'thursday': [{ id: 'thursday-work', startHour: 9, endHour: 17 }],
+            'friday': [{ id: 'friday-work', startHour: 9, endHour: 17 }],
+          }
+        },
+        // Other categories remain unchanged
+      };
+      
+      console.log('📝 Default settings created:', defaultTimeSettings);
+      
+      // Save these default settings for future use
+      try {
+        updateSettings({
+          smartScheduling: {
+            ...settings.smartScheduling,
+            categoryTimeSettings: defaultTimeSettings
+          }
+        });
+        console.log('✅ Default settings saved to settings');
+      } catch (error) {
+        console.error('❌ Error saving default settings:', error);
+      }
+      
+      userCategoryTimeSettings = defaultTimeSettings;
+    }
+    
+    // Log the settings for debugging
+    console.log('Category time settings:', JSON.stringify(userCategoryTimeSettings, null, 2));
+    
+    try {
+      let result;
       
       // First, make sure we only schedule unlocked events
       const fixedEvents = allEvents.filter(
@@ -1323,139 +1748,95 @@ export const CalendarProvider = ({
         (event: CalendarEvent) => !event.locked
       );
       
-      console.log(`🔒 Sự kiện cố định: ${fixedEvents.length}, Sự kiện có thể sắp xếp: ${rescheduleableEvents.length}`);
+      console.log(`🔒 Fixed events: ${fixedEvents.length}, Reschedulable events: ${rescheduleableEvents.length}`);
       
-      // Get the user's category time settings
-      let userCategoryTimeSettings = settings?.smartScheduling?.categoryTimeSettings || {};
-      
-      // If no category time settings exist, generate default ones
-      if (Object.keys(userCategoryTimeSettings).length === 0) {
-        console.log('⚠️ Không tìm thấy cài đặt thời gian danh mục, sử dụng mặc định');
-        
-        // Generate default settings for basic categories
-        const defaultTimeSettings: Record<string, CategoryTimeSetting> = {
-          'Work': {
-            preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-            optimalHours: [9, 10, 11, 14, 15, 16],
-            startHour: 9,
-            endHour: 17,
-            timeSlots: {
-              'monday': [{ id: 'monday-work', startHour: 9, endHour: 17 }],
-              'tuesday': [{ id: 'tuesday-work', startHour: 9, endHour: 17 }],
-              'wednesday': [{ id: 'wednesday-work', startHour: 9, endHour: 17 }],
-              'thursday': [{ id: 'thursday-work', startHour: 9, endHour: 17 }],
-              'friday': [{ id: 'friday-work', startHour: 9, endHour: 17 }],
-            }
-          },
-          'Meeting': {
-            preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-            optimalHours: [10, 11, 14, 15],
-            startHour: 10,
-            endHour: 16,
-            timeSlots: {
-              'monday': [
-                { id: 'monday-meeting-1', startHour: 10, endHour: 12 },
-                { id: 'monday-meeting-2', startHour: 14, endHour: 16 }
-              ],
-              'tuesday': [
-                { id: 'tuesday-meeting-1', startHour: 10, endHour: 12 },
-                { id: 'tuesday-meeting-2', startHour: 14, endHour: 16 }
-              ],
-              'wednesday': [
-                { id: 'wednesday-meeting-1', startHour: 10, endHour: 12 },
-                { id: 'wednesday-meeting-2', startHour: 14, endHour: 16 }
-              ],
-              'thursday': [
-                { id: 'thursday-meeting-1', startHour: 10, endHour: 12 },
-                { id: 'thursday-meeting-2', startHour: 14, endHour: 16 }
-              ],
-              'friday': [
-                { id: 'friday-meeting-1', startHour: 10, endHour: 12 },
-                { id: 'friday-meeting-2', startHour: 14, endHour: 16 }
-              ]
-            }
-          },
-          'Personal': {
-            preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
-            optimalHours: [6, 7, 18, 19, 20, 21],
-            startHour: 6,
-            endHour: 22,
-            timeSlots: {
-              'monday': [
-                { id: 'monday-personal-1', startHour: 6, endHour: 8 },
-                { id: 'monday-personal-2', startHour: 18, endHour: 22 }
-              ],
-              'tuesday': [
-                { id: 'tuesday-personal-1', startHour: 6, endHour: 8 },
-                { id: 'tuesday-personal-2', startHour: 18, endHour: 22 }
-              ],
-              'wednesday': [
-                { id: 'wednesday-personal-1', startHour: 6, endHour: 8 },
-                { id: 'wednesday-personal-2', startHour: 18, endHour: 22 }
-              ],
-              'thursday': [
-                { id: 'thursday-personal-1', startHour: 6, endHour: 8 },
-                { id: 'thursday-personal-2', startHour: 18, endHour: 22 }
-              ],
-              'friday': [
-                { id: 'friday-personal-1', startHour: 6, endHour: 8 },
-                { id: 'friday-personal-2', startHour: 18, endHour: 22 }
-              ],
-              'saturday': [
-                { id: 'saturday-personal', startHour: 10, endHour: 20 }
-              ],
-              'sunday': [
-                { id: 'sunday-personal', startHour: 10, endHour: 20 }
-              ]
-            }
-          }
-        };
-        
-        console.log('📝 Đã tạo cài đặt mặc định:', defaultTimeSettings);
-        
-        // Save these default settings for future use
-        try {
-          updateSettings({
-            smartScheduling: {
-              ...settings.smartScheduling,
-              categoryTimeSettings: defaultTimeSettings
-            }
-          });
-          console.log('✅ Đã lưu cài đặt mặc định vào settings');
-        } catch (error) {
-          console.error('❌ Lỗi khi lưu cài đặt mặc định:', error);
-        }
-        
-        userCategoryTimeSettings = defaultTimeSettings;
-      }
-      
-      // Log the settings for debugging
-      console.log('⚙️ Cài đặt thời gian danh mục:', JSON.stringify(userCategoryTimeSettings, null, 2));
-      
-      try {
-        // Schedule the events using the enhanced function
-        console.log('🔄 Gọi enhancedRescheduleEvents với', rescheduleableEvents.length, 'sự kiện');
-        const result = await enhancedRescheduleEvents(
-          rescheduleableEvents,
+      if (geminiApiKey) {
+        // Use Gemini for scheduling
+        console.log('🤖 Using Gemini for smart scheduling');
+        result = await smartScheduleWithGemini(
+          allEvents,
           periodStart,
           periodEnd,
+          geminiApiKey,
           userCategoryTimeSettings
         );
-        
-        // Combine fixed events with rescheduled events
-        const finalEvents = [...fixedEvents, ...result];
-        console.log(`✅ Hoàn thành lên lịch: ${finalEvents.length} sự kiện tổng cộng (${fixedEvents.length} cố định + ${result.length} đã sắp xếp)`);
-        
-        // Refresh the calendar
-        refresh();
-        
-        return finalEvents;
-      } catch (error) {
-        console.error('❌ Lỗi trong quá trình lên lịch:', error);
-        return allEvents; // Return original events in case of error
+      } else {
+        // Try using Gemini API with environment variable if user doesn't have API key
+        console.log('🔍 Checking for environment variable API key');
+        try {
+          result = await smartScheduleWithGemini(
+            allEvents,
+            periodStart,
+            periodEnd,
+            undefined, // Pass undefined to use environment variable
+            userCategoryTimeSettings
+          );
+        } catch (error) {
+          console.log('⚠️ Could not use environment variable for API key:', error);
+          console.log('⚙️ Falling back to built-in algorithm for scheduling');
+          const rescheduledEvents = await enhancedRescheduleEvents(
+            rescheduleableEvents,
+            periodStart,
+            periodEnd,
+            userCategoryTimeSettings
+          );
+          
+          // Combine fixed events with rescheduled events
+          result = [...fixedEvents, ...rescheduledEvents];
+        }
       }
+      
+      console.log(`✅ Scheduling complete with ${result.length} events`);
+    
+      // Save the time changes to database
+      const originalEventMap = new Map(allEvents.map((e: CalendarEvent) => [e.id, e]));
+      const updatePromises = [];
+
+      for (const newEvent of result) {
+        const originalEvent = originalEventMap.get(newEvent.id) as CalendarEvent | undefined;
+        
+        // Check if the event has a new time
+        if (originalEvent && 
+           (originalEvent.start_at !== newEvent.start_at || 
+            originalEvent.end_at !== newEvent.end_at)) {
+          
+          console.log(`💾 Saving updated event: ${newEvent.title}`);
+          console.log(`   From: ${new Date(originalEvent.start_at).toLocaleString()} → ${new Date(newEvent.start_at).toLocaleString()}`);
+          
+          // Update event with new time from Gemini
+          updatePromises.push(updateEvent(newEvent.id, {
+            start_at: newEvent.start_at,
+            end_at: newEvent.end_at,
+            metadata: {
+              ...(originalEvent.metadata || {}),
+              last_scheduled: new Date().toISOString(),
+              original_start: originalEvent.start_at,
+              original_end: originalEvent.end_at,
+              scheduled_by: 'gemini',
+              scheduling_reason: newEvent.metadata?.scheduling_reason || 'Optimized by Smart Scheduler'
+            }
+          }));
+        }
+      }
+
+      // Wait for all updates to complete before refreshing
+      if (updatePromises.length > 0) {
+        console.log(`⏳ Saving ${updatePromises.length} updated events...`);
+        await Promise.all(updatePromises);
+        console.log('✅ All events saved successfully');
+      } else {
+        console.log('ℹ️ No events need updating');
+      }
+
+      // Refresh the calendar
+      refresh();
+    
+      return result;
+    } catch (error) {
+      console.error('❌ Error in scheduling:', error);
+      return allEvents; // Return original events in case of error
     }
-  }, [events, ws?.id, settings, refresh, enhancedRescheduleEvents, smartScheduleWithGemini, updateSettings]);
+  }, [events, ws?.id, settings, refresh, enhancedRescheduleEvents, smartScheduleWithGemini, updateSettings, updateEvent]);
 
   const values = {
     getEvent,
@@ -1491,8 +1872,6 @@ export const CalendarProvider = ({
     // Settings API
     settings,
     updateSettings,
-
-    smartScheduleWithGemini,
   };
 
   // Clean up any pending updates when component unmounts
@@ -1528,3 +1907,9 @@ const formatHour = (hour: number): string => {
   if (hour === 12) return '12 PM';
   return hour < 12 ? `${hour} AM` : `${hour-12} PM`;
 };
+
+// Helper function to get day of week
+function getDayOfWeek(date: Date): string {
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  return days[date.getDay()] || 'monday'; // Fallback to monday if undefined
+}

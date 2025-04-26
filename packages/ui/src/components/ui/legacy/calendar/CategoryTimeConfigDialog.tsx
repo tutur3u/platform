@@ -27,6 +27,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { Copy, Clock, User, Briefcase, Plus, Trash } from 'lucide-react';
 import { Switch } from '@tuturuuu/ui/switch';
+import { CategoryTimeSetting as ContextCategoryTimeSetting, CategoryTimeSettings as ContextCategoryTimeSettings } from './settings/CalendarSettingsContext';
 
 // Hours in a day
 const HOURS_IN_DAY = Array.from({ length: 24 }, (_, i) => i);
@@ -56,13 +57,9 @@ interface TimeSlot {
   endHour: number;
 }
 
-// Types
-interface CategoryTimeSetting {
-  timeSlots: Record<string, TimeSlot[]>; // key is day of week, value is array of time slots
-  preferredDays: string[];
-  optimalHours: number[]; // Keep for backward compatibility
-  startHour: number;      // Keep for backward compatibility
-  endHour: number;        // Keep for backward compatibility
+// Extended types for internal use
+interface CategoryTimeSetting extends ContextCategoryTimeSetting {
+  timeSlots: Record<string, TimeSlot[]>; // Ensure timeSlots is required 
 }
 
 interface CategoryTimeSettings {
@@ -87,8 +84,8 @@ const DEFAULT_CATEGORY_SETTING: CategoryTimeSetting = {
 interface CategoryTimeConfigDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  currentSettings?: CategoryTimeSettings;
-  onSave: (settings: CategoryTimeSettings) => void;
+  currentSettings?: ContextCategoryTimeSettings;
+  onSave: (settings: ContextCategoryTimeSettings) => void;
   selectedCategory?: string;
 }
 
@@ -110,16 +107,16 @@ export function CategoryTimeConfigDialog({
   const [dayIndex, setDayIndex] = useState<number>(0);
   
   // Migrate legacy settings to new format if needed
-  function migrateSettings(oldSettings: CategoryTimeSettings): CategoryTimeSettings {
-    const newSettings: CategoryTimeSettings = { ...oldSettings };
+  function migrateSettings(oldSettings: ContextCategoryTimeSettings): CategoryTimeSettings {
+    const newSettings: CategoryTimeSettings = { ...oldSettings as any };
     
     // Loop through each category
     Object.keys(newSettings).forEach(category => {
       const setting = newSettings[category];
       
       if (setting) {
-        // If timeSlots doesn't exist, create it
-        if (!setting.timeSlots) {
+        // If timeSlots doesn't exist or is empty, create it
+        if (!setting.timeSlots || Object.keys(setting.timeSlots).length === 0) {
           setting.timeSlots = {};
           
           // For each preferred day, create a time slot with the start and end hours
@@ -132,10 +129,36 @@ export function CategoryTimeConfigDialog({
               }
             ];
           });
+        } else {
+          // Ensure all time slots have proper IDs
+          Object.keys(setting.timeSlots).forEach(day => {
+            const slots = setting.timeSlots[day];
+            if (slots && slots.length > 0) {
+              slots.forEach(slot => {
+                if (!slot.id) {
+                  slot.id = generateUniqueId();
+                }
+              });
+            }
+          });
         }
+
+        // Ensure all preferred days have time slots
+        (setting.preferredDays || []).forEach(day => {
+          if (!setting.timeSlots[day] || setting.timeSlots[day].length === 0) {
+            setting.timeSlots[day] = [
+              { 
+                id: generateUniqueId(), 
+                startHour: setting.startHour || 9, 
+                endHour: setting.endHour || 17 
+              }
+            ];
+          }
+        });
       }
     });
     
+    console.log('Migrated settings:', JSON.stringify(newSettings, null, 2));
     return newSettings;
   }
   
@@ -461,7 +484,73 @@ export function CategoryTimeConfigDialog({
   };
   
   const handleSave = () => {
-    onSave(settings);
+    // Before saving, make sure the context properties are properly set
+    const finalSettings: ContextCategoryTimeSettings = {};
+    
+    // Convert internal settings to context settings format
+    Object.keys(settings).forEach((category) => {
+      const setting = settings[category];
+      if (setting) {
+        // Make sure all preferred days have time slots
+        setting.preferredDays.forEach(day => {
+          if (!setting.timeSlots[day] || setting.timeSlots[day].length === 0) {
+            setting.timeSlots[day] = [
+              { 
+                id: generateUniqueId(), 
+                startHour: setting.startHour || 9, 
+                endHour: setting.endHour || 17 
+              }
+            ];
+          }
+        });
+        
+        // Make sure all time slot days are in preferred days
+        Object.keys(setting.timeSlots).forEach(day => {
+          if (!setting.preferredDays.includes(day)) {
+            // If a day has time slots but isn't preferred, add it to preferred days
+            setting.preferredDays.push(day);
+          }
+        });
+        
+        // Update startHour and endHour based on time slots for backward compatibility
+        // Gather all hours from all time slots
+        let allHours: number[] = [];
+        Object.values(setting.timeSlots).forEach(slots => {
+          slots.forEach(slot => {
+            // Add all hours within the slot's range
+            for (let hour = slot.startHour; hour <= slot.endHour; hour++) {
+              if (!allHours.includes(hour)) {
+                allHours.push(hour);
+              }
+            }
+          });
+        });
+        
+        // Sort hours
+        allHours.sort((a, b) => a - b);
+        
+        // If we have hours, update optimalHours, startHour, and endHour
+        if (allHours.length > 0) {
+          setting.startHour = allHours[0] || 9;
+          setting.endHour = allHours[allHours.length - 1] || 17;
+          setting.optimalHours = allHours;
+        }
+        
+        // Add to final settings
+        finalSettings[category] = {
+          startHour: setting.startHour,
+          endHour: setting.endHour,
+          optimalHours: setting.optimalHours,
+          preferredDays: setting.preferredDays,
+          timeSlots: setting.timeSlots
+        };
+      }
+    });
+    
+    console.log('Saving settings:', JSON.stringify(finalSettings, null, 2));
+    
+    // Call the onSave callback with the final settings
+    onSave(finalSettings);
     onOpenChange(false);
   };
   

@@ -3,6 +3,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Slider } from '@tuturuuu/ui/slider';
 import { Switch } from '@tuturuuu/ui/switch';
 import React from 'react';
+import { CategoryTimeSettings } from './CalendarSettingsContext';
 
 export type SmartSchedulingData = {
   enabled: boolean;
@@ -20,7 +21,7 @@ export type SmartSchedulingData = {
     end: number; // hour of day (0-23)
   };
   maxTasksPerDay: number;
-  categoryTimeSettings?: Record<string, any>;
+  categoryTimeSettings?: CategoryTimeSettings;
 };
 
 export const defaultSmartSchedulingData: SmartSchedulingData = {

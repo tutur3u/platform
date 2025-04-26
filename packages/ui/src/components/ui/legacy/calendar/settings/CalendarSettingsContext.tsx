@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import { WeekTimeRanges, defaultWeekTimeRanges } from './TimeRangePicker';
 
 // Defines the data type for the time setting of each category
 export interface CategoryTimeSetting {
@@ -15,6 +16,7 @@ export interface CategoryTimeSetting {
   endHour: number;
   optimalHours: number[];
   preferredDays: string[];
+  timeSlots: Record<string, { id: string; startHour: number; endHour: number }[]>;
 }
 
 // Defines the data type for all time settings
@@ -67,12 +69,24 @@ export interface CategoryColorSettings {
   }>;
 }
 
+// Notification settings
+export interface NotificationSettings {
+  enabled: boolean;
+  reminderTimes: number[]; // minutes before event
+  preferredMethod: 'email' | 'push' | 'both';
+}
+
 // Calendar settings interface
 export interface CalendarSettings {
   appearance: AppearanceSettings;
   categoryColors: CategoryColorSettings;
   smartScheduling: SmartSchedulingSettings;
   taskSettings: TaskSettings;
+  timezone: string;
+  personalHours: WeekTimeRanges;
+  workHours: WeekTimeRanges;
+  meetingHours: WeekTimeRanges;
+  notifications: NotificationSettings;
 }
 
 // Default calendar settings
@@ -115,25 +129,57 @@ export const defaultCalendarSettings: CalendarSettings = {
         startHour: 9,
         endHour: 17,
         optimalHours: [9, 10, 11, 14, 15, 16],
-        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        timeSlots: {
+          'monday': [{ id: 'monday-work', startHour: 9, endHour: 17 }],
+          'tuesday': [{ id: 'tuesday-work', startHour: 9, endHour: 17 }],
+          'wednesday': [{ id: 'wednesday-work', startHour: 9, endHour: 17 }],
+          'thursday': [{ id: 'thursday-work', startHour: 9, endHour: 17 }],
+          'friday': [{ id: 'friday-work', startHour: 9, endHour: 17 }]
+        }
       },
       Meeting: {
         startHour: 10,
         endHour: 16,
         optimalHours: [10, 11, 14, 15],
-        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        timeSlots: {
+          'monday': [{ id: 'monday-meeting', startHour: 10, endHour: 16 }],
+          'tuesday': [{ id: 'tuesday-meeting', startHour: 10, endHour: 16 }],
+          'wednesday': [{ id: 'wednesday-meeting', startHour: 10, endHour: 16 }],
+          'thursday': [{ id: 'thursday-meeting', startHour: 10, endHour: 16 }],
+          'friday': [{ id: 'friday-meeting', startHour: 10, endHour: 16 }]
+        }
       },
       Personal: {
         startHour: 7,
         endHour: 22,
         optimalHours: [7, 8, 12, 13, 17, 18, 19, 20],
-        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        preferredDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+        timeSlots: {
+          'monday': [{ id: 'monday-personal', startHour: 7, endHour: 22 }],
+          'tuesday': [{ id: 'tuesday-personal', startHour: 7, endHour: 22 }],
+          'wednesday': [{ id: 'wednesday-personal', startHour: 7, endHour: 22 }],
+          'thursday': [{ id: 'thursday-personal', startHour: 7, endHour: 22 }],
+          'friday': [{ id: 'friday-personal', startHour: 7, endHour: 22 }],
+          'saturday': [{ id: 'saturday-personal', startHour: 7, endHour: 22 }],
+          'sunday': [{ id: 'sunday-personal', startHour: 7, endHour: 22 }]
+        }
       }
     }
   },
   taskSettings: {
     defaultTaskDuration: 60, // Default to 1 hour
   },
+  timezone: 'UTC',
+  personalHours: defaultWeekTimeRanges,
+  workHours: defaultWeekTimeRanges,
+  meetingHours: defaultWeekTimeRanges,
+  notifications: {
+    enabled: true,
+    reminderTimes: [15, 30, 60], // 15 minutes, 30 minutes, 1 hour before
+    preferredMethod: 'both',
+  }
 };
 
 // Helper function to load settings from localStorage
