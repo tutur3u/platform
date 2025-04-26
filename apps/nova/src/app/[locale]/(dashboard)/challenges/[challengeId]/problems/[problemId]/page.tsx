@@ -151,6 +151,7 @@ async function getChallenge(
 }
 
 async function getSession(challengeId: string): Promise<NovaSession | null> {
+  const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
   const {
@@ -164,7 +165,7 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
 
   try {
     // Fetch sessions for this challenge
-    const { data: session, error } = await supabase
+    const { data: session, error } = await sbAdmin
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)
