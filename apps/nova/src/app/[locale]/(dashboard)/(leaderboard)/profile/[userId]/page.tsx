@@ -1,10 +1,6 @@
-import UserProfileClient from './client';
+import UserProfileClient, { ProfileData } from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
-import {
-  calculatePercentage,
-  calculateScore,
-} from '@tuturuuu/utils/nova/scores/calculate';
 import { Metadata } from 'next';
 import { getLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -82,62 +78,141 @@ export default async function UserProfilePage({
     return notFound();
   }
 
-  // Fetch user's sessions with submissions
-  const { data: sessionsData = [], error: sessionsError } = await sbAdmin
-    .from('nova_sessions')
-    .select(
-      `
-      id,
-      user_id,
-      challenge_id,
-      created_at,
-      nova_submissions_with_scores(
-        id, 
-        problem_id, 
-        total_score,
-        total_tests,
-        passed_tests,
-        total_criteria,
-        sum_criterion_score
-      ),
-      nova_challenges(
-        id,
-        title,
-        description
-      )
-    `
-    )
+  // Fetch user from leaderboard for ranking and total score
+  const { data: leaderboardEntry, error: leaderboardError } = await sbAdmin
+    .from('nova_user_leaderboard')
+    .select('*')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .single();
 
-  if (sessionsError) {
-    throw sessionsError;
+  if (leaderboardError) {
+    console.error(
+      'Error fetching leaderboard entry:',
+      leaderboardError.message
+    );
   }
 
-  // Fetch problems to get problem-challenge mapping
-  const { data: problemsData = [] } = await sbAdmin
+  // Get user's rank by querying all users ordered by score
+  const { data: allUsers, error: allUsersError } = await sbAdmin
+    .from('nova_user_leaderboard')
+    .select('user_id, score')
+    .order('score', { ascending: false });
+
+  if (allUsersError) {
+    console.error('Error fetching ranks:', allUsersError.message);
+  }
+
+  let userRank = 0;
+  let nearbyRanks: {
+    id: string;
+    score: number;
+    isCurrentUser: boolean;
+  }[] = [];
+
+  if (allUsers) {
+    // Find user's position in the sorted array
+    const userIndex = allUsers.findIndex((user) => user.user_id === userId);
+    if (userIndex !== -1) {
+      userRank = userIndex + 1;
+    }
+
+    // Get nearby ranks for display
+    nearbyRanks = allUsers
+      .slice(Math.max(0, userRank - 3), Math.min(allUsers.length, userRank + 2))
+      .map((user) => ({
+        id: user.user_id || userId, // Fallback to current userId if null
+        score: user.score || 0,
+        isCurrentUser: user.user_id === userId,
+      }));
+  }
+
+  // Fetch challenge details for the user's participated challenges
+  const challengeScores = (leaderboardEntry?.challenge_scores || {}) as Record<
+    string,
+    number
+  >;
+  const challengeIds = Object.keys(challengeScores);
+
+  const { data: challengesRaw, error: challengesError } = await sbAdmin
+    .from('nova_challenges')
+    .select('id, title, description')
+    .in('id', challengeIds.length > 0 ? challengeIds : ['none']);
+
+  if (challengesError) {
+    console.error('Error fetching challenges:', challengesError.message);
+  }
+
+  const challengesData = challengesRaw || [];
+
+  // Fetch problems to calculate completion percentages
+  const { data: problemsRaw, error: problemsError } = await sbAdmin
     .from('nova_problems')
     .select('id, challenge_id');
 
-  // Create a map of problem to challenge
-  const problemChallengeMap = new Map();
+  if (problemsError) {
+    console.error('Error fetching problems:', problemsError.message);
+  }
 
-  problemsData?.forEach((problem) => {
-    problemChallengeMap.set(problem.id, problem.challenge_id);
+  const problemsData = problemsRaw || [];
+
+  // Map problems to challenges for completion stats
+  const problemsByChallenge = problemsData.reduce(
+    (acc, problem) => {
+      const challengeId = problem.challenge_id || '';
+      if (!acc[challengeId]) {
+        acc[challengeId] = [];
+      }
+      acc[challengeId].push(problem.id);
+      return acc;
+    },
+    {} as Record<string, string[]>
+  );
+
+  // Fetch problem scores for the user across all challenges
+  const { data: challengeScoresRaw, error: challengeScoresError } =
+    await sbAdmin
+      .from('nova_user_challenge_leaderboard')
+      .select('challenge_id, problem_scores')
+      .eq('user_id', userId);
+
+  if (challengeScoresError) {
+    console.error(
+      'Error fetching challenge scores:',
+      challengeScoresError.message
+    );
+  }
+
+  const userChallengeScores = challengeScoresRaw || [];
+
+  // Create a map of problem IDs to scores
+  const bestProblemScores: Map<string, { score: number; challengeId: string }> =
+    new Map();
+  userChallengeScores.forEach((challengeScore) => {
+    const challengeId = challengeScore.challenge_id;
+    if (!challengeId) return;
+
+    const problemScores = Array.isArray(challengeScore.problem_scores)
+      ? (challengeScore.problem_scores as { id: string; score: number }[])
+      : [];
+
+    problemScores.forEach((problem) => {
+      if (problem && problem.id && typeof problem.score === 'number') {
+        bestProblemScores.set(problem.id, {
+          score: problem.score,
+          challengeId,
+        });
+      }
+    });
   });
 
   // Fetch recent activity
-  const { data: recentActivity = [], error: activityError } = await sbAdmin
+  const { data: recentActivityRaw, error: activityError } = await sbAdmin
     .from('nova_submissions_with_scores')
     .select(
       `
       id,
       problem_id,
       total_score,
-      total_tests,
-      passed_tests,
-      total_criteria,
-      sum_criterion_score,
       created_at,
       nova_problems(
         id,
@@ -150,221 +225,59 @@ export default async function UserProfilePage({
     .limit(10);
 
   if (activityError) {
-    throw activityError;
+    console.error('Error fetching recent activity:', activityError.message);
   }
 
-  // Process submissions to get best scores per problem
-  const bestProblemScores = new Map<string, number>();
-  const challengeScores: Record<string, number> = {};
+  const recentActivity = recentActivityRaw || [];
 
-  // Collect all submissions from all sessions
-  const allSubmissions: any[] = [];
+  // Assemble ProfileData
+  const challenges = challengesData.map((challenge) => {
+    const challengeId = challenge.id;
+    const problemsInChallenge = problemsByChallenge[challengeId] || [];
+    const attemptedProblems = Array.from(bestProblemScores.entries()).filter(
+      ([_, { challengeId: cid }]) => cid === challengeId
+    ).length;
 
-  sessionsData?.forEach((session) => {
-    if (session.nova_submissions_with_scores) {
-      session.nova_submissions_with_scores.forEach((submission: any) => {
-        allSubmissions.push({
-          ...submission,
-          challenge_id: session.challenge_id,
-        });
-      });
-    }
+    return {
+      id: challengeId,
+      title: challenge.title,
+      description: challenge.description,
+      score: challengeScores[challengeId] || 0,
+      problemCount: problemsInChallenge.length,
+      attemptedProblems: attemptedProblems,
+    };
   });
 
-  // Calculate best scores for each problem using the same formula as other parts of the app
-  allSubmissions.forEach((submission) => {
-    const problemId = submission.problem_id;
-    if (!problemId) return;
-
-    // Calculate the score properly according to the formula
-    const correctScore = calculateScore({
-      total_tests: submission.total_tests,
-      passed_tests: submission.passed_tests,
-      total_criteria: submission.total_criteria,
-      sum_criterion_score: submission.sum_criterion_score,
-    });
-
-    // Get the existing best score for this problem, or 0 if none
-    const currentBestScore = bestProblemScores.get(problemId) || 0;
-
-    // If this submission has a higher score, update the best score
-    if (correctScore > currentBestScore) {
-      bestProblemScores.set(problemId, correctScore);
-
-      // Update challenge score
-      const challengeId =
-        submission.challenge_id || problemChallengeMap.get(problemId);
-      if (challengeId) {
-        // Get current challenge score (sum of best problem scores for this challenge)
-        const currentChallengeScore = challengeScores[challengeId] || 0;
-        // Calculate score difference (new best - old best)
-        const scoreDiff = correctScore - currentBestScore;
-        // Update challenge score
-        challengeScores[challengeId] = currentChallengeScore + scoreDiff;
-      }
-    }
-  });
-
-  // Calculate total score (sum of best scores for each problem)
-  const totalScore = Array.from(bestProblemScores.values()).reduce(
-    (sum, score) => sum + score,
-    0
-  );
-
-  // Get user's rank from leaderboard
-  const { data: leaderboardData = [] } = await sbAdmin.from('nova_sessions')
-    .select(`
-      user_id,
-      nova_submissions_with_scores(
-        id, 
-        problem_id, 
-        total_score,
-        total_tests,
-        passed_tests,
-        total_criteria,
-        sum_criterion_score
-      )
-    `);
-
-  // Group by user and calculate total scores for ranking based on best score per problem
-  const userScores: Record<string, number> = {};
-
-  // Process all users' submissions to get best scores per problem
-  leaderboardData?.forEach((session) => {
-    if (!session.user_id) return;
-
-    // Initialize user's record if not exists
-    if (!userScores[session.user_id]) {
-      userScores[session.user_id] = 0;
-    }
-
-    // Get user's best problem scores map
-    const userBestScores = new Map<string, number>();
-
-    // Process submissions using the same formula
-    if (session.nova_submissions_with_scores) {
-      session.nova_submissions_with_scores.forEach((sub: any) => {
-        const problemId = sub.problem_id;
-        if (!problemId) return;
-
-        // Calculate the score with the formula
-        const correctScore = calculateScore({
-          total_tests: sub.total_tests,
-          passed_tests: sub.passed_tests,
-          total_criteria: sub.total_criteria,
-          sum_criterion_score: sub.sum_criterion_score,
-        });
-
-        // Update best score for this problem
-        const currentBest = userBestScores.get(problemId) || 0;
-        if (correctScore > currentBest) {
-          userBestScores.set(problemId, correctScore);
-        }
-      });
-    }
-
-    // Sum up best scores for this user
-    let userTotalScore = 0;
-    userBestScores.forEach((score) => {
-      userTotalScore += score;
-    });
-
-    // Update user's total score
-    userScores[session.user_id] = userTotalScore;
-  });
-
-  // Convert to array and sort to determine rank
-  const sortedUsers = Object.entries(userScores)
-    .map(([id, score]) => ({ id, score }))
-    .sort((a, b) => b.score - a.score);
-
-  // Find user's position in the sorted array
-  const userRank = sortedUsers.findIndex((user) => user.id === userId) + 1;
-
-  // Format data for client component
-  const profileData = {
+  const profileData: ProfileData = {
     id: userData.id,
     name: userData.display_name || generateFunName({ id: userData.id, locale }),
     avatar: userData.avatar_url || '',
     joinedDate: userData.created_at,
-    totalScore,
-    rank: userRank || 999, // Fallback rank if not found
-    challengeCount: Object.keys(challengeScores).length,
+    totalScore: leaderboardEntry?.score || 0,
+    rank: userRank,
+    challengeCount: challengeIds.length,
     challengeScores,
-    // Additional stats for better UX/UI
     problemCount: bestProblemScores.size,
-    totalAvailableProblems: problemsData?.length || 0,
-    problemsAttemptedPercentage: problemsData?.length
-      ? calculatePercentage(bestProblemScores.size, problemsData.length)
+    totalAvailableProblems: problemsData.length,
+    problemsAttemptedPercentage: problemsData.length
+      ? (bestProblemScores.size / problemsData.length) * 100
       : 0,
     bestProblemScores: Array.from(bestProblemScores.entries()).map(
-      ([id, score]) => ({
+      ([id, { score, challengeId }]) => ({
         id,
         score,
-        challengeId: problemChallengeMap.get(id),
+        challengeId,
       })
     ),
-    nearbyRanks: sortedUsers
-      .slice(
-        Math.max(0, userRank - 3),
-        Math.min(sortedUsers.length, userRank + 2)
-      )
-      .map((user) => ({
-        id: user.id,
-        score: user.score,
-        isCurrentUser: user.id === userId,
-      })),
-    recentActivity:
-      recentActivity?.map((activity) => {
-        // Calculate score with the formula for recent activity display
-        const correctScore = calculateScore({
-          total_tests: activity.total_tests,
-          passed_tests: activity.passed_tests,
-          total_criteria: activity.total_criteria,
-          sum_criterion_score: activity.sum_criterion_score,
-        });
-
-        return {
-          id: activity.id || '',
-          problemId: activity.problem_id || '',
-          problemTitle: activity.nova_problems?.title || 'Unknown Problem',
-          score: correctScore,
-          date: activity.created_at || '',
-        };
-      }) || [],
-    challenges:
-      sessionsData?.reduce(
-        (acc, session) => {
-          if (
-            session.nova_challenges &&
-            !acc.some((c) => c.id === session.challenge_id)
-          ) {
-            acc.push({
-              id: session.challenge_id,
-              title: session.nova_challenges.title,
-              description: session.nova_challenges.description,
-              score: challengeScores[session.challenge_id] || 0,
-              // Add problem count for this challenge
-              problemCount:
-                problemsData?.filter(
-                  (p) => p.challenge_id === session.challenge_id
-                ).length || 0,
-              attemptedProblems: Array.from(bestProblemScores.entries()).filter(
-                ([id]) => problemChallengeMap.get(id) === session.challenge_id
-              ).length,
-            });
-          }
-          return acc;
-        },
-        [] as Array<{
-          id: string;
-          title: string;
-          description: string;
-          score: number;
-          problemCount: number;
-          attemptedProblems: number;
-        }>
-      ) || [],
+    nearbyRanks,
+    recentActivity: recentActivity.map((activity) => ({
+      id: activity.id || '',
+      problemId: activity.problem_id || '',
+      problemTitle: activity.nova_problems?.title || 'Unknown Problem',
+      score: activity.total_score || 0,
+      date: activity.created_at || '',
+    })),
+    challenges,
   };
 
   return <UserProfileClient profile={profileData} />;
