@@ -1,6 +1,6 @@
 'use client';
 
-import { ExtendedNovaSubmission, fetchSubmissions } from './actions';
+import { ExtendedNovaSubmission } from './actions';
 import ScoreBadge from '@/components/common/ScoreBadge';
 import {
   NovaProblem,
@@ -27,6 +27,7 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 
 interface Props {
@@ -34,15 +35,15 @@ interface Props {
     test_cases: NovaProblemTestCase[];
   };
   session: NovaSession;
+  submissions: ExtendedNovaSubmission[];
 }
 
-export default function PromptForm({ problem, session }: Props) {
+export default function PromptForm({ problem, session, submissions }: Props) {
+  const router = useRouter();
+
   const [prompt, setPrompt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [submissions, setSubmissions] = useState<
-    ExtendedNovaSubmission[] | undefined
-  >();
   const [activeTab, setActiveTab] = useState('prompt');
   const [submissionsTab, setSubmissionsTab] = useState('current');
 
@@ -63,8 +64,7 @@ export default function PromptForm({ problem, session }: Props) {
         : 3 - currentSubmissions.length;
 
   const getSubmissions = useCallback(async () => {
-    const submissions = await fetchSubmissions(problem.id);
-    setSubmissions(submissions);
+    router.refresh();
   }, [problem.id, session.id]);
 
   useEffect(() => {
@@ -169,7 +169,7 @@ export default function PromptForm({ problem, session }: Props) {
           <TabsContent value="prompt" className="space-y-4">
             <div className="flex h-full flex-col">
               <div className="mb-2 flex items-center justify-between">
-                <div className="text-muted-foreground text-sm">
+                <div className="text-sm text-muted-foreground">
                   Characters: {prompt.length} / {problem.max_prompt_length}
                 </div>
                 {remainingAttempts !== null && (
@@ -252,9 +252,9 @@ export default function PromptForm({ problem, session }: Props) {
           <TabsContent value="submissions" className="space-y-4">
             {submissions && submissions.length == 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                 <h3 className="text-lg font-medium">No submissions yet</h3>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Your submission history will appear here after you submit your
                   first prompt.
                 </p>
@@ -288,11 +288,11 @@ export default function PromptForm({ problem, session }: Props) {
                   <TabsContent value="current" className="space-y-4">
                     {currentSubmissions && currentSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                         <h3 className="text-lg font-medium">
                           No submissions in current session
                         </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Submit your first prompt to see results here.
                         </p>
                       </div>
@@ -310,11 +310,11 @@ export default function PromptForm({ problem, session }: Props) {
                   <TabsContent value="past" className="space-y-4">
                     {pastSubmissions && pastSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                         <h3 className="text-lg font-medium">
                           No submissions from past sessions
                         </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Past session submissions will appear here.
                         </p>
                       </div>
@@ -352,7 +352,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-xs">
+            <span className="text-xs text-muted-foreground">
               <Clock className="mr-1 inline h-3 w-3" />
               {new Date(submission.created_at).toLocaleString()}
             </span>
@@ -376,8 +376,8 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="text-foreground mb-1 text-sm font-medium">Prompt:</h3>
-          <div className="bg-muted rounded-md p-2 text-sm">
+          <h3 className="mb-1 text-sm font-medium text-foreground">Prompt:</h3>
+          <div className="rounded-md bg-muted p-2 text-sm">
             {submission.prompt}
           </div>
         </div>
@@ -386,7 +386,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
         {submission.total_tests > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-muted-foreground text-xs font-medium">
+              <h3 className="text-xs font-medium text-muted-foreground">
                 Test Case Evaluation:
               </h3>
               <ScoreBadge
@@ -423,7 +423,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
         {submission.total_criteria > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-muted-foreground text-xs font-medium">
+              <h3 className="text-xs font-medium text-muted-foreground">
                 Criteria Evaluation
                 {isCurrent ? '' : ': (Hover to see Feedback)'}
               </h3>
@@ -469,7 +469,7 @@ function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
                     <HoverCardContent className="w-80 p-4">
                       <div className="space-y-2">
                         <h4 className="font-medium">Feedback</h4>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                           {cs.result.feedback}
                         </p>
                       </div>
