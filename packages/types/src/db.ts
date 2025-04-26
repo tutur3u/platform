@@ -91,7 +91,14 @@ export type NovaSubmissionCriteria = Tables<'nova_submission_criteria'>;
 export type NovaSubmissionTestCase = Tables<'nova_submission_test_cases'>;
 export type NovaSubmissionWithScores =
   Tables<'nova_submissions_with_scores'> & {
-    criteria: NovaChallengeCriteria[];
+    criteria: (NovaChallengeCriteria & {
+      result?: {
+        score: number;
+        feedback: string;
+        strengths: string[];
+        improvements: string[];
+      };
+    })[];
   };
 export type NovaExtendedChallenge = NovaChallenge & {
   criteria?: NovaChallengeCriteria[];

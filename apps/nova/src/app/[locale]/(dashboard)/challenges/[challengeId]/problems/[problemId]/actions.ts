@@ -1,30 +1,12 @@
 'use server';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import {
-  NovaChallengeCriteria,
-  NovaSubmission,
-  NovaSubmissionCriteria,
-} from '@tuturuuu/types/db';
+import { type NovaSubmissionWithScores } from '@tuturuuu/types/db';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
-
-export type ExtendedNovaSubmission = NovaSubmission & {
-  total_tests: number;
-  passed_tests: number;
-  test_case_score: number;
-  criteria: (NovaChallengeCriteria & {
-    result: NovaSubmissionCriteria;
-  })[];
-  total_criteria: number;
-  sum_criterion_score: number;
-  criteria_score: number;
-  total_score: number;
-  overall_assessment: string;
-};
 
 export async function fetchSubmissions(
   problemId: string
-): Promise<ExtendedNovaSubmission[]> {
+): Promise<NovaSubmissionWithScores[]> {
   const sbAdmin = await createAdminClient();
   const user = await getCurrentSupabaseUser();
 
@@ -65,19 +47,12 @@ export async function fetchSubmissions(
       // Return properly typed submission
       return {
         ...submission,
-        overall_assessment: '',
-        total_tests: submission.total_tests || 0,
-        passed_tests: submission.passed_tests || 0,
-        test_case_score: submission.test_case_score || 0,
         criteria,
-        total_criteria: submission.total_criteria || 0,
-        sum_criterion_score: submission.sum_criterion_score || 0,
-        criteria_score: submission.criteria_score || 0,
-        total_score: submission.total_score || 0,
-      } as ExtendedNovaSubmission;
+      } as NovaSubmissionWithScores;
     })
     .sort(
       (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        new Date(b.created_at || '').getTime() -
+        new Date(a.created_at || '').getTime()
     );
 }

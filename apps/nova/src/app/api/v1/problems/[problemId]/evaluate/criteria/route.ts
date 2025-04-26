@@ -1,4 +1,4 @@
-import { POST } from '@tuturuuu/ai/chat/google-vertex/nova/test-case/route';
+import { POST } from '@tuturuuu/ai/chat/google-vertex/nova/criteria/route';
 
 export const config = {
   maxDuration: 60,

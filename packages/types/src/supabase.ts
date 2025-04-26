@@ -5883,7 +5883,9 @@ export type Database = {
           created_at: string | null;
           criteria_score: number | null;
           id: string | null;
+          overall_assessment: string | null;
           passed_tests: number | null;
+          pending_tests: number | null;
           problem_id: string | null;
           prompt: string | null;
           session_id: string | null;
