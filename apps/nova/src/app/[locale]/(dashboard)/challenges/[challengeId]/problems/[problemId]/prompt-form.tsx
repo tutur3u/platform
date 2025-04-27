@@ -1,9 +1,6 @@
 'use client';
 
 import { SubmissionCard } from './submission-card';
-import { EvaluationSchema as CriteriaEvaluationSchema } from '@tuturuuu/ai/chat/google-vertex/nova/criteria/schema';
-import { TestCaseSchema } from '@tuturuuu/ai/chat/google-vertex/nova/test-cases/schema';
-import { useObject } from '@tuturuuu/ai/object/core';
 import {
   NovaProblem,
   NovaProblemTestCase,
@@ -19,7 +16,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 interface Props {
   problem: NovaProblem & {
@@ -55,47 +52,6 @@ export default function PromptForm({ problem, session, submissions }: Props) {
       : currentSubmissions.length > MAX_ATTEMPTS
         ? 0
         : MAX_ATTEMPTS - currentSubmissions.length;
-
-  const [processedSubmissions, setProcessedSubmissions] = useState<
-    {
-      submissionId: string;
-      criteriaEvaluated: boolean;
-      testCasesEvaluated: boolean;
-      status: 'pending' | 'processing' | 'evaluated' | 'error';
-    }[]
-  >(
-    submissions
-      .filter((s) => s.id !== null)
-      .map((s) => ({
-        submissionId: s.id!,
-        criteriaEvaluated:
-          s.total_criteria === 0 || s.total_criteria === s.criteria.length,
-        testCasesEvaluated: s.pending_tests === 0,
-        status: 'pending',
-      }))
-  );
-
-  const [evaluatedSubmissionId, setEvaluatedSubmissionId] = useState<
-    string | null
-  >(null);
-
-  const {
-    object: criteriaObject,
-    submit: submitCriteria,
-    isLoading: isCriteriaLoading,
-  } = useObject({
-    api: `/api/v1/problems/${problem.id}/evaluate/criteria`,
-    schema: CriteriaEvaluationSchema,
-  });
-
-  const {
-    object: testCasesObject,
-    submit: submitTestCases,
-    isLoading: isTestCasesLoading,
-  } = useObject({
-    api: `/api/v1/problems/${problem.id}/evaluate/test-cases`,
-    schema: TestCaseSchema,
-  });
 
   const handleSend = async () => {
     if (!prompt.trim()) {
@@ -155,18 +111,6 @@ export default function PromptForm({ problem, session, submissions }: Props) {
         title: 'Prompt submitted successfully',
         description: 'Your prompt has been evaluated.',
       });
-
-      const submissionId = (await promptResponse.json()).submissionId;
-
-      setProcessedSubmissions((prev) => [
-        ...prev,
-        {
-          submissionId,
-          criteriaEvaluated: false,
-          testCasesEvaluated: false,
-          status: 'pending',
-        },
-      ]);
     } catch (error) {
       console.error('Error submitting prompt:', error);
       toast({
@@ -190,101 +134,6 @@ export default function PromptForm({ problem, session, submissions }: Props) {
     }
   };
 
-  useEffect(() => {
-    if (!evaluatedSubmissionId) return;
-
-    if (criteriaObject && !isCriteriaLoading) {
-      setProcessedSubmissions((prev) =>
-        prev.map((s) =>
-          s.submissionId === evaluatedSubmissionId
-            ? { ...s, criteriaEvaluated: true }
-            : s
-        )
-      );
-      router.refresh();
-    }
-
-    if (testCasesObject && !isTestCasesLoading) {
-      setProcessedSubmissions((prev) =>
-        prev.map((s) =>
-          s.submissionId === evaluatedSubmissionId
-            ? { ...s, testCasesEvaluated: true }
-            : s
-        )
-      );
-      router.refresh();
-    }
-
-    if (
-      criteriaObject &&
-      testCasesObject &&
-      !isCriteriaLoading &&
-      !isTestCasesLoading
-    ) {
-      setProcessedSubmissions((prev) =>
-        prev.map((s) =>
-          s.submissionId === evaluatedSubmissionId
-            ? { ...s, status: 'evaluated' }
-            : s
-        )
-      );
-      router.refresh();
-    }
-  }, [
-    evaluatedSubmissionId,
-    criteriaObject,
-    testCasesObject,
-    isCriteriaLoading,
-    isTestCasesLoading,
-  ]);
-
-  useEffect(() => {
-    const updateProcessedSubmissions = async () => {
-      const isProcessing = processedSubmissions.some(
-        (s) => s.status === 'processing'
-      );
-
-      if (isProcessing) return;
-
-      const nextSubmission = processedSubmissions.find(
-        (s) => s.status === 'pending'
-      );
-
-      if (!nextSubmission) return;
-
-      setEvaluatedSubmissionId(nextSubmission.submissionId);
-      setProcessedSubmissions((prev) =>
-        prev.map((s) =>
-          s.submissionId === nextSubmission.submissionId
-            ? { ...s, status: 'processing' }
-            : s
-        )
-      );
-
-      const submission = submissions.find(
-        (s) => s.id === nextSubmission.submissionId
-      );
-
-      if (!submission) return;
-
-      if (!nextSubmission.criteriaEvaluated) {
-        submitCriteria({
-          prompt: submission.prompt,
-          submissionId: submission.id,
-        });
-      }
-
-      if (!nextSubmission.testCasesEvaluated) {
-        submitTestCases({
-          prompt: submission.prompt,
-          submissionId: submission.id,
-        });
-      }
-    };
-
-    updateProcessedSubmissions();
-  }, [submissions, processedSubmissions]);
-
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto">
@@ -304,7 +153,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
           <TabsContent value="prompt" className="space-y-4">
             <div className="flex h-full flex-col">
               <div className="mb-2 flex items-center justify-between">
-                <div className="text-muted-foreground text-sm">
+                <div className="text-sm text-muted-foreground">
                   Characters: {prompt.length} / {problem.max_prompt_length}
                 </div>
                 {remainingAttempts !== null && (
@@ -387,9 +236,9 @@ export default function PromptForm({ problem, session, submissions }: Props) {
           <TabsContent value="submissions" className="space-y-4">
             {submissions && submissions.length == 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                 <h3 className="text-lg font-medium">No submissions yet</h3>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Your submission history will appear here after you submit your
                   first prompt.
                 </p>
@@ -423,11 +272,11 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                   <TabsContent value="current" className="space-y-4">
                     {currentSubmissions && currentSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                         <h3 className="text-lg font-medium">
                           No submissions in current session
                         </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Submit your first prompt to see results here.
                         </p>
                       </div>
@@ -437,6 +286,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                           key={submission.id}
                           submission={submission}
                           isCurrent={true}
+                          problemId={problem.id}
                         />
                       ))
                     )}
@@ -445,11 +295,11 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                   <TabsContent value="past" className="space-y-4">
                     {pastSubmissions && pastSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                         <h3 className="text-lg font-medium">
                           No submissions from past sessions
                         </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Past session submissions will appear here.
                         </p>
                       </div>
@@ -457,29 +307,9 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                       pastSubmissions?.map((submission) => (
                         <SubmissionCard
                           key={submission.id}
-                          submission={{
-                            ...submission,
-                            total_criteria:
-                              criteriaObject?.criteriaEvaluation?.length,
-                            total_tests:
-                              testCasesObject?.testCaseEvaluation?.length,
-                            criteria_score:
-                              criteriaObject?.criteriaEvaluation?.reduce(
-                                (acc, curr) => acc + (curr?.score ?? 0),
-                                0
-                              ),
-                            test_case_score:
-                              testCasesObject?.testCaseEvaluation?.reduce(
-                                (acc, curr) => acc + (curr?.matched ? 1 : 0),
-                                0
-                              ),
-                            passed_tests:
-                              testCasesObject?.testCaseEvaluation?.reduce(
-                                (acc, curr) => acc + (curr?.matched ? 1 : 0),
-                                0
-                              ),
-                          }}
+                          submission={submission}
                           isCurrent={false}
+                          problemId={problem.id}
                         />
                       ))
                     )}
