@@ -89,10 +89,12 @@ export type NovaSession = Tables<'nova_sessions'>;
 export type NovaSubmission = Tables<'nova_submissions'>;
 export type NovaSubmissionCriteria = Tables<'nova_submission_criteria'>;
 export type NovaSubmissionTestCase = Tables<'nova_submission_test_cases'>;
-export type NovaSubmissionWithScores =
+export type NovaSubmissionWithScores = Tables<'nova_submissions_with_scores'>;
+export type NovaSubmissionWithScoresAndCriteria =
   Tables<'nova_submissions_with_scores'> & {
     criteria: NovaChallengeCriteria[];
   };
+
 export type NovaExtendedChallenge = NovaChallenge & {
   criteria?: NovaChallengeCriteria[];
   whitelists?: NovaChallengeWhitelistedEmail[];
@@ -101,4 +103,21 @@ export type NovaExtendedChallenge = NovaChallenge & {
   lastSession: NovaSession | null;
   total_sessions?: number;
   daily_sessions?: number;
+};
+
+export type NovaSubmissionData = NovaSubmissionWithScores & {
+  session?: NovaSession;
+  problem?: NovaProblem;
+  challenge?: NovaChallenge;
+  criteria: (NovaSubmissionCriteria & { name: string; description: string })[];
+  test_cases: (NovaSubmissionTestCase & {
+    input: string;
+    expected_output: string;
+  })[];
+  user: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    email?: string | null;
+  };
 };

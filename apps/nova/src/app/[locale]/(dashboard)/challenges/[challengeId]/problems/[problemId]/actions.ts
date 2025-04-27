@@ -1,83 +1,36 @@
 'use server';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import {
-  NovaChallengeCriteria,
-  NovaSubmission,
-  NovaSubmissionCriteria,
-} from '@tuturuuu/types/db';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 
-export type ExtendedNovaSubmission = NovaSubmission & {
-  total_tests: number;
-  passed_tests: number;
-  test_case_score: number;
-  criteria: (NovaChallengeCriteria & {
-    result: NovaSubmissionCriteria;
-  })[];
-  total_criteria: number;
-  sum_criterion_score: number;
-  criteria_score: number;
-  total_score: number;
-  overall_assessment: string;
-};
+export const fetchFullSubmission = async (submissionId: string) => {
+  if (!submissionId) return;
 
-export async function fetchSubmissions(
-  problemId: string
-): Promise<ExtendedNovaSubmission[]> {
   const sbAdmin = await createAdminClient();
-  const user = await getCurrentSupabaseUser();
 
-  if (!user) throw new Error('User not found');
+  const { data: submissionCriteria, error: errorCriteria } = await sbAdmin
+    .from('nova_submission_criteria')
+    .select('*, ...nova_challenge_criteria!inner(name, description)')
+    .eq('submission_id', submissionId);
 
-  const queryBuilder = sbAdmin
-    .from('nova_submissions_with_scores')
+  const { data: testCases, error: errorTestCases } = await sbAdmin
+    .from('nova_submission_test_cases')
     .select(
-      `
-      *,
-      criteria:nova_challenge_criteria(
-        *,
-        results:nova_submission_criteria(*)
-      )
-    `
+      '*, ...nova_problem_test_cases!inner(input, expected_output:output)'
     )
-    .eq('problem_id', problemId)
-    .eq('user_id', user.id);
+    .eq('submission_id', submissionId);
 
-  const { data: submissions, error } = await queryBuilder;
-
-  if (error) {
-    console.error('Error fetching submissions:', error);
-    return [];
+  if (errorCriteria || !submissionCriteria) {
+    console.error('Error fetching submission criteria:', errorCriteria);
+    return;
   }
 
-  return submissions
-    .map((submission) => {
-      // Map criteria to expected format
-      const criteria = submission.criteria.map((criterion) => ({
-        ...criterion,
-        results: undefined,
-        result: criterion.results.find(
-          (result) => result.submission_id === submission.id
-        ),
-      }));
+  if (errorTestCases || !testCases) {
+    console.error('Error fetching submission test cases:', errorTestCases);
+    return;
+  }
 
-      // Return properly typed submission
-      return {
-        ...submission,
-        overall_assessment: '',
-        total_tests: submission.total_tests || 0,
-        passed_tests: submission.passed_tests || 0,
-        test_case_score: submission.test_case_score || 0,
-        criteria,
-        total_criteria: submission.total_criteria || 0,
-        sum_criterion_score: submission.sum_criterion_score || 0,
-        criteria_score: submission.criteria_score || 0,
-        total_score: submission.total_score || 0,
-      } as ExtendedNovaSubmission;
-    })
-    .sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-}
+  return {
+    criteria: submissionCriteria,
+    test_cases: testCases,
+  };
+};

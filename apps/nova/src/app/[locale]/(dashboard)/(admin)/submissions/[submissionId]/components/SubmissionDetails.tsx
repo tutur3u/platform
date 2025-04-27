@@ -1,10 +1,10 @@
-import { ExtendedNovaSubmission } from '../types';
 import CriteriaEvaluation from './CriteriaEvaluation';
 import TestCaseEvaluation from './TestCaseEvaluation';
+import type { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 
 interface SubmissionDetailsProps {
-  submission: ExtendedNovaSubmission;
+  submission: NovaSubmissionData;
 }
 
 export default function SubmissionDetails({

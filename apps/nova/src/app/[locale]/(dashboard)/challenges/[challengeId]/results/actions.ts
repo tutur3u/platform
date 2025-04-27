@@ -8,7 +8,7 @@ import type {
   NovaProblem,
   NovaSession,
   NovaSubmissionCriteria,
-  NovaSubmissionWithScores,
+  NovaSubmissionWithScoresAndCriteria,
 } from '@tuturuuu/types/db';
 
 // Helper interfaces for return types
@@ -274,7 +274,10 @@ export async function fetchAllProblems(
     }
 
     // Step 6: Group submissions by problem_id
-    const submissionsByProblem: Record<string, NovaSubmissionWithScores[]> = {};
+    const submissionsByProblem: Record<
+      string,
+      NovaSubmissionWithScoresAndCriteria[]
+    > = {};
 
     if (allSubmissions && allSubmissions.length > 0) {
       allSubmissions.forEach((submission) => {
@@ -308,13 +311,6 @@ export async function fetchAllProblems(
         submissionsByProblem[problemId].push({
           ...submission,
           criteria: submissionCriteria,
-          total_tests: submission.total_tests || 0,
-          passed_tests: submission.passed_tests || 0,
-          test_case_score: submission.test_case_score || 0,
-          total_criteria: submission.total_criteria || 0,
-          sum_criterion_score: submission.sum_criterion_score || 0,
-          criteria_score: submission.criteria_score || 0,
-          total_score: submission.total_score || 0,
         });
       });
     }
