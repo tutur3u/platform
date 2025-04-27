@@ -1,6 +1,5 @@
 'use client';
 
-import { BlockEditor } from '@/components/components/BlockEditor';
 import { WorkspaceDocument } from '@tuturuuu/types/db';
 import { Globe2, Loader2 } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
@@ -23,7 +22,7 @@ export default function DocumentPageContent({ document }: Props) {
 
   return (
     <div className="relative flex flex-col">
-      <div className="bg-background sticky top-0 z-50 flex h-14 items-center justify-center">
+      <div className="sticky top-0 z-50 flex h-14 items-center justify-center bg-background">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
@@ -39,8 +38,8 @@ export default function DocumentPageContent({ document }: Props) {
 
       <div className="overflow-auto py-6">
         <div className="mx-auto max-w-screen-xl px-4">
-          <div className="bg-background rounded-lg border p-6 shadow-sm">
-            <BlockEditor document={document.content as any} editable={false} />
+          <div className="rounded-lg border bg-background p-6 shadow-sm">
+            {/* <BlockEditor document={document.content as any} editable={false} /> */}
           </div>
         </div>
       </div>

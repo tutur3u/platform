@@ -1,12 +1,6 @@
 'use client';
 
 import DocumentShareDialog from '../document-share-dialog';
-import {
-  BlockEditor,
-  BlockEditorRef,
-} from '@/components/components/BlockEditor';
-import { TiptapCollabProvider } from '@hocuspocus/provider';
-import { JSONContent } from '@tiptap/core';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { WorkspaceDocument } from '@tuturuuu/types/db';
 import {
@@ -68,7 +62,6 @@ async function deleteDocument(wsId: string, documentId: string) {
 export default function DocumentDetailsPage({ params }: Props) {
   const t = useTranslations();
   const nameInputRef = useRef<HTMLInputElement | null>(null);
-  const editorRef = useRef<BlockEditorRef | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [document, setDocument] = useState<Partial<WorkspaceDocument> | null>(
@@ -82,8 +75,6 @@ export default function DocumentDetailsPage({ params }: Props) {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
-  const [provider] = useState<TiptapCollabProvider | null>(null);
-  const [aiToken] = useState<string | null | undefined>();
 
   const { wsId, documentId } = use(params);
 
@@ -211,7 +202,7 @@ export default function DocumentDetailsPage({ params }: Props) {
   };
 
   const saveContentToDatabase = useCallback(
-    async (content: JSONContent) => {
+    async (content: string) => {
       if (!document?.id) return;
 
       updateSyncStatus({
@@ -250,21 +241,22 @@ export default function DocumentDetailsPage({ params }: Props) {
   );
 
   const handleRetrySave = useCallback(() => {
-    if (editorRef.current?.editor) {
-      const content = editorRef.current.editor.getJSON();
+    // if (editorRef.current?.editor) {
+    // const content = editorRef.current.editor.getJSON();
+    const content = '';
+    updateSyncStatus({
+      type: 'saving',
+      message: t('common.saving'),
+      timestamp: Date.now(),
+    });
+    saveContentToDatabase(content).catch(() => {
       updateSyncStatus({
-        type: 'saving',
-        message: t('common.saving'),
+        type: 'error',
+        message: t('common.error_saving'),
         timestamp: Date.now(),
       });
-      saveContentToDatabase(content).catch(() => {
-        updateSyncStatus({
-          type: 'error',
-          message: t('common.error_saving'),
-          timestamp: Date.now(),
-        });
-      });
-    }
+    });
+    // }
   }, [t, saveContentToDatabase, updateSyncStatus]);
 
   if (loading || !wsId || !documentId) {
@@ -279,8 +271,8 @@ export default function DocumentDetailsPage({ params }: Props) {
   if (!document) return null;
 
   return (
-    <div className="bg-background relative flex h-screen flex-col">
-      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
+    <div className="relative flex h-screen flex-col bg-background">
+      <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-4">
             <Button
@@ -306,7 +298,7 @@ export default function DocumentDetailsPage({ params }: Props) {
                   <div
                     className={cn(
                       'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                      'hover:bg-muted/50 cursor-default select-none',
+                      'cursor-default select-none hover:bg-muted/50',
                       syncStatus.type === 'saving' &&
                         'bg-muted/30 text-muted-foreground',
                       syncStatus.type === 'saved' && 'text-emerald-500',
@@ -364,14 +356,14 @@ export default function DocumentDetailsPage({ params }: Props) {
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-foreground gap-1.5"
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
               onClick={() => setIsShareDialogOpen(true)}
             >
               <Share2 className="h-4 w-4" />
               {t('common.share')}
             </Button>
 
-            <div className="bg-border mx-2 h-5 w-px" />
+            <div className="mx-2 h-5 w-px bg-border" />
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -387,7 +379,7 @@ export default function DocumentDetailsPage({ params }: Props) {
                   {document.is_public ? (
                     <Globe2 className="h-4 w-4 text-emerald-500" />
                   ) : (
-                    <Lock className="text-muted-foreground h-4 w-4" />
+                    <Lock className="h-4 w-4 text-muted-foreground" />
                   )}
                 </Button>
               </TooltipTrigger>
@@ -425,26 +417,6 @@ export default function DocumentDetailsPage({ params }: Props) {
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-screen-xl px-4 py-6">
-          <BlockEditor
-            ref={editorRef}
-            aiToken={aiToken ?? undefined}
-            document={document.content as any}
-            wsId={wsId}
-            docId={documentId}
-            provider={provider}
-            onSave={saveContentToDatabase}
-            onSyncStatusChange={(status) => {
-              updateSyncStatus({
-                ...status,
-                timestamp: Date.now(),
-              });
-            }}
-          />
         </div>
       </div>
 

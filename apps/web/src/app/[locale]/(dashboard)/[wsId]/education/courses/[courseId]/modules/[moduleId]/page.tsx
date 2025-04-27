@@ -3,7 +3,6 @@ import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
 import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';
-import { BlockEditor } from '@/components/components/BlockEditor';
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
@@ -51,7 +50,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
         {fc?.front || '...'}
       </div>
     ),
@@ -61,7 +60,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">
         {fc?.back || '...'}
       </div>
     ),
@@ -75,9 +74,10 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         icon={<Goal className="h-5 w-5" />}
         rawContent={data.content as any | undefined}
         content={
-          data.content ? (
-            <BlockEditor document={data.content as any} />
-          ) : undefined
+          data.content
+            ? // <BlockEditor document={data.content as any} />
+              undefined
+            : undefined
         }
       />
       <CourseSection
@@ -182,9 +182,10 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         icon={<BookText className="h-5 w-5" />}
         rawContent={data.extra_content as any | undefined}
         content={
-          data.extra_content ? (
-            <BlockEditor document={data.extra_content as any} />
-          ) : undefined
+          data.extra_content
+            ? // <BlockEditor document={data.extra_content as any} />
+              undefined
+            : undefined
         }
       />
     </div>
