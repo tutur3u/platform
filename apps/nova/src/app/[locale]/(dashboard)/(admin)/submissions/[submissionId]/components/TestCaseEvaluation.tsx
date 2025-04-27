@@ -1,6 +1,6 @@
 'use client';
 
-import { type ExtendedNovaSubmission } from '../types';
+import type { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   AlertCircle,
@@ -27,7 +27,7 @@ import {
 import { Fragment, useState } from 'react';
 
 interface TestCaseEvaluationProps {
-  submission: ExtendedNovaSubmission;
+  submission: NovaSubmissionData;
 }
 
 export default function TestCaseEvaluation({
@@ -71,7 +71,7 @@ export default function TestCaseEvaluation({
           <TooltipTrigger asChild>
             <Badge variant={variant} className="ml-2">
               <BrainCircuit className="mr-1 h-3 w-3" />
-              {Math.round(confidence * 100)}%
+              {Math.round((confidence || 0) * 100)}%
             </Badge>
           </TooltipTrigger>
           <TooltipContent>
@@ -82,27 +82,21 @@ export default function TestCaseEvaluation({
     );
   };
 
+  const passedTests = submission.passed_tests || 0;
+  const totalTests = submission.total_tests || 1;
+  const passRate = totalTests > 0 ? (passedTests / totalTests) * 100 : 0;
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div className="space-y-1">
           <h3 className="font-medium">Test Case Results</h3>
-          <p className="text-muted-foreground text-sm">
-            {submission.passed_tests} of {submission.total_tests} test cases
-            passed
+          <p className="text-sm text-muted-foreground">
+            {passedTests} of {totalTests} test cases passed
           </p>
         </div>
-        <Badge
-          variant={
-            submission.passed_tests === submission.total_tests
-              ? 'success'
-              : 'secondary'
-          }
-        >
-          {((submission.passed_tests / submission.total_tests) * 100).toFixed(
-            0
-          )}
-          % Pass Rate
+        <Badge variant={passedTests === totalTests ? 'success' : 'secondary'}>
+          {passRate.toFixed(0)}% Pass Rate
         </Badge>
       </div>
 
@@ -121,60 +115,63 @@ export default function TestCaseEvaluation({
             {submission.test_cases.map((testCase, index) => {
               const rowKey = `row-${index}`;
               const isExpanded = expandedRows[rowKey] || false;
+              const matched = !!testCase.matched;
+              const confidence = testCase.confidence || null;
+              const testCaseInput = testCase.input || 'No input';
+              const expectedOutput =
+                testCase.expected_output || 'No expected output';
+              const actualOutput = testCase.output || 'No output';
+              const reasoning = testCase.reasoning || '';
 
               return (
-                <Fragment key={testCase.test_case_id}>
+                <Fragment key={testCase.test_case_id || `test-case-${index}`}>
                   <TableRow
-                    key={testCase.test_case_id}
-                    className={
-                      testCase.matched ? 'bg-success/5' : 'bg-destructive/5'
-                    }
+                    className={matched ? 'bg-success/5' : 'bg-destructive/5'}
                   >
                     <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell>
-                      {testCase.matched ? (
+                      {matched ? (
                         <div className="text-success flex items-center">
                           <CheckCircle className="mr-1 h-4 w-4" />
                           Passed
-                          {renderConfidenceBadge(testCase.confidence)}
+                          {renderConfidenceBadge(confidence)}
                         </div>
                       ) : (
-                        <div className="text-destructive flex items-center">
+                        <div className="flex items-center text-destructive">
                           <XCircle className="mr-1 h-4 w-4" />
                           Failed
-                          {renderConfidenceBadge(testCase.confidence)}
+                          {renderConfidenceBadge(confidence)}
                         </div>
                       )}
                     </TableCell>
                     <TableCell>
                       <div className="max-h-20 overflow-auto">
-                        <pre className="whitespace-pre-wrap text-xs">
-                          {testCase.test_case?.input || 'No input'}
+                        <pre className="text-xs whitespace-pre-wrap">
+                          {testCaseInput}
                         </pre>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-2">
                         <div>
-                          <span className="text-muted-foreground text-xs font-semibold">
+                          <span className="text-xs font-semibold text-muted-foreground">
                             Expected:
                           </span>
                           <div className="max-h-20 overflow-auto">
-                            <pre className="whitespace-pre-wrap text-xs">
-                              {testCase.test_case?.output ||
-                                'No expected output'}
+                            <pre className="text-xs whitespace-pre-wrap">
+                              {expectedOutput}
                             </pre>
                           </div>
                         </div>
                         <div>
-                          <span className="text-muted-foreground text-xs font-semibold">
+                          <span className="text-xs font-semibold text-muted-foreground">
                             Actual:
                           </span>
                           <div className="max-h-20 overflow-auto">
                             <pre
-                              className={`whitespace-pre-wrap text-xs ${!testCase.matched ? 'text-destructive' : ''}`}
+                              className={`text-xs whitespace-pre-wrap ${!matched ? 'text-destructive' : ''}`}
                             >
-                              {testCase.output || 'No output'}
+                              {actualOutput}
                             </pre>
                           </div>
                         </div>
@@ -183,7 +180,7 @@ export default function TestCaseEvaluation({
                     <TableCell>
                       <button
                         onClick={() => toggleRow(rowKey)}
-                        className="hover:bg-muted rounded p-1 transition-colors"
+                        className="rounded p-1 transition-colors hover:bg-muted"
                         aria-label={
                           isExpanded ? 'Hide details' : 'Show details'
                         }
@@ -196,20 +193,18 @@ export default function TestCaseEvaluation({
                       </button>
                     </TableCell>
                   </TableRow>
-                  {isExpanded && testCase.reasoning && (
+                  {isExpanded && reasoning && (
                     <TableRow
-                      className={
-                        testCase.matched ? 'bg-success/5' : 'bg-destructive/5'
-                      }
+                      className={matched ? 'bg-success/5' : 'bg-destructive/5'}
                     >
                       <TableCell colSpan={5} className="px-4 py-3">
-                        <div className="bg-background/80 rounded-md p-3 shadow-sm">
+                        <div className="rounded-md bg-background/80 p-3 shadow-sm">
                           <div className="mb-2 flex items-center gap-2">
-                            <AlertCircle className="text-muted-foreground h-4 w-4" />
+                            <AlertCircle className="h-4 w-4 text-muted-foreground" />
                             <h4 className="font-medium">Reasoning</h4>
                           </div>
-                          <p className="whitespace-pre-wrap text-sm">
-                            {testCase.reasoning}
+                          <p className="text-sm whitespace-pre-wrap">
+                            {reasoning}
                           </p>
                         </div>
                       </TableCell>
