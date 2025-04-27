@@ -35,13 +35,13 @@ export function SessionOverview({ stats }: SessionStatsProps) {
           <CardTitle className="text-sm font-medium">
             {t('total-submissions')}
           </CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <Users className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
             {stats.totalCount.toLocaleString()}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             {t('total-submissions-description')}
           </p>
         </CardContent>
@@ -50,13 +50,13 @@ export function SessionOverview({ stats }: SessionStatsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <Users className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
             {stats.activeCount.toLocaleString()}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Currently active sessions
           </p>
         </CardContent>
@@ -67,13 +67,13 @@ export function SessionOverview({ stats }: SessionStatsProps) {
           <CardTitle className="text-sm font-medium">
             {t('unique-users')}
           </CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <Users className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
             {stats.uniqueUsersCount.toLocaleString()}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             {t('unique-users-description')}
           </p>
         </CardContent>
@@ -84,13 +84,13 @@ export function SessionOverview({ stats }: SessionStatsProps) {
           <CardTitle className="text-sm font-medium">
             {t('latest-submission')}
           </CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
+          <Clock className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-md font-bold">
             {formatDate(stats.latestSessionDate)}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             {t('latest-submission-description')}
           </p>
         </CardContent>
