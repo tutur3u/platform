@@ -4,7 +4,6 @@ import { Countdown } from './Countdown';
 import { TimeProgress } from './TimeProgress';
 import { ConfirmDialog } from './confirmDialog';
 import EditChallengeDialog from './editChallengeDialog';
-import { useQueryClient } from '@tanstack/react-query';
 import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -66,7 +65,6 @@ export default function ChallengeCard({
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [status, setStatus] = useState<
     'disabled' | 'upcoming' | 'preview' | 'active' | 'closed'
@@ -153,7 +151,6 @@ export default function ChallengeCard({
       });
 
       if (response.ok) {
-        queryClient.invalidateQueries({ queryKey: ['challenges'] });
         router.refresh();
       } else {
         toast({
