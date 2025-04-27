@@ -42,7 +42,7 @@ export default function CriteriaEvaluation({
       <div className="mb-4 flex items-center justify-between">
         <div className="space-y-1">
           <h3 className="font-medium">Criteria Evaluation</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {sumCriterionScore.toFixed(1)} of {totalCriteria * 10} possible
             points
           </p>
@@ -90,7 +90,7 @@ export default function CriteriaEvaluation({
                     <p className="text-muted-foreground">{criterionFeedback}</p>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">
+                  <p className="text-muted-foreground text-sm italic">
                     No feedback provided
                   </p>
                 )}
