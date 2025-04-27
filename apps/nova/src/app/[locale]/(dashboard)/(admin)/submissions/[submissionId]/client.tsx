@@ -113,7 +113,7 @@ export default function SubmissionClient({ submission }: Props) {
                     className="h-12 w-12 rounded-full"
                   />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold">
+                  <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold">
                     {submission.user?.display_name?.charAt(0) || '?'}
                   </div>
                 )}
@@ -122,7 +122,7 @@ export default function SubmissionClient({ submission }: Props) {
                     {submission.user?.display_name || 'Unknown User'}
                   </h3>
                   {submission.user?.email && (
-                    <div className="flex items-center text-sm text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center text-sm">
                       <Mail className="mr-1 h-3.5 w-3.5" />
                       <span>{submission.user.email}</span>
                     </div>
@@ -155,7 +155,7 @@ export default function SubmissionClient({ submission }: Props) {
             <CardContent className="space-y-6">
               {submission.challenge && (
                 <div>
-                  <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                     Challenge
                   </h3>
                   <p className="font-medium">{submission.challenge.title}</p>
@@ -176,7 +176,7 @@ export default function SubmissionClient({ submission }: Props) {
 
               {submission.problem && (
                 <div>
-                  <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                     Problem
                   </h3>
                   <p className="font-medium">{submission.problem.title}</p>
@@ -197,7 +197,7 @@ export default function SubmissionClient({ submission }: Props) {
 
               {submission.created_at && (
                 <div>
-                  <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                     Submitted
                   </h3>
                   <p className="flex items-center gap-1">
@@ -209,7 +209,7 @@ export default function SubmissionClient({ submission }: Props) {
 
               {submission.session && (
                 <div>
-                  <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                     Session
                   </h3>
                   <p>
@@ -218,7 +218,7 @@ export default function SubmissionClient({ submission }: Props) {
                     </Badge>
                   </p>
                   <div className="mt-2 flex items-center gap-2 text-sm">
-                    <Timer className="h-4 w-4 text-muted-foreground" />
+                    <Timer className="text-muted-foreground h-4 w-4" />
                     <span>{getSessionDuration()}</span>
                   </div>
                 </div>
@@ -249,28 +249,28 @@ export default function SubmissionClient({ submission }: Props) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <p className="flex items-center text-xs text-muted-foreground">
+                  <p className="text-muted-foreground flex items-center text-xs">
                     <CheckSquare className="mr-1 h-3.5 w-3.5" />
                     Test Cases
                   </p>
                   <p className="text-sm font-semibold">
                     {submission.test_case_score?.toFixed(1) || '0.0'}/10
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {submission.passed_tests}/{submission.total_tests || 1}{' '}
                     passed
                   </p>
                 </div>
 
                 <div className="space-y-1">
-                  <p className="flex items-center text-xs text-muted-foreground">
+                  <p className="text-muted-foreground flex items-center text-xs">
                     <PencilRuler className="mr-1 h-3.5 w-3.5" />
                     Criteria
                   </p>
                   <p className="text-sm font-semibold">
                     {submission.criteria_score?.toFixed(1) || '0.0'}/10
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {submission.sum_criterion_score?.toFixed(1) || '0.0'}/
                     {(submission.total_criteria || 1) * 10} points
                   </p>
@@ -317,13 +317,13 @@ export default function SubmissionClient({ submission }: Props) {
                 </TabsList>
                 <TabsContent value="prompt" className="mt-0">
                   <div className="relative">
-                    <pre className="max-h-[400px] overflow-auto rounded-md bg-muted/50 p-4 text-sm">
+                    <pre className="bg-muted/50 max-h-[400px] overflow-auto rounded-md p-4 text-sm">
                       {submission.prompt || 'No prompt available'}
                     </pre>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute top-2 right-2"
+                      className="absolute right-2 top-2"
                       onClick={() => copyToClipboard(submission.prompt || '')}
                     >
                       {copied ? (
