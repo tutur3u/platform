@@ -1,12 +1,3 @@
-drop view if exists nova_user_leaderboard
-drop view if exists nova_user_challenge_leaderboard
-drop view if exists nova_team_leaderboard
-drop view if exists nova_team_challenge_leaderboard
-
-
-
-
-
 CREATE OR REPLACE VIEW nova_user_leaderboard AS
 WITH problem_best_submissions_per_session AS (
     -- Get the best submission for each problem by user in each session

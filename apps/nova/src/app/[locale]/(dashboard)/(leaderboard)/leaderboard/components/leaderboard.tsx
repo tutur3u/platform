@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -179,7 +180,7 @@ export function Leaderboard({
         </TooltipProvider>
       </div>
 
-      <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700 overflow-auto">
+      <div className="scrollbar-thin overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/30">
             <TableRow className="border-b border-gray-200 hover:bg-transparent dark:border-slate-700/50 dark:hover:bg-transparent">
@@ -231,7 +232,7 @@ export function Leaderboard({
                         {/* Hexagon background with animated glow for top ranks */}
                         <div
                           className={cn(
-                            'absolute left-0 top-0 h-full w-full',
+                            'absolute top-0 left-0 h-full w-full',
                             entry.rank <= 3 && 'hex-shape'
                           )}
                           style={{
@@ -429,7 +430,7 @@ export function Leaderboard({
                                   : 'bg-gray-50 dark:bg-slate-700/20'
                         )}
                       >
-                        {entry.score.toLocaleString()}
+                        {formatScore(entry.score, 2)}
                       </div>
                     </div>
                   </TableCell>
@@ -505,7 +506,7 @@ export function Leaderboard({
                                           duration: 0.5,
                                           delay: 0.2 + i * 0.1,
                                         }}
-                                        title={`${challenge.title}: ${score.toFixed(1)} pts (${percentage.toFixed(1)}%)`}
+                                        title={`${challenge.title}: ${score.toFixed(2)} pts (${percentage.toFixed(1)}%)`}
                                       />
                                     );
                                   })}
@@ -557,7 +558,7 @@ export function Leaderboard({
                                           {challenge.title}
                                         </span>
                                         <span className="text-xs text-gray-500 dark:text-slate-400">
-                                          {score.toFixed(1)} pts
+                                          {score.toFixed(2)} pts
                                         </span>
                                         <span className="text-xs text-gray-400 dark:text-slate-500">
                                           ({percentage.toFixed(1)}%)
@@ -723,7 +724,7 @@ export function Leaderboard({
                                                 {problem.title}
                                               </span>
                                               <span className="text-xs text-gray-500 dark:text-slate-400">
-                                                {problemScore.toFixed(1)} pts
+                                                {problemScore.toFixed(2)} pts
                                               </span>
                                               <span className="text-xs text-gray-400 dark:text-slate-500">
                                                 ({percentage.toFixed(1)}%)
