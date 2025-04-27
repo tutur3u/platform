@@ -11,6 +11,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
+  Activity,
   Box,
   Calculator,
   Code,
@@ -84,6 +85,12 @@ export default async function RootLayout({
       requiresChallengeManagement: true,
     },
     {
+      name: t('sessions'),
+      href: '/sessions',
+      icon: <Activity className="h-4 w-4" />,
+      requiresChallengeManagement: true,
+    },
+    {
       name: t('score-calculator'),
       href: '/score-calculator',
       icon: <Calculator className="h-4 w-4" />,
@@ -126,7 +133,7 @@ export default async function RootLayout({
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -135,7 +142,7 @@ export default async function RootLayout({
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />

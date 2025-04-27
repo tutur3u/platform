@@ -6866,6 +6866,16 @@ export type Database = {
           amount: number;
         }[];
       };
+      get_session_statistics: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          total_count: number;
+          unique_users_count: number;
+          active_count: number;
+          completed_count: number;
+          latest_session_date: string;
+        }[];
+      };
       get_submission_statistics: {
         Args: Record<PropertyKey, never>;
         Returns: {

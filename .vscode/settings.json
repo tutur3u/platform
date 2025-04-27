@@ -23,6 +23,7 @@
     "apps/nova/messages",
     "apps/upskii/messages"
   ],
+  "i18n-ally.autoDetection": true,
   "i18n-ally.keystyle": "nested",
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"
@@ -36,5 +37,6 @@
   "codeQL.githubDatabase.update": "never",
   "codeQL.githubDatabase.download": "never",
   "IDX.aI.enableInlineCompletion": true,
-  "IDX.aI.enableCodebaseIndexing": true
+  "IDX.aI.enableCodebaseIndexing": true,
+  "i18n-ally.sourceLanguage": "en"
 }
