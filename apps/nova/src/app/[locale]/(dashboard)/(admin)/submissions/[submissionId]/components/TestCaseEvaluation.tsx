@@ -24,7 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 interface TestCaseEvaluationProps {
   submission: ExtendedNovaSubmission;
@@ -123,7 +123,7 @@ export default function TestCaseEvaluation({
               const isExpanded = expandedRows[rowKey] || false;
 
               return (
-                <>
+                <Fragment key={testCase.test_case_id}>
                   <TableRow
                     key={testCase.test_case_id}
                     className={
@@ -215,7 +215,7 @@ export default function TestCaseEvaluation({
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </TableBody>

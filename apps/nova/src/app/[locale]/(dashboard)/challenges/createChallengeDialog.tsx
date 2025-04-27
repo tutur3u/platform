@@ -1,7 +1,6 @@
 'use client';
 
 import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
-import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +11,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface CreateChallengeDialogProps {
@@ -21,9 +21,10 @@ interface CreateChallengeDialogProps {
 export default function CreateChallengeDialog({
   trigger,
 }: CreateChallengeDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
+
   const t = useTranslations('nova.challenge');
 
   const onSubmit = async (values: ChallengeFormValues) => {
@@ -94,10 +95,8 @@ export default function CreateChallengeDialog({
         );
       }
 
-      // Invalidate challenges query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: ['challenges'] });
-
       setOpen(false);
+      router.refresh();
     } catch (error) {
       console.error('Error saving challenge:', error);
       toast({

@@ -3,7 +3,6 @@ import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
 import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';
-import { BlockEditor } from '@/components/components/BlockEditor';
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
@@ -75,9 +74,10 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         icon={<Goal className="h-5 w-5" />}
         rawContent={data.content as any | undefined}
         content={
-          data.content ? (
-            <BlockEditor document={data.content as any} />
-          ) : undefined
+          data.content
+            ? // <BlockEditor document={data.content as any} />
+              undefined
+            : undefined
         }
       />
       <CourseSection
@@ -182,9 +182,10 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         icon={<BookText className="h-5 w-5" />}
         rawContent={data.extra_content as any | undefined}
         content={
-          data.extra_content ? (
-            <BlockEditor document={data.extra_content as any} />
-          ) : undefined
+          data.extra_content
+            ? // <BlockEditor document={data.extra_content as any} />
+              undefined
+            : undefined
         }
       />
     </div>

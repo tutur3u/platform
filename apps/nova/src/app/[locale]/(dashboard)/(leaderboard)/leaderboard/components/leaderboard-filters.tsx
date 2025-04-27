@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Filter, Search, Sparkles, X } from '@tuturuuu/ui/icons';
@@ -31,7 +29,8 @@ export function LeaderboardFilters({
   setSelectedChallenge,
   challenges = [],
 }: LeaderboardFiltersProps) {
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] =
+    useState(!!selectedChallenge);
   const t = useTranslations('nova.leaderboard-page.filters');
 
   return (
@@ -101,7 +100,7 @@ export function LeaderboardFilters({
             showAdvancedFilters &&
               'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/50 dark:bg-blue-950/40 dark:text-blue-400'
           )}
-          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          onClick={() => setShowAdvancedFilters((prev) => !prev)}
         >
           <Filter className="h-3.5 w-3.5" />
           {t('filters')}

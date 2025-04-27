@@ -1491,9 +1491,16 @@
         "filter-challenges": "Lọc theo thử thách",
         "filter-problems": "Lọc theo vấn đề",
         "all-problems": "Tất cả vấn đề",
-        "clear-filters": "Xóa bộ lọc"
+        "clear-filters": "Xóa bộ lọc",
+        "all-statuses": "Tất cả các trạng thái",
+        "in-progress": "Đang làm",
+        "ended": "Đã hoàn thành"
       },
       "submission-table": {
+        "status": {
+          "in_progress": "Đang làm",
+          "ended": "Đã hoàn thành"
+        },
         "headers": {
           "user": "Người dùng",
           "problem": "Đề Bài",
@@ -1943,15 +1950,27 @@
         "you": "Bạn",
         "hover-info": "Nhấn để thay đổi thứ tự sắp xếp",
         "no-entries-found": "Không tìm thấy mục nào",
-        "first-join": "Hãy là người đầu tiên tham gia cuộc thi!"
-      }
+        "first-join": "Hãy là người đầu tiên tham gia cuộc thi!",
+        "pts": "điểm"
+      },
+      "neo-league-card": {
+        "title": "Cuộc thi Neo League",
+        "new": "Mới",
+        "description": "Mặc định, bảng xếp hạng này thể hiện tổng điểm từ tất cả các thử thách bạn đã tham gia. \nĐể xem kết quả cụ thể cho vòng 1 của cuộc thi Neo League, nhấp vào liên kết bên dưới.",
+        "view-round-1": "Xem kết quả Vòng 1",
+        "view-all-challenges": "Xem tất cả các thử thách",
+        "round-1-description": "Bạn hiện đang xem kết quả cho vòng 1 của cuộc thi Neo League. \nCác điểm số được hiển thị là cụ thể cho thử thách này.",
+        "active": "Đang hiển thị",
+        "round-1-title": "Xem Neo League Vòng 1"
+      },
+      "teams": "Đội"
     },
     "profile-page": {
       "breadcrumb": {
         "home": "Trang chủ",
         "leaderboard": "Bảng xếp hạng"
       },
-      "rank": "Hạng #",
+      "rank": "Hạng",
       "challenge": "Thử thách",
       "challenges": {
         "title": "Thử thách",
@@ -2195,7 +2214,8 @@
         "cancel": "Hủy"
       }
     },
-    "score-calculator": "Công cụ tính điểm"
+    "score-calculator": "Công cụ tính điểm",
+    "sessions": "Phiên làm bài"
   },
   "onboarding": {
     "just-a-moment": "Bước cuối cùng!",

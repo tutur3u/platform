@@ -1,6 +1,5 @@
 'use client';
 
-import { BlockEditor } from '@/components/components/BlockEditor';
 import { WorkspaceDocument } from '@tuturuuu/types/db';
 import { Globe2, Loader2 } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
@@ -40,7 +39,7 @@ export default function DocumentPageContent({ document }: Props) {
       <div className="overflow-auto py-6">
         <div className="mx-auto max-w-screen-xl px-4">
           <div className="bg-background rounded-lg border p-6 shadow-sm">
-            <BlockEditor document={document.content as any} editable={false} />
+            {/* <BlockEditor document={document.content as any} editable={false} /> */}
           </div>
         </div>
       </div>

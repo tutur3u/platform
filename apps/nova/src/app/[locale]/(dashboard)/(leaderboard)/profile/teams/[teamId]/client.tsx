@@ -45,7 +45,6 @@ export interface TeamData {
   }[];
   rank?: number;
   total_score?: number;
-  active_since?: string;
   challenge_scores?: Record<string, number>;
   challenge_details?: Array<{
     id: string;
@@ -59,7 +58,11 @@ export interface TeamData {
   };
 }
 
-export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
+export default function TeamClient({
+  teamData,
+}: {
+  teamData: TeamData | null;
+}) {
   const locale = useLocale();
 
   if (!teamData) {
@@ -99,7 +102,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
   });
 
   // Use either stats.active_since or the root active_since property
-  const activeSinceDate = teamData.stats?.active_since || teamData.active_since;
+  const activeSinceDate = teamData.stats?.active_since || '';
 
   const formattedActiveDate = activeSinceDate
     ? (() => {

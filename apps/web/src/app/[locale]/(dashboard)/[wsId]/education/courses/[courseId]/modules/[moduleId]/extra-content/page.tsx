@@ -1,19 +1,17 @@
-import { ModuleExtraContentEditor } from './editor';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { BookText, Sparkles } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
-interface Props {
-  params: Promise<{
-    wsId: string;
-    courseId: string;
-    moduleId: string;
-  }>;
-}
+// interface Props {
+//   params: Promise<{
+//     wsId: string;
+//     courseId: string;
+//     moduleId: string;
+//   }>;
+// }
 
-export default async function ModuleExtraContentPage({ params }: Props) {
-  const { courseId, moduleId } = await params;
+export default async function ModuleExtraContentPage() {
   const t = await getTranslations();
 
   return (
@@ -35,7 +33,7 @@ export default async function ModuleExtraContentPage({ params }: Props) {
         }
         showSecondaryTrigger
       />
-      <ModuleExtraContentEditor courseId={courseId} moduleId={moduleId} />
+      {/* <ModuleExtraContentEditor courseId={courseId} moduleId={moduleId} /> */}
     </div>
   );
 }

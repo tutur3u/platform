@@ -19,6 +19,8 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { generateFunName } from '@tuturuuu/utils/name-helper';
+import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -50,21 +52,21 @@ export type LeaderboardEntry = {
 };
 
 interface LeaderboardProps {
+  locale: string;
   data: LeaderboardEntry[];
   currentEntryId?: string;
   teamMode?: boolean;
   challenges?: { id: string; title: string }[];
   selectedChallenge?: string;
-  problems?: { id: string; title: string; challenge_id: string }[];
 }
 
 export function Leaderboard({
+  locale,
   data,
   teamMode,
   currentEntryId,
   challenges = [],
   selectedChallenge = 'all',
-  problems = [],
 }: LeaderboardProps) {
   const prefersReducedMotion = useReducedMotion();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -119,11 +121,6 @@ export function Leaderboard({
     return challenge
       ? { id: challenge.id, title: challenge.title, score: bestScore }
       : null;
-  };
-
-  // Added function to get problems for selected challenge
-  const getProblemsForChallenge = (challengeId: string) => {
-    return problems.filter((problem) => problem.challenge_id === challengeId);
   };
 
   return (
@@ -323,7 +320,13 @@ export function Leaderboard({
                               className="scale-110"
                             />
                             <AvatarFallback className="bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-blue-400">
-                              {entry.name.charAt(0)}
+                              {(
+                                entry.name ||
+                                generateFunName({
+                                  id: entry.id,
+                                  locale,
+                                })
+                              ).charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                         </Link>
@@ -345,7 +348,11 @@ export function Leaderboard({
                               'text-amber-700 dark:text-amber-400'
                           )}
                         >
-                          {entry.name}
+                          {entry.name ||
+                            generateFunName({
+                              id: entry.id,
+                              locale,
+                            })}
                         </Link>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           {currentEntryId === entry.id && (
@@ -369,6 +376,20 @@ export function Leaderboard({
                             )}
                           {entry.challenge_scores &&
                             Object.keys(entry.challenge_scores).length > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleRowExpand(entry.id)}
+                                className="ml-1 h-5 p-0 text-[10px] font-normal text-gray-500 hover:bg-transparent hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                              >
+                                <Sparkles className="mr-1 h-2.5 w-2.5" />
+                                {expandedRows.has(entry.id)
+                                  ? t('hide-breakdown')
+                                  : t('show-breakdown')}
+                              </Button>
+                            )}
+                          {entry.problem_scores &&
+                            Object.keys(entry.problem_scores).length > 0 && (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -415,199 +436,59 @@ export function Leaderboard({
                                   : 'bg-gray-50 dark:bg-slate-700/20'
                         )}
                       >
-                        {entry.score.toLocaleString()}
+                        {formatScore(entry.score, 2)}
                       </div>
                     </div>
                   </TableCell>
                 </motion.tr>
 
                 {/* Challenge Breakdown */}
-                {expandedRows.has(entry.id) && entry.challenge_scores && (
-                  <motion.tr
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="border-b border-gray-200 bg-gray-50/80 dark:border-slate-800/30 dark:bg-slate-800/20"
-                  >
-                    <TableCell colSpan={3} className="px-4 py-3">
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3, delay: 0.1 }}
-                        className="space-y-3"
-                      >
-                        <h4 className="text-xs font-medium text-gray-500 dark:text-slate-400">
-                          {selectedChallenge !== 'all'
-                            ? t('problem-breakdown')
-                            : t('challenge-breakdown')}
-                        </h4>
+                {expandedRows.has(entry.id) &&
+                  (entry.challenge_scores || entry.problem_scores) && (
+                    <motion.tr
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="border-b border-gray-200 bg-gray-50/80 dark:border-slate-800/30 dark:bg-slate-800/20"
+                    >
+                      <TableCell colSpan={3} className="px-4 py-3">
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.3, delay: 0.1 }}
+                          className="space-y-3"
+                        >
+                          <h4 className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                            {selectedChallenge !== 'all'
+                              ? t('problem-breakdown')
+                              : t('challenge-breakdown')}
+                          </h4>
 
-                        {selectedChallenge === 'all' ? (
-                          // Original code for challenge breakdown
-                          <>
-                            {/* Challenge Score Distribution */}
-                            <div className="mb-2 flex h-4 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-slate-800/50">
-                              {challenges
-                                .filter(
-                                  (challenge) =>
-                                    entry.challenge_scores?.[challenge.id] !==
-                                      undefined &&
-                                    (entry.challenge_scores?.[challenge.id] ||
-                                      0) > 0
-                                )
-                                .sort(
-                                  (a, b) =>
-                                    (entry.challenge_scores?.[b.id] || 0) -
-                                    (entry.challenge_scores?.[a.id] || 0)
-                                )
-                                .map((challenge, i) => {
-                                  const score =
-                                    entry.challenge_scores?.[challenge.id] || 0;
-                                  const percentage =
-                                    (score / entry.score) * 100;
-
-                                  // Generate colors for segments
-                                  const colors = [
-                                    'from-blue-500 to-blue-600',
-                                    'from-purple-500 to-purple-600',
-                                    'from-indigo-500 to-indigo-600',
-                                    'from-sky-500 to-sky-600',
-                                    'from-emerald-500 to-emerald-600',
-                                  ];
-
-                                  const colorClass = colors[i % colors.length];
-
-                                  return (
-                                    <motion.div
-                                      key={challenge.id}
-                                      className={`relative h-full bg-gradient-to-r ${colorClass}`}
-                                      initial={{ width: 0 }}
-                                      animate={{ width: `${percentage}%` }}
-                                      transition={{
-                                        duration: 0.5,
-                                        delay: 0.2 + i * 0.1,
-                                      }}
-                                      title={`${challenge.title}: ${score.toFixed(1)} pts (${percentage.toFixed(1)}%)`}
-                                    />
-                                  );
-                                })}
-                            </div>
-
-                            {/* Challenge Score Legend */}
-                            <div className="flex flex-wrap gap-4">
-                              {challenges
-                                .filter(
-                                  (challenge) =>
-                                    entry.challenge_scores?.[challenge.id] !==
-                                      undefined &&
-                                    (entry.challenge_scores?.[challenge.id] ||
-                                      0) > 0
-                                )
-                                .sort(
-                                  (a, b) =>
-                                    (entry.challenge_scores?.[b.id] || 0) -
-                                    (entry.challenge_scores?.[a.id] || 0)
-                                )
-                                .map((challenge, i) => {
-                                  const score =
-                                    entry.challenge_scores?.[challenge.id] || 0;
-                                  const percentage =
-                                    (score / entry.score) * 100;
-
-                                  // Generate colors for legend
-                                  const colors = [
-                                    'bg-blue-500',
-                                    'bg-purple-500',
-                                    'bg-indigo-500',
-                                    'bg-sky-500',
-                                    'bg-emerald-500',
-                                  ];
-
-                                  const bgColorClass =
-                                    colors[i % colors.length];
-
-                                  return (
-                                    <div
-                                      key={challenge.id}
-                                      className="flex items-center gap-2"
-                                    >
-                                      <div
-                                        className={`h-2.5 w-2.5 rounded-full ${bgColorClass}`}
-                                      />
-                                      <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
-                                        {challenge.title}
-                                      </span>
-                                      <span className="text-xs text-gray-500 dark:text-slate-400">
-                                        {score.toFixed(1)} pts
-                                      </span>
-                                      <span className="text-xs text-gray-400 dark:text-slate-500">
-                                        ({percentage.toFixed(1)}%)
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </>
-                        ) : (
-                          // New code for problem breakdown when a specific challenge is selected
-                          <>
-                            {/* Problem Score Distribution */}
-                            <div className="mb-2 flex h-4 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-slate-800/50">
-                              {entry.problem_scores &&
-                              entry.problem_scores[selectedChallenge]
-                                ? // Make sure to generate unique keys based on both problem ID and index
-                                  entry.problem_scores[selectedChallenge]
-                                    .sort((a, b) => b.score - a.score)
-                                    .map((problem, i) => {
-                                      const challengeScore =
-                                        entry.challenge_scores?.[
-                                          selectedChallenge
-                                        ] || 0;
-                                      const percentage =
-                                        challengeScore > 0
-                                          ? (problem.score / challengeScore) *
-                                            100
-                                          : 0;
-
-                                      // Generate colors for segments
-                                      const colors = [
-                                        'from-blue-500 to-blue-600',
-                                        'from-purple-500 to-purple-600',
-                                        'from-indigo-500 to-indigo-600',
-                                        'from-sky-500 to-sky-600',
-                                        'from-emerald-500 to-emerald-600',
-                                      ];
-
-                                      const colorClass =
-                                        colors[i % colors.length];
-
-                                      return (
-                                        <motion.div
-                                          key={`${problem.id}-${i}`}
-                                          className={`relative h-full bg-gradient-to-r ${colorClass}`}
-                                          initial={{ width: 0 }}
-                                          animate={{
-                                            width: `${percentage}%`,
-                                          }}
-                                          transition={{
-                                            duration: 0.5,
-                                            delay: 0.2 + i * 0.1,
-                                          }}
-                                          title={`${problem.title}: ${problem.score.toFixed(1)} pts (${percentage.toFixed(1)}%)`}
-                                        />
-                                      );
-                                    })
-                                : // If no problem scores, show the challenge problems with equal width
-                                  getProblemsForChallenge(
-                                    selectedChallenge
-                                  ).map((problem, i) => {
-                                    const problemCount =
-                                      getProblemsForChallenge(
-                                        selectedChallenge
-                                      ).length;
+                          {selectedChallenge === 'all' ? (
+                            // Original code for challenge breakdown
+                            <>
+                              {/* Challenge Score Distribution */}
+                              <div className="mb-2 flex h-4 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-slate-800/50">
+                                {challenges
+                                  .filter(
+                                    (challenge) =>
+                                      entry.challenge_scores?.[challenge.id] !==
+                                        undefined &&
+                                      (entry.challenge_scores?.[challenge.id] ||
+                                        0) > 0
+                                  )
+                                  .sort(
+                                    (a, b) =>
+                                      (entry.challenge_scores?.[b.id] || 0) -
+                                      (entry.challenge_scores?.[a.id] || 0)
+                                  )
+                                  .map((challenge, i) => {
+                                    const score =
+                                      entry.challenge_scores?.[challenge.id] ||
+                                      0;
                                     const percentage =
-                                      problemCount > 0 ? 100 / problemCount : 0;
+                                      (score / entry.score) * 100;
 
                                     // Generate colors for segments
                                     const colors = [
@@ -623,7 +504,7 @@ export function Leaderboard({
 
                                     return (
                                       <motion.div
-                                        key={`${problem.id}-${i}`}
+                                        key={challenge.id}
                                         className={`relative h-full bg-gradient-to-r ${colorClass}`}
                                         initial={{ width: 0 }}
                                         animate={{ width: `${percentage}%` }}
@@ -631,64 +512,36 @@ export function Leaderboard({
                                           duration: 0.5,
                                           delay: 0.2 + i * 0.1,
                                         }}
-                                        title={`${problem.title}: No score data`}
+                                        title={`${challenge.title}: ${score.toFixed(2)} ${t(
+                                          'pts'
+                                        )} (${percentage.toFixed(1)}%)`}
                                       />
                                     );
                                   })}
-                            </div>
+                              </div>
 
-                            {/* Problem Score Legend */}
-                            <div className="flex flex-wrap gap-4">
-                              {entry.problem_scores &&
-                              entry.problem_scores[selectedChallenge]
-                                ? entry.problem_scores[selectedChallenge]
-                                    .sort((a, b) => b.score - a.score)
-                                    .map((problem, i) => {
-                                      const challengeScore =
-                                        entry.challenge_scores?.[
-                                          selectedChallenge
-                                        ] || 0;
-                                      const percentage =
-                                        challengeScore > 0
-                                          ? (problem.score / challengeScore) *
-                                            100
-                                          : 0;
+                              {/* Challenge Score Legend */}
+                              <div className="flex flex-wrap gap-4">
+                                {challenges
+                                  .filter(
+                                    (challenge) =>
+                                      entry.challenge_scores?.[challenge.id] !==
+                                        undefined &&
+                                      (entry.challenge_scores?.[challenge.id] ||
+                                        0) > 0
+                                  )
+                                  .sort(
+                                    (a, b) =>
+                                      (entry.challenge_scores?.[b.id] || 0) -
+                                      (entry.challenge_scores?.[a.id] || 0)
+                                  )
+                                  .map((challenge, i) => {
+                                    const score =
+                                      entry.challenge_scores?.[challenge.id] ||
+                                      0;
+                                    const percentage =
+                                      (score / entry.score) * 100;
 
-                                      // Generate colors for legend
-                                      const colors = [
-                                        'bg-blue-500',
-                                        'bg-purple-500',
-                                        'bg-indigo-500',
-                                        'bg-sky-500',
-                                        'bg-emerald-500',
-                                      ];
-
-                                      const bgColorClass =
-                                        colors[i % colors.length];
-
-                                      return (
-                                        <div
-                                          key={`legend-${problem.id}-${i}`}
-                                          className="flex items-center gap-2"
-                                        >
-                                          <div
-                                            className={`h-2.5 w-2.5 rounded-full ${bgColorClass}`}
-                                          />
-                                          <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
-                                            {problem.title}
-                                          </span>
-                                          <span className="text-xs text-gray-500 dark:text-slate-400">
-                                            {problem.score.toFixed(1)} pts
-                                          </span>
-                                          <span className="text-xs text-gray-400 dark:text-slate-500">
-                                            ({percentage.toFixed(1)}%)
-                                          </span>
-                                        </div>
-                                      );
-                                    })
-                                : getProblemsForChallenge(
-                                    selectedChallenge
-                                  ).map((problem, i) => {
                                     // Generate colors for legend
                                     const colors = [
                                       'bg-blue-500',
@@ -703,28 +556,164 @@ export function Leaderboard({
 
                                     return (
                                       <div
-                                        key={`legend-${problem.id}-${i}`}
+                                        key={challenge.id}
                                         className="flex items-center gap-2"
                                       >
                                         <div
                                           className={`h-2.5 w-2.5 rounded-full ${bgColorClass}`}
                                         />
                                         <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
-                                          {problem.title}
+                                          {challenge.title}
                                         </span>
                                         <span className="text-xs text-gray-500 dark:text-slate-400">
-                                          {'—'}
+                                          {score.toFixed(2)} {t('pts')}
+                                        </span>
+                                        <span className="text-xs text-gray-400 dark:text-slate-500">
+                                          ({percentage.toFixed(1)}%)
                                         </span>
                                       </div>
                                     );
                                   })}
-                            </div>
-                          </>
-                        )}
-                      </motion.div>
-                    </TableCell>
-                  </motion.tr>
-                )}
+                              </div>
+                            </>
+                          ) : (
+                            // New code for problem breakdown when a specific challenge is selected
+                            <>
+                              {/* Problem Score Distribution */}
+                              <div className="mb-2 flex h-4 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-slate-800/50">
+                                {entry.problem_scores &&
+                                entry.problem_scores[selectedChallenge]
+                                  ? // Make sure to generate unique keys based on both problem ID and index
+                                    (() => {
+                                      // Calculate total score for all problems in this challenge
+                                      const totalProblemScore =
+                                        entry.problem_scores[
+                                          selectedChallenge
+                                        ].reduce(
+                                          (sum, problem) =>
+                                            sum + (problem.score || 0),
+                                          0
+                                        );
+
+                                      return entry.problem_scores[
+                                        selectedChallenge
+                                      ]
+                                        .sort((a, b) => b.score - a.score)
+                                        .map((problem, i) => {
+                                          const problemScore =
+                                            problem.score || 0;
+                                          const percentage =
+                                            totalProblemScore > 0
+                                              ? (problemScore /
+                                                  totalProblemScore) *
+                                                100
+                                              : 0;
+
+                                          // Generate colors for segments
+                                          const colors = [
+                                            'from-blue-500 to-blue-600',
+                                            'from-purple-500 to-purple-600',
+                                            'from-indigo-500 to-indigo-600',
+                                            'from-sky-500 to-sky-600',
+                                            'from-emerald-500 to-emerald-600',
+                                          ];
+
+                                          const colorClass =
+                                            colors[i % colors.length];
+
+                                          return (
+                                            <motion.div
+                                              key={`${problem.id}-${i}`}
+                                              className={`relative h-full bg-gradient-to-r ${colorClass}`}
+                                              initial={{ width: 0 }}
+                                              animate={{
+                                                width: `${percentage}%`,
+                                              }}
+                                              transition={{
+                                                duration: 0.5,
+                                                delay: 0.2 + i * 0.1,
+                                              }}
+                                              title={`${problem.title}: ${problemScore.toFixed(1)} ${t(
+                                                'pts'
+                                              )} (${percentage.toFixed(1)}%)`}
+                                            />
+                                          );
+                                        });
+                                    })()
+                                  : undefined}
+                              </div>
+
+                              {/* Problem Score Legend */}
+                              <div className="flex flex-wrap gap-4">
+                                {entry.problem_scores &&
+                                entry.problem_scores[selectedChallenge]
+                                  ? (() => {
+                                      // Calculate total score for all problems in this challenge
+                                      const totalProblemScore =
+                                        entry.problem_scores[
+                                          selectedChallenge
+                                        ].reduce(
+                                          (sum, problem) =>
+                                            sum + (problem.score || 0),
+                                          0
+                                        );
+
+                                      return entry.problem_scores[
+                                        selectedChallenge
+                                      ]
+                                        .sort((a, b) => b.score - a.score)
+                                        .map((problem, i) => {
+                                          const problemScore =
+                                            problem.score || 0;
+                                          const percentage =
+                                            totalProblemScore > 0
+                                              ? (problemScore /
+                                                  totalProblemScore) *
+                                                100
+                                              : 0;
+
+                                          // Generate colors for legend
+                                          const colors = [
+                                            'bg-blue-500',
+                                            'bg-purple-500',
+                                            'bg-indigo-500',
+                                            'bg-sky-500',
+                                            'bg-emerald-500',
+                                          ];
+
+                                          const bgColorClass =
+                                            colors[i % colors.length];
+
+                                          return (
+                                            <div
+                                              key={`legend-${problem.id}-${i}`}
+                                              className="flex items-center gap-2"
+                                            >
+                                              <div
+                                                className={`h-2.5 w-2.5 rounded-full ${bgColorClass}`}
+                                              />
+                                              <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
+                                                {problem.title}
+                                              </span>
+                                              <span className="text-xs text-gray-500 dark:text-slate-400">
+                                                {problemScore.toFixed(2)}{' '}
+                                                {t('pts')}
+                                              </span>
+                                              <span className="text-xs text-gray-400 dark:text-slate-500">
+                                                ({percentage.toFixed(1)}%)
+                                              </span>
+                                            </div>
+                                          );
+                                        });
+                                    })()
+                                  : undefined}
+                              </div>
+                            </>
+                          )}
+                        </motion.div>
+                      </TableCell>
+                    </motion.tr>
+                  )}
               </React.Fragment>
             ))}
 

@@ -51,14 +51,7 @@ Tuturuuu services include:
 
 2. **Configure Tiptap Pro Registry:**
 
-   > Before installing dependencies, you need to configure Tiptap Pro registry access. Visit [cloud.tiptap.dev/pro-extensions](https://cloud.tiptap.dev/pro-extensions) and login, then find your auth token in the "Global setup (for CI/CD)" section. Run these commands:
-   >
-   > ```bash
-   > npm config set "@tiptap-pro:registry" https://registry.tiptap.dev
-   > npm config set "//registry.tiptap.dev/:_authToken" [AUTH_TOKEN]
-   > ```
-   >
-   > Replace [AUTH_TOKEN] with your actual token from the Tiptap dashboard.
+   > This step is no longer needed.
 
 3. **Install dependencies:**
 

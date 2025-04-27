@@ -1,11 +1,10 @@
 import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
-import { CardContent } from '@tuturuuu/ui/card';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Rocket, Sparkles, Star, Trophy, Users, Zap } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import React from 'react';
 
 export interface BasicInformation {
   currentRank: number;
@@ -126,7 +125,7 @@ export default function BasicInformationComponent({
                 {t('statistics.highest-score.title')}
               </p>
               <h3 className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                {basicInfo.topScore?.toLocaleString()}
+                {formatScore(basicInfo.topScore, 2)}
               </h3>
               <p className="text-xs text-gray-500 dark:text-slate-500">
                 {basicInfo.topScore > 0
