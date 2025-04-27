@@ -1,4 +1,3 @@
-import { fetchSubmissions } from './actions';
 import ChallengeClient from './client';
 import {
   createAdminClient,
@@ -10,7 +9,9 @@ import {
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
+  type NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -183,4 +184,27 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
     console.error('Unexpected error:', error);
     return null;
   }
+}
+
+async function fetchSubmissions(
+  problemId: string
+): Promise<NovaSubmissionWithScores[]> {
+  const sbAdmin = await createAdminClient();
+  const user = await getCurrentSupabaseUser();
+
+  if (!user) throw new Error('User not found');
+
+  const { data: submissions, error } = await sbAdmin
+    .from('nova_submissions_with_scores')
+    .select('*')
+    .eq('problem_id', problemId)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching submissions:', error);
+    return [];
+  }
+
+  return submissions;
 }

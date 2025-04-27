@@ -111,8 +111,6 @@ export default async function Page({ params }: Props) {
       challenge,
     };
 
-    console.log(submissionData);
-
     return <SubmissionClient submission={submissionData} />;
   } catch (error) {
     console.error('Error fetching data:', error);
