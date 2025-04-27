@@ -50,7 +50,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
+      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
         {fc?.front || '...'}
       </div>
     ),
@@ -60,7 +60,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">
+      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
         {fc?.back || '...'}
       </div>
     ),
