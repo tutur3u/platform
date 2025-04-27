@@ -6,6 +6,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 
 export const revalidate = 60;
@@ -15,24 +16,25 @@ export default async function Page({
 }: {
   searchParams: Promise<{
     page?: string;
-    locale?: string;
   }>;
 }) {
+  const locale = await getLocale();
   return (
     <div className="container mx-auto px-4 py-8">
       <Suspense fallback={<TeamsLeaderboardFallback />}>
-        <TeamsLeaderboardContent searchParams={searchParams} />
+        <TeamsLeaderboardContent locale={locale} searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
 async function TeamsLeaderboardContent({
+  locale,
   searchParams,
 }: {
+  locale: string;
   searchParams: Promise<{
     page?: string;
-    locale?: string;
     challenge?: string;
   }>;
 }) {
@@ -51,6 +53,7 @@ async function TeamsLeaderboardContent({
 
   return (
     <LeaderboardClient
+      locale={locale}
       data={data}
       topThree={topThree}
       basicInfo={basicInfo}

@@ -26,6 +26,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function LeaderboardClient({
+  locale,
   data,
   topThree,
   basicInfo,
@@ -36,6 +37,7 @@ export default function LeaderboardClient({
   totalPages = 1,
   calculationDate,
 }: {
+  locale: string;
   data: LeaderboardEntry[];
   topThree: LeaderboardEntry[];
   basicInfo: BasicInformation;
@@ -201,6 +203,7 @@ export default function LeaderboardClient({
               transition={{ duration: 0.5, delay: 0.3 }}
             >
               <Leaderboard
+                locale={locale}
                 data={filteredData}
                 teamMode={false}
                 currentEntryId={currentUserId}
@@ -210,20 +213,20 @@ export default function LeaderboardClient({
               />
 
               <div className="mt-6">
-                <div className="bg-foreground/[0.025] dark:bg-foreground/5 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-2 text-center backdrop-blur-xl">
-                  <div className="text-muted-foreground flex-none text-sm">
-                    <span className="text-primary font-semibold">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-foreground/[0.025] px-4 py-2 text-center backdrop-blur-xl dark:bg-foreground/5">
+                  <div className="flex-none text-sm text-muted-foreground">
+                    <span className="font-semibold text-primary">
                       {basicInfo.totalParticipants}
                     </span>{' '}
                     participant(s)
                   </div>
 
                   <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
-                    <div className="text-muted-foreground w-fit text-sm">
+                    <div className="w-fit text-sm text-muted-foreground">
                       Page{' '}
-                      <span className="text-primary font-semibold">{page}</span>{' '}
+                      <span className="font-semibold text-primary">{page}</span>{' '}
                       of{' '}
-                      <span className="text-primary font-semibold">
+                      <span className="font-semibold text-primary">
                         {totalPages ||
                           Math.ceil(basicInfo.totalParticipants / 20)}
                       </span>

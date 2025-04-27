@@ -7,6 +7,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
+import { getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 
 export const revalidate = 60;
@@ -38,7 +39,8 @@ async function LeaderboardContent({
     challenge?: string;
   }>;
 }) {
-  const { locale = 'en', page = '1', challenge = 'all' } = await searchParams;
+  const locale = await getLocale();
+  const { page = '1', challenge = 'all' } = await searchParams;
   const pageNumber = parseInt(page, 10);
 
   const {
@@ -53,6 +55,7 @@ async function LeaderboardContent({
 
   return (
     <LeaderboardClient
+      locale={locale}
       data={data}
       topThree={topThree}
       basicInfo={basicInfo}

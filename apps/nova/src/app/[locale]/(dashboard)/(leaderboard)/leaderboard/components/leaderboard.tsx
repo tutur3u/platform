@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
@@ -51,6 +52,7 @@ export type LeaderboardEntry = {
 };
 
 interface LeaderboardProps {
+  locale: string;
   data: LeaderboardEntry[];
   currentEntryId?: string;
   teamMode?: boolean;
@@ -60,6 +62,7 @@ interface LeaderboardProps {
 }
 
 export function Leaderboard({
+  locale,
   data,
   teamMode,
   currentEntryId,
@@ -324,7 +327,13 @@ export function Leaderboard({
                               className="scale-110"
                             />
                             <AvatarFallback className="bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-blue-400">
-                              {entry.name.charAt(0)}
+                              {(
+                                entry.name ||
+                                generateFunName({
+                                  id: entry.id,
+                                  locale,
+                                })
+                              ).charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                         </Link>
@@ -346,7 +355,11 @@ export function Leaderboard({
                               'text-amber-700 dark:text-amber-400'
                           )}
                         >
-                          {entry.name}
+                          {entry.name ||
+                            generateFunName({
+                              id: entry.id,
+                              locale,
+                            })}
                         </Link>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           {currentEntryId === entry.id && (
@@ -506,7 +519,9 @@ export function Leaderboard({
                                           duration: 0.5,
                                           delay: 0.2 + i * 0.1,
                                         }}
-                                        title={`${challenge.title}: ${score.toFixed(2)} pts (${percentage.toFixed(1)}%)`}
+                                        title={`${challenge.title}: ${score.toFixed(2)} ${t(
+                                          'pts'
+                                        )} (${percentage.toFixed(1)}%)`}
                                       />
                                     );
                                   })}
@@ -558,7 +573,7 @@ export function Leaderboard({
                                           {challenge.title}
                                         </span>
                                         <span className="text-xs text-gray-500 dark:text-slate-400">
-                                          {score.toFixed(2)} pts
+                                          {score.toFixed(2)} {t('pts')}
                                         </span>
                                         <span className="text-xs text-gray-400 dark:text-slate-500">
                                           ({percentage.toFixed(1)}%)
@@ -625,7 +640,9 @@ export function Leaderboard({
                                                 duration: 0.5,
                                                 delay: 0.2 + i * 0.1,
                                               }}
-                                              title={`${problem.title}: ${problemScore.toFixed(1)} pts (${percentage.toFixed(1)}%)`}
+                                              title={`${problem.title}: ${problemScore.toFixed(1)} ${t(
+                                                'pts'
+                                              )} (${percentage.toFixed(1)}%)`}
                                             />
                                           );
                                         });
@@ -724,7 +741,8 @@ export function Leaderboard({
                                                 {problem.title}
                                               </span>
                                               <span className="text-xs text-gray-500 dark:text-slate-400">
-                                                {problemScore.toFixed(2)} pts
+                                                {problemScore.toFixed(2)}{' '}
+                                                {t('pts')}
                                               </span>
                                               <span className="text-xs text-gray-400 dark:text-slate-500">
                                                 ({percentage.toFixed(1)}%)
