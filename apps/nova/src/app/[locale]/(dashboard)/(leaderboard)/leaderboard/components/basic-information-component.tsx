@@ -170,7 +170,7 @@ export default function BasicInformationComponent({
         </Card>
       </div>
 
-      <Separator className="mt-2 mb-8 border-slate-800" />
+      <Separator className="mb-8 mt-2 border-slate-800" />
     </div>
   );
 }
