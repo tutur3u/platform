@@ -72,7 +72,7 @@ function CriterionItem({ criterion }: CriterionItemProps) {
       <HoverCardContent className="w-80 p-4">
         <div className="space-y-2">
           <h4 className="font-medium">Feedback</h4>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {criterion.result.feedback}
           </p>
         </div>
@@ -265,7 +265,7 @@ export function SubmissionCard({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               <Clock className="mr-1 inline h-3 w-3" />
               {submission.created_at
                 ? new Date(submission.created_at).toLocaleString()
@@ -338,8 +338,8 @@ export function SubmissionCard({
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="mb-1 text-sm font-medium text-foreground">Prompt:</h3>
-          <div className="rounded-md bg-muted p-2 text-sm">
+          <h3 className="text-foreground mb-1 text-sm font-medium">Prompt:</h3>
+          <div className="bg-muted rounded-md p-2 text-sm">
             {submission.prompt}
           </div>
         </div>
@@ -366,7 +366,7 @@ export function SubmissionCard({
         {(totalTests > 0 || isLoading) && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-medium text-muted-foreground">
+              <h3 className="text-muted-foreground text-xs font-medium">
                 Test Case Evaluation:
               </h3>
               <ScoreBadge
@@ -380,8 +380,8 @@ export function SubmissionCard({
             {isLoading && totalTests === 0 ? (
               <div className="flex h-16 items-center justify-center rounded-md border">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
+                  <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                  <span className="text-muted-foreground text-sm">
                     Evaluating test cases...
                   </span>
                 </div>
@@ -413,7 +413,7 @@ export function SubmissionCard({
         {(totalCriteria > 0 || isLoading) && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-medium text-muted-foreground">
+              <h3 className="text-muted-foreground text-xs font-medium">
                 Criteria Evaluation
                 {isCurrent ? '' : ': (Hover to see Feedback)'}
               </h3>
@@ -428,8 +428,8 @@ export function SubmissionCard({
             {isLoading && criteriaList.length === 0 ? (
               <div className="flex h-16 items-center justify-center rounded-md border">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
+                  <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                  <span className="text-muted-foreground text-sm">
                     Evaluating criteria...
                   </span>
                 </div>
@@ -450,10 +450,10 @@ export function SubmissionCard({
           criteriaList.length === 0 &&
           totalTests === 0 && (
             <div className="flex flex-col items-center justify-center space-y-3 rounded-md border p-6 text-center">
-              <PlayCircle className="h-8 w-8 text-muted-foreground" />
+              <PlayCircle className="text-muted-foreground h-8 w-8" />
               <div>
                 <h4 className="font-medium">No Evaluation Results</h4>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Click the button below to evaluate this submission
                 </p>
               </div>
