@@ -1,12 +1,6 @@
 'use client';
 
 import DocumentShareDialog from '../document-share-dialog';
-import {
-  BlockEditor,
-  BlockEditorRef,
-} from '@/components/components/BlockEditor';
-import { TiptapCollabProvider } from '@hocuspocus/provider';
-import { JSONContent } from '@tiptap/core';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { WorkspaceDocument } from '@tuturuuu/types/db';
 import {
@@ -68,7 +62,6 @@ async function deleteDocument(wsId: string, documentId: string) {
 export default function DocumentDetailsPage({ params }: Props) {
   const t = useTranslations();
   const nameInputRef = useRef<HTMLInputElement | null>(null);
-  const editorRef = useRef<BlockEditorRef | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [document, setDocument] = useState<Partial<WorkspaceDocument> | null>(
@@ -82,8 +75,6 @@ export default function DocumentDetailsPage({ params }: Props) {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
-  const [provider] = useState<TiptapCollabProvider | null>(null);
-  const [aiToken] = useState<string | null | undefined>();
 
   const { wsId, documentId } = use(params);
 
@@ -211,7 +202,7 @@ export default function DocumentDetailsPage({ params }: Props) {
   };
 
   const saveContentToDatabase = useCallback(
-    async (content: JSONContent) => {
+    async (content: string) => {
       if (!document?.id) return;
 
       updateSyncStatus({
@@ -250,21 +241,22 @@ export default function DocumentDetailsPage({ params }: Props) {
   );
 
   const handleRetrySave = useCallback(() => {
-    if (editorRef.current?.editor) {
-      const content = editorRef.current.editor.getJSON();
+    // if (editorRef.current?.editor) {
+    // const content = editorRef.current.editor.getJSON();
+    const content = '';
+    updateSyncStatus({
+      type: 'saving',
+      message: t('common.saving'),
+      timestamp: Date.now(),
+    });
+    saveContentToDatabase(content).catch(() => {
       updateSyncStatus({
-        type: 'saving',
-        message: t('common.saving'),
+        type: 'error',
+        message: t('common.error_saving'),
         timestamp: Date.now(),
       });
-      saveContentToDatabase(content).catch(() => {
-        updateSyncStatus({
-          type: 'error',
-          message: t('common.error_saving'),
-          timestamp: Date.now(),
-        });
-      });
-    }
+    });
+    // }
   }, [t, saveContentToDatabase, updateSyncStatus]);
 
   if (loading || !wsId || !documentId) {
@@ -425,26 +417,6 @@ export default function DocumentDetailsPage({ params }: Props) {
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-screen-xl px-4 py-6">
-          <BlockEditor
-            ref={editorRef}
-            aiToken={aiToken ?? undefined}
-            document={document.content as any}
-            wsId={wsId}
-            docId={documentId}
-            provider={provider}
-            onSave={saveContentToDatabase}
-            onSyncStatusChange={(status) => {
-              updateSyncStatus({
-                ...status,
-                timestamp: Date.now(),
-              });
-            }}
-          />
         </div>
       </div>
 
