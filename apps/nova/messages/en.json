@@ -1945,7 +1945,18 @@
         "no-entries-found": "No entries found",
         "first-join": "Be the first to join the competition!",
         "pts": "pts"
-      }
+      },
+      "neo-league-card": {
+        "title": "NEO League Competition",
+        "new": "New",
+        "description": "By default, this leaderboard shows scores from all challenges combined. To view results specifically for Round 1 of the NEO League competition, click the link below.",
+        "view-round-1": "View Round 1 Results",
+        "view-all-challenges": "View All Challenges",
+        "round-1-description": "You are currently viewing the results for Round 1 of the NEO League competition. The scores shown are specific to this challenge.",
+        "active": "Active",
+        "round-1-title": "Viewing NEO League Round 1"
+      },
+      "teams": "Teams"
     },
     "profile-page": {
       "breadcrumb": {
