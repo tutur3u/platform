@@ -11,6 +11,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
+  Activity,
   Box,
   Calculator,
   Code,
@@ -81,6 +82,12 @@ export default async function RootLayout({
       name: t('submissions'),
       href: '/submissions',
       icon: <Box className="h-4 w-4" />,
+      requiresChallengeManagement: true,
+    },
+    {
+      name: t('sessions'),
+      href: '/sessions',
+      icon: <Activity className="h-4 w-4" />,
       requiresChallengeManagement: true,
     },
     {

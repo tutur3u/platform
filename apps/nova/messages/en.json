@@ -1491,9 +1491,16 @@
         "all-problems": "All Problems",
         "filter-challenges": "Filter by Challenge",
         "filter-problems": "Filter by Problem",
-        "clear-filters": "Clear Filters"
+        "clear-filters": "Clear Filters",
+        "all-statuses": "All statuses",
+        "in-progress": "In progress",
+        "ended": "Ended"
       },
       "submission-table": {
+        "status": {
+          "in_progress": "In Progress",
+          "ended": "Ended"
+        },
         "headers": {
           "user": "User",
           "problem": "Problem",
@@ -2209,7 +2216,8 @@
         "cancel": "Cancel"
       }
     },
-    "score-calculator": "Score Calculator"
+    "score-calculator": "Score Calculator",
+    "sessions": "Sessions"
   },
   "onboarding": {
     "just-a-moment": "Just a moment...",
