@@ -90,6 +90,20 @@ export type Database = {
             foreignKeyName: 'ai_chat_messages_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_chat_messages_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_chat_messages_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -137,6 +151,20 @@ export type Database = {
           title?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'ai_chats_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_chats_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
           {
             foreignKeyName: 'ai_chats_creator_id_fkey';
             columns: ['creator_id'];
@@ -470,6 +498,20 @@ export type Database = {
             foreignKeyName: 'calendar_auth_tokens_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'calendar_auth_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'calendar_auth_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -579,6 +621,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_calendar_events';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_platform_participants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_platform_participants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
           {
             foreignKeyName: 'calendar_event_platform_participants_user_id_fkey';
@@ -803,6 +859,20 @@ export type Database = {
             foreignKeyName: 'crawled_urls_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'crawled_urls_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'crawled_urls_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -875,6 +945,20 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'cross_app_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'cross_app_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
           {
             foreignKeyName: 'cross_app_tokens_user_id_fkey';
             columns: ['user_id'];
@@ -1422,6 +1506,20 @@ export type Database = {
             foreignKeyName: 'handles_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'handles_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'handles_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -1540,6 +1638,20 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'healthcare_checkups_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'healthcare_checkups_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
           {
             foreignKeyName: 'healthcare_checkups_creator_id_fkey';
             columns: ['creator_id'];
@@ -2062,6 +2174,20 @@ export type Database = {
             foreignKeyName: 'meet_together_plans_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_together_plans_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_together_plans_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -2107,6 +2233,20 @@ export type Database = {
             foreignKeyName: 'meet_together_user_timeblocks_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_together_user_timeblocks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_together_user_timeblocks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -2142,6 +2282,13 @@ export type Database = {
             referencedRelation: 'nova_challenges';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'nova_challenge_criteria_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['challenge_id'];
+          },
         ];
       };
       nova_challenge_manager_emails: {
@@ -2168,6 +2315,13 @@ export type Database = {
             referencedRelation: 'nova_challenges';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'nova_challenge_manager_emails_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['challenge_id'];
+          },
         ];
       };
       nova_challenge_whitelisted_emails: {
@@ -2193,6 +2347,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'nova_challenges';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_challenge_whitelisted_emails_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['challenge_id'];
           },
         ];
       };
@@ -2321,6 +2482,13 @@ export type Database = {
             referencedRelation: 'nova_challenges';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'nova_problems_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['challenge_id'];
+          },
         ];
       };
       nova_roles: {
@@ -2388,6 +2556,27 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'nova_challenges';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_sessions_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['challenge_id'];
+          },
+          {
+            foreignKeyName: 'nova_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'nova_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
           {
             foreignKeyName: 'nova_sessions_user_id_fkey';
@@ -2549,6 +2738,20 @@ export type Database = {
             foreignKeyName: 'nova_submissions_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'nova_submissions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'nova_submissions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -2571,6 +2774,20 @@ export type Database = {
           team_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'nova_team_emails_team_id_fkey';
+            columns: ['team_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_team_challenge_leaderboard';
+            referencedColumns: ['team_id'];
+          },
+          {
+            foreignKeyName: 'nova_team_emails_team_id_fkey';
+            columns: ['team_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_team_leaderboard';
+            referencedColumns: ['team_id'];
+          },
           {
             foreignKeyName: 'nova_team_emails_team_id_fkey';
             columns: ['team_id'];
@@ -2601,8 +2818,36 @@ export type Database = {
             foreignKeyName: 'nova_team_members_team_id_fkey';
             columns: ['team_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_team_challenge_leaderboard';
+            referencedColumns: ['team_id'];
+          },
+          {
+            foreignKeyName: 'nova_team_members_team_id_fkey';
+            columns: ['team_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_team_leaderboard';
+            referencedColumns: ['team_id'];
+          },
+          {
+            foreignKeyName: 'nova_team_members_team_id_fkey';
+            columns: ['team_id'];
+            isOneToOne: false;
             referencedRelation: 'nova_teams';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_team_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'nova_team_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
           {
             foreignKeyName: 'nova_team_members_user_id_fkey';
@@ -2661,8 +2906,36 @@ export type Database = {
             foreignKeyName: 'personal_notes_owner_id_fkey';
             columns: ['owner_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'personal_notes_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'personal_notes_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'personal_notes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'personal_notes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
           {
             foreignKeyName: 'personal_notes_user_id_fkey';
@@ -2940,6 +3213,20 @@ export type Database = {
             foreignKeyName: 'sent_emails_sender_id_fkey';
             columns: ['sender_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_sender_id_fkey';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_sender_id_fkey';
+            columns: ['sender_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -3006,6 +3293,20 @@ export type Database = {
             foreignKeyName: 'task_assignees_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_assignees_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_assignees_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -3046,6 +3347,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_boards';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_lists_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_lists_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
           {
             foreignKeyName: 'task_lists_creator_id_fkey';
@@ -3104,6 +3419,20 @@ export type Database = {
             foreignKeyName: 'tasks_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tasks_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tasks_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -3136,6 +3465,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_teams';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'project_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
           {
             foreignKeyName: 'project_members_user_id_fkey';
@@ -3760,6 +4103,20 @@ export type Database = {
             foreignKeyName: 'user_private_details_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_private_details_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_private_details_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -4001,6 +4358,20 @@ export type Database = {
             foreignKeyName: 'public_workspace_ai_prompts_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_ai_prompts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_ai_prompts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -4081,6 +4452,20 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'project_boards_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'project_boards_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
           {
             foreignKeyName: 'project_boards_creator_id_fkey';
             columns: ['creator_id'];
@@ -4659,6 +5044,20 @@ export type Database = {
             foreignKeyName: 'workspace_email_invites_invited_by_fkey';
             columns: ['invited_by'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_email_invites_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_email_invites_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -4744,6 +5143,20 @@ export type Database = {
             foreignKeyName: 'workspace_invites_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_invites_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_invites_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -4788,6 +5201,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_default_roles';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
           {
             foreignKeyName: 'workspace_members_user_id_fkey';
@@ -5026,6 +5453,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_roles';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_role_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_role_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
           {
             foreignKeyName: 'public_workspace_role_members_user_id_fkey';
@@ -5430,6 +5871,20 @@ export type Database = {
             foreignKeyName: 'workspace_user_linked_users_platform_user_id_fkey';
             columns: ['platform_user_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_linked_users_platform_user_id_fkey';
+            columns: ['platform_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_linked_users_platform_user_id_fkey';
+            columns: ['platform_user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -5792,6 +6247,20 @@ export type Database = {
             foreignKeyName: 'workspaces_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspaces_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspaces_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -5840,6 +6309,20 @@ export type Database = {
           ws_id?: never;
         };
         Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
           {
             foreignKeyName: 'record_version_auth_uid_fkey';
             columns: ['auth_uid'];
@@ -5913,10 +6396,79 @@ export type Database = {
             foreignKeyName: 'nova_submissions_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'nova_submissions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'nova_submissions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
+      };
+      nova_team_challenge_leaderboard: {
+        Row: {
+          challenge_id: string | null;
+          name: string | null;
+          problem_scores: Json | null;
+          score: number | null;
+          team_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_problems_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenges';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_problems_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['challenge_id'];
+          },
+        ];
+      };
+      nova_team_leaderboard: {
+        Row: {
+          challenge_scores: Json | null;
+          name: string | null;
+          score: number | null;
+          team_id: string | null;
+        };
+        Relationships: [];
+      };
+      nova_user_challenge_leaderboard: {
+        Row: {
+          avatar: string | null;
+          challenge_id: string | null;
+          name: string | null;
+          problem_scores: Json | null;
+          score: number | null;
+          user_id: string | null;
+        };
+        Relationships: [];
+      };
+      nova_user_leaderboard: {
+        Row: {
+          avatar: string | null;
+          challenge_scores: Json | null;
+          name: string | null;
+          score: number | null;
+          user_id: string | null;
+        };
+        Relationships: [];
       };
       user_groups_with_tags: {
         Row: {

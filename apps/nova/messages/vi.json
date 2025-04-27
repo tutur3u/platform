@@ -1943,7 +1943,8 @@
         "you": "Bạn",
         "hover-info": "Nhấn để thay đổi thứ tự sắp xếp",
         "no-entries-found": "Không tìm thấy mục nào",
-        "first-join": "Hãy là người đầu tiên tham gia cuộc thi!"
+        "first-join": "Hãy là người đầu tiên tham gia cuộc thi!",
+        "pts": "điểm"
       }
     },
     "profile-page": {
@@ -1951,7 +1952,7 @@
         "home": "Trang chủ",
         "leaderboard": "Bảng xếp hạng"
       },
-      "rank": "Hạng #",
+      "rank": "Hạng",
       "challenge": "Thử thách",
       "challenges": {
         "title": "Thử thách",

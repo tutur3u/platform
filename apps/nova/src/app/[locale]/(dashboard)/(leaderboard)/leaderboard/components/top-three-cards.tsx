@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { ExternalLink, Medal, Sparkles, Trophy } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -461,7 +462,7 @@ export function TopThreeCards({
                   }
                   transition={{ duration: 0.5 }}
                 >
-                  {entry.score.toLocaleString()}
+                  {formatScore(entry.score, 2)}
                 </motion.span>
                 <span className="ml-1 text-xs text-gray-500 dark:text-slate-400">
                   pts

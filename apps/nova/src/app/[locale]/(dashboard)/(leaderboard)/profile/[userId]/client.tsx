@@ -75,7 +75,7 @@ interface NearbyRank {
   isCurrentUser: boolean;
 }
 
-interface ProfileData {
+export interface ProfileData {
   id: string;
   name: string;
   avatar: string;
@@ -84,7 +84,6 @@ interface ProfileData {
   rank: number;
   challengeCount: number;
   challengeScores: Record<string, number>;
-  // Additional fields for improved UI
   problemCount: number;
   totalAvailableProblems: number;
   problemsAttemptedPercentage: number;
@@ -307,7 +306,7 @@ export default function UserProfileClient({
                 )}
                 <div className="text-muted-foreground flex items-center text-sm">
                   <Trophy className="mr-1 h-4 w-4" />
-                  {t('rank')}: #{profile.rank}
+                  {t('rank')} #{profile.rank}
                 </div>
                 <div className="text-muted-foreground flex items-center text-sm">
                   <Target className="mr-1 h-4 w-4" />

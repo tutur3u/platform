@@ -1943,7 +1943,8 @@
         "you": "You",
         "hover-info": "Click to change sort order",
         "no-entries-found": "No entries found",
-        "first-join": "Be the first to join the competition!"
+        "first-join": "Be the first to join the competition!",
+        "pts": "pts"
       }
     },
     "profile-page": {
@@ -1951,7 +1952,7 @@
         "home": "Home",
         "leaderboard": "Leaderboard"
       },
-      "rank": "Rank #",
+      "rank": "Rank",
       "challenge": "Challenge",
       "challenges": {
         "title": "Challenges",
