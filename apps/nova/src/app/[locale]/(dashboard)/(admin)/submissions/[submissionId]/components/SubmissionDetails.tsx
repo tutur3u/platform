@@ -1,10 +1,10 @@
-import { ExtendedNovaSubmission } from '../types';
 import CriteriaEvaluation from './CriteriaEvaluation';
 import TestCaseEvaluation from './TestCaseEvaluation';
+import type { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 
 interface SubmissionDetailsProps {
-  submission: ExtendedNovaSubmission;
+  submission: NovaSubmissionData;
 }
 
 export default function SubmissionDetails({
@@ -15,7 +15,7 @@ export default function SubmissionDetails({
       {/* Solution */}
       <div>
         <h4 className="mb-2 text-sm font-medium">Your Solution</h4>
-        <div className="bg-muted max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg p-3">
+        <div className="max-h-64 overflow-y-auto rounded-lg bg-muted p-3 whitespace-pre-wrap">
           {submission.prompt || 'No solution provided'}
         </div>
       </div>
