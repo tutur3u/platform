@@ -1,10 +1,12 @@
 'use client';
 
+import { fetchFullSubmission } from './actions';
 import { SubmissionCard } from './submission-card';
 import {
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
+  NovaSubmissionData,
   type NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -16,7 +18,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
   problem: NovaProblem & {
@@ -26,7 +28,11 @@ interface Props {
   submissions: NovaSubmissionWithScores[];
 }
 
+type EnrichedSubmission = NovaSubmissionWithScores &
+  Partial<NovaSubmissionData>;
+
 const MAX_ATTEMPTS = 3;
+const MAX_CONCURRENT_FETCHES = 1; // Limit to one fetch at a time
 
 export default function PromptForm({ problem, session, submissions }: Props) {
   const router = useRouter();
@@ -36,6 +42,16 @@ export default function PromptForm({ problem, session, submissions }: Props) {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('prompt');
   const [submissionsTab, setSubmissionsTab] = useState('current');
+
+  // Submission data management
+  const [enrichedSubmissions, setEnrichedSubmissions] = useState<
+    Record<string, EnrichedSubmission>
+  >({});
+  const [loadingSubmissions, setLoadingSubmissions] = useState<Set<string>>(
+    new Set()
+  );
+  const submissionQueueRef = useRef<string[]>([]);
+  const isFetchingRef = useRef(false);
 
   // Split submissions between current and past sessions
   const currentSubmissions = submissions?.filter(
@@ -55,7 +71,112 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
   const getSubmissions = useCallback(async () => {
     router.refresh();
-  }, [problem.id, session.id]);
+  }, [problem.id, session.id, router]);
+
+  // Process the submission queue
+  const processQueue = useCallback(async () => {
+    if (isFetchingRef.current || submissionQueueRef.current.length === 0)
+      return;
+
+    isFetchingRef.current = true;
+    const submissionId = submissionQueueRef.current[0];
+
+    if (!submissionId) {
+      isFetchingRef.current = false;
+      return;
+    }
+
+    // Mark as loading
+    setLoadingSubmissions((prev) => {
+      const newSet = new Set(prev);
+      newSet.add(submissionId);
+      return newSet;
+    });
+
+    try {
+      const data = await fetchFullSubmission(submissionId);
+      if (data) {
+        const submission = submissions.find((s) => s.id === submissionId);
+        if (submission) {
+          setEnrichedSubmissions((prev) => ({
+            ...prev,
+            [submissionId]: {
+              ...submission,
+              ...data,
+            },
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching submission details:', error);
+    } finally {
+      // Remove from queue and loading state
+      submissionQueueRef.current.shift();
+      setLoadingSubmissions((prev) => {
+        const newSet = new Set(prev);
+        if (submissionId) {
+          newSet.delete(submissionId);
+        }
+        return newSet;
+      });
+      isFetchingRef.current = false;
+
+      // Process next in queue
+      if (submissionQueueRef.current.length > 0) {
+        processQueue();
+      }
+    }
+  }, [submissions]);
+
+  // Request a submission to be added to the queue
+  const requestFetchSubmission = useCallback(
+    (submissionId: string) => {
+      // Skip if already fetched or in queue
+      if (
+        enrichedSubmissions[submissionId]?.criteria ||
+        submissionQueueRef.current.includes(submissionId) ||
+        loadingSubmissions.has(submissionId)
+      )
+        return;
+
+      // Add to queue
+      submissionQueueRef.current.push(submissionId);
+
+      // Start processing if not already processing
+      if (!isFetchingRef.current) {
+        processQueue();
+      }
+    },
+    [enrichedSubmissions, loadingSubmissions, processQueue]
+  );
+
+  // Initialize queue with visible submissions based on active tab
+  useEffect(() => {
+    if (activeTab === 'submissions') {
+      const visibleSubmissions =
+        submissionsTab === 'current' ? currentSubmissions : pastSubmissions;
+
+      // Queue first 2-3 visible submissions if they have any
+      if (visibleSubmissions && visibleSubmissions.length > 0) {
+        // Clear queue first
+        submissionQueueRef.current = [];
+
+        // Queue first few visible submissions that aren't already enriched
+        visibleSubmissions.slice(0, 3).forEach((submission) => {
+          if (submission.id && !enrichedSubmissions[submission.id]?.criteria) {
+            requestFetchSubmission(submission.id);
+          }
+        });
+      }
+    }
+  }, [
+    activeTab,
+    submissionsTab,
+    currentSubmissions,
+    pastSubmissions,
+    enrichedSubmissions,
+    requestFetchSubmission,
+  ]);
 
   useEffect(() => {
     getSubmissions();
@@ -140,6 +261,15 @@ export default function PromptForm({ problem, session, submissions }: Props) {
       getSubmissions();
       setIsSubmitting(false);
     }
+  };
+
+  // Helper function to get enriched submission or original submission
+  const getSubmissionData = (
+    submission: NovaSubmissionWithScores
+  ): EnrichedSubmission => {
+    return submission.id
+      ? enrichedSubmissions[submission.id] || submission
+      : submission;
   };
 
   return (
@@ -291,9 +421,19 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                     ) : (
                       currentSubmissions?.map((submission) => (
                         <SubmissionCard
-                          key={submission.id}
-                          submission={submission}
+                          key={
+                            submission.id || `current-${submission.created_at}`
+                          }
+                          submission={getSubmissionData(submission)}
                           isCurrent={true}
+                          onRequestFetch={
+                            submission.id ? requestFetchSubmission : undefined
+                          }
+                          isLoading={
+                            submission.id
+                              ? loadingSubmissions.has(submission.id)
+                              : false
+                          }
                         />
                       ))
                     )}
@@ -313,9 +453,17 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                     ) : (
                       pastSubmissions?.map((submission) => (
                         <SubmissionCard
-                          key={submission.id}
-                          submission={submission}
+                          key={submission.id || `past-${submission.created_at}`}
+                          submission={getSubmissionData(submission)}
                           isCurrent={false}
+                          onRequestFetch={
+                            submission.id ? requestFetchSubmission : undefined
+                          }
+                          isLoading={
+                            submission.id
+                              ? loadingSubmissions.has(submission.id)
+                              : false
+                          }
                         />
                       ))
                     )}

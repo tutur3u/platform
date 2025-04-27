@@ -1,6 +1,5 @@
-import { fetchFullSubmission } from './actions';
 import ScoreBadge from '@/components/common/ScoreBadge';
-import type {
+import {
   NovaSubmissionData,
   NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
@@ -11,33 +10,46 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
-import { CheckCircle2, Clock, User, XCircle } from '@tuturuuu/ui/icons';
+import {
+  CheckCircle2,
+  Clock,
+  Loader2,
+  RefreshCw,
+  User,
+  XCircle,
+} from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
-import { useEffect, useState } from 'react';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { useEffect } from 'react';
 
 interface SubmissionCardProps {
-  submission: NovaSubmissionWithScores;
+  submission: NovaSubmissionWithScores & Partial<NovaSubmissionData>;
   isCurrent: boolean;
+  onRequestFetch?: (submissionId: string) => void;
+  isLoading?: boolean;
+  queuePosition?: number;
 }
 
-export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
-  const [fullSubmission, setFullSubmission] =
-    useState<Partial<NovaSubmissionData>>(submission);
-
+export function SubmissionCard({
+  submission,
+  isCurrent,
+  onRequestFetch,
+  isLoading = false,
+  queuePosition,
+}: SubmissionCardProps) {
   useEffect(() => {
-    if (!submission.id) return;
-    fetchFullSubmission(submission.id).then((data) => {
-      setFullSubmission((prev) => ({
-        ...prev,
-        ...data,
-      }));
-    });
-  }, [submission.id]);
+    // Only request fetch if we don't already have the full data
+    if (!submission.id || submission.criteria || !onRequestFetch) return;
+    onRequestFetch(submission.id);
+  }, [submission.id, submission.criteria, onRequestFetch]);
+
+  const isDetailsFetched = !!submission.criteria || !!submission.test_cases;
+  const showSkeleton = isLoading && !isDetailsFetched;
 
   return (
     <Card
       key={submission.id}
-      className={`overflow-hidden ${isCurrent ? '' : 'border-muted-foreground/20'}`}
+      className={`overflow-hidden transition-all duration-200 ${isCurrent ? '' : 'border-muted-foreground/20'} ${showSkeleton ? 'opacity-90' : ''}`}
     >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
@@ -55,20 +67,51 @@ export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
                 Past Session
               </Badge>
             )}
+
+            {isLoading && (
+              <Badge variant="secondary" className="animate-pulse text-xs">
+                {queuePosition === 0 ? (
+                  <>
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    Loading details...
+                  </>
+                ) : (
+                  <>
+                    <Clock className="mr-1 h-3 w-3" />
+                    Queued {queuePosition ? `(${queuePosition})` : ''}
+                  </>
+                )}
+              </Badge>
+            )}
+
+            {!isLoading && !isDetailsFetched && submission.id && (
+              <Badge
+                variant="outline"
+                className="cursor-pointer text-xs hover:bg-secondary"
+                onClick={() => onRequestFetch?.(submission.id!)}
+              >
+                <RefreshCw className="mr-1 h-3 w-3" />
+                Load details
+              </Badge>
+            )}
           </div>
 
-          {fullSubmission.total_score != null && (
+          {submission.total_score != null ? (
             <ScoreBadge
-              score={fullSubmission.total_score}
+              score={submission.total_score}
               maxScore={10}
               className="px-2 py-0"
             >
-              {fullSubmission.total_score.toFixed(2)}/10
+              {submission.total_score.toFixed(2)}/10
             </ScoreBadge>
+          ) : (
+            showSkeleton && <Skeleton className="h-6 w-16" />
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent
+        className={`space-y-6 ${showSkeleton ? 'animate-pulse' : ''}`}
+      >
         <div>
           <h3 className="mb-1 text-sm font-medium text-foreground">Prompt:</h3>
           <div className="rounded-md bg-muted p-2 text-sm">
@@ -77,20 +120,22 @@ export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
         </div>
 
         {/* Test Case Evaluation */}
-        {fullSubmission.total_tests && fullSubmission.total_tests > 0 && (
+        {submission.total_tests && submission.total_tests > 0 ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-medium text-muted-foreground">
                 Test Case Evaluation:
               </h3>
-              {fullSubmission.test_case_score != null && (
+              {submission.test_case_score != null ? (
                 <ScoreBadge
-                  score={fullSubmission.test_case_score}
+                  score={submission.test_case_score}
                   maxScore={10}
                   className="px-2 py-0"
                 >
-                  {fullSubmission.test_case_score.toFixed(2)}/10
+                  {submission.test_case_score.toFixed(2)}/10
                 </ScoreBadge>
+              ) : (
+                showSkeleton && <Skeleton className="h-5 w-14" />
               )}
             </div>
             <div className="space-y-2 rounded-md border p-4">
@@ -100,21 +145,19 @@ export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
                   test cases
                 </span>
               </div>
-              {fullSubmission.passed_tests != null &&
-                fullSubmission.total_tests != null && (
+              {submission.passed_tests != null &&
+                submission.total_tests != null && (
                   <Progress
                     value={
-                      (fullSubmission.passed_tests /
-                        fullSubmission.total_tests) *
-                      100
+                      (submission.passed_tests / submission.total_tests) * 100
                     }
                     className="h-2 w-full"
                     indicatorClassName={
-                      fullSubmission.test_case_score != null &&
-                      fullSubmission.test_case_score >= 8
+                      submission.test_case_score != null &&
+                      submission.test_case_score >= 8
                         ? 'bg-emerald-500'
-                        : fullSubmission.test_case_score != null &&
-                            fullSubmission.test_case_score >= 5
+                        : submission.test_case_score != null &&
+                            submission.test_case_score >= 5
                           ? 'bg-amber-500'
                           : 'bg-red-500'
                     }
@@ -122,28 +165,40 @@ export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
                 )}
             </div>
           </div>
+        ) : (
+          showSkeleton && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-5 w-14" />
+              </div>
+              <Skeleton className="h-24 w-full" />
+            </div>
+          )
         )}
 
         {/* Criteria Evaluation */}
-        {fullSubmission.total_criteria && fullSubmission.total_criteria > 0 && (
+        {submission.total_criteria && submission.total_criteria > 0 ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-medium text-muted-foreground">
                 Criteria Evaluation
                 {isCurrent ? '' : ': (Hover to see Feedback)'}
               </h3>
-              {fullSubmission.criteria_score != null && (
+              {submission.criteria_score != null ? (
                 <ScoreBadge
-                  score={fullSubmission.criteria_score}
+                  score={submission.criteria_score}
                   maxScore={10}
                   className="px-2 py-0"
                 >
-                  {fullSubmission.criteria_score.toFixed(2)}/10
+                  {submission.criteria_score.toFixed(2)}/10
                 </ScoreBadge>
+              ) : (
+                showSkeleton && <Skeleton className="h-5 w-14" />
               )}
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              {fullSubmission.criteria?.map((cs) => {
+              {submission.criteria?.map((cs) => {
                 if (!cs) return null;
 
                 return (
@@ -186,6 +241,21 @@ export function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
               })}
             </div>
           </div>
+        ) : (
+          showSkeleton && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-5 w-14" />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            </div>
+          )
         )}
       </CardContent>
     </Card>
