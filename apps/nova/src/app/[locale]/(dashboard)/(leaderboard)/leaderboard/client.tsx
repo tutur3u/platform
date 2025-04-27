@@ -210,20 +210,20 @@ export default function LeaderboardClient({
               />
 
               <div className="mt-6">
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-foreground/[0.025] px-4 py-2 text-center backdrop-blur-xl dark:bg-foreground/5">
-                  <div className="flex-none text-sm text-muted-foreground">
-                    <span className="font-semibold text-primary">
+                <div className="bg-foreground/[0.025] dark:bg-foreground/5 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-2 text-center backdrop-blur-xl">
+                  <div className="text-muted-foreground flex-none text-sm">
+                    <span className="text-primary font-semibold">
                       {basicInfo.totalParticipants}
                     </span>{' '}
                     participant(s)
                   </div>
 
                   <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
-                    <div className="w-fit text-sm text-muted-foreground">
+                    <div className="text-muted-foreground w-fit text-sm">
                       Page{' '}
-                      <span className="font-semibold text-primary">{page}</span>{' '}
+                      <span className="text-primary font-semibold">{page}</span>{' '}
                       of{' '}
-                      <span className="font-semibold text-primary">
+                      <span className="text-primary font-semibold">
                         {totalPages ||
                           Math.ceil(basicInfo.totalParticipants / 20)}
                       </span>
