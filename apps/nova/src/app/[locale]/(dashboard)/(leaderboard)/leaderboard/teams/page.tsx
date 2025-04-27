@@ -41,15 +41,8 @@ async function TeamsLeaderboardContent({
   const { page = '1', challenge = 'all' } = await searchParams;
   const pageNumber = parseInt(page, 10);
 
-  const {
-    data,
-    topThree,
-    basicInfo,
-    challenges,
-    problems,
-    hasMore,
-    totalPages,
-  } = await fetchLeaderboard(pageNumber, challenge);
+  const { data, topThree, basicInfo, challenges, hasMore, totalPages } =
+    await fetchLeaderboard(pageNumber, challenge);
 
   return (
     <LeaderboardClient
@@ -58,7 +51,6 @@ async function TeamsLeaderboardContent({
       topThree={topThree}
       basicInfo={basicInfo}
       challenges={challenges}
-      problems={problems}
       hasMore={hasMore}
       initialPage={pageNumber}
       totalPages={totalPages}
@@ -102,24 +94,6 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
   if (challengesError) {
     console.error('Error fetching challenges:', challengesError.message);
     return defaultData;
-  }
-
-  // Fetch problems
-  const { data: problemsData, error: problemsError } = await sbAdmin
-    .from('nova_problems')
-    .select('id, challenge_id, title');
-
-  if (problemsError) {
-    console.error('Error fetching problems:', problemsError.message);
-    return defaultData;
-  }
-
-  // Filter problems if a specific challenge is selected
-  let filteredProblems = problemsData;
-  if (challengeId !== 'all') {
-    filteredProblems = problemsData.filter(
-      (problem) => problem.challenge_id === challengeId
-    );
   }
 
   // Fetch team members for avatar display and member details
@@ -176,11 +150,13 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
   }
 
   let rankedTeams: LeaderboardEntry[] = [];
+
   if (challengeId === 'all') {
     // Fetch team data from the team leaderboard view
     const { data: leaderboardData, error: leaderboardError } = await sbAdmin
       .from('nova_team_leaderboard')
-      .select('*');
+      .select('*')
+      .order('score', { ascending: false });
 
     if (leaderboardError) {
       console.error(
@@ -214,7 +190,8 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
       await sbAdmin
         .from('nova_team_challenge_leaderboard')
         .select('*')
-        .eq('challenge_id', challengeId);
+        .eq('challenge_id', challengeId)
+        .order('score', { ascending: false });
 
     if (challengeLeaderboardError) {
       console.error(
@@ -307,7 +284,6 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
     topThree,
     basicInfo,
     challenges: challenges || [],
-    problems: filteredProblems,
     hasMore: rankedTeams.length > page * limit,
     totalPages,
   };

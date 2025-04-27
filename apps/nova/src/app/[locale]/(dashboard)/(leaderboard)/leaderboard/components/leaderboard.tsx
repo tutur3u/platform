@@ -58,7 +58,6 @@ interface LeaderboardProps {
   teamMode?: boolean;
   challenges?: { id: string; title: string }[];
   selectedChallenge?: string;
-  problems?: { id: string; title: string; challenge_id: string }[];
 }
 
 export function Leaderboard({
@@ -68,7 +67,6 @@ export function Leaderboard({
   currentEntryId,
   challenges = [],
   selectedChallenge = 'all',
-  problems = [],
 }: LeaderboardProps) {
   const prefersReducedMotion = useReducedMotion();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -125,11 +123,6 @@ export function Leaderboard({
       : null;
   };
 
-  // Added function to get problems for selected challenge
-  const getProblemsForChallenge = (challengeId: string) => {
-    return problems.filter((problem) => problem.challenge_id === challengeId);
-  };
-
   return (
     <motion.div
       initial={prefersReducedMotion ? {} : { opacity: 0, y: 10 }}
@@ -183,7 +176,7 @@ export function Leaderboard({
         </TooltipProvider>
       </div>
 
-      <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700 overflow-auto">
+      <div className="scrollbar-thin overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/30">
             <TableRow className="border-b border-gray-200 hover:bg-transparent dark:border-slate-700/50 dark:hover:bg-transparent">
@@ -235,7 +228,7 @@ export function Leaderboard({
                         {/* Hexagon background with animated glow for top ranks */}
                         <div
                           className={cn(
-                            'absolute left-0 top-0 h-full w-full',
+                            'absolute top-0 left-0 h-full w-full',
                             entry.rank <= 3 && 'hex-shape'
                           )}
                           style={{
@@ -647,45 +640,7 @@ export function Leaderboard({
                                           );
                                         });
                                     })()
-                                  : // If no problem scores, show the challenge problems with equal width
-                                    getProblemsForChallenge(
-                                      selectedChallenge
-                                    ).map((problem, i) => {
-                                      const problemCount =
-                                        getProblemsForChallenge(
-                                          selectedChallenge
-                                        ).length;
-                                      const percentage =
-                                        problemCount > 0
-                                          ? 100 / problemCount
-                                          : 0;
-
-                                      // Generate colors for segments
-                                      const colors = [
-                                        'from-blue-500 to-blue-600',
-                                        'from-purple-500 to-purple-600',
-                                        'from-indigo-500 to-indigo-600',
-                                        'from-sky-500 to-sky-600',
-                                        'from-emerald-500 to-emerald-600',
-                                      ];
-
-                                      const colorClass =
-                                        colors[i % colors.length];
-
-                                      return (
-                                        <motion.div
-                                          key={`${problem.id}-${i}`}
-                                          className={`relative h-full bg-gradient-to-r ${colorClass}`}
-                                          initial={{ width: 0 }}
-                                          animate={{ width: `${percentage}%` }}
-                                          transition={{
-                                            duration: 0.5,
-                                            delay: 0.2 + i * 0.1,
-                                          }}
-                                          title={`${problem.title}: No score data`}
-                                        />
-                                      );
-                                    })}
+                                  : undefined}
                               </div>
 
                               {/* Problem Score Legend */}
@@ -751,38 +706,7 @@ export function Leaderboard({
                                           );
                                         });
                                     })()
-                                  : getProblemsForChallenge(
-                                      selectedChallenge
-                                    ).map((problem, i) => {
-                                      // Generate colors for legend
-                                      const colors = [
-                                        'bg-blue-500',
-                                        'bg-purple-500',
-                                        'bg-indigo-500',
-                                        'bg-sky-500',
-                                        'bg-emerald-500',
-                                      ];
-
-                                      const bgColorClass =
-                                        colors[i % colors.length];
-
-                                      return (
-                                        <div
-                                          key={`legend-${problem.id}-${i}`}
-                                          className="flex items-center gap-2"
-                                        >
-                                          <div
-                                            className={`h-2.5 w-2.5 rounded-full ${bgColorClass}`}
-                                          />
-                                          <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
-                                            {problem.title}
-                                          </span>
-                                          <span className="text-xs text-gray-500 dark:text-slate-400">
-                                            {'—'}
-                                          </span>
-                                        </div>
-                                      );
-                                    })}
+                                  : undefined}
                               </div>
                             </>
                           )}

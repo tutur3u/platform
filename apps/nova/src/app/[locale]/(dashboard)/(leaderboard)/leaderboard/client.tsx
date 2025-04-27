@@ -31,7 +31,6 @@ export default function LeaderboardClient({
   topThree,
   basicInfo,
   challenges,
-  problems = [],
   hasMore,
   initialPage = 1,
   totalPages = 1,
@@ -42,7 +41,6 @@ export default function LeaderboardClient({
   topThree: LeaderboardEntry[];
   basicInfo: BasicInformation;
   challenges: { id: string; title: string }[];
-  problems?: { id: string; title: string; challenge_id: string }[];
   hasMore: boolean;
   initialPage?: number;
   totalPages?: number;
@@ -209,24 +207,23 @@ export default function LeaderboardClient({
                 currentEntryId={currentUserId}
                 challenges={challenges}
                 selectedChallenge={selectedChallenge}
-                problems={problems}
               />
 
               <div className="mt-6">
-                <div className="bg-foreground/[0.025] dark:bg-foreground/5 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-2 text-center backdrop-blur-xl">
-                  <div className="text-muted-foreground flex-none text-sm">
-                    <span className="text-primary font-semibold">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-foreground/[0.025] px-4 py-2 text-center backdrop-blur-xl dark:bg-foreground/5">
+                  <div className="flex-none text-sm text-muted-foreground">
+                    <span className="font-semibold text-primary">
                       {basicInfo.totalParticipants}
                     </span>{' '}
                     participant(s)
                   </div>
 
                   <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
-                    <div className="text-muted-foreground w-fit text-sm">
+                    <div className="w-fit text-sm text-muted-foreground">
                       Page{' '}
-                      <span className="text-primary font-semibold">{page}</span>{' '}
+                      <span className="font-semibold text-primary">{page}</span>{' '}
                       of{' '}
-                      <span className="text-primary font-semibold">
+                      <span className="font-semibold text-primary">
                         {totalPages ||
                           Math.ceil(basicInfo.totalParticipants / 20)}
                       </span>
