@@ -1,8 +1,5 @@
 import ScoreBadge from '@/components/common/ScoreBadge';
-import {
-  NovaSubmissionData,
-  NovaSubmissionWithScores,
-} from '@tuturuuu/types/db';
+import { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import {
@@ -23,7 +20,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useEffect } from 'react';
 
 interface SubmissionCardProps {
-  submission: NovaSubmissionWithScores & Partial<NovaSubmissionData>;
+  submission: Partial<NovaSubmissionData>;
   isCurrent: boolean;
   onRequestFetch?: (submissionId: string) => void;
   isLoading?: boolean;

@@ -32,7 +32,6 @@ type EnrichedSubmission = NovaSubmissionWithScores &
   Partial<NovaSubmissionData>;
 
 const MAX_ATTEMPTS = 3;
-const MAX_CONCURRENT_FETCHES = 1; // Limit to one fetch at a time
 
 export default function PromptForm({ problem, session, submissions }: Props) {
   const router = useRouter();

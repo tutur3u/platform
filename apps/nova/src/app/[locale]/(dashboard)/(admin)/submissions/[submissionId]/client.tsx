@@ -153,43 +153,47 @@ export default function SubmissionClient({ submission }: Props) {
               <CardDescription>Submission details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div>
-                <h3 className="mb-1 text-sm font-medium text-muted-foreground">
-                  Challenge
-                </h3>
-                <p className="font-medium">{submission.challenge.title}</p>
-                {submission.challenge.id && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="mt-1 h-auto px-0"
-                    onClick={() =>
-                      router.push(`/challenges/${submission.challenge.id}`)
-                    }
-                  >
-                    View Challenge
-                  </Button>
-                )}
-              </div>
+              {submission.challenge && (
+                <div>
+                  <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                    Challenge
+                  </h3>
+                  <p className="font-medium">{submission.challenge.title}</p>
+                  {submission.challenge.id && (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="mt-1 h-auto px-0"
+                      onClick={() =>
+                        router.push(`/challenges/${submission.challenge!.id}`)
+                      }
+                    >
+                      View Challenge
+                    </Button>
+                  )}
+                </div>
+              )}
 
-              <div>
-                <h3 className="mb-1 text-sm font-medium text-muted-foreground">
-                  Problem
-                </h3>
-                <p className="font-medium">{submission.problem.title}</p>
-                {submission.problem.id && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="mt-1 h-auto px-0"
-                    onClick={() =>
-                      router.push(`/problems/${submission.problem.id}`)
-                    }
-                  >
-                    View Problem
-                  </Button>
-                )}
-              </div>
+              {submission.problem && (
+                <div>
+                  <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                    Problem
+                  </h3>
+                  <p className="font-medium">{submission.problem.title}</p>
+                  {submission.problem.id && (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="mt-1 h-auto px-0"
+                      onClick={() =>
+                        router.push(`/problems/${submission.problem!.id}`)
+                      }
+                    >
+                      View Problem
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {submission.created_at && (
                 <div>
@@ -278,14 +282,14 @@ export default function SubmissionClient({ submission }: Props) {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  if (submission.challenge.id) {
+                  if (submission?.challenge?.id) {
                     router.push(
                       `/challenges/${submission.challenge.id}/results`
                     );
                   }
                 }}
                 className="w-full"
-                disabled={!submission.challenge.id}
+                disabled={!submission?.challenge?.id}
               >
                 View Challenge Results
               </Button>
