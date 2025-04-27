@@ -96,7 +96,7 @@ export function SessionFilters({
   return (
     <div className="mb-6 rounded-lg border p-4">
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-        <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
+        <div className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
           <Select
             value={selectedChallenge || 'all'}
             onValueChange={onChallengeChange}
