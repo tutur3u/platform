@@ -54,7 +54,7 @@
     "@upstash/qstash": "^2.7.23",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
-    "babel-plugin-react-compiler": "19.0.0-beta-21e868a-20250216",
+    "babel-plugin-react-compiler": "19.0.0-beta-714736e-20250131",
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.1",
     "date-fns": "^4.1.0",
