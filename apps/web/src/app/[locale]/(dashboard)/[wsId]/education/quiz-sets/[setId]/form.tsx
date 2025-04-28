@@ -173,7 +173,7 @@ export default function QuizForm({
                   placeholder={t('common.question')}
                   autoComplete="off"
                   {...field}
-                  className="rounded-md border-foreground/20 shadow-sm"
+                  className="border-foreground/20 rounded-md shadow-sm"
                 />
               </FormControl>
               <FormMessage />
@@ -197,7 +197,7 @@ export default function QuizForm({
                           control={form.control}
                           name={`quiz_options.${index}.is_correct`}
                           render={({ field }) => (
-                            <FormItem className="flex items-center space-y-0 space-x-1">
+                            <FormItem className="flex items-center space-x-1 space-y-0">
                               <Checkbox
                                 id={`quiz_options.${index}.is_correct`}
                                 checked={field.value}
@@ -213,7 +213,7 @@ export default function QuizForm({
                             placeholder={`${t('common.option')} ${index + 1}`}
                             autoComplete="off"
                             {...field}
-                            className="rounded-md border-foreground/20 shadow-sm"
+                            className="border-foreground/20 rounded-md shadow-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -261,7 +261,7 @@ export default function QuizForm({
                           placeholder={t('common.explanation')}
                           autoComplete="off"
                           {...field}
-                          className="rounded-md border-foreground/20 shadow-sm"
+                          className="border-foreground/20 rounded-md shadow-sm"
                         />
                       </FormControl>
                       <FormMessage />

@@ -206,9 +206,9 @@ export default function PlanLogin({
           <div className="grid gap-2">
             {user?.is_guest ? (
               <>
-                <div className="mb-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground mb-2 text-sm">
                   {t('meet-together-plan-details.logged_in_as')}{' '}
-                  <span className="font-semibold text-foreground">
+                  <span className="text-foreground font-semibold">
                     {user.display_name}
                   </span>
                   .
@@ -317,7 +317,7 @@ export default function PlanLogin({
                 control={form.control}
                 name="saveCredentials"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-y-0 space-x-3">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
                       <Checkbox
                         checked={field.value}

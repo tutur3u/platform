@@ -90,7 +90,7 @@ export default function EditableReportPreview({
         return (
           <span
             key={key + index}
-            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
+            className="bg-foreground text-background rounded px-1 py-0.5 font-semibold"
           >
             {key}
           </span>
@@ -117,7 +117,7 @@ export default function EditableReportPreview({
                 <div className="flex items-center gap-1">
                   Average score:
                   <div className="flex flex-wrap gap-1">
-                    <div className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background">
+                    <div className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold">
                       {(
                         (report?.scores
                           ?.filter((s) => s !== null && s !== undefined)
@@ -143,7 +143,7 @@ export default function EditableReportPreview({
                       ?.map((s, idx) => (
                         <div
                           key={`report-${report.id}-score-${idx}`}
-                          className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background"
+                          className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold"
                         >
                           {s}
                         </div>

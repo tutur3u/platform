@@ -351,7 +351,7 @@ export default function ChallengeForm({
                     <CardTitle>
                       {t('judging-criteria.judging-criteria')}
                     </CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground">
+                    <CardDescription className="text-muted-foreground text-sm">
                       {t('judging-criteria.judging-criteria-description')}
                     </CardDescription>
                   </div>
@@ -405,7 +405,7 @@ export default function ChallengeForm({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
+                                className="text-destructive hover:text-destructive/80 h-8 w-8 p-0"
                                 onClick={() => removeCriteria(index)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -464,7 +464,7 @@ export default function ChallengeForm({
                         </Card>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {t('judging-criteria.no-criteria')}
                       </p>
                     )}
@@ -477,7 +477,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>{t('security.security')}</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardDescription className="text-muted-foreground text-sm">
                     {t('security.security-description')}
                   </CardDescription>
                 </CardHeader>
@@ -537,7 +537,7 @@ export default function ChallengeForm({
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="absolute top-0 right-0 h-full px-3"
+                                  className="absolute right-0 top-0 h-full px-3"
                                   onClick={() => setShowPassword(!showPassword)}
                                 >
                                   {showPassword ? (
@@ -827,7 +827,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>{t('duration.duration')}</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardDescription className="text-muted-foreground text-sm">
                     {t('duration.duration-description')}
                   </CardDescription>
                 </CardHeader>
@@ -885,7 +885,7 @@ export default function ChallengeForm({
                         </div>
 
                         {field.value && (
-                          <div className="mt-4 rounded-md border bg-muted/30 p-3">
+                          <div className="bg-muted/30 mt-4 rounded-md border p-3">
                             <DurationDisplay seconds={field.value} />
                           </div>
                         )}
@@ -905,19 +905,19 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>{t('schedule.schedule')}</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {t('schedule.schedule-description')}
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6 rounded-md border border-dashed p-4">
                     <div className="mb-2 flex items-center">
-                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
                       <h3 className="text-sm font-medium">
                         {t('schedule.timeline-recommendation')}
                       </h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {t('schedule.timeline-recommendation-description')}
                     </p>
                   </div>
