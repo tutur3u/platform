@@ -193,7 +193,7 @@ export default function CalendarPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Family Calendar</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Plan and coordinate family activities
             </p>
           </div>
@@ -208,7 +208,7 @@ export default function CalendarPage() {
 
       <div className="grid gap-6 md:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-6">
-          <Card className="overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
+          <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="text-2xl font-bold">
@@ -219,7 +219,7 @@ export default function CalendarPage() {
                     onClick={prevMonth}
                     size="icon"
                     variant="outline"
-                    className="h-7 w-7 rounded-full border-foreground/10 dark:border-foreground/5"
+                    className="border-foreground/10 dark:border-foreground/5 h-7 w-7 rounded-full"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -227,7 +227,7 @@ export default function CalendarPage() {
                     onClick={nextMonth}
                     size="icon"
                     variant="outline"
-                    className="h-7 w-7 rounded-full border-foreground/10 dark:border-foreground/5"
+                    className="border-foreground/10 dark:border-foreground/5 h-7 w-7 rounded-full"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -235,7 +235,7 @@ export default function CalendarPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Select value={view} onValueChange={(value) => setView(value)}>
-                  <SelectTrigger className="h-8 w-[110px] border-foreground/10 text-xs dark:border-foreground/5">
+                  <SelectTrigger className="border-foreground/10 dark:border-foreground/5 h-8 w-[110px] text-xs">
                     <SelectValue placeholder="View" />
                   </SelectTrigger>
                   <SelectContent>
@@ -247,7 +247,7 @@ export default function CalendarPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 border-foreground/10 text-xs dark:border-foreground/5"
+                  className="border-foreground/10 dark:border-foreground/5 h-8 text-xs"
                   onClick={() => setCurrentMonth(new Date())}
                 >
                   Today
@@ -259,15 +259,15 @@ export default function CalendarPage() {
               {/* Calendar Grid */}
               <div className="relative">
                 {/* Decorative elements */}
-                <div className="absolute top-10 -right-20 h-60 w-60 rounded-full bg-purple-500/5 blur-3xl dark:bg-purple-500/10"></div>
-                <div className="absolute bottom-10 -left-20 h-60 w-60 rounded-full bg-blue-500/5 blur-3xl dark:bg-blue-500/10"></div>
+                <div className="absolute -right-20 top-10 h-60 w-60 rounded-full bg-purple-500/5 blur-3xl dark:bg-purple-500/10"></div>
+                <div className="absolute -left-20 bottom-10 h-60 w-60 rounded-full bg-blue-500/5 blur-3xl dark:bg-blue-500/10"></div>
 
-                <div className="relative grid grid-cols-7 border-b border-foreground/10 dark:border-foreground/5">
+                <div className="border-foreground/10 dark:border-foreground/5 relative grid grid-cols-7 border-b">
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
                     (day, i) => (
                       <div
                         key={i}
-                        className="py-2 text-center text-sm font-medium text-muted-foreground"
+                        className="text-muted-foreground py-2 text-center text-sm font-medium"
                       >
                         {day}
                       </div>
@@ -283,7 +283,7 @@ export default function CalendarPage() {
                       onClick={() =>
                         day && setSelectedDate(new Date(year, month, day))
                       }
-                      className={`relative h-24 border-r border-b border-foreground/10 p-1 dark:border-foreground/5 ${
+                      className={`border-foreground/10 dark:border-foreground/5 relative h-24 border-b border-r p-1 ${
                         !day ? 'bg-foreground/5 dark:bg-foreground/[0.01]' : ''
                       } ${
                         day && isToday(year, month, day)
@@ -330,7 +330,7 @@ export default function CalendarPage() {
 
           {/* Selected Day Events */}
           {selectedDateEvents.length > 0 && (
-            <Card className="border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
+            <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-lg">
                   Events for{' '}
@@ -346,7 +346,7 @@ export default function CalendarPage() {
                   {selectedDateEvents.map((event) => (
                     <div
                       key={event.id}
-                      className={`rounded-lg border border-foreground/10 p-4 dark:border-foreground/5 ${
+                      className={`border-foreground/10 dark:border-foreground/5 rounded-lg border p-4 ${
                         event.color === 'blue'
                           ? 'bg-blue-500/5 dark:bg-blue-500/10'
                           : event.color === 'green'
@@ -366,7 +366,7 @@ export default function CalendarPage() {
                       </div>
                       <div className="grid gap-2">
                         <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <Clock className="text-muted-foreground h-4 w-4" />
                           <span>
                             {event.date.toLocaleTimeString([], {
                               hour: '2-digit',
@@ -381,16 +381,16 @@ export default function CalendarPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <MapPin className="text-muted-foreground h-4 w-4" />
                           <span>{event.location}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
-                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <Users className="text-muted-foreground h-4 w-4" />
                           <div className="flex -space-x-2">
                             {event.attendees.slice(0, 4).map((attendee) => (
                               <Avatar
                                 key={attendee.id}
-                                className="h-6 w-6 border-2 border-background"
+                                className="border-background h-6 w-6 border-2"
                               >
                                 <AvatarFallback
                                   className={`text-xs ${
@@ -410,7 +410,7 @@ export default function CalendarPage() {
                               </Avatar>
                             ))}
                             {event.attendees.length > 4 && (
-                              <Avatar className="h-6 w-6 border-2 border-background">
+                              <Avatar className="border-background h-6 w-6 border-2">
                                 <AvatarFallback className="bg-foreground/10 text-xs">
                                   +{event.attendees.length - 4}
                                 </AvatarFallback>
@@ -429,7 +429,7 @@ export default function CalendarPage() {
 
         <div className="flex flex-col gap-6">
           {/* Family Members Schedule */}
-          <Card className="border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
+          <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
             <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20">
               <CardTitle className="text-base">Family Members</CardTitle>
             </CardHeader>
@@ -477,7 +477,7 @@ export default function CalendarPage() {
                       </Avatar>
                       <div>
                         <p className="text-sm font-medium">{member.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           {member.status}
                         </p>
                       </div>
@@ -489,7 +489,7 @@ export default function CalendarPage() {
           </Card>
 
           {/* Upcoming Events */}
-          <Card className="border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
+          <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
             <CardHeader className="bg-gradient-to-r from-pink-500/10 to-orange-500/10 dark:from-pink-500/20 dark:to-orange-500/20">
               <CardTitle className="text-base">Upcoming Events</CardTitle>
             </CardHeader>
@@ -498,7 +498,7 @@ export default function CalendarPage() {
                 {events.slice(0, 3).map((event) => (
                   <div
                     key={event.id}
-                    className="rounded-lg border border-foreground/10 p-3 dark:border-foreground/5"
+                    className="border-foreground/10 dark:border-foreground/5 rounded-lg border p-3"
                   >
                     <div className="flex justify-between">
                       <Badge className={getEventColor(event.color)}>
@@ -515,7 +515,7 @@ export default function CalendarPage() {
                       </span>
                     </div>
                     <h4 className="mt-1 text-sm font-medium">{event.title}</h4>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {event.location}
                     </p>
                   </div>
@@ -525,19 +525,19 @@ export default function CalendarPage() {
           </Card>
 
           {/* Tips */}
-          <Card className="border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
+          <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
             <CardHeader className="bg-gradient-to-r from-green-500/10 to-teal-500/10 dark:from-green-500/20 dark:to-teal-500/20">
               <CardTitle className="text-base">Scheduling Tips</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               <div className="flex items-start gap-2">
-                <Info className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">
+                <Info className="text-muted-foreground mt-0.5 h-4 w-4" />
+                <p className="text-muted-foreground text-xs">
                   Famigo can automatically suggest the best times for family
                   activities based on everyone's schedule.
                 </p>
               </div>
-              <Separator className="my-2 bg-foreground/5" />
+              <Separator className="bg-foreground/5 my-2" />
               <Button
                 size="sm"
                 variant="outline"

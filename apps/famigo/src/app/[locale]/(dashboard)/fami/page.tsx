@@ -88,7 +88,7 @@ export default function FamiPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Fami</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Your AI Communication Mediator
             </p>
           </div>
@@ -101,10 +101,10 @@ export default function FamiPage() {
         </Badge>
       </div>
 
-      <Card className="relative flex flex-1 flex-col overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
+      <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 relative flex flex-1 flex-col overflow-hidden backdrop-blur-sm">
         {/* Decorative elements */}
-        <div className="absolute -top-20 -left-20 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-500/20"></div>
-        <div className="absolute -right-20 -bottom-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
+        <div className="absolute -left-20 -top-20 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-500/20"></div>
+        <div className="absolute -bottom-20 -right-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
 
         <ScrollArea className="relative flex-1 p-4">
           <div className="flex flex-col gap-4">
@@ -135,7 +135,7 @@ export default function FamiPage() {
                       <span className="text-sm font-medium">
                         {message.role === 'fami' ? 'Fami' : 'You'}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {new Date(message.timestamp).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -184,7 +184,7 @@ export default function FamiPage() {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type your message to Fami..."
-            className="min-h-[60px] resize-none border-foreground/10 bg-background/60 dark:border-foreground/5"
+            className="border-foreground/10 bg-background/60 dark:border-foreground/5 min-h-[60px] resize-none"
           />
           <Button
             onClick={handleSendMessage}
@@ -197,12 +197,12 @@ export default function FamiPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="col-span-2 overflow-hidden border-foreground/10 bg-background/60 dark:border-foreground/5">
+        <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 col-span-2 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-4 dark:from-blue-500/20 dark:to-purple-500/20">
             <h3 className="text-sm font-medium">Conversation Privacy</h3>
           </div>
           <div className="p-4">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Your conversations with Fami are private. You control what gets
               shared with family members. Use Fami to help craft messages or
               mediate difficult conversations.
@@ -210,7 +210,7 @@ export default function FamiPage() {
           </div>
         </Card>
 
-        <Card className="overflow-hidden border-foreground/10 bg-background/60 dark:border-foreground/5">
+        <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden">
           <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-4 dark:from-purple-500/20 dark:to-pink-500/20">
             <h3 className="text-sm font-medium">Communicate With</h3>
           </div>
@@ -233,7 +233,7 @@ export default function FamiPage() {
           </div>
         </Card>
 
-        <Card className="overflow-hidden border-foreground/10 bg-background/60 dark:border-foreground/5">
+        <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden">
           <div className="bg-gradient-to-r from-pink-500/10 to-orange-500/10 p-4 dark:from-pink-500/20 dark:to-orange-500/20">
             <h3 className="text-sm font-medium">Save Templates</h3>
           </div>
