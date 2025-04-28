@@ -22,7 +22,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.15.2",
     "@types/react": "^19.1.2",
-    "@typescript-eslint/eslint-plugin": "^8.31.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.0",
     "typescript": "^5.8.3"
   },

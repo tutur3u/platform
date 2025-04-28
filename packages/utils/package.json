@@ -30,7 +30,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.15.2",
     "@types/react": "^19.1.2",
-    "@typescript-eslint/eslint-plugin": "^8.31.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.0",
     "@vitejs/plugin-react": "^4.4.1",
     "@vitest/coverage-v8": "^3.1.2",
