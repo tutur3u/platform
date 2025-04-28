@@ -6,10 +6,7 @@ import {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
   SIDEBAR_SIZE_COOKIE_NAME,
 } from '@/constants/common';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Bell,
   Bot,
@@ -27,7 +24,6 @@ export default async function RootLayout({
 }: {
   children: ReactNode;
 }) {
-  const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
   const {
@@ -35,14 +31,6 @@ export default async function RootLayout({
   } = await supabase.auth.getUser();
 
   if (!user?.id) redirect('/login');
-
-  const { data: whitelisted } = await sbAdmin
-    .from('nova_roles')
-    .select('enabled, allow_challenge_management, allow_role_management')
-    .eq('email', user?.email as string)
-    .maybeSingle();
-
-  if (!whitelisted?.enabled) redirect('/not-whitelisted');
 
   const sidebarSize = (await cookies()).get(SIDEBAR_SIZE_COOKIE_NAME);
   const mainSize = (await cookies()).get(MAIN_CONTENT_SIZE_COOKIE_NAME);
@@ -91,10 +79,8 @@ export default async function RootLayout({
 
   return (
     <Structure
-      allowChallengeManagement={
-        whitelisted?.allow_challenge_management || false
-      }
-      allowRoleManagement={whitelisted?.allow_role_management || false}
+      allowChallengeManagement={false}
+      allowRoleManagement={false}
       defaultLayout={defaultLayout}
       defaultCollapsed={defaultCollapsed}
       navCollapsedSize={4}
@@ -102,7 +88,7 @@ export default async function RootLayout({
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -111,7 +97,7 @@ export default async function RootLayout({
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />
