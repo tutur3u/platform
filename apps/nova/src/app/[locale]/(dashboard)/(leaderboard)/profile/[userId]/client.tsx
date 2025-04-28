@@ -507,10 +507,10 @@ export default function UserProfileClient({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Award className="text-primary h-5 w-5" />
-                  {t('achievements.title')}
+                  {t('achievements-tab.name')}
                 </CardTitle>
                 <CardDescription>
-                  {unlockedAchievements.length} {t('achievements.unlocked')}
+                  {unlockedAchievements.length} {t('achievements-tab.unlocked')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
