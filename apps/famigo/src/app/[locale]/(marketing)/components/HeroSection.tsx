@@ -41,7 +41,7 @@ const HeroSection = () => {
             className="group relative mb-8 overflow-hidden border-transparent backdrop-blur-sm"
           >
             <motion.div
-              className="absolute inset-0 border border-foreground/5 bg-foreground/5 opacity-100 transition-opacity"
+              className="border-foreground/5 bg-foreground/5 absolute inset-0 border opacity-100 transition-opacity"
               whileHover={{ opacity: 1 }}
             />
             <Heart className="mr-2 h-4 w-4 text-pink-500 dark:text-pink-400" />
@@ -53,7 +53,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl lg:text-7xl"
+          className="text-foreground mb-6 text-balance text-center text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl"
         >
           <GradientHeadline title="Famigo" />
           <span className="mt-4 block text-3xl md:text-4xl lg:text-5xl">
@@ -65,7 +65,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.8 }}
-          className="mb-8 max-w-2xl text-center text-lg text-balance text-foreground/70"
+          className="text-foreground/70 mb-8 max-w-2xl text-balance text-center text-lg"
         >
           An AI-integrated solution for strengthening Vietnamese parent-child
           relationships across the intergenerational gap. Fostering empathy,
@@ -94,7 +94,7 @@ const HeroSection = () => {
           transition={{ delay: 0.8, duration: 0.8 }}
           className="relative mt-8 w-full max-w-5xl"
         >
-          <div className="flex aspect-video items-center justify-center rounded-xl border border-foreground/10 bg-gradient-to-br from-primary/10 via-purple-500/10 to-blue-500/10 shadow-lg dark:border-foreground/5 dark:from-primary/20 dark:via-purple-500/20 dark:to-blue-500/20">
+          <div className="border-foreground/10 from-primary/10 dark:border-foreground/5 dark:from-primary/20 flex aspect-video items-center justify-center rounded-xl border bg-gradient-to-br via-purple-500/10 to-blue-500/10 shadow-lg dark:via-purple-500/20 dark:to-blue-500/20">
             <div className="p-8 text-center">
               <Image
                 src="/famigo-mockup.jpg"
@@ -103,15 +103,15 @@ const HeroSection = () => {
                 height={1152}
                 className="w-full rounded-lg"
               />
-              <p className="mt-4 text-2xl font-semibold text-foreground">
+              <p className="text-foreground mt-4 text-2xl font-semibold">
                 Family connection reimagined with AI
               </p>
             </div>
           </div>
 
           {/* Decorative elements */}
-          <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-pink-500/10 blur-xl dark:bg-pink-500/20"></div>
-          <div className="absolute -top-4 -left-4 h-24 w-24 rounded-full bg-blue-500/10 blur-xl dark:bg-blue-500/20"></div>
+          <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-pink-500/10 blur-xl dark:bg-pink-500/20"></div>
+          <div className="absolute -left-4 -top-4 h-24 w-24 rounded-full bg-blue-500/10 blur-xl dark:bg-blue-500/20"></div>
         </motion.div>
       </div>
     </section>
