@@ -542,14 +542,14 @@ export function AboutUsPage() {
             <div className="flex flex-col items-center">
               <div className="relative overflow-hidden">
                 <Image
-                  src="/media/logos/nova-transparent.png"
+                  src="/media/logos/transparent.png"
                   alt="Tuturuuu"
                   className="hidden object-contain md:block"
                   width={160}
                   height={160}
                 />
                 <Image
-                  src="/media/logos/nova-transparent.png"
+                  src="/media/logos/transparent.png"
                   alt="Tuturuuu"
                   className="object-contain md:hidden"
                   width={80}
@@ -1436,7 +1436,7 @@ export function AboutUsPage() {
               >
                 <div className="border-primary/30 relative h-32 w-32 overflow-hidden rounded-xl border-2">
                   <Image
-                    src="/media/logos/nova-transparent.png"
+                    src="/media/logos/transparent.png"
                     alt="Tuturuuu"
                     fill
                     className="object-contain p-2"

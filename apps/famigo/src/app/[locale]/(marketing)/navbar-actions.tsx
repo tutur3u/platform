@@ -1,9 +1,6 @@
 import { UserNavWrapper } from './user-nav-wrapper';
-import { LOCALE_COOKIE_NAME } from '@/constants/common';
-import { defaultLocale, supportedLocales } from '@/i18n/routing';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
-import { LanguageWrapper } from '@tuturuuu/ui/custom/language-wrapper';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { getTranslations } from 'next-intl/server';
 
@@ -29,11 +26,11 @@ export default async function NavbarActions({
         ) : (
           <>
             <GetStartedButton text={t('home.get-started')} href="/home" />
-            <LanguageWrapper
+            {/* <LanguageWrapper
               cookieName={LOCALE_COOKIE_NAME}
               defaultLocale={defaultLocale}
               supportedLocales={supportedLocales}
-            />
+            /> */}
             <ThemeToggle />
           </>
         )}
