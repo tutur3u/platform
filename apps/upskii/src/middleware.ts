@@ -9,8 +9,8 @@ import { NextResponse } from 'next/server';
 
 const WEB_APP_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://tuturuuu.com'
-    : 'http://localhost:7803';
+    ? 'https://upskii.com'
+    : 'http://localhost:7806';
 
 // Create the centralized auth middleware
 const authMiddleware = createCentralizedAuthMiddleware({
