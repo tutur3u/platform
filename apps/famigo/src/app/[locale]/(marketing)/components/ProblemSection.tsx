@@ -9,7 +9,7 @@ const ProblemSection = () => {
   return (
     <section
       id="problem"
-      className="relative w-full bg-foreground/5 py-24 dark:bg-foreground/[0.02]"
+      className="bg-foreground/5 dark:bg-foreground/[0.02] relative w-full py-24"
     >
       {/* Background patterns */}
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--background-rgb),0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(var(--background-rgb),0.01)_1px,transparent_1px)] bg-[size:14px_24px]"></div>
@@ -27,7 +27,7 @@ const ProblemSection = () => {
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">
             Bridging the Generational Gap in Vietnamese Families
           </h2>
-          <p className="mx-auto max-w-2xl text-muted-foreground">
+          <p className="text-muted-foreground mx-auto max-w-2xl">
             In Vietnam's rapidly modernizing society, Generation Z faces unique
             challenges while navigating between tradition and transformation.
             Communication barriers with parents threaten family harmony and
@@ -66,10 +66,10 @@ const ProblemSection = () => {
 
         {/* Visual element - decorative line connecting the problems */}
         <div className="relative mt-12 hidden md:block">
-          <div className="absolute top-0 right-1/6 left-1/6 h-px bg-gradient-to-r from-transparent via-foreground/10 to-transparent"></div>
-          <div className="absolute top-0 left-1/2 h-8 w-px -translate-x-1/2 bg-gradient-to-b from-foreground/10 to-transparent"></div>
-          <div className="absolute top-8 left-1/2 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-foreground/10 bg-background/50 text-xs font-medium">
-            <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+          <div className="right-1/6 left-1/6 via-foreground/10 absolute top-0 h-px bg-gradient-to-r from-transparent to-transparent"></div>
+          <div className="from-foreground/10 absolute left-1/2 top-0 h-8 w-px -translate-x-1/2 bg-gradient-to-b to-transparent"></div>
+          <div className="border-foreground/10 bg-background/50 absolute left-1/2 top-8 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border text-xs font-medium">
+            <span className="from-primary bg-gradient-to-r to-blue-500 bg-clip-text text-transparent">
               Famigo
             </span>
           </div>

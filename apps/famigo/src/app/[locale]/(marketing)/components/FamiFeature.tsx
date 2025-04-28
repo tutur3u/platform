@@ -61,10 +61,10 @@ const FamiFeature = ({
       whileHover="hover"
       className="group"
     >
-      <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 backdrop-blur-sm dark:border-foreground/5 dark:bg-foreground/10">
+      <Card className="border-foreground/10 bg-foreground/5 dark:border-foreground/5 dark:bg-foreground/10 h-full overflow-hidden backdrop-blur-sm">
         <div className="relative overflow-hidden rounded-xl p-6">
           {/* Animated gradient background on hover */}
-          <div className="absolute inset-0 bg-gradient-to-br from-background/20 via-foreground/5 to-background opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+          <div className="from-background/20 via-foreground/5 to-background absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
 
           <div className="relative">
             <div

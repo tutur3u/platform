@@ -54,7 +54,7 @@ const FeatureCard = ({ icon, title, description, color }: FeatureCardProps) => {
       viewport={{ once: true }}
       whileHover={{ y: -5 }}
       transition={{ duration: 0.3 }}
-      className={`rounded-xl border ${getBorderColorClasses()} bg-background/50 p-6 backdrop-blur-sm dark:bg-background/20`}
+      className={`rounded-xl border ${getBorderColorClasses()} bg-background/50 dark:bg-background/20 p-6 backdrop-blur-sm`}
     >
       <div
         className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${getBgColorClasses()}`}
