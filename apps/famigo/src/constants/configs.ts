@@ -1,7 +1,7 @@
 import { DEV_MODE } from './common';
 
 export const siteConfig = {
-  name: 'Tuturuuu Nova',
+  name: 'Famigo',
   url: DEV_MODE ? 'http://localhost:7805' : 'https://nova.tuturuuu.com',
   ogImage: DEV_MODE
     ? 'http://localhost:7805/api/og'

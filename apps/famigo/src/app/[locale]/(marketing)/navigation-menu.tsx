@@ -1,35 +1,26 @@
 'use client';
 
-import { useNavigation } from './shared/navigation-config';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
-import { BookText } from '@tuturuuu/ui/icons';
 import {
   NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
   NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from '@tuturuuu/ui/navigation-menu';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import * as React from 'react';
 
 export function MainNavigationMenu() {
-  const t = useTranslations();
-  const { categories } = useNavigation(t);
+  // const t = useTranslations();
+  // const { categories } = useNavigation(t);
 
-  const main = categories.find((cat) => cat.title === 'main')?.items || [];
-  const resources =
-    categories.find((cat) => cat.title === 'resources')?.items || [];
-  const company =
-    categories.find((cat) => cat.title === 'company')?.items || [];
+  // const main = categories.find((cat) => cat.title === 'main')?.items || [];
+  // const resources =
+  //   categories.find((cat) => cat.title === 'resources')?.items || [];
+  // const company =
+  //   categories.find((cat) => cat.title === 'company')?.items || [];
 
   return (
     <NavigationMenu className="flex w-full max-w-none">
-      <NavigationMenuList className="flex w-full justify-between">
+      {/* <NavigationMenuList className="flex w-full justify-between">
         {main.map((item) => (
           <NavigationMenuItem key={item.href}>
             <NavigationMenuLink
@@ -83,7 +74,7 @@ export function MainNavigationMenu() {
             </NavigationMenuLink>
           </NavigationMenuItem>
         ))}
-      </NavigationMenuList>
+      </NavigationMenuList> */}
     </NavigationMenu>
   );
 }
@@ -103,7 +94,7 @@ const ListItem = React.forwardRef<
         <a
           ref={ref}
           className={cn(
-            'outline-hidden group relative block h-full select-none space-y-1 rounded-md p-4 leading-none no-underline transition-all duration-300',
+            'group relative block h-full space-y-1 rounded-md p-4 leading-none no-underline outline-hidden transition-all duration-300 select-none',
             'via-primary/10 to-primary/5 hover:bg-gradient-to-br',
             'opacity-90 hover:opacity-100',
             'hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]',
@@ -114,10 +105,10 @@ const ListItem = React.forwardRef<
         >
           <div className="relative">
             <div className="flex items-center gap-2">
-              <div className="text-primary transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110">
+              <div className="text-primary transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                 {icon}
               </div>
-              <div className="text-sm font-semibold leading-none">{title}</div>
+              <div className="text-sm leading-none font-semibold">{title}</div>
               {badge && (
                 <Badge
                   variant="secondary"
@@ -127,7 +118,7 @@ const ListItem = React.forwardRef<
                 </Badge>
               )}
             </div>
-            <p className="text-muted-foreground mt-2 line-clamp-2 text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
+            <p className="mt-2 line-clamp-2 text-sm leading-snug text-muted-foreground opacity-80 transition-opacity duration-300 group-hover:opacity-100">
               {children}
             </p>
           </div>

@@ -23,7 +23,7 @@ export default function Navbar({
   const renderNavbarActions = () => (
     <Suspense
       fallback={
-        <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+        <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
       }
     >
       <NavbarActions hideMetadata={hideMetadata} />
@@ -32,8 +32,8 @@ export default function Navbar({
 
   return (
     <SharedNavbar
-      logo="/media/logos/nova-transparent.png"
-      title={<LogoTitle text="Nova" />}
+      logo="/media/logos/transparent.png"
+      title={<LogoTitle text="Famigo" />}
       navigationMenu={<MainNavigationMenu />}
       actions={
         <>
