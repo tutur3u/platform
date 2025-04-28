@@ -9,8 +9,8 @@ import { NextResponse } from 'next/server';
 
 const WEB_APP_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://famigo.vercel.app'
-    : 'http://localhost:7807';
+    ? 'https://tuturuuu.com'
+    : 'http://localhost:7803';
 
 // Create the centralized auth middleware
 const authMiddleware = createCentralizedAuthMiddleware({
