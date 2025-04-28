@@ -69,7 +69,7 @@ export function StorageFolderForm({
 
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof FolderFormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FolderFormSchema),
     defaultValues: {
       name: '',
@@ -151,7 +151,7 @@ export function StorageObjectForm({
 
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof ObjectFormSchema>>({
+  const form = useForm({
     resolver: zodResolver(ObjectFormSchema),
     defaultValues: {
       files: [],

@@ -36,7 +36,7 @@ export default function EditableReportPreview({
   const locale = useLocale();
   const t = useTranslations();
 
-  const form = useForm<z.infer<typeof UserReportFormSchema>>({
+  const form = useForm({
     resolver: zodResolver(UserReportFormSchema),
     defaultValues: {
       title: report?.title || '',
@@ -90,7 +90,7 @@ export default function EditableReportPreview({
         return (
           <span
             key={key + index}
-            className="bg-foreground text-background rounded px-1 py-0.5 font-semibold"
+            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
           >
             {key}
           </span>
@@ -117,7 +117,7 @@ export default function EditableReportPreview({
                 <div className="flex items-center gap-1">
                   Average score:
                   <div className="flex flex-wrap gap-1">
-                    <div className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold">
+                    <div className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background">
                       {(
                         (report?.scores
                           ?.filter((s) => s !== null && s !== undefined)
@@ -143,7 +143,7 @@ export default function EditableReportPreview({
                       ?.map((s, idx) => (
                         <div
                           key={`report-${report.id}-score-${idx}`}
-                          className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold"
+                          className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background"
                         >
                           {s}
                         </div>
@@ -159,7 +159,6 @@ export default function EditableReportPreview({
           isNew={isNew}
           form={form}
           submitLabel={t('common.save')}
-          onSubmit={(_) => {}}
         />
 
         {/* <div className="grid h-fit gap-2 rounded-lg border p-4">

@@ -28,7 +28,7 @@ export const WhitelistEmailFormSchema = FormSchema;
 export default function WhitelistEmailForm({ onSubmit }: Props) {
   const t = useTranslations();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       email: '',

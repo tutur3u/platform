@@ -81,7 +81,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
 
   const walletsLoading = !wallets && !walletsError;
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       id: data?.id,

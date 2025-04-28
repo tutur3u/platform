@@ -64,7 +64,7 @@ export default function WorkspaceUserGroupTagsPage({ params }: Props) {
   const { wsId } = use(params);
   console.log(wsId);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
   });
 
@@ -85,7 +85,7 @@ export default function WorkspaceUserGroupTagsPage({ params }: Props) {
         pluralTitle={t('ai_chat.new_chatbot')}
         description={t('ai_chat.my_chatbots_description')}
       />
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-6 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-6 md:flex-row md:items-start">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -100,7 +100,7 @@ export default function WorkspaceUserGroupTagsPage({ params }: Props) {
                   <FormControl>
                     <input
                       type="text"
-                      className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
                       placeholder="e.g., Marketing Assistant, Code Review Expert"
                       {...field}
                     />

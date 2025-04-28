@@ -57,7 +57,8 @@ const FormSchema = z.object({
   display_name: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  gender: z.string().optional(),
+  // gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
   birthday: z.date().nullable().optional(),
   ethnicity: z.string().optional(),
   guardian: z.string().optional(),
@@ -81,7 +82,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: user?.id,
@@ -178,6 +179,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         });
       }
       router.refresh();
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast({
         title: t('ws-members.error'),
@@ -589,7 +591,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>

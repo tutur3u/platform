@@ -51,7 +51,7 @@ import { z } from 'zod';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
-  plan: z.enum(['FREE', 'PRO', 'ENTERPRISE']),
+  plan: z.string(),
 });
 
 export function WorkspaceSelect({
@@ -77,7 +77,7 @@ export function WorkspaceSelect({
 
   const workspaces = workspacesQuery.data;
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: '',
@@ -180,7 +180,7 @@ export function WorkspaceSelect({
   return (
     <>
       {hideLeading || (
-        <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
+        <div className="mx-2 h-4 w-[1px] flex-none rotate-[30deg] bg-foreground/20" />
       )}
       <Dialog
         open={showNewWorkspaceDialog}
@@ -201,7 +201,7 @@ export function WorkspaceSelect({
               aria-label="Select a workspace"
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full whitespace-normal text-start'
+                'w-full text-start whitespace-normal'
               )}
               disabled={!workspaces || workspaces.length === 0}
             >

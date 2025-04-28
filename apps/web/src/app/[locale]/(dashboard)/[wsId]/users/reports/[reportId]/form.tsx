@@ -23,14 +23,18 @@ export default function UserReportForm({
   isNew: boolean;
   form: UseFormReturn<z.infer<typeof UserReportFormSchema>>;
   submitLabel: string;
-  onSubmit: (formData: z.infer<typeof UserReportFormSchema>) => void;
+  // eslint-disable-next-line no-unused-vars
+  onSubmit?: (formData: z.infer<typeof UserReportFormSchema>) => void;
 }) {
   return (
     <div className="grid h-fit gap-2 rounded-lg border p-4">
       <div className="text-lg font-semibold">Thông tin cơ bản</div>
       <Separator />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-2">
+        <form
+          onSubmit={onSubmit && form.handleSubmit(onSubmit)}
+          className="grid gap-2"
+        >
           <FormField
             control={form.control}
             name="title"

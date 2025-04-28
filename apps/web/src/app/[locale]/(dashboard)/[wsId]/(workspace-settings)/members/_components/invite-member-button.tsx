@@ -41,7 +41,8 @@ const FormSchema = z.object({
   wsId: z.string().uuid(),
   email: z.string().email(),
   role: z.string(),
-  accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
+  accessLevel: z.string(),
+  // accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
 });
 
 export default function InviteMemberButton({
@@ -55,7 +56,7 @@ export default function InviteMemberButton({
 
   const [open, setOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       wsId: wsId,
@@ -206,7 +207,7 @@ export default function InviteMemberButton({
           </>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
-            <p className="text-muted-foreground text-center">
+            <p className="text-center text-muted-foreground">
               You must be an admin or higher to invite members.
             </p>
           </div>

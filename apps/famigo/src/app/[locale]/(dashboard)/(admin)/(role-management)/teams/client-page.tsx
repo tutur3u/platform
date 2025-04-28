@@ -32,7 +32,7 @@ export default function TeamClient({ onFinish }: { onFinish?: () => void }) {
     }),
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',

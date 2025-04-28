@@ -49,7 +49,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
 
   const userGroups = queryData?.data;
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,
@@ -124,7 +124,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
                   text={form.watch('name')}
                   value={field.value}
                   onChange={field.onChange}
-                  className="line-clamp-1 w-full grow-0 text-ellipsis whitespace-nowrap break-all"
+                  className="line-clamp-1 w-full grow-0 break-all text-ellipsis whitespace-nowrap"
                 />
               </FormControl>
               <FormMessage />

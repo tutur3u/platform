@@ -44,7 +44,7 @@ export default function ApiKeyForm({
 }: Props) {
   const t = useTranslations('ws-reports');
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       type: data.type || 'TEXT',

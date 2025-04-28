@@ -38,7 +38,7 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
 
   const [saving, setSaving] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,

@@ -30,7 +30,7 @@ export const WhitelistDomainFormSchema = FormSchema;
 export default function WhitelistDomainForm({ onSubmit }: Props) {
   const t = useTranslations();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       domain: '',

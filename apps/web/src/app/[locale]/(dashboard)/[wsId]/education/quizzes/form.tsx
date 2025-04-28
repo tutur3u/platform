@@ -63,7 +63,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
   const router = useRouter();
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       id: data?.id,
@@ -164,7 +164,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                   placeholder={t('common.question')}
                   autoComplete="off"
                   {...field}
-                  className="border-foreground/20 rounded-md shadow-sm"
+                  className="rounded-md border-foreground/20 shadow-sm"
                 />
               </FormControl>
               <FormMessage />
@@ -188,7 +188,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                           control={form.control}
                           name={`quiz_options.${index}.is_correct`}
                           render={({ field }) => (
-                            <FormItem className="flex items-center space-x-1 space-y-0">
+                            <FormItem className="flex items-center space-y-0 space-x-1">
                               <Checkbox
                                 id={`quiz_options.${index}.is_correct`}
                                 checked={field.value}
@@ -204,7 +204,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                             placeholder={`${t('common.option')} ${index + 1}`}
                             autoComplete="off"
                             {...field}
-                            className="border-foreground/20 rounded-md shadow-sm"
+                            className="rounded-md border-foreground/20 shadow-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -252,7 +252,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                           placeholder={t('common.explanation')}
                           autoComplete="off"
                           {...field}
-                          className="border-foreground/20 rounded-md shadow-sm"
+                          className="rounded-md border-foreground/20 shadow-sm"
                         />
                       </FormControl>
                       <FormMessage />

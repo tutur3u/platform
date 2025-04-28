@@ -33,6 +33,7 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   data?: WorkspaceUser;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
@@ -42,7 +43,8 @@ const FormSchema = z.object({
   display_name: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  gender: z.string().optional(),
+  // gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
   birthday: z.date().optional(),
   ethnicity: z.string().optional(),
   guardian: z.string().optional(),
@@ -60,7 +62,7 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
   );
   const [file, setFile] = useState<File | null>(null); // Track the file selected
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,

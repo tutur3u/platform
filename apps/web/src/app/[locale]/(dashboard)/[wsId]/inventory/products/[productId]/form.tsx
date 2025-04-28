@@ -88,7 +88,7 @@ export function ProductForm({
   const [showWarehouseDialog, setWarehouseDialog] = useState(false);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       ...data,

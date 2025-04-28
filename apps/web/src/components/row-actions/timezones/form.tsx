@@ -34,7 +34,7 @@ export const ApiConfigFormSchema = FormSchema;
 export default function TimezoneForm({ data, submitLabel, onSubmit }: Props) {
   const t = (key: string) => key;
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       value: data.value || '',

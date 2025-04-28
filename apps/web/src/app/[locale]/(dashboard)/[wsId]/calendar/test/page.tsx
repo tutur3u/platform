@@ -61,7 +61,7 @@ export default function Page() {
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       prompt: '',
@@ -240,11 +240,11 @@ export default function Page() {
                   {/* Date and Time */}
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-muted-foreground mb-1 text-sm font-medium">
+                      <h3 className="mb-1 text-sm font-medium text-muted-foreground">
                         Start Time
                       </h3>
                       <div className="flex items-center gap-2">
-                        <CalendarIcon className="text-muted-foreground h-4 w-4" />
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                         <p>
                           {generatedEvent.start_at
                             ? format(new Date(generatedEvent.start_at), 'PPP p')
@@ -254,11 +254,11 @@ export default function Page() {
                     </div>
 
                     <div>
-                      <h3 className="text-muted-foreground mb-1 text-sm font-medium">
+                      <h3 className="mb-1 text-sm font-medium text-muted-foreground">
                         End Time
                       </h3>
                       <div className="flex items-center gap-2">
-                        <CalendarIcon className="text-muted-foreground h-4 w-4" />
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                         <p>
                           {generatedEvent.end_at
                             ? format(new Date(generatedEvent.end_at), 'PPP p')
@@ -268,7 +268,7 @@ export default function Page() {
                     </div>
 
                     {generatedEvent.is_all_day && (
-                      <div className="text-muted-foreground flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-muted-foreground">
                         <span>All day event</span>
                       </div>
                     )}
@@ -278,7 +278,7 @@ export default function Page() {
                   <div className="space-y-4">
                     {generatedEvent.location && (
                       <div>
-                        <h3 className="text-muted-foreground mb-1 text-sm font-medium">
+                        <h3 className="mb-1 text-sm font-medium text-muted-foreground">
                           Location
                         </h3>
                         <p>{generatedEvent.location}</p>
@@ -287,7 +287,7 @@ export default function Page() {
 
                     {generatedEvent.description && (
                       <div>
-                        <h3 className="text-muted-foreground mb-1 text-sm font-medium">
+                        <h3 className="mb-1 text-sm font-medium text-muted-foreground">
                           Description
                         </h3>
                         <p>{generatedEvent.description}</p>

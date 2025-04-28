@@ -48,7 +48,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: data?.name || '',
@@ -189,7 +189,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
       <AccordionItem value="output">
         <AccordionTrigger>Output</AccordionTrigger>
         <AccordionContent>
-          <div className="bg-foreground/5 rounded-lg border p-2">
+          <div className="rounded-lg border bg-foreground/5 p-2">
             {output || 'No output generated yet.'}
           </div>
         </AccordionContent>
