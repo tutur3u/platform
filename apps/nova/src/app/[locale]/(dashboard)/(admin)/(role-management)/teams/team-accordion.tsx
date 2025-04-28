@@ -13,6 +13,7 @@ import { Mail, Users } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useState } from 'react';
 
 interface Member {
@@ -92,7 +93,10 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
               ) : members && members.length > 0 ? (
                 <div className="max-h-40 space-y-2 overflow-y-auto">
                   {members.map((member) => (
-                    <div
+                    <Link
+                      href={`/profile/${member.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       key={member.id}
                       className="hover:bg-accent flex items-center gap-2 rounded-md px-2 py-1.5 text-sm"
                     >
@@ -108,7 +112,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                           {member.email}
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (

@@ -34,7 +34,9 @@ export const getTeamColumns = (t: any): ColumnDef<Team>[] => {
       ),
       cell: ({ row }) => (
         <Link
-          href={`/teams/${row.getValue('id')}`}
+          href={`profile/teams/${row.getValue('id')}`}
+          target="_blank"
+          rel="noopener noreferrer"
           className="line-clamp-1 font-semibold hover:underline"
         >
           {row.getValue('name')}
