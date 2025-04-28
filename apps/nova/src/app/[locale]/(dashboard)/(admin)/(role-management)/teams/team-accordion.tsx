@@ -94,7 +94,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                 <div className="max-h-40 space-y-2 overflow-y-auto">
                   {members.map((member) => (
                     <Link
-                      href={`/profile/teams/${member.id}`}
+                      href={`/profile/${member.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       key={member.id}
