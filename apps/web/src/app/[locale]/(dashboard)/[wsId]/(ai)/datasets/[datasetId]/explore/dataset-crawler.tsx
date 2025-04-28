@@ -508,7 +508,7 @@ export function DatasetCrawler({
                   dataRow: '2',
                 });
               }}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-2"
             >
               <span className="i-lucide-file-plus h-4 w-4" />
               Change File
@@ -529,7 +529,7 @@ export function DatasetCrawler({
 
       {isFileLoaded && (
         <div className="space-y-6">
-          <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <div className="bg-card rounded-lg border p-4 shadow-sm">
             {renderConfigurationSection()}
           </div>
 
@@ -561,7 +561,7 @@ export function DatasetCrawler({
                           variant="secondary"
                           size="sm"
                           onClick={() => handleSheetChange(sheet)}
-                          className="flex items-center gap-2 transition-colors hover:bg-accent"
+                          className="hover:bg-accent flex items-center gap-2 transition-colors"
                         >
                           <span className="i-lucide-file-spreadsheet h-4 w-4" />
                           {sheet}
@@ -577,11 +577,11 @@ export function DatasetCrawler({
           {processedData.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <span className="i-lucide-table h-4 w-4" />
                   Preview Data
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   {processedData.length > 0 &&
                     `Showing ${processedData.length - 1} preview rows of ${
                       workbook && 'SheetNames' in workbook && workbook.Sheets
@@ -603,7 +603,7 @@ export function DatasetCrawler({
             <Button
               onClick={handleConfirmSync}
               disabled={loading || !!excelError || processedData.length <= 1}
-              className="flex min-w-[120px] items-center gap-2 transition-colors hover:bg-primary/90"
+              className="hover:bg-primary/90 flex min-w-[120px] items-center gap-2 transition-colors"
             >
               {loading ? (
                 <>
@@ -624,13 +624,13 @@ export function DatasetCrawler({
   );
 
   const renderLoadingOverlay = () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-4 rounded-lg border bg-background/95 p-6 text-center shadow-lg">
+    <div className="bg-background/80 absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+      <div className="bg-background/95 flex flex-col items-center gap-4 rounded-lg border p-6 text-center shadow-lg">
         <div className="relative">
           <div className="relative h-12 w-12">
-            <RefreshCw className="h-12 w-12 animate-spin text-primary/20" />
+            <RefreshCw className="text-primary/20 h-12 w-12 animate-spin" />
             <RefreshCw
-              className="absolute inset-0 h-12 w-12 animate-spin text-primary"
+              className="text-primary absolute inset-0 h-12 w-12 animate-spin"
               style={{ animationDelay: '-0.2s' }}
             />
           </div>
@@ -639,13 +639,13 @@ export function DatasetCrawler({
           <p className="text-lg font-medium">{syncStatus}</p>
           {syncProgress > 0 && (
             <div className="space-y-1">
-              <div className="h-2 w-48 overflow-hidden rounded-full bg-muted">
+              <div className="bg-muted h-2 w-48 overflow-hidden rounded-full">
                 <div
-                  className="h-full bg-primary transition-all duration-300 ease-in-out"
+                  className="bg-primary h-full transition-all duration-300 ease-in-out"
                   style={{ width: `${syncProgress}%` }}
                 />
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {syncProgress.toFixed(0)}% Complete
               </p>
             </div>
@@ -657,9 +657,9 @@ export function DatasetCrawler({
 
   const renderFileUploadSection = () => (
     <div className="grid gap-8 sm:grid-cols-2">
-      <div className="space-y-4 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-accent/5">
+      <div className="bg-card hover:bg-accent/5 space-y-4 rounded-lg border p-4 shadow-sm transition-colors">
         <div className="flex items-center gap-2">
-          <span className="i-lucide-hard-drive h-5 w-5 text-primary" />
+          <span className="i-lucide-hard-drive text-primary h-5 w-5" />
           <h3 className="text-sm font-medium">Upload Local File</h3>
         </div>
         <div className="flex items-center gap-2">
@@ -668,17 +668,17 @@ export function DatasetCrawler({
             accept=".csv,.xlsx,.xls"
             onChange={loadExcelFile}
             disabled={loading}
-            className="cursor-pointer transition-colors file:cursor-pointer file:bg-primary/10 file:text-primary hover:bg-accent/50"
+            className="file:bg-primary/10 file:text-primary hover:bg-accent/50 cursor-pointer transition-colors file:cursor-pointer"
           />
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           Supported formats: .xlsx, .xls, .csv (max 10MB)
         </p>
       </div>
 
-      <div className="space-y-4 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-accent/5">
+      <div className="bg-card hover:bg-accent/5 space-y-4 rounded-lg border p-4 shadow-sm transition-colors">
         <div className="flex items-center gap-2">
-          <span className="i-lucide-link h-5 w-5 text-primary" />
+          <span className="i-lucide-link text-primary h-5 w-5" />
           <h3 className="text-sm font-medium">Import from URL</h3>
         </div>
         <div className="flex items-center gap-2">
@@ -689,10 +689,10 @@ export function DatasetCrawler({
               {...form.register('url')}
               onChange={handleUrlChange}
               disabled={loading}
-              className="transition-colors hover:bg-accent/50"
+              className="hover:bg-accent/50 transition-colors"
             />
             {form.formState.errors.url && (
-              <p className="mt-1 text-xs text-destructive">
+              <p className="text-destructive mt-1 text-xs">
                 {form.formState.errors.url.message}
               </p>
             )}
@@ -718,7 +718,7 @@ export function DatasetCrawler({
             )}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           URL must point to a publicly accessible Excel or CSV file
         </p>
       </div>
@@ -728,7 +728,7 @@ export function DatasetCrawler({
   const renderErrorAlert = () => (
     <Alert
       variant="destructive"
-      className="duration-300 animate-in fade-in slide-in-from-top-2"
+      className="animate-in fade-in slide-in-from-top-2 duration-300"
     >
       <AlertTitle className="flex items-center gap-2 text-lg">
         <span className="i-lucide-alert-circle h-5 w-5" />
@@ -772,7 +772,7 @@ export function DatasetCrawler({
   );
 
   const renderStatusAlert = () => (
-    <Alert className="duration-300 animate-in fade-in slide-in-from-top-2">
+    <Alert className="animate-in fade-in slide-in-from-top-2 duration-300">
       <AlertTitle className="flex items-center gap-2">
         <Info className="h-4 w-4" />
         Status
@@ -781,13 +781,13 @@ export function DatasetCrawler({
         <p className="text-sm">{syncStatus}</p>
         {syncProgress > 0 && (
           <div className="mt-2 space-y-1">
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
               <div
-                className="h-full bg-primary transition-all duration-300 ease-in-out"
+                className="bg-primary h-full transition-all duration-300 ease-in-out"
                 style={{ width: `${syncProgress}%` }}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {syncProgress.toFixed(0)}% Complete
             </p>
           </div>
@@ -804,7 +804,7 @@ export function DatasetCrawler({
             <FormItem>
               <FormLabel>Sheet</FormLabel>
               <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground hover:bg-accent/50 focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={selectedSheet}
                 onChange={(e) => handleSheetChange(e.target.value)}
               >
@@ -833,7 +833,7 @@ export function DatasetCrawler({
                       field.onChange(e);
                       handleConfigChange();
                     }}
-                    className="transition-colors hover:bg-accent/50"
+                    className="hover:bg-accent/50 transition-colors"
                   />
                 </FormControl>
                 <FormDescription>
@@ -859,7 +859,7 @@ export function DatasetCrawler({
                       field.onChange(e);
                       handleConfigChange();
                     }}
-                    className="transition-colors hover:bg-accent/50"
+                    className="hover:bg-accent/50 transition-colors"
                   />
                 </FormControl>
                 <FormDescription>
@@ -875,12 +875,12 @@ export function DatasetCrawler({
   );
 
   const renderDataPreview = () => (
-    <div className="mt-4 rounded-lg border bg-card shadow-sm">
+    <div className="bg-card mt-4 rounded-lg border shadow-sm">
       <div className="max-h-[400px] overflow-auto">
         <div className="relative w-full">
           <div className="overflow-x-auto">
-            <table className="w-full divide-y divide-border">
-              <thead className="sticky top-0 bg-muted/50 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <table className="divide-border w-full divide-y">
+              <thead className="bg-muted/50 supports-[backdrop-filter]:bg-background/60 sticky top-0 backdrop-blur">
                 <tr>
                   {processedData[0]?.map((header: string, index: number) => (
                     <th
@@ -893,11 +893,11 @@ export function DatasetCrawler({
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-border divide-y">
                 {processedData.slice(1).map((row: any[], rowIndex: number) => (
                   <tr
                     key={rowIndex}
-                    className="transition-colors hover:bg-muted/50"
+                    className="hover:bg-muted/50 transition-colors"
                   >
                     {row.map((cell: any, cellIndex: number) => (
                       <td
