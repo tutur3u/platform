@@ -16,7 +16,7 @@ import {
   Calendar,
   Home,
   MessageCircle,
-  ShieldCheck,
+  Users,
 } from '@tuturuuu/ui/icons';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -64,33 +64,28 @@ export default async function RootLayout({
     },
     {
       name: 'Fami',
-      href: '/challenges',
+      href: '/fami',
       icon: <Bot className="h-4 w-4" />,
     },
     {
       name: 'Chat',
-      href: '/problems',
+      href: '/chat',
       icon: <MessageCircle className="h-4 w-4" />,
-      requiresChallengeManagement: true,
     },
     {
       name: 'Calendar',
-      href: '/submissions',
+      href: '/calendar',
       icon: <Calendar className="h-4 w-4" />,
-      requiresChallengeManagement: true,
     },
     {
       name: 'Notifications',
-      href: '/sessions',
+      href: '/notifications',
       icon: <Bell className="h-4 w-4" />,
-      requiresChallengeManagement: true,
     },
     {
-      name: 'Roles',
-      href: '/roles',
-      subItems: [] as { name: string; href: string }[],
-      icon: <ShieldCheck className="h-4 w-4" />,
-      requiresRoleManagement: true,
+      name: 'Manage',
+      href: '/manage',
+      icon: <Users className="h-4 w-4" />,
     },
   ];
 
@@ -107,7 +102,7 @@ export default async function RootLayout({
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -116,7 +111,7 @@ export default async function RootLayout({
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />
