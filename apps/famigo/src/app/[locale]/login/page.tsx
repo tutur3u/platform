@@ -35,7 +35,7 @@ export default async function Login() {
         <div className="flex items-center justify-center">
           <h1 className="relative flex w-fit items-center gap-2">
             <Image
-              src="/media/logos/nova-transparent.png"
+              src="/media/logos/transparent.png"
               width={128}
               height={128}
               alt="Tuturuuu Logo"

@@ -1,35 +1,26 @@
 'use client';
 
-import { useNavigation } from './shared/navigation-config';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
-import { BookText } from '@tuturuuu/ui/icons';
 import {
   NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
   NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from '@tuturuuu/ui/navigation-menu';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import * as React from 'react';
 
 export function MainNavigationMenu() {
-  const t = useTranslations();
-  const { categories } = useNavigation(t);
+  // const t = useTranslations();
+  // const { categories } = useNavigation(t);
 
-  const main = categories.find((cat) => cat.title === 'main')?.items || [];
-  const resources =
-    categories.find((cat) => cat.title === 'resources')?.items || [];
-  const company =
-    categories.find((cat) => cat.title === 'company')?.items || [];
+  // const main = categories.find((cat) => cat.title === 'main')?.items || [];
+  // const resources =
+  //   categories.find((cat) => cat.title === 'resources')?.items || [];
+  // const company =
+  //   categories.find((cat) => cat.title === 'company')?.items || [];
 
   return (
     <NavigationMenu className="flex w-full max-w-none">
-      <NavigationMenuList className="flex w-full justify-between">
+      {/* <NavigationMenuList className="flex w-full justify-between">
         {main.map((item) => (
           <NavigationMenuItem key={item.href}>
             <NavigationMenuLink
@@ -83,7 +74,7 @@ export function MainNavigationMenu() {
             </NavigationMenuLink>
           </NavigationMenuItem>
         ))}
-      </NavigationMenuList>
+      </NavigationMenuList> */}
     </NavigationMenu>
   );
 }

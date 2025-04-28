@@ -81,14 +81,14 @@ export default function Structure({
         )}
       >
         <Image
-          src="/media/logos/nova-transparent.png"
+          src="/media/logos/transparent.png"
           className="h-8 w-8"
           width={32}
           height={32}
           alt="logo"
         />
       </div>
-      {isCollapsed || <LogoTitle text="Nova" />}
+      {isCollapsed || <LogoTitle text="Famigo" />}
     </Link>
   );
 

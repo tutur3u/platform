@@ -1,5 +1,4 @@
 import Navbar from './navbar';
-import Footer from '@/components/Footer';
 import React from 'react';
 
 interface LayoutProps {
@@ -13,7 +12,7 @@ export default function Layout({ children }: LayoutProps) {
       <div id="main-content" className="flex flex-col pt-8">
         {children}
       </div>
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 }

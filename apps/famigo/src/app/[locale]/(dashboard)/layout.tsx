@@ -11,17 +11,13 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
-  Activity,
-  Box,
-  Calculator,
-  Code,
+  Bell,
+  Bot,
+  Calendar,
   Home,
-  List,
+  MessageCircle,
   ShieldCheck,
-  Trophy,
-  Users,
 } from '@tuturuuu/ui/icons';
-import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ReactNode, Suspense } from 'react';
@@ -33,7 +29,6 @@ export default async function RootLayout({
 }) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
-  const t = await getTranslations('nova');
 
   const {
     data: { user },
@@ -63,51 +58,35 @@ export default async function RootLayout({
 
   const navItems = [
     {
-      name: t('home'),
+      name: 'Home',
       href: '/home',
       icon: <Home className="h-4 w-4" />,
     },
     {
-      name: t('challenges'),
+      name: 'Fami',
       href: '/challenges',
-      icon: <Code className="h-4 w-4" />,
+      icon: <Bot className="h-4 w-4" />,
     },
     {
-      name: t('problems'),
+      name: 'Chat',
       href: '/problems',
-      icon: <List className="h-4 w-4" />,
+      icon: <MessageCircle className="h-4 w-4" />,
       requiresChallengeManagement: true,
     },
     {
-      name: t('submissions'),
+      name: 'Calendar',
       href: '/submissions',
-      icon: <Box className="h-4 w-4" />,
+      icon: <Calendar className="h-4 w-4" />,
       requiresChallengeManagement: true,
     },
     {
-      name: t('sessions'),
+      name: 'Notifications',
       href: '/sessions',
-      icon: <Activity className="h-4 w-4" />,
+      icon: <Bell className="h-4 w-4" />,
       requiresChallengeManagement: true,
     },
     {
-      name: t('score-calculator'),
-      href: '/score-calculator',
-      icon: <Calculator className="h-4 w-4" />,
-    },
-    {
-      name: t('leaderboard'),
-      href: '/leaderboard',
-      icon: <Trophy className="h-4 w-4" />,
-    },
-    {
-      name: t('teams'),
-      href: '/teams',
-      icon: <Users className="h-4 w-4" />,
-      requiresRoleManagement: true,
-    },
-    {
-      name: t('roles'),
+      name: 'Roles',
       href: '/roles',
       subItems: [] as { name: string; href: string }[],
       icon: <ShieldCheck className="h-4 w-4" />,
