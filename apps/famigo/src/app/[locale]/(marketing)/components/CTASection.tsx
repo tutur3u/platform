@@ -9,12 +9,12 @@ const CTASection = () => {
   return (
     <section className="relative w-full overflow-hidden py-24">
       {/* Colorful background elements */}
-      <div className="from-background via-background/95 to-background absolute inset-0 bg-gradient-to-b"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-20%,rgba(var(--primary-rgb),0.15),transparent)] dark:bg-[radial-gradient(circle_800px_at_50%_-20%,rgba(var(--primary-rgb),0.2),transparent)]"></div>
 
       {/* Decorative elements */}
-      <div className="absolute -left-20 -top-20 h-60 w-60 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
-      <div className="absolute -bottom-20 -right-20 h-60 w-60 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-500/20"></div>
+      <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
+      <div className="absolute -right-20 -bottom-20 h-60 w-60 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-500/20"></div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -24,17 +24,17 @@ const CTASection = () => {
       >
         <Badge
           variant="outline"
-          className="bg-background/50 mb-4 backdrop-blur-sm"
+          className="mb-4 bg-background/50 backdrop-blur-sm"
         >
           <Sparkles className="mr-2 h-4 w-4 text-pink-500 dark:text-pink-400" />
           Join Our Mission
         </Badge>
 
-        <h2 className="from-primary dark:from-primary mb-4 bg-gradient-to-r via-blue-500 to-purple-500 bg-clip-text text-4xl font-bold text-transparent md:text-5xl dark:via-blue-400 dark:to-purple-400">
+        <h2 className="mb-4 bg-gradient-to-r from-primary via-blue-500 to-purple-500 bg-clip-text text-4xl font-bold text-transparent md:text-5xl dark:from-primary dark:via-blue-400 dark:to-purple-400">
           Be Part of the Family Connection Revolution
         </h2>
 
-        <p className="text-muted-foreground mx-auto mb-8 max-w-2xl">
+        <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">
           Join our early access program and help shape the future of family
           communication in Vietnam. Together, we can bridge generations and
           foster deeper understanding between parents and children.
@@ -47,7 +47,7 @@ const CTASection = () => {
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
         >
-          <GetStartedButton text="Get Early Access" href="/home" />
+          <GetStartedButton text="Start Now" href="/home" />
         </motion.div>
 
         {/* Bonus element: Floating hearts representing family connection */}
