@@ -1,5 +1,6 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -44,6 +45,15 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       });
   };
 
+  if (
+    visibleDates.reduce(
+      (acc, date) => acc + getEventsForDate(date).length,
+      0
+    ) === 0
+  ) {
+    return null;
+  }
+
   return (
     <div className="flex">
       {/* Label column */}
@@ -67,19 +77,28 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           return (
             <div
               key={`all-day-${date.toISOString()}`}
-              className="group mr-[1px] flex h-full flex-col justify-center gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r hover:bg-muted/20"
+              className="group mr-[1px] flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r hover:bg-muted/20"
             >
-              {dateEvents.map((event) => (
-                <div
-                  key={`all-day-event-${event.id}-${date.toISOString()}`}
-                  className={cn(
-                    'cursor-pointer truncate rounded-sm border border-dynamic-blue/20 bg-dynamic-blue/20 px-2 py-1 text-xs font-semibold text-dynamic-blue'
-                  )}
-                  onClick={() => openModal(event.id, 'all-day')}
-                >
-                  {event.title}
-                </div>
-              ))}
+              {dateEvents.map((event) => {
+                const { bg, border, text } = getEventStyles(
+                  event.color || 'BLUE'
+                );
+
+                return (
+                  <div
+                    key={`all-day-event-${event.id}-${date.toISOString()}`}
+                    className={cn(
+                      'cursor-pointer truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold',
+                      bg,
+                      border,
+                      text
+                    )}
+                    onClick={() => openModal(event.id, 'all-day')}
+                  >
+                    {event.title}
+                  </div>
+                );
+              })}
             </div>
           );
         })}
