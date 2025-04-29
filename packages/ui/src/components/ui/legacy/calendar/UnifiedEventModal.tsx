@@ -54,6 +54,9 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { format } from 'date-fns';
+import dayjs from 'dayjs';
+import ts from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import {
   AlertCircle,
   Brain,
@@ -80,9 +83,10 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
+dayjs.extend(ts);
+dayjs.extend(utc);
 interface ExtendedCalendarEvent extends CalendarEvent {
   _originalId?: string;
-  _isMultiDay?: boolean;
   _dayPosition?: 'start' | 'middle' | 'end';
 }
 
@@ -174,8 +178,11 @@ export function UnifiedEventModal({
   const [activeTab, setActiveTab] = useState<'manual' | 'ai' | 'preview'>(
     isEditing ? 'manual' : 'ai' // Default to AI for new events
   );
-  const [isAllDay, setIsAllDay] = useState(false);
-  const [isMultiDay, setIsMultiDay] = useState(false);
+  const [isAllDay, setIsAllDay] = useState(
+    dayjs(event.start_at).diff(dayjs(event.end_at), 'seconds') %
+      (24 * 60 * 60) ===
+      0
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [dateError, setDateError] = useState<string | null>(null);
@@ -243,27 +250,6 @@ export function UnifiedEventModal({
         locked: eventData.locked,
       });
 
-      // Check if this is an all-day event (no time component)
-      const start = new Date(eventData.start_at);
-      const end = new Date(eventData.end_at);
-
-      const isAllDayEvent =
-        start.getHours() === 0 &&
-        start.getMinutes() === 0 &&
-        end.getHours() === 23 &&
-        end.getMinutes() === 59;
-
-      setIsAllDay(isAllDayEvent);
-
-      // Check if this is a multi-day event
-      const startDay = new Date(start);
-      startDay.setHours(0, 0, 0, 0);
-
-      const endDay = new Date(end);
-      endDay.setHours(0, 0, 0, 0);
-
-      setIsMultiDay(startDay.getTime() !== endDay.getTime());
-
       // Check for overlapping events
       checkForOverlaps(eventData);
 
@@ -287,7 +273,6 @@ export function UnifiedEventModal({
 
       setEvent(newEvent);
       setIsAllDay(false);
-      setIsMultiDay(false);
 
       // Reset AI form
       aiForm.reset();
@@ -562,12 +547,24 @@ export function UnifiedEventModal({
       const newEvent = { ...prev, start_at: date.toISOString() };
 
       // If start time is after end time, push end time forward
-      const endDate = new Date(prev.end_at || '');
-      if (date > endDate) {
-        const duration =
-          endDate.getTime() - new Date(prev.start_at || '').getTime();
-        const newEndDate = new Date(date.getTime() + duration);
+      const endDate = dayjs(prev.end_at || '');
+
+      if (dayjs(date).isAfter(endDate)) {
+        const duration = endDate.diff(dayjs(prev.start_at || ''), 'seconds');
+        const newEndDate = dayjs(date).add(duration, 'seconds');
         newEvent.end_at = newEndDate.toISOString();
+      }
+
+      if (isAllDay) {
+        newEvent.start_at = dayjs(newEvent.start_at)
+          .utc()
+          .startOf('day')
+          .toISOString();
+
+        newEvent.end_at = dayjs(newEvent.end_at)
+          .utc()
+          .startOf('day')
+          .toISOString();
       }
 
       return newEvent;
@@ -585,9 +582,25 @@ export function UnifiedEventModal({
       const newEvent = { ...prev, end_at: date.toISOString() };
 
       // If end time is before start time, pull start time backward
-      const startDate = new Date(prev.start_at || '');
-      if (date < startDate) {
-        newEvent.start_at = date.toISOString();
+      const startDate = dayjs(prev.start_at || '');
+
+      if (dayjs(date).isBefore(startDate)) {
+        const duration = dayjs(date).diff(startDate, 'seconds');
+        const newStartDate = dayjs(date).subtract(duration, 'seconds');
+        newEvent.start_at = newStartDate.toISOString();
+      }
+
+      if (isAllDay) {
+        newEvent.start_at = dayjs(newEvent.start_at)
+          .utc()
+          .startOf('day')
+          .toISOString();
+
+        newEvent.end_at = dayjs(date)
+          .utc()
+          .add(1, 'day')
+          .endOf('day')
+          .toISOString();
       }
 
       return newEvent;
@@ -599,21 +612,22 @@ export function UnifiedEventModal({
 
   // Handle all-day toggle
   const handleAllDayChange = (checked: boolean) => {
-    setIsAllDay(checked);
-
     setEvent((prev) => {
-      const startDate = new Date(prev.start_at || '');
-      const endDate = new Date(prev.end_at || '');
+      let startDate = dayjs(prev.start_at);
+      let endDate = dayjs(prev.end_at);
 
       if (checked) {
-        // Set to all day: start at 00:00, end at 23:59
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
+        // Set to all day: start at 00:00, end at 00:00 of next day (UTC)
+        startDate = startDate.utc().set('hour', 0).startOf('hour');
+
+        endDate = endDate.utc().isSame(endDate.startOf('day'), 'day')
+          ? endDate.utc().set('hour', 0).startOf('hour')
+          : endDate.utc().subtract(1, 'day').set('hour', 0).endOf('day');
       } else {
         // Set to specific time: default to current time for start, +1 hour for end
-        const now = new Date();
-        startDate.setHours(now.getHours(), now.getMinutes(), 0, 0);
-        endDate.setHours(now.getHours() + 1, now.getMinutes(), 0, 0);
+        const now = dayjs();
+        startDate = startDate.set('hour', now.hour()).startOf('hour');
+        endDate = endDate.set('hour', now.hour() + 1).startOf('hour');
       }
 
       return {
@@ -622,34 +636,8 @@ export function UnifiedEventModal({
         end_at: endDate.toISOString(),
       };
     });
-  };
 
-  // Handle multi-day toggle
-  const handleMultiDayChange = (checked: boolean) => {
-    setIsMultiDay(checked);
-
-    setEvent((prev) => {
-      const startDate = new Date(prev.start_at || '');
-      const endDate = new Date(prev.end_at || '');
-
-      if (checked && startDate.getDate() === endDate.getDate()) {
-        // If turning on multi-day and currently same day, extend to next day
-        endDate.setDate(endDate.getDate() + 1);
-      } else if (!checked && startDate.getDate() !== endDate.getDate()) {
-        // If turning off multi-day and currently different days, set end to same day
-        endDate.setFullYear(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate()
-        );
-        endDate.setHours(23, 59, 59, 999);
-      }
-
-      return {
-        ...prev,
-        end_at: endDate.toISOString(),
-      };
-    });
+    setIsAllDay((prev) => !prev);
   };
 
   const [isRecording, setIsRecording] = useState(false);
@@ -900,7 +888,7 @@ export function UnifiedEventModal({
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 pb-4 pt-6">
+        <DialogHeader className="border-b px-6 pt-6 pb-4">
           <DialogTitle className="text-xl font-semibold">
             {isEditing ? 'Edit Event' : 'Create Event'}
           </DialogTitle>
@@ -916,10 +904,10 @@ export function UnifiedEventModal({
           onValueChange={(value) => setActiveTab(value as any)}
           className="flex h-[calc(90vh-140px)] flex-col"
         >
-          <TabsList className="justify-start gap-2 bg-transparent px-6 pb-0 pt-4">
+          <TabsList className="justify-start gap-2 bg-transparent px-6 pt-4 pb-0">
             <TabsTrigger
               value="ai"
-              className="data-[state=active]:bg-background rounded-b-none rounded-t-md border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:shadow-sm"
+              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               disabled={!!isEditing}
             >
               <Sparkles className="mr-2 h-4 w-4" />
@@ -927,7 +915,7 @@ export function UnifiedEventModal({
             </TabsTrigger>
             <TabsTrigger
               value="manual"
-              className="data-[state=active]:bg-background rounded-b-none rounded-t-md border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:shadow-sm"
+              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               Manual
@@ -938,7 +926,7 @@ export function UnifiedEventModal({
             {/* Manual Event Creation Tab */}
             <TabsContent
               value="manual"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'manual' ? 'flex' : 'none' }}
             >
               <div className="flex flex-1 flex-col overflow-hidden">
@@ -946,7 +934,7 @@ export function UnifiedEventModal({
                   <div className="space-y-6 p-6">
                     {/* Locked Event Indicator */}
                     {event.locked && (
-                      <div className="border-dynamic-light-yellow/30 bg-dynamic-light-yellow/10 text-dynamic-light-yellow mb-4 flex items-center gap-2 rounded-md border p-3">
+                      <div className="mb-4 flex items-center gap-2 rounded-md border border-dynamic-light-yellow/30 bg-dynamic-light-yellow/10 p-3 text-dynamic-light-yellow">
                         <div>
                           <h3 className="font-semibold">Event is Locked</h3>
                           <p className="text-sm">
@@ -978,13 +966,6 @@ export function UnifiedEventModal({
                             onChange={handleAllDayChange}
                             disabled={event.locked}
                           />
-                          <EventToggleSwitch
-                            id="multi-day"
-                            label="Multi-Day"
-                            checked={isMultiDay}
-                            onChange={handleMultiDayChange}
-                            disabled={event.locked}
-                          />
                         </div>
                       </div>
 
@@ -994,12 +975,15 @@ export function UnifiedEventModal({
                           value={new Date(event.start_at || new Date())}
                           onChange={handleStartDateChange}
                           disabled={event.locked}
+                          showTimeSelect={!isAllDay}
                         />
                         <EventDateTimePicker
                           label="End"
                           value={new Date(event.end_at || new Date())}
                           onChange={handleEndDateChange}
                           disabled={event.locked}
+                          showTimeSelect={!isAllDay}
+                          minusOneDay={isAllDay}
                         />
                       </div>
                     </div>
@@ -1045,8 +1029,8 @@ export function UnifiedEventModal({
                             Advanced Settings
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="pb-0 pt-2">
-                          <div className="bg-muted/30 space-y-4 rounded-lg p-4">
+                        <AccordionContent className="pt-2 pb-0">
+                          <div className="space-y-4 rounded-lg bg-muted/30 p-4">
                             <h3 className="text-sm font-medium">
                               Event Properties
                             </h3>
@@ -1071,11 +1055,11 @@ export function UnifiedEventModal({
                                 />
                                 <div className="mt-1 flex items-center gap-2">
                                   {event.locked ? (
-                                    <Lock className="text-muted-foreground h-3.5 w-3.5" />
+                                    <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                                   ) : (
-                                    <Unlock className="text-muted-foreground h-3.5 w-3.5" />
+                                    <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
                                   )}
-                                  <p className="text-muted-foreground text-xs">
+                                  <p className="text-xs text-muted-foreground">
                                     {event.locked
                                       ? 'Event is locked'
                                       : 'Event is unlocked'}
@@ -1083,7 +1067,7 @@ export function UnifiedEventModal({
                                 </div>
                               </div>
                             </div>
-                            <div className="text-muted-foreground mt-2 text-xs">
+                            <div className="mt-2 text-xs text-muted-foreground">
                               <p className="flex items-center gap-1">
                                 <Info className="h-3 w-3" />
                                 Color and protection settings help organize and
@@ -1203,7 +1187,7 @@ export function UnifiedEventModal({
             {/* AI Event Generation Tab */}
             <TabsContent
               value="ai"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'ai' ? 'flex' : 'none' }}
             >
               <Form {...aiForm}>
@@ -1228,7 +1212,7 @@ export function UnifiedEventModal({
                                     {...field}
                                     autoFocus
                                     placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
-                                    className="border-input bg-background focus:ring-ring min-h-[200px] w-full resize-none rounded-md border p-4 pr-20 text-base focus:outline-none focus:ring-1"
+                                    className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 pr-20 text-base focus:ring-1 focus:ring-ring focus:outline-none"
                                     disabled={
                                       isLoading ||
                                       isRecording ||
@@ -1238,7 +1222,7 @@ export function UnifiedEventModal({
                                   />
 
                                   {/* Record Button */}
-                                  <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                                  <div className="absolute right-2 bottom-2 flex items-center gap-1">
                                     <Button
                                       size="xs"
                                       type="button"
@@ -1307,8 +1291,8 @@ export function UnifiedEventModal({
                         {isLoading && (
                           <div className="flex items-center justify-center py-8">
                             <div className="flex flex-col items-center gap-2">
-                              <Loader2 className="text-primary h-8 w-8 animate-spin" />
-                              <p className="text-muted-foreground text-sm">
+                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                              <p className="text-sm text-muted-foreground">
                                 Creating your event...
                               </p>
                             </div>
@@ -1342,7 +1326,7 @@ export function UnifiedEventModal({
                         <Button
                           type="submit"
                           disabled={isLoading || !aiForm.watch('prompt')}
-                          className="bg-primary flex items-center gap-2"
+                          className="flex items-center gap-2 bg-primary"
                         >
                           {isLoading ? (
                             <>
@@ -1366,23 +1350,23 @@ export function UnifiedEventModal({
             {/* Preview Tab */}
             <TabsContent
               value="preview"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'preview' ? 'flex' : 'none' }}
             >
               <div className="flex flex-1 flex-col overflow-hidden">
                 <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                   <div className="space-y-6 p-6">
                     {/* AI Generated Event Preview */}
-                    <div className="bg-muted/10 rounded-lg border p-4">
+                    <div className="rounded-lg border bg-muted/10 p-4">
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="flex items-center gap-2 text-base font-medium">
-                          <Sparkles className="text-primary h-4 w-4" />
+                          <Sparkles className="h-4 w-4 text-primary" />
                           AI Generated Event
                           {generatedEvents.length > 1 ? 's' : ''}
                         </h3>
                         <div className="flex items-center gap-2">
                           {generatedEvents.length > 1 && (
-                            <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <span>{currentEventIndex + 1}</span>
                               <span>/</span>
                               <span>{generatedEvents.length}</span>
@@ -1401,7 +1385,7 @@ export function UnifiedEventModal({
                               <h4 className="text-lg font-medium">
                                 {generatedEvent.title}
                               </h4>
-                              <div className="text-muted-foreground flex flex-wrap gap-2 text-sm">
+                              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                   <CalendarIcon className="h-3.5 w-3.5" />
                                   <span>
@@ -1432,7 +1416,7 @@ export function UnifiedEventModal({
                                       onClick={() =>
                                         openGoogleMaps(generatedEvent.location)
                                       }
-                                      className="text-muted-foreground hover:text-primary text-sm hover:underline"
+                                      className="text-sm text-muted-foreground hover:text-primary hover:underline"
                                       title="Open in Google Maps"
                                     >
                                       {generatedEvent.location}
@@ -1447,7 +1431,7 @@ export function UnifiedEventModal({
                                 <h5 className="text-sm font-medium">
                                   Description
                                 </h5>
-                                <p className="text-muted-foreground text-sm">
+                                <p className="text-sm text-muted-foreground">
                                   {generatedEvent.description}
                                 </p>
                               </div>
@@ -1484,8 +1468,8 @@ export function UnifiedEventModal({
 
                             {/* Event protection status */}
                             <div className="flex items-center gap-2">
-                              <Unlock className="text-muted-foreground h-3.5 w-3.5" />
-                              <span className="text-muted-foreground text-xs">
+                              <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">
                                 Event will be created unlocked
                               </span>
                             </div>
@@ -1522,9 +1506,9 @@ export function UnifiedEventModal({
 
                     {/* AI Insights and Suggestions */}
                     {aiSuggestions.length > 0 && (
-                      <div className="bg-muted/10 rounded-lg border p-4">
+                      <div className="rounded-lg border bg-muted/10 p-4">
                         <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
-                          <Brain className="text-primary h-4 w-4" />
+                          <Brain className="h-4 w-4 text-primary" />
                           AI Insights & Suggestions
                         </h3>
                         <ul className="space-y-2">
@@ -1533,7 +1517,7 @@ export function UnifiedEventModal({
                               key={index}
                               className="flex items-start gap-2 text-sm"
                             >
-                              <div className="text-primary mt-0.5">•</div>
+                              <div className="mt-0.5 text-primary">•</div>
                               <span>{suggestion}</span>
                             </li>
                           ))}

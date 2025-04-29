@@ -7,10 +7,10 @@ import { useParams } from 'next/navigation';
 const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const params = useParams();
   const wsId = params?.wsId as string;
-  const { getEvents } = useCalendar();
+  const { eventsWithoutAllDays } = useCalendar();
 
   // Get all events
-  const allEvents = getEvents();
+  const allEvents = eventsWithoutAllDays;
 
   // Process events to handle multi-day events
   const processedEvents = allEvents.flatMap((event) => {
