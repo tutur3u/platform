@@ -44,6 +44,8 @@ const CalendarContext = createContext<{
   getCurrentEvents: (date?: Date) => CalendarEvent[];
   getUpcomingEvent: () => CalendarEvent | undefined;
   getEvents: () => CalendarEvent[];
+  allDayEvents: CalendarEvent[];
+  eventsWithoutAllDays: CalendarEvent[];
   getEventLevel: (eventId: string) => number;
   addEvent: (
     event: Omit<CalendarEvent, 'id'>
@@ -57,7 +59,7 @@ const CalendarContext = createContext<{
   deleteEvent: (eventId: string) => Promise<void>;
   isModalOpen: boolean;
   activeEvent: CalendarEvent | undefined;
-  openModal: (eventId?: string) => void;
+  openModal: (eventId?: string, modalType?: 'all-day' | 'event') => void;
   closeModal: () => void;
   isEditing: () => boolean;
   hideModal: () => void;
@@ -75,6 +77,8 @@ const CalendarContext = createContext<{
   getCurrentEvents: () => [],
   getUpcomingEvent: () => undefined,
   getEvents: () => [],
+  allDayEvents: [],
+  eventsWithoutAllDays: [],
   getEventLevel: () => 0,
   addEvent: () => Promise.resolve({} as CalendarEvent),
   addEmptyEvent: () => ({}) as CalendarEvent,
@@ -221,7 +225,7 @@ export const CalendarProvider = ({
       throw new Error('Failed to fetch calendar events');
     }
 
-    return await response.json();
+    return (await response.json()) as { data: CalendarEvent[]; count: number };
   };
 
   // Function to detect and remove duplicate events
@@ -328,31 +332,28 @@ export const CalendarProvider = ({
 
   // Process events to remove duplicates, then memoize the result
   const events = useMemo(() => {
-    const eventsWithAllDays: CalendarEvent[] = data?.data ?? [];
-
-    // Check for duplicates whenever events are loaded or refreshed
-    if (eventsWithAllDays.length > 0) {
-      // We need to run this asynchronously since it makes API calls
-      removeDuplicateEvents(eventsWithAllDays);
-    }
-
-    const events = eventsWithAllDays.filter((event) => {
-      const start = new Date(event.start_at);
-      const end = new Date(event.end_at);
-      const duration = end.getTime() - start.getTime();
-      // Identify true all-day events
-      const isExactDaySpan =
-        duration === 86400000 &&
-        start.getUTCHours() === 0 &&
-        start.getUTCMinutes() === 0 &&
-        end.getUTCHours() === 0 &&
-        end.getUTCMinutes() === 0;
-      const isTrueAllDay = event.is_all_day === true || isExactDaySpan;
-      // Keep only non–all-day events
-      return !isTrueAllDay;
-    });
-    return events;
+    return (data?.data ?? []) as CalendarEvent[];
   }, [data, removeDuplicateEvents]);
+
+  const eventsWithoutAllDays = useMemo(() => {
+    return events.filter((event) => {
+      const start = dayjs(event.start_at);
+      const end = dayjs(event.end_at);
+
+      const duration = Math.abs(end.diff(start, 'seconds'));
+      return duration % (24 * 60 * 60) !== 0;
+    });
+  }, [events]);
+
+  const allDayEvents = useMemo(() => {
+    return events.filter((event) => {
+      const start = dayjs(event.start_at);
+      const end = dayjs(event.end_at);
+
+      const duration = Math.abs(end.diff(start, 'seconds'));
+      return duration % (24 * 60 * 60) === 0;
+    });
+  }, [events]);
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
@@ -1212,6 +1213,9 @@ export const CalendarProvider = ({
     getUpcomingEvent,
     getEvents,
     getEventLevel,
+
+    eventsWithoutAllDays,
+    allDayEvents,
 
     addEvent,
     addEmptyEvent,
