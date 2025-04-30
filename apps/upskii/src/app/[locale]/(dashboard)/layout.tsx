@@ -11,14 +11,11 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
-  Box,
-  Calculator,
-  Code,
+  BookText,
   Home,
-  List,
+  ListTodo,
+  MessageCircleMore,
   ShieldCheck,
-  Trophy,
-  Users,
 } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
@@ -32,7 +29,7 @@ export default async function RootLayout({
 }) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
-  const t = await getTranslations('nova');
+  const t = await getTranslations();
 
   const {
     data: { user },
@@ -62,50 +59,29 @@ export default async function RootLayout({
 
   const navItems = [
     {
-      name: t('home'),
+      name: t('sidebar.home'),
       href: '/home',
       icon: <Home className="h-4 w-4" />,
     },
     {
-      name: t('challenges'),
-      href: '/challenges',
-      icon: <Code className="h-4 w-4" />,
+      name: t('sidebar.courses'),
+      href: '/courses',
+      icon: <BookText className="h-4 w-4" />,
     },
     {
-      name: t('problems'),
-      href: '/problems',
-      icon: <List className="h-4 w-4" />,
+      name: t('sidebar.quizzes'),
+      href: '/quizzes',
+      icon: <ListTodo className="h-4 w-4" />,
       requiresChallengeManagement: true,
     },
     {
-      name: t('submissions'),
-      href: '/submissions',
-      icon: <Box className="h-4 w-4" />,
+      name: t('sidebar.chat'),
+      href: '/chat',
+      icon: <MessageCircleMore className="h-4 w-4" />,
       requiresChallengeManagement: true,
     },
     {
-      name: t('score-calculator'),
-      href: '/score-calculator',
-      icon: <Calculator className="h-4 w-4" />,
-    },
-    ...(whitelisted?.allow_challenge_management ||
-    whitelisted?.allow_role_management
-      ? [
-          {
-            name: t('leaderboard'),
-            href: '/leaderboard',
-            icon: <Trophy className="h-4 w-4" />,
-          },
-        ]
-      : []),
-    {
-      name: t('teams'),
-      href: '/teams',
-      icon: <Users className="h-4 w-4" />,
-      requiresRoleManagement: true,
-    },
-    {
-      name: t('roles'),
+      name: t('sidebar.roles'),
       href: '/roles',
       subItems: [] as { name: string; href: string }[],
       icon: <ShieldCheck className="h-4 w-4" />,
@@ -126,7 +102,7 @@ export default async function RootLayout({
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -135,7 +111,7 @@ export default async function RootLayout({
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />

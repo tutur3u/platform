@@ -3496,5 +3496,12 @@
   },
   "ws_post_details": {
     "check_all": "Đã kiểm tra tất cả"
+  },
+  "sidebar": {
+    "home": "Trang chủ",
+    "courses": "Khóa học",
+    "quizzes": "Bài kiểm tra",
+    "chat": "Trò chuyện",
+    "roles": "Vai trò"
   }
 }

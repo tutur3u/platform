@@ -88,7 +88,7 @@ export default function Structure({
           alt="logo"
         />
       </div>
-      {isCollapsed || <LogoTitle text="Nova" />}
+      {isCollapsed || <LogoTitle text="Upskii" />}
     </Link>
   );
 
