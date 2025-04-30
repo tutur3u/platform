@@ -23,8 +23,6 @@ interface Props {
   disabled?: boolean;
 }
 
-
-
 export default function DisplayNameInput({
   defaultValue = '',
   disabled,

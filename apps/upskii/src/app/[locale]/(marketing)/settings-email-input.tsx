@@ -25,8 +25,6 @@ interface Props {
   disabled?: boolean;
 }
 
-
-
 export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
   const router = useRouter();
   const t = useTranslations('settings-account');
@@ -38,9 +36,7 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
   const [saving, setSaving] = useState(false);
 
   const FormSchema = z.object({
-    email: z
-      .string()
-      .email({ message: t('email-invalid') })
+    email: z.string().email({ message: t('email-invalid') }),
   });
 
   const form = useForm({
