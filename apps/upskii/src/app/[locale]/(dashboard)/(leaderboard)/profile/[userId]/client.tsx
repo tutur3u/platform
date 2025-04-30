@@ -31,6 +31,7 @@ import {
   Sparkles,
   Target,
   Trophy,
+  User,
 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -81,6 +82,7 @@ interface ProfileData {
   name: string;
   avatar: string;
   joinedDate: string | null;
+  bio: string | null;
   totalScore: number;
   rank: number;
   challengeCount: number;
@@ -231,8 +233,8 @@ export default function UserProfileClient({
 
   // Generate a level based on total score
   const level = Math.floor(profile.totalScore / 500) + 1;
-  const nextLevel = level + 1;
-  const levelProgress = ((profile.totalScore % 500) / 500) * 100;
+  // const nextLevel = level + 1;
+  // const levelProgress = ((profile.totalScore % 500) / 500) * 100;
 
   // Get status text and color based on overall progress
   const getProgressStatus = (percentage: number) => {
@@ -250,6 +252,9 @@ export default function UserProfileClient({
   const overallStatus = getProgressStatus(profile.problemsAttemptedPercentage);
 
   const [open, setOpen] = useState(false);
+
+  // Implement Role check
+  const role = 'Teacher'; // Replace with actual role check logic
 
   return (
     <div className="container max-w-6xl pb-16 pt-8">
@@ -278,8 +283,8 @@ export default function UserProfileClient({
         transition={{ duration: 0.5 }}
         className="bg-card/50 mb-8 overflow-hidden rounded-xl border p-6 shadow-sm"
       >
-        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-          <div className="flex flex-col items-center gap-4 sm:flex-row">
+        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center ">
+          <div className="flex flex-col items-center gap-4 sm:flex-row mx-auto md:mx-0">
             <div className="relative">
               <motion.div
                 initial={{ opacity: 0 }}
@@ -304,30 +309,22 @@ export default function UserProfileClient({
               </motion.div>
             </div>
             <div>
-              <h1 className="text-3xl font-bold">{profile.name}</h1>
+              <h1 className="text-3xl font-bold text-center md:text-left">{profile.name}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 {formattedJoinedDate && (
-                  <div className="text-muted-foreground flex items-center text-sm">
+                  <div className="text-muted-foreground flex items-center text-sm mx-auto md:mx-0">
                     <Calendar className="mr-1 h-4 w-4" />
                     {t('joined')}: {formattedJoinedDate}
                   </div>
                 )}
-                <div className="text-muted-foreground flex items-center text-sm">
-                  <Trophy className="mr-1 h-4 w-4" />
-                  {t('rank')}: #{profile.rank}
-                </div>
-                <div className="text-muted-foreground flex items-center text-sm">
-                  <Target className="mr-1 h-4 w-4" />
-                  {t('score')}: {profile.totalScore.toFixed(1)}
-                </div>
-                <div className="text-muted-foreground flex items-center text-sm">
-                  <BookOpen className="mr-1 h-4 w-4" />
-                  {t('challenges.title')}: {profile.challengeCount}
-                </div>
+                  <div className="text-muted-foreground flex items-center text-sm mx-auto md:mx-0">
+                    <User className="mr-1 h-4 w-4" />
+                    {t('role')}: {role == 'Teacher' ? t('teacher') : t('student')}
+                  </div>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 self-end">
+          <div className="flex items-center gap-2 self-end mx-auto md:mx-0">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -363,9 +360,19 @@ export default function UserProfileClient({
             )}
           </div>
         </div>
+        {/* Bio Section */}
+        <div className="mt-4 flex flex-col w-full justify-between gap-4 rounded-md border bg-muted/30 p-4 text-sm">
+          <div className="flex gap-2 mx-auto md:mx-0">
+            <BookOpen className="h-5 w-5 text-muted-foreground" />
+            <span className='font-semibold'>{t('bio')}</span>
+          </div>
+          <p className="text-muted-foreground">{profile.bio}</p>
+        </div>
+
 
         {/* Level Progress */}
-        <div className="mt-6">
+        {/*
+                <div className="mt-6">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-sm font-medium">
               {t('level')} {level}
@@ -376,6 +383,8 @@ export default function UserProfileClient({
           </div>
           <Progress value={levelProgress} className="h-2" />
         </div>
+         */}
+
       </motion.div>
 
       {/* Main Content */}

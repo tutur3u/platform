@@ -26,15 +26,33 @@ interface Props {
 const minLength = 10;
 const maxLength = 100;
 
-const FormSchema = z.object({
-  bio: z.string().min(minLength).max(maxLength).optional(),
-});
 
-export default function BioInput({ defaultValue = '', disabled }: Props) {
+
+export default function BioInput({ defaultValue = 'I love cats!', disabled }: Props) {
   const t = useTranslations('settings-account');
   const router = useRouter();
 
   const [saving, setSaving] = useState(false);
+
+
+  function createFormSchema(t: ReturnType<typeof useTranslations>) {
+    return z.object({
+      bio: z
+        .string()
+        .refine(
+          (value) => value.split(/\s+/).filter(Boolean).length >= minLength,
+          { message: t('bio-min-length', { min: minLength }) } 
+        )
+        .refine(
+          (value) => value.split(/\s+/).filter(Boolean).length <= maxLength,
+          { message: t('bio-max-length', { max: maxLength }) }
+        )
+        .optional(),
+    });
+  }
+
+  
+  const FormSchema = createFormSchema(t);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -86,8 +104,6 @@ export default function BioInput({ defaultValue = '', disabled }: Props) {
                   <Textarea
                     className="resize-none"
                     rows={3}
-                    maxLength={maxLength}
-                    minLength={minLength}
                     id="bio"
                     placeholder={t('bio')}
                     disabled={disabled}

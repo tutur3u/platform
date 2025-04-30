@@ -23,9 +23,7 @@ interface Props {
   disabled?: boolean;
 }
 
-const FormSchema = z.object({
-  name: z.string().min(0).max(50).optional(),
-});
+
 
 export default function DisplayNameInput({
   defaultValue = '',
@@ -33,6 +31,19 @@ export default function DisplayNameInput({
 }: Props) {
   const t = useTranslations('settings-account');
   const router = useRouter();
+
+  const minLength = 1;
+  const maxLength = 50;
+  const minLengthError = t('display-name-min-error', { min: minLength });
+  const maxLengthError = t('display-name-max-error', { max: maxLength });
+
+  const FormSchema = z.object({
+    name: z
+      .string()
+      .min(1, { message: minLengthError })
+      .max(50, { message: maxLengthError })
+      .optional(),
+  });
 
   const [saving, setSaving] = useState(false);
 

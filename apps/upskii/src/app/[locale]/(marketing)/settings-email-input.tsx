@@ -25,9 +25,7 @@ interface Props {
   disabled?: boolean;
 }
 
-const FormSchema = z.object({
-  email: z.string().email(),
-});
+
 
 export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
   const router = useRouter();
@@ -38,6 +36,12 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
   const changeEmailDescription = t('change-email-description');
 
   const [saving, setSaving] = useState(false);
+
+  const FormSchema = z.object({
+    email: z
+      .string()
+      .email({ message: t('email-invalid') })
+  });
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
