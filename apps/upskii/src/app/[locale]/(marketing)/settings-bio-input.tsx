@@ -26,14 +26,14 @@ interface Props {
 const minLength = 10;
 const maxLength = 100;
 
-
-
-export default function BioInput({ defaultValue = 'I love cats!', disabled }: Props) {
+export default function BioInput({
+  defaultValue = 'I love cats!',
+  disabled,
+}: Props) {
   const t = useTranslations('settings-account');
   const router = useRouter();
 
   const [saving, setSaving] = useState(false);
-
 
   function createFormSchema(t: ReturnType<typeof useTranslations>) {
     return z.object({
@@ -41,7 +41,7 @@ export default function BioInput({ defaultValue = 'I love cats!', disabled }: Pr
         .string()
         .refine(
           (value) => value.split(/\s+/).filter(Boolean).length >= minLength,
-          { message: t('bio-min-length', { min: minLength }) } 
+          { message: t('bio-min-length', { min: minLength }) }
         )
         .refine(
           (value) => value.split(/\s+/).filter(Boolean).length <= maxLength,
@@ -51,7 +51,6 @@ export default function BioInput({ defaultValue = 'I love cats!', disabled }: Pr
     });
   }
 
-  
   const FormSchema = createFormSchema(t);
 
   const form = useForm({
