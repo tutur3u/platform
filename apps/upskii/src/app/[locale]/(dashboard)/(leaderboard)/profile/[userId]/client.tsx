@@ -1,7 +1,6 @@
 'use client';
 
 import UserSettingsDialog from '@/app/[locale]/(marketing)/settings-dialog';
-import { Dialog } from '@tuturuuu/ui/dialog';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -15,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   Award,
   Bolt,
@@ -253,11 +253,11 @@ export default function UserProfileClient({
 
   return (
     <div className="container max-w-6xl pb-16 pt-8">
-            {user && (
-              <Dialog open={open} onOpenChange={setOpen}>
-                <UserSettingsDialog user={user} />
-              </Dialog>
-            )}
+      {user && (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <UserSettingsDialog user={user} />
+        </Dialog>
+      )}
       {/* Breadcrumb navigation */}
       <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
         <Link href="/home" className="hover:text-foreground">

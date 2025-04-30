@@ -1,4 +1,5 @@
 import UserAvatar from './settings-avatar';
+import BioInput from './settings-bio-input';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -7,7 +8,6 @@ import { DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
-import BioInput from './settings-bio-input';
 
 interface UserSettingsDialogProps {
   user: WorkspaceUser;
@@ -68,7 +68,6 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
             <EmailInput oldEmail={user.email} newEmail={user.new_email} />
           </SettingItemTab>
         </Suspense>
-
 
         <Separator className="my-4" />
 

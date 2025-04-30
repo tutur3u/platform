@@ -11,8 +11,8 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Check, Loader2 } from '@tuturuuu/ui/icons';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -30,10 +30,7 @@ const FormSchema = z.object({
   bio: z.string().min(minLength).max(maxLength).optional(),
 });
 
-export default function BioInput({
-  defaultValue = '',
-  disabled,
-}: Props) {
+export default function BioInput({ defaultValue = '', disabled }: Props) {
   const t = useTranslations('settings-account');
   const router = useRouter();
 
