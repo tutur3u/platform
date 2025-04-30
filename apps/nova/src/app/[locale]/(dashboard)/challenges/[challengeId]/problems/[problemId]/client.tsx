@@ -159,12 +159,12 @@ export default function ChallengeClient({
         href.startsWith('data:') ||
         href.startsWith('vbscript:')
       )
-      if (
-        href.includes(
-          `/challenges/${challenge.id}/problems/${currentProblem.id}`
+        if (
+          href.includes(
+            `/challenges/${challenge.id}/problems/${currentProblem.id}`
+          )
         )
-      )
-        return;
+          return;
 
       if (!isNavigationConfirmed) {
         e.preventDefault();
