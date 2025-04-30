@@ -117,14 +117,12 @@ export default function ChallengeClient({
 
     const handlePopstate = () => {
       if (isNavigationConfirmed) return;
-      // remember that the user wanted to go back
       sessionStorage.setItem(pendingNavKey, 'back');
       window.history.pushState(
         { challengePage: true },
         '',
         window.location.pathname
       );
-      setShowModel(true);
     };
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -146,7 +144,13 @@ export default function ChallengeClient({
 
       const href = anchor.getAttribute('href');
 
-      if (!href || href.startsWith('#') || href.startsWith('javascript:'))
+      if (
+        !href ||
+        href.startsWith('#') ||
+        href.startsWith('javascript:') ||
+        href.startsWith('data:') ||
+        href.startsWith('vbscript:')
+      )
         return;
 
       if (
