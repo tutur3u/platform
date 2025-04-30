@@ -3498,5 +3498,12 @@
   },
   "ws_post_details": {
     "check_all": "Check all"
+  },
+  "sidebar": {
+    "home": "Home",
+    "courses": "Courses",
+    "quizzes": "Quizzes",
+    "chat": "Chat",
+    "roles": "Roles"
   }
 }
