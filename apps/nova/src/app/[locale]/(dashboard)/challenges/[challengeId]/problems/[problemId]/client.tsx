@@ -56,7 +56,7 @@ export default function ChallengeClient({
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [showModel, setShowModel] = useState(false);
   const [isNavigationConfirmed, setIsNavigationConfirmed] = useState(false);
-
+  const [pendingHref, setPendingHref] = useState('');
   const nextProblem = () => {
     const nextProblemId =
       challenge.problems.length > currentProblemIndex + 1
@@ -68,7 +68,7 @@ export default function ChallengeClient({
       router.refresh();
     }
   };
-
+  const pendingNavKey = 'pending nav key';
   const prevProblem = () => {
     const prevProblemId =
       currentProblemIndex > 0
@@ -115,26 +115,20 @@ export default function ChallengeClient({
       window.location.pathname
     );
 
-    const handlePopstate = (e: PopStateEvent) => {
+    const handlePopstate = () => {
       if (isNavigationConfirmed) return;
-
-      e.preventDefault();
-
+      // remember that the user wanted to go back
+      sessionStorage.setItem(pendingNavKey, 'back');
       window.history.pushState(
         { challengePage: true },
         '',
         window.location.pathname
       );
-
       setShowModel(true);
     };
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isNavigationConfirmed) {
-        setTimeout(() => {
-          router.back();
-        }, 0);
-      }
+      if (isNavigationConfirmed) return;
 
       e.preventDefault();
       e.returnValue =
@@ -164,7 +158,7 @@ export default function ChallengeClient({
 
       if (!isNavigationConfirmed) {
         e.preventDefault();
-        anchor.dataset.pendingHref = href;
+        setPendingHref(href);
         setShowModel(true);
       }
     };
@@ -192,6 +186,9 @@ export default function ChallengeClient({
   const handleConfirm = () => {
     setIsNavigationConfirmed(true);
     setShowModel(false);
+    if (pendingHref) router.push(pendingHref);
+    else if (sessionStorage.getItem(pendingNavKey) === 'back') router.back();
+    sessionStorage.removeItem(pendingNavKey);
   };
 
   return (
