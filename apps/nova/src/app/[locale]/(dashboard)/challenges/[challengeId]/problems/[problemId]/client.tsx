@@ -27,7 +27,7 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
@@ -54,7 +54,9 @@ export default function ChallengeClient({
   const router = useRouter();
 
   const [showEndDialog, setShowEndDialog] = useState(false);
-
+  const [showModel, setShowModel] = useState(false);
+  const [isNavigationConfirmed, setIsNavigationConfirmed] = useState(false);
+  const [pendingHref, setPendingHref] = useState('');
   const nextProblem = () => {
     const nextProblemId =
       challenge.problems.length > currentProblemIndex + 1
@@ -66,7 +68,7 @@ export default function ChallengeClient({
       router.refresh();
     }
   };
-
+  const pendingNavKey = 'pending nav key';
   const prevProblem = () => {
     const prevProblemId =
       currentProblemIndex > 0
@@ -104,6 +106,99 @@ export default function ChallengeClient({
         variant: 'destructive',
       });
     }
+  };
+
+  useEffect(() => {
+    window.history.pushState(
+      { challengePage: true },
+      '',
+      window.location.pathname
+    );
+
+    const handlePopstate = () => {
+      if (isNavigationConfirmed) return;
+      sessionStorage.setItem(pendingNavKey, 'back');
+      window.history.pushState(
+        { challengePage: true },
+        '',
+        window.location.pathname
+      );
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isNavigationConfirmed) return;
+
+      e.preventDefault();
+      e.returnValue =
+        'Are you sure you want to leave? Your progress may not be saved.';
+      return e.returnValue;
+    };
+
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a');
+
+      if (!anchor) return;
+
+      if (anchor.getAttribute('data-allow-navigation') === 'true') return;
+
+      const href = anchor.getAttribute('href');
+
+      if (
+        !href ||
+        href.startsWith('#') ||
+        href.startsWith('javascript:') ||
+        href.startsWith('data:') ||
+        href.startsWith('vbscript:')
+      )
+        return;
+      if (
+        !href ||
+        href.startsWith('#') ||
+        href.startsWith('javascript:') ||
+        href.startsWith('data:') ||
+        href.startsWith('vbscript:')
+      )
+        if (
+          href.includes(
+            `/challenges/${challenge.id}/problems/${currentProblem.id}`
+          )
+        )
+          return;
+
+      if (!isNavigationConfirmed) {
+        e.preventDefault();
+        setPendingHref(href);
+        setShowModel(true);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopstate);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('click', handleLinkClick, { capture: true });
+
+    return () => {
+      window.removeEventListener('popstate', handlePopstate);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('click', handleLinkClick, { capture: true });
+    };
+  }, [challenge.id, isNavigationConfirmed]);
+
+  const handleCancel = () => {
+    window.history.pushState(
+      { challengePage: true },
+      '',
+      window.location.pathname
+    );
+    setShowModel(false);
+  };
+
+  const handleConfirm = () => {
+    setIsNavigationConfirmed(true);
+    setShowModel(false);
+    if (pendingHref) router.push(pendingHref);
+    else if (sessionStorage.getItem(pendingNavKey) === 'back') router.back();
+    sessionStorage.removeItem(pendingNavKey);
   };
 
   return (
@@ -174,6 +269,26 @@ export default function ChallengeClient({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleEndChallenge}>
               End
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showModel} onOpenChange={setShowModel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Challenge Page</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave this page? Your progress may not be
+              saved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancel}>
+              Stay on Page
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm}>
+              Leave Page
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
