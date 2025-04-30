@@ -1,5 +1,7 @@
 'use client';
 
+import UserSettingsDialog from '@/app/[locale]/(marketing)/settings-dialog';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -43,7 +45,6 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface RecentActivity {
@@ -100,7 +101,6 @@ export default function UserProfileClient({
   profile: ProfileData;
 }) {
   const supabase = createClient();
-  const router = useRouter();
 
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [copied, setCopied] = useState(false);
@@ -249,8 +249,15 @@ export default function UserProfileClient({
 
   const overallStatus = getProgressStatus(profile.problemsAttemptedPercentage);
 
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="container max-w-6xl pb-16 pt-8">
+            {user && (
+              <Dialog open={open} onOpenChange={setOpen}>
+                <UserSettingsDialog user={user} />
+              </Dialog>
+            )}
       {/* Breadcrumb navigation */}
       <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
         <Link href="/home" className="hover:text-foreground">
@@ -347,7 +354,7 @@ export default function UserProfileClient({
             </TooltipProvider>
             {isCurrentUser && (
               <Button
-                onClick={() => router.push('/settings/profile')}
+                onClick={() => setOpen(true)}
                 variant="outline"
                 className="gap-2 rounded-full"
               >

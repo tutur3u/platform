@@ -7,6 +7,7 @@ import { DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
+import BioInput from './settings-bio-input';
 
 interface UserSettingsDialogProps {
   user: WorkspaceUser;
@@ -65,6 +66,27 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
             description={t('settings-account.email-description')}
           >
             <EmailInput oldEmail={user.email} newEmail={user.new_email} />
+          </SettingItemTab>
+        </Suspense>
+
+
+        <Separator className="my-4" />
+
+        <Suspense
+          fallback={
+            <SettingItemTab
+              title="Bio"
+              description={t('settings-account.bio-description')}
+            >
+              <BioInput disabled />
+            </SettingItemTab>
+          }
+        >
+          <SettingItemTab
+            title="Bio"
+            description={t('settings-account.bio-description')}
+          >
+            <BioInput defaultValue={user?.bio} />
           </SettingItemTab>
         </Suspense>
 

@@ -2305,7 +2305,9 @@
     "new_avatar": "Hình đại diện mới",
     "upload_avatar": "Hình đại diện mới",
     "remove_avatar": "Xóa hình đại diện",
-    "save_avatar": "Lưu hình đại diện"
+    "save_avatar": "Lưu hình đại diện",
+    "bio": "Tiểu sử",
+    "bio-description": "Giới thiệu bản thân với mọi người!"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",

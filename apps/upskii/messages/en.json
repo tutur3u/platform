@@ -2307,7 +2307,9 @@
     "new_avatar": "New avatar",
     "upload_avatar": "Upload avatar",
     "remove_avatar": "Remove avatar",
-    "save_avatar": "Save avatar"
+    "save_avatar": "Save avatar",
+    "bio": "Bio",
+    "bio-description": "Introduce yourself to people!"
   },
   "settings-appearance": {
     "appearance": "Appearance",
