@@ -40,7 +40,8 @@ interface Props {
 
 const FormSchema = z.object({
   role: z.string(),
-  accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
+  accessLevel: z.string(),
+  // accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
 });
 
 export function MemberSettingsButton({
@@ -51,7 +52,7 @@ export function MemberSettingsButton({
   const router = useRouter();
   const t = useTranslations('ws-members');
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       role: user?.role_title || '',

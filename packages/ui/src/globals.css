@@ -83,17 +83,17 @@
   --cyan: hsl(180 40% 30%);
   --gray: hsl(0 0% 30%);
 
-  --light-lime: hsl(90 50% 40%);
-  --light-purple: hsl(240 50% 40%);
-  --light-pink: hsl(330 50% 40%);
-  --light-blue: hsl(220 50% 40%);
-  --light-sky: hsl(200 50% 40%);
-  --light-green: hsl(140 50% 40%);
-  --light-yellow: hsl(40 50% 40%);
-  --light-orange: hsl(25 50% 40%);
-  --light-red: hsl(0 50% 40%);
-  --light-indigo: hsl(250 50% 40%);
-  --light-cyan: hsl(180 50% 40%);
+  --light-lime: hsl(90 45% 60%);
+  --light-purple: hsl(240 45% 60%);
+  --light-pink: hsl(330 45% 60%);
+  --light-blue: hsl(220 45% 60%);
+  --light-sky: hsl(200 45% 60%);
+  --light-green: hsl(140 45% 60%);
+  --light-yellow: hsl(40 45% 60%);
+  --light-orange: hsl(25 45% 60%);
+  --light-red: hsl(0 45% 60%);
+  --light-indigo: hsl(250 45% 60%);
+  --light-cyan: hsl(180 45% 60%);
   --light-gray: hsl(0 0% 60%);
 
   /* Dynamic colors for calendar events */
@@ -108,16 +108,16 @@
   --dynamic-cyan: hsl(180 70% 50%);
   --dynamic-gray: hsl(0 0% 50%);
 
-  --calendar-bg-blue: hsl(220, 64%, 95%);
-  --calendar-bg-red: hsl(0, 64%, 95%);
-  --calendar-bg-green: hsl(140, 64%, 95%);
-  --calendar-bg-yellow: hsl(40, 64%, 95%);
-  --calendar-bg-purple: hsl(270, 64%, 95%);
-  --calendar-bg-pink: hsl(330, 64%, 95%);
-  --calendar-bg-orange: hsl(25, 64%, 95%);
-  --calendar-bg-indigo: hsl(250, 64%, 95%);
-  --calendar-bg-cyan: hsl(180, 64%, 95%);
-  --calendar-bg-gray: hsl(0, 0%, 95%);
+  --calendar-bg-blue: hsl(220 64% 95%);
+  --calendar-bg-red: hsl(0 64% 95%);
+  --calendar-bg-green: hsl(140 64% 95%);
+  --calendar-bg-yellow: hsl(40 64% 95%);
+  --calendar-bg-purple: hsl(270 64% 95%);
+  --calendar-bg-pink: hsl(330 64% 95%);
+  --calendar-bg-orange: hsl(25 64% 95%);
+  --calendar-bg-indigo: hsl(250 64% 95%);
+  --calendar-bg-cyan: hsl(180 64% 95%);
+  --calendar-bg-gray: hsl(0 0% 95%);
 }
 
 .dark {
@@ -189,16 +189,16 @@
   --dynamic-cyan: hsl(180 70% 60%);
   --dynamic-gray: hsl(0 0% 60%);
 
-  --calendar-bg-blue: hsl(220, 14%, 11%);
-  --calendar-bg-red: hsl(0, 14%, 11%);
-  --calendar-bg-green: hsl(140, 14%, 11%);
-  --calendar-bg-yellow: hsl(40, 14%, 11%);
-  --calendar-bg-purple: hsl(270, 14%, 11%);
-  --calendar-bg-pink: hsl(330, 14%, 11%);
-  --calendar-bg-orange: hsl(25, 14%, 11%);
-  --calendar-bg-indigo: hsl(250, 14%, 11%);
-  --calendar-bg-cyan: hsl(180, 14%, 11%);
-  --calendar-bg-gray: hsl(0, 0%, 11%);
+  --calendar-bg-blue: hsl(220 14% 11%);
+  --calendar-bg-red: hsl(0 14% 11%);
+  --calendar-bg-green: hsl(140 14% 11%);
+  --calendar-bg-yellow: hsl(40 14% 11%);
+  --calendar-bg-purple: hsl(270 14% 11%);
+  --calendar-bg-pink: hsl(330 14% 11%);
+  --calendar-bg-orange: hsl(25 14% 11%);
+  --calendar-bg-indigo: hsl(250 14% 11%);
+  --calendar-bg-cyan: hsl(180 14% 11%);
+  --calendar-bg-gray: hsl(0 0% 11%);
 }
 
 @theme inline {

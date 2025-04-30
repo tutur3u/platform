@@ -88,7 +88,7 @@ export default function PlanLogin({
     }
   }, [plan.id]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       guestName: user?.display_name ?? '',

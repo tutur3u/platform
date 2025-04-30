@@ -48,7 +48,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: data?.name || '',

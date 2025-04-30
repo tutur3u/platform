@@ -23,13 +23,15 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   data?: TransactionCategory;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1).max(255),
-  type: z.enum(['INCOME', 'EXPENSE']),
+  type: z.string(),
+  // type: z.enum(['INCOME', 'EXPENSE']),
 });
 
 export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
@@ -38,7 +40,7 @@ export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       id: data?.id,
@@ -144,7 +146,7 @@ export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading
             ? t('common.processing')
-            : !!data?.id
+            : data?.id
               ? t('ws-transaction-categories.edit')
               : t('ws-transaction-categories.create')}
         </Button>

@@ -3,12 +3,6 @@
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@radix-ui/react-dropdown-menu';
 import { useQuery } from '@tanstack/react-query';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -23,6 +17,12 @@ import {
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import { useTranslations } from 'next-intl';

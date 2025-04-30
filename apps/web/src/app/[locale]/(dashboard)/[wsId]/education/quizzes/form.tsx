@@ -63,7 +63,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
   const router = useRouter();
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       id: data?.id,

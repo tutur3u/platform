@@ -36,7 +36,7 @@ export default function DisplayNameInput({
 
   const [saving, setSaving] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: defaultValue || '',

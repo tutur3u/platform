@@ -127,7 +127,7 @@ export default function ChallengeForm({
 
   const t = useTranslations('nova.challenge');
 
-  const form = useForm<ChallengeFormValues>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',

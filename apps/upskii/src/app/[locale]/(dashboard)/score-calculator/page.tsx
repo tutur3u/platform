@@ -38,7 +38,7 @@ const ScoreSchema = z.object({
 export default function ScoreCalculatorPage() {
   const t = useTranslations('score-calculator');
 
-  const form = useForm<z.infer<typeof ScoreSchema>>({
+  const form = useForm({
     resolver: zodResolver(ScoreSchema),
     defaultValues: {
       total_tests: undefined,

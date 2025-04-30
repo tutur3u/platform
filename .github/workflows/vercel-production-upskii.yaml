@@ -1,7 +1,7 @@
 name: Vercel Upskii Production Deployment
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_MIRA_PROJECT_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_UPSKII_PROJECT_ID }}
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
   NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
@@ -55,12 +55,6 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
-
-      - name: Configure Tiptap Pro
-        if: steps.check_commits.outputs.skip_build != 'true'
-        run: |
-          pnpm config set "@tiptap-pro:registry" https://registry.tiptap.dev/
-          pnpm config set "//registry.tiptap.dev/:_authToken" ${{ secrets.TIPTAP_PRO_TOKEN }}
 
       - name: Install dependencies
         if: steps.check_commits.outputs.skip_build != 'true'

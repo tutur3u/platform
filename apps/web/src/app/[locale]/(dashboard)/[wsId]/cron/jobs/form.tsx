@@ -68,7 +68,7 @@ export function CronJobForm({ wsId, data, onFinish }: Props) {
   // Get dataset ID from URL if available
   const datasetId = params?.datasetId as string;
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id || undefined,

@@ -27,6 +27,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'upskii',
     url: 'https://upskii.com',
   },
+  {
+    name: 'famigo',
+    url: 'https://famigo.vercel.app',
+  },
 ] as const;
 
 export const DEV_INTERNAL_APP_DOMAINS = [
@@ -49,6 +53,10 @@ export const DEV_INTERNAL_APP_DOMAINS = [
   {
     name: 'upskii',
     url: 'http://localhost:7806',
+  },
+  {
+    name: 'famigo',
+    url: 'http://localhost:7807',
   },
 ] as const;
 

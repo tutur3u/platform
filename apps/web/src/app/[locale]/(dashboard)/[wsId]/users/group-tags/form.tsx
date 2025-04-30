@@ -49,7 +49,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
 
   const userGroups = queryData?.data;
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,

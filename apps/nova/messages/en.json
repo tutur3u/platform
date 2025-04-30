@@ -1491,9 +1491,16 @@
         "all-problems": "All Problems",
         "filter-challenges": "Filter by Challenge",
         "filter-problems": "Filter by Problem",
-        "clear-filters": "Clear Filters"
+        "clear-filters": "Clear Filters",
+        "all-statuses": "All statuses",
+        "in-progress": "In progress",
+        "ended": "Ended"
       },
       "submission-table": {
+        "status": {
+          "in_progress": "In Progress",
+          "ended": "Ended"
+        },
         "headers": {
           "user": "User",
           "problem": "Problem",
@@ -1943,15 +1950,27 @@
         "you": "You",
         "hover-info": "Click to change sort order",
         "no-entries-found": "No entries found",
-        "first-join": "Be the first to join the competition!"
-      }
+        "first-join": "Be the first to join the competition!",
+        "pts": "pts"
+      },
+      "neo-league-card": {
+        "title": "NEO League Competition",
+        "new": "New",
+        "description": "By default, this leaderboard shows scores from all challenges combined. To view results specifically for Round 1 of the NEO League competition, click the link below.",
+        "view-round-1": "View Round 1 Results",
+        "view-all-challenges": "View All Challenges",
+        "round-1-description": "You are currently viewing the results for Round 1 of the NEO League competition. The scores shown are specific to this challenge.",
+        "active": "Active",
+        "round-1-title": "Viewing NEO League Round 1"
+      },
+      "teams": "Teams"
     },
     "profile-page": {
       "breadcrumb": {
         "home": "Home",
         "leaderboard": "Leaderboard"
       },
-      "rank": "Rank #",
+      "rank": "Rank",
       "challenge": "Challenge",
       "challenges": {
         "title": "Challenges",
@@ -2083,6 +2102,78 @@
         "prompt-master-description": "Achieved perfect scores in multiple challenges"
       }
     },
+    "profile-team-page": {
+      "not-found": "Team not found",
+      "not-found-description": "The requested team could not be loaded.",
+      "view-all-teams": "View All Teams",
+      "breadcrumb": {
+        "home": "Home",
+        "teams": "Teams"
+      },
+      "members": "Members",
+      "top-percentage": "Top 15%",
+      "rank": "Rank",
+      "description": "Description",
+      "edit-profile": "Edit Profile",
+      "view-leaderboard": "View on Leaderboard",
+      "share": "Share",
+      "copied": "Copied!",
+      "pts": "pts",
+      "overview-tab": {
+        "title": "Overview",
+        "team-rank": "Team Rank",
+        "top-performers": "This team is currently in the top performers",
+        "competing": "This team is competing in the leaderboard",
+        "rank-label": "Rank",
+        "points": "Points",
+        "challenge-breakdown": "Challenge Breakdown",
+        "breakdown-description": "Detailed breakdown of the team's performance in each challenge",
+        "score-distribution": "Score Distribution",
+        "challenge": "Challenge",
+        "score": "Score",
+        "contribution": "Contribution",
+        "team-stats": "Team Stats",
+        "total-members": "Total Members",
+        "active-since": "Active Since",
+        "activity-status": "Activity Status",
+        "active": "Active",
+        "quick-actions": "Quick Actions",
+        "team-description": "Team Description",
+        "view-team-goals": "View Team Goals",
+        "performance-metrics": "Performance Metrics",
+        "performance-description": "Key performance indicators for this team",
+        "average-member-score": "Average Member Score",
+        "weekly-progress": "Weekly Progress",
+        "points-this-week": "points this week",
+        "inactive": "Inactive",
+        "last-7-days": "Last 7 days",
+        "top-contributor": "Top Contributor",
+        "of-team-score": "% of team score"
+      },
+      "members-tab": {
+        "name": "Members",
+        "team-members": "Team Members",
+        "members-description": "Members and their contributions to the team's score",
+        "team-lead": "Team Lead",
+        "joined": "Joined",
+        "contribution-percentage": "% contribution"
+      },
+      "activity-tab": {
+        "name": "Activity",
+        "team-activity": "Team Activity",
+        "activity-description": "Recent team performance and statistics",
+        "team-average": "Team Average",
+        "points-per-member": "points per member",
+        "weekly-activity": "Weekly Activity",
+        "points-this-week": "points this week",
+        "top-member": "Top Member",
+        "points-by": "points by",
+        "member-contributions": "Member Contributions",
+        "challenge-performance": "Challenge Performance",
+        "of-total-score": "% of total score",
+        "no-activity": "No recent activity data available"
+      }
+    },
     "challenge": {
       "edit": "Edit Challenge",
       "update": "Update Challenge",
@@ -2197,7 +2288,8 @@
         "cancel": "Cancel"
       }
     },
-    "score-calculator": "Score Calculator"
+    "score-calculator": "Score Calculator",
+    "sessions": "Sessions"
   },
   "onboarding": {
     "just-a-moment": "Just a moment...",

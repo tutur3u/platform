@@ -1,10 +1,15 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
+import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
 import { Calendar } from 'lucide-react';
 
+dayjs.extend(isBetween);
+
 const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
-  const { getEvents, settings, openModal } = useCalendar();
+  const { allDayEvents, settings, openModal } = useCalendar();
   const showWeekends = settings.appearance.showWeekends;
 
   // Filter out weekend days if showWeekends is false
@@ -15,40 +20,39 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
-  // Get all events and filter for all-day events
-  const events = getEvents();
-
-  const allDayEvents = events.filter((event: CalendarEvent) => {
-    const start = new Date(event.start_at);
-    const end = new Date(event.end_at);
-    const duration = end.getTime() - start.getTime();
-
-    // Check if duration is exactly 24 hours (86400000 milliseconds) or
-    // if start and end times are at midnight (indicating a full day)
-    return duration % 86400000 === 0;
-  });
-
   // Function to get events for a specific date
   const getEventsForDate = (date: Date): CalendarEvent[] => {
     const dateStr = date.toDateString();
 
-    return allDayEvents.filter((event) => {
-      const eventStart = new Date(event.start_at);
-      const eventEnd = new Date(event.end_at);
+    return allDayEvents
+      .filter((event) => {
+        const eventStart = new Date(event.start_at);
+        const eventEnd = new Date(event.end_at);
 
-      // Check if the date falls within the event's date range
-      return (
-        eventStart.toDateString() <= dateStr &&
-        eventEnd.toDateString() >= dateStr
-      );
-    });
+        // Check if the date falls within the event's date range
+        return dayjs(dateStr).isBetween(
+          dayjs(eventStart),
+          dayjs(eventEnd),
+          'day',
+          '[)'
+        );
+      })
+      .map((event) => {
+        return {
+          ...event,
+          days: dayjs(event.end_at).diff(dayjs(event.start_at), 'day'),
+        };
+      });
   };
 
-  // Function to get background color class based on event color
-  const getEventColorClass = (color: string | undefined): string => {
-    const validColor = color?.toLowerCase() || 'blue';
-    return `bg-${validColor}-600 hover:bg-${validColor}-700`;
-  };
+  if (
+    visibleDates.reduce(
+      (acc, date) => acc + getEventsForDate(date).length,
+      0
+    ) === 0
+  ) {
+    return null;
+  }
 
   return (
     <div className="flex">
@@ -68,23 +72,33 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         {visibleDates.map((date) => {
           const dateEvents = getEventsForDate(date);
 
+          // return JSON.stringify(dateEvents);
+
           return (
             <div
               key={`all-day-${date.toISOString()}`}
-              className="hover:bg-muted/20 group mr-[1px] flex h-full flex-col justify-center gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r"
+              className="hover:bg-muted/20 group mr-[1px] flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r"
             >
-              {dateEvents.map((event) => (
-                <div
-                  key={`all-day-event-${event.id}-${date.toISOString()}`}
-                  className={cn(
-                    'cursor-pointer truncate rounded-sm px-2 py-1 text-xs text-white',
-                    getEventColorClass(event.color)
-                  )}
-                  onClick={() => openModal(event.id)}
-                >
-                  {event.title}
-                </div>
-              ))}
+              {dateEvents.map((event) => {
+                const { bg, border, text } = getEventStyles(
+                  event.color || 'BLUE'
+                );
+
+                return (
+                  <div
+                    key={`all-day-event-${event.id}-${date.toISOString()}`}
+                    className={cn(
+                      'cursor-pointer truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold',
+                      bg,
+                      border,
+                      text
+                    )}
+                    onClick={() => openModal(event.id, 'all-day')}
+                  >
+                    {event.title}
+                  </div>
+                );
+              })}
             </div>
           );
         })}

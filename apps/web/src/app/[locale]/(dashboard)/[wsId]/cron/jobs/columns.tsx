@@ -10,9 +10,9 @@ import cronstrue from 'cronstrue';
 import moment from 'moment';
 import Link from 'next/link';
 
-function getNextRunTime(schedule: string, lastRun?: string | null): string {
+function getNextRunTime(schedule: string, lastRun?: string | null) {
   try {
-    const interval = parser.parseExpression(schedule);
+    const interval = parser.parse(schedule);
 
     // If there's a last run, get next occurrence after that
     if (lastRun) {

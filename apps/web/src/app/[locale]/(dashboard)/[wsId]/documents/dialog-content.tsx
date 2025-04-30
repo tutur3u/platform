@@ -37,7 +37,7 @@ export default function MyDialogContent({ wsId }: MyDialogContentProps) {
 
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       name: '',

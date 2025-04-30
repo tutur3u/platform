@@ -11,6 +11,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
+  Activity,
   Box,
   Calculator,
   Code,
@@ -84,12 +85,18 @@ export default async function RootLayout({
       requiresChallengeManagement: true,
     },
     {
+      name: t('sessions'),
+      href: '/sessions',
+      icon: <Activity className="h-4 w-4" />,
+      requiresChallengeManagement: true,
+    },
+    {
       name: t('score-calculator'),
       href: '/score-calculator',
       icon: <Calculator className="h-4 w-4" />,
     },
-    ...(whitelisted?.allow_challenge_management ||
-    whitelisted?.allow_role_management
+    ...(whitelisted.allow_challenge_management ||
+    whitelisted.allow_role_management
       ? [
           {
             name: t('leaderboard'),

@@ -41,7 +41,8 @@ const FormSchema = z.object({
   wsId: z.string().uuid(),
   email: z.string().email(),
   role: z.string(),
-  accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
+  accessLevel: z.string(),
+  // accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
 });
 
 export default function InviteMemberButton({
@@ -55,7 +56,7 @@ export default function InviteMemberButton({
 
   const [open, setOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       wsId: wsId,

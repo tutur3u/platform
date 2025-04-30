@@ -121,7 +121,7 @@ export default function LoginForm() {
     }
   }, [user, initialized]);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       email: DEV_MODE ? 'local@tuturuuu.com' : '',

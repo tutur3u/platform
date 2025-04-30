@@ -63,7 +63,7 @@ export default function FleetingAssistant({
     },
   });
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       prompt: '',

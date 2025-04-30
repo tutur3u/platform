@@ -33,7 +33,7 @@ export default function Navbar({
   return (
     <SharedNavbar
       logo="/media/logos/nova-transparent.png"
-      title={<LogoTitle text="Nova" />}
+      title={<LogoTitle text="Upskii" />}
       navigationMenu={<MainNavigationMenu />}
       actions={
         <>

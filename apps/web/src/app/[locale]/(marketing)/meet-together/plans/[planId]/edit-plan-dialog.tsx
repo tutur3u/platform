@@ -59,7 +59,7 @@ export default function EditPlanDialog({ plan }: Props) {
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       name: plan.name || t('meet-together.untitled_plan'),

@@ -92,7 +92,7 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
     ? workspaceMembersQuery.data?.count
     : roleMembersCount;
 
-  const form = useForm<FormType>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: forceDefault ? 'DEFAULT' : roleId,

@@ -61,7 +61,7 @@ export default function Page() {
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       prompt: '',

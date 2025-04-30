@@ -53,11 +53,6 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Configure Tiptap Pro
-        run: |
-          pnpm config set "@tiptap-pro:registry" https://registry.tiptap.dev/
-          pnpm config set "//registry.tiptap.dev/:_authToken" ${{ secrets.TIPTAP_PRO_TOKEN }}
-
       - name: Install dependencies
         run: pnpm install
 

@@ -63,7 +63,7 @@ export default function CreatePlanDialog({ plan }: Props) {
   const [isOpened, setIsOpened] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       name: t('untitled_plan'),

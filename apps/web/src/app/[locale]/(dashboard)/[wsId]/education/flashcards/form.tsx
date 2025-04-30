@@ -42,7 +42,7 @@ export default function FlashcardForm({
   const t = useTranslations('ws-flashcards');
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,

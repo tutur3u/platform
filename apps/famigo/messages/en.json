@@ -1,0 +1,3522 @@
+{
+  "score-calculator": {
+    "title": "Score Calculator",
+    "subtitle": "Calculate your submission score based on test results and criteria evaluation",
+    "input_metrics": "Input Metrics",
+    "test_results": "Test Results",
+    "total_tests": "Total Tests",
+    "total_tests_description": "Total number of test cases",
+    "passed_tests": "Passed Tests",
+    "passed_tests_description": "Number of passing test cases",
+    "criteria_evaluation": "Criteria Evaluation",
+    "total_criteria": "Total Criteria",
+    "total_criteria_description": "Number of evaluation criteria",
+    "sum_criterion_score": "Sum of Criterion Scores",
+    "sum_criterion_score_description": "Total sum of all criteria scores",
+    "score_calculation": "Score Calculation",
+    "no_calculation_yet": "No calculation yet",
+    "fill_form_realtime": "Fill in the form to see your results updated in real-time",
+    "final_score": "Final Score",
+    "of_maximum_score": "of maximum score",
+    "calculation_breakdown": "Calculation Breakdown",
+    "test_score_component": "Test Score Component",
+    "criteria_score_component": "Criteria Score Component",
+    "final_score_calculation": "Final Score",
+    "points": "points",
+    "scoring_rules": "Scoring Rules",
+    "rule_1": "Each submission can score up to 10 points",
+    "rule_2": "If both tests and criteria are present, each contributes 50% to the final score",
+    "rule_3": "If only tests exist, they contribute 100% of the final score",
+    "rule_4": "If only criteria exist, they contribute 100% of the final score",
+    "rule_5": "Each criterion is scored on a scale of 0-10",
+    "max": "max",
+    "test_formula": "(Passed Tests / Total Tests) × 10 × Weight",
+    "criteria_formula": "(Sum of Criterion Scores / (Total Criteria × 10)) × 10 × Weight",
+    "final_formula": "Test Score + Criteria Score",
+    "weight": "Weight"
+  },
+  "nova-apology-modal": {
+    "title": "Important Notice to NEO League Competition Participants",
+    "description": "The Nova development team wishes to address recent technical issues affecting the competition.",
+    "known_issues": "Known Issues",
+    "resolution_status": "Resolution Status",
+    "apology_message": "We sincerely apologize to all Nova platform users and contestants in the NEO League competition. Our team is working diligently to resolve the following identified issues:",
+    "ai_scoring_system": "AI-Powered Scoring System",
+    "ai_scoring_description": "The scoring system is currently misconfigured and will result in giving most users a score of 0. We have identified the root cause and are implementing a fix.",
+    "leaderboard_scores": "Leaderboard Score Calculations",
+    "leaderboard_description": "The leaderboard scores are not calculating correctly, affecting the competitive ranking display. Our team has identified the issue and is implementing a comprehensive fix.",
+    "testcase_criteria": "Testcase & Criteria Handling",
+    "testcase_description": "Non-admin users are currently unable to save testcases and criteria evaluations. This affects challenge submission validation and scoring.",
+    "critical": "Critical",
+    "high": "High",
+    "issue_tracked": "Issue tracked in",
+    "issues_tracked": "Issues tracked in",
+    "resolution_message": "The Nova development team is working around the clock to resolve these issues before the official start of round 1. We're committed to providing you with the best competition experience possible.",
+    "bugs_identified": "All critical bugs have been identified and prioritized",
+    "ai_fix": "Fix for AI scoring system in active development",
+    "testcase_fix": "Fix for testcase handling in review phase",
+    "leaderboard_fix": "Leaderboard score calculation fix in progress (ETA: before round 1)",
+    "our_commitment": "Our Commitment",
+    "commitment_description": "The Nova development team is fully committed to resolving these issues before the competition begins. We appreciate your patience and understanding as we work to deliver the best possible platform for your competitive experience.",
+    "next_steps": "Next Steps:",
+    "step_1": "Deploy emergency hotfix for scoring system",
+    "step_2": "Fix testcase handling for all users",
+    "step_3": "Address leaderboard score calculation issues",
+    "step_4": "Ensure all systems are ready before round 1 begins",
+    "updates_info": "For updates and latest information, visit",
+    "github_issues": "GitHub Issues",
+    "report_issue": "Report Issue",
+    "understand": "I Understand",
+    "fixed": "Fixed",
+    "issue": "Issue",
+    "and": "and"
+  },
+  "ai-prompts-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "model": "AI Model",
+    "input": "Input",
+    "output": "Output",
+    "created_at": "Created At"
+  },
+  "ai-whitelist": {
+    "add_email": "Add email",
+    "add_domain": "Add domain"
+  },
+  "ai_chat": {
+    "welcome_to": "Welcome to",
+    "welcome_msg": "You can start a conversation here or try the following examples:",
+    "example_1": "Explain technical concepts",
+    "example_1_prompt": "What is quantum computing?",
+    "example_2": "Generate math problems",
+    "example_2_prompt": "Generate a list of hard but interesting math problems for undergraduates.",
+    "example_3": "Explain to a 5th grader",
+    "example_3_prompt": "Explain the following concepts like I'm a fifth grader: \n\n",
+    "example_4": "Summarize an article",
+    "example_4_prompt": "Summarize the following article for a 2nd grader: \n\n",
+    "example_5": "Draft an email",
+    "example_5_prompt": "Draft an email to my boss about the following: \n\n",
+    "example_6": "Generate a poem",
+    "example_6_prompt": "Generate a poem about the following: \n\n",
+    "prompt": "Enter a prompt to start chatting with Tuturuuu AI.",
+    "prompt_placeholder": "Type your prompt here...",
+    "chats": "Chats",
+    "no_chats": "Start a new chat by sending a prompt.",
+    "new_chat": "New chat",
+    "reset_chat": "Reset chat",
+    "creating_chat": "Creating chat...",
+    "default_chat": "Default chat",
+    "regenerate_response": "Regenerate response",
+    "stop_generating": "Stop generating",
+    "something_went_wrong": "Something went wrong.",
+    "try_again_later": "Please try again later.",
+    "recent_conversations": "Recent conversations",
+    "latest_messages": "Latest messages",
+    "view_conversation": "View conversation",
+    "all_conversations": "All conversations",
+    "created": "Created",
+    "anonymous": "Anonymous",
+    "you": "You",
+    "chat_visibility": "Chat visibility",
+    "chat_visibility_description": "Choose who can view this chat.",
+    "public": "Public",
+    "only_me": "Only me",
+    "summarized": "Summarized",
+    "chat_updated": "Chat updated",
+    "visibility_updated_desc": "Chat visibility updated successfully.",
+    "copy_public_link": "Copy public link",
+    "open_public_link": "Open public link",
+    "summary": "Summary",
+    "notes": "Notes",
+    "multi_choice_quiz": "Multiple Choice",
+    "paragraph_quiz": "Paragraph Answers",
+    "flashcards": "Flashcards",
+    "correct_answer_is_highlighed": "The correct answer is highlighted",
+    "you_selected": "You selected",
+    "which_is": "which is",
+    "correct": "correct",
+    "incorrect": "incorrect",
+    "reveal_answer": "Reveal answer",
+    "experimental_disclaimer": "Disclaimer: AI-generated content may not be accurate or up-to-date, please verify the information before using it.",
+    "add_attachments": "Add attachments",
+    "voice_input": "Voice input",
+    "refresh_chat": "Refresh chat",
+    "send_message": "Send message",
+    "extra_options": "Extra options",
+    "permission_denied": "Permission denied",
+    "microphone_permission_denied": "You have denied microphone permissions. Please enable microphone permissions in your browser settings to use this feature.",
+    "upload_files": "Upload Files",
+    "upload_file_description": "Choose files you want to upload to this chat.",
+    "response_language": "Response language",
+    "chat_summary": "Chat summary",
+    "chat_notes": "Chat notes",
+    "multiple_choice": "Multiple choice",
+    "paragraph_answers": "Paragraph answers",
+    "ai_models": "AI Models",
+    "quizzes": "Quizzes",
+    "chatbots": "Chatbots",
+    "my_chatbots": "My Chatbots",
+    "my_chatbots_description": "Manage your custom chatbots with your own prompts and responses.",
+    "new_chatbot": "New chatbot"
+  },
+  "api-key-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "value": "Value",
+    "updated_at": "Updated at",
+    "created_at": "Created at"
+  },
+  "aurora": {
+    "statistical_models": "Statistical models",
+    "ml_models": "Machine learning models",
+    "last_updated": "Last updated",
+    "current_price": "Current price",
+    "forecast_range": "Forecast range",
+    "high": "High",
+    "low": "Low",
+    "average": "Average",
+    "trend": "Trend",
+    "volatility": "Price volatility",
+    "90_confidence_high": "90% Confidence (High)",
+    "90_confidence_lo": "90% Confidence (Low)",
+    "ml_price_prediction": "ML Model Price Prediction",
+    "slope": "slope",
+    "prediction_insights": "Prediction insights",
+    "relative": "relative",
+    "strong": "Strong",
+    "moderate": "Moderate",
+    "weak": "Weak",
+    "model_comparison": "Model comparison",
+    "select_date": "Select date",
+    "model_correlation": "Model correlation",
+    "no_data": "No data.",
+    "model_performance": "Model Performance",
+    "stable": "Stable",
+    "improving": "Improving",
+    "declining": "Declining",
+    "best_performing": "Best performing",
+    "average_performance": "Average performance",
+    "worst_performing": "Worst performing",
+    "scaled_model": "(Scaled)",
+    "weighted_score": "Weighted Score",
+    "turning_point_accuracy": "Turning Point Accuracy",
+    "directional_accuracy": "Directional Accuracy",
+    "accuracy": "Accuracy",
+    "consistency": "Consistency",
+    "overall": "Overall"
+  },
+  "aurora_select_model": "Select model",
+  "auth": {
+    "password": "Password",
+    "notice-p1": "By continuing, you agree to Tuturuuu's",
+    "notice-p2": " to receive periodic emails with updates",
+    "tos": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "by_continuing": "By continuing, you agree to Tuturuuu's",
+    "consent_notice": "You consent to provide your email for authentication purposes and platform access. Other profile information will be optionally collected when you voluntarily fill in your profile details.",
+    "your_email": "Your email",
+    "will_be_sent": "will be used to send a one-time password (OTP) for authentication.",
+    "decline": "Decline",
+    "accept_and_continue": "Accept & Continue"
+  },
+  "auth-email-sent": {
+    "email-sent-p1": "A confirmation email has been sent to your email",
+    "email-sent-p2": "Please check your inbox and use the provided verification code to complete your registration."
+  },
+  "avatar": "Avatar",
+  "basic-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "created_at": "Created at"
+  },
+  "batch-data-table": {
+    "id": "ID",
+    "price": "Price",
+    "total_diff": "Total diff",
+    "warehouse": "Warehouse",
+    "supplier": "Supplier",
+    "created_at": "Created at"
+  },
+  "branding": {
+    "branding": "Branding",
+    "our-logo": "Our Logo",
+    "colors": "Colors"
+  },
+  "calendar": {
+    "today": "Today",
+    "this-week": "This Week",
+    "current": "Current",
+    "day": "Day",
+    "4-days": "4 Days",
+    "week": "Week"
+  },
+  "calendar-tabs": {
+    "calendar": "Calendar",
+    "overview": "Overview",
+    "events": "Events"
+  },
+  "common": {
+    "allow_manage_all_challenges": "Allow Manage All Challenges",
+    "name_placeholder": "Enter name",
+    "name": "Name",
+    "members": "Members",
+    "created_at": "Created at",
+    "alpha": "Alpha",
+    "learn": "Learn",
+    "beta": "Beta",
+    "and": "and",
+    "learn-description": "Learn description",
+    "login": "Login",
+    "export-content": "Please choose file type to export",
+    "export": "Export",
+    "file-type": "File Type",
+    "maximize": "Maximize",
+    "productivity": "productivity",
+    "minimize": "minimize",
+    "stress": "stress",
+    "underconstruction": "Under Construction",
+    "coming_soon": "Coming Soon",
+    "feature": "Features",
+    "get-started": "Get Started",
+    "title-v2": "Chuẩn bị cho tương lai, thành thạo AI",
+    "get-started-desc": "Sign up for free and start using our platform today.",
+    "copyright": "Copyright © 2025 Tuturuuu, Inc. – All rights reserved.",
+    "legal": "Legal",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "documentation": "Documentation",
+    "404-msg": "The page you are looking for does not exist.",
+    "500-msg": "Something went wrong. Please try again later.",
+    "unsaved-changes": "You have unsaved changes.",
+    "back-to-home": "Go back to home",
+    "home": "Home",
+    "profile": "My Profile",
+    "docs": "Docs",
+    "dashboard": "Dashboard",
+    "local_database": "Local Database",
+    "meet-together": "Meet Together",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "standard": "Standard",
+    "pink": "Pink",
+    "purple": "Purple",
+    "yellow": "Yellow",
+    "orange": "Orange",
+    "green": "Green",
+    "blue": "Blue",
+    "system": "System",
+    "language": "Language",
+    "settings": "Settings",
+    "invite_users": "Invite Users",
+    "logout": "Logout",
+    "delete": "Delete",
+    "create": "Create",
+    "add": "Add",
+    "add_column": "Add Column",
+    "add_column_description": "Enter a name for the new column",
+    "column_name": "Column Name",
+    "new": "New",
+    "save": "Save",
+    "reset": "Reset",
+    "cancel": "Cancel",
+    "start": "Start",
+    "upload": "Upload",
+    "uploading": "Uploading",
+    "uploaded": "Uploaded",
+    "download": "Download",
+    "rename": "Rename",
+    "processing": "Processing...",
+    "saving": "Saving changes...",
+    "loading": "Loading",
+    "success": "Success",
+    "complete": "Complete",
+    "default": "Default",
+    "all": "All",
+    "general": "General",
+    "other": "Other",
+    "empty": "Empty",
+    "error": "Error",
+    "back": "Back",
+    "untitled": "Untitled",
+    "unknown": "Unknown",
+    "completed": "Completed",
+    "continue": "Continue",
+    "cancel-completed": "Cancel completed",
+    "pending-completion": "Pending completion",
+    "return": "Return",
+    "creating": "Creating",
+    "unnamed-workspace": "Unnamed Workspace",
+    "resources": "Resources",
+    "branding": "Branding",
+    "developers": "Developers",
+    "open-source": "Open Source",
+    "copied": "Copied",
+    "edit": "Edit",
+    "remove": "Remove",
+    "refresh": "Refresh",
+    "view-options": "Columns",
+    "view": "View",
+    "show-all": "Show All",
+    "hide-all": "Hide All",
+    "columns": "Columns",
+    "toggle-columns": "Toggle Columns",
+    "no-results": "No Results",
+    "of": "of",
+    "selected": "Selected",
+    "page": "Page",
+    "row(s)": "row(s)",
+    "result(s)": "result(s)",
+    "rows-per-page": "Rows per page",
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "hide_column": "Hide column",
+    "unnamed": "No name",
+    "personal_account": "Personal Account",
+    "workspaces": "Workspaces",
+    "create_new_workspace": "Create New Workspace",
+    "create_workspace": "Create Workspace",
+    "create_workspace_description": "Add a new workspace to easily manage everything that matters to you, and collaborate with your team as you go.",
+    "workspace_name": "Workspace Name",
+    "subscription_plan": "Subscription Plan",
+    "free": "Free",
+    "pro": "Pro",
+    "enterprise": "Enterprise",
+    "month": "Month",
+    "0_usd_per_month": "$0/month",
+    "currently_online": "Currently online",
+    "no_online_users": "No online users",
+    "waiting_for_response": "I'll respond to you shortly, please wait...",
+    "qr_generator": "QR Generator",
+    "qr_name": "QR Name",
+    "shapes": "Shapes",
+    "styles": "Styles",
+    "formats": "Formats",
+    "foreground": "Foreground",
+    "background": "Background",
+    "scan_me": "Scan me",
+    "qr_code": "QR Code",
+    "current_plan": "Current plan",
+    "incomplete": "Incomplete",
+    "file-name": "File Name",
+    "date": "Date",
+    "status": "Status",
+    "years_old": "years old",
+    "year_old": "year old",
+    "average": "Average",
+    "no_content_yet": "No content yet",
+    "words": "words",
+    "word": "word",
+    "share": "Share",
+    "confirm_delete_title": "Delete confirmation",
+    "confirm_delete_description": "Are you sure you want to delete this item? This action is permanent and irreversible.",
+    "saved": "All changes saved",
+    "unsaved": "Unsaved",
+    "previous": "Previous",
+    "next": "Next",
+    "published": "Published",
+    "option": "Option",
+    "correct": "Correct",
+    "add_option": "Add option",
+    "question": "Question",
+    "create_new": "Create new",
+    "import": "Import",
+    "invalid-file-type": "Invalid file type",
+    "no-sheets-found": "No sheets found.",
+    "generate_with_ai": "Generate with AI",
+    "regenerate": "Regenerate",
+    "accept": "Accept",
+    "context": "Context",
+    "enter_context": "Enter context",
+    "generate": "Generate",
+    "enabled": "Enabled",
+    "explanation": "Explanation",
+    "generate_explanation": "Generate explanation",
+    "products": "Products",
+    "solutions": "Solutions",
+    "pricing": "Pricing",
+    "about": "About",
+    "contact": "Contact",
+    "ai-assistant": "AI Assistant",
+    "lms": "LMS",
+    "calendar": "Calendar",
+    "documents": "Documents",
+    "drive": "Drive",
+    "crm": "CRM",
+    "inventory": "Inventory",
+    "finance": "Finance",
+    "mail": "Mail",
+    "tasks": "Tasks",
+    "workflows": "Workflows",
+    "education": "Education",
+    "restaurants": "Restaurants",
+    "pharmacies": "Pharmacies",
+    "agencies": "Agencies",
+    "realestate": "Real Estate",
+    "blog": "Blog",
+    "blog-description": "Read our latest articles and updates.",
+    "documentation-description": "Find detailed documentation and guides.",
+    "education-description": "Solutions tailored for educational institutions.",
+    "retail-description": "Solutions tailored for retail businesses.",
+    "hospitality-description": "Solutions tailored for hospitality businesses.",
+    "construction-description": "Solutions tailored for construction businesses.",
+    "restaurants-description": "Manage your restaurant operations efficiently.",
+    "manufacturing-description": "Solutions tailored for manufacturing businesses.",
+    "pharmacies-description": "Streamline pharmacy management and services.",
+    "realestate-description": "Optimize your real estate business operations.",
+    "meet-together-description": "Schedule meetings effortlessly across time zones and teams.",
+    "ai-assistant-description": "Leverage AI to automate tasks and enhance productivity.",
+    "lms-description": "Deliver and track educational content effectively.",
+    "calendar-description": "Comprehensive calendar and event management system.",
+    "documents-description": "AI-powered document management and collaboration.",
+    "drive-description": "Secure cloud storage with seamless file sharing.",
+    "crm-description": "Build and maintain valuable customer relationships.",
+    "inventory-description": "Streamline inventory control and stock management.",
+    "branding-description": "Get Tuturuuu's branding assets and guidelines.",
+    "github-description": "View our open-source projects on GitHub.",
+    "finance-description": "Track finances and manage transactions efficiently.",
+    "mail-description": "Powerful email and communication management.",
+    "tasks-description": "Organize and track projects with clarity.",
+    "workflows-description": "Automate and optimize your business processes.",
+    "scroll_to_explore": "Scroll to explore",
+    "features": "Features",
+    "learn_more": "Learn more",
+    "pricing_hook": "Simple, transparent pricing",
+    "usage_based_pricing": "Usage-Based Pricing",
+    "usage_based_pricing_description": "Pay only for what you use. All plans include core features with different usage limits.",
+    "faq": "Frequently Asked Questions",
+    "unlink": "Unlink",
+    "explore": "Explore",
+    "actions": "Actions",
+    "clear_all": "Clear All",
+    "clear_all_title": "Clear All Content",
+    "clear_all_description": "Are you sure you want to clear all content? This action cannot be undone.",
+    "clearing": "Clearing",
+    "retail": "Retail",
+    "manufacturing": "Manufacturing",
+    "hospitality": "Hospitality",
+    "construction": "Construction",
+    "changelog": "Changelog",
+    "changelog-description": "Stay up to date with our latest product updates and improvements.",
+    "about-description": "Learn more about Tuturuuu and our mission.",
+    "terms-description": "Read our terms of service and policies.",
+    "privacy-description": "Learn how we protect your data and privacy.",
+    "security": "Security",
+    "security-description": "Learn about our security practices and commitments.",
+    "pitch-description": "Tuturuuu's business plan pitch deck.",
+    "product-updates": "Product Updates",
+    "product-updates-title": "Product Updates",
+    "product-updates-description": "Stay up to date with the latest features, improvements, and fixes in our product journey.",
+    "new-features": "New Features",
+    "improvements": "Improvements",
+    "bug-fixes": "Bug Fixes",
+    "stay-updated": "Stay in the Loop",
+    "changelog-subscribe-description": "Subscribe to our newsletter to get notified about new updates and features as they roll out.",
+    "enter-email": "Enter your email",
+    "subscribe": "Subscribe",
+    "view-full-documentation": "View full documentation",
+    "company": "Company",
+    "pitch": "Pitch Deck",
+    "careers": "Careers",
+    "not_whitelisted": "Not whitelisted",
+    "email_added": "Email added",
+    "error_adding_email": "Error adding email",
+    "history": "History",
+    "public_document": "Public document",
+    "private_document": "Private document",
+    "last_saved": "Last saved: {time}",
+    "unsaved_changes": "You have unsaved changes",
+    "error_saving": "Error saving changes",
+    "save_failed": "Failed to save changes",
+    "retry_save": "Retry saving",
+    "auto_save_enabled": "Auto-save enabled",
+    "save_status": "Save status",
+    "document_status": "Document status",
+    "updating": "Updating...",
+    "name_updated": "Name updated successfully",
+    "error_updating_name": "Error updating name",
+    "visibility_updated": "Visibility updated successfully",
+    "error_updating_visibility": "Error updating visibility",
+    "error_deleting": "Error deleting document",
+    "domain_added": "Domain added",
+    "error_adding_domain": "Failed to add domain",
+    "is_admin": "Is Admin",
+    "allow_challenge_management": "Allow Challenge Management",
+    "allow_role_management": "Allow Role Management",
+    "searching": "Searching",
+    "or": "Or",
+    "joined": "Joined"
+  },
+  "contact": {
+    "title": "Contact us",
+    "description": "Have questions or need assistance? We're here to help. Choose your preferred way to reach us.",
+    "get_in_touch": "Get in Touch",
+    "founder_contact": "Founder Contact",
+    "founder_description": "Founder & CEO",
+    "on_github": "on GitHub",
+    "send_us_a_message": "Send us a Message",
+    "form": {
+      "name_label": "Name",
+      "name_placeholder": "Your name",
+      "subject_label": "Subject",
+      "subject_placeholder": "How can we help?",
+      "message_label": "Message",
+      "message_placeholder": "Your message...",
+      "submit_button": "Send Message",
+      "sent_message": "Thank you for contacting us! We'll get back to you as soon as possible."
+    }
+  },
+  "course-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "is_public": "Public",
+    "is_published": "Published",
+    "modules": "Modules",
+    "created_at": "Created At"
+  },
+  "course-details-tabs": {
+    "preview": "Preview",
+    "module_objectives": "Module Objectives",
+    "resources": "Resources",
+    "youtube_links": "YouTube Links",
+    "extra_reading": "Extra Reading",
+    "module_content": "Module Content",
+    "no_youtube_links": "No YouTube links yet.",
+    "resource_preview_unavailable": "Resource preview is unavailable"
+  },
+  "crawled-url-data-table": {
+    "id": "ID",
+    "url": "URL",
+    "html": "HTML",
+    "markdown": "Markdown",
+    "created_at": "Created at"
+  },
+  "cron-execution-data-table": {
+    "id": "ID",
+    "job": "Job",
+    "status": "Status",
+    "started_at": "Started at",
+    "finished_at": "Finished at",
+    "created_at": "Created at"
+  },
+  "cron-job-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "description": "Description",
+    "schedule": "Schedule",
+    "status": "Status",
+    "last_run": "Last run",
+    "next_run": "Next run",
+    "inactive": "Inactive",
+    "active": "Active",
+    "running": "Running",
+    "failed": "Failed",
+    "created_at": "Created at"
+  },
+  "crud-ops": {
+    "ops": "Operations",
+    "select_ops": "Select Operations",
+    "insert": "Create",
+    "update": "Update",
+    "delete": "Delete"
+  },
+  "date_helper": {
+    "time-unit": "Time unit",
+    "time-unit-placeholder": "Select time unit",
+    "time-range": "Time range",
+    "time-range-placeholder": "Select time range",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "custom": "Custom",
+    "all": "All",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
+    "this-week": "This week",
+    "last-week": "Last week",
+    "next-week": "Next week",
+    "this_month": "This month",
+    "last-month": "Last month",
+    "next-month": "Next month",
+    "this-year": "This year",
+    "last-year": "Last year",
+    "next-year": "Next year"
+  },
+  "documents": {
+    "documents": "Documents",
+    "new-document": "New document",
+    "delete-document": "Delete document",
+    "delete-document-confirmation": "Are you sure you want to delete this document?",
+    "create": "Create",
+    "save": "Save",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "creating": "Creating document",
+    "no-documents": "No documents in this workspace",
+    "create-new-document": "Create new document",
+    "create-document-error": "An error occurred while creating the document.",
+    "document-name": "Document name",
+    "document-name-placeholder": "Enter document name",
+    "untitled-document": "Untitled document",
+    "preview": "Preview",
+    "edit": "Edit"
+  },
+  "dworkspace-mail": {
+    "destination-addresses": "Destination Addresses"
+  },
+  "email-data-table": {
+    "id": "ID",
+    "recipient": "Recipient",
+    "sender": "Sender",
+    "email": "Email",
+    "subject": "Subject",
+    "source_name": "Source Name",
+    "source_email": "Source Email",
+    "created_at": "Created At"
+  },
+  "experimental-notice": {
+    "experimental_feature": "Experimental feature",
+    "experimental_notice": "This is an experimental feature that is still under heavy development. It may not work as expected and may change in the future."
+  },
+  "finance-overview": {
+    "finance": "Finance",
+    "overview": "Overview",
+    "total-balance": "Total balance",
+    "total-expense": "Total expense",
+    "total-income": "Total income",
+    "recent-transactions": "Recent transactions",
+    "no-transaction": "You have no transactions",
+    "show-finance-stats": "Show finance statistics"
+  },
+  "flashcard-data-table": {
+    "id": "ID",
+    "front": "Front",
+    "back": "Back",
+    "created_at": "Created At"
+  },
+  "healthcare-tabs": {
+    "overview": "Overview",
+    "checkups": "Checkups",
+    "diagnoses": "Diagnoses",
+    "vitals": "Vitals",
+    "vital-groups": "Vital Groups"
+  },
+  "home": {
+    "headline": "Your intelligent shortcut",
+    "subheadline": "Take control of workflows, supercharged by AI",
+    "get-started": "Get Started",
+    "features-lead": "What can you do with Tuturuuu?",
+    "features-1-title": "Powered by AI",
+    "features-1-subtitle": "Brainstorm and organize your ideas at the speed of thought, with our smart AI-powered tools.",
+    "features-2-title": "Fully-featured chat",
+    "features-2-subtitle": "Fully-featured chatting experience, with support for markdown, code blocks, and more at your fingertips.",
+    "features-3-title": "Powerful task management",
+    "features-3-subtitle": "Create tasks, assign them to your team, and track their progress, all in one place.",
+    "features-4-title": "Intuitive documents",
+    "features-4-subtitle": "Write and maintain your documents with ease, with an intuitive and powerful document editor.",
+    "features-5-title": "Robust finance tracker",
+    "features-5-subtitle": "Track your finances, and keep your team in the loop, so you can focus on what matters.",
+    "features-6-title": "Open-source",
+    "features-6-subtitle": "Tuturuuu is open-source, so you can contribute to the project, and make it better for everyone."
+  },
+  "infrastructure-tabs": {
+    "infrastructure": "Infrastructure",
+    "overview": "Overview",
+    "users": "Users",
+    "workspaces": "Workspaces",
+    "timezones": "Timezones",
+    "storage": "Storage",
+    "features": "Features",
+    "monitoring": "Monitoring",
+    "backups": "Backups",
+    "integrations": "Integrations",
+    "ai_whitelisted_emails": "AI Whitelisted Emails"
+  },
+  "inventory-overview": {
+    "products-with-prices": "Products with prices"
+  },
+  "invite": {
+    "invited-to": "You have been invited to join",
+    "accept-invite": "Accept Invite",
+    "decline-invite": "Decline Invite",
+    "accept-invite-success-title": "You have successfully accepted the invite.",
+    "accept-invite-success-msg": "You can now access this workspace.",
+    "decline-invite-success-title": "You have successfully declined the invite.",
+    "decline-invite-success-msg": "This invite will no longer be visible.",
+    "accept-invite-error-title": "There was an error accepting the invite.",
+    "accept-invite-error-msg": "Please try again later.",
+    "decline-invite-error-title": "There was an error declining the invite.",
+    "decline-invite-error-msg": "Please try again later.",
+    "invited-you": "invited you",
+    "workspace-invitation": "Workspace invitation",
+    "you-been-invited-to-join-the": "You've been invited to join the",
+    "accept-to-start-collaborating": " workspace. Accept to start collaborating!"
+  },
+  "invoice-data-table": {
+    "id": "ID",
+    "customer_id": "Customer ID",
+    "customer": "Customer",
+    "price": "Original Price",
+    "final_price": "Final price",
+    "total_diff": "Price difference",
+    "notice": "Description",
+    "note": "Note",
+    "created_at": "Created at"
+  },
+  "invoices": {
+    "finance": "Finance",
+    "unnamed-ws": "Untitled workspace",
+    "invoices": "Invoices",
+    "invoice": "Invoice",
+    "show-phone": "Show phone",
+    "show-gender": "Show gender",
+    "show-address": "Show address",
+    "show-time": "Show time created",
+    "show-status": "Show status",
+    "show-amount": "Show amount of products",
+    "show-price": "Show price",
+    "show-creator": "Show creator",
+    "create": "Create",
+    "create-invoice": "Create invoice",
+    "close-order-after-create": "Close order after create",
+    "basic-info": "Basic information",
+    "time": "Time",
+    "notice": "Notice",
+    "notice-placeholder": "Enter notice for this invoice",
+    "add-notice": "Add notice",
+    "note": "Note",
+    "note-placeholder": "Enter note for this invoice",
+    "add-note": "Add note",
+    "total": "Total",
+    "total-placeholder": "Enter the amount customer needs to pay",
+    "reset": "Reset",
+    "discount": "Customer will receive a discount of",
+    "extra-pay": "Customer will pay an extra of",
+    "for-this-invoice": "for this invoice.",
+    "products": "Products",
+    "add-product": "Add product",
+    "update-invoice": "Update invoice",
+    "delete-invoice": "Delete invoice",
+    "reopen-invoice": "Reopen invoice",
+    "close-invoice": "Close invoice",
+    "save-changes": "Save changes",
+    "checkup": "Checkup",
+    "bill_to": "Bill to",
+    "invoice_date": "Invoice date",
+    "description": "Description",
+    "quantity": "Quantity",
+    "price": "Price",
+    "promotions": "Promotions",
+    "subtotal": "Subtotal",
+    "discounts": "Discounts",
+    "rounding": "Rounding",
+    "print": "Print",
+    "download_image": "Download image",
+    "add_promotion": "Add promotion",
+    "files": "Files"
+  },
+  "landing": {
+    "headline": "Your intelligent shortcut",
+    "subheadline": "Take control of workflows, supercharged by AI",
+    "features": {
+      "title": "Features",
+      "subtitle": "Discover powerful features designed to enhance your productivity and streamline your workflow.",
+      "ai_powered": {
+        "title": "Powered by AI",
+        "description": "Brainstorm and organize your ideas at the speed of thought, with our smart AI-powered tools."
+      },
+      "collaboration": {
+        "title": "Team Collaboration",
+        "description": "Seamless communication and collaboration features for your entire team."
+      },
+      "task_management": {
+        "title": "Task Management",
+        "description": "Create tasks, assign them to your team, and track their progress, all in one place."
+      },
+      "document_management": {
+        "title": "Document Management",
+        "description": "Write and maintain your documents with ease, with an intuitive and powerful document editor."
+      },
+      "finance_tracking": {
+        "title": "Finance Tracking",
+        "description": "Track your finances, and keep your team in the loop, so you can focus on what matters."
+      },
+      "open_source": {
+        "title": "Open Source",
+        "description": "Tuturuuu is open-source, so you can contribute to the project, and make it better for everyone."
+      }
+    },
+    "products": {
+      "title": "Products",
+      "subtitle": "Explore our suite of powerful products designed to help you work smarter, not harder.",
+      "ai_assistant": {
+        "title": "AI Assistant",
+        "description": "Smart automation and intelligent insights powered by advanced AI."
+      },
+      "meet_together": {
+        "title": "Meet Together",
+        "description": "Virtual meetings, team collaboration, and project management in one place."
+      },
+      "calendar": {
+        "title": "Calendar",
+        "description": "Smart scheduling and time management tools."
+      },
+      "documents": {
+        "title": "Documents",
+        "description": "Centralized document storage, sharing, and collaboration."
+      },
+      "drive": {
+        "title": "Drive",
+        "description": "Secure cloud storage for all your business files and data."
+      },
+      "crm": {
+        "title": "CRM",
+        "description": "Build and maintain valuable customer relationships."
+      },
+      "finance": {
+        "title": "Finance",
+        "description": "Comprehensive financial management and reporting."
+      },
+      "inventory": {
+        "title": "Inventory",
+        "description": "Real-time inventory tracking and management."
+      },
+      "tasks": {
+        "title": "Tasks",
+        "description": "Streamlined task tracking and team coordination."
+      },
+      "workflows": {
+        "title": "Workflows",
+        "description": "Automated business processes and workflows."
+      }
+    },
+    "solutions": {
+      "title": "For Every Industry",
+      "subtitle": "Tailored solutions for every industry, from small businesses to large enterprises.",
+      "industries": {
+        "manufacturing": "Manufacturing",
+        "healthcare": "Healthcare",
+        "education": "Education",
+        "retail": "Retail",
+        "real_estate": "Real Estate",
+        "hospitality": "Hospitality",
+        "construction": "Construction",
+        "pharmacies": "Pharmacies"
+      }
+    },
+    "benefits": {
+      "title": "Tremendous Benefits",
+      "subtitle": "Experience the advantages of an all-in-one platform designed for modern businesses.",
+      "for_businesses": {
+        "title": "For Businesses",
+        "items": [
+          "Reduced operational costs",
+          "Improved efficiency and productivity",
+          "Better decision-making with AI insights",
+          "Enhanced team collaboration",
+          "Streamlined workflows",
+          "Scalable solutions for growth"
+        ]
+      },
+      "for_teams": {
+        "title": "For Teams",
+        "items": [
+          "Seamless communication",
+          "Real-time collaboration",
+          "Automated task management",
+          "Centralized information access",
+          "Integrated tools and features",
+          "Enhanced productivity"
+        ]
+      }
+    },
+    "how_it_works": {
+      "title": "How It Works",
+      "subtitle": "Get started with Tuturuuu in just a few simple steps",
+      "steps": {
+        "step1": {
+          "title": "Sign Up",
+          "description": "Create your account in seconds and get started with a free trial"
+        },
+        "step2": {
+          "title": "Set Up Your Workspace",
+          "description": "Customize your workspace and invite your team members"
+        },
+        "step3": {
+          "title": "Start Collaborating",
+          "description": "Begin using our powerful tools to boost your productivity"
+        },
+        "step4": {
+          "title": "Scale & Grow",
+          "description": "Expand your usage as your business grows with our flexible platform"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "What Our Users Say",
+      "subtitle": "Join thousands of satisfied users who trust Tuturuuu",
+      "items": [
+        {
+          "quote": "Tuturuuu has transformed how we work. The AI features are incredible!",
+          "author": "Sarah Chen",
+          "role": "Product Manager",
+          "company": "TechCorp"
+        },
+        {
+          "quote": "The best all-in-one solution we've found for our team's needs.",
+          "author": "Michael Rodriguez",
+          "role": "CEO",
+          "company": "StartupX"
+        },
+        {
+          "quote": "Intuitive interface and powerful features. Highly recommended!",
+          "author": "Emily Johnson",
+          "role": "Team Lead",
+          "company": "DesignPro"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Ready to Get Started?",
+      "subtitle": "Join thousands of teams already using Tuturuuu",
+      "primary_button": "Start Free Trial",
+      "secondary_button": "Contact Sales",
+      "no_card_required": "No credit card required"
+    },
+    "ai_revolution": {
+      "title": "AI Revolution",
+      "subtitle": "Experience the future of work with AI that understands, adapts, and grows with you",
+      "items": [
+        {
+          "title": "Think Faster",
+          "description": "AI-powered insights and automation help you make decisions 10x faster"
+        },
+        {
+          "title": "Work Smarter",
+          "description": "Let AI handle repetitive tasks while you focus on what matters most"
+        },
+        {
+          "title": "Grow Bigger",
+          "description": "Scale your operations effortlessly with AI that learns and adapts"
+        },
+        {
+          "title": "Stay Ahead",
+          "description": "Always be at the cutting edge with continuously evolving AI capabilities"
+        }
+      ]
+    },
+    "universal_value": {
+      "title": "For Everyone, Everywhere",
+      "subtitle": "From solo entrepreneurs to global enterprises, Tuturuuu adapts to your needs",
+      "categories": {
+        "business_size": {
+          "title": "Any Size",
+          "items": [
+            "Solopreneurs & Freelancers",
+            "Small & Medium Businesses",
+            "Large Enterprises",
+            "Global Organizations"
+          ]
+        },
+        "industries": {
+          "title": "Any Industry",
+          "items": [
+            "Technology & Innovation",
+            "Healthcare & Wellness",
+            "Education & Learning",
+            "Retail & E-commerce",
+            "Manufacturing & Production",
+            "Services & Consulting",
+            "Creative & Entertainment",
+            "Non-profit & Social Impact"
+          ]
+        },
+        "use_cases": {
+          "title": "Any Goal",
+          "items": [
+            "Streamline Operations",
+            "Boost Productivity",
+            "Enhance Collaboration",
+            "Drive Innovation",
+            "Improve Customer Experience",
+            "Scale Globally",
+            "Reduce Costs",
+            "Achieve Sustainability"
+          ]
+        }
+      }
+    },
+    "ai_features": {
+      "title": "AI at Its Core",
+      "subtitle": "Every feature is enhanced by cutting-edge artificial intelligence",
+      "features": [
+        {
+          "title": "Smart Automation",
+          "description": "Automate complex workflows with AI that learns your preferences"
+        },
+        {
+          "title": "Intelligent Insights",
+          "description": "Get actionable recommendations based on your data and industry trends"
+        },
+        {
+          "title": "Natural Collaboration",
+          "description": "Work with AI that understands context and communicates naturally"
+        },
+        {
+          "title": "Predictive Analytics",
+          "description": "Anticipate challenges and opportunities with AI-powered forecasting"
+        },
+        {
+          "title": "Adaptive Learning",
+          "description": "AI that continuously improves based on your team's usage patterns"
+        },
+        {
+          "title": "Global Intelligence",
+          "description": "Access insights from worldwide data while maintaining privacy"
+        }
+      ]
+    },
+    "success_metrics": {
+      "title": "Real Impact",
+      "subtitle": "Join thousands of organizations achieving remarkable results",
+      "metrics": [
+        {
+          "value": "10x",
+          "label": "Faster Decision Making"
+        },
+        {
+          "value": "80%",
+          "label": "Time Saved on Routine Tasks"
+        },
+        {
+          "value": "50%",
+          "label": "Reduction in Operating Costs"
+        },
+        {
+          "value": "3x",
+          "label": "Increase in Team Productivity"
+        }
+      ]
+    },
+    "transformation": {
+      "title": "Transform Your Work",
+      "subtitle": "Experience the power of AI-driven transformation",
+      "steps": [
+        {
+          "title": "Start Instantly",
+          "description": "Get up and running in minutes with intuitive onboarding"
+        },
+        {
+          "title": "Scale Effortlessly",
+          "description": "Grow from one to thousands of users without friction"
+        },
+        {
+          "title": "Evolve Continuously",
+          "description": "Stay ahead with AI that learns and improves every day"
+        }
+      ]
+    }
+  },
+  "login": {
+    "email_placeholder": "username@example.com",
+    "email_description": "Enter your email address to get started with Tuturuuu.",
+    "otp_code": "Verification code",
+    "otp_description": "Enter the verification code sent to your email address.",
+    "open_inbucket": "Open Inbucket",
+    "open_gmail": "Open Gmail",
+    "open_outlook": "Open Outlook",
+    "success": "Success!",
+    "failed": "Failed!",
+    "otp_sent": "We've sent a verification code to your email address.",
+    "otp_verified": "Your email address has been verified.",
+    "failed_to_send": "Failed to send verification code.",
+    "failed_to_verify": "Failed to verify your email address.",
+    "invalid_verification_code": "Invalid verification code.",
+    "resend": "Resend",
+    "processing": "Processing...",
+    "continue": "Continue",
+    "continue_with_google": "Continue with Google",
+    "continue_with_github": "Continue with GitHub",
+    "continue_with_apple": "Continue with Apple",
+    "continue_with_discord": "Continue with Discord"
+  },
+  "logout": {
+    "logout": "Log out",
+    "description": "Log out of your account"
+  },
+  "marketing": {
+    "solutions": {
+      "education": {
+        "education_solutions": "Education Solutions",
+        "title": "Transform Education with AI",
+        "description": "Empower educators and students with intelligent tools for personalized learning, seamless collaboration, and enhanced educational outcomes.",
+        "trusted_section_title": "Trusted by Educational Institutions",
+        "trusted_section_description": "Our platform is designed to meet the highest standards of security and privacy, ensuring a safe learning environment for students of all ages.",
+        "features_title": "Powerful Educational Tools",
+        "features": {
+          "smart_learning_management": "Smart Learning Management",
+          "smart_learning_management_desc": "AI-powered LMS that adapts to each student's learning style and pace.",
+          "interactive_classrooms": "Interactive Classrooms",
+          "interactive_classrooms_desc": "Engage students with real-time collaboration and virtual classroom tools.",
+          "progress_tracking": "Progress Tracking",
+          "progress_tracking_desc": "Comprehensive analytics to monitor student performance and engagement.",
+          "course_creation": "Course Creation",
+          "course_creation_desc": "Easy-to-use tools for creating and managing educational content.",
+          "virtual_classrooms": "Virtual Classrooms",
+          "virtual_classrooms_desc": "Seamless video conferencing integration for remote learning.",
+          "ai assessment": "AI Assessment",
+          "ai assessment_desc": "Automated grading and personalized feedback powered by AI."
+        },
+        "use_cases_title": "Solutions For Every Level",
+        "use_cases": {
+          "K_12_education": "K-12 Education",
+          "K_12_education_desc": "Comprehensive tools for primary and secondary education management.",
+          "K_12_education_item1": "Interactive lessons",
+          "K_12_education_item2": "Parent communication",
+          "K_12_education_item3": "Homework management",
+          "K_12_education_item4": "Progress reports",
+          "higher_education": "Higher Education",
+          "higher_education_desc": "Advanced features for universities and colleges.",
+          "higher_education_item1": "Course management",
+          "higher_education_item2": "Research collaboration",
+          "higher_education_item3": "Student analytics",
+          "higher_education_item4": "Resource sharing",
+          "professional_training": "Professional Training",
+          "professional_training_desc": "Corporate training and professional development solutions.",
+          "professional_training_item1": "Skill assessments",
+          "professional_training_item2": "Certification programs",
+          "professional_training_item3": "Employee onboarding",
+          "professional_training_item4": "Performance tracking"
+        },
+        "bento_grid_title": "Learning Excellence",
+        "bento_grid_subtitle": "Comprehensive Library",
+        "bento_grid_description": "Access thousands of curated educational resources, textbooks, and multimedia content.",
+        "bento_grid_features": {
+          "global_reach": "Global Reach",
+          "global_reach_desc": "Connect with learners worldwide",
+          "gamification": "Gamification",
+          "gamification_desc": "Earn badges and certificates",
+          "smart_network": "Smart Network",
+          "smart_network_desc": "AI-powered learning paths",
+          "custom_dashboard": "Custom Dashboard",
+          "custom_dashboard_desc": "Personalized learning space"
+        },
+        "timeline_title": "Implementation Journey",
+        "timeline_steps": {
+          "step1": "Platform Setup",
+          "week1": "Week 1",
+          "step2": "Staff Training",
+          "week2": "Week 2",
+          "step3": "Data Migration",
+          "week3": "Week 3",
+          "step4": "Full Deployment",
+          "week4": "Week 4"
+        },
+        "faq": {
+          "question1": "How does the AI-powered learning system work?",
+          "answer1": "Our AI system analyzes student performance, learning patterns, and engagement levels to create personalized learning paths. It adapts in real-time to provide optimal content delivery and support.",
+          "question2": "What security measures are in place?",
+          "answer2": "We implement enterprise-grade encryption, regular security audits, and comply with FERPA and GDPR requirements to ensure student data protection.",
+          "question3": "Can it integrate with existing systems?",
+          "answer3": "Yes, our platform offers robust API integration capabilities and supports common education technology standards for seamless integration with existing systems.",
+          "question4": "What kind of support do you offer?",
+          "answer4": "We provide 24/7 technical support, dedicated customer success managers, and comprehensive onboarding assistance. Our team also offers regular training sessions and educational webinars.",
+          "question5": "How customizable is the platform?",
+          "answer5": "The platform is highly customizable with white-labeling options, custom branding, configurable workflows, and API integrations. You can tailor the learning experience to match your institution's needs.",
+          "question6": "What are the hardware requirements?",
+          "answer6": "Our cloud-based platform works on any modern web browser. For optimal video conferencing, we recommend a stable internet connection and updated devices with camera and microphone capabilities.",
+          "question7": "How do you handle data backup?",
+          "answer7": "We maintain automated daily backups with 30-day retention, geo-redundant storage, and disaster recovery protocols. Your data is always safe and accessible."
+        }
+      }
+    }
+  },
+  "meet-together": {
+    "headline-p1": "Find the best time slot for everyone,",
+    "headline-p2": "hassle-free",
+    "dates-to-meet-together": "Dates to meet together",
+    "soonest-time-to-meet": "Soonest time",
+    "latest-time-to-meet": "Latest time",
+    "time-zone": "Time zone",
+    "select-time-zone": "Select time zone",
+    "create_plan": "Create plan",
+    "creating_plan": "Creating plan...",
+    "name": "Name",
+    "your_plans": "Your plans",
+    "no_plans_yet": "You don't have any plans yet.",
+    "new_plan": "New plan",
+    "new_plan_desc": "This plan will help you find the best time to meet together with your friends, family, or colleagues.",
+    "missing_fields": "Missing fields",
+    "start_time_required": "Please select start time",
+    "end_time_required": "Please select end time",
+    "timezone_required": "Please select time zone",
+    "dates_required": "Please select at least one date",
+    "something_went_wrong": "Something went wrong",
+    "cant_create_plan_right_now": "We can't create your plan right now. Please try again later.",
+    "local_time": "Local time",
+    "login_to_save_plans": "Sign up or login into Tuturuuu to save your created plans.",
+    "untitled_plan": "Untitled plan"
+  },
+  "meet-together-plan-details": {
+    "copy_link": "Copy link",
+    "send_email": "Send email",
+    "mail_p1": "Hi everyone",
+    "mail_p2": "I'm setting up a meet-together plan for us to help figure out when we're all available for",
+    "mail_p3": "Please visit",
+    "mail_p4": "to add your availability and make it easier for everyone to meet together. Thank you",
+    "mail_p5": "Cheers",
+    "your_availability": "Your availability",
+    "everyone_availability": "Everyone's availability",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "identity_protection": "Identity protection",
+    "identity_protection_desc": "Use a guest account and optionally set a password for this plan to protect your identity.",
+    "account_switcher": "Account switcher",
+    "account_switcher_desc": "Interact with this plan using a guest account, or use a Tuturuuu account with more advanced features.",
+    "use_guest_account": "Use guest account",
+    "use_other_guest_account": "Use other guest account",
+    "use_tuturuuu_account": "Use Tuturuuu account",
+    "using_tuturuuu_account": "Using Tuturuuu account",
+    "your_name": "Your name",
+    "your_name_desc": "This is how others will see you in this plan.",
+    "password": "Password (optional)",
+    "password_desc": "Prevent others from using your name in this plan without your permission.",
+    "viewing_as": "Viewing as",
+    "anonymous": "Anonymous",
+    "interacting_as": "Interacting as",
+    "guest": "Guest",
+    "guest_account": "Guest account",
+    "tuturuuu_account": "Tuturuuu account",
+    "switch_account": "Switch account",
+    "plan_users": "Plan users",
+    "timeblocks": "Timeblocks",
+    "name": "Name",
+    "update_plan": "Update plan",
+    "delete_plan": "Delete plan",
+    "updating_plan": "Updating plan...",
+    "deleting_plan": "Deleting plan...",
+    "update_plan_desc": "This plan will help you find the best time to meet together with your friends, family, or colleagues.",
+    "something_went_wrong": "Something went wrong",
+    "cant_update_plan_right_now": "We can't update your plan right now. Please try again later.",
+    "cant_delete_plan_right_now": "We can't delete your plan right now. Please try again later.",
+    "no_users_yet": "No users yet",
+    "are_you_absolutely_sure": "Are you absolutely sure?",
+    "delete_plan_warning": "This action cannot be undone. The plan and all related information will be permanently deleted from Tuturuuu.",
+    "select_users_to_filter": "Select users to filter",
+    "show_qr_code": "Show QR Code",
+    "qr_code_description": "Scan this QR code to quickly access the meet together plan details."
+  },
+  "notifications": {
+    "accept": "Accept",
+    "decline": "Decline",
+    "notifications": "Notifications",
+    "no-notifications": "You have no notifications yet.",
+    "workspace-invite": "Workspace invite",
+    "invited-to": "You have been invited to"
+  },
+  "nova": {
+    "badge": "Welcome to the Future of Prompt Engineering",
+    "title": "Master the Art of",
+    "description": "Your playground for crafting, testing, and perfecting AI prompts. Join a community of innovators solving real-world problems through advanced prompt engineering.",
+    "error": "Error",
+    "get-started": "Get Started",
+    "challenges": "Challenges",
+    "leaderboard": "Leaderboard",
+    "performance-analysis": "Performance Analysis",
+    "performance-analysis-description": "Track and optimize your prompt engineering efforts",
+    "explore": "Explore",
+    "season": "Season",
+    "feature-event": "Featured Event",
+    "time-line": {
+      "virtual-badge": "Virtual",
+      "onsite-badge": "Onsite",
+      "open-cere": "Open Ceremony",
+      "open-cere-description": "Join us for the kickoff of NEO League Season 1",
+      "open-cere-date": "19 April 2025",
+      "top-30-selection": "Top 30 Selection",
+      "top-30-selection-description": "First round of selections for top performers",
+      "top-30-selection-date": "26 April 2025",
+      "top-15-selection": "Top 15 Selection",
+      "top-15-selection-description": "Final online round to determine finalists",
+      "top-15-selection-date": "10 May 2025",
+      "final-competition": "Final Competition",
+      "final-competition-description": "Final round to determine the winners",
+      "final-competition-date": "31 May 2025"
+    },
+    "ai-capabilities": "AI Capabilities",
+    "ai-capabilities-subtitle": "Powered by Advanced AI Technology",
+    "ai-capabilities-description": "Experience the next generation of prompt engineering with our cutting-edge AI features and tools.",
+    "advanced-ai-models": "Advanced AI Models",
+    "advanced-ai-models-description": "Access GPT-4, Claude, and other cutting-edge AI models",
+    "smart-templating": "Smart Templating",
+    "smart-templating-description": "Create and share reusable prompt templates",
+    "fine-tune-controls": "Fine-tune Controls",
+    "fine-tune-controls-description": "Adjust parameters for perfect outputs",
+    "secure=processes": "Secure Processes",
+    "secure-processes-description": "Enterprise-grade security for your data",
+    "ethical-ai": "Ethical AI",
+    "ethical-ai-description": "Built-in bias detection and ethical guidelines",
+    "magic-commands": "Magic Commands",
+    "magic-commands-description": "Use special commands to quickly generate optimized prompts for different use cases",
+    "commands": {
+      "story": "/story \"Generate a creative story about...\"",
+      "analyze": "/analyze \"Analyze this text for sentiment...\"",
+      "improve": "/improve \"Make this text more engaging...\""
+    },
+    "interactive-demo": {
+      "title": "Interactive AI Demo",
+      "badge": "Live Preview",
+      "input1": "Generate a creative story about a time-traveling scientist.",
+      "response1": "Here's a short story about Dr. Elena Chen, a quantum physicist who accidentally discovered time travel while researching particle entanglement...",
+      "input2": "Make it more suspenseful and add a plot twist.",
+      "response2": "As Dr. Chen stepped through the quantum portal, she realized with horror that each \"alternate timeline\" she'd visited was actually creating paradoxical copies of herself...",
+      "ai-typing": "AI is typing...",
+      "user-typing": "User is typing...",
+      "input-place-holder": "Type your message..."
+    },
+    "browse-learning-resources": "Browse Learning Resources",
+    "get-started-today": "Get started today",
+    "get-started-today-subtitle": "Are you ready for AI?",
+    "get-started-today-description": "Join thousands of prompt engineers who are already creating more effective and efficient AI interactions with Nova.",
+    "requirements": "Admission Requirements",
+    "based-in": "Based in Ho Chi Minh City",
+    "undergraduates": "Undergraduate Students",
+    "age": "18+ yearts old",
+    "register": "Register for NEO League",
+    "platform-feature": "Platform Features",
+    "feature": "Platform Features",
+    "feature-title": "Everything You Need to Excel in Prompt Engineering",
+    "feature-title-description": "A comprehensive suite of tools designed for modern prompt engineers",
+    "advanced-ai": "Advanced AI Models",
+    "advanced-ai-description": "Access cutting-edge AI models for powerful prompt engineering",
+    "real-time": "Real-time Testing",
+    "real-time-description": "Test your prompts in real-time with instant feedback",
+    "collaborative-learning": "Collaborative Learning",
+    "collaborative-learning-description": "Learn from and share with the community",
+    "advanced-controls": "Advanced Controls",
+    "advanced-controls-description": "Fine-tune your prompts with advanced controls",
+    "smart-templates": "Smart Templates",
+    "smart-templates-description": "Start with optimized prompt templates",
+    "performance": "Performance Mode",
+    "performance-description": "Optimize for speed and efficiency",
+    "performance-analytics": "Performance Analytics",
+    "performance-analytics-description": "Track and optimize your prompt engineering efforts",
+    "AI-assistant": "AI Assistant",
+    "AI-assistant-description": "Get help from our AI assistant for prompt engineering",
+    "learning-resources": "Learning Resources",
+    "learning-subtitle": "Master Prompt Engineering Through Structured Learning",
+    "start-button": "Start",
+    "why-is-prompt-engineering": "Why is Prompt Engineering Important?",
+    "why-is-prompt-engineering-description": "Prompt engineering is crucial because it directly impacts the quality and usefulness of AI-generated content. Well-crafted prompts can significantly improve the accuracy, relevance, and coherence of AI outputs.",
+    "learning-page-subtitle": "Follow our comprehensive curriculum to become an expert in crafting effective AI prompts",
+    "module-1": "Introduction to Prompt Engineering",
+    "module-1-description": "Learn the basics of prompt engineering and its importance in AI development",
+    "what-is-prompt-engineering": "What is Prompt Engineering?",
+    "what-is-prompt-engineering-description": "Prompt engineering is the practice of designing and refining input prompts for AI language models to generate desired outputs. It involves crafting clear, specific, and effective instructions that guide the AI in producing accurate and relevant responses.",
+    "module-2": "Basic Techniques in Prompt Engineering",
+    "module-2-description": "Master fundamental strategies for effective prompting",
+    "zero-shot": "Zero-shot & Few-shot Prompting",
+    "zero-shot-description": "Learn the differences between zero-shot and few-shot prompting, and when to use each approach effectively.",
+    "chain-of-thought": "Chain of Thought Prompting",
+    "chain-of-thought-description": "Master the technique of breaking down complex problems into logical steps for better AI responses.",
+    "module-3": "Advanced Strategies",
+    "module-3-description": "Explore advanced techniques for complex prompt engineering",
+    "iterative-refinement": "Iterative Refinement",
+    "iterative-refinement-description": "Learn how to iteratively improve prompts based on AI outputs for optimal results.",
+    "module-4": "Best practices",
+    "Meta-prompting": "Meta prompting",
+    "Meta-prompting-description": "Discover advanced techniques for using prompts to generate other prompts automatically.",
+    "module-4-description": "Explore advanced techniques for complex prompt engineering",
+    "learning-subtitle-description": "Access comprehensive tutorials, guides, and real-world examples to enhance your prompt engineering skills. Learn from industry experts and join a supportive community.",
+    "structure-learning-description": "Learn from industry experts and join a supportive community.",
+    "learning-tututorials": "Interactive tutorials and exercises",
+    "real-world": "Real-world examples and case studies",
+    "expert-lead": "Expert-led workshops",
+    "community": "Community challenges and competitions",
+    "structure-learning": "Structured learning paths",
+    "community-support": "Community Support",
+    "community-support-description": "Learn and grow with fellow prompt engineers",
+    "earn-cert": "Earn Certifications",
+    "earn-cert-description": "Get certified in prompt engineering and showcase your skills",
+    "program-objectives": "Program Objectives",
+    "program-objectives-description-1": "Democratize Prompt Engineering across all backgrounds",
+    "program-objectives-description-2": "Develop practical AI skills and problem-solving abilities",
+    "program-objectives-description-3": "Build a global community of AI innovators",
+    "program-objectives-description-4": "Foster creative solutions to real-world challenges",
+    "program-objectives-description-5": "Advance AI literacy and ethical understanding",
+    "error-description": "An error occurred while processing your request. Please try again later.",
+    "error-404": "Page not found",
+    "error-404-description": "The page you are looking for does not exist.",
+    "error-500": "Internal server error",
+    "error-500-description": "Something went wrong. Please try again later.",
+    "dashboard": "Dashboard",
+    "problems": "Problems",
+    "roles": "Roles",
+    "create-problem": "Create Problem",
+    "view-leaderboard": "View leaderboard",
+    "challenges-page": {
+      "prompt-engineering-challenges": "Prompt Engineering Challenges",
+      "start-challenge": "Start a Challenge",
+      "create-challenge": "Create Challenge",
+      "search-placeholder": "Search challenges...",
+      "filters": {
+        "all": "All",
+        "disabled": "Disabled",
+        "upcoming": "Upcoming",
+        "preview": "Preview",
+        "active": "Active",
+        "closed": "Closed"
+      },
+      "no-challenges-found": {
+        "title": "No challenges found",
+        "search-description": "No challenges match your search criteria. Try adjusting your filters or search terms.",
+        "default-description": "There are no challenges available at the moment. Check back later or contact an administrator."
+      },
+      "clear-filters": "Clear filters"
+    },
+    "submission-page": {
+      "title": "Submissions",
+      "description": "Manage and review user submissions",
+      "total-submissions": "Total Submissions",
+      "total-submissions-description": "All time submissions",
+      "unique-users": "Unique Users",
+      "unique-users-description": "Users who have submitted",
+      "latest-submission": "Latest Submission",
+      "latest-submission-description": "Most recent activity",
+      "no-submissions-yet": "No submissions yet",
+      "filters": {
+        "title": "All Challenges",
+        "all-problems": "All Problems",
+        "filter-challenges": "Filter by Challenge",
+        "filter-problems": "Filter by Problem",
+        "clear-filters": "Clear Filters",
+        "all-statuses": "All statuses",
+        "in-progress": "In progress",
+        "ended": "Ended"
+      },
+      "submission-table": {
+        "status": {
+          "in_progress": "In Progress",
+          "ended": "Ended"
+        },
+        "headers": {
+          "user": "User",
+          "problem": "Problem",
+          "score": "Score",
+          "date": "Date",
+          "actions": "Actions"
+        },
+        "empty-state": {
+          "no-results": "No results found for",
+          "no-submissions": "No submissions found",
+          "clear-search": "Clear Search"
+        },
+        "actions": {
+          "view-details": "View Details",
+          "challenge-results": "Challenge Results"
+        }
+      }
+    },
+    "cards": {
+      "learn": {
+        "title": "Learn",
+        "description": "Explore comprehensive guides and tutorials on prompt engineering techniques."
+      },
+      "practice": {
+        "title": "Practice",
+        "description": "Tackle real-world challenges and improve your skills in a hands-on environment."
+      },
+      "innovate": {
+        "title": "Innovate",
+        "description": "Push the boundaries of what's possible with AI and create groundbreaking prompts."
+      },
+      "compete": {
+        "title": "Compete",
+        "description": "Join the leaderboard and see how your prompt engineering skills stack up against others."
+      }
+    },
+    "learn_more": "Learn More",
+    "about": {
+      "title": "The People Behind",
+      "subtitle": "Meet the team of organizers, developers, sponsors, and contributors who make the NEO League - Prompt the Future 2025 possible.",
+      "event-intro": {
+        "badge": "First Ever Collaboration",
+        "event-title": "NEO League – Prompt the Future 2025",
+        "event-description": "The first-ever prompt engineering competition hosted by RMIT SGS Neo Culture Tech club, with technical and platform support from Tuturuuu, a pioneer in AI and smart productivity tools.",
+        "features": {
+          "challengesTitle": "Innovative Challenges",
+          "challengesDesc": "Participants tackle real-world AI prompt engineering problems designed by industry experts.",
+          "skillsTitle": "Skill Development",
+          "skillsDesc": "Comprehensive learning resources and mentorship to help participants master prompt engineering.",
+          "communityTitle": "Community Building",
+          "communityDesc": "Connect with like-minded AI enthusiasts and industry professionals throughout the competition."
+        },
+        "call-to-action": {
+          "title": "Join the Revolution",
+          "desc": "Be part of the first-ever prompt engineering competition that's shaping the future of AI interaction"
+        }
+      },
+      "prompt-intro": {
+        "badge": "The Art & Science",
+        "title1": "What is ",
+        "title2": "Prompt Engineering?",
+        "description": "The emerging discipline that bridges human creativity with artificial intelligence, unlocking the full potential of AI systems through carefully crafted instructions",
+        "cards": {
+          "language-title": "The Language of AI",
+          "language-desc": "Prompt engineering is the art of communicating effectively with AI systems, crafting precise instructions that guide models toward desired outputs.",
+          "creativity-title": "Precision & Creativity",
+          "creativity-desc": "Combining technical precision with creative thinking to unlock capabilities hidden within AI models, transforming vague ideas into concrete results.",
+          "future-work-title": "The Future of Work",
+          "future-work-desc": "A critical skill for the AI era, enabling professionals across industries to leverage AI as a powerful tool for innovation and problem-solving."
+        }
+      },
+      "prompt-impact": {
+        "badge": "Why It Matters",
+        "title": "The Bridge Between Human Intent and AI Capability",
+        "description": "As AI systems become increasingly powerful, the ability to direct them effectively becomes crucial. Prompt engineering is the key that unlocks their potential, transforming these sophisticated tools into practical solutions for real-world challenges.",
+        "cards": {
+          "democratize-title": "Democratizing AI",
+          "democratize-desc": "Making advanced AI accessible to everyone.",
+          "precision-title": "Precision Control",
+          "precision-desc": "Achieving specific, accurate results from general-purpose AI models.",
+          "skill-title": "Skill of the Future",
+          "skill-desc": "A critical competency for professionals in the rapidly evolving AI landscape."
+        },
+        "example-code": "Create a detailed plan for a sustainable smart city that integrates AI for resource management"
+      },
+      "why-now-why-us": {
+        "why-now": {
+          "badge": "Why Now?",
+          "title": "The Perfect Moment",
+          "description": " We're at a pivotal moment in AI development. Large language models have reached a level of capability where prompt engineering is no longer just a technical skill—it's a creative discipline with transformative potential across industries.",
+          "tagline": "The Year of Prompt Engineering"
+        },
+        "why-us": {
+          "badge": "Why Us?",
+          "title": "Pioneering Excellence",
+          "description": "The collaboration between RMIT SGS Neo Culture Tech club and Tuturuuu brings together academic rigor and technical innovation. We're uniquely positioned to create a competition that challenges participants while providing the resources they need to excel.",
+          "academic": "Academic Excellence",
+          "technical": "Technical Innovation"
+        }
+      },
+      "organizers": {
+        "title": "Organizers",
+        "subtitle": "The team leading the NEO League initiative and competition.",
+        "members": {
+          "vo-hoang-phuc": {
+            "name": "Võ Hoàng Phúc",
+            "role": "Nova Project Leader",
+            "organization": "Tuturuuu",
+            "bio": "Built the platform and ensured the competition runs smoothly, with a focus on technical aspects."
+          },
+          "nguyen-yen-ngoc": {
+            "name": "Nguyễn Yến Ngọc",
+            "role": "Nova External Affairs Leader",
+            "organization": "Tuturuuu",
+            "bio": "Work with external organizations and stakeholders to ensure the competition is successful."
+          },
+          "doan-huu-quoc": {
+            "name": "Đoàn Hữu Quốc",
+            "role": "Nova Quality Assurance Leader",
+            "organization": "ZenBright",
+            "bio": "Ensure the platform is of high quality and intuitive, with a focus on the user experience."
+          },
+          "cao-nguyen-viet-quang": {
+            "name": "Cao Nguyễn Việt Quang",
+            "role": "Neo League Project Leader & External Affairs Leader",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Supervise the project and ensure the competition is run smoothly."
+          },
+          "dao-ngoc-khanh": {
+            "name": "Đào Ngọc Khanh",
+            "role": "Neo League Co-leader & Marketing & Communications",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Promote the competition and build the community."
+          },
+          "ngo-van-tai": {
+            "name": "Ngô Văn Tài",
+            "role": "Neo League Program Leader",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Handle everything related to the program, including the competition and the community."
+          },
+          "huynh-tan-phat": {
+            "name": "Huỳnh Tấn Phát",
+            "role": "Neo League Logistic and Finance Leader",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Handle the logistics and finance of the competition."
+          },
+          "huynh-hoang-duc": {
+            "name": "Huỳnh Hoàng Đức",
+            "role": "Neo League Internal Affairs Leader",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Handle the internal affairs of the competition."
+          },
+          "nguyen-vo-phuong-quynh": {
+            "name": "Nguyễn Võ Phương Quỳnh",
+            "role": "Neo League Creative Leader",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Handle the creative aspects of the competition."
+          },
+          "tran-duc-linh": {
+            "name": "Dr. Trần Đức Linh",
+            "role": "Neo League Academic Mentor",
+            "organization": "RMIT University",
+            "bio": "Provide guidance and compile challenges for the competition."
+          },
+          "pham-chi-thanh": {
+            "name": "Dr. Phạm Chí Thanh",
+            "role": "Neo League Academic Mentor",
+            "organization": "RMIT University",
+            "bio": "Provide guidance and compile challenges for the competition."
+          },
+          "tom-huynh": {
+            "name": "Dr. Tom Huynh",
+            "role": "Neo League Academic Mentor",
+            "organization": "RMIT University",
+            "bio": "Provide guidance and compile challenges for the competition."
+          }
+        }
+      },
+      "platform-builder": {
+        "title": "Platform Builders",
+        "subtitle": "The development team who built the NEO League platform, powered by Tuturuuu technology.",
+        "members": {
+          "vo-hoang-phuc": {
+            "name": "Võ Hoàng Phúc",
+            "role": "Lead Developer",
+            "organization": "Tuturuuu",
+            "bio": "Core maintainer of Tuturuuu and Nova, with a passion for building tools that help people be more productive and creative."
+          },
+          "huynh-tan-phat": {
+            "name": "Huỳnh Tấn Phát",
+            "role": "Fullstack Engineer",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Built the foundation of the Neo League platform, focusing on scalability and performance."
+          },
+          "nguyen-gia-khang": {
+            "name": "Nguyễn Gia Khang",
+            "role": "Fullstack Engineer",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Enhanced the user experience of the Neo League platform, with a focus on usability and accessibility."
+          },
+          "ngo-van-tai": {
+            "name": "Ngô Văn Tài",
+            "role": "Fullstack Engineer",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Strengthened the Neo League platform through backend development, system maintenance, and continuous support for platform improvements."
+          },
+          "huynh-thai-duong": {
+            "name": "Huỳnh Thái Dương",
+            "role": "Frontend Engineer",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Developed the responsive and user-friendly frontend of the Neo League platform."
+          }
+        }
+      },
+      "sponsors": {
+        "badge": "Sponsors",
+        "title": "Our Sponsors",
+        "subtitle": "Organizations supporting the NEO League initiative.",
+        "call-to-action": {
+          "text": "Interested in sponsoring NEO League?",
+          "button": "Contact Us"
+        },
+        "tuturuuu": {
+          "name": "Tuturuuu",
+          "description": "Pioneer in AI and smart productivity tools, providing technical and platform support for the Neo League competition. Tuturuuu Nova is revolutionizing how we interact with AI through advanced prompt engineering."
+        },
+        "rmit-neo-culture-tech": {
+          "name": "RMIT SGS Neo Culture Tech",
+          "description": "Host of the Neo League – Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students."
+        },
+        "rmit-sset": {
+          "name": "RMIT SSET",
+          "description": "Partner of the Neo League - Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students."
+        },
+        "aptech": {
+          "name": "Aptech",
+          "description": "Sponsor of the Neo League - APTECH has been in Vietnam since 1999, providing reputable education primarily to students, high school learners and has trained over 100,000 international programmers for Vietnam's IT industry."
+        },
+        "holistics": {
+          "name": "Holistics",
+          "description": "Sponsor of the Neo League - Holistics offers a self-service business intelligence platform to help businesses improve their data capabilities easily, focusing on boosting data team productivity and making insights accessible across the company."
+        },
+        "AICT": {
+          "name": "AICT",
+          "description": "Sponsor of the Neo League - Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students."
+        },
+        "student-council": {
+          "name": "RMIT Student Council",
+          "description": "Partner of the Neo League - RMIT Vietnam Student Council (SC) is the representative of RMIT Vietnam student bodies. SC is the conduit for communication between students and the University. By listening and considering students' concerns, SC aims to increase their education experience, personal welfare, social life and cultural activities. "
+        },
+        "netcompany": {
+          "name": "Netcompany",
+          "description": "Sponsor of the Neo League - Netcompany is an IT services company specializing in strategic projects that drive digital transformation through digital platforms, core systems, and infrastructure services."
+        }
+      },
+      "special-thanks": {
+        "title": "Special Thanks",
+        "subtitle": "Contributors and supporters who helped make NEO League possible.",
+        "contributors": {
+          "rmit-university": {
+            "name": "RMIT University",
+            "contribution": "Academic support and venue hosting for the final competition"
+          },
+          "ai-research-community": {
+            "name": "AI Research Community",
+            "contribution": "Challenge design and technical advisory"
+          },
+          "volunteer-mentors": {
+            "name": "Volunteer Mentors",
+            "contribution": "Providing guidance and support to Neo League participants"
+          },
+          "industry-experts": {
+            "name": "Industry Experts",
+            "contribution": "Judging panel and masterclass sessions"
+          },
+          "student-ambassadors": {
+            "name": "Student Ambassadors",
+            "contribution": "Campus outreach and participant support"
+          },
+          "open-source-community": {
+            "name": "Open Source Community",
+            "contribution": "Various libraries and tools used in the platform"
+          },
+          "beta-testers": {
+            "name": "Beta Testers",
+            "contribution": "Platform testing and feedback before launch"
+          },
+          "media-partners": {
+            "name": "Media Partners",
+            "contribution": "Coverage and promotion of the Neo League competition"
+          }
+        },
+        "community": {
+          "title": "Community Contributions",
+          "contribution": "We'd like to thank all the community members, volunteers, and participants who have contributed to making NEO League a success. Your passion and dedication drive us forward."
+        }
+      },
+      "tech-sponsor": {
+        "title": "Powered by ",
+        "intro": "The Tuturuuu team has been instrumental in making the Neo League competition a reality. Beyond just providing the Nova platform, Tuturuuu's contributions span across multiple aspects of the competition:",
+        "sections": {
+          "infrastructure": {
+            "title": "Technical Infrastructure",
+            "description": "Developing and maintaining the entire competition platform, including the prompt evaluation system."
+          },
+          "resources": {
+            "title": "Educational Resources",
+            "description": "Developing learning materials and documentation to help participants master prompt engineering."
+          },
+          "challenges": {
+            "title": "Challenge Design",
+            "description": "Creating technically sound and educationally valuable prompt engineering challenges."
+          },
+          "mentorship": {
+            "title": "Mentorship & Support",
+            "description": "Providing technical guidance and mentorship to participants throughout the competition."
+          }
+        },
+        "quote": {
+          "text": "This competition represents our commitment to advancing prompt engineering as a discipline and empowering the next generation of AI practitioners.",
+          "author": "The Tuturuuu Team"
+        }
+      }
+    },
+    "teams": "Teams",
+    "submissions": "Submissions",
+    "home": "Home",
+    "leaderboard-page": {
+      "title": "Leaderboard",
+      "description": "Compete against the best players around the world. Climb the ranks and claim your spot at the top of the leaderboard!",
+      "current-rank": "Your Current Rank",
+      "badge": {
+        "competition": "Competition",
+        "active": "Active",
+        "live": "Live"
+      },
+      "statistics": {
+        "position": {
+          "title": "Your Position",
+          "not-ranked": "Not Ranked Yet",
+          "top-position": "Top tier competitor!",
+          "rising-position": "Rising through the ranks!",
+          "normal-position": "Keep improving!"
+        },
+        "highest-score": {
+          "title": "Highest Score",
+          "description": "Achieve by",
+          "no-participant": "No participants yet"
+        },
+        "total": {
+          "player": "Total Player",
+          "teams": "Total Teams",
+          "description": "Join the competition!",
+          "heating-up": "Competition is heating up!",
+          "join-now": "Join the competition!"
+        }
+      },
+      "individual": "Individual",
+      "team": "Teams",
+      "share": "Share",
+      "view-profile": "View Profile",
+      "top-performers": {
+        "title": "Top Performers",
+        "ranks": {
+          "first-badge": "Champion",
+          "second-badge": "Runner-up",
+          "third-badge": "Third Place"
+        }
+      },
+      "selected-challenges": "Selected Challenge",
+      "filter-challenges": {
+        "specific-challenge-title": "Showing leaderboard rankings for this specific challenge",
+        "view-all-challenges": "View All Challenges",
+        "total-participants": "Total Participants",
+        "highest-score": "Highest Score",
+        "your-rank": "Your Rank"
+      },
+      "load-more": "Load More",
+      "tutorials": {
+        "title": "How to Play",
+        "step-1": "Complete challenges and quests to earn points",
+        "step-2": "Your total points determine your rank on the leaderboard",
+        "step-3": "Compete with others for the top spot and win exclusive rewards"
+      },
+      "rewards": {
+        "current-rewards": "Current Rewards",
+        "1st-place": "Champion",
+        "1st-place-reward": "185,000,000 VND \n(Cash + Scholarships)",
+        "2nd-place": "1st Runner-up",
+        "2nd-place-reward": "111,000,000 VND (Cash + Scholarships)",
+        "3rd-place": "2nd Runner-up",
+        "3rd-place-reward": "67,000,000 VND (Cash + Scholarships)",
+        "top-5": "Co-Top 5 Finalists",
+        "top-5-reward": "63,000,000 VND (Scholarships)",
+        "top-16": "Co-Top 16 Finalists",
+        "top-16-reward": "3,840,000 VND (DB Diagram Pro accounts)",
+        "first-45-teams": "First 45 Teams",
+        "first-45-teams-reward": "Tuturuuu Pro accounts per team"
+      },
+      "share-leaderboard": "Share Leaderboard",
+      "last-updated": "Last updated:",
+      "filters": {
+        "filters": "Filters",
+        "all-challenges": "All Challenges",
+        "search-competitors": "Search competitors...",
+        "score-range": {
+          "name": "Score Range",
+          "all-scores": "All Scores",
+          "high-scores": "High (1000+)",
+          "medium-scores": "Medium (500-999)",
+          "low-scores": "Low (0-499)"
+        },
+        "time-period": {
+          "name": "Time Period",
+          "all-time": "All Time",
+          "today": "Today",
+          "this-week": "This Week",
+          "this-month": "This Month"
+        },
+        "status": {
+          "name": "Status",
+          "all-users": "All Users",
+          "active": "Active",
+          "inactive": "Inactive"
+        },
+        "region": {
+          "name": "Region",
+          "global": "Global",
+          "americas": "Americas",
+          "europe": "Europe",
+          "asia": "Asia"
+        }
+      },
+      "points": "Points",
+      "rankings": {
+        "challenge-breakdown": "Challenge Breakdown",
+        "problem-breakdown": "Problem Breakdown",
+        "show-breakdown": "Show Breakdown",
+        "hide-breakdown": "Hide Breakdown",
+        "title": "Leaderboard Rankings",
+        "rank": "Rank",
+        "score": "Score",
+        "user": "User",
+        "highest-first": "Highest First",
+        "lowest-first": "Lowest First",
+        "best-in": "Best in:",
+        "you": "You",
+        "hover-info": "Click to change sort order",
+        "no-entries-found": "No entries found",
+        "first-join": "Be the first to join the competition!",
+        "pts": "pts"
+      },
+      "neo-league-card": {
+        "title": "NEO League Competition",
+        "new": "New",
+        "description": "By default, this leaderboard shows scores from all challenges combined. To view results specifically for Round 1 of the NEO League competition, click the link below.",
+        "view-round-1": "View Round 1 Results",
+        "view-all-challenges": "View All Challenges",
+        "round-1-description": "You are currently viewing the results for Round 1 of the NEO League competition. The scores shown are specific to this challenge.",
+        "active": "Active",
+        "round-1-title": "Viewing NEO League Round 1"
+      },
+      "teams": "Teams"
+    },
+    "profile-page": {
+      "breadcrumb": {
+        "home": "Home",
+        "leaderboard": "Leaderboard"
+      },
+      "rank": "Rank",
+      "challenge": "Challenge",
+      "challenges": {
+        "title": "Challenges",
+        "problems": "problems",
+        "no-challenges": "No Challenges Yet",
+        "no-challenges-description": "You haven't attempted any challenges yet. Browse available challenges to get started.",
+        "browse-challenges": "Browse Challenges"
+      },
+      "score": "Score",
+      "joined": "Joined",
+      "level": "Level",
+      "points": "points",
+      "share-profile": "Share profile",
+      "edit-profile": "Edit profile",
+      "tabs": {
+        "overview": "Overview",
+        "challenges": "Challenges",
+        "activity": "Activity"
+      },
+      "progress": {
+        "excellent": "Excellent",
+        "great": "Great job",
+        "good": "Good progress",
+        "progress": "Keep going",
+        "started": "Just started"
+      },
+      "stats": {
+        "title": "Statistics",
+        "description": "Your performance at a glance",
+        "total-score": "Total Score",
+        "rank": "Rank",
+        "problems-attempted": "Problems Attempted",
+        "challenges": "Challenges",
+        "overall-progress": "Overall Progress",
+        "problems": "problems",
+        "leaderboard-position": "Leaderboard Position"
+      },
+      "overview": {
+        "best-performance": "Best Challenge Performance",
+        "recent-activity": "Recent Activity",
+        "problem-submissions": "Problem Submissions",
+        "avg-score": "Average Score",
+        "best-score": "Best Score",
+        "last-active": "Last Active",
+        "top-problems": "Top Problem Scores",
+        "top-problems-description": "Your highest-scoring problem solutions",
+        "problems": "problems",
+        "view-challenge": "View Challenge"
+      },
+      "activity": {
+        "recent": "Recent Activity",
+        "description": "Your latest prompt engineering submissions",
+        "excellent": "Excellent",
+        "good": "Good",
+        "average": "Average",
+        "needs-work": "Needs Work",
+        "no-activity": "No Recent Activity",
+        "no-activity-description": "You haven't submitted any solutions recently."
+      },
+      "profile-header": {
+        "joined": "Joined",
+        "points": "Points",
+        "level": "Level ",
+        "level-progress": "to Level",
+        "edit-profile": "Edit Profile",
+        "share": "Share",
+        "copied": "Copied!",
+        "view-leaderboard": "View Leaderboard"
+      },
+      "info-tiles": {
+        "score": "SCORE",
+        "rank": "RANK",
+        "challenges": "CHALLENGES",
+        "achievements": "ACHIEVEMENTS"
+      },
+      "overview-tab": {
+        "name": "Overview",
+        "summary-title": "Activity Summary",
+        "summary-submissions": "Submissions",
+        "summary-average-score": "Average Score",
+        "summary-best-score": "Best Score",
+        "challenge-title": "Best Challenge Performance",
+        "challenge-description": "Highest scoring challenge completed by ",
+        "challenge-top-score": "Top Score",
+        "challenge-performance": "Performance",
+        "challenge-view-all": "View All Challenges",
+        "achievements-title": "Recent Achievements",
+        "achievements-description": "Unlocked badges and accomplishments",
+        "achievements-view-all": "View All Achievements",
+        "activity-title": "Recent Activity",
+        "activity-description": "Latest prompt engineering submissions",
+        "activity-view-all": "View All Activity"
+      },
+      "challenges-tab": {
+        "name": "Challenges",
+        "title": "Challenge Performance",
+        "description": "All completed challenges with scores",
+        "progress": "Progress",
+        "no-challenges": "No challenges completed yet"
+      },
+      "achievements-tab": {
+        "name": "Achievements",
+        "title": "Achievements Showcase",
+        "description": "Badges and achievements earned",
+        "locked": "Locked",
+        "unlocked": "Unlocked"
+      },
+      "activity-tab": {
+        "name": "Activity",
+        "title": "Recent Activity",
+        "description": "Latest prompt engineering attempts and submissions",
+        "submitted-solution": "Submitted a solution",
+        "no-activity": "No recent activity"
+      },
+      "achievements": {
+        "title": "Achievements",
+        "unlocked": "unlocked",
+        "adopter": "Early Adopter",
+        "adopter-description": "Joined during the platform's early days",
+        "master": "Challenge Master",
+        "master-description": "Completed 5+ different challenges",
+        "high-scorer": "High Scorer",
+        "high-scorer-description": "Achieved a score over 500 points",
+        "top-rank": "Top Ranked",
+        "top-rank-description": "Reached the top 10 on the leaderboard",
+        "consistent": "Consistent Learner",
+        "consistent-description": "Submitted solutions regularly",
+        "prompt-master": "Prompt Master",
+        "prompt-master-description": "Achieved perfect scores in multiple challenges"
+      }
+    },
+    "challenge": {
+      "edit": "Edit Challenge",
+      "update": "Update Challenge",
+      "create": "Create Challenge",
+      "create-challenge": "Create a new prompt engineering challenge for users to practice with.",
+      "edit-description": "Edit the challenge details and settings.",
+      "save-changes": "Save Changes",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "delete-confirmation": "Are you sure you want to delete this challenge? This action cannot be undone.",
+      "limits": "Attempt Limits",
+      "max-attempts": "Max Attempts",
+      "attempt-description": "Total number of times a user can attempt this challenge.",
+      "daily-attempts": "Maximum Daily Attempts",
+      "number-of-attempts": "Number of times a user can attempt this per day.",
+      "details": {
+        "details": "Details",
+        "challenge-details": "Challenge Details",
+        "title": "Title",
+        "title-description": "Give your challenge a descriptive title.",
+        "description": "Description",
+        "description-placeholder": "Provide a detailed description of the challenge.",
+        "form-description": "Form Description"
+      },
+      "judging-criteria": {
+        "judging-criteria": "Judging Criteria",
+        "judging-criteria-description": "Define how submissions will be evaluated. Each criterion will be scored separately.",
+        "add-criteria": "Add Criteria",
+        "remove-criteria": "Remove",
+        "criteria-name": "Criteria Name",
+        "criteria-name-placeholder": "Criteria name (e.g., Clarity, Efficiency)",
+        "criteria-description": "Criteria Description",
+        "criteria-description-placeholder": "Explain how this criteria will be judged (e.g., 'How clear and unambiguous is the prompt?')",
+        "no-criteria": "No criteria added yet",
+        "criteria": "Criteria"
+      },
+      "security": {
+        "security": "Security",
+        "security-description": "Secure your challenge with a password or restrict access to specific users.",
+        "password-protect": "Password Protection",
+        "password-description": "Require a password to access this challenge",
+        "challenge-password": "Challenge Password",
+        "leave-empty": "Leave empty to keep current password",
+        "enter-password": "Enter new password",
+        "enter-or-leave-password": "Enter a new password or leave empty to keep the current one",
+        "must-be-6-characters": "Password must be at least 6 characters long",
+        "enable": "Enabled",
+        "enable-description": "Whether this challenge is currently enabled."
+      },
+      "whitelist": {
+        "only": "Whitelisted Only",
+        "whitelist-only-description": "Restrict access to only whitelisted users.",
+        "emails": "Whitelisted Emails Adress",
+        "emails-description": "Only these email addresses will have access to the challenge.",
+        "remove": "Remove",
+        "email-enter-placeholder": "Enter email address",
+        "add": "Add"
+      },
+      "duration": {
+        "duration": "Duration",
+        "duration-description": "Set how long participants have to complete the challenge once they start.",
+        "seconds": "Seconds",
+        "common-duration": "Common Durations:",
+        "30-minutes": "30 Minutes",
+        "1-hour": "1 Hour",
+        "2-hour": "2 Hour",
+        "4-hour": "4 Hour",
+        "duration-display-description": "How long users have to complete this challenge once they start it."
+      },
+      "schedule": {
+        "schedule": "Schedule",
+        "schedule-description": "Set when your challenge is available to participants.",
+        "timeline-recommendation": "Timeline Recommendation",
+        "timeline-recommendation-description": "For best results, set dates in this order: Preview Date ➝ Open Date ➝ Close Date.",
+        "preview-available": "Preview Available",
+        "preview-available-description": " When participants can preview this challenge before it starts.",
+        "open-at": "Open at",
+        "open-at-description": "When the challenge starts",
+        "end-at": "Open at",
+        "end-at-description": "When the challenge starts"
+      },
+      "cards": {
+        "disabled": "Disabled",
+        "upcoming": "Upcoming",
+        "preview": "Preview",
+        "active": "Active",
+        "closed": "Closed",
+        "your-session": "your session",
+        "in-progress": "In Progress",
+        "time-remaining": "Time Remaining",
+        "started-at": "Started at",
+        "ends-at": "Ends at",
+        "retry-challenges": "Retry Challenges",
+        "comeback-tomorrow": "Come back tomorrow",
+        "view-results": "View Results",
+        "resume-challenge": "Resume Challenge",
+        "start-challenge": "Start Challenge",
+        "not-available": "Not Available",
+        "available-soon": "Available Soon",
+        "not-yet-opened": "Not yet opened",
+        "open-menu": "Open Menu",
+        "edit": "Edit",
+        "delete": "Delete",
+        "duration": "Duration",
+        "total-attempts": "Total Attempts",
+        "daily-attempts": "Daily Attempts",
+        "preview-available": "Preview Available",
+        "open-in": "Opens in",
+        "closes-in": "Closes in",
+        "delete-challenge": "Delete Challenge",
+        "delete-challenge-description": "Are you sure you want to delete this challenge? This action cannot be undone.",
+        "cancel": "Cancel"
+      }
+    },
+    "score-calculator": "Score Calculator",
+    "sessions": "Sessions"
+  },
+  "onboarding": {
+    "just-a-moment": "Just a moment...",
+    "just-a-moment-desc": "Accept a workspace invite to get started.",
+    "no-invites": "You have no pending invites."
+  },
+  "platform-token-usage": {
+    "hourly_total_from_last_12_hours": "Hourly total token from last 12 hours",
+    "daily_total_from_14_recent_days": "Daily total token from 14 most recent days",
+    "monthly_total_from_12_recent_months": "Monthly total token from 12 most recent months",
+    "prompt_tokens": "Prompt tokens",
+    "completion_tokens": "Completion tokens"
+  },
+  "post-email-data-table": {
+    "id": "ID",
+    "recipient": "Recipient",
+    "group_name": "Group Name",
+    "post_title": "Post Title",
+    "post_content": "Post Content",
+    "email": "Email",
+    "subject": "Subject",
+    "is_completed": "Work Completed",
+    "send_email": "Send Email",
+    "preview": "Preview",
+    "notes": "Notes",
+    "created_at": "Created At"
+  },
+  "product-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "category": "Category",
+    "description": "Description",
+    "manufacturer": "Manufacturer",
+    "stock": "Stock",
+    "unit": "Unit",
+    "warehouse": "Warehouse",
+    "usage": "Usage",
+    "price": "Price",
+    "created_at": "Created at"
+  },
+  "promotion-data-table": {
+    "id": "ID",
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "value": "Value",
+    "created_at": "Created at"
+  },
+  "quiz-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "question": "Question",
+    "created_at": "Created At"
+  },
+  "quiz-set-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "linked_modules": "Linked Modules",
+    "is_public": "Public",
+    "is_published": "Published",
+    "created_at": "Created At"
+  },
+  "reset-password": {
+    "reset-password": "Reset Password",
+    "reset-password-desc": "Enter the new password for your account",
+    "resetting": "Resetting"
+  },
+  "search": {
+    "search": "Search",
+    "search-placeholder": "Enter a keyword to search"
+  },
+  "secret-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "value": "Value",
+    "created_at": "Created at"
+  },
+  "settings-account": {
+    "account": "Account",
+    "avatar": "Avatar",
+    "avatar-description": "Personalize your profile with a custom avatar.",
+    "revert_changes": "Revert changes",
+    "preview": "Preview",
+    "display-name": "Display name",
+    "display-name-description": "Enter your name as you would like it to be displayed on your profile.",
+    "handle-description": "This is your custom URL namespace within Tuturuuu.",
+    "birthday": "Birthday",
+    "birthday-description": "Your birthday will only be used for social features.",
+    "birthday-placeholder": "Your birthday",
+    "email-description": "Your email address that you used to login with.",
+    "current-email": "Current email",
+    "new-email": "New email",
+    "change-email-description": "Once you have confirmed the change on both emails, your new email address will be automatically applied.",
+    "language": "Language",
+    "language-description": "Change the language of the website.",
+    "development": "Development",
+    "development-description": "Customize local development settings.",
+    "hide-experimental-on-sidebar": "Hide experimental features on sidebar",
+    "hide-experimental-on-top-nav": "Hide experimental features on top navigation bar",
+    "logout-description": "Log out of your account.",
+    "confirm-account-deletion": "Confirm account deletion",
+    "change-password": "Change password",
+    "change-password-description": "Change your pasword",
+    "delete-account": "Delete account",
+    "delete-account-description": "Delete your account",
+    "delete-account-message": "This will permanently delete your account and cannot be undone. Type your email address to confirm deletion.",
+    "new_avatar": "New avatar",
+    "upload_avatar": "Upload avatar",
+    "remove_avatar": "Remove avatar",
+    "save_avatar": "Save avatar"
+  },
+  "settings-appearance": {
+    "appearance": "Appearance",
+    "appearance-description": "Customize the look and feel of Tuturuuu.",
+    "light-mode": "Light mode",
+    "dark-mode": "Dark mode"
+  },
+  "settings-security": {
+    "security": "Security",
+    "security-description": "Manage your account security",
+    "change-email": "Change email",
+    "change-password": "Change password",
+    "delete-account": "Delete account"
+  },
+  "settings-tabs": {
+    "account": "Account",
+    "appearance": "Appearance",
+    "security": "Security",
+    "notifications": "Notifications",
+    "integrations": "Integrations",
+    "workspaces": "Workspaces",
+    "activities": "Activities",
+    "billing": "Billing"
+  },
+  "settings-workspaces": {
+    "workspaces": "Workspaces",
+    "workspaces-description": "Workspaces that you have access to will be listed here."
+  },
+  "sidebar_tabs": {
+    "invite": "Invite",
+    "more-members": "more members",
+    "new": "New",
+    "home": "Home",
+    "refresh": "Refresh",
+    "chat_with_ai": "Chat with AI",
+    "calendar": "Calendar",
+    "projects": "Projects",
+    "documents": "Documents",
+    "drive": "Drive",
+    "users": "Users",
+    "attendance": "Attendance",
+    "healthcare": "Healthcare",
+    "inventory": "Inventory",
+    "classes": "Classes",
+    "finance": "Finance",
+    "databases": "Databases",
+    "x": "X",
+    "ai": "AI",
+    "infrastructure": "Infrastructure",
+    "migrations": "Migrations",
+    "notifications": "Notifications",
+    "new-ws": "New workspace",
+    "new-team": "New Team",
+    "new-task": "New Task",
+    "new-note": "New Note",
+    "new-transaction": "New Transaction",
+    "new-invoice": "New Invoice",
+    "invite-people": "Invite People",
+    "collapse-sidebar": "Collapse Sidebar",
+    "expand-sidebar": "Expand Sidebar",
+    "slides": "Slides",
+    "mail": "Mail",
+    "tasks": "Tasks",
+    "education": "Education",
+    "models": "Models",
+    "datasets": "Datasets",
+    "pipelines": "Pipelines",
+    "cron": "Cron Jobs",
+    "workouts": "Workouts",
+    "readings": "Readings",
+    "diet_and_nutrition": "Diet & Nutrition",
+    "progress": "Progress",
+    "metrics": "Metrics",
+    "crawlers": "Crawlers",
+    "queues": "Queues"
+  },
+  "signup": {
+    "get-started": "Get started",
+    "get-started-desc": "Create a new account",
+    "password": "Password",
+    "signup": "Sign up",
+    "confirm": "Confirm",
+    "signing-up": "Signing up",
+    "login": "Login",
+    "already-have-account": "Already have an account?",
+    "notice-p1": "By continuing, you agree to the",
+    "notice-p2": "of Tuturuuu and receive periodic emails with new updates",
+    "tos": "Terms of Service",
+    "privacy": "Privacy Policy"
+  },
+  "slogan": {
+    "title": "Ready to get started?",
+    "description": "Join the waitlist to be among the first to experience our intelligent business management platform when it launches.",
+    "join_waitlist": "Join waitlist"
+  },
+  "storage-object-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "size": "Size",
+    "created_at": "Created at",
+    "files": "Files",
+    "clear_files": "Clear files",
+    "folder": {
+      "name": "Folder name"
+    }
+  },
+  "team-tabs": {
+    "overview": "Overview",
+    "members": "Members",
+    "settings": "Settings"
+  },
+  "teams": {
+    "plural": "Teams",
+    "singular": "Team",
+    "description": "Teams are used to manage users who will be attending different challenges.",
+    "create": "Create team",
+    "create_description": "Create a new team",
+    "name_description": "Team name",
+    "current_invitations": "Current invitations",
+    "current_invitations_description": "Current invitations for this team",
+    "no_invitations": "No invitations",
+    "email": "Email",
+    "invited_at": "Invited at",
+    "actions": "Actions",
+    "manage": "Manage",
+    "delete_success": "Team deleted successfully",
+    "delete_error": "Failed to delete team",
+    "email_already_invited": "Email already invited",
+    "invitation_sent": "Invitation sent",
+    "failed_to_invite": "Failed to invite",
+    "invitations": "Invitations",
+    "invited": "Invited",
+    "find_users": "Find users",
+    "current_members": "Current members",
+    "no_members": "No members yet.",
+    "members_count": "This team has {count} member(s).",
+    "add_member": "Add member",
+    "add_as_member": "Add as member",
+    "send_invitation": "Send invitation",
+    "created": "Created",
+    "invitation_removed": "Invitation removed",
+    "failed_to_remove_invitation": "Failed to remove invitation",
+    "remove_member": "Remove member",
+    "remove_member_confirmation": "Are you sure you want to remove {name} as a member of this team?",
+    "remove_invitation": "Remove invitation",
+    "remove_invitation_description": "Are you sure you want to revoke {email}'s invitation?",
+    "user_not_found": "User not found",
+    "member_added": "Member added",
+    "failed_to_add_member": "Failed to add member",
+    "member_removed": "Member removed",
+    "failed_to_remove_member": "Failed to remove member",
+    "create_success": "Team created successfully",
+    "create_error": "Failed to create team",
+    "name_already_exists": "Team's name already exists",
+    "members": "Members"
+  },
+  "transaction-category-data-table": {
+    "id": "ID",
+    "category_name": "Category name",
+    "category_type": "Category type",
+    "name_examples": "Cash, Bank Transfer, etc.",
+    "select_type": "Select type",
+    "name": "Name",
+    "amount": "Transactions",
+    "type": "Type",
+    "income": "Income",
+    "expense": "Expense",
+    "is_expense": "Is expense",
+    "created_at": "Created at"
+  },
+  "transaction-data-table": {
+    "id": "ID",
+    "wallet": "Wallet",
+    "select_wallet": "Select wallet",
+    "category": "Category",
+    "select_category": "Select category",
+    "amount": "Amount",
+    "description": "Description",
+    "report_opt_in": "Show in reports",
+    "taken_at": "Taken at",
+    "created_at": "Created at",
+    "income": "Income",
+    "expense": "Expense",
+    "daily_total_from_14_recent_days": "Daily total from 14 most recent days",
+    "monthly_total_from_12_recent_months": "Monthly total from 12 most recent months"
+  },
+  "user-data-table": {
+    "id": "ID",
+    "avatar_url": "Avatar",
+    "name": "Name",
+    "full_name": "Full Name",
+    "display_name": "Display Name",
+    "description": "Description",
+    "email": "Email",
+    "phone": "Phone",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "birthday": "Birthday",
+    "ethnicity": "Ethnicity",
+    "guardian": "Guardian",
+    "national_id": "National ID",
+    "address": "Address",
+    "note": "Note",
+    "linked_users": "Linked Users",
+    "linked_to": "Linked to",
+    "created_at": "Created At",
+    "updated_at": "Updated At",
+    "reports": "Reports",
+    "no_reports": "No reports",
+    "coupons": "Coupons",
+    "no_coupons": "No linked coupons",
+    "joined_groups": "Joined Groups",
+    "no_groups": "Not in any group",
+    "user": "User",
+    "group": "Group",
+    "report": "Report",
+    "group_count": "Group Count",
+    "included_groups": "Included Groups",
+    "excluded_groups": "Excluded Groups",
+    "select_all": "Select All",
+    "clear_selection": "Clear Selection",
+    "revert_changes": "Revert Changes",
+    "apply_changes": "Apply Changes",
+    "applying": "Applying...",
+    "selected": "Selected",
+    "linked_products": "Linked products",
+    "remove-from-group": "Remove from group",
+    "url": "URL",
+    "columns": "Columns",
+    "rows": "Rows",
+    "type": "Type"
+  },
+  "user-field-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "description": "Description",
+    "type": "Type",
+    "possible_values": "Possible values",
+    "default_value": "Default value",
+    "null": "None",
+    "boolean": "Boolean",
+    "text": "Text",
+    "number": "Number",
+    "date": "Date",
+    "datetime": "Date and Time",
+    "notes": "Notes",
+    "created_at": "Created at"
+  },
+  "user-group-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "attendance_stats": "Attendance Stats",
+    "completed": "Completed",
+    "incomplete": "Incomplete",
+    "no_attendance_today": "No attendance today",
+    "amount": "Amount",
+    "locked": "Locked",
+    "created_at": "Created At",
+    "included_tags": "Included Tags",
+    "excluded_tags": "Excluded Tags",
+    "special_users": "Special users"
+  },
+  "user-group-tag-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "color": "Color",
+    "updated_at": "Updated at",
+    "created_at": "Created at"
+  },
+  "user-report-data-table": {
+    "id": "ID",
+    "user_id": "User ID",
+    "user_name": "User Name",
+    "title": "Title",
+    "content": "Content",
+    "feedback": "Feedback",
+    "creator_name": "Creator Name",
+    "updated_at": "Updated At",
+    "created_at": "Created At"
+  },
+  "validation": {
+    "invalid_email": "Email is not valid",
+    "required": "Team name is required"
+  },
+  "wallet-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "wallet_name": "Wallet name",
+    "description": "Description",
+    "balance": "Balance",
+    "wallet_balance": "Wallet balance",
+    "type": "Type",
+    "wallet_type": "Wallet type",
+    "standard": "Standard",
+    "credit": "Credit",
+    "currency": "Currency",
+    "report_opt_in": "Show in reports",
+    "created_at": "Created at"
+  },
+  "workspace-ai-layout": {
+    "overview": "Overview",
+    "test_generation": "Test Generation",
+    "prompts": "Prompts",
+    "workflows": "Workflows",
+    "pipelines": "Pipelines",
+    "pipeline": "Pipeline",
+    "executions": "Executions",
+    "jobs": "Jobs",
+    "cron_jobs": "Jobs"
+  },
+  "workspace-education-tabs": {
+    "overview": "Overview",
+    "courses": "Courses",
+    "materials": "Learning Materials",
+    "quizzes": "Quizzes",
+    "flashcards": "Flashcards",
+    "quiz-sets": "Quiz Sets",
+    "attempts": "Quiz Attempts"
+  },
+  "workspace-finance-tabs": {
+    "overview": "Overview",
+    "wallets": "Wallets",
+    "transactions": "Transactions",
+    "categories": "Categories",
+    "invoices": "Invoices",
+    "import": "Import",
+    "settings": "Settings"
+  },
+  "workspace-inventory-tabs": {
+    "overview": "Overview",
+    "products": "Products",
+    "categories": "Categories",
+    "units": "Units",
+    "suppliers": "Suppliers",
+    "warehouses": "Warehouses",
+    "batches": "Batches",
+    "promotions": "Promotions"
+  },
+  "workspace-mail": {
+    "overview": "Overview",
+    "emails": "Emails",
+    "history": "History",
+    "send": "Send email",
+    "posts": "Posts"
+  },
+  "workspace-role-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "description": "Description",
+    "permissions": "Permissions",
+    "user_count": "User count",
+    "created_at": "Created at"
+  },
+  "workspace-settings-layout": {
+    "workspace": "Workspace",
+    "members": "Members",
+    "roles": "Roles",
+    "teams": "Teams",
+    "reports": "Reports",
+    "api_keys": "API Keys",
+    "secrets": "Secrets",
+    "infrastructure": "Infrastructure",
+    "migrations": "Migrations",
+    "activities": "Activities"
+  },
+  "workspace-users-tabs": {
+    "overview": "Overview",
+    "database": "Database",
+    "groups": "Groups",
+    "group_tags": "Group Tags",
+    "attendance": "Attendance",
+    "reports": "Reports",
+    "fields": "Fields"
+  },
+  "ws-activities": {
+    "description": "View all activities in your workspace",
+    "created": "created",
+    "updated": "updated",
+    "deleted": "deleted",
+    "added": "Added",
+    "invited": "Invited",
+    "removed": "Removed",
+    "revoked_invite": "Revoked invitation to",
+    "no_changes": "No changes",
+    "no_display_name": "No display name",
+    "no_handle": "No handle",
+    "member": "member",
+    "expense": "expense",
+    "income": "income",
+    "name": "Name:",
+    "set_name_to": "Set name to",
+    "to": "to",
+    "set_wallet_name_to": "Set wallet name to",
+    "rename_from": "Renamed from",
+    "set_wallet_type_to": "Set wallet type to",
+    "change_type_from": "Changed type from",
+    "set_wallet_currency_to": "Set wallet currency to",
+    "change_currency_from": "Changed currency from",
+    "set_wallet_balance_to": "Set wallet balance to",
+    "set_expense_type_to": "Set expense type to",
+    "change_expense_type_from": "Changed expense type from",
+    "set_unit_to": "Set unit to",
+    "change_unit_from": "Changed unit from",
+    "set_manufacturer_to": "Set manufacturer to",
+    "change_manufacturer_from": "Changed manufacturer from",
+    "set_usage_to": "Set usage to",
+    "change_usage_from": "Changed usage from",
+    "set_description_to": "Set description to",
+    "change_description_from": "Changed description from",
+    "set_note_to": "Set note to",
+    "change_note_from": "Changed note from",
+    "set_email_to": "Set email to",
+    "change_email_from": "Changed email from",
+    "set_phone_to": "Set phone to",
+    "change_phone_from": "Changed phone from",
+    "set_gender_to": "Set gender to",
+    "change_gender_from": "Changed gender from",
+    "set_address_to": "Set address to",
+    "change_address_from": "Changed address from",
+    "set_balance_to": "Set balance to",
+    "change_balance_from": "Changed balance from",
+    "set_birthday_to": "Set birthday to",
+    "change_birthday_from": "Changed birthday from",
+    "set_guardian_to": "Set guardian to",
+    "change_guardian_from": "Changed guardian from",
+    "set_ethnicity_to": "Set ethnicity to",
+    "change_ethnicity_from": "Changed ethnicity from",
+    "set_national_id_to": "Set national ID to",
+    "change_national_id_from": "Changed national ID from",
+    "set_role_to": "Set role to",
+    "change_role_from": "Changed role from",
+    "set_role_title_to": "Set role title to",
+    "change_role_title_from": "Changed role title from",
+    "trailing_label_workspace_members": {
+      "one": "{{count}} member",
+      "other": "{{count}} members"
+    },
+    "trailing_label_workspace_invites": {
+      "one": "{{count}} invite",
+      "other": "{{count}} invites"
+    },
+    "trailing_label_workspace_teams": {
+      "one": "{{count}} team",
+      "other": "{{count}} teams"
+    },
+    "trailing_label_workspace_documents": {
+      "one": "{{count}} document",
+      "other": "{{count}} documents"
+    },
+    "trailing_label_workspace_boards": {
+      "one": "{{count}} board",
+      "other": "{{count}} boards"
+    },
+    "trailing_label_workspace_wallets": {
+      "one": "{{count}} wallet",
+      "other": "{{count}} wallets"
+    },
+    "trailing_label_product_categories": {
+      "one": "{{count}} product category",
+      "other": "{{count}} product categories"
+    },
+    "trailing_label_inventory_units": {
+      "one": "{{count}} unit",
+      "other": "{{count}} units"
+    },
+    "trailing_label_workspace_products": {
+      "one": "{{count}} product",
+      "other": "{{count}} products"
+    },
+    "trailing_label_inventory_suppliers": {
+      "one": "{{count}} supplier",
+      "other": "{{count}} suppliers"
+    },
+    "trailing_label_inventory_warehouses": {
+      "one": "{{count}} warehouse",
+      "other": "{{count}} warehouses"
+    },
+    "trailing_label_transaction_categories": {
+      "one": "{{count}} transaction category",
+      "other": "{{count}} transaction categories"
+    },
+    "trailing_label_healthcare_vitals": {
+      "one": "{{count}} vital",
+      "other": "{{count}} vitals"
+    },
+    "trailing_label_healthcare_diagnoses": {
+      "one": "{{count}} diagnosis",
+      "other": "{{count}} diagnoses"
+    },
+    "trailing_label_healthcare_vital_groups": {
+      "one": "{{count}} vital group",
+      "other": "{{count}} vital groups"
+    },
+    "trailing_label_workspace_users": {
+      "one": "{{count}} user",
+      "other": "{{count}} users"
+    },
+    "trailing_label_workspace_user_roles": {
+      "one": "{{count}} user role",
+      "other": "{{count}} user roles"
+    },
+    "trailing_label_workspace_user_groups": {
+      "one": "{{count}} user group",
+      "other": "{{count}} user groups"
+    },
+    "trailing_label_workspaces": {
+      "0": "workspace",
+      "one": "{{count}} workspace",
+      "other": "{{count}} workspaces"
+    },
+    "trailing_label_finance_invoices": {
+      "one": "{{count}} invoice",
+      "other": "{{count}} invoices"
+    },
+    "trailing_label_healthcare_checkups": {
+      "one": "{{count}} checkup",
+      "other": "{{count}} checkups"
+    },
+    "trailing_label_workspace_calendar_events": {
+      "one": "{{count}} calendar event",
+      "other": "{{count}} calendar events"
+    },
+    "trailing_label_wallet_transactions": {
+      "one": "{{count}} transaction",
+      "other": "{{count}} transactions"
+    },
+    "trailing_label_calendar_event_platform_participants": {
+      "one": "{{count}} participant (platform user)",
+      "other": "{{count}} participants (platform users)"
+    },
+    "trailing_label_calendar_event_virtual_participants": {
+      "one": "{{count}} participant (virtual user)",
+      "other": "{{count}} participants (virtual users)"
+    },
+    "trailing_label_calendar_event_participant_groups": {
+      "one": "{{count}} participant group",
+      "other": "{{count}} participant groups"
+    }
+  },
+  "ws-ai-chatbots": {
+    "plural": "Chatbots",
+    "singular": "Chatbot",
+    "description": "View custom chatbots created by the community.",
+    "create": "Create chatbot",
+    "create_description": "Create a new chatbot"
+  },
+  "ws-ai-whitelist-domains": {
+    "plural": "Whitelisted domains",
+    "singular": "Whitelisted domain",
+    "description": "Whitelisted domains are used to allow specific domains to access AI features.",
+    "create": "Create whitelisted domain",
+    "create_description": "Create a whitelisted domain"
+  },
+  "ws-ai-whitelist-emails": {
+    "plural": "Whitelisted emails",
+    "singular": "Whitelisted email",
+    "description": "Whitelisted emails are used to allow specific email addresses to access AI features.",
+    "create": "Create whitelisted email",
+    "create_description": "Create a new whitelisted email"
+  },
+  "ws-ai-workflows": {
+    "module": "Workflows",
+    "description": "Workflows are a series of input-output pairs that define the behavior of a model.",
+    "name": "Name",
+    "create": "Create Workflow",
+    "edit": "Edit Workflow",
+    "add_new": "Add a new workflow to this workspace.",
+    "edit_existing": "Edit an existing workflow in this workspace.",
+    "include_resources": "Include uploaded resources",
+    "include_youtube_links": "Include YouTube links",
+    "include_module_content": "Include module content"
+  },
+  "ws-api-keys": {
+    "api_key": "API Key",
+    "api_keys": "API Keys",
+    "description": "Secret keys to access your workspace data externally via Tuturuuu Platform API in a secure and confidental way.",
+    "name": "Name",
+    "value": "Value",
+    "create_key": "Create API Key",
+    "edit_key": "Edit API Key",
+    "add_new_workspace_key": "Add a new API key for this workspace.",
+    "edit_existing_workspace_key": "Edit an existing API key for this workspace.",
+    "no_api_keys_found": "No API keys found",
+    "select_api_key": "Select an API key"
+  },
+  "ws-course-modules": {
+    "plural": "Course Modules",
+    "singular": "Course Module",
+    "create": "Create module",
+    "create_description": "Create a new module",
+    "description": "Manage modules in your workspace that are part of a course.",
+    "edit": "Edit module",
+    "name": "Module name",
+    "edit_description": "Edit an existing module",
+    "add_link": "Add link",
+    "add_youtube_link_description": "Add a new YouTube link.",
+    "youtube_link": "YouTube Link",
+    "youtube_links": "YouTube Links",
+    "edit_link": "Edit link",
+    "invalid_youtube_link": "Invalid YouTube link",
+    "resource": "Resource",
+    "resources": "Resources",
+    "add_resource": "Add resource",
+    "add_resource_description": "Add a new resource."
+  },
+  "ws-courses": {
+    "plural": "Courses",
+    "singular": "Course",
+    "create": "Create course",
+    "create_description": "Create a new course",
+    "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
+    "edit": "Edit course",
+    "name": "Course name",
+    "edit_description": "Edit an existing course"
+  },
+  "ws-crawlers": {
+    "plural": "Crawlers",
+    "singular": "Crawler",
+    "description": "Crawlers are used to scrape data from websites.",
+    "create": "Create crawler",
+    "create_description": "Create a new crawler"
+  },
+  "ws-cron": {
+    "description": "Cron jobs are used to schedule tasks to run at specific times."
+  },
+  "ws-cron-executions": {
+    "plural": "Cron Executions",
+    "singular": "Cron Execution",
+    "description": "Cron executions are used to view the history of cron jobs."
+  },
+  "ws-cron-jobs": {
+    "plural": "Cron Jobs",
+    "singular": "Cron Job",
+    "create": "Create job",
+    "create_description": "Create a new job",
+    "description": "Cron jobs are used to schedule tasks to run at specific times.",
+    "edit": "Edit job",
+    "edit_description": "Edit an existing job"
+  },
+  "ws-datasets": {
+    "plural": "Datasets",
+    "singular": "Dataset",
+    "description": "Datasets are used to train AI models.",
+    "create": "Create dataset",
+    "create_description": "Create a dataset",
+    "total_columns": "Total Columns",
+    "total_rows": "Total Rows",
+    "last_updated": "Last Updated",
+    "add_row": "Add Row",
+    "edit_row": "Edit Row",
+    "delete_row": "Delete Row",
+    "confirm_delete_row": "Are you sure you want to delete this row? This action cannot be undone.",
+    "no_data": "No data available",
+    "columns_description": "Manage the columns in your dataset, including their names, descriptions, and aliases."
+  },
+  "ws-documents": {
+    "plural": "Documents",
+    "singular": "Document",
+    "create": "Create document",
+    "create_description": "Create a new document",
+    "description": "Documents are used to facilitate the sharing of information in your workspace."
+  },
+  "ws-emails": {
+    "plural": "Emails",
+    "singular": "Email",
+    "description": "View mailing history that belongs to your workspace."
+  },
+  "ws-flashcards": {
+    "plural": "Flashcards",
+    "singular": "Flashcard",
+    "create": "Create flashcard",
+    "create_description": "Create a new flashcard",
+    "description": "Manage flashcards in your workspace that have a front and back side for learning purposes.",
+    "edit": "Edit flashcard",
+    "front": "Front",
+    "back": "Back",
+    "edit_description": "Edit an existing flashcard",
+    "generation_error": "An error has occured when generating flashcards.",
+    "generation_accepted": "AI-generated flashcards are accepted!"
+  },
+  "ws-home": {
+    "home": "Home",
+    "description_p1": "A quick summary of the",
+    "description_p2": "workspace and its progress.",
+    "latest_announcement": "Latest Announcement",
+    "ai_chat_playground_experiment": "AI Chat Playground Experiment (Mira AI)",
+    "ai_chat_playground_discontinued_p1": "Hi there,\n\nWe are sorry to announce that",
+    "ai_chat_playground_discontinued_p2": "has been temporarily disabled for improvement and further testing. Don't worry! We are working on exciting features to bring you a better experience. Stay tuned for a comeback with more features and functionalities. Thank you for your patience and understanding.\n\nBest regards,\nTuturuuu"
+  },
+  "ws-inventory-batches": {
+    "plural": "Batches",
+    "singular": "Batch",
+    "description": "Batches are used to manage product imports and exports.",
+    "create": "Create batch",
+    "create_description": "Create a new batch"
+  },
+  "ws-inventory-categories": {
+    "plural": "Categories",
+    "singular": "Category",
+    "description": "Categories are used to group similar inventory products together.",
+    "create": "Create category",
+    "create_description": "Create a new category",
+    "placeholder": "Choose a category"
+  },
+  "ws-inventory-products": {
+    "plural": "Products",
+    "singular": "Product",
+    "description": "Products are used as individual type of item that you have in your inventory and could be used to link with invoices.",
+    "create": "Create product",
+    "create_description": "Create a new product",
+    "form": {
+      "details": "Details",
+      "name": "Product name",
+      "manufacturer": "Manufacturer",
+      "description": "Description",
+      "usage": "Usage",
+      "price": "Price",
+      "stock": "Stock",
+      "add_warehouse": "Add warehouse",
+      "amount": "Amount",
+      "min_amount": "Min amount",
+      "category": "Category"
+    }
+  },
+  "ws-inventory-promotions": {
+    "plural": "Promotions",
+    "singular": "Promotion",
+    "description": "Promotions are used to manage product discounts and promotions.",
+    "create": "Create promotion",
+    "create_description": "Create a new promotion",
+    "update": "Update promotion",
+    "form": {
+      "name": "Name",
+      "description": "Decription",
+      "code": "Coupon code",
+      "value": "Discount value",
+      "unit": {
+        "placeholder": "Unit",
+        "currency": "Currency",
+        "percentage": "Percentage"
+      }
+    }
+  },
+  "ws-inventory-suppliers": {
+    "plural": "Suppliers",
+    "singular": "Supplier",
+    "description": "Suppliers are used to link inventory products with their suppliers.",
+    "create": "Create supplier",
+    "create_description": "Create a new supplier"
+  },
+  "ws-inventory-units": {
+    "plural": "Units",
+    "singular": "Unit",
+    "description": "Units are used to measure inventory products.",
+    "create": "Create unit",
+    "create_description": "Create a new unit",
+    "placeholder": "Choose a unit"
+  },
+  "ws-inventory-warehouses": {
+    "plural": "Warehouses",
+    "singular": "Warehouse",
+    "description": "Warehouses are used to store inventory products.",
+    "create": "Create warehouse",
+    "create_description": "Create a new warehouse",
+    "placeholder": "Choose a warehouse"
+  },
+  "ws-invoices": {
+    "plural": "Invoices",
+    "singular": "Invoice",
+    "description": "Invoices are used to link finance transactions and purchased products with applied promotions from your workspace's inventory.",
+    "create": "Create invoice",
+    "create_description": "Create a new invoice",
+    "edit": "Edit invoice",
+    "edit_description": "Edit an existing invoice",
+    "new_invoice": "New invoice",
+    "standard": "Standard invoice",
+    "subscription": "Subscription invoice"
+  },
+  "ws-members": {
+    "description": "Manage members of your workspace.",
+    "invite_member": "Invite member",
+    "invite_member_disabled": "Invite member disabled",
+    "enter_email_or_username": "Enter an email or username",
+    "member_since": "Member since",
+    "pending_invitations": "Pending invitations",
+    "invited": "Invited",
+    "joined": "Joined",
+    "all": "All",
+    "leave": "Leave",
+    "no_members_match": "No members match your search",
+    "no_invited_members_found": "No pending invitations found",
+    "remove_member": "Remove member",
+    "member_removed": "Member removed",
+    "revoke_invitation": "Revoke invitation",
+    "invitation_sent": "Invitation sent",
+    "invitation_revoked": "Invitation revoked",
+    "invitation_to": "Invitation to",
+    "has_been_sent": "has been sent",
+    "has_been_revoked": "has been revoked",
+    "has_been_removed": "has been removed from this workspace",
+    "error": "Error",
+    "invitation_error": "Failed to send invitation",
+    "invitation_error_user_not_found": "User not found or not registered on the platform.",
+    "invitation_error_already_exist": "User is already a member or invite has been sent.",
+    "revoke_error": "An error occurred while revoking the invitation",
+    "remove_error": "An error occurred while removing the member",
+    "member-settings": "Member settings",
+    "role": "Role",
+    "role-placeholder": "Select a role",
+    "role-title": "Title",
+    "role-title-placeholder": "Designer, Project Manager, etc.",
+    "delete-member-description": "You can delete this member from the workspace.",
+    "cannot-delete-last-owner": "You cannot delete the last owner of the workspace.",
+    "member-updated": "Member updated",
+    "has-been-updated": "has been updated",
+    "update-error": "An error occurred while updating the member",
+    "member": "Member",
+    "admin": "Administrator",
+    "owner": "Owner",
+    "you": "You"
+  },
+  "ws-models": {
+    "plural": "Models",
+    "singular": "Model",
+    "create": "Create model",
+    "create_description": "Create a new model",
+    "description": "Models are trained AI models that can be used for different tasks."
+  },
+  "ws-pipelines": {
+    "plural": "Pipelines",
+    "singular": "Pipeline",
+    "description": "Pipelines are used to run programmable workflows.",
+    "create": "Create pipeline",
+    "create_description": "Create a new pipeline"
+  },
+  "ws-post-emails": {
+    "plural": "Posts",
+    "singular": "Post",
+    "description": "Send emails to users that have their work checked by authorized staff in specific user group posts.",
+    "sent_emails": "Sent emails",
+    "pending_emails": "Pending emails"
+  },
+  "ws-product-categories": {
+    "singular": "Product Category",
+    "plural": "Product Categories",
+    "description": "Product categories are used to categorize the products in your workspace.",
+    "create": "Create category",
+    "edit": "Edit category",
+    "create_description": "Create a new product category",
+    "edit_description": "Edit an existing product category"
+  },
+  "ws-product-suppliers": {
+    "singular": "Product Supplier",
+    "plural": "Product Suppliers",
+    "description": "Product suppliers are used to manage the suppliers of the products in your workspace.",
+    "create": "Create supplier",
+    "edit": "Edit supplier",
+    "create_description": "Create a new product supplier",
+    "edit_description": "Edit an existing product supplier"
+  },
+  "ws-product-units": {
+    "singular": "Product Unit",
+    "plural": "Product Units",
+    "description": "Product units are used to define the units of measurement for the products in your workspace.",
+    "create": "Create unit",
+    "edit": "Edit unit",
+    "create_description": "Create a new product unit",
+    "edit_description": "Edit an existing product unit"
+  },
+  "ws-product-warehouses": {
+    "singular": "Product Warehouse",
+    "plural": "Product Warehouses",
+    "description": "Product warehouses are used to manage the storage locations of the products in your workspace.",
+    "create": "Create warehouse",
+    "edit": "Edit warehouse",
+    "create_description": "Create a new product warehouse",
+    "edit_description": "Edit an existing product warehouse"
+  },
+  "ws-queues": {
+    "plural": "Queues",
+    "singular": "Queue",
+    "description": "Queues are used to manage tasks and jobs.",
+    "create": "Create queue",
+    "create_description": "Create a new queue"
+  },
+  "ws-quiz-sets": {
+    "plural": "Quiz Sets",
+    "singular": "Quiz Set",
+    "description": "Quiz sets are used to group quizzes together for learning purposes.",
+    "create": "Create quiz set",
+    "create_description": "Create a new quiz set",
+    "name": "Set name",
+    "edit": "Edit set",
+    "link-quizzes": "Link Quizzes",
+    "link-modules": "Link modules"
+  },
+  "ws-quizzes": {
+    "plural": "Quizzes",
+    "singular": "Quiz",
+    "create": "Create quiz",
+    "create_description": "Create a new quiz",
+    "description": "Manage quizzes in your workspace that have multiple choice questions for learning purposes.",
+    "edit": "Edit quiz",
+    "question": "Question",
+    "answer": "Answer",
+    "edit_description": "Edit an existing quiz",
+    "generation_error": "An error has occured when generating quizzes.",
+    "generation_accepted": "AI-generated quizzes are accepted!"
+  },
+  "ws-reports": {
+    "report": "Report",
+    "reports": "Reports",
+    "description": "Configure your report settings.",
+    "name": "Name",
+    "value": "Value",
+    "edit_value": "Edit value",
+    "reset_value": "Reset value",
+    "edit_existing_value": "Edit existing value",
+    "brand_logo_url": "Brand logo URL",
+    "brand_name": "Brand name",
+    "brand_location": "Brand location",
+    "brand_phone_number": "Brand phone number",
+    "report_title_prefix": "Report title prefix",
+    "report_title_suffix": "Report title suffix",
+    "report_intro": "Report introduction",
+    "report_content_text": "Text displayed for report content header",
+    "report_score_text": "Text displayed for report score header",
+    "report_feedback_text": "Text displayed for report feedback header",
+    "report_conclusion": "Report conclusion",
+    "report_closing": "Report closing"
+  },
+  "ws-roles": {
+    "singular": "Role",
+    "plural": "Roles",
+    "description": "Roles are used to manage user permissions in your workspace by creating roles and assigning them to users.",
+    "create": "Create role",
+    "edit": "Edit role",
+    "create_description": "Create a new role for this workspace.",
+    "edit_description": "Edit an existing role in this workspace.",
+    "display": "Display",
+    "permissions": "Permissions",
+    "members": "Members",
+    "name": "Name",
+    "admin": "Administrator",
+    "admin_description": "Full access to all features and settings.",
+    "infrastructure": "Infrastructure",
+    "view_infrastructure": "View infrastructure",
+    "view_infrastructure_description": "Allows members to view infrastructure statistics and settings.",
+    "manage_workspace_secrets": "Manage workspace secrets",
+    "manage_workspace_secrets_description": "Allows members to view, create, edit, and delete workspace secrets.",
+    "manage_external_migrations": "Manage external migrations",
+    "manage_external_migrations_description": "Allows members to view and execute external migrations.",
+    "workspace": "Workspace",
+    "manage_default_permissions": "Manage default permissions",
+    "default_permissions": "Default permissions",
+    "default_permissions_description": "These permissions will be applied to all users in your workspace by default.",
+    "manage_workspace_roles": "Manage workspace roles",
+    "manage_workspace_roles_description": "Allows members to change permissions and assign roles to users.",
+    "manage_workspace_members": "Manage workspace members",
+    "manage_workspace_members_description": "Allows members to invite, remove, and update members.",
+    "manage_workspace_invites": "Manage workspace invites",
+    "manage_workspace_invites_description": "Allows members to send, revoke, and accept invites.",
+    "manage_workspace_settings": "Manage workspace settings",
+    "manage_workspace_settings_description": "Allows members to change workspace name and logo.",
+    "manage_workspace_security": "Manage workspace security",
+    "manage_workspace_security_description": "Allows members to manage API keys and delete the workspace.",
+    "manage_workspace_audit_logs": "Manage workspace audit logs",
+    "manage_workspace_audit_logs_description": "Allows members to view all activities in the workspace.",
+    "manage_workspace_billing": "Manage workspace billing",
+    "manage_workspace_billing_description": "Allows members to view and update billing information.",
+    "ai": "Artificial Intelligence",
+    "ai_chat": "AI Chat",
+    "ai_chat_description": "Allows members to interact with artificial intelligence through chat.",
+    "ai_lab": "AI Lab",
+    "ai_lab_description": "Allows members to create, edit, and delete custom prompts for artificial intelligence.",
+    "manage_calendar": "Manage Calendar",
+    "manage_calendar_description": "Allows members to view, create, edit, and delete events in the workspace.",
+    "manage_projects": "Manage Projects",
+    "manage_projects_description": "Allows members to view, create, edit, and delete projects in the workspace.",
+    "manage_documents": "Manage Documents",
+    "manage_documents_description": "Allows members to view, create, edit, and delete documents in the workspace.",
+    "manage_drive": "Manage Drive",
+    "manage_drive_description": "Allows members to view, create, edit, and delete files in the workspace.",
+    "manage_users": "Manage Users",
+    "manage_users_description": "Allows members to view, create, edit, and delete virtual user profiles in the workspace.",
+    "manage_inventory": "Manage Inventory",
+    "manage_inventory_description": "Allows members to view, create, edit, and delete inventory items in the workspace.",
+    "manage_finance": "Manage Finance",
+    "manage_finance_description": "Allows members to view, create, edit, and delete financial transactions in the workspace.",
+    "manage_user_report_templates": "Manage user report templates",
+    "manage_user_report_templates_description": "Allows members to edit user report templates.",
+    "send_user_group_post_emails": "Send post content via emails",
+    "send_user_group_post_emails_description": "Allows members to send emails to virtual users created in your workspace about specific user group post content.",
+    "export_users_data": "Allow exporting users data",
+    "export_users_data_description": "Allows members to export users data in the workspace.",
+    "export_finance_data": "Allow exporting finance data",
+    "export_finance_data_description": "Allows members to export finance data in the workspace."
+  },
+  "ws-secrets": {
+    "secrets": "Secrets",
+    "workspace_secret": "Workspace Secret",
+    "description": "A custom value to interact with our platform in a secure and confidental way.",
+    "name": "Name",
+    "value": "Value",
+    "create_secret": "Create Secret",
+    "edit_secret": "Edit Secret",
+    "add_new_workspace_secret": "Add a new secret for this workspace.",
+    "edit_existing_workspace_secret": "Edit an existing secret for this workspace.",
+    "plural": "Secrets",
+    "singular": "Secret",
+    "create": "Create secret",
+    "create_description": "Create a new secret"
+  },
+  "ws-settings": {
+    "description": "Manage the settings of your workspace.",
+    "basic_info": "Basic Information",
+    "basic_info_description": "Manage the basic information of your workspace.",
+    "workspace_logo": "Workspace Logo",
+    "workspace_logo_description": "Manage the logo of your workspace to use in reports.",
+    "workspace_avatar": "Workspace Avatar",
+    "workspace_avatar_description": "Everyone in your workspace will see this avatar.",
+    "id": "Workspace ID",
+    "name": "Workspace Name",
+    "name_placeholder": "Enter workspace name",
+    "created_at": "This workspace was created ",
+    "security": "Security",
+    "security_description": "Manage the security of your workspace.",
+    "features": "Features",
+    "features_description": "Manage the features of your workspace.",
+    "delete": "Delete Workspace",
+    "deleting": "Deleting Workspace"
+  },
+  "ws-slides": {
+    "singular": "Slide",
+    "plural": "Slides",
+    "description": "Slides are used to create presentations for your workspace.",
+    "name": "Name",
+    "create": "Create slide",
+    "edit": "Edit slide",
+    "create_description": "Create a new slide",
+    "edit_description": "Edit an existing slide"
+  },
+  "ws-storage-objects": {
+    "name": "Tuturuuu Drive",
+    "plural": "Tuturuuu Drive",
+    "singular": "Tuturuuu Drive",
+    "upload": "Upload",
+    "upload_description": "Upload multiple files to Tuturuuu Drive",
+    "description": "Store workspace files securely, and access them from anywhere.",
+    "total_files": "Total Files",
+    "total_size": "Total Size",
+    "largest_file": "Largest File",
+    "smallest_file": "Smallest File",
+    "files": "Files",
+    "folder": "Folder",
+    "folder_create": "Create folder"
+  },
+  "ws-task-boards": {
+    "name": "Board name",
+    "plural": "Task boards",
+    "singular": "Task board",
+    "create": "Create board",
+    "create_description": "Create a task board",
+    "description": "Task boards are used to manage tasks that are related to a specific project or goal."
+  },
+  "ws-transaction-categories": {
+    "singular": "Transaction Category",
+    "plural": "Transaction Categories",
+    "description": "Transaction categories are used to categorize the financial activities of your workspace.",
+    "create": "Create category",
+    "edit": "Edit category",
+    "create_description": "Create a new transaction category",
+    "edit_description": "Edit an existing transaction category"
+  },
+  "ws-transactions": {
+    "singular": "Transaction",
+    "plural": "Transactions",
+    "description": "Transactions are used to track the financial activities of your workspace.",
+    "create": "Create transaction",
+    "edit": "Edit transaction",
+    "create_description": "Create a new transaction",
+    "edit_description": "Edit an existing transaction"
+  },
+  "ws-user-attendance": {
+    "singular": "Attendance",
+    "plural": "Attendances",
+    "description": "Attendance helps you track the participation progress of users in your workspace.",
+    "create": "Add attendance",
+    "edit": "Edit attendance",
+    "create_description": "Add a new attendance",
+    "edit_description": "Edit an existing attendance",
+    "present": "Present",
+    "absent": "Absent",
+    "not-set": "Not set",
+    "no_groups": "No group found",
+    "select_group": "Select a group",
+    "update_error": "Attendance update error",
+    "update_success": "Attendance updated"
+  },
+  "ws-user-fields": {
+    "module": "User Fields",
+    "module_description": "User fields are used to store additional information about users in your workspace.",
+    "name": "Name",
+    "description": "Description",
+    "select_type": "Select a type",
+    "type": "Type",
+    "possible_values": "Possible Values",
+    "possible_values_description": "If you want to have a dropdown list of possible values for this field, enter them here, one per line.",
+    "add_possible_value": "Add possible value",
+    "default_value": "Default Value",
+    "value": "Value",
+    "notes": "Notes",
+    "create_field": "Create field",
+    "edit_field": "Edit field",
+    "add_new_user_field": "Add a new user field for this workspace.",
+    "edit_existing_user_field": "Edit an existing user field for this workspace."
+  },
+  "ws-user-group-details": {
+    "schedule": "Group Schedule",
+    "attendance": "Group Attendance",
+    "reports": "Group Reports",
+    "metrics": "Group Metrics"
+  },
+  "ws-user-group-tags": {
+    "singular": "Group Tag",
+    "plural": "Group Tags",
+    "description": "Organize user groups together for easier management.",
+    "name": "Tag Name",
+    "color": "Tag Color",
+    "linked_user_groups": "Linked User Groups",
+    "create": "Create Tag",
+    "edit": "Edit Tag",
+    "create_description": "Create a new group tag",
+    "edit_description": "Edit an existing group tag",
+    "enable_custom_color": "Enable custom color",
+    "add_group": "Add groups",
+    "add_group_description": "Add a user group to this tag"
+  },
+  "ws-user-groups": {
+    "singular": "User group",
+    "plural": "User groups",
+    "description": "Organize users into groups to meet your needs.",
+    "name": "Group Name",
+    "create": "Create group",
+    "edit": "Edit group",
+    "create_description": "Create a new user group",
+    "edit_description": "Edit an existing user group",
+    "add_user": "Add users",
+    "add_user_description": "Add users to this group",
+    "posts": "Posts",
+    "add_post": "Add post",
+    "edit_post": "Edit post",
+    "edit_post_description": "Make changes to your post here.",
+    "add_post_description": "Add a new post.",
+    "show_post_content": "Show post content",
+    "show_post_status": "Show post status"
+  },
+  "ws-user-reports": {
+    "singular": "User Report",
+    "plural": "User Reports",
+    "description": "User reports are used to track the progress of users in your workspace.",
+    "create": "Create report",
+    "edit": "Edit report",
+    "create_description": "Create a new user report",
+    "edit_description": "Edit an existing user report"
+  },
+  "ws-users": {
+    "singular": "User",
+    "plural": "Users",
+    "description": "Users are people who are directly or indirectly related to your workspace. They can be assigned to tasks, projects, and more.",
+    "full_name": "Full name",
+    "display_name": "Display name",
+    "create": "Create user",
+    "edit": "Edit user",
+    "create_description": "Create a new user",
+    "edit_description": "Edit an existing user"
+  },
+  "ws-wallets": {
+    "singular": "Wallet",
+    "plural": "Wallets",
+    "description": "Wallets are used to store and manage the financial activities of your workspace.",
+    "create": "Create wallet",
+    "edit": "Edit wallet",
+    "create_description": "Create a new wallet",
+    "edit_description": "Edit an existing wallet"
+  },
+  "ws_post_details": {
+    "check_all": "Check all"
+  }
+}

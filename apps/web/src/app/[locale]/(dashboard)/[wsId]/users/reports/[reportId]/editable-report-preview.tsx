@@ -36,7 +36,7 @@ export default function EditableReportPreview({
   const locale = useLocale();
   const t = useTranslations();
 
-  const form = useForm<z.infer<typeof UserReportFormSchema>>({
+  const form = useForm({
     resolver: zodResolver(UserReportFormSchema),
     defaultValues: {
       title: report?.title || '',
@@ -159,7 +159,6 @@ export default function EditableReportPreview({
           isNew={isNew}
           form={form}
           submitLabel={t('common.save')}
-          onSubmit={(_) => {}}
         />
 
         {/* <div className="grid h-fit gap-2 rounded-lg border p-4">

@@ -40,7 +40,7 @@ export default function CourseModuleForm({
   const t = useTranslations('ws-course-modules');
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,

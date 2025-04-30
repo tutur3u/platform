@@ -54,7 +54,7 @@ export const ApiConfigFormSchema = FormSchema;
 export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
   const t = useTranslations();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       name: data.name || '',

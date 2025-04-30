@@ -30,7 +30,7 @@ export const ApiConfigFormSchema = FormSchema;
 export default function ApiKeyForm({ data, submitLabel, onSubmit }: Props) {
   const t = useTranslations('ws-api-keys');
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       name: data.name || '',

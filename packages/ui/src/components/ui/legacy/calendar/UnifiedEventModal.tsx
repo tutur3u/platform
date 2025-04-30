@@ -54,6 +54,9 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { format } from 'date-fns';
+import dayjs from 'dayjs';
+import ts from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import {
   AlertCircle,
   Brain,
@@ -80,9 +83,10 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
+dayjs.extend(ts);
+dayjs.extend(utc);
 interface ExtendedCalendarEvent extends CalendarEvent {
   _originalId?: string;
-  _isMultiDay?: boolean;
   _dayPosition?: 'start' | 'middle' | 'end';
 }
 
@@ -92,7 +96,8 @@ const AIFormSchema = z.object({
     .string()
     .default(() => Intl.DateTimeFormat().resolvedOptions().timeZone),
   smart_scheduling: z.boolean().default(true),
-  priority: z.enum(['low', 'medium', 'high']).default('medium'),
+  priority: z.string().default('medium'),
+  // priority: z.enum(['low', 'medium', 'high']).default('medium'),
 });
 
 export function UnifiedEventModal({
@@ -173,8 +178,11 @@ export function UnifiedEventModal({
   const [activeTab, setActiveTab] = useState<'manual' | 'ai' | 'preview'>(
     isEditing ? 'manual' : 'ai' // Default to AI for new events
   );
-  const [isAllDay, setIsAllDay] = useState(false);
-  const [isMultiDay, setIsMultiDay] = useState(false);
+  const [isAllDay, setIsAllDay] = useState(
+    dayjs(event.start_at).diff(dayjs(event.end_at), 'seconds') %
+      (24 * 60 * 60) ===
+      0
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [dateError, setDateError] = useState<string | null>(null);
@@ -185,7 +193,7 @@ export function UnifiedEventModal({
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   // AI form
-  const aiForm = useForm<z.infer<typeof AIFormSchema>>({
+  const aiForm = useForm({
     resolver: zodResolver(AIFormSchema),
     defaultValues: {
       prompt: '',
@@ -242,27 +250,6 @@ export function UnifiedEventModal({
         locked: eventData.locked,
       });
 
-      // Check if this is an all-day event (no time component)
-      const start = new Date(eventData.start_at);
-      const end = new Date(eventData.end_at);
-
-      const isAllDayEvent =
-        start.getHours() === 0 &&
-        start.getMinutes() === 0 &&
-        end.getHours() === 23 &&
-        end.getMinutes() === 59;
-
-      setIsAllDay(isAllDayEvent);
-
-      // Check if this is a multi-day event
-      const startDay = new Date(start);
-      startDay.setHours(0, 0, 0, 0);
-
-      const endDay = new Date(end);
-      endDay.setHours(0, 0, 0, 0);
-
-      setIsMultiDay(startDay.getTime() !== endDay.getTime());
-
       // Check for overlapping events
       checkForOverlaps(eventData);
 
@@ -286,7 +273,6 @@ export function UnifiedEventModal({
 
       setEvent(newEvent);
       setIsAllDay(false);
-      setIsMultiDay(false);
 
       // Reset AI form
       aiForm.reset();
@@ -561,12 +547,24 @@ export function UnifiedEventModal({
       const newEvent = { ...prev, start_at: date.toISOString() };
 
       // If start time is after end time, push end time forward
-      const endDate = new Date(prev.end_at || '');
-      if (date > endDate) {
-        const duration =
-          endDate.getTime() - new Date(prev.start_at || '').getTime();
-        const newEndDate = new Date(date.getTime() + duration);
+      const endDate = dayjs(prev.end_at || '');
+
+      if (dayjs(date).isAfter(endDate)) {
+        const duration = endDate.diff(dayjs(prev.start_at || ''), 'seconds');
+        const newEndDate = dayjs(date).add(duration, 'seconds');
         newEvent.end_at = newEndDate.toISOString();
+      }
+
+      if (isAllDay) {
+        newEvent.start_at = dayjs(newEvent.start_at)
+          .utc()
+          .startOf('day')
+          .toISOString();
+
+        newEvent.end_at = dayjs(newEvent.end_at)
+          .utc()
+          .startOf('day')
+          .toISOString();
       }
 
       return newEvent;
@@ -584,9 +582,25 @@ export function UnifiedEventModal({
       const newEvent = { ...prev, end_at: date.toISOString() };
 
       // If end time is before start time, pull start time backward
-      const startDate = new Date(prev.start_at || '');
-      if (date < startDate) {
-        newEvent.start_at = date.toISOString();
+      const startDate = dayjs(prev.start_at || '');
+
+      if (dayjs(date).isBefore(startDate)) {
+        const duration = dayjs(date).diff(startDate, 'seconds');
+        const newStartDate = dayjs(date).subtract(duration, 'seconds');
+        newEvent.start_at = newStartDate.toISOString();
+      }
+
+      if (isAllDay) {
+        newEvent.start_at = dayjs(newEvent.start_at)
+          .utc()
+          .startOf('day')
+          .toISOString();
+
+        newEvent.end_at = dayjs(date)
+          .utc()
+          .add(1, 'day')
+          .endOf('day')
+          .toISOString();
       }
 
       return newEvent;
@@ -598,21 +612,22 @@ export function UnifiedEventModal({
 
   // Handle all-day toggle
   const handleAllDayChange = (checked: boolean) => {
-    setIsAllDay(checked);
-
     setEvent((prev) => {
-      const startDate = new Date(prev.start_at || '');
-      const endDate = new Date(prev.end_at || '');
+      let startDate = dayjs(prev.start_at);
+      let endDate = dayjs(prev.end_at);
 
       if (checked) {
-        // Set to all day: start at 00:00, end at 23:59
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
+        // Set to all day: start at 00:00, end at 00:00 of next day (UTC)
+        startDate = startDate.utc().set('hour', 0).startOf('hour');
+
+        endDate = endDate.utc().isSame(endDate.startOf('day'), 'day')
+          ? endDate.utc().set('hour', 0).startOf('hour')
+          : endDate.utc().subtract(1, 'day').set('hour', 0).endOf('day');
       } else {
         // Set to specific time: default to current time for start, +1 hour for end
-        const now = new Date();
-        startDate.setHours(now.getHours(), now.getMinutes(), 0, 0);
-        endDate.setHours(now.getHours() + 1, now.getMinutes(), 0, 0);
+        const now = dayjs();
+        startDate = startDate.set('hour', now.hour()).startOf('hour');
+        endDate = endDate.set('hour', now.hour() + 1).startOf('hour');
       }
 
       return {
@@ -621,34 +636,8 @@ export function UnifiedEventModal({
         end_at: endDate.toISOString(),
       };
     });
-  };
 
-  // Handle multi-day toggle
-  const handleMultiDayChange = (checked: boolean) => {
-    setIsMultiDay(checked);
-
-    setEvent((prev) => {
-      const startDate = new Date(prev.start_at || '');
-      const endDate = new Date(prev.end_at || '');
-
-      if (checked && startDate.getDate() === endDate.getDate()) {
-        // If turning on multi-day and currently same day, extend to next day
-        endDate.setDate(endDate.getDate() + 1);
-      } else if (!checked && startDate.getDate() !== endDate.getDate()) {
-        // If turning off multi-day and currently different days, set end to same day
-        endDate.setFullYear(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate()
-        );
-        endDate.setHours(23, 59, 59, 999);
-      }
-
-      return {
-        ...prev,
-        end_at: endDate.toISOString(),
-      };
-    });
+    setIsAllDay((prev) => !prev);
   };
 
   const [isRecording, setIsRecording] = useState(false);
@@ -977,13 +966,6 @@ export function UnifiedEventModal({
                             onChange={handleAllDayChange}
                             disabled={event.locked}
                           />
-                          <EventToggleSwitch
-                            id="multi-day"
-                            label="Multi-Day"
-                            checked={isMultiDay}
-                            onChange={handleMultiDayChange}
-                            disabled={event.locked}
-                          />
                         </div>
                       </div>
 
@@ -993,12 +975,15 @@ export function UnifiedEventModal({
                           value={new Date(event.start_at || new Date())}
                           onChange={handleStartDateChange}
                           disabled={event.locked}
+                          showTimeSelect={!isAllDay}
                         />
                         <EventDateTimePicker
                           label="End"
                           value={new Date(event.end_at || new Date())}
                           onChange={handleEndDateChange}
                           disabled={event.locked}
+                          showTimeSelect={!isAllDay}
+                          minusOneDay={isAllDay}
                         />
                       </div>
                     </div>

@@ -26,7 +26,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -45,7 +45,6 @@ export interface TeamData {
   }[];
   rank?: number;
   total_score?: number;
-  active_since?: string;
   challenge_scores?: Record<string, number>;
   challenge_details?: Array<{
     id: string;
@@ -59,18 +58,23 @@ export interface TeamData {
   };
 }
 
-export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
+export default function TeamClient({
+  teamData,
+}: {
+  teamData: TeamData | null;
+}) {
   const locale = useLocale();
-
+  const t = useTranslations('nova.profile-team-page');
+  console.log('team', teamData);
   if (!teamData) {
     return (
       <div className="container max-w-6xl py-16 text-center">
-        <h2 className="text-2xl font-semibold">Team not found</h2>
+        <h2 className="text-2xl font-semibold">{t('not-found')}</h2>
         <p className="text-muted-foreground mt-2">
-          The requested team could not be loaded.
+          {t('not-found-description')}
         </p>
         <Button className="mt-4" asChild>
-          <Link href="/teams">View All Teams</Link>
+          <Link href="/teams">{t('view-all-teams')}</Link>
         </Button>
       </div>
     );
@@ -99,7 +103,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
   });
 
   // Use either stats.active_since or the root active_since property
-  const activeSinceDate = teamData.stats?.active_since || teamData.active_since;
+  const activeSinceDate = teamData.stats?.active_since || '';
 
   const formattedActiveDate = activeSinceDate
     ? (() => {
@@ -169,11 +173,11 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
       {/* Breadcrumb navigation */}
       <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
         <Link href="/home" className="hover:text-foreground">
-          Home
+          {t('breadcrumb.home')}
         </Link>
         <ChevronRight className="h-4 w-4" />
         <Link href="/teams" className="hover:text-foreground">
-          Teams
+          {t('breadcrumb.teams')}
         </Link>
         <ChevronRight className="h-4 w-4" />
         <span className="text-foreground font-medium">{teamInfo?.name}</span>
@@ -213,13 +217,15 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                 <h1 className="text-3xl font-bold">{teamInfo?.name}</h1>
                 <Badge variant="outline" className="bg-card">
                   <Users className="mr-1 h-3.5 w-3.5 text-blue-500" />
-                  {teamStats.totalMembers} Members
+                  {teamStats.totalMembers} {t('members')}
                 </Badge>
                 +
                 {teamData.rank && (
                   <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white">
                     <Trophy className="mr-1 h-3.5 w-3.5" />
-                    {teamData.rank <= 20 ? 'Top 15%' : `Rank #${teamData.rank}`}
+                    {teamData.rank <= 20
+                      ? 'Top 15%'
+                      : `${t('rank')} #${teamData.rank}`}
                   </Badge>
                 )}
               </div>
@@ -245,13 +251,13 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   })
                 }
               >
-                Edit Profile
+                {t('edit-profile')}
               </Button>
             )}
             <Link href={'/leaderboard'}>
               <Button variant="outline">
                 <Trophy className="mr-1.5 h-4 w-4" />
-                View on Leaderboard
+                {t('view-leaderboard')}
               </Button>
             </Link>
             <Button
@@ -259,7 +265,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
               className="flex items-center gap-1"
               onClick={handleShare}
             >
-              {copied ? 'Copied!' : 'Share'}
+              {copied ? `${t('copied')}` : `${t('share')}`}
               <Share2 className="ml-1.5 h-4 w-4" />
             </Button>
           </div>
@@ -269,9 +275,9 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
       {/* Team Content */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="mb-8 grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="overview">{t('overview-tab.title')}</TabsTrigger>
+          <TabsTrigger value="members">{t('members-tab.name')}</TabsTrigger>
+          <TabsTrigger value="activity">{t('activity-tab.name')}</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -287,12 +293,13 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
               <div>
                 <h3 className="flex items-center gap-2 text-xl font-semibold">
                   <Award className="h-5 w-5 text-amber-500" />
-                  Team Rank
+
+                  {t('overview-tab.team-rank')}
                 </h3>
                 <p className="text-muted-foreground mt-1">
                   {teamData.rank && teamData.rank <= 50
-                    ? 'This team is currently in the top performers'
-                    : 'This team is competing in the leaderboard'}
+                    ? `${t('overview-tab.top-performers')}`
+                    : `${t('overview-tab.competing')}`}
                 </p>
               </div>
 
@@ -301,14 +308,18 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   <div className="text-3xl font-bold text-amber-500">
                     #{teamData.rank || '?'}
                   </div>
-                  <div className="text-muted-foreground text-sm">Rank</div>
+                  <div className="text-muted-foreground text-sm">
+                    {t('overview-tab.rank-label')}
+                  </div>
                 </div>
 
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-500">
                     {teamData.total_score?.toFixed(1) || 0}
                   </div>
-                  <div className="text-muted-foreground text-sm">Points</div>
+                  <div className="text-muted-foreground text-sm">
+                    {t('overview-tab.points')}
+                  </div>
                 </div>
               </div>
             </div>
@@ -327,18 +338,17 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <Trophy className="h-5 w-5 text-purple-500" />
-                      Challenge Breakdown
+                      {t('overview-tab.challenge-breakdown')}
                     </CardTitle>
                     <CardDescription>
-                      Detailed breakdown of the team's performance in each
-                      challenge
+                      {t('overview-tab.breakdown-description')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {/* Score Distribution Visualization */}
                     <div className="bg-card/50 mb-6 flex flex-col gap-2 rounded-lg border p-4">
                       <div className="text-base font-medium">
-                        Score Distribution
+                        {t('overview-tab.score-distribution')}
                       </div>
                       <div className="flex h-8 w-full overflow-hidden rounded-lg">
                         {teamData.challenge_details.map((challenge, index) => {
@@ -403,10 +413,10 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                     {/* Challenge Details */}
                     <div className="space-y-6">
                       <div className="text-muted-foreground flex justify-between border-b pb-2 text-sm font-medium">
-                        <span>Challenge</span>
+                        <span>{t('overview-tab.challenge')}</span>
                         <div className="flex gap-8">
-                          <span>Score</span>
-                          <span>Contribution</span>
+                          <span>{t('overview-tab.score')}</span>
+                          <span>{t('overview-tab.contribution')}</span>
                         </div>
                       </div>
                       {teamData.challenge_details.map((challenge, index) => {
@@ -437,7 +447,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                                   variant="outline"
                                   className="min-w-[70px] justify-center border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
                                 >
-                                  {challenge.score.toFixed(1)} pts
+                                  {challenge.score.toFixed(1)} {t('pts')}
                                 </Badge>
                                 <span className="min-w-[70px] text-right font-medium text-purple-600 dark:text-purple-400">
                                   {percentage.toFixed(1)}%
@@ -469,31 +479,31 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Info className="h-5 w-5 text-blue-500" />
-                  Team Stats
+                  {t('overview-tab.team-stats')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
-                    Total Members
+                    {t('overview-tab.total-members')}
                   </span>
                   <span className="font-medium">{teamStats.totalMembers}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
-                    Active Since
+                    {t('overview-tab.active-since')}
                   </span>
                   <span className="font-medium">{formattedActiveDate}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
-                    Activity Status
+                    {t('overview-tab.activity-status')}
                   </span>
                   <Badge
                     variant="outline"
                     className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                   >
-                    Active
+                    {t('overview-tab.active')}
                   </Badge>
                 </div>
               </CardContent>
@@ -503,7 +513,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Star className="h-5 w-5 text-amber-500" />
-                  Quick Actions
+                  {t('overview-tab.quick-actions')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -513,7 +523,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   onClick={() => openDialog('des')}
                 >
                   <Info className="mr-2 h-4 w-4 text-blue-500" />
-                  Team Description
+                  {t('overview-tab.team-description')}
                 </Button>
                 <Button
                   className="w-full justify-start"
@@ -521,7 +531,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   onClick={() => openDialog('goals')}
                 >
                   <Target className="mr-2 h-4 w-4 text-green-500" />
-                  View Team Goals
+                  {t('overview-tab.view-team-goals')}
                 </Button>
               </CardContent>
             </Card>
@@ -537,10 +547,10 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Award className="h-5 w-5 text-blue-500" />
-                  Performance Metrics
+                  {t('overview-tab.performance-metrics')}
                 </CardTitle>
                 <CardDescription>
-                  Key performance indicators for this team
+                  {t('overview-tab.performance-description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -548,7 +558,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   {/* Average Member Score */}
                   <div className="bg-card/50 flex flex-col rounded-lg border p-4">
                     <span className="text-muted-foreground mb-1 text-xs font-medium">
-                      Average Member Score
+                      {t('overview-tab.average-member-score')}
                     </span>
                     <div className="flex items-end gap-2">
                       <span className="text-2xl font-bold text-blue-600">
@@ -556,7 +566,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                           '0'}
                       </span>
                       <span className="text-muted-foreground text-sm">
-                        points
+                        {t('overview-tab.points')}
                       </span>
                     </div>
                     <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
@@ -574,14 +584,14 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   {/* Weekly Activity */}
                   <div className="bg-card/50 flex flex-col rounded-lg border p-4">
                     <span className="text-muted-foreground mb-1 text-xs font-medium">
-                      Weekly Progress
+                      {t('overview-tab.weekly-progress')}
                     </span>
                     <div className="flex items-end gap-2">
                       <span className="text-2xl font-bold text-green-600">
                         {teamData.stats?.weekly_progress?.toFixed(1) || '0'}
                       </span>
                       <span className="text-muted-foreground text-sm">
-                        points this week
+                        {t('overview-tab.points-this-week')}
                       </span>
                     </div>
                     <div className="mt-4 flex items-center justify-between">
@@ -591,11 +601,11 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                       >
                         {teamData.stats?.weekly_progress &&
                         teamData.stats.weekly_progress > 0
-                          ? 'Active'
-                          : 'Inactive'}
+                          ? `${t('overview-tab.active')}`
+                          : `${t('overview-tab.inactive')}`}
                       </Badge>
                       <span className="text-muted-foreground text-xs">
-                        Last 7 days
+                        {t('overview-tab.last-7-days')}
                       </span>
                     </div>
                   </div>
@@ -603,7 +613,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   {/* Top Contributor */}
                   <div className="bg-card/50 flex flex-col rounded-lg border p-4">
                     <span className="text-muted-foreground mb-1 text-xs font-medium">
-                      Top Contributor
+                      {t('overview-tab.top-contributor')}
                     </span>
                     {teamData.members?.length > 0 && (
                       <>
@@ -629,14 +639,14 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                             ) || '0'}
                           </span>
                           <span className="text-muted-foreground text-sm">
-                            points
+                            {t('overview-tab.points')}
                           </span>
                         </div>
                         <div className="text-muted-foreground mt-1 text-xs">
                           {teamData?.members?.[0]?.contribution_percentage?.toFixed(
                             1
                           ) || '0'}
-                          % of team score
+                          {t('overview-tab.of-team-score')}
                         </div>
                       </>
                     )}
@@ -651,9 +661,9 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
         <TabsContent value="members">
           <Card>
             <CardHeader>
-              <CardTitle>Team Members</CardTitle>
+              <CardTitle>{t('members-tab.team-members')}</CardTitle>
               <CardDescription>
-                Members and their contributions to the team's score
+                {t('members-tab.members-description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -666,7 +676,12 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                     key={member.user_id}
                     className="hover:bg-muted/50 group flex flex-col gap-4 rounded-lg border p-4 transition-all hover:shadow-md sm:flex-row sm:items-center"
                   >
-                    <div className="flex items-center gap-4">
+                    <Link
+                      href={`/profile/${member.user_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4"
+                    >
                       <Avatar className="border-border h-12 w-12 border">
                         <AvatarImage src={member.avatar_url || ''} />
                         <AvatarFallback>
@@ -681,12 +696,12 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                           </p>
                           {index === 0 && (
                             <Badge variant="secondary" className="text-xs">
-                              Team Lead
+                              {t('members-tab.team-lead')}
                             </Badge>
                           )}
                         </div>
                         <p className="text-muted-foreground text-sm">
-                          Joined{' '}
+                          {t('members-tab.joined')}{' '}
                           {member.join_date
                             ? new Date(member.join_date).toLocaleDateString(
                                 'en-US',
@@ -699,15 +714,16 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                             : 'Unknown'}
                         </p>
                       </div>
-                    </div>
+                    </Link>
 
                     <div className="mt-2 flex flex-col gap-4 sm:ml-auto sm:mt-0 sm:flex-row sm:items-center">
                       <div className="flex items-center gap-3">
                         <div className="rounded-md bg-blue-50 px-2.5 py-1 text-sm font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
-                          {member.individual_score.toFixed(1)} pts
+                          {member.individual_score.toFixed(1)} {t('pts')}
                         </div>
                         <div className="rounded-md bg-purple-50 px-2.5 py-1 text-sm font-medium text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
-                          {member.contribution_percentage}% contribution
+                          {member.contribution_percentage}
+                          {t('members-tab.contribution-percentage')}
                         </div>
                       </div>
 
@@ -736,9 +752,9 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
         <TabsContent value="activity">
           <Card>
             <CardHeader>
-              <CardTitle>Team Activity</CardTitle>
+              <CardTitle>{t('activity-tab.team-activity')}</CardTitle>
               <CardDescription>
-                Recent team performance and statistics
+                {t('activity-tab.activity-description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -748,37 +764,38 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   <div className="grid gap-6 md:grid-cols-3">
                     <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
                       <div className="text-muted-foreground mb-1 text-sm">
-                        Team Average
+                        {t('activity-tab.team-average')}
                       </div>
                       <div className="text-2xl font-bold text-blue-600">
                         {teamData.stats.average_member_score.toFixed(1)}
                       </div>
                       <div className="text-muted-foreground text-xs">
-                        points per member
+                        {t('activity-tab.points-per-member')}
                       </div>
                     </div>
 
                     <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
                       <div className="text-muted-foreground mb-1 text-sm">
-                        Weekly Activity
+                        {t('activity-tab.weekly-activity')}
                       </div>
                       <div className="text-2xl font-bold text-green-600">
                         {teamData.stats.weekly_progress?.toFixed(1) || 0}
                       </div>
                       <div className="text-muted-foreground text-xs">
-                        points this week
+                        {t('activity-tab.points-this-week')}
                       </div>
                     </div>
 
                     <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
                       <div className="text-muted-foreground mb-1 text-sm">
-                        Top Member
+                        {t('activity-tab.top-member')}
                       </div>
                       <div className="text-2xl font-bold text-purple-600">
                         {teamData.members[0]?.individual_score.toFixed(1) || 0}
                       </div>
                       <div className="text-muted-foreground text-xs">
-                        points by {teamData.members[0]?.display_name}
+                        {t('activity-tab.points-by')}{' '}
+                        {teamData.members[0]?.display_name}
                       </div>
                     </div>
                   </div>
@@ -786,7 +803,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   {/* Member Contribution Chart */}
                   <div className="bg-card rounded-lg border p-6 shadow-sm">
                     <h3 className="mb-4 text-lg font-medium">
-                      Member Contributions
+                      {t('activity-tab.member-contributions')}
                     </h3>
                     <div className="space-y-4">
                       {teamData.members.map((member, index) => (
@@ -836,7 +853,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                     teamData.challenge_details.length > 0 && (
                       <div className="bg-card rounded-lg border p-6 shadow-sm">
                         <h3 className="mb-4 text-lg font-medium">
-                          Challenge Performance
+                          {t('activity-tab.challenge-performance')}
                         </h3>
                         <div className="grid gap-4 sm:grid-cols-2">
                           {teamData.challenge_details
@@ -861,7 +878,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                                       (teamData.total_score || 1)) *
                                     100
                                   ).toFixed(1)}
-                                  % of total score
+                                  {t('activity-tab.of-total-score')}
                                 </div>
                                 <div className="text-xl font-bold text-blue-600">
                                   {challenge.score.toFixed(1)}
@@ -874,7 +891,7 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                 </div>
               ) : (
                 <div className="text-muted-foreground flex h-24 items-center justify-center">
-                  No recent activity data available
+                  {t('activity-tab.no-activity')}
                 </div>
               )}
             </CardContent>

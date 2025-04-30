@@ -112,7 +112,7 @@ export function DatasetCrawler({
     }
   }, [isOpen, dataset.url]);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       url: dataset.url || '',

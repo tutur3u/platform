@@ -54,7 +54,7 @@ export default function UserAvatar({ user }: AvatarProps) {
     user?.avatar_url || null
   );
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
   });
 

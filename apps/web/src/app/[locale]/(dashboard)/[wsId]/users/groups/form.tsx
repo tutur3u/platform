@@ -34,7 +34,7 @@ export default function UserGroupForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations('ws-user-groups');
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,

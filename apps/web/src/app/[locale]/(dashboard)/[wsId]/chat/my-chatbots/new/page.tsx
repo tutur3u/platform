@@ -64,7 +64,7 @@ export default function WorkspaceUserGroupTagsPage({ params }: Props) {
   const { wsId } = use(params);
   console.log(wsId);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
   });
 

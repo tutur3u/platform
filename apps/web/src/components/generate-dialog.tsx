@@ -45,7 +45,7 @@ export function GenerateDialog({
   const t = useTranslations();
   const [open, setOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       context: '',

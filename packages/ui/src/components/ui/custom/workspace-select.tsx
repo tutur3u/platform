@@ -51,7 +51,7 @@ import { z } from 'zod';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
-  plan: z.enum(['FREE', 'PRO', 'ENTERPRISE']),
+  plan: z.string(),
 });
 
 export function WorkspaceSelect({
@@ -77,7 +77,7 @@ export function WorkspaceSelect({
 
   const workspaces = workspacesQuery.data;
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: '',

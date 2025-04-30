@@ -55,7 +55,7 @@ export function ConfirmDialog({
   const [isConfirming, setIsConfirming] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const form = useForm<FormValues>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       password: challenge.password_hash !== null ? '' : undefined,
