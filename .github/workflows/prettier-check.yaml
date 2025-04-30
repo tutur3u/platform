@@ -2,6 +2,10 @@ name: Prettier Format Check
 
 on:
   push:
+    branches-ignore:
+      - 'dependabot/**'
+      - 'staging'
+      - 'production'
   workflow_dispatch:
 
 jobs:
