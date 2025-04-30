@@ -152,7 +152,13 @@ export default function ChallengeClient({
         href.startsWith('vbscript:')
       )
         return;
-
+      if (
+        !href ||
+        href.startsWith('#') ||
+        href.startsWith('javascript:') ||
+        href.startsWith('data:') ||
+        href.startsWith('vbscript:')
+      )
       if (
         href.includes(
           `/challenges/${challenge.id}/problems/${currentProblem.id}`
