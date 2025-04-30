@@ -29,7 +29,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.798.0",
+    "@aws-sdk/client-ses": "^3.799.0",
     "@deepgram/sdk": "^3.12.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -41,7 +41,7 @@
     "@octokit/auth-app": "^7.2.1",
     "@octokit/rest": "^21.1.1",
     "@react-email/components": "^0.0.36",
-    "@tanstack/react-query": "^5.74.7",
+    "@tanstack/react-query": "^5.74.11",
     "@tanstack/react-table": "^8.21.3",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -100,7 +100,7 @@
     "@next/bundle-analyzer": "^15.3.1",
     "@next/eslint-plugin-next": "^15.3.1",
     "@tanstack/eslint-plugin-query": "^5.74.7",
-    "@tanstack/react-query-devtools": "^5.74.7",
+    "@tanstack/react-query-devtools": "^5.74.11",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
