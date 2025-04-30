@@ -78,6 +78,7 @@
       "@vercel/speed-insights",
       "canvas",
       "core-js",
+      "cytoscape",
       "esbuild",
       "sharp",
       "supabase",
