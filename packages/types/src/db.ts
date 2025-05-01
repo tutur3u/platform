@@ -66,6 +66,7 @@ export type WorkspaceRole = Tables<'workspace_roles'> & {
 export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {
   href?: string;
 };
+export type WorkspaceCalendarGoogleToken = Tables<'calendar_auth_tokens'>;
 
 export type AuroraStatisticalForecast = Tables<'aurora_statistical_forecast'>;
 export type AuroraStatisticalMetrics = Tables<'aurora_statistical_metrics'>;

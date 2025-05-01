@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
@@ -118,6 +119,7 @@ export const CalendarProvider = ({
   children,
   initialSettings,
   enableExperimentalGoogleCalendar = false,
+  experimentalGoogleToken,
 }: {
   ws?: Workspace;
   useQuery: any;
@@ -125,6 +127,7 @@ export const CalendarProvider = ({
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
   enableExperimentalGoogleCalendar?: boolean;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
 }) => {
   const queryClient = useQueryClient();
 
@@ -836,7 +839,11 @@ export const CalendarProvider = ({
       const googleCalendarEventId = eventToDelete?.google_event_id;
 
       // --- Google Calendar Sync (Delete) ---
-      if (googleCalendarEventId && enableExperimentalGoogleCalendar) {
+      if (
+        googleCalendarEventId &&
+        enableExperimentalGoogleCalendar &&
+        experimentalGoogleToken
+      ) {
         // Check if ID exists and feature enabled
         try {
           const syncResponse = await fetch('/api/v1/calendar/auth/sync', {
@@ -874,7 +881,11 @@ export const CalendarProvider = ({
             syncError
           );
         }
-      } else if (enableExperimentalGoogleCalendar && !googleCalendarEventId) {
+      } else if (
+        enableExperimentalGoogleCalendar &&
+        experimentalGoogleToken &&
+        !googleCalendarEventId
+      ) {
         console.log(
           `Event ${eventId} has no Google Calendar ID, skipping delete sync.`
         );
@@ -913,15 +924,22 @@ export const CalendarProvider = ({
   const { data: googleData } = useQuery({
     queryKey: ['googleCalendarEvents', ws?.id],
     queryFn: fetchGoogleCalendarEvents,
-    enabled: !!ws?.id && enableExperimentalGoogleCalendar,
-    refetchInterval: 30000, // Fetch every 30 seconds
+    enabled:
+      !!ws?.id && enableExperimentalGoogleCalendar && experimentalGoogleToken,
+    refetchInterval: 60000, // Fetch every 60 seconds
     staleTime: 1000 * 60, // Data is considered fresh for 1 minute
   });
+
   const googleEvents = useMemo(() => googleData?.events || [], [googleData]);
 
   // Function to synchronize local events with Google Calendar
   const syncEvents = useCallback(async () => {
-    if (!googleEvents.length || !enableExperimentalGoogleCalendar) return;
+    if (
+      !googleEvents.length ||
+      !enableExperimentalGoogleCalendar ||
+      !experimentalGoogleToken
+    )
+      return;
 
     // Get local events that are synced with Google Calendar
     const localGoogleEvents: CalendarEvent[] = events.filter(
@@ -1070,7 +1088,12 @@ export const CalendarProvider = ({
 
   // Set up an interval to sync events every 30 seconds
   useEffect(() => {
-    if (!enableExperimentalGoogleCalendar || !ws?.id) return;
+    if (
+      !enableExperimentalGoogleCalendar ||
+      !ws?.id ||
+      !experimentalGoogleToken
+    )
+      return;
 
     const interval = setInterval(() => {
       syncEvents();
@@ -1081,7 +1104,7 @@ export const CalendarProvider = ({
   // Google Calendar sync moved to API Route
   const syncWithGoogleCalendar = useCallback(
     async (event: CalendarEvent) => {
-      if (!enableExperimentalGoogleCalendar) {
+      if (!enableExperimentalGoogleCalendar || !experimentalGoogleToken) {
         return;
       }
 
@@ -1137,7 +1160,7 @@ export const CalendarProvider = ({
         throw error;
       }
     },
-    [enableExperimentalGoogleCalendar, refresh]
+    [enableExperimentalGoogleCalendar, refresh, experimentalGoogleToken]
   );
 
   // Modal management

@@ -7,11 +7,13 @@ import {
   useCalendarSettings,
 } from './settings/CalendarSettingsContext';
 import { CategoryColorsSettings } from './settings/CategoryColorsSettings';
+import { GoogleCalendarSettings } from './settings/GoogleCalendarSettings';
 import { HoursSettings } from './settings/HoursSettings';
 import { NotificationSettings } from './settings/NotificationSettings';
 import { SmartSchedulingSettings } from './settings/SmartSchedulingSettings';
 import { TaskSettings } from './settings/TaskSettings';
 import { TimezoneSettings } from './settings/TimezoneSettings';
+import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -45,11 +47,11 @@ import {
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
-import { Clock, Paintbrush, Palette } from 'lucide-react';
+import { CalendarIcon, Clock, Paintbrush, Palette } from 'lucide-react';
 import * as React from 'react';
 
 type SettingsSection = {
-  id: keyof CalendarSettings | 'hours' | 'advanced';
+  id: keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar';
   name: string;
   icon: React.ElementType;
   description: string;
@@ -67,6 +69,12 @@ const settingsSections: SettingsSection[] = [
     name: 'Category Colors',
     icon: Palette,
     description: 'Customize colors for different event categories',
+  },
+  {
+    id: 'googleCalendar',
+    name: 'Google Calendar',
+    icon: CalendarIcon,
+    description: 'Connect your Google Calendar to your calendar',
   },
   // {
   //   id: 'smartScheduling',
@@ -90,9 +98,13 @@ const settingsSections: SettingsSection[] = [
 
 // Content for each settings section
 const SettingsContent = ({
+  wsId,
   section,
+  experimentalGoogleToken,
 }: {
-  section: keyof CalendarSettings | 'hours' | 'advanced';
+  wsId: string;
+  section: keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar';
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
 }) => {
   const { settings, updateSettings } = useCalendarSettings();
 
@@ -105,20 +117,7 @@ const SettingsContent = ({
         />
       );
     case 'hours':
-      return (
-        <HoursSettings
-          value={{
-            personalHours: settings.personalHours,
-            workHours: settings.workHours,
-            meetingHours: settings.meetingHours,
-          }}
-          onChange={(value) => {
-            updateSettings('personalHours', value.personalHours);
-            updateSettings('workHours', value.workHours);
-            updateSettings('meetingHours', value.meetingHours);
-          }}
-        />
-      );
+      return <HoursSettings wsId={wsId} />;
     case 'categoryColors':
       return (
         <CategoryColorsSettings
@@ -131,6 +130,13 @@ const SettingsContent = ({
         <SmartSchedulingSettings
           value={settings.smartScheduling}
           onChange={(value) => updateSettings('smartScheduling', value)}
+        />
+      );
+    case 'googleCalendar':
+      return (
+        <GoogleCalendarSettings
+          wsId={wsId}
+          experimentalGoogleToken={experimentalGoogleToken}
         />
       );
     case 'taskSettings':
@@ -162,11 +168,15 @@ const SettingsContent = ({
 // Dialog content with settings
 function SettingsDialogContent({
   onClose,
+  wsId,
+  experimentalGoogleToken,
 }: {
   onClose: (save?: boolean) => void;
+  wsId: string;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
 }) {
   const [activeSection, setActiveSection] = React.useState<
-    keyof CalendarSettings | 'hours' | 'advanced'
+    keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar'
   >('hours');
   const { hasChanges, saveSettings, resetSettings } = useCalendarSettings();
 
@@ -258,7 +268,11 @@ function SettingsDialogContent({
         </header>
 
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 md:p-6">
-          <SettingsContent section={activeSection} />
+          <SettingsContent
+            section={activeSection}
+            wsId={wsId}
+            experimentalGoogleToken={experimentalGoogleToken}
+          />
         </div>
 
         <div className="flex justify-end gap-2 border-t p-4">
@@ -269,7 +283,7 @@ function SettingsDialogContent({
             onClick={handleSave}
             disabled={!hasChanges}
             className={cn(
-              hasChanges && 'bg-primary/90 hover:bg-primary animate-pulse'
+              hasChanges && 'animate-pulse bg-primary/90 hover:bg-primary'
             )}
           >
             Save Changes
@@ -285,11 +299,15 @@ export function CalendarSettingsDialog({
   onOpenChange,
   initialSettings,
   onSave,
+  wsId,
+  experimentalGoogleToken,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialSettings?: Partial<CalendarSettings>;
   onSave?: (settings: CalendarSettings) => Promise<void>;
+  wsId: string;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
 }) {
   const handleClose = () => {
     onOpenChange(false);
@@ -306,7 +324,11 @@ export function CalendarSettingsDialog({
           initialSettings={initialSettings}
           onSave={onSave}
         >
-          <SettingsDialogContent onClose={handleClose} />
+          <SettingsDialogContent
+            onClose={handleClose}
+            wsId={wsId}
+            experimentalGoogleToken={experimentalGoogleToken}
+          />
         </CalendarSettingsProvider>
       </DialogContent>
     </Dialog>
