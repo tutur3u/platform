@@ -1,11 +1,11 @@
 import { DEV_MODE } from './common';
 
 export const siteConfig = {
-  name: 'Tuturuuu Nova',
-  url: DEV_MODE ? 'http://localhost:7805' : 'https://nova.tuturuuu.com',
+  name: 'Upskii',
+  url: DEV_MODE ? 'http://localhost:7806' : 'https://upskii.com',
   ogImage: DEV_MODE
-    ? 'http://localhost:7805/api/og'
-    : 'https://nova.tuturuuu.com/api/og',
+    ? 'http://localhost:7806/api/og'
+    : 'https://upskii.com/api/og',
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/platform',
