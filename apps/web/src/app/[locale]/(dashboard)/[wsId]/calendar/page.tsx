@@ -22,6 +22,7 @@ export default async function CalendarPage({ params }: PageProps) {
   const { data: googleToken } = await supabase
     .from('calendar_auth_tokens')
     .select('*')
+    .eq('ws_id', wsId)
     .maybeSingle();
 
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
