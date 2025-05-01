@@ -8,6 +8,7 @@ import MonthCalendar from './MonthCalendar';
 import { UnifiedEventModal } from './UnifiedEventModal';
 import WeekdayBar from './WeekdayBar';
 import { CalendarSettings } from './settings/CalendarSettingsContext';
+import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -19,7 +20,6 @@ import { cn } from '@tuturuuu/utils/format';
 import { PlusIcon, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-// Floating action button for quick event creation
 const CreateEventButton = () => {
   const { openModal } = useCalendar();
 
@@ -44,10 +44,13 @@ const CreateEventButton = () => {
 
 // Settings button component
 const SettingsButton = ({
+  wsId,
+  experimentalGoogleToken,
   // initialSettings,
   onSaveSettings,
 }: {
-  showSyncButton?: boolean;
+  wsId: string;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
   initialSettings?: Partial<CalendarSettings>;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
@@ -91,8 +94,10 @@ const SettingsButton = ({
         <TooltipContent>Calendar settings</TooltipContent>
       </Tooltip>
       <CalendarSettingsDialog
+        wsId={wsId}
         open={open}
         onOpenChange={setOpen}
+        experimentalGoogleToken={experimentalGoogleToken}
         initialSettings={settings}
         onSave={handleSaveSettings}
       />
@@ -109,8 +114,7 @@ export const Calendar = ({
   disabled,
   initialSettings,
   enableHeader = true,
-  experimentalGoogleCalendarLinked = false,
-  enableExperimentalGoogleCalendar = false,
+  experimentalGoogleToken,
   onSaveSettings,
   externalState,
 }: {
@@ -122,8 +126,7 @@ export const Calendar = ({
   disabled?: boolean;
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
-  experimentalGoogleCalendarLinked?: boolean;
-  enableExperimentalGoogleCalendar?: boolean;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;
@@ -141,7 +144,7 @@ export const Calendar = ({
       useQuery={useQuery}
       useQueryClient={useQueryClient}
       initialSettings={initialSettings}
-      enableExperimentalGoogleCalendar={enableExperimentalGoogleCalendar}
+      experimentalGoogleToken={experimentalGoogleToken}
     >
       <CalendarContent
         t={t}
@@ -150,8 +153,7 @@ export const Calendar = ({
         workspace={workspace}
         initialSettings={initialSettings}
         enableHeader={enableHeader}
-        experimentalGoogleCalendarLinked={experimentalGoogleCalendarLinked}
-        enableExperimentalGoogleCalendar={enableExperimentalGoogleCalendar}
+        experimentalGoogleToken={experimentalGoogleToken}
         onSaveSettings={onSaveSettings}
         externalState={externalState}
       />
@@ -167,8 +169,7 @@ const CalendarContent = ({
   workspace,
   initialSettings,
   enableHeader = true,
-  experimentalGoogleCalendarLinked,
-  enableExperimentalGoogleCalendar,
+  experimentalGoogleToken,
   onSaveSettings,
   externalState,
 }: {
@@ -178,8 +179,7 @@ const CalendarContent = ({
   workspace?: Workspace;
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
-  experimentalGoogleCalendarLinked: boolean;
-  enableExperimentalGoogleCalendar: boolean;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;
@@ -531,27 +531,16 @@ const CalendarContent = ({
 
       {disabled ? null : (
         <>
-          {workspace && (
-            <UnifiedEventModal
-              wsId={workspace.id}
-              experimentalGoogleCalendarLinked={
-                experimentalGoogleCalendarLinked
-              }
-              enableExperimentalGoogleCalendar={
-                enableExperimentalGoogleCalendar
-              }
+          {workspace && <UnifiedEventModal />}
+          <CreateEventButton />
+          {workspace?.id && (
+            <SettingsButton
+              wsId={workspace?.id}
+              experimentalGoogleToken={experimentalGoogleToken}
+              initialSettings={initialSettings}
+              onSaveSettings={onSaveSettings}
             />
           )}
-          <CreateEventButton />
-          <SettingsButton
-            showSyncButton={
-              !!workspace?.id &&
-              experimentalGoogleCalendarLinked &&
-              enableExperimentalGoogleCalendar
-            }
-            initialSettings={initialSettings}
-            onSaveSettings={onSaveSettings}
-          />
         </>
       )}
     </div>

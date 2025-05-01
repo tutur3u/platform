@@ -19,20 +19,19 @@ export default async function CalendarPage({ params }: PageProps) {
 
   const supabase = await createClient();
 
-  const { data: googleTokens } = await supabase
+  const { data: googleToken } = await supabase
     .from('calendar_auth_tokens')
     .select('*')
+    .eq('ws_id', wsId)
     .maybeSingle();
 
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
   if (!workspace) return null;
 
-  const ggCalendarLinked = googleTokens !== null;
-
   return (
     <CalendarClientPage
+      experimentalGoogleToken={googleToken || undefined}
       workspace={workspace}
-      experimentalGoogleCalendarLinked={ggCalendarLinked}
     />
   );
 }
