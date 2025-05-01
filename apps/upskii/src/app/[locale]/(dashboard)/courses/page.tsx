@@ -1,11 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+
 import { getWorkspaceCourseColumns } from './columns';
 import CourseForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 
 interface Course {
   id: string;
@@ -27,7 +28,7 @@ export default function WorkspaceCoursesPage({ wsId }: Props) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch(`/api/${wsId}/courses`);  
+        const res = await fetch(`/api/${wsId}/courses`);
         const json = await res.json();
         setData(json.data || []);
         setCount(json.count || 0);
