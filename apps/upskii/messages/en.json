@@ -484,7 +484,7 @@
     "pricing_hook": "Simple, transparent pricing",
     "usage_based_pricing": "Usage-Based Pricing",
     "usage_based_pricing_description": "Pay only for what you use. All plans include core features with different usage limits.",
-    "faq": "Frequently Asked Questions",
+    "faq": "FAQ",
     "unlink": "Unlink",
     "explore": "Explore",
     "actions": "Actions",
@@ -545,7 +545,8 @@
     "allow_role_management": "Allow Role Management",
     "searching": "Searching",
     "or": "Or",
-    "joined": "Joined"
+    "joined": "Joined",
+    "guide": "Guide"
   },
   "contact": {
     "title": "Contact us",

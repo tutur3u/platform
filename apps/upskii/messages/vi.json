@@ -481,7 +481,7 @@
     "pricing_hook": "Giá cả đơn giản, minh bạch",
     "usage_based_pricing": "Bảng giá",
     "usage_based_pricing_description": "Chỉ trả tiền cho những gì bạn sử dụng. Tất cả các gói đều bao gồm các tính năng cốt lõi với các giới hạn sử dụng khác nhau.",
-    "faq": "Câu hỏi thường gặp",
+    "faq": "FAQ",
     "unlink": "Hủy liên kết",
     "add_column": "Thêm Cột",
     "add_column_description": "Nhập tên cho cột mới",
@@ -545,7 +545,8 @@
     "allow_role_management": "Quản lý vai trò",
     "searching": "Đang tìm kiếm",
     "or": "Hoặc",
-    "joined": "Tham gia"
+    "joined": "Tham gia",
+    "guide": "Hướng dẫn"
   },
   "contact": {
     "title": "Liên hệ với chúng tôi",
