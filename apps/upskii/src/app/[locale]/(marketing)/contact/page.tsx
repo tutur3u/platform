@@ -119,9 +119,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="font-medium">Email</p>
-                    <p className="text-muted-foreground">
-                      support@eduplatform.com
-                    </p>
+                    <p className="text-muted-foreground">support@upskii.com</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -139,13 +137,14 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="font-medium">Address</p>
-                    <p className="text-muted-foreground">
+                    <p>Physical office coming soon</p>
+                    {/* <p className="text-muted-foreground">
                       123 Education Street
                       <br />
                       San Francisco, CA 94103
                       <br />
                       United States
-                    </p>
+                    </p> */}
                   </div>
                 </div>
               </div>
@@ -171,7 +170,7 @@ export default function ContactPage() {
 
             <Card className="overflow-hidden bg-primary/5 p-6">
               <h3 className="mb-4 text-lg font-semibold">Quick Links</h3>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-2">
                 <Link href="/faq">
                   <Button variant="outline" className="w-full justify-start">
                     <FileQuestion className="mr-2 h-4 w-4" />
