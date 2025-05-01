@@ -12,6 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import {
   ArrowRight,
   AtSign,
@@ -38,7 +39,6 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 // Form validation schema
@@ -55,7 +55,6 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Initialize react-hook-form
   const form = useForm<z.infer<typeof contactFormSchema>>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
