@@ -93,7 +93,7 @@ export default function ContactPage() {
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             Contact Us
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
             Have questions or need support? We're here to help. Reach out to our
             team and we'll get back to you as soon as possible.
           </p>
@@ -113,7 +113,7 @@ export default function ContactPage() {
               <h2 className="mb-4 text-xl font-bold">Contact Information</h2>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-full text-primary">
+                  <div className="text-primary mt-0.5 rounded-full">
                     <Mail className="h-5 w-5" />
                   </div>
                   <div>
@@ -122,7 +122,7 @@ export default function ContactPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-full text-primary">
+                  <div className="text-primary mt-0.5 rounded-full">
                     <Phone className="h-5 w-5" />
                   </div>
                   <div>
@@ -131,7 +131,7 @@ export default function ContactPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-full text-primary">
+                  <div className="text-primary mt-0.5 rounded-full">
                     <MapPin className="h-5 w-5" />
                   </div>
                   <div>
@@ -167,7 +167,7 @@ export default function ContactPage() {
               </div>
             </Card>
 
-            <Card className="overflow-hidden bg-primary/5 p-6">
+            <Card className="bg-primary/5 overflow-hidden p-6">
               <h3 className="mb-4 text-lg font-semibold">Quick Links</h3>
               <div className="grid grid-cols-1 gap-2">
                 <Link href="/faq">
@@ -199,11 +199,11 @@ export default function ContactPage() {
           <Card className="p-6 md:p-8">
             {isSubmitted ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="mb-4 rounded-full bg-primary/10 p-3 text-primary">
+                <div className="bg-primary/10 text-primary mb-4 rounded-full p-3">
                   <SendHorizontal className="h-8 w-8" />
                 </div>
                 <h2 className="mb-2 text-2xl font-bold">Message Sent!</h2>
-                <p className="mb-6 max-w-md text-muted-foreground">
+                <p className="text-muted-foreground mb-6 max-w-md">
                   Thank you for contacting us. We've received your message and
                   will get back to you shortly.
                 </p>
@@ -228,7 +228,7 @@ export default function ContactPage() {
                             <FormLabel>Name</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <User className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground" />
+                                <User className="text-muted-foreground absolute left-3 top-2.5 h-4 w-4" />
                                 <Input
                                   placeholder="Your name"
                                   className="pl-10"
@@ -249,7 +249,7 @@ export default function ContactPage() {
                             <FormLabel>Email</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <AtSign className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground" />
+                                <AtSign className="text-muted-foreground absolute left-3 top-2.5 h-4 w-4" />
                                 <Input
                                   placeholder="your.email@example.com"
                                   className="pl-10"

@@ -129,7 +129,7 @@ export default function FAQPage() {
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             Frequently Asked Questions
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
             Find answers to the most common questions about our educational
             platform.
           </p>
@@ -155,7 +155,7 @@ export default function FAQPage() {
                   <AccordionTrigger className="text-left">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="prose max-w-none text-muted-foreground">
+                  <AccordionContent className="prose text-muted-foreground max-w-none">
                     <p>{faq.answer}</p>
                   </AccordionContent>
                 </AccordionItem>
@@ -172,7 +172,7 @@ export default function FAQPage() {
         className="mt-16 text-center"
       >
         <h2 className="text-2xl font-bold">Still have questions?</h2>
-        <p className="mt-2 mb-6 text-muted-foreground">
+        <p className="text-muted-foreground mb-6 mt-2">
           If you couldn't find the answer to your question, please contact our
           support team.
         </p>
