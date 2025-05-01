@@ -60,4 +60,10 @@ grant truncate on table "public"."workspace_calendar_hour_settings" to "service_
 
 grant update on table "public"."workspace_calendar_hour_settings" to "service_role";
 
-
+create policy "Enable all access for workspace members"
+on "public"."workspace_calendar_hour_settings"
+as permissive
+for all
+to authenticated
+using (is_org_member(auth.uid(), ws_id))
+with check (is_org_member(auth.uid(), ws_id));
