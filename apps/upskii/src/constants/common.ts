@@ -45,6 +45,7 @@ export const PUBLIC_PATHS = [
   '/learn',
   '/blog',
   '/faq',
+  '/guide',
   '/terms',
   '/privacy',
   '/branding',
