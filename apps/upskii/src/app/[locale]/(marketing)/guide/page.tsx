@@ -47,7 +47,7 @@ function GuideStep({
       className="flex gap-4"
     >
       <div className="flex-shrink-0">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+        <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold">
           {number}
         </div>
       </div>
@@ -83,8 +83,8 @@ function FeatureCard({
       whileHover={{ y: -5 }}
       className="group"
     >
-      <Card className="h-full border-foreground/10 p-6 transition-colors hover:border-primary/40">
-        <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
+      <Card className="border-foreground/10 hover:border-primary/40 h-full p-6 transition-colors">
+        <div className="bg-primary/10 text-primary mb-4 inline-flex rounded-lg p-3">
           {icon}
         </div>
         <h3 className="mb-2 text-xl font-bold">{title}</h3>
@@ -111,7 +111,7 @@ export default function GuidePage() {
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             How to Use Our Platform
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
             A comprehensive guide to help you get started and make the most of
             our educational platform.
           </p>
@@ -272,7 +272,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="mt-0.5 flex-shrink-0 rounded-full bg-primary/10 p-1 text-primary">
+                        <div className="bg-primary/10 text-primary mt-0.5 flex-shrink-0 rounded-full p-1">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{tip}</span>
@@ -303,7 +303,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="mt-0.5 flex-shrink-0 rounded-full bg-primary/10 p-1 text-primary">
+                        <div className="bg-primary/10 text-primary mt-0.5 flex-shrink-0 rounded-full p-1">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{tip}</span>
@@ -323,14 +323,14 @@ export default function GuidePage() {
               viewport={{ once: true }}
               className="text-center"
             >
-              <div className="mx-auto max-w-3xl rounded-xl bg-primary/5 p-8 backdrop-blur-sm">
-                <div className="mx-auto mb-4 inline-flex rounded-full bg-primary/10 p-3 text-primary">
+              <div className="bg-primary/5 mx-auto max-w-3xl rounded-xl p-8 backdrop-blur-sm">
+                <div className="bg-primary/10 text-primary mx-auto mb-4 inline-flex rounded-full p-3">
                   <Lightbulb className="h-6 w-6" />
                 </div>
                 <h2 className="mb-4 text-2xl font-bold">
                   Ready to Start Learning?
                 </h2>
-                <p className="mb-6 text-muted-foreground">
+                <p className="text-muted-foreground mb-6">
                   Join thousands of students who are enhancing their skills and
                   knowledge through our platform.
                 </p>
@@ -499,7 +499,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="mt-0.5 flex-shrink-0 rounded-full bg-primary/10 p-1 text-primary">
+                        <div className="bg-primary/10 text-primary mt-0.5 flex-shrink-0 rounded-full p-1">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{practice}</span>
@@ -530,7 +530,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="mt-0.5 flex-shrink-0 rounded-full bg-primary/10 p-1 text-primary">
+                        <div className="bg-primary/10 text-primary mt-0.5 flex-shrink-0 rounded-full p-1">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{practice}</span>
@@ -550,14 +550,14 @@ export default function GuidePage() {
               viewport={{ once: true }}
               className="text-center"
             >
-              <div className="mx-auto max-w-3xl rounded-xl bg-primary/5 p-8 backdrop-blur-sm">
-                <div className="mx-auto mb-4 inline-flex rounded-full bg-primary/10 p-3 text-primary">
+              <div className="bg-primary/5 mx-auto max-w-3xl rounded-xl p-8 backdrop-blur-sm">
+                <div className="bg-primary/10 text-primary mx-auto mb-4 inline-flex rounded-full p-3">
                   <School className="h-6 w-6" />
                 </div>
                 <h2 className="mb-4 text-2xl font-bold">
                   Ready to Share Your Knowledge?
                 </h2>
-                <p className="mb-6 text-muted-foreground">
+                <p className="text-muted-foreground mb-6">
                   Join our community of educators and reach students around the
                   world with your expertise.
                 </p>
