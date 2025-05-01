@@ -21,12 +21,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { type Variants, motion } from 'framer-motion';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
-
-const HeroAnimation = dynamic(() => import('./hero-animation'), {
-  ssr: false,
-});
 
 export default function MarketingPage() {
   // Enhanced floating effect variants with reduced movement for better performance
@@ -45,7 +40,7 @@ export default function MarketingPage() {
 
   return (
     <>
-      <HeroAnimation />
+      {/* <HeroAnimation /> */}
       <div className="relative flex h-full min-h-screen w-full flex-col items-center will-change-transform">
         <section id="hero" className="relative w-full">
           <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-24 sm:py-32">
