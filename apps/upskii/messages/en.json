@@ -2081,7 +2081,11 @@
         "consistent-description": "Submitted solutions regularly",
         "prompt-master": "Prompt Master",
         "prompt-master-description": "Achieved perfect scores in multiple challenges"
-      }
+      },
+      "bio": "Bio",
+      "role": "Role",
+      "teacher": "Teacher",
+      "student": "Student"
     },
     "challenge": {
       "edit": "Edit Challenge",
@@ -2307,7 +2311,14 @@
     "new_avatar": "New avatar",
     "upload_avatar": "Upload avatar",
     "remove_avatar": "Remove avatar",
-    "save_avatar": "Save avatar"
+    "save_avatar": "Save avatar",
+    "bio": "Bio",
+    "bio-description": "Introduce yourself to people!",
+    "bio-min-length": "Bio must have at least {min} words.",
+    "bio-max-length": "Bio must have at most {max} words.",
+    "display-name-min-error": "Display name must be at least {min} character",
+    "display-name-max-error": "Display name must be less than {max} characters",
+    "email-invalid": "Invalid email"
   },
   "settings-appearance": {
     "appearance": "Appearance",

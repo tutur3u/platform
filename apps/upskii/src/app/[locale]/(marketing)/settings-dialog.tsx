@@ -1,4 +1,5 @@
 import UserAvatar from './settings-avatar';
+import BioInput from './settings-bio-input';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -65,6 +66,26 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
             description={t('settings-account.email-description')}
           >
             <EmailInput oldEmail={user.email} newEmail={user.new_email} />
+          </SettingItemTab>
+        </Suspense>
+
+        <Separator className="my-4" />
+
+        <Suspense
+          fallback={
+            <SettingItemTab
+              title="Bio"
+              description={t('settings-account.bio-description')}
+            >
+              <BioInput disabled />
+            </SettingItemTab>
+          }
+        >
+          <SettingItemTab
+            title="Bio"
+            description={t('settings-account.bio-description')}
+          >
+            <BioInput defaultValue={user?.bio} />
           </SettingItemTab>
         </Suspense>
 

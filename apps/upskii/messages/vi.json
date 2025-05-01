@@ -2078,8 +2078,14 @@
         "consistent": "Người Học Kiên Trì",
         "consistent-description": "Nộp bài đều như cơm bữa, không lùi bước!",
         "prompt-master": "Bậc Thầy Nhập Lệnh",
-        "prompt-master-description": "Chơi prompt đỉnh quá trời, toàn điểm tuyệt đối!"
-      }
+        "prompt-master-description": "Chơi prompt đỉnh quá trời, toàn điểm tuyệt đối!",
+        "unlocked": "đã mở khóa",
+        "title": "Thành tích"
+      },
+      "bio": "Tiểu sử",
+      "role": "Vai trò",
+      "teacher": "Giáo viên",
+      "student": "Học viên"
     },
     "challenge": {
       "edit": "Chỉnh sửa thử thách",
@@ -2305,7 +2311,14 @@
     "new_avatar": "Hình đại diện mới",
     "upload_avatar": "Hình đại diện mới",
     "remove_avatar": "Xóa hình đại diện",
-    "save_avatar": "Lưu hình đại diện"
+    "save_avatar": "Lưu hình đại diện",
+    "bio": "Tiểu sử",
+    "bio-description": "Giới thiệu bản thân với mọi người!",
+    "bio-min-length": "Bio phải có ít nhất {min} từ.",
+    "bio-max-length": "Bio phải ít hơn {max} từ.",
+    "display-name-min-error": "Tên hiển thị phải ít nhất {min} kí tự",
+    "display-name-max-error": "Tên hiển thị phải ít hơn {max} kí tự",
+    "email-invalid": "Email không hợp lệ"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
