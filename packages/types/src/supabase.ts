@@ -4542,6 +4542,35 @@ export type Database = {
           },
         ];
       };
+      workspace_calendar_hour_settings: {
+        Row: {
+          created_at: string;
+          data: Json;
+          type: Database['public']['Enums']['calendar_hour_type'];
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          data: Json;
+          type: Database['public']['Enums']['calendar_hour_type'];
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          data?: Json;
+          type?: Database['public']['Enums']['calendar_hour_type'];
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_calendar_hour_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_configs: {
         Row: {
           created_at: string;
@@ -7151,6 +7180,7 @@ export type Database = {
         | 'multi_choice_quiz'
         | 'paragraph_quiz'
         | 'flashcards';
+      calendar_hour_type: 'WORK' | 'PERSONAL' | 'MEETING';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       dataset_type: 'excel' | 'csv' | 'html';
       workspace_role_permission:
@@ -7301,6 +7331,7 @@ export const Constants = {
         'paragraph_quiz',
         'flashcards',
       ],
+      calendar_hour_type: ['WORK', 'PERSONAL', 'MEETING'],
       chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
       dataset_type: ['excel', 'csv', 'html'],
       workspace_role_permission: [

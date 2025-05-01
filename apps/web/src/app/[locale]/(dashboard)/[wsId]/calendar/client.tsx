@@ -1,15 +1,16 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import type { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Calendar } from '@tuturuuu/ui/legacy/calendar/Calendar';
 import { useLocale, useTranslations } from 'next-intl';
 
 export default function CalendarClientPage({
-  experimentalGoogleCalendarLinked = false,
+  experimentalGoogleToken,
   workspace,
 }: {
-  experimentalGoogleCalendarLinked?: boolean;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
   workspace: Workspace;
 }) {
   const t = useTranslations('calendar');
@@ -22,8 +23,11 @@ export default function CalendarClientPage({
       workspace={workspace}
       useQuery={useQuery}
       useQueryClient={useQueryClient}
-      experimentalGoogleCalendarLinked={experimentalGoogleCalendarLinked}
-      enableExperimentalGoogleCalendar={true}
+      experimentalGoogleToken={
+        experimentalGoogleToken?.ws_id === workspace.id
+          ? experimentalGoogleToken
+          : undefined
+      }
     />
   );
 }
