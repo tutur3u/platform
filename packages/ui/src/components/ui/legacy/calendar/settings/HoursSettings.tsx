@@ -163,10 +163,10 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-md bg-muted/30 p-4">
+      <div className="bg-muted/30 rounded-md p-4">
         <div className="flex items-start gap-2">
-          <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
-          <div className="text-sm text-muted-foreground">
+          <Clock className="text-muted-foreground mt-0.5 h-4 w-4" />
+          <div className="text-muted-foreground text-sm">
             <p>
               Configure your available hours for different activities. These
               settings help the calendar optimize scheduling and provide better
