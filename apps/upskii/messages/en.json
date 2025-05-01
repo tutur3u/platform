@@ -2921,9 +2921,11 @@
     "create": "Create course",
     "create_description": "Create a new course",
     "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
+    "course_description": "Course description",
     "edit": "Edit course",
     "name": "Course name",
-    "edit_description": "Edit an existing course"
+    "edit_description": "Edit an existing course",
+    "delete_confirm_title": "Deleting \"{name}\""
   },
   "ws-crawlers": {
     "plural": "Crawlers",

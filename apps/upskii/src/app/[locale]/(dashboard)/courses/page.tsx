@@ -1,43 +1,36 @@
-'use client';
-import { useEffect, useState } from 'react';
 import { getWorkspaceCourseColumns } from './columns';
 import CourseForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceCourse } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { mockData, MockCourse } from './mock/mock-courses';
 
-interface Course {
-  id: string;
-  name: string;
-  ws_id: string;
-  modules: number;
-  href: string;
+interface SearchParams {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+  includedTags?: string | string[];
+  excludedTags?: string | string[];
 }
 
 interface Props {
-  wsId: string;
+  params: Promise<{
+    wsId: string;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
-export default function WorkspaceCoursesPage({ wsId }: Props) {
-  const t = useTranslations();
-  const [data, setData] = useState<Course[]>([]);
-  const [count, setCount] = useState(0);
+export default async function WorkspaceCoursesPage({
+  params,
+  searchParams,
+}: Props) {
+  const t = await getTranslations();
+  const { wsId } = await params;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`/api/${wsId}/courses`);  
-        const json = await res.json();
-        setData(json.data || []);
-        setCount(json.count || 0);
-      } catch (err) {
-        console.error('Failed to fetch courses:', err);
-      }
-    };
-
-    fetchData();
-  }, [wsId]);
+  const { data, count } = await getData(wsId, await searchParams);
 
   const courses = data.map((c) => ({
     ...c,
@@ -47,25 +40,94 @@ export default function WorkspaceCoursesPage({ wsId }: Props) {
 
   return (
     <>
-      <FeatureSummary
-        pluralTitle={t('ws-courses.plural')}
-        singularTitle={t('ws-courses.singular')}
-        description={t('ws-courses.description')}
-        createTitle={t('ws-courses.create')}
-        createDescription={t('ws-courses.create_description')}
-        form={<CourseForm wsId={wsId} />}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={courses}
-        columnGenerator={getWorkspaceCourseColumns}
-        namespace="course-data-table"
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
+      <div className="p-4">
+        <FeatureSummary
+          pluralTitle={t('ws-courses.plural')}
+          singularTitle={t('ws-courses.singular')}
+          description={t('ws-courses.description')}
+          createTitle={t('ws-courses.create')}
+          createDescription={t('ws-courses.create_description')}
+          form={<CourseForm wsId={wsId} />}
+        />
+        <Separator className="my-4" />
+        <CustomDataTable
+          data={courses}
+          columnGenerator={getWorkspaceCourseColumns}
+          namespace="course-data-table"
+          count={count}
+          defaultVisibility={{
+            id: false,
+            created_at: false,
+          }}
+        />
+      </div>
+
     </>
   );
+}
+
+
+async function getData(
+  wsId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+    retry = true,
+  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
+) {
+
+  if (process.env.NODE_ENV === 'development') {
+
+    const allMock: MockCourse[] = mockData(wsId);
+
+    const filteredData = allMock.filter(course =>
+      q ? course.name.toLowerCase().includes(q.toLowerCase()) : true
+    );
+
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    const paginatedData = filteredData.slice(start, end);
+
+    return {
+      data: paginatedData,
+      count: filteredData.length,
+    };
+  }
+  
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .from('workspace_courses')
+    .select('*, workspace_course_modules(id.count())', {
+      count: 'exact',
+    })
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  if (q) queryBuilder.ilike('name', `%${q}%`);
+
+  if (page && pageSize) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { data, error, count } = await queryBuilder;
+  if (error) {
+    if (!retry) throw error;
+    return getData(wsId, { q, pageSize, retry: false });
+  }
+
+  return {
+    data: data.map(({ workspace_course_modules, ...rest }) => ({
+      ...rest,
+      modules: workspace_course_modules?.[0]?.count || 0,
+    })),
+    count,
+  } as { data: WorkspaceCourse[]; count: number };
 }
