@@ -114,7 +114,7 @@ export function GoogleCalendarSettings({
             {experimentalGoogleToken ? (
               <div className="space-y-4">
                 <div className="flex items-start rounded-md border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
-                  <Check className="mt-0.5 mr-3 h-5 w-5 text-green-600 dark:text-green-400" />
+                  <Check className="mr-3 mt-0.5 h-5 w-5 text-green-600 dark:text-green-400" />
                   <div>
                     <h4 className="font-medium text-green-800 dark:text-green-300">
                       Connected to Google Calendar
@@ -139,7 +139,7 @@ export function GoogleCalendarSettings({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2 border-destructive text-destructive hover:bg-destructive/10"
+                    className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2"
                   >
                     <Link className="h-4 w-4" />
                     Disconnect
