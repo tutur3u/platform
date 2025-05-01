@@ -57,7 +57,7 @@
     "cronstrue": "^2.59.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
-    "framer-motion": "^12.9.2",
+    "framer-motion": "^12.9.4",
     "google-auth-library": "^9.15.1",
     "googleapis": "^148.0.0",
     "html2canvas": "^1.4.1",
