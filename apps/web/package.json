@@ -54,7 +54,7 @@
     "@vercel/speed-insights": "^1.2.0",
     "canvas-confetti": "^1.9.3",
     "cron-parser": "^5.1.1",
-    "cronstrue": "^2.59.0",
+    "cronstrue": "^2.60.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.9.2",
