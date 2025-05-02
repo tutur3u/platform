@@ -103,19 +103,20 @@ export function generateStaticParams() {
 }
 
 export default async function RootLayout({ children, params }: Props) {
+  const { locale } = await params;
+
   // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes((await params).locale as Locale)) {
+  if (!routing.locales.includes(locale as Locale)) {
     notFound();
   }
 
-  const { locale } = await params;
-  setRequestLocale(locale);
+  setRequestLocale(locale as Locale);
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'bg-background overflow-y-scroll antialiased',
+          'overflow-y-scroll bg-background antialiased',
           font.className
         )}
       >
