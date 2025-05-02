@@ -27,7 +27,7 @@ const minLength = 10;
 const maxLength = 100;
 
 export default function BioInput({
-  defaultValue = 'I love cats!',
+  defaultValue = '',
   disabled,
 }: Props) {
   const t = useTranslations('settings-account');
