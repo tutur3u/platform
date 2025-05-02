@@ -107,7 +107,7 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'overflow-hidden bg-background antialiased',
+          'bg-background overflow-hidden antialiased',
           font.className
         )}
       >
