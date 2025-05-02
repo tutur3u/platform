@@ -4,7 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { PermissionId, type Workspace } from '@tuturuuu/types/db';
+import { PermissionId, Workspace } from '@tuturuuu/types/db';
 import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 
@@ -303,7 +303,6 @@ export async function getPermissions({
 export async function getWorkspaceUser(id: string, userId: string) {
   const supabase = await createClient();
 
-  // TODO: this could be expand to back-relate platform_user_id -> auth.user
   const { data, error } = await supabase
     .from('workspace_user_linked_users')
     .select('*')

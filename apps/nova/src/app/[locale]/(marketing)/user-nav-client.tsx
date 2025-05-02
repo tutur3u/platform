@@ -6,10 +6,7 @@ import { SystemLanguageWrapper } from '../(dashboard)/_components/system-languag
 import { ThemeDropdownItems } from '../(dashboard)/_components/theme-dropdown-items';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
-import {
-  WorkspaceUser,
-  type WorkspaceUserPrivateDetails,
-} from '@tuturuuu/types/db';
+import { type UserPrivateDetails, WorkspaceUser } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
@@ -45,7 +42,7 @@ export default function UserNavClient({
   locale,
   hideMetadata = false,
 }: {
-  user: (WorkspaceUser & WorkspaceUserPrivateDetails) | null;
+  user: (WorkspaceUser & UserPrivateDetails) | null;
   locale: string | undefined;
   hideMetadata?: boolean;
 }) {

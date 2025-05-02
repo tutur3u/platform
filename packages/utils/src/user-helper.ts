@@ -1,7 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { type User, type UserPrivateDetails } from '@tuturuuu/types/db';
 import { notFound, redirect } from 'next/navigation';
 
-export async function getCurrentSupabaseUser() {
+export async function getCurrentSupabaseUser(): Promise<SupabaseUser | null> {
   const supabase = await createClient();
 
   const {
@@ -11,7 +13,9 @@ export async function getCurrentSupabaseUser() {
   return user;
 }
 
-export async function getCurrentUser(noRedirect?: boolean) {
+export async function getCurrentUser(
+  noRedirect?: boolean
+): Promise<(User & UserPrivateDetails) | null> {
   const supabase = await createClient();
 
   const {
@@ -30,5 +34,5 @@ export async function getCurrentUser(noRedirect?: boolean) {
     .single();
 
   if (error) notFound();
-  return data;
+  return data as User & UserPrivateDetails;
 }

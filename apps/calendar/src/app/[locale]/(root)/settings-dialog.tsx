@@ -1,10 +1,7 @@
 import UserAvatar from './settings-avatar';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
-import {
-  WorkspaceUser,
-  type WorkspaceUserPrivateDetails,
-} from '@tuturuuu/types/db';
+import { type UserPrivateDetails, WorkspaceUser } from '@tuturuuu/types/db';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -12,7 +9,7 @@ import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 
 interface UserSettingsDialogProps {
-  user: WorkspaceUser & WorkspaceUserPrivateDetails;
+  user: WorkspaceUser & UserPrivateDetails;
 }
 
 export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
