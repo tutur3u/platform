@@ -26,10 +26,7 @@ interface Props {
 const minLength = 10;
 const maxLength = 100;
 
-export default function BioInput({
-  defaultValue = '',
-  disabled,
-}: Props) {
+export default function BioInput({ defaultValue = '', disabled }: Props) {
   const t = useTranslations('settings-account');
   const router = useRouter();
 
@@ -101,7 +98,7 @@ export default function BioInput({
               <FormItem className="w-full md:min-w-max md:max-w-lg">
                 <FormControl>
                   <Textarea
-                    className="resize-none field-sizing-fixed"
+                    className="field-sizing-fixed resize-none"
                     rows={3}
                     id="bio"
                     placeholder={t('bio')}
