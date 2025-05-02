@@ -26,10 +26,7 @@ interface Props {
 const minLength = 10;
 const maxLength = 100;
 
-export default function BioInput({
-  defaultValue = 'I love cats!',
-  disabled,
-}: Props) {
+export default function BioInput({ defaultValue = '', disabled }: Props) {
   const t = useTranslations('settings-account');
   const router = useRouter();
 
