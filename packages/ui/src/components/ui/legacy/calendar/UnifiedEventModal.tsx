@@ -511,13 +511,13 @@ export function UnifiedEventModal() {
 
       // Only show error if end <= start
       if (
-        (isAllDay || !isAllDay) &&
-        (dayjs(newEvent.end_at).isSame(dayjs(newEvent.start_at)) ||
-          dayjs(newEvent.end_at).isBefore(dayjs(newEvent.start_at)))
+        dayjs(newEvent.end_at).isSame(dayjs(newEvent.start_at)) ||
+        dayjs(newEvent.end_at).isBefore(dayjs(newEvent.start_at))
       ) {
         setDateError('End time must be after start time.');
       } else {
         setDateError(null);
+      }
       }
       return newEvent;
     });
