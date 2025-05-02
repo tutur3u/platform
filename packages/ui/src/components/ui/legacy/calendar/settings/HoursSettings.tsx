@@ -1,11 +1,13 @@
 'use client';
 
 import { TimeRangePicker, WeekTimeRanges } from './TimeRangePicker';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Briefcase, Calendar, Clock, User } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export type HoursSettingsData = {
   personalHours: WeekTimeRanges;
@@ -14,38 +16,141 @@ export type HoursSettingsData = {
 };
 
 type HoursSettingsProps = {
-  value: HoursSettingsData;
-  onChange: (value: HoursSettingsData) => void;
+  wsId: string;
 };
 
-export function HoursSettings({ value, onChange }: HoursSettingsProps) {
+export function HoursSettings({ wsId }: HoursSettingsProps) {
+  const [value, setValue] = useState<{
+    personalHours?: WeekTimeRanges | null;
+    workHours?: WeekTimeRanges | null;
+    meetingHours?: WeekTimeRanges | null;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchHours = async () => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('workspace_calendar_hour_settings')
+        .select('*')
+        .eq('ws_id', wsId);
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      setValue({
+        personalHours: data?.find((h) => h.type === 'PERSONAL')
+          ?.data as WeekTimeRanges | null,
+        workHours: data?.find((h) => h.type === 'WORK')
+          ?.data as WeekTimeRanges | null,
+        meetingHours: data?.find((h) => h.type === 'MEETING')
+          ?.data as WeekTimeRanges | null,
+      });
+    };
+
+    fetchHours();
+  }, [wsId]);
+
   const [activeTab, setActiveTab] = useState<'work' | 'meeting' | 'personal'>(
     'work'
   );
 
-  const handlePersonalHoursChange = (newHours: WeekTimeRanges) => {
-    onChange({
-      ...value,
+  const handlePersonalHoursChange = async (
+    newHours?: WeekTimeRanges | null
+  ) => {
+    if (!newHours) {
+      toast.error('No hours provided');
+      return;
+    }
+
+    setValue((prev) => ({
+      ...prev,
       personalHours: newHours,
-    });
+    }));
+
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('workspace_calendar_hour_settings')
+      .upsert({
+        data: newHours,
+        type: 'PERSONAL',
+        ws_id: wsId,
+      })
+      .eq('ws_id', wsId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    toast.success('Personal hours updated');
   };
 
-  const handleWorkHoursChange = (newHours: WeekTimeRanges) => {
-    onChange({
-      ...value,
+  const handleWorkHoursChange = async (newHours?: WeekTimeRanges | null) => {
+    if (!newHours) {
+      toast.error('No hours provided');
+      return;
+    }
+
+    setValue((prev) => ({
+      ...prev,
       workHours: newHours,
-    });
+    }));
+
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('workspace_calendar_hour_settings')
+      .upsert({
+        data: newHours,
+        type: 'WORK',
+        ws_id: wsId,
+      });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    toast.success('Work hours updated');
   };
 
-  const handleMeetingHoursChange = (newHours: WeekTimeRanges) => {
-    onChange({
-      ...value,
+  const handleMeetingHoursChange = async (newHours?: WeekTimeRanges | null) => {
+    if (!newHours) {
+      toast.error('No hours provided');
+      return;
+    }
+
+    setValue((prev) => ({
+      ...prev,
       meetingHours: newHours,
-    });
+    }));
+
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('workspace_calendar_hour_settings')
+      .upsert({
+        data: newHours,
+        type: 'MEETING',
+        ws_id: wsId,
+      });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    toast.success('Meeting hours updated');
   };
 
   // Helper to get a summary of active days
-  const getActiveDaysSummary = (hours: WeekTimeRanges): string => {
+  const getActiveDaysSummary = (hours?: WeekTimeRanges | null): string => {
+    if (!hours) return 'No days';
+
     const days = Object.entries(hours)
       .filter(([_, value]) => value.enabled)
       .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1, 3));
@@ -99,14 +204,14 @@ export function HoursSettings({ value, onChange }: HoursSettingsProps) {
                   Work Hours
                 </CardTitle>
                 <Badge variant="outline" className="text-xs font-normal">
-                  {getActiveDaysSummary(value.workHours)}
+                  {getActiveDaysSummary(value?.workHours)}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <TimeRangePicker
                 label=""
-                value={value.workHours}
+                value={value?.workHours}
                 onChange={handleWorkHoursChange}
                 showDaySelector={true}
                 compact={false}
@@ -125,14 +230,14 @@ export function HoursSettings({ value, onChange }: HoursSettingsProps) {
                   Meeting Hours
                 </CardTitle>
                 <Badge variant="outline" className="text-xs font-normal">
-                  {getActiveDaysSummary(value.meetingHours)}
+                  {getActiveDaysSummary(value?.meetingHours)}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <TimeRangePicker
                 label=""
-                value={value.meetingHours}
+                value={value?.meetingHours}
                 onChange={handleMeetingHoursChange}
                 showDaySelector={true}
                 compact={false}
@@ -151,14 +256,14 @@ export function HoursSettings({ value, onChange }: HoursSettingsProps) {
                   Personal Hours
                 </CardTitle>
                 <Badge variant="outline" className="text-xs font-normal">
-                  {getActiveDaysSummary(value.personalHours)}
+                  {getActiveDaysSummary(value?.personalHours)}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <TimeRangePicker
                 label=""
-                value={value.personalHours}
+                value={value?.personalHours}
                 onChange={handlePersonalHoursChange}
                 showDaySelector={true}
                 compact={false}

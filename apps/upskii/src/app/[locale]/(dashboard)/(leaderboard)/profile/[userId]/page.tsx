@@ -74,7 +74,7 @@ export default async function UserProfilePage({
   // Fetch user data
   const { data: userData, error: userError } = await sbAdmin
     .from('users')
-    .select('id, display_name, avatar_url, created_at')
+    .select('id, display_name, avatar_url, created_at, bio')
     .eq('id', userId)
     .single();
 
@@ -287,6 +287,7 @@ export default async function UserProfilePage({
     name: userData.display_name || generateFunName({ id: userData.id, locale }),
     avatar: userData.avatar_url || '',
     joinedDate: userData.created_at,
+    bio: userData.bio || 'No bio available',
     totalScore,
     rank: userRank || 999, // Fallback rank if not found
     challengeCount: Object.keys(challengeScores).length,

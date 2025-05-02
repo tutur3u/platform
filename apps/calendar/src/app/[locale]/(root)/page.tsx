@@ -1,6 +1,5 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar } from '@tuturuuu/ui/legacy/calendar/Calendar';
 import { useLocale, useTranslations } from 'next-intl';
@@ -18,15 +17,7 @@ export default function Home() {
         useQuery={useQuery}
         useQueryClient={useQueryClient}
         enableHeader={false}
-        enableExperimentalGoogleCalendar={DEV_MODE}
         disabled
-        // externalState={{
-        //   date,
-        //   setDate,
-        //   view,
-        //   setView,
-        //   availableViews,
-        // }}
       />
     </div>
   );

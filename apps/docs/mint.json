@@ -40,8 +40,9 @@
       "pages": [
         "introduction",
         "development",
-        "local-supabase-development",
         "monorepo-architecture",
+        "git-conventions",
+        "local-supabase-development",
         "ci-cd-pipelines",
         "documenting"
       ]

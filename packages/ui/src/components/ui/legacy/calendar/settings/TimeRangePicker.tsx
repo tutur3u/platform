@@ -56,8 +56,8 @@ export const defaultWeekTimeRanges: WeekTimeRanges = {
 
 type TimeRangePickerProps = {
   label: string;
-  value: WeekTimeRanges;
-  onChange: (value: WeekTimeRanges) => void;
+  value?: WeekTimeRanges | null;
+  onChange: (value?: WeekTimeRanges | null | undefined) => void;
   showDaySelector?: boolean;
   dayFilter?: 'all' | 'weekday' | 'weekend';
   compact?: boolean;
@@ -106,17 +106,20 @@ export function TimeRangePicker({
         ...newTimeRanges[day].timeBlocks[blockIndex],
         [field]: newValue,
       };
-      onChange(newTimeRanges);
+      onChange(newTimeRanges as WeekTimeRanges);
     }
   };
 
   const handleDayToggle = (day: keyof WeekTimeRanges, enabled: boolean) => {
     const newTimeRanges = { ...value };
+    if (!newTimeRanges[day]) {
+      newTimeRanges[day] = { ...defaultTimeRange };
+    }
     newTimeRanges[day] = {
       ...newTimeRanges[day],
       enabled,
     };
-    onChange(newTimeRanges);
+    onChange(newTimeRanges as WeekTimeRanges);
   };
 
   const addTimeBlock = (day: keyof WeekTimeRanges) => {
@@ -143,7 +146,7 @@ export function TimeRangePicker({
         startTime: newStartTime,
         endTime: newEndTime,
       });
-      onChange(newTimeRanges);
+      onChange(newTimeRanges as WeekTimeRanges);
     }
   };
 
@@ -151,23 +154,23 @@ export function TimeRangePicker({
     const newTimeRanges = { ...value };
 
     // Don't remove the last block
-    if (newTimeRanges[day].timeBlocks.length <= 1) return;
+    if ((newTimeRanges?.[day]?.timeBlocks?.length || 0) <= 1) return;
 
-    newTimeRanges[day].timeBlocks.splice(blockIndex, 1);
-    onChange(newTimeRanges);
+    newTimeRanges[day]?.timeBlocks?.splice(blockIndex, 1);
+    onChange(newTimeRanges as WeekTimeRanges);
   };
 
   const copyToAllDays = () => {
-    const currentDaySettings = value[activeDay];
+    const currentDaySettings = value?.[activeDay];
     const newTimeRanges = { ...value };
 
     days.forEach(({ key }) => {
       if (key !== activeDay) {
-        newTimeRanges[key] = { ...currentDaySettings };
+        newTimeRanges[key] = { ...currentDaySettings } as DayTimeRange;
       }
     });
 
-    onChange(newTimeRanges);
+    onChange(newTimeRanges as WeekTimeRanges);
   };
 
   return (
@@ -177,7 +180,7 @@ export function TimeRangePicker({
           {label && <Label className="text-base">{label}</Label>}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" onClick={copyToAllDays} disabled>
+              <Button variant="outline" onClick={copyToAllDays}>
                 <Copy className="h-4 w-4" />
                 <span>Copy to all days</span>
               </Button>
@@ -201,17 +204,16 @@ export function TimeRangePicker({
                     size="sm"
                     className={cn(
                       'h-9 w-9 p-0',
-                      !value[key]?.enabled && 'opacity-50'
+                      !value?.[key]?.enabled && 'opacity-50'
                     )}
                     onClick={() => setActiveDay(key)}
-                    disabled
                   >
                     {dayLabel}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   {fullLabel}
-                  {!value[key]?.enabled && ' (Disabled)'}
+                  {!value?.[key]?.enabled && ' (Disabled)'}
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -232,15 +234,14 @@ export function TimeRangePicker({
               <div className="flex items-center gap-2">
                 <Switch
                   id={`enable-${key}`}
-                  checked={value[key]?.enabled || false}
+                  checked={value?.[key]?.enabled || false}
                   onCheckedChange={(checked) => handleDayToggle(key, checked)}
-                  disabled
                 />
                 <Label
                   htmlFor={`enable-${key}`}
                   className={cn(
                     'font-medium',
-                    !value[key]?.enabled && 'text-muted-foreground',
+                    !value?.[key]?.enabled && 'text-muted-foreground',
                     compact && 'text-sm'
                   )}
                 >
@@ -252,7 +253,7 @@ export function TimeRangePicker({
                 size="sm"
                 className={cn('gap-1', compact && 'h-6 text-xs')}
                 onClick={() => addTimeBlock(key)}
-                disabled={!value[key]?.enabled}
+                disabled={!value?.[key]?.enabled}
               >
                 <Plus className={cn('h-3.5 w-3.5', compact && 'h-3 w-3')} />
                 <span className="text-xs">Add Time Block</span>
@@ -260,7 +261,7 @@ export function TimeRangePicker({
             </div>
 
             {/* Time block inputs */}
-            {value[key]?.enabled && (
+            {value?.[key]?.enabled && (
               <div
                 className={cn(
                   'space-y-2',

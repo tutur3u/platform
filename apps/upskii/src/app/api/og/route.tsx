@@ -53,7 +53,7 @@ export async function GET() {
                 position: 'relative',
               }}
             >
-              {/* Nova Logo */}
+              {/* Upskii Logo */}
               <div
                 style={{
                   display: 'flex',
@@ -67,7 +67,7 @@ export async function GET() {
                   filter: 'drop-shadow(0 0 40px rgba(37, 99, 235, 0.4))',
                 }}
               >
-                Nova
+                Upskii
               </div>
 
               {/* Title */}
@@ -82,8 +82,8 @@ export async function GET() {
                   letterSpacing: '-0.02em',
                 }}
               >
-                <span>Prompt Engineering</span>
-                <span>Playground</span>
+                <span>Education for</span>
+                <span>Everyone</span>
               </div>
 
               {/* Description */}

@@ -1,5 +1,6 @@
 'use client';
 
+import UserSettingsDialog from '@/app/[locale]/(marketing)/settings-dialog';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -13,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   Award,
   Bolt,
@@ -29,6 +31,7 @@ import {
   Sparkles,
   Target,
   Trophy,
+  User,
 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -43,7 +46,6 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface RecentActivity {
@@ -80,6 +82,7 @@ interface ProfileData {
   name: string;
   avatar: string;
   joinedDate: string | null;
+  bio: string | null;
   totalScore: number;
   rank: number;
   challengeCount: number;
@@ -100,7 +103,6 @@ export default function UserProfileClient({
   profile: ProfileData;
 }) {
   const supabase = createClient();
-  const router = useRouter();
 
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [copied, setCopied] = useState(false);
@@ -231,8 +233,8 @@ export default function UserProfileClient({
 
   // Generate a level based on total score
   const level = Math.floor(profile.totalScore / 500) + 1;
-  const nextLevel = level + 1;
-  const levelProgress = ((profile.totalScore % 500) / 500) * 100;
+  // const nextLevel = level + 1;
+  // const levelProgress = ((profile.totalScore % 500) / 500) * 100;
 
   // Get status text and color based on overall progress
   const getProgressStatus = (percentage: number) => {
@@ -249,8 +251,18 @@ export default function UserProfileClient({
 
   const overallStatus = getProgressStatus(profile.problemsAttemptedPercentage);
 
+  const [open, setOpen] = useState(false);
+
+  // Implement Role check
+  const role = 'Teacher'; // Replace with actual role check logic
+
   return (
     <div className="container max-w-6xl pb-16 pt-8">
+      {user && (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <UserSettingsDialog user={user} />
+        </Dialog>
+      )}
       {/* Breadcrumb navigation */}
       <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
         <Link href="/home" className="hover:text-foreground">
@@ -272,7 +284,7 @@ export default function UserProfileClient({
         className="bg-card/50 mb-8 overflow-hidden rounded-xl border p-6 shadow-sm"
       >
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-          <div className="flex flex-col items-center gap-4 sm:flex-row">
+          <div className="mx-auto flex flex-col items-center gap-4 sm:flex-row md:mx-0">
             <div className="relative">
               <motion.div
                 initial={{ opacity: 0 }}
@@ -297,30 +309,24 @@ export default function UserProfileClient({
               </motion.div>
             </div>
             <div>
-              <h1 className="text-3xl font-bold">{profile.name}</h1>
+              <h1 className="text-center text-3xl font-bold md:text-left">
+                {profile.name}
+              </h1>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 {formattedJoinedDate && (
-                  <div className="text-muted-foreground flex items-center text-sm">
+                  <div className="text-muted-foreground mx-auto flex items-center text-sm md:mx-0">
                     <Calendar className="mr-1 h-4 w-4" />
                     {t('joined')}: {formattedJoinedDate}
                   </div>
                 )}
-                <div className="text-muted-foreground flex items-center text-sm">
-                  <Trophy className="mr-1 h-4 w-4" />
-                  {t('rank')}: #{profile.rank}
-                </div>
-                <div className="text-muted-foreground flex items-center text-sm">
-                  <Target className="mr-1 h-4 w-4" />
-                  {t('score')}: {profile.totalScore.toFixed(1)}
-                </div>
-                <div className="text-muted-foreground flex items-center text-sm">
-                  <BookOpen className="mr-1 h-4 w-4" />
-                  {t('challenges.title')}: {profile.challengeCount}
+                <div className="text-muted-foreground mx-auto flex items-center text-sm md:mx-0">
+                  <User className="mr-1 h-4 w-4" />
+                  {t('role')}: {role == 'Teacher' ? t('teacher') : t('student')}
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 self-end">
+          <div className="mx-auto flex items-center gap-2 self-end md:mx-0">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -347,7 +353,7 @@ export default function UserProfileClient({
             </TooltipProvider>
             {isCurrentUser && (
               <Button
-                onClick={() => router.push('/settings/profile')}
+                onClick={() => setOpen(true)}
                 variant="outline"
                 className="gap-2 rounded-full"
               >
@@ -356,9 +362,18 @@ export default function UserProfileClient({
             )}
           </div>
         </div>
+        {/* Bio Section */}
+        <div className="bg-muted/30 mt-4 flex w-full flex-col justify-between gap-4 rounded-md border p-4 text-sm">
+          <div className="mx-auto flex gap-2 md:mx-0">
+            <BookOpen className="text-muted-foreground h-5 w-5" />
+            <span className="font-semibold">{t('bio')}</span>
+          </div>
+          <p className="text-muted-foreground">{profile.bio}</p>
+        </div>
 
         {/* Level Progress */}
-        <div className="mt-6">
+        {/*
+                <div className="mt-6">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-sm font-medium">
               {t('level')} {level}
@@ -369,6 +384,7 @@ export default function UserProfileClient({
           </div>
           <Progress value={levelProgress} className="h-2" />
         </div>
+         */}
       </motion.div>
 
       {/* Main Content */}
