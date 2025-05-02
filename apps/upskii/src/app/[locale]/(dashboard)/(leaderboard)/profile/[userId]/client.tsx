@@ -41,8 +41,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { getCurrentUser } from '@tuturuuu/utils/client/user-helper';
 import { cn } from '@tuturuuu/utils/format';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
