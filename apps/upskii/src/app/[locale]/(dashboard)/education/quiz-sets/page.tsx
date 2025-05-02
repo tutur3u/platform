@@ -1,6 +1,5 @@
-
-import { getQuizSetColumns } from '@/app/[locale]/(dashboard)/education/quiz-sets/columns';
 import QuizForm from './form';
+import { getQuizSetColumns } from '@/app/[locale]/(dashboard)/education/quiz-sets/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type WorkspaceQuizSet } from '@tuturuuu/types/db';

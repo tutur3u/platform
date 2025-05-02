@@ -32,12 +32,7 @@ const FormSchema = z.object({
   moduleId: z.string().optional(),
 });
 
-export default function QuizForm({
-  wsId,
-  moduleId,
-  data,
-  onFinish,
-}: Props) {
+export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
   const t = useTranslations();
   const router = useRouter();
 
