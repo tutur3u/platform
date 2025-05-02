@@ -1,6 +1,6 @@
 import { getWorkspaceCourseColumns } from './columns';
 import CourseForm from './form';
-import { MockCourse, mockData } from './mock/mock-courses';
+import { mockData } from './mock/mock-courses';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourse } from '@tuturuuu/types/db';
@@ -76,7 +76,7 @@ async function getData(
 ) {
   if (process.env.NODE_ENV === 'development') {
     // Placing mock data for testing
-    const allMock: MockCourse[] = mockData(wsId);
+    const allMock: WorkspaceCourse[] = mockData();
 
     const filteredData = allMock.filter((course) =>
       q ? course.name.toLowerCase().includes(q.toLowerCase()) : true
