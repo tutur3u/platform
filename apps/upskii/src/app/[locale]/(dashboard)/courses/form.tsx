@@ -28,7 +28,7 @@ interface Props {
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
-  description: z.string().optional(), 
+  description: z.string().optional(),
 });
 
 export default function CourseForm({ wsId, data, onFinish }: Props) {
@@ -91,11 +91,15 @@ export default function CourseForm({ wsId, data, onFinish }: Props) {
               <FormItem>
                 <FormLabel>{t('name')}</FormLabel>
                 <FormControl>
-                  <Input placeholder={t('name')} autoComplete="off" {...field} />
+                  <Input
+                    placeholder={t('name')}
+                    autoComplete="off"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
-              
+
               <FormItem>
                 <FormLabel>{t('course_description')}</FormLabel>
                 <FormControl>
@@ -106,8 +110,6 @@ export default function CourseForm({ wsId, data, onFinish }: Props) {
                   />
                 </FormControl>
               </FormItem>
-
-              
             </>
           )}
         />

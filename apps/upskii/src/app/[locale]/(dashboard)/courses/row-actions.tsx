@@ -18,8 +18,6 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-
-
 interface WorkspaceCourseRowActionsProps {
   row: Row<WorkspaceCourse>;
 }
@@ -105,7 +103,6 @@ export function WorkspaceCourseRowActions({
         setOpen={setShowEditDialog}
         form={<WorkspaceCourseForm wsId={data.ws_id} data={data} />}
       />
-      
 
       <ModifiableDialogTrigger
         data={data}
@@ -115,7 +112,10 @@ export function WorkspaceCourseRowActions({
         setOpen={setShowDeleteDialog}
         form={
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
               {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={deleteWorkspaceCourse}>
@@ -124,7 +124,6 @@ export function WorkspaceCourseRowActions({
           </div>
         }
       />
-
     </div>
   );
 }

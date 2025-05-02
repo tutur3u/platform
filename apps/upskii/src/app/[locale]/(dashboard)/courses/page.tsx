@@ -1,12 +1,12 @@
 import { getWorkspaceCourseColumns } from './columns';
 import CourseForm from './form';
+import { MockCourse, mockData } from './mock/mock-courses';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourse } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
-import { mockData, MockCourse } from './mock/mock-courses';
 
 interface SearchParams {
   q?: string;
@@ -61,11 +61,9 @@ export default async function WorkspaceCoursesPage({
           }}
         />
       </div>
-
     </>
   );
 }
-
 
 async function getData(
   wsId: string,
@@ -76,13 +74,11 @@ async function getData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-
   if (process.env.NODE_ENV === 'development') {
-
     // Placing mock data for testing
     const allMock: MockCourse[] = mockData(wsId);
 
-    const filteredData = allMock.filter(course =>
+    const filteredData = allMock.filter((course) =>
       q ? course.name.toLowerCase().includes(q.toLowerCase()) : true
     );
 
@@ -97,7 +93,7 @@ async function getData(
       count: filteredData.length,
     };
   }
-  
+
   const supabase = await createClient();
 
   const queryBuilder = supabase
