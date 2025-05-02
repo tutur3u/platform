@@ -55,7 +55,7 @@ export default function UserNavClient({
               'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
               hideMetadata
                 ? 'items-center justify-center'
-                : 'items-center justify-start hover:bg-foreground/5'
+                : 'hover:bg-foreground/5 items-center justify-start'
             )}
           >
             <Avatar className="relative cursor-pointer overflow-visible font-semibold">
@@ -70,14 +70,14 @@ export default function UserNavClient({
                   <UserIcon className="h-5 w-5" />
                 )}
               </AvatarFallback>
-              <UserPresenceIndicator className="-right-1 -bottom-1 h-3 w-3 border-2" />
+              <UserPresenceIndicator className="-bottom-1 -right-1 h-3 w-3 border-2" />
             </Avatar>
             {hideMetadata || (
               <div className="flex w-full flex-col items-start justify-center">
-                <div className="line-clamp-1 text-sm font-semibold break-all">
+                <div className="line-clamp-1 break-all text-sm font-semibold">
                   {user?.display_name || t('common.unnamed')}
                 </div>
-                <div className="line-clamp-1 text-xs break-all opacity-70">
+                <div className="line-clamp-1 break-all text-xs opacity-70">
                   {user?.email}
                 </div>
               </div>

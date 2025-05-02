@@ -56,7 +56,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
         {item.icon}
         {item.label}
         {item.badge && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+          <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
             {item.badge}
           </span>
         )}
@@ -90,7 +90,7 @@ const MobileMenu: React.FC<MenuProps> = ({ user, t }) => {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="rounded-lg p-2 transition-all hover:bg-accent active:bg-accent/80">
+      <SheetTrigger className="hover:bg-accent active:bg-accent/80 rounded-lg p-2 transition-all">
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
 
@@ -120,7 +120,7 @@ const MobileMenu: React.FC<MenuProps> = ({ user, t }) => {
                       key={item.href}
                       item={item}
                       onClick={closeMenu}
-                      className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                      className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                     />
                   ))}
                 </div>
@@ -129,19 +129,19 @@ const MobileMenu: React.FC<MenuProps> = ({ user, t }) => {
               <Accordion type="multiple" className="space-y-3">
                 {/* Products Section */}
                 <AccordionItem value="products" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">
                       {t('common.products')}
                     </span>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
+                  <AccordionContent className="pb-2 pt-3">
                     <div className="grid gap-2 px-2">
                       {products.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                         />
                       ))}
                     </div>
@@ -150,19 +150,19 @@ const MobileMenu: React.FC<MenuProps> = ({ user, t }) => {
 
                 {/* Solutions Section */}
                 <AccordionItem value="solutions" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">
                       {t('common.solutions')}
                     </span>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
+                  <AccordionContent className="pb-2 pt-3">
                     <div className="grid gap-2 px-2">
                       {solutions.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                         />
                       ))}
                     </div>
@@ -171,19 +171,19 @@ const MobileMenu: React.FC<MenuProps> = ({ user, t }) => {
 
                 {/* Resources Section */}
                 <AccordionItem value="resources" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">
                       {t('common.resources')}
                     </span>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
+                  <AccordionContent className="pb-2 pt-3">
                     <div className="grid gap-2 px-2">
                       {resources.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                         />
                       ))}
                     </div>
@@ -192,19 +192,19 @@ const MobileMenu: React.FC<MenuProps> = ({ user, t }) => {
 
                 {/* Company Section */}
                 <AccordionItem value="company" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">
                       {t('common.company')}
                     </span>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
+                  <AccordionContent className="pb-2 pt-3">
                     <div className="grid gap-2 px-2">
                       {company.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                         />
                       ))}
                     </div>
