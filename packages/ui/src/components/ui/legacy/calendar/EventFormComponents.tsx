@@ -13,7 +13,6 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
 import { AlertCircle, Clock, MapPin } from 'lucide-react';
 import { ReactNode } from 'react';
 
@@ -204,7 +203,8 @@ export const EventDateTimePicker = ({
   disabled = false,
   icon,
   showTimeSelect = true,
-  minusOneDay = false,
+  minDate,
+  minTime,
 }: {
   label: string;
   value: Date;
@@ -212,7 +212,8 @@ export const EventDateTimePicker = ({
   disabled?: boolean;
   icon?: ReactNode;
   showTimeSelect?: boolean;
-  minusOneDay?: boolean;
+  minDate?: Date;
+  minTime?: string;
 }) => (
   <div className="space-y-2">
     <Label className="flex items-center gap-2 text-sm font-medium">
@@ -221,9 +222,11 @@ export const EventDateTimePicker = ({
     </Label>
     <div className={cn(disabled ? 'pointer-events-none opacity-50' : '')}>
       <DateTimePicker
-        date={minusOneDay ? dayjs(value).subtract(1, 'day').toDate() : value}
+        date={value}
         setDate={(date) => onChange(date)}
         showTimeSelect={showTimeSelect}
+        minDate={minDate}
+        minTime={minTime}
       />
     </div>
   </div>
