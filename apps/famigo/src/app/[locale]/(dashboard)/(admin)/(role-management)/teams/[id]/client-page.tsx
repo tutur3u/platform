@@ -42,7 +42,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -340,7 +340,13 @@ export default function TeamDetailsClient({
                               </AlertDialogTitle>
                               <AlertDialogDescription>
                                 {t('teams.remove_member_confirmation', {
-                                  name: member.display_name || member.email,
+                                  name:
+                                    member.display_name ||
+                                    member.email ||
+                                    generateFunName({
+                                      id: member.id!,
+                                      locale: 'en',
+                                    }),
                                 })}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
@@ -413,7 +419,7 @@ export default function TeamDetailsClient({
                               </AlertDialogTitle>
                               <AlertDialogDescription>
                                 {t('teams.remove_invitation_description', {
-                                  email: invitation.email,
+                                  email: invitation.email || '',
                                 })}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
