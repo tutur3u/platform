@@ -116,7 +116,7 @@ export default function UserProfileClient({
     const fetchUser = async () => {
       // Fetch the current user from Supabase
 
-      if (!isCurrentUser){
+      if (!isCurrentUser) {
         const {
           data: { user },
         } = await supabase.auth.getUser();
