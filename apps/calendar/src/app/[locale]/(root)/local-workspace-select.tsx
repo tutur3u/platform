@@ -4,7 +4,18 @@ import { useQuery } from '@tanstack/react-query';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { useTranslations } from 'next-intl';
 
-export default function LocalWorkspaceSelect() {
+export default function LocalWorkspaceSelect({
+  hideLeading,
+}: {
+  hideLeading?: boolean;
+}) {
   const t = useTranslations();
-  return <WorkspaceSelect t={t} localUseQuery={useQuery} />;
+  return (
+    <WorkspaceSelect
+      t={t}
+      localUseQuery={useQuery}
+      hideLeading={hideLeading}
+      showWithoutWorkspace
+    />
+  );
 }

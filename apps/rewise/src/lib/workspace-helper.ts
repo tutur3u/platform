@@ -4,8 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { PermissionId } from '@tuturuuu/types/db';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { PermissionId, Workspace } from '@tuturuuu/types/db';
 import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 

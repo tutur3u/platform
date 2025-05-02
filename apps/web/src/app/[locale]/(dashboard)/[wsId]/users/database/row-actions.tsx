@@ -3,7 +3,7 @@
 import { DatePicker } from '../../../../../../components/row-actions/users/date-picker';
 import { Row } from '@tanstack/react-table';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { SelectField } from '@tuturuuu/ui/custom/select-field';
@@ -591,7 +591,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>

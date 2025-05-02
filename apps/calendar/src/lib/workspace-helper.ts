@@ -36,7 +36,7 @@ export async function getWorkspace(id: string, requireUserRole = false) {
     joined: workspaceJoined,
   };
 
-  return ws;
+  return ws as Workspace & { role: string; joined: boolean };
 }
 
 export async function getWorkspaces(noRedirect?: boolean) {
@@ -53,7 +53,9 @@ export async function getWorkspaces(noRedirect?: boolean) {
 
   const { data, error } = await supabase
     .from('workspaces')
-    .select('*, workspace_members!inner(role)')
+    .select(
+      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+    )
     .eq('workspace_members.user_id', user.id);
 
   if (error) notFound();

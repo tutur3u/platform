@@ -7,20 +7,10 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  // Create the default labels object for the calendar
-  // const defaultLabels = {
-  //   day: t('day'),
-  //   '4-days': t('4-days'),
-  //   week: t('week'),
-  //   month: t('month'),
-  // };
-
   return (
-    <ClientLayoutWrapper
-    // defaultLabels={defaultLabels}
-    >
+    <ClientLayoutWrapper>
       <Navbar hideMetadata />
-      <div id="main-content" className="flex flex-col">
+      <div id="main-content" className="flex h-64 flex-col overflow-hidden">
         {children}
       </div>
     </ClientLayoutWrapper>

@@ -1,7 +1,7 @@
-import { DEV_MODE } from '@/constants/common';
+import { DEV_MODE, TUTURUUU_WEB_URL } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -25,7 +25,9 @@ export default function DashboardMenuItem() {
     <>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <Link href={`/${workspaces?.[0]?.id || 'onboarding'}`}>
+        <Link
+          href={`${TUTURUUU_WEB_URL}/${workspaces?.[0]?.id || 'onboarding'}`}
+        >
           <DropdownMenuItem className="cursor-pointer">
             <ActivitySquare className="mr-2 h-4 w-4" />
             <span>{t('dashboard')}</span>
@@ -64,5 +66,5 @@ async function fetchWorkspaces() {
     .eq('workspace_members.user_id', user.id);
 
   if (error) return [] as Workspace[];
-  return workspaces as Workspace[];
+  return workspaces;
 }

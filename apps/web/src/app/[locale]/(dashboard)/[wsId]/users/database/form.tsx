@@ -2,7 +2,7 @@
 
 import { DatePicker } from '@/components/row-actions/users/date-picker';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { SelectField } from '@tuturuuu/ui/custom/select-field';

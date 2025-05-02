@@ -20,7 +20,7 @@ import { useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
-  oldEmail?: string;
+  oldEmail?: string | null;
   newEmail?: string | null;
   disabled?: boolean;
 }

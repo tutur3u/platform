@@ -2,7 +2,7 @@
 
 import { AuthButton } from './auth-button';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@tuturuuu/types/db';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { MenuIcon } from '@tuturuuu/ui/icons';
 import {
@@ -79,7 +79,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user }) => {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="hover:bg-accent active:bg-accent/80 rounded-lg p-2 transition-all">
+      <SheetTrigger className="rounded-lg p-2 transition-all hover:bg-accent active:bg-accent/80">
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
 

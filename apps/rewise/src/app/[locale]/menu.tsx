@@ -3,7 +3,7 @@
 import { AuthButton } from './auth-button';
 import { PUBLIC_PATHS } from '@/constants/common';
 import { type SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@tuturuuu/types/db';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { MenuIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';

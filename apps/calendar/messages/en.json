@@ -1487,7 +1487,9 @@
     "week": "Week",
     "month": "Month",
     "view": "View",
-    "this-month": "This month"
+    "this-month": "This month",
+    "select_workspace": "Select Workspace",
+    "please_select_workspace_from_header": "Please select a workspace from the header"
   },
   "documents": {
     "documents": "Documents",

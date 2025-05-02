@@ -2,7 +2,7 @@
 
 import UserMonthAttendance from './user-month-attendance';
 import useSearchParams from '@/hooks/useSearchParams';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@tuturuuu/types/db';
 import { DataTablePagination } from '@tuturuuu/ui/custom/tables/data-table-pagination';
 import { useTranslations } from 'next-intl';
 import { FC } from 'react';

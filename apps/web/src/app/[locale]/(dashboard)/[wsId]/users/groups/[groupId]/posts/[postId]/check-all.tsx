@@ -1,6 +1,6 @@
 'use client';
 
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { CheckCheck } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';

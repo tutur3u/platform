@@ -100,11 +100,11 @@ const settingsSections: SettingsSection[] = [
 const SettingsContent = ({
   wsId,
   section,
-  experimentalGoogleToken,
+  googleToken,
 }: {
   wsId: string;
   section: keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar';
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  googleToken?: WorkspaceCalendarGoogleToken;
 }) => {
   const { settings, updateSettings } = useCalendarSettings();
 
@@ -133,12 +133,7 @@ const SettingsContent = ({
         />
       );
     case 'googleCalendar':
-      return (
-        <GoogleCalendarSettings
-          wsId={wsId}
-          experimentalGoogleToken={experimentalGoogleToken}
-        />
-      );
+      return <GoogleCalendarSettings wsId={wsId} googleToken={googleToken} />;
     case 'taskSettings':
       return (
         <TaskSettings
@@ -169,11 +164,11 @@ const SettingsContent = ({
 function SettingsDialogContent({
   onClose,
   wsId,
-  experimentalGoogleToken,
+  googleToken,
 }: {
   onClose: (save?: boolean) => void;
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  googleToken?: WorkspaceCalendarGoogleToken;
 }) {
   const [activeSection, setActiveSection] = React.useState<
     keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar'
@@ -271,7 +266,7 @@ function SettingsDialogContent({
           <SettingsContent
             section={activeSection}
             wsId={wsId}
-            experimentalGoogleToken={experimentalGoogleToken}
+            googleToken={googleToken}
           />
         </div>
 
@@ -283,7 +278,7 @@ function SettingsDialogContent({
             onClick={handleSave}
             disabled={!hasChanges}
             className={cn(
-              hasChanges && 'bg-primary/90 hover:bg-primary animate-pulse'
+              hasChanges && 'animate-pulse bg-primary/90 hover:bg-primary'
             )}
           >
             Save Changes
@@ -300,14 +295,14 @@ export function CalendarSettingsDialog({
   initialSettings,
   onSave,
   wsId,
-  experimentalGoogleToken,
+  googleToken,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialSettings?: Partial<CalendarSettings>;
   onSave?: (settings: CalendarSettings) => Promise<void>;
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  googleToken?: WorkspaceCalendarGoogleToken;
 }) {
   const handleClose = () => {
     onOpenChange(false);
@@ -327,7 +322,7 @@ export function CalendarSettingsDialog({
           <SettingsDialogContent
             onClose={handleClose}
             wsId={wsId}
-            experimentalGoogleToken={experimentalGoogleToken}
+            googleToken={googleToken}
           />
         </CalendarSettingsProvider>
       </DialogContent>

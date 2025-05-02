@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -58,10 +58,12 @@ export function WorkspaceSelect({
   t,
   localUseQuery,
   hideLeading,
+  showWithoutWorkspace = false,
 }: {
   t: any;
   localUseQuery: any;
   hideLeading?: boolean;
+  showWithoutWorkspace?: boolean;
 }) {
   const router = useRouter();
   const params = useParams();
@@ -128,7 +130,7 @@ export function WorkspaceSelect({
     //   teams: [
     //     {
     //       label:
-    //         user?.display_name || user?.handle || user?.email || 'Personal',
+    //         user?.display_name  || user?.email || 'Personal',
     //       value: user?.id,
     //     },
     //   ],
@@ -175,12 +177,12 @@ export function WorkspaceSelect({
     };
   }, []);
 
-  if (!wsId) return <div />;
+  if (!wsId && !showWithoutWorkspace) return <div />;
 
   return (
     <>
       {hideLeading || (
-        <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
+        <div className="mx-2 h-4 w-[1px] flex-none rotate-[30deg] bg-foreground/20" />
       )}
       <Dialog
         open={showNewWorkspaceDialog}
@@ -192,7 +194,7 @@ export function WorkspaceSelect({
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
             asChild
-            disabled={!workspaces || workspaces.length === 0}
+            disabled={!workspaces || workspaces.length === 0 || !wsId}
           >
             <Button
               variant="outline"
@@ -201,7 +203,7 @@ export function WorkspaceSelect({
               aria-label="Select a workspace"
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full whitespace-normal text-start'
+                'w-full text-start whitespace-normal'
               )}
               disabled={!workspaces || workspaces.length === 0}
             >
@@ -458,7 +460,7 @@ export function WorkspaceSelect({
                   />
                   <AvatarFallback className="text-sm font-semibold">
                     {getInitials(
-                      user?.display_name || user?.handle || user.email || '?'
+                      user?.display_name  || user.email || '?'
                     )}
                   </AvatarFallback>
                   <div className="absolute bottom-0 right-0 flex items-center">
@@ -498,5 +500,5 @@ async function fetchWorkspaces() {
     .eq('workspace_members.user_id', user.id);
 
   if (error) return [] as Workspace[];
-  return workspaces as Workspace[];
+  return workspaces;
 }

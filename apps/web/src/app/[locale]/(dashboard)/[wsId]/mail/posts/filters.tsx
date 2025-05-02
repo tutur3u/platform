@@ -1,7 +1,7 @@
 import { Filter } from '../../users/filters';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceUser } from '@tuturuuu/types/db';
 import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { MinusCircle, PlusCircle, User } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 

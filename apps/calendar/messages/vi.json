@@ -1487,7 +1487,9 @@
     "week": "Tuần",
     "month": "Tháng",
     "view": "Chế độ hiển thị",
-    "this-month": "Tháng này"
+    "this-month": "Tháng này",
+    "select_workspace": "Chọn Không gian làm việc",
+    "please_select_workspace_from_header": "Vui lòng chọn không gian làm việc từ thanh điều hướng trên cùng"
   },
   "documents": {
     "documents": "Tài liệu",

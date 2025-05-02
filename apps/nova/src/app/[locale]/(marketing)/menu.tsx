@@ -3,7 +3,7 @@
 import { AuthButton } from './auth-button';
 import { NavItem, useNavigation } from './shared/navigation-config';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,
@@ -57,7 +57,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
         {item.icon}
         {item.label}
         {item.badge && (
-          <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
             {item.badge}
           </span>
         )}
@@ -88,7 +88,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="hover:bg-accent active:bg-accent/80 rounded-lg p-2 transition-all">
+      <SheetTrigger className="rounded-lg p-2 transition-all hover:bg-accent active:bg-accent/80">
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
 
@@ -118,7 +118,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                       key={item.href}
                       item={item}
                       onClick={closeMenu}
-                      className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                      className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
                     />
                   ))}
                 </div>
@@ -127,19 +127,19 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
               <Accordion type="multiple" className="space-y-3">
                 {/* Resources Section */}
                 <AccordionItem value="resources" className="border-none px-4">
-                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
+                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="text-sm font-semibold">
                       {t('common.resources')}
                     </span>
                   </AccordionTrigger>
-                  <AccordionContent className="pb-2 pt-3">
+                  <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">
                       {resources.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
                         />
                       ))}
                     </div>
@@ -148,19 +148,19 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
                 {/* Company Section */}
                 <AccordionItem value="company" className="border-none px-4">
-                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
+                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="text-sm font-semibold">
                       {t('common.company')}
                     </span>
                   </AccordionTrigger>
-                  <AccordionContent className="pb-2 pt-3">
+                  <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">
                       {company.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
                         />
                       ))}
                     </div>

@@ -2,10 +2,9 @@ import { Filter } from '../../../filters';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceUserReport } from '@tuturuuu/types/db';
+import { WorkspaceUser, WorkspaceUserReport } from '@tuturuuu/types/db';
 import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {

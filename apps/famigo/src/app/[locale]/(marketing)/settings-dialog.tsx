@@ -1,7 +1,10 @@
 import UserAvatar from './settings-avatar';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import {
+  WorkspaceUser,
+  type WorkspaceUserPrivateDetails,
+} from '@tuturuuu/types/db';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -9,7 +12,7 @@ import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 
 interface UserSettingsDialogProps {
-  user: WorkspaceUser;
+  user: WorkspaceUser & WorkspaceUserPrivateDetails;
 }
 
 export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
@@ -20,7 +23,7 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
       <DialogHeader>
         <DialogTitle>{t('settings-account.account')}</DialogTitle>
       </DialogHeader>
-      <div className="grid gap-1 md:min-w-max md:max-w-lg">
+      <div className="grid gap-1 md:max-w-lg md:min-w-max">
         <SettingItemTab
           title={t('settings-account.avatar')}
           description={t('settings-account.avatar-description')}

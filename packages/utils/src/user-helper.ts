@@ -1,5 +1,4 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { notFound, redirect } from 'next/navigation';
 
 export async function getCurrentSupabaseUser() {
@@ -26,13 +25,10 @@ export async function getCurrentUser(noRedirect?: boolean) {
 
   const { data, error } = await supabase
     .from('users')
-    .select(
-      'id, display_name, avatar_url, handle, created_at, user_private_details(email, new_email, birthday)'
-    )
+    .select('*, ...user_private_details(*)')
     .eq('id', user.id)
     .single();
 
   if (error) notFound();
-  const { user_private_details, ...rest } = data;
-  return { ...rest, ...user_private_details } as WorkspaceUser;
+  return data;
 }

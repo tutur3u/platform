@@ -6,7 +6,7 @@ import {
   PROD_MODE,
   ROOT_WORKSPACE_ID,
 } from '@/constants/common';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@tuturuuu/types/db';
 import { buttonVariants } from '@tuturuuu/ui/button';
 import { DraftingCompass, FlaskConical } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -136,7 +136,7 @@ export function Nav({
                     }),
                     'h-9 w-9 max-sm:hover:bg-transparent',
                     urlToLoad === link.href &&
-                      'bg-accent text-accent-foreground animate-pulse'
+                      'animate-pulse bg-accent text-accent-foreground'
                   )}
                   onClick={() => {
                     if (!link.newTab && link.href.split('?')[0] !== pathname)
@@ -151,7 +151,7 @@ export function Nav({
               <TooltipContent
                 side="right"
                 className={cn(
-                  'bg-background text-foreground flex items-center gap-4 border',
+                  'flex items-center gap-4 border bg-background text-foreground',
                   ((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
                     link.experimental) &&
                     'flex-col items-start gap-1'
@@ -166,7 +166,7 @@ export function Nav({
                       'text-muted-foreground',
                       (ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
                         link.experimental
-                        ? 'bg-foreground/5 rounded-lg border px-2 py-0.5'
+                        ? 'rounded-lg border bg-foreground/5 px-2 py-0.5'
                         : 'ml-auto'
                     )}
                   >
@@ -185,7 +185,7 @@ export function Nav({
                             ) : (
                               <FlaskConical className="h-2 w-2 flex-none" />
                             )}
-                            <span className="line-clamp-1 break-all text-xs font-semibold">
+                            <span className="line-clamp-1 text-xs font-semibold break-all">
                               {t(`common.${link.experimental}`)}
                             </span>
                           </div>
@@ -204,7 +204,7 @@ export function Nav({
                   size: 'sm',
                 }),
                 urlToLoad === link.href &&
-                  'bg-accent text-accent-foreground animate-pulse',
+                  'animate-pulse bg-accent text-accent-foreground',
                 'justify-between gap-2 max-sm:hover:bg-transparent'
               )}
               onClick={() => {
@@ -230,7 +230,7 @@ export function Nav({
                     'text-muted-foreground',
                     isActive && 'bg-background text-foreground',
                     ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
-                      ? 'bg-foreground/5 hidden rounded-lg border px-2 py-0.5 md:block'
+                      ? 'hidden rounded-lg border bg-foreground/5 px-2 py-0.5 md:block'
                       : 'ml-auto',
                     link.experimental && 'bg-transparent'
                   )}
@@ -250,7 +250,7 @@ export function Nav({
                           ) : (
                             <FlaskConical className="h-2 w-2 flex-none" />
                           )}
-                          <span className="line-clamp-1 break-all text-xs font-semibold">
+                          <span className="line-clamp-1 text-xs font-semibold break-all">
                             {t(`common.${link.experimental}`)}
                           </span>
                         </div>
