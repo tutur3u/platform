@@ -40,23 +40,31 @@
       "pages": [
         "introduction",
         "development",
-        "local-supabase-development",
         "monorepo-architecture",
+        "git-conventions",
+        "local-supabase-development",
         "ci-cd-pipelines",
         "documenting"
       ]
     },
     {
       "group": "Features",
-      "pages": ["features/meet-together"]
+      "pages": [
+        "features/meet-together"
+      ]
     },
     {
       "group": "AI Features",
-      "pages": ["ai-structured-data"]
+      "pages": [
+        "ai-structured-data"
+      ]
     },
     {
       "group": "Personalization",
-      "pages": ["personalization/themes", "personalization/language"]
+      "pages": [
+        "personalization/themes",
+        "personalization/language"
+      ]
     },
     {
       "group": "Experiments",

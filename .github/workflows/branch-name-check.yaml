@@ -1,0 +1,25 @@
+name: Branch Name Check
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - staging
+      - production
+
+jobs:
+  check-branch-name:
+    name: Check branch name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          if ! [[ $BRANCH_NAME =~ ^(feature|bugfix|hotfix|release|chore)/.+ ]]; then
+            echo "❌ Branch name '$BRANCH_NAME' doesn't follow the conventional branch format."
+            echo "Branch name should be in format: type/description"
+            echo "Allowed types: feature, bugfix, hotfix, release, chore"
+            exit 1
+          else
+            echo "✅ Branch name follows convention: $BRANCH_NAME"
+          fi
