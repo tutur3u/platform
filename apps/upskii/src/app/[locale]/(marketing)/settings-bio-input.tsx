@@ -98,10 +98,10 @@ export default function BioInput({
             control={form.control}
             name="bio"
             render={({ field }) => (
-              <FormItem className="w-full">
+              <FormItem className="w-full md:min-w-max md:max-w-lg">
                 <FormControl>
                   <Textarea
-                    className="resize-none"
+                    className="field-sizing-fixed resize-none"
                     rows={3}
                     id="bio"
                     placeholder={t('bio')}
