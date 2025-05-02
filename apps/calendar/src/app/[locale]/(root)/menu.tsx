@@ -2,8 +2,7 @@
 
 import { AuthButton } from './auth-button';
 import { NavItem, useNavigation } from './shared/navigation-config';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { WorkspaceUser } from '@tuturuuu/types/db';
+import { type User, UserPrivateDetails } from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,
@@ -25,8 +24,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 interface MenuProps {
-  sbUser: SupabaseUser | null;
-  user: WorkspaceUser | null;
+  user: (User & UserPrivateDetails) | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t?: any;
 }
@@ -73,7 +71,7 @@ const MobileNavLink: React.FC<NavLinkProps> = ({
   onClick,
 }) => <NavLink item={item} className={className} onClick={onClick} />;
 
-const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
+const MobileMenu: React.FC<MenuProps> = ({ user, t }) => {
   const [isOpened, setIsOpened] = useState(false);
   const closeMenu = () => setIsOpened(false);
 
@@ -103,7 +101,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
           <div className="border-b px-6 py-6">
             <div className={cn('items-center gap-3', user ? 'grid' : 'flex')}>
               <AuthButton
-                user={sbUser}
+                user={user}
                 className="w-full items-center justify-center"
                 onClick={closeMenu}
               />
@@ -221,13 +219,13 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
   );
 };
 
-const Menu: React.FC<MenuProps> = ({ sbUser, user }) => {
+const Menu: React.FC<MenuProps> = ({ user }) => {
   const t = useTranslations();
 
   return (
     <>
       <div className="flex gap-2 md:hidden">
-        <MobileMenu sbUser={sbUser} user={user} t={t} />
+        <MobileMenu user={user} t={t} />
       </div>
     </>
   );
