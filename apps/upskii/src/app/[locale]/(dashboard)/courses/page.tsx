@@ -79,6 +79,7 @@ async function getData(
 
   if (process.env.NODE_ENV === 'development') {
 
+    // Placing mock data for testing
     const allMock: MockCourse[] = mockData(wsId);
 
     const filteredData = allMock.filter(course =>

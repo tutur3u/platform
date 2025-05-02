@@ -1,3 +1,4 @@
+// Defining mock data for testing
 
 export interface MockCourse {
   id: string;
