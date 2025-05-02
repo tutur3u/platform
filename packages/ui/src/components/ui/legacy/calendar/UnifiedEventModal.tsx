@@ -157,7 +157,10 @@ export function UnifiedEventModal() {
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   // Store previous time values for toggling all-day
-  const [prevTimes, setPrevTimes] = useState<{ start: string | null; end: string | null }>({ start: null, end: null });
+  const [prevTimes, setPrevTimes] = useState<{
+    start: string | null;
+    end: string | null;
+  }>({ start: null, end: null });
 
   // AI form
   const aiForm = useForm({
@@ -583,9 +586,14 @@ export function UnifiedEventModal() {
         };
       } else {
         // Restore the exact previous start and end date/time, including custom times
-        let newStart = prevTimes.start ? dayjs(prevTimes.start) : dayjs().startOf('hour');
-        let newEnd = prevTimes.end ? dayjs(prevTimes.end) : newStart.add(1, 'hour');
-        if (newEnd.isSame(newStart) || newEnd.isBefore(newStart)) newEnd = newStart.add(1, 'hour');
+        let newStart = prevTimes.start
+          ? dayjs(prevTimes.start)
+          : dayjs().startOf('hour');
+        let newEnd = prevTimes.end
+          ? dayjs(prevTimes.end)
+          : newStart.add(1, 'hour');
+        if (newEnd.isSame(newStart) || newEnd.isBefore(newStart))
+          newEnd = newStart.add(1, 'hour');
         return {
           ...prev,
           start_at: newStart.toISOString(),
@@ -941,11 +949,19 @@ export function UnifiedEventModal() {
                           showTimeSelect={!isAllDay}
                           minDate={(() => {
                             // Only disable dates before the start date, not the start date itself
-                            const start = new Date(event.start_at || new Date());
-                            return new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                            const start = new Date(
+                              event.start_at || new Date()
+                            );
+                            return new Date(
+                              start.getFullYear(),
+                              start.getMonth(),
+                              start.getDate()
+                            );
                           })()}
                           minTime={(() => {
-                            const start = new Date(event.start_at || new Date());
+                            const start = new Date(
+                              event.start_at || new Date()
+                            );
                             const end = new Date(event.end_at || new Date());
                             // Only apply minTime if start and end are on the same day
                             if (

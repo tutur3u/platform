@@ -14,7 +14,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import { CalendarIcon, Check, Clock, Edit } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface DateTimePickerProps {
   date?: Date;
@@ -79,7 +79,8 @@ export function DateTimePicker({
     newDate.setMinutes(minutes);
 
     // If minDate is set and this is the end time picker, and the new time is before or equal to minDate on the same day, increment the date by one day
-    if (minDate &&
+    if (
+      minDate &&
       newDate.getFullYear() === minDate.getFullYear() &&
       newDate.getMonth() === minDate.getMonth() &&
       newDate.getDate() === minDate.getDate()
@@ -100,7 +101,12 @@ export function DateTimePicker({
       if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(manualTimeInput)) {
         if (date) {
           const [h, m] = manualTimeInput.split(':').map(Number);
-          if (typeof h === 'number' && !isNaN(h) && typeof m === 'number' && !isNaN(m)) {
+          if (
+            typeof h === 'number' &&
+            !isNaN(h) &&
+            typeof m === 'number' &&
+            !isNaN(m)
+          ) {
             const newDate = new Date(date);
             newDate.setHours(h);
             newDate.setMinutes(m);
@@ -219,7 +225,11 @@ export function DateTimePicker({
                   disabled={noValidTimes}
                 >
                   <SelectTrigger className="w-[110px]">
-                    <SelectValue placeholder={noValidTimes ? "Invalid time selection" : "Select time"} />
+                    <SelectValue
+                      placeholder={
+                        noValidTimes ? 'Invalid time selection' : 'Select time'
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
                     {filteredTimeOptions.map((time) => (
@@ -230,8 +240,9 @@ export function DateTimePicker({
                   </SelectContent>
                 </Select>
                 {noValidTimes && (
-                  <div className="text-destructive text-xs mt-1">
-                    No valid end times available. Please select an earlier start time or check your time selection.
+                  <div className="text-destructive mt-1 text-xs">
+                    No valid end times available. Please select an earlier start
+                    time or check your time selection.
                   </div>
                 )}
                 <Button
