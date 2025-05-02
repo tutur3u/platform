@@ -2,8 +2,7 @@
 
 import { AuthButton } from './auth-button';
 import { PUBLIC_PATHS } from '@/constants/common';
-import { type SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { WorkspaceUser } from '@tuturuuu/types/db';
+import { type User, type UserPrivateDetails } from '@tuturuuu/types/db';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { MenuIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -15,8 +14,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 interface MenuProps {
-  sbUser: SupabaseUser | null;
-  user: WorkspaceUser | null;
+  user: (User & UserPrivateDetails) | null;
   t?: any;
 }
 
@@ -83,7 +81,7 @@ const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
   />
 );
 
-const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
+const MobileMenu: React.FC<MenuProps> = ({ user, t }) => {
   const [isOpened, setIsOpened] = useState(false);
   const closeMenu = () => setIsOpened(false);
 
@@ -95,7 +93,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
       <SheetContent className="md:hidden">
         <div className={cn('mt-6 items-center gap-1', user ? 'grid' : 'flex')}>
           <AuthButton
-            user={sbUser}
+            user={user}
             className="w-full items-center justify-center"
             onClick={closeMenu}
           />
@@ -112,14 +110,14 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
   );
 };
 
-const Menu: React.FC<MenuProps> = ({ sbUser, user }) => {
+const Menu: React.FC<MenuProps> = ({ user }) => {
   const t = useTranslations();
 
   return (
     <>
       <DesktopMenu t={t} />
       <div className="flex gap-2 md:hidden">
-        <MobileMenu sbUser={sbUser} user={user} t={t} />
+        <MobileMenu user={user} t={t} />
       </div>
     </>
   );

@@ -36,7 +36,7 @@ export async function getWorkspace(id?: string) {
     role: workspace_members[0]?.role,
   };
 
-  return ws as Workspace;
+  return ws;
 }
 
 export async function getWorkspaces(noRedirect?: boolean) {
@@ -60,7 +60,7 @@ export async function getWorkspaces(noRedirect?: boolean) {
 
   if (error) notFound();
 
-  return data as Workspace[];
+  return data;
 }
 
 export async function getWorkspaceInvites() {

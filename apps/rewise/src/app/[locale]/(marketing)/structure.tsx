@@ -2,7 +2,7 @@
 
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
-import { WorkspaceUser } from '@tuturuuu/types/db';
+import { type User, type UserPrivateDetails } from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,
@@ -31,7 +31,7 @@ interface MailProps {
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
-  user: WorkspaceUser | null;
+  user: (User & UserPrivateDetails) | null;
   links: NavLink[];
   actions: ReactNode;
   userPopover: ReactNode;

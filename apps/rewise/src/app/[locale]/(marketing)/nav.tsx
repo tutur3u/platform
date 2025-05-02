@@ -3,7 +3,7 @@
 import ChatLink from './chat-link';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE } from '@/constants/common';
-import { WorkspaceUser } from '@tuturuuu/types/db';
+import { type User, type UserPrivateDetails } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { CirclePlus } from '@tuturuuu/ui/icons';
@@ -17,7 +17,7 @@ import { useEffect, useState } from 'react';
 interface NavProps {
   t: any;
   locale: string;
-  currentUser: WorkspaceUser | null;
+  currentUser: (User & UserPrivateDetails) | null;
   isCollapsed: boolean;
   links: NavLink[];
   single: boolean;
