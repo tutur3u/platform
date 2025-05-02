@@ -1,7 +1,6 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/db';
-import { User } from '@tuturuuu/types/primitives/User';
+import { type User, Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -34,8 +33,8 @@ import * as z from 'zod';
 
 interface Props {
   workspace: Workspace;
-  user: User;
-  currentUser: User;
+  user: User & { role_title: string | null; role: string | null };
+  currentUser: User & { role: string };
 }
 
 const FormSchema = z.object({
@@ -147,7 +146,7 @@ export function MemberSettingsButton({
     >
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
-          <Settings className="text-foreground/70 h-6 w-6" />
+          <Settings className="h-6 w-6 text-foreground/70" />
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -174,7 +173,7 @@ export function MemberSettingsButton({
           </Avatar>
 
           <div className="flex-1 space-y-1">
-            <p className="line-clamp-1 text-sm font-medium leading-none">
+            <p className="line-clamp-1 text-sm leading-none font-medium">
               {user?.display_name ? (
                 user.display_name
               ) : (
@@ -183,7 +182,7 @@ export function MemberSettingsButton({
               {role ? <span className="text-orange-300">({role})</span> : null}
             </p>
 
-            <p className="text-foreground/60 line-clamp-1 text-sm">
+            <p className="line-clamp-1 text-sm text-foreground/60">
               {user?.email ||
                 (user?.handle
                   ? `@${user.handle}`

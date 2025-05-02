@@ -48,7 +48,7 @@ export default async function WorkspaceMembersPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">
             {t('workspace-settings-layout.members')}
@@ -58,19 +58,21 @@ export default async function WorkspaceMembersPage({
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
           <MemberTabs value={status || 'all'} />
-          <InviteMemberButton
-            wsId={wsId}
-            currentUser={{
-              ...user!,
-              role: ws?.role,
-            }}
-            label={
-              disableInvite
-                ? t('ws-members.invite_member_disabled')
-                : t('ws-members.invite_member')
-            }
-            disabled={disableInvite}
-          />
+          {ws?.role && (
+            <InviteMemberButton
+              wsId={wsId}
+              currentUser={{
+                ...user!,
+                role: ws.role,
+              }}
+              label={
+                disableInvite
+                  ? t('ws-members.invite_member_disabled')
+                  : t('ws-members.invite_member')
+              }
+              disabled={disableInvite}
+            />
+          )}
         </div>
       </div>
       <Separator className="my-4" />
