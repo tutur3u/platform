@@ -6,7 +6,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { AIChat } from '@tuturuuu/types/db';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getCurrentUser } from '@tuturuuu/utils/server/user-helper';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {

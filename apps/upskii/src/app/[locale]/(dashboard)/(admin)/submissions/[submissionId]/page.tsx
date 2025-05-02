@@ -1,7 +1,7 @@
 import SubmissionClient from './client';
 import { SubmissionData } from './types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/server/user-helper';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 

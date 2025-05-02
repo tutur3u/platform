@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { User as UserIcon } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getCurrentUser } from '@tuturuuu/utils/server/user-helper';
 import moment from 'moment';
 import { getLocale, getTranslations } from 'next-intl/server';
 

@@ -4,7 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { calculatePercentage } from '@tuturuuu/utils/nova/scores/calculate';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/server/user-helper';
 import { redirect } from 'next/navigation';
 
 interface Props {

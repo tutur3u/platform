@@ -11,7 +11,7 @@ import {
   NovaSession,
   type NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/server/user-helper';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 

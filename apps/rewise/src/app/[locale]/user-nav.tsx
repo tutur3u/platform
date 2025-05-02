@@ -20,7 +20,7 @@ import {
 import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getCurrentUser } from '@tuturuuu/utils/server/user-helper';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 

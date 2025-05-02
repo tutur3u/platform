@@ -6,7 +6,7 @@ import {
   NovaSubmission,
   NovaSubmissionCriteria,
 } from '@tuturuuu/types/db';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/server/user-helper';
 
 export type ExtendedNovaSubmission = NovaSubmission & {
   total_tests: number;
