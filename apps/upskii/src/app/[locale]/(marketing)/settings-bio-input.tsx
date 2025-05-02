@@ -101,7 +101,7 @@ export default function BioInput({
               <FormItem className="w-full md:min-w-max md:max-w-lg">
                 <FormControl>
                   <Textarea
-                    className="resize-none field-sizing-fixed"
+                    className="field-sizing-fixed resize-none"
                     rows={3}
                     id="bio"
                     placeholder={t('bio')}
