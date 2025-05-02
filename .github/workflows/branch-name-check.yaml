@@ -15,10 +15,10 @@ jobs:
       - name: Check branch name
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          if ! [[ $BRANCH_NAME =~ ^(feature|bugfix|hotfix|release|chore)/.+ ]]; then
+          if ! [[ $BRANCH_NAME =~ ^(feature|feat|fix|bugfix|hotfix|release|chore)/.+ ]]; then
             echo "❌ Branch name '$BRANCH_NAME' doesn't follow the conventional branch format."
             echo "Branch name should be in format: type/description"
-            echo "Allowed types: feature, bugfix, hotfix, release, chore"
+            echo "Allowed types: feature, feat, fix, bugfix, hotfix, release, chore"
             exit 1
           else
             echo "✅ Branch name follows convention: $BRANCH_NAME"
