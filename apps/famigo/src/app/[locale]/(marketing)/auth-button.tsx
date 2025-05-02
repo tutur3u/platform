@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { type User, type UserPrivateDetails } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
@@ -12,7 +12,7 @@ export function AuthButton({
   onClick,
   className,
 }: {
-  user: SupabaseUser | null;
+  user: (User & UserPrivateDetails) | null;
   onClick?: () => void;
   className?: string;
 }) {

@@ -6,7 +6,7 @@ import { SystemLanguageWrapper } from '../(dashboard)/_components/system-languag
 import { ThemeDropdownItems } from '../(dashboard)/_components/theme-dropdown-items';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
-import { WorkspaceUser } from '@tuturuuu/types/db';
+import { type User, type UserPrivateDetails } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
@@ -21,7 +21,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Globe, Home, Palette, Settings, User } from '@tuturuuu/ui/icons';
+import { Globe, Home, Palette, Settings, UserIcon } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
@@ -33,7 +33,7 @@ export default function UserNavClient({
   locale,
   hideMetadata = false,
 }: {
-  user: WorkspaceUser | null;
+  user: (User & UserPrivateDetails) | null;
   locale: string | undefined;
   hideMetadata?: boolean;
 }) {
@@ -67,7 +67,7 @@ export default function UserNavClient({
                 {user?.display_name ? (
                   getInitials(user.display_name)
                 ) : (
-                  <User className="h-5 w-5" />
+                  <UserIcon className="h-5 w-5" />
                 )}
               </AvatarFallback>
               <UserPresenceIndicator className="-right-1 -bottom-1 h-3 w-3 border-2" />

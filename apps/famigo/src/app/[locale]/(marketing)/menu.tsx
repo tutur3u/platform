@@ -1,8 +1,7 @@
 'use client';
 
 import { AuthButton } from './auth-button';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { WorkspaceUser } from '@tuturuuu/types/db';
+import { type User, type UserPrivateDetails } from '@tuturuuu/types/db';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { MenuIcon } from '@tuturuuu/ui/icons';
 import {
@@ -16,8 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface MenuProps {
-  sbUser: SupabaseUser | null;
-  user: WorkspaceUser | null;
+  user: (User & UserPrivateDetails) | null;
   t?: any;
 }
 
@@ -63,7 +61,7 @@ interface MenuProps {
 //   onClick,
 // }) => <NavLink item={item} className={className} onClick={onClick} />;
 
-const MobileMenu: React.FC<MenuProps> = ({ sbUser, user }) => {
+const MobileMenu: React.FC<MenuProps> = ({ user }) => {
   const [isOpened, setIsOpened] = useState(false);
   const closeMenu = () => setIsOpened(false);
 
@@ -90,7 +88,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user }) => {
           <div className="border-b px-6 py-6">
             <div className={cn('items-center gap-3', user ? 'grid' : 'flex')}>
               <AuthButton
-                user={sbUser}
+                user={user}
                 className="w-full items-center justify-center"
                 onClick={closeMenu}
               />
@@ -163,13 +161,13 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user }) => {
   );
 };
 
-const Menu: React.FC<MenuProps> = ({ sbUser, user }) => {
+const Menu: React.FC<MenuProps> = ({ user }) => {
   const t = useTranslations();
 
   return (
     <>
       <div className="flex gap-2 md:hidden">
-        <MobileMenu sbUser={sbUser} user={user} t={t} />
+        <MobileMenu user={user} t={t} />
       </div>
     </>
   );
