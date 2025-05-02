@@ -77,7 +77,7 @@ const MobileMenu: React.FC<MenuProps> = ({ user }) => {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="rounded-lg p-2 transition-all hover:bg-accent active:bg-accent/80">
+      <SheetTrigger className="hover:bg-accent active:bg-accent/80 rounded-lg p-2 transition-all">
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
 

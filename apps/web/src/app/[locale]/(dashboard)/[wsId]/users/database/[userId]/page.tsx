@@ -228,7 +228,7 @@ export default async function WorkspaceUserDetailsPage({
         </div>
       </div>
 
-      <div className="mt-4 mb-2 text-lg font-semibold">
+      <div className="mb-2 mt-4 text-lg font-semibold">
         Hoá đơn ({invoiceCount})
       </div>
       <CustomDataTable
