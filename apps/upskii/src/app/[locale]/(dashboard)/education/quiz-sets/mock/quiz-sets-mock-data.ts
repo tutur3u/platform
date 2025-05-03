@@ -36,4 +36,4 @@ export const mockQuizSets: WorkspaceQuizSet[] = [
     ws_id: 'ws_1',
     href: '/ws_1/education/quiz-sets/5',
   },
-];  
+];
