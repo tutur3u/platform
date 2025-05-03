@@ -45,7 +45,7 @@ export const getUserColumns = (
                 generateFunName({ id: user.id, locale: extraData.locale })}
             </div>
             {user?.email && (
-              <div className="text-sm text-muted-foreground">{user.email}</div>
+              <div className="text-muted-foreground text-sm">{user.email}</div>
             )}
           </div>
         </div>
