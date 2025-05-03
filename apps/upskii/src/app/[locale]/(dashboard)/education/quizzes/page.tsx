@@ -1,6 +1,6 @@
-import { mockQuizzes } from '@/app/[locale]/(dashboard)/education/quizzes/mock/quizzes-mock-data';
 import { getWorkspaceQuizColumns } from './columns';
 import QuizForm from './form';
+import { mockQuizzes } from '@/app/[locale]/(dashboard)/education/quizzes/mock/quizzes-mock-data';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceQuiz } from '@tuturuuu/types/db';

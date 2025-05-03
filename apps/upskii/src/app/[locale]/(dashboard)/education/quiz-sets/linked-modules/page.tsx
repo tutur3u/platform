@@ -1,6 +1,10 @@
-import { mockAllModules, mockLinkedModules, mockMappedModules } from '@/app/[locale]/(dashboard)/education/quiz-sets/linked-modules/mock/modules-mock-data';
 import { getWorkspaceCourseModuleColumns } from './columns';
 import { QuizsetModuleLinker } from './linker';
+import {
+  mockAllModules,
+  mockLinkedModules,
+  mockMappedModules,
+} from '@/app/[locale]/(dashboard)/education/quiz-sets/linked-modules/mock/modules-mock-data';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
@@ -27,7 +31,6 @@ interface Props {
 // TEMPORARY
 const allModules = mockAllModules;
 const modules = mockMappedModules;
-
 
 export default async function WorkspaceCoursesPage({
   params,
