@@ -1018,7 +1018,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
                   <img
                     src="/media/google-logo.png"
                     alt="Google Calendar"
-                    className="inline-block h-4 w-4 mr-1 align-text-bottom"
+                    className="mr-1 inline-block h-4 w-4 align-text-bottom"
                     title="Synced from Google Calendar"
                   />
                 )}
