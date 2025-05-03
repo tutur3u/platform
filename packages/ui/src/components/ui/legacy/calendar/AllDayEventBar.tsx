@@ -95,6 +95,15 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                     )}
                     onClick={() => openModal(event.id, 'all-day')}
                   >
+                    {typeof event.google_event_id === 'string' && event.google_event_id.trim() !== '' && (
+                      <img
+                        src="/media/google-calendar-icon.png"
+                        alt="Google Calendar"
+                        className="inline-block h-[1.25em] w-[1.25em] mr-1 align-middle opacity-80 dark:opacity-90"
+                        title="Synced from Google Calendar"
+                        data-testid="google-calendar-logo"
+                      />
+                    )}
                     {event.title}
                   </div>
                 );

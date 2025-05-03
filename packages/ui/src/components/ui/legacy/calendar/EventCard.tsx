@@ -1014,12 +1014,13 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
                     aria-label="Event locked"
                   />
                 )}
-                {localEvent.google_event_id && (
+                {typeof localEvent.google_event_id === 'string' && localEvent.google_event_id.trim() !== '' && (
                   <img
-                    src="/media/google-logo.png"
+                    src="/media/google-calendar-icon.png"
                     alt="Google Calendar"
-                    className="inline-block h-4 w-4 mr-1 align-text-bottom"
+                    className="inline-block h-[1.25em] w-[1.25em] mr-1 align-middle opacity-80 dark:opacity-90"
                     title="Synced from Google Calendar"
+                    data-testid="google-calendar-logo"
                   />
                 )}
                 <span className="min-w-0 overflow-hidden text-ellipsis">

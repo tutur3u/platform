@@ -852,8 +852,20 @@ export function UnifiedEventModal() {
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
         <DialogHeader className="border-b px-6 pb-4 pt-6">
-          <DialogTitle className="text-xl font-semibold">
-            {isEditing ? 'Edit Event' : 'Create Event'}
+          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+            <span>{isEditing ? 'Edit Event' : 'Create Event'}</span>
+            {event.google_event_id && typeof event.google_event_id === 'string' && event.google_event_id.trim() !== '' && (
+              <div className="flex items-center gap-2 border rounded-md bg-blue-50 dark:bg-blue-950/30 px-3 py-1 text-sm ml-3">
+                <img
+                  src="/media/google-calendar-icon.png"
+                  alt="Google Calendar"
+                  className="inline-block h-[18px] w-[18px] align-middle"
+                  title="Synced from Google Calendar"
+                  data-testid="google-calendar-logo"
+                />
+                <span className="text-xs font-medium">Google Calendar</span>
+              </div>
+            )}
           </DialogTitle>
           <DialogDescription>
             {isEditing
