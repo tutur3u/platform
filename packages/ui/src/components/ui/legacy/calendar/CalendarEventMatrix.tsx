@@ -3,11 +3,15 @@ import EventCard from './EventCard';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useParams } from 'next/navigation';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(timezone);
 
 const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const params = useParams();
   const wsId = params?.wsId as string;
-  const { eventsWithoutAllDays } = useCalendar();
+  const { eventsWithoutAllDays, settings } = useCalendar();
+  const tz = settings?.timezone?.timezone || 'auto';
 
   // Get all events
   const allEvents = eventsWithoutAllDays;
@@ -15,34 +19,24 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   // Process events to handle multi-day events
   const processedEvents = allEvents.flatMap((event) => {
     // Parse dates with proper timezone handling
-    const eventStart = new Date(event.start_at);
-    const eventEnd = new Date(event.end_at);
+    const eventStart = tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
+    const eventEnd = tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
 
     // Ensure end time is after start time
-    if (eventEnd <= eventStart) {
+    if (eventEnd.isBefore(eventStart)) {
       // Fix invalid event by setting end time to 1 hour after start
-      eventEnd.setTime(eventStart.getTime() + 60 * 60 * 1000);
+      return [{ ...event, end_at: eventStart.add(1, 'hour').toISOString() }];
     }
 
     // Normalize dates to compare just the date part (ignoring time)
-    const startDay = new Date(
-      eventStart.getFullYear(),
-      eventStart.getMonth(),
-      eventStart.getDate()
-    );
-
-    const endDay = new Date(
-      eventEnd.getFullYear(),
-      eventEnd.getMonth(),
-      eventEnd.getDate()
-    );
+    const startDay = eventStart.startOf('day');
+    const endDay = eventEnd.startOf('day');
 
     // If start and end are on the same day, return the original event
-    if (startDay.getTime() === endDay.getTime()) {
+    if (startDay.isSame(endDay)) {
       return [
         {
           ...event,
-          // Ensure start and end times are valid
           start_at: eventStart.toISOString(),
           end_at: eventEnd.toISOString(),
         },
@@ -51,64 +45,35 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
 
     // For multi-day events, create a separate instance for each day
     const splitEvents: CalendarEvent[] = [];
-    let currentDay = new Date(startDay);
+    let currentDay = startDay.clone();
 
     // Iterate through each day of the event
-    while (currentDay.getTime() <= endDay.getTime()) {
-      // Create date objects for the current day's boundaries
-      const dayStart = new Date(
-        currentDay.getFullYear(),
-        currentDay.getMonth(),
-        currentDay.getDate(),
-        0,
-        0,
-        0
-      );
+    while (currentDay.isSameOrBefore(endDay)) {
+      const dayStart = currentDay.startOf('day');
+      const dayEnd = currentDay.endOf('day');
 
-      const dayEnd = new Date(
-        currentDay.getFullYear(),
-        currentDay.getMonth(),
-        currentDay.getDate(),
-        23,
-        59,
-        59
-      );
-
-      // Create a new event instance for this day
       const dayEvent: CalendarEvent = {
         ...event,
         _originalId: event.id,
-        id: `${event.id}-${currentDay.toISOString().split('T')[0]}`,
+        id: `${event.id}-${currentDay.format('YYYY-MM-DD')}`,
         _isMultiDay: true,
         _dayPosition:
-          currentDay.getTime() === startDay.getTime()
-            ? 'start'
-            : currentDay.getTime() === endDay.getTime()
-              ? 'end'
-              : 'middle',
+          currentDay.isSame(startDay) ? 'start' : currentDay.isSame(endDay) ? 'end' : 'middle',
       };
 
-      // Adjust start and end times for this day's instance
-      if (currentDay.getTime() === startDay.getTime()) {
-        // First day - keep original start time, end at midnight
+      if (currentDay.isSame(startDay)) {
         dayEvent.start_at = eventStart.toISOString();
         dayEvent.end_at = dayEnd.toISOString();
-      } else if (currentDay.getTime() === endDay.getTime()) {
-        // Last day - start at midnight, keep original end time
+      } else if (currentDay.isSame(endDay)) {
         dayEvent.start_at = dayStart.toISOString();
         dayEvent.end_at = eventEnd.toISOString();
       } else {
-        // Middle days - full day from midnight to midnight
         dayEvent.start_at = dayStart.toISOString();
         dayEvent.end_at = dayEnd.toISOString();
       }
 
       splitEvents.push(dayEvent);
-
-      // Move to the next day
-      const nextDay = new Date(currentDay);
-      nextDay.setDate(nextDay.getDate() + 1);
-      currentDay = nextDay;
+      currentDay = currentDay.add(1, 'day');
     }
 
     return splitEvents;

@@ -59,6 +59,12 @@ type SettingsSection = {
 
 const settingsSections: SettingsSection[] = [
   {
+    id: 'timezone',
+    name: 'Timezone',
+    icon: Clock,
+    description: 'Set your calendar timezone',
+  },
+  {
     id: 'hours',
     name: 'Hours',
     icon: Clock,
