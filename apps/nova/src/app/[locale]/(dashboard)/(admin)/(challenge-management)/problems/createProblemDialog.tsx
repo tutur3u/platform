@@ -78,14 +78,16 @@ export default function CreateProblemDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="flex h-[80vh] flex-col gap-4 sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create New Problem</DialogTitle>
           <DialogDescription>
             Create a new prompt engineering problem for users to practice with.
           </DialogDescription>
         </DialogHeader>
-        <ProblemForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
+        <div className="flex-1 overflow-y-auto">
+          <ProblemForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
+        </div>
       </DialogContent>
     </Dialog>
   );

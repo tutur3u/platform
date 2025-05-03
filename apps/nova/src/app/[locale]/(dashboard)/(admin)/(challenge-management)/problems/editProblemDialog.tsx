@@ -134,19 +134,21 @@ export default function EditProblemDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="flex h-[80vh] flex-col gap-4 sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Problem</DialogTitle>
           <DialogDescription>
             Make changes to the problem details.
           </DialogDescription>
         </DialogHeader>
-        <ProblemForm
-          problemId={problem.id}
-          defaultValues={formattedDefaultValues}
-          onSubmit={onSubmit}
-          isSubmitting={isSubmitting}
-        />
+        <div className="flex-1 overflow-y-auto px-4">
+          <ProblemForm
+            problemId={problem.id}
+            defaultValues={formattedDefaultValues}
+            onSubmit={onSubmit}
+            isSubmitting={isSubmitting}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
