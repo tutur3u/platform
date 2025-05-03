@@ -1014,6 +1014,14 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
                     aria-label="Event locked"
                   />
                 )}
+                {localEvent.google_event_id && (
+                  <img
+                    src="/media/google-logo.png"
+                    alt="Google Calendar"
+                    className="inline-block h-4 w-4 mr-1 align-text-bottom"
+                    title="Synced from Google Calendar"
+                  />
+                )}
                 <span className="min-w-0 overflow-hidden text-ellipsis">
                   {localEvent.title || 'Untitled event'}
                 </span>
