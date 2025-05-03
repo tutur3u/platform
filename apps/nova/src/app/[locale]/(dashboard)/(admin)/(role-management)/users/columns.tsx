@@ -5,12 +5,15 @@ import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Badge, Shield, ShieldAlert, UserIcon } from '@tuturuuu/ui/icons';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 
 export const getUserColumns = (
-  t: any
-): ColumnDef<User & UserPrivateDetails>[] => [
+  t: any,
+  _: string | undefined,
+  __: any[] | undefined,
+  extraData: { locale: string }
+): ColumnDef<User & UserPrivateDetails & { team_name: string[] }>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
@@ -32,10 +35,15 @@ export const getUserColumns = (
               src={user.avatar_url || ''}
               alt={user?.display_name || ''}
             />
-            <AvatarFallback>{getInitials(user.display_name)}</AvatarFallback>
+            <AvatarFallback>
+              {getInitials(user.display_name || '?')}
+            </AvatarFallback>
           </Avatar>
           <div>
-            <div className="font-medium">{user.display_name}</div>
+            <div className="font-medium">
+              {user.display_name ||
+                generateFunName({ id: user.id, locale: extraData.locale })}
+            </div>
             {user?.email && (
               <div className="text-sm text-muted-foreground">{user.email}</div>
             )}
@@ -82,6 +90,17 @@ export const getUserColumns = (
             </Badge>
           );
       }
+    },
+  },
+  {
+    accessorKey: 'team_name',
+    header: ({ column }) => (
+      <DataTableColumnHeader t={t} column={column} title="Team" />
+    ),
+    cell: ({ row }) => {
+      const team_name = row.getValue('team_name') as string[] | undefined;
+      if (!team_name) return null;
+      return team_name.join(', ');
     },
   },
   {

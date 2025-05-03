@@ -4,7 +4,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { getLocale } from 'next-intl/server';
 
 export default async function UserManagement({
@@ -20,17 +19,6 @@ export default async function UserManagement({
     pageSize: pageSize || '10',
   });
 
-  // Process users to ensure they have display names
-  const processedUsers = userData.map((user) => {
-    const displayName =
-      user.display_name || generateFunName({ id: user.id, locale });
-
-    return {
-      ...user,
-      display_name: displayName,
-    };
-  });
-
   return (
     <div className="p-4 md:p-8">
       <FeatureSummary
@@ -39,9 +27,10 @@ export default async function UserManagement({
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={processedUsers}
+        data={userData}
         columnGenerator={getUserColumns}
         count={userCount}
+        extraData={{ locale }}
         // namespace="admin.user-management"
       />
     </div>
@@ -56,15 +45,21 @@ async function getUserData({
   q?: string;
   page?: string;
   pageSize?: string;
-}): Promise<{ userData: (User & UserPrivateDetails)[]; userCount: number }> {
+}): Promise<{
+  userData: (User & UserPrivateDetails & { team_name: string[] })[];
+  userCount: number;
+}> {
   try {
     const sbAdmin = await createAdminClient();
 
     const queryBuilder = sbAdmin
       .from('platform_user_roles')
-      .select('...users!inner(*, ...user_private_details!inner(*))', {
-        count: 'exact',
-      })
+      .select(
+        '...users!inner(*, ...user_private_details!inner(*), nova_team_members(...nova_teams!inner(team_name:name)))',
+        {
+          count: 'exact',
+        }
+      )
       .order('created_at', { ascending: false });
 
     if (q) {
@@ -80,13 +75,19 @@ async function getUserData({
 
     const { data, error, count } = await queryBuilder;
 
+    console.log(JSON.stringify(data, null, 2));
+
     if (error) {
       console.error('Error fetching users:', error);
       return { userData: [], userCount: 0 };
     }
 
     return {
-      userData: data || [],
+      userData:
+        data.map(({ nova_team_members, ...user }) => ({
+          ...user,
+          team_name: nova_team_members.map((member) => member.team_name),
+        })) || [],
       userCount: count || 0,
     };
   } catch (error) {
