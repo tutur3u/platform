@@ -161,3 +161,51 @@ CREATE TRIGGER redirect_platform_email_roles_trigger
 BEFORE INSERT ON public.platform_email_roles
 FOR EACH ROW
 EXECUTE FUNCTION public.redirect_platform_email_roles_insert();
+
+drop policy "allow_user_to_update_team_info" on "public"."nova_teams";
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.is_nova_challenge_manager()
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$begin
+  return exists (
+    select 1 from public.platform_user_roles
+    where (select auth.uid()) = user_id and allow_challenge_management = true
+  );
+end;$function$
+;
+
+CREATE OR REPLACE FUNCTION public.is_nova_role_manager()
+ RETURNS boolean
+ LANGUAGE plpgsql
+AS $function$begin
+  return exists (
+    select 1 from public.platform_user_roles
+    where (select auth.uid()) = user_id and allow_role_management = true
+  );
+end;$function$
+;
+
+CREATE OR REPLACE FUNCTION public.is_nova_user_email_in_team(_user_email text, _team_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+AS $function$begin
+  return exists(
+    select 1 
+    from public.nova_team_emails
+    where _user_email = email 
+    and _team_id = team_id
+  );
+end;$function$
+;
+
+create policy "Allow team members to update team info"
+on "public"."nova_teams"
+as permissive
+for update
+to authenticated
+using ((is_nova_user_id_in_team(auth.uid(), id) OR is_nova_user_email_in_team(auth.email(), id)))
+with check ((is_nova_user_id_in_team(auth.uid(), id) OR is_nova_user_email_in_team(auth.email(), id)));
