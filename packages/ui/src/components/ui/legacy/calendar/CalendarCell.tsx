@@ -2,9 +2,10 @@ import { useCalendar } from '../../../../hooks/use-calendar';
 import { HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 dayjs.extend(timezone);
 
 interface CalendarCellProps {
@@ -27,13 +28,20 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const formatTime = (hour: number, minute: number = 0) => {
     const base = dayjs(date);
     const dateTz = tz === 'auto' ? base : base.tz(tz);
-    return dateTz.hour(hour).minute(minute).format(settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
+    return dateTz
+      .hour(hour)
+      .minute(minute)
+      .format(settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
   };
 
   const handleCreateEvent = (midHour?: boolean) => {
     const base = dayjs(date);
     const dateTz = tz === 'auto' ? base : base.tz(tz);
-    const newDate = dateTz.hour(hour).minute(midHour ? 30 : 0).second(0).millisecond(0);
+    const newDate = dateTz
+      .hour(hour)
+      .minute(midHour ? 30 : 0)
+      .second(0)
+      .millisecond(0);
     addEmptyEvent(newDate.toDate());
   };
 
