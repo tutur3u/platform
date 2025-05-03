@@ -74,7 +74,7 @@ export async function POST(request: Request) {
   }
 
   const { data: roleData, error: roleError } = await supabase
-    .from('nova_roles')
+    .from('platform_email_roles')
     .select('*')
     .eq('email', user.email)
     .eq('allow_challenge_management', true)

@@ -1,7 +1,7 @@
-import UsersClient from './client';
 import { getUserColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
@@ -10,16 +10,15 @@ import { getLocale } from 'next-intl/server';
 export default async function UserManagement({
   searchParams,
 }: {
-  searchParams: { q?: string; page?: string; pageSize?: string };
+  searchParams: Promise<{ q?: string; page?: string; pageSize?: string }>;
 }) {
   const locale = await getLocale();
+  const { q, page, pageSize } = await searchParams;
   const { userData, userCount } = await getUserData({
-    q: searchParams.q,
-    page: searchParams.page || '1',
-    pageSize: searchParams.pageSize || '10',
+    q,
+    page: page || '1',
+    pageSize: pageSize || '10',
   });
-
-  console.log('user', userData);
 
   // Process users to ensure they have display names
   const processedUsers = userData.map((user) => {
@@ -57,13 +56,15 @@ async function getUserData({
   q?: string;
   page?: string;
   pageSize?: string;
-}) {
+}): Promise<{ userData: (User & UserPrivateDetails)[]; userCount: number }> {
   try {
     const sbAdmin = await createAdminClient();
 
     const queryBuilder = sbAdmin
-      .from('users')
-      .select('id, display_name, created_at, avatar_url', { count: 'exact' })
+      .from('platform_user_roles')
+      .select('...users!inner(*, ...user_private_details!inner(*))', {
+        count: 'exact',
+      })
       .order('created_at', { ascending: false });
 
     if (q) {

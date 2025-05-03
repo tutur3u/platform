@@ -42,9 +42,9 @@ export default async function RootLayout({
   if (!user?.id) redirect('/login');
 
   const { data: whitelisted } = await sbAdmin
-    .from('nova_roles')
+    .from('platform_user_roles')
     .select('enabled, allow_challenge_management, allow_role_management')
-    .eq('email', user?.email as string)
+    .eq('user_id', user.id)
     .maybeSingle();
 
   if (!whitelisted?.enabled) redirect('/not-whitelisted');
@@ -133,7 +133,7 @@ export default async function RootLayout({
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -142,7 +142,7 @@ export default async function RootLayout({
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />

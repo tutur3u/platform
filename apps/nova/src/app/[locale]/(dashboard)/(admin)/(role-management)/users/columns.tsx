@@ -1,22 +1,16 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
+import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { Badge, Shield, ShieldAlert, User } from '@tuturuuu/ui/icons';
+import { Badge, Shield, ShieldAlert, UserIcon } from '@tuturuuu/ui/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 
-interface UserData {
-  id: string;
-  email: string;
-  display_name: string;
-  created_at: string;
-  avatar_url: string | null;
-}
-
-export const getUserColumns = (t: any): ColumnDef<UserData>[] => [
+export const getUserColumns = (
+  t: any
+): ColumnDef<User & UserPrivateDetails>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
@@ -34,13 +28,16 @@ export const getUserColumns = (t: any): ColumnDef<UserData>[] => [
       return (
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.avatar_url || ''} alt={user.display_name} />
+            <AvatarImage
+              src={user.avatar_url || ''}
+              alt={user?.display_name || ''}
+            />
             <AvatarFallback>{getInitials(user.display_name)}</AvatarFallback>
           </Avatar>
           <div>
             <div className="font-medium">{user.display_name}</div>
-            {user.email && (
-              <div className="text-muted-foreground text-sm">{user.email}</div>
+            {user?.email && (
+              <div className="text-sm text-muted-foreground">{user.email}</div>
             )}
           </div>
         </div>
@@ -74,7 +71,7 @@ export const getUserColumns = (t: any): ColumnDef<UserData>[] => [
         case 'user':
           return (
             <Badge className="border-blue-200 bg-blue-50 text-blue-700">
-              <User className="mr-1 h-3 w-3" />
+              <UserIcon className="mr-1 h-3 w-3" />
               User
             </Badge>
           );
