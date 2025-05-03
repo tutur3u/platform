@@ -1,3 +1,4 @@
+import { mockAllModules, mockLinkedModules, mockMappedModules } from '@/app/[locale]/(dashboard)/education/quiz-sets/linked-modules/mock/modules-mock-data';
 import { getWorkspaceCourseModuleColumns } from './columns';
 import { QuizsetModuleLinker } from './linker';
 import { CustomDataTable } from '@/components/custom-data-table';
@@ -23,6 +24,11 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
+// TEMPORARY
+const allModules = mockAllModules;
+const modules = mockMappedModules;
+
+
 export default async function WorkspaceCoursesPage({
   params,
   searchParams,
@@ -30,14 +36,16 @@ export default async function WorkspaceCoursesPage({
   const t = await getTranslations();
   const { wsId, setId } = await params;
 
-  const { data: allModules } = await getModules(wsId, await searchParams);
-  const { data, count } = await getData(setId, await searchParams);
+  const { data: __ } = await getData(setId, await searchParams);
+  const { data: _ } = await getModules(wsId, await searchParams);
 
-  const modules = data.map((m) => ({
-    ...m,
-    ws_id: wsId,
-    href: `/${wsId}/education/courses/${m.course_id}/modules/${m.id}`,
-  }));
+  // const { data, count } = await getData(setId, await searchParams);
+  // const { data: allModules } = await getModules(wsId, await searchParams);
+  // const modules = data.map((m) => ({
+  //   ...m,
+  //   ws_id: wsId,
+  //   href: `/${wsId}/education/courses/${m.course_id}/modules/${m.id}`,
+  // }));
 
   return (
     <>
@@ -63,7 +71,7 @@ export default async function WorkspaceCoursesPage({
         columnGenerator={getWorkspaceCourseModuleColumns}
         extraData={{ wsId, setId }}
         namespace="course-data-table"
-        count={count}
+        count={mockLinkedModules.length}
         defaultVisibility={{
           id: false,
           created_at: false,
