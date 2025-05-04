@@ -19,18 +19,24 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const visibleDates = showWeekends
     ? dates
     : dates.filter((date) => {
-        const day = tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
+        const day =
+          tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
   // Function to get events for a specific date
   const getEventsForDate = (date: Date): CalendarEvent[] => {
-    const dateStr = tz === 'auto' ? dayjs(date).format('YYYY-MM-DD') : dayjs(date).tz(tz).format('YYYY-MM-DD');
+    const dateStr =
+      tz === 'auto'
+        ? dayjs(date).format('YYYY-MM-DD')
+        : dayjs(date).tz(tz).format('YYYY-MM-DD');
 
     return allDayEvents
       .filter((event) => {
-        const eventStart = tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
-        const eventEnd = tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
+        const eventStart =
+          tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
+        const eventEnd =
+          tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
         // Check if the date falls within the event's date range
         return dayjs(dateStr).isBetween(
           eventStart.startOf('day'),
@@ -40,8 +46,10 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         );
       })
       .map((event) => {
-        const eventStart = tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
-        const eventEnd = tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
+        const eventStart =
+          tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
+        const eventEnd =
+          tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
         return {
           ...event,
           days: eventEnd.diff(eventStart, 'day'),

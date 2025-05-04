@@ -3,6 +3,7 @@ import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+
 dayjs.extend(timezone);
 
 const TimeTrail = () => {
@@ -16,8 +17,12 @@ const TimeTrail = () => {
   // Format time for display - only show hour
   const formatTime = (hour: number) => {
     let date = dayjs();
-    date = tz === 'auto' ? date.hour(hour).minute(0).second(0).millisecond(0) : date.tz(tz).hour(hour).minute(0).second(0).millisecond(0);
-    const timeFormat = settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h a';
+    date =
+      tz === 'auto'
+        ? date.hour(hour).minute(0).second(0).millisecond(0)
+        : date.tz(tz).hour(hour).minute(0).second(0).millisecond(0);
+    const timeFormat =
+      settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h a';
     return date.format(timeFormat);
   };
 

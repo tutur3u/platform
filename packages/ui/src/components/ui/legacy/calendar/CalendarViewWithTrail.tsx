@@ -1,10 +1,11 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
 import CalendarView from './CalendarView';
 import TimeTrail from './TimeTrail';
 import { HOUR_HEIGHT } from './config';
-import { useEffect, useRef, useState } from 'react';
-import { useCalendar } from '../../../../hooks/use-calendar';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { useEffect, useRef, useState } from 'react';
+
 dayjs.extend(timezone);
 
 const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
@@ -17,7 +18,8 @@ const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
   useEffect(() => {
     if (!initialized && calendarViewRef.current) {
       const now = tz === 'auto' ? dayjs() : dayjs().tz(tz);
-      const scrollY = now.hour() * HOUR_HEIGHT + (now.minute() / 60) * HOUR_HEIGHT;
+      const scrollY =
+        now.hour() * HOUR_HEIGHT + (now.minute() / 60) * HOUR_HEIGHT;
       calendarViewRef.current.scrollTop = scrollY - 100;
       setInitialized(true);
     }

@@ -36,7 +36,9 @@ const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   const totalHours = hours + minutes / 60 + seconds / 3600;
 
   // Format the current time
-  const formattedTime = nowTz.format(settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
+  const formattedTime = nowTz.format(
+    settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h:mm a'
+  );
 
   // Only show the time indicator text for the first column (when columnIndex is 0)
   // This prevents duplicate time indicators when multiple days are visible
