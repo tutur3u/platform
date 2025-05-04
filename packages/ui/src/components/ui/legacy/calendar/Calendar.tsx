@@ -24,7 +24,7 @@ const CreateEventButton = () => {
   const { openModal } = useCalendar();
 
   return (
-    <div className="fixed bottom-6 right-6 z-10 flex gap-2">
+    <div className="fixed right-6 bottom-6 z-10 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -78,7 +78,7 @@ const SettingsButton = ({
   };
 
   return (
-    <div className="fixed bottom-24 right-6 z-10 flex gap-2">
+    <div className="fixed right-6 bottom-24 z-10 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -521,7 +521,7 @@ const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="scrollbar-none relative flex-1 overflow-hidden">
+      <div className="relative scrollbar-none flex-1 overflow-hidden">
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar date={dates[0]} workspace={workspace} />
         ) : (
