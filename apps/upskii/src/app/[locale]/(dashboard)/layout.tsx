@@ -70,7 +70,7 @@ export default async function RootLayout({
     },
     {
       name: t('sidebar.quizzes'),
-      href: '/quizzes',
+      href: '/education/quizzes',
       icon: <ListTodo className="h-4 w-4" />,
       requiresChallengeManagement: true,
     },
