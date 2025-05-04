@@ -1,10 +1,5 @@
 import { getWorkspaceCourseModuleColumns } from './columns';
 import { QuizsetModuleLinker } from './linker';
-import {
-  mockAllModules,
-  mockLinkedModules,
-  mockMappedModules,
-} from '@/app/[locale]/(dashboard)/education/quiz-sets/linked-modules/mock/modules-mock-data';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
@@ -28,10 +23,6 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
-// TEMPORARY
-const allModules = mockAllModules;
-const modules = mockMappedModules;
-
 export default async function WorkspaceCoursesPage({
   params,
   searchParams,
@@ -39,16 +30,14 @@ export default async function WorkspaceCoursesPage({
   const t = await getTranslations();
   const { wsId, setId } = await params;
 
-  const { data: __ } = await getData(setId, await searchParams);
-  const { data: _ } = await getModules(wsId, await searchParams);
+  const { data: allModules } = await getModules(wsId, await searchParams);
+  const { data, count } = await getData(setId, await searchParams);
 
-  // const { data, count } = await getData(setId, await searchParams);
-  // const { data: allModules } = await getModules(wsId, await searchParams);
-  // const modules = data.map((m) => ({
-  //   ...m,
-  //   ws_id: wsId,
-  //   href: `/${wsId}/education/courses/${m.course_id}/modules/${m.id}`,
-  // }));
+  const modules = data.map((m) => ({
+    ...m,
+    ws_id: wsId,
+    href: `/${wsId}/education/courses/${m.course_id}/modules/${m.id}`,
+  }));
 
   return (
     <>
@@ -74,7 +63,7 @@ export default async function WorkspaceCoursesPage({
         columnGenerator={getWorkspaceCourseModuleColumns}
         extraData={{ wsId, setId }}
         namespace="course-data-table"
-        count={mockLinkedModules.length}
+        count={count}
         defaultVisibility={{
           id: false,
           created_at: false,

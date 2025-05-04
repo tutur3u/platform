@@ -1,6 +1,6 @@
 'use client';
 
-import { Filter } from '@/app/[locale]/(dashboard)/users/filters';
+import { Filter } from '../../../../users/filters';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { useTranslations } from 'next-intl';
