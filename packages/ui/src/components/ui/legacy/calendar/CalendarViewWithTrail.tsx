@@ -1,45 +1,29 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
 import CalendarView from './CalendarView';
 import TimeTrail from './TimeTrail';
 import { HOUR_HEIGHT } from './config';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useRef, useState } from 'react';
+
+dayjs.extend(timezone);
 
 const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
   const [initialized, setInitialized] = useState(false);
   const calendarViewRef = useRef<HTMLDivElement>(null);
+  const { settings } = useCalendar();
+  const tz = settings?.timezone?.timezone;
 
   // Scroll to current time on mount and when dates change
   useEffect(() => {
-    const scrollToCurrentTime = () => {
-      if (initialized) return;
-
-      const component = calendarViewRef.current;
-      if (!component) return;
-
-      const now = new Date();
-      const minutes = now.getMinutes();
-      const hours = now.getHours() + minutes / 60;
-
-      // Calculate scroll position to center the current time in the viewport
-      const height = component.clientHeight;
-      const scrollPosition = Math.max(0, hours * HOUR_HEIGHT - height / 2);
-
-      // Use smooth scrolling for better UX
-      component.scrollTo({
-        top: scrollPosition,
-        behavior: 'smooth',
-      });
-
+    if (!initialized && calendarViewRef.current) {
+      const now = tz === 'auto' ? dayjs() : dayjs().tz(tz);
+      const scrollY =
+        now.hour() * HOUR_HEIGHT + (now.minute() / 60) * HOUR_HEIGHT;
+      calendarViewRef.current.scrollTop = scrollY - 100;
       setInitialized(true);
-    };
-
-    // Initial scroll
-    scrollToCurrentTime();
-
-    // Set up a timer to update the scroll position every minute
-    const intervalId = setInterval(scrollToCurrentTime, 60000);
-
-    return () => clearInterval(intervalId);
-  }, [dates, initialized]);
+    }
+  }, [dates, initialized, tz]);
 
   return (
     <div

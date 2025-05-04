@@ -1,4 +1,9 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
 import { cn } from '@tuturuuu/utils/format';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(timezone);
 
 interface DayTitleProps {
   view: 'day' | '4-days' | 'week' | 'month';
@@ -7,8 +12,11 @@ interface DayTitleProps {
 }
 
 export default function DayTitle({ date, weekday }: DayTitleProps) {
-  const today = new Date();
-  const isToday = date.toDateString() === today.toDateString();
+  const { settings } = useCalendar();
+  const tz = settings?.timezone?.timezone;
+  const today = tz === 'auto' ? dayjs() : dayjs().tz(tz);
+  const dayjsDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
+  const isToday = dayjsDate.isSame(today, 'day');
 
   return (
     <div
@@ -32,7 +40,7 @@ export default function DayTitle({ date, weekday }: DayTitleProps) {
               : 'bg-muted text-muted-foreground'
           )}
         >
-          {date.getDate()}
+          {dayjsDate.date()}
         </span>
       </div>
     </div>

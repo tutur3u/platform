@@ -18,6 +18,7 @@ interface SearchParams {
 interface Props {
   params: Promise<{
     wsId: string;
+    setId: string;
   }>;
   searchParams: Promise<SearchParams>;
 }
@@ -27,9 +28,9 @@ export default async function WorkspaceQuizzesPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId, setId } = await params;
 
-  const { data, count } = await getData(wsId, await searchParams);
+  const { data, count } = await getData(setId, await searchParams);
 
   return (
     <>
@@ -39,16 +40,14 @@ export default async function WorkspaceQuizzesPage({
         description={t('ws-quizzes.description')}
         createTitle={t('ws-quizzes.create')}
         createDescription={t('ws-quizzes.create_description')}
-        form={<QuizForm wsId={wsId} />}
+        form={<QuizForm wsId={wsId} setId={setId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
         data={data}
-        count={count}
-        // data={mockQuizzes}
-        // count={mockQuizzes.length}
         columnGenerator={getWorkspaceQuizColumns}
         namespace="quiz-data-table"
+        count={count}
         defaultVisibility={{
           id: false,
           created_at: false,
@@ -59,7 +58,7 @@ export default async function WorkspaceQuizzesPage({
 }
 
 async function getData(
-  wsId: string,
+  setId: string,
   {
     q,
     page = '1',
@@ -70,11 +69,11 @@ async function getData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_quizzes')
-    .select('*', {
+    .from('quiz_set_quizzes')
+    .select('...workspace_quizzes(*, quiz_options(*))', {
       count: 'exact',
     })
-    .eq('ws_id', wsId)
+    .eq('set_id', setId)
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
@@ -90,7 +89,7 @@ async function getData(
   const { data, error, count } = await queryBuilder;
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(setId, { q, pageSize, retry: false });
   }
 
   return { data, count } as { data: WorkspaceQuiz[]; count: number };
