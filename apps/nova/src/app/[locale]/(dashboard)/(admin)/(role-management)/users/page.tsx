@@ -1,7 +1,11 @@
 import { getUserColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type {
+  PlatformUser,
+  User,
+  UserPrivateDetails,
+} from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getLocale } from 'next-intl/server';
@@ -31,7 +35,10 @@ export default async function UserManagement({
         columnGenerator={getUserColumns}
         count={userCount}
         extraData={{ locale }}
-        // namespace="admin.user-management"
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
       />
     </div>
   );
@@ -46,7 +53,9 @@ async function getUserData({
   page?: string;
   pageSize?: string;
 }): Promise<{
-  userData: (User & UserPrivateDetails & { team_name: string[] })[];
+  userData: (User &
+    PlatformUser &
+    UserPrivateDetails & { team_name: string[] })[];
   userCount: number;
 }> {
   try {
@@ -55,7 +64,7 @@ async function getUserData({
     const queryBuilder = sbAdmin
       .from('platform_user_roles')
       .select(
-        '...users!inner(*, ...user_private_details!inner(*), nova_team_members(...nova_teams!inner(team_name:name)))',
+        '*,...users!inner(*, ...user_private_details!inner(*), nova_team_members(...nova_teams!inner(team_name:name)))',
         {
           count: 'exact',
         }
@@ -74,8 +83,6 @@ async function getUserData({
     queryBuilder.range(start, end);
 
     const { data, error, count } = await queryBuilder;
-
-    console.log(JSON.stringify(data, null, 2));
 
     if (error) {
       console.error('Error fetching users:', error);
