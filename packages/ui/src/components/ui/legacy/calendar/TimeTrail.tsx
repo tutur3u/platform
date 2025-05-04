@@ -1,24 +1,29 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(timezone);
 
 const TimeTrail = () => {
   // Get settings from context
   const { settings } = useCalendar();
+  const tz = settings?.timezone?.timezone;
 
   // Only show hours (not every half hour)
   const hours = Array.from(Array(24).keys());
 
   // Format time for display - only show hour
   const formatTime = (hour: number) => {
-    const date = new Date();
-    date.setHours(hour, 0, 0, 0);
-
-    // Use 24-hour format if specified in settings
+    let date = dayjs();
+    date =
+      tz === 'auto'
+        ? date.hour(hour).minute(0).second(0).millisecond(0)
+        : date.tz(tz).hour(hour).minute(0).second(0).millisecond(0);
     const timeFormat =
       settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h a';
-    return format(date, timeFormat);
+    return date.format(timeFormat);
   };
 
   return (

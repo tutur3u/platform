@@ -2,10 +2,13 @@ import UserAvatar from './settings-avatar';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
+import { ArrowRight } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { Suspense } from 'react';
 
 interface UserSettingsDialogProps {
@@ -67,6 +70,15 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
             <EmailInput oldEmail={user.email} newEmail={user.new_email} />
           </SettingItemTab>
         </Suspense>
+
+        <Separator className="my-4" />
+
+        <Link href="/settings/account" className="w-full">
+          <Button variant="outline" className="w-full">
+            {t('settings-account.view-full-settings')}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </Link>
 
         {/* Uncomment this section if you want to include the delete account option
           <Separator className="my-2" />

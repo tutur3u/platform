@@ -1,8 +1,8 @@
-import { getQuizSetColumns } from './columns';
+import { getWorkspaceQuizColumns } from './columns';
 import QuizForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { type WorkspaceQuizSet } from '@tuturuuu/types/db';
+import { WorkspaceQuiz } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -18,6 +18,7 @@ interface SearchParams {
 interface Props {
   params: Promise<{
     wsId: string;
+    setId: string;
   }>;
   searchParams: Promise<SearchParams>;
 }
@@ -27,32 +28,26 @@ export default async function WorkspaceQuizzesPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId, setId } = await params;
 
-  const { data, count } = await getData(wsId, await searchParams);
-
-  const quizSets = data.map((quizSet) => ({
-    ...quizSet,
-    href: `/${wsId}/education/quiz-sets/${quizSet.id}`,
-  }));
+  const { data, count } = await getData(setId, await searchParams);
 
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('ws-quiz-sets.plural')}
-        singularTitle={t('ws-quiz-sets.singular')}
-        description={t('ws-quiz-sets.description')}
-        createTitle={t('ws-quiz-sets.create')}
-        createDescription={t('ws-quiz-sets.create_description')}
-        form={<QuizForm wsId={wsId} />}
+        pluralTitle={t('ws-quizzes.plural')}
+        singularTitle={t('ws-quizzes.singular')}
+        description={t('ws-quizzes.description')}
+        createTitle={t('ws-quizzes.create')}
+        createDescription={t('ws-quizzes.create_description')}
+        form={<QuizForm wsId={wsId} setId={setId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={quizSets}
-        columnGenerator={getQuizSetColumns}
-        namespace="quiz-set-data-table"
+        data={data}
+        columnGenerator={getWorkspaceQuizColumns}
+        namespace="quiz-data-table"
         count={count}
-        extraData={{ wsId }}
         defaultVisibility={{
           id: false,
           created_at: false,
@@ -63,7 +58,7 @@ export default async function WorkspaceQuizzesPage({
 }
 
 async function getData(
-  wsId: string,
+  setId: string,
   {
     q,
     page = '1',
@@ -74,14 +69,11 @@ async function getData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_quiz_sets')
-    .select(
-      '*, linked_modules:course_module_quiz_sets(...workspace_course_modules(module_id:id, module_name:name, ...workspace_courses(course_id:id, course_name:name)))',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId)
+    .from('quiz_set_quizzes')
+    .select('...workspace_quizzes(*, quiz_options(*))', {
+      count: 'exact',
+    })
+    .eq('set_id', setId)
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
@@ -97,8 +89,8 @@ async function getData(
   const { data, error, count } = await queryBuilder;
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(setId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: WorkspaceQuizSet[]; count: number };
+  return { data, count } as { data: WorkspaceQuiz[]; count: number };
 }

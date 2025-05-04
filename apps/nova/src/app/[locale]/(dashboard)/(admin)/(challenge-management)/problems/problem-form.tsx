@@ -140,11 +140,12 @@ export default function ProblemForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Tabs defaultValue="details">
-          <TabsList>
+          <TabsList className="max-w-full justify-start overflow-x-auto">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="testCases">Test Cases</TabsTrigger>
           </TabsList>
-          <ScrollArea className="h-[500px]">
+
+          <ScrollArea className="h-64 md:h-96">
             <TabsContent value="details">
               <Card>
                 <CardHeader>
