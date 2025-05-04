@@ -1,9 +1,10 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
 import { HOUR_HEIGHT } from './config';
 import { format } from 'date-fns';
-import { useEffect, useState } from 'react';
-import { useCalendar } from '../../../../hooks/use-calendar';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { useEffect, useState } from 'react';
+
 dayjs.extend(timezone);
 
 const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {

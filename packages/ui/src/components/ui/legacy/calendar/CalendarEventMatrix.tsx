@@ -2,9 +2,10 @@ import { useCalendar } from '../../../../hooks/use-calendar';
 import EventCard from './EventCard';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { useParams } from 'next/navigation';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { useParams } from 'next/navigation';
+
 dayjs.extend(timezone);
 
 const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
@@ -19,8 +20,10 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   // Process events to handle multi-day events
   const processedEvents = allEvents.flatMap((event) => {
     // Parse dates with proper timezone handling
-    const eventStart = tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
-    const eventEnd = tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
+    const eventStart =
+      tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
+    const eventEnd =
+      tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
 
     // Ensure end time is after start time
     if (eventEnd.isBefore(eventStart)) {
@@ -57,8 +60,11 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
         _originalId: event.id,
         id: `${event.id}-${currentDay.format('YYYY-MM-DD')}`,
         _isMultiDay: true,
-        _dayPosition:
-          currentDay.isSame(startDay) ? 'start' : currentDay.isSame(endDay) ? 'end' : 'middle',
+        _dayPosition: currentDay.isSame(startDay)
+          ? 'start'
+          : currentDay.isSame(endDay)
+            ? 'end'
+            : 'middle',
       };
 
       if (currentDay.isSame(startDay)) {
