@@ -4,43 +4,47 @@ import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import timezone from 'dayjs/plugin/timezone';
 import { Calendar } from 'lucide-react';
 
 dayjs.extend(isBetween);
+dayjs.extend(timezone);
 
 const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const { allDayEvents, settings, openModal } = useCalendar();
   const showWeekends = settings.appearance.showWeekends;
+  const tz = settings?.timezone?.timezone;
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
     ? dates
     : dates.filter((date) => {
-        const day = date.getDay();
+        const day = tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
   // Function to get events for a specific date
   const getEventsForDate = (date: Date): CalendarEvent[] => {
-    const dateStr = date.toDateString();
+    const dateStr = tz === 'auto' ? dayjs(date).format('YYYY-MM-DD') : dayjs(date).tz(tz).format('YYYY-MM-DD');
 
     return allDayEvents
       .filter((event) => {
-        const eventStart = new Date(event.start_at);
-        const eventEnd = new Date(event.end_at);
-
+        const eventStart = tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
+        const eventEnd = tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
         // Check if the date falls within the event's date range
         return dayjs(dateStr).isBetween(
-          dayjs(eventStart),
-          dayjs(eventEnd),
+          eventStart.startOf('day'),
+          eventEnd.endOf('day'),
           'day',
-          '[)'
+          '[]'
         );
       })
       .map((event) => {
+        const eventStart = tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
+        const eventEnd = tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
         return {
           ...event,
-          days: dayjs(event.end_at).diff(dayjs(event.start_at), 'day'),
+          days: eventEnd.diff(eventStart, 'day'),
         };
       });
   };
@@ -72,11 +76,9 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         {visibleDates.map((date) => {
           const dateEvents = getEventsForDate(date);
 
-          // return JSON.stringify(dateEvents);
-
           return (
             <div
-              key={`all-day-${date.toISOString()}`}
+              key={`all-day-${tz === 'auto' ? dayjs(date).toISOString() : dayjs(date).tz(tz).toISOString()}`}
               className="hover:bg-muted/20 group mr-[1px] flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r"
             >
               {dateEvents.map((event) => {
@@ -86,7 +88,7 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
                 return (
                   <div
-                    key={`all-day-event-${event.id}-${date.toISOString()}`}
+                    key={`all-day-event-${event.id}-${tz === 'auto' ? dayjs(date).toISOString() : dayjs(date).tz(tz).toISOString()}`}
                     className={cn(
                       'cursor-pointer truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold',
                       bg,

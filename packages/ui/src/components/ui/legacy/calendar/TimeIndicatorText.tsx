@@ -1,6 +1,5 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { HOUR_HEIGHT } from './config';
-import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useState } from 'react';
@@ -9,13 +8,13 @@ dayjs.extend(timezone);
 
 const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   const { settings } = useCalendar();
-  const tz = settings?.timezone?.timezone || 'auto';
-  const [now, setNow] = useState(dayjs());
+  const tz = settings?.timezone?.timezone;
+  const [now, setNow] = useState(tz === 'auto' ? dayjs() : dayjs().tz(tz));
 
   // Update the time every minute
   useEffect(() => {
     const updateTime = () => {
-      setNow(dayjs());
+      setNow(tz === 'auto' ? dayjs() : dayjs().tz(tz));
     };
 
     // Update immediately
@@ -37,7 +36,7 @@ const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   const totalHours = hours + minutes / 60 + seconds / 3600;
 
   // Format the current time
-  const formattedTime = nowTz.format('h:mm a');
+  const formattedTime = nowTz.format(settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
 
   // Only show the time indicator text for the first column (when columnIndex is 0)
   // This prevents duplicate time indicators when multiple days are visible

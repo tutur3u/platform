@@ -113,6 +113,8 @@ export function UnifiedEventModal() {
     settings,
   } = useCalendar();
 
+  const tz = settings?.timezone?.timezone;
+
   // State for manual event creation/editing
   const [event, setEvent] = useState<Partial<CalendarEvent>>({
     title: '',
@@ -179,6 +181,9 @@ export function UnifiedEventModal() {
     schema: calendarEventsSchema,
   });
 
+  // Add this near the top of the component, after tz is defined
+  const categoriesKey = JSON.stringify(settings?.categoryColors?.categories ?? []);
+
   // Handle AI-generated events
   useEffect(() => {
     if (object && !isLoading) {
@@ -198,7 +203,7 @@ export function UnifiedEventModal() {
 
       setActiveTab('preview');
     }
-  }, [object, isLoading, settings?.categoryColors?.categories]);
+  }, [object, isLoading, categoriesKey, tz]);
 
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
@@ -251,7 +256,7 @@ export function UnifiedEventModal() {
 
     // Clear any error messages
     setDateError(null);
-  }, [activeEvent, isModalOpen]);
+  }, [activeEvent, isModalOpen, tz]);
 
   // Function to check for overlapping events
   const checkForOverlaps = (eventToCheck: Partial<CalendarEvent>) => {
@@ -483,8 +488,8 @@ export function UnifiedEventModal() {
     if (!date) return;
 
     setEvent((prev) => {
-      let newStartDate = dayjs(date);
-      let endDate = dayjs(prev.end_at || '');
+      let newStartDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
+      let endDate = tz === 'auto' ? dayjs(prev.end_at || '') : dayjs(prev.end_at || '').tz(tz);
       const newEvent = { ...prev, start_at: date.toISOString() };
 
       if (isAllDay) {
@@ -527,8 +532,8 @@ export function UnifiedEventModal() {
     if (!date) return;
 
     setEvent((prev) => {
-      let newEndDate = dayjs(date);
-      const startDate = dayjs(prev.start_at || '');
+      let newEndDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
+      const startDate = tz === 'auto' ? dayjs(prev.start_at || '') : dayjs(prev.start_at || '').tz(tz);
       const newEvent = { ...prev };
 
       // If end is not after start, increment end date by one day and set the entered time
@@ -558,8 +563,8 @@ export function UnifiedEventModal() {
   // Handle all-day toggle
   const handleAllDayChange = (checked: boolean) => {
     setEvent((prev) => {
-      let startDate = dayjs(prev.start_at);
-      let endDate = dayjs(prev.end_at);
+      let startDate = tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
+      let endDate = tz === 'auto' ? dayjs(prev.end_at) : dayjs(prev.end_at).tz(tz);
 
       if (checked) {
         setPrevTimes({
@@ -586,13 +591,13 @@ export function UnifiedEventModal() {
       } else {
         // Restore the exact previous start and end date/time, including custom times
         let newStart = prevTimes.start
-          ? dayjs(prevTimes.start)
-          : dayjs().startOf('hour');
+          ? (tz === 'auto' ? dayjs(prevTimes.start) : dayjs(prevTimes.start).tz(tz))
+          : (tz === 'auto' ? dayjs().startOf('hour') : dayjs().startOf('hour').tz(tz));
         let newEnd = prevTimes.end
-          ? dayjs(prevTimes.end)
-          : newStart.add(1, 'hour');
+          ? (tz === 'auto' ? dayjs(prevTimes.end) : dayjs(prevTimes.end).tz(tz))
+          : (tz === 'auto' ? newStart.add(1, 'hour') : newStart.add(1, 'hour').tz(tz));
         if (newEnd.isSame(newStart) || newEnd.isBefore(newStart))
-          newEnd = newStart.add(1, 'hour');
+          newEnd = tz === 'auto' ? newStart.add(1, 'hour') : newStart.add(1, 'hour').tz(tz);
         return {
           ...prev,
           start_at: newStart.toISOString(),

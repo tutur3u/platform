@@ -20,7 +20,7 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const cellRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ date: Date; y: number } | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
-  const tz = settings?.timezone?.timezone || 'auto';
+  const tz = settings?.timezone?.timezone;
 
   const id = `cell-${date}-${hour}`;
 

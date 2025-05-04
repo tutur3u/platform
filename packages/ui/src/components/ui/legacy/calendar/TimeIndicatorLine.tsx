@@ -14,13 +14,13 @@ const TimeIndicatorLine = ({
   columnsCount: number;
 }) => {
   const { settings } = useCalendar();
-  const tz = settings?.timezone?.timezone || 'auto';
-  const [now, setNow] = useState(dayjs());
+  const tz = settings?.timezone?.timezone;
+  const [now, setNow] = useState(tz === 'auto' ? dayjs() : dayjs().tz(tz));
 
   // Update the time every minute
   useEffect(() => {
     const updateTime = () => {
-      setNow(dayjs());
+      setNow(tz === 'auto' ? dayjs() : dayjs().tz(tz));
     };
 
     // Update immediately
