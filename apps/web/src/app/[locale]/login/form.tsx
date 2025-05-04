@@ -451,7 +451,7 @@ export default function LoginForm() {
                       <FormLabel>{t('login.email')}</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                          <Mail className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
                           <Input
                             className="pl-10"
                             placeholder={t('login.email_placeholder')}
@@ -551,7 +551,7 @@ export default function LoginForm() {
                       <FormLabel>{t('login.email')}</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                          <Mail className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
                           <Input
                             className="pl-10"
                             placeholder={t('login.email_placeholder')}
@@ -573,9 +573,9 @@ export default function LoginForm() {
                       <FormLabel>{t('login.password')}</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                          <Lock className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
                           <Input
-                            className="pr-10 pl-10"
+                            className="pl-10 pr-10"
                             type={showPassword ? 'text' : 'password'}
                             placeholder={t('login.password_placeholder')}
                             {...field}
@@ -583,7 +583,7 @@ export default function LoginForm() {
                           />
                           <button
                             type="button"
-                            className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
+                            className="text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2"
                             onClick={() => setShowPassword(!showPassword)}
                           >
                             {showPassword ? (
@@ -633,7 +633,7 @@ export default function LoginForm() {
         <div className="relative my-2">
           <Separator />
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="bg-card px-2 text-xs text-muted-foreground">
+            <span className="bg-card text-muted-foreground px-2 text-xs">
               {t('login.or')}
             </span>
           </div>
