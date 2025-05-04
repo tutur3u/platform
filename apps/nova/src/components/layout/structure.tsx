@@ -7,7 +7,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ReactNode, useCallback, useEffect, useState } from 'react';
+import { ReactNode, useCallback, useState } from 'react';
 
 interface NavItem {
   name: string;
@@ -41,10 +41,6 @@ export default function Structure({
   children,
 }: StructureProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-
-  useEffect(() => {
-    setIsCollapsed(window.innerWidth < 768);
-  }, []);
 
   // Add debounced function for saving sidebar sizes
   const debouncedSaveSizes = useCallback(
@@ -106,7 +102,27 @@ export default function Structure({
     />
   );
 
-  const mobileHeader = <span className="font-semibold">Menu</span>;
+  const mobileHeader = (
+    <Link href="/" className="flex w-fit items-center gap-2">
+      <div
+        className={cn(
+          isCollapsed
+            ? 'flex w-fit items-center justify-center'
+            : 'inline-block w-fit',
+          'flex-none'
+        )}
+      >
+        <Image
+          src="/media/logos/nova-transparent.png"
+          className="h-8 w-8"
+          width={32}
+          height={32}
+          alt="logo"
+        />
+      </div>
+      <LogoTitle text="Nova" />
+    </Link>
+  );
 
   return (
     <BaseStructure

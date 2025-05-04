@@ -44,7 +44,10 @@ export function Structure({
 }: StructureProps) {
   return (
     <>
-      <nav id="navbar" className="fixed inset-x-0 top-0 z-20 md:hidden">
+      <nav
+        id="navbar"
+        className="fixed inset-x-0 top-0 z-20 max-sm:border-b md:hidden"
+      >
         <div
           id="navbar-content"
           className="bg-background/50 px-4 py-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32"
@@ -96,21 +99,21 @@ export function Structure({
             }}
             className={cn(
               isCollapsed
-                ? 'md:bg-background/70 hidden min-w-[50px] md:flex'
-                : 'bg-background/70 md:bg-background absolute inset-0 z-40 flex md:static',
+                ? 'hidden min-w-[50px] md:flex md:bg-background/70'
+                : 'absolute inset-0 z-40 flex bg-background/70 md:static md:bg-background',
               'flex-col overflow-hidden backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
             <div
               className={cn(
-                'border-foreground/10 items-center border-b p-2 md:flex md:h-16 md:p-0',
-                isCollapsed ? 'justify-center' : ''
+                'items-center border-b border-foreground/10 p-2 md:flex md:h-16 md:p-0',
+                isCollapsed ? 'justify-center' : 'max-sm:py-1'
               )}
             >
               <div
                 className={cn(
                   'flex h-[52px] w-full items-center justify-center',
-                  isCollapsed ? 'h-[52px]' : 'px-4'
+                  isCollapsed ? 'h-[52px]' : 'px-2 md:px-4'
                 )}
               >
                 <div
@@ -136,7 +139,7 @@ export function Structure({
             <div className="scrollbar-none flex flex-1 flex-col gap-4 overflow-auto">
               {sidebarContent}
             </div>
-            <div className="border-foreground/10 border-t p-2">
+            <div className="border-t border-foreground/10 p-2">
               {isCollapsed ? userPopover : actions}
             </div>
           </ResizablePanel>
@@ -144,7 +147,7 @@ export function Structure({
           <ResizablePanel defaultSize={defaultLayout[1]}>
             <main
               id="main-content"
-              className="relative flex h-full min-h-screen flex-col overflow-y-auto pt-8 md:pt-0"
+              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pt-20 md:pt-4"
             >
               {header && <div className="mb-4 hidden md:block">{header}</div>}
               {children}
