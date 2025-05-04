@@ -2,9 +2,10 @@ import { useCalendar } from '../../../../hooks/use-calendar';
 import AllDayEventBar from './AllDayEventBar';
 import DayTitle from './DayTitle';
 import { cn } from '@tuturuuu/utils/format';
-import { Clock } from 'lucide-react';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { Clock } from 'lucide-react';
+
 dayjs.extend(timezone);
 
 const WeekdayBar = ({
@@ -24,7 +25,8 @@ const WeekdayBar = ({
   const visibleDates = showWeekends
     ? dates
     : dates.filter((date) => {
-        const day = tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
+        const day =
+          tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
@@ -46,7 +48,8 @@ const WeekdayBar = ({
           }}
         >
           {visibleDates.map((weekday) => {
-            const dayjsDate = tz === 'auto' ? dayjs(weekday) : dayjs(weekday).tz(tz);
+            const dayjsDate =
+              tz === 'auto' ? dayjs(weekday) : dayjs(weekday).tz(tz);
             return (
               <div
                 key={`date-${dayjsDate.format('YYYY-MM-DD')}`}
@@ -55,7 +58,9 @@ const WeekdayBar = ({
                 <DayTitle
                   view={view}
                   date={dayjsDate.toDate()}
-                  weekday={dayjsDate.locale(locale).format(locale === 'vi' ? 'dd' : 'ddd')}
+                  weekday={dayjsDate
+                    .locale(locale)
+                    .format(locale === 'vi' ? 'dd' : 'ddd')}
                 />
               </div>
             );

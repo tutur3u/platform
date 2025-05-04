@@ -14,6 +14,8 @@ import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -28,8 +30,7 @@ import {
   Unlock,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
+
 dayjs.extend(timezone);
 
 // Utility function to round time to nearest 15-minute interval
@@ -71,15 +72,20 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const overlapCount = _overlapCount || 1;
   const overlapGroup = _overlapGroup || [id];
 
-  const { updateEvent, hideModal, openModal, deleteEvent, settings } = useCalendar();
+  const { updateEvent, hideModal, openModal, deleteEvent, settings } =
+    useCalendar();
   const tz = settings?.timezone?.timezone;
 
   // Local state for immediate UI updates
   const [localEvent, setLocalEvent] = useState<CalendarEvent>(event);
 
   // Parse dates properly using selected time zone
-  const startDate = tz === 'auto' ? dayjs(localEvent.start_at) : dayjs(localEvent.start_at).tz(tz);
-  const endDate = tz === 'auto' ? dayjs(localEvent.end_at) : dayjs(localEvent.end_at).tz(tz);
+  const startDate =
+    tz === 'auto'
+      ? dayjs(localEvent.start_at)
+      : dayjs(localEvent.start_at).tz(tz);
+  const endDate =
+    tz === 'auto' ? dayjs(localEvent.end_at) : dayjs(localEvent.end_at).tz(tz);
 
   // Calculate hours with decimal minutes for positioning
   const startHours = Math.min(
@@ -87,10 +93,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     startDate.hour() + startDate.minute() / 60
   );
 
-  const endHours = Math.min(
-    MAX_HOURS,
-    endDate.hour() + endDate.minute() / 60
-  );
+  const endHours = Math.min(MAX_HOURS, endDate.hour() + endDate.minute() / 60);
 
   // Calculate duration, handling overnight events correctly
   const duration =
@@ -463,7 +466,11 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
             const newEndMinute = Math.round(
               (newEndHours - Math.floor(newEndHours)) * 60
             );
-            newEndAt = newEndAt.hour(newEndHour).minute(newEndMinute).second(0).millisecond(0);
+            newEndAt = newEndAt
+              .hour(newEndHour)
+              .minute(newEndMinute)
+              .second(0)
+              .millisecond(0);
             // Snap to 15-minute intervals
             newEndAt = dayjs(roundToNearest15Minutes(newEndAt.toDate()));
           } else if (_dayPosition === 'end') {
@@ -474,7 +481,11 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
             const newEndMinute = Math.round(
               (newDuration - Math.floor(newDuration)) * 60
             );
-            newEndAt = newEndAt.hour(newEndHour).minute(newEndMinute).second(0).millisecond(0);
+            newEndAt = newEndAt
+              .hour(newEndHour)
+              .minute(newEndMinute)
+              .second(0)
+              .millisecond(0);
             // Snap to 15-minute intervals
             newEndAt = dayjs(roundToNearest15Minutes(newEndAt.toDate()));
           } else {
@@ -716,7 +727,9 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
           }
 
           // Calculate new end time maintaining original duration
-          const newEndAt = dayjs(roundedStartAt).add(endDate.valueOf() - startDate.valueOf(), 'millisecond').toDate();
+          const newEndAt = dayjs(roundedStartAt)
+            .add(endDate.valueOf() - startDate.valueOf(), 'millisecond')
+            .toDate();
 
           // Schedule update
           scheduleUpdate({
@@ -833,7 +846,11 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const formatEventTime = (date: Date | dayjs.Dayjs) => {
     const { settings } = useCalendar();
     const timeFormat = settings.appearance.timeFormat;
-    const d = dayjs.isDayjs(date) ? date : (tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz));
+    const d = dayjs.isDayjs(date)
+      ? date
+      : tz === 'auto'
+        ? dayjs(date)
+        : dayjs(date).tz(tz);
     return d.format(timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
   };
 

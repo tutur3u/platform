@@ -19,10 +19,11 @@ import {
   isToday,
   startOfMonth,
 } from 'date-fns';
-import { Clock, Plus } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { Clock, Plus } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
 dayjs.extend(timezone);
 
 interface MonthCalendarProps {
@@ -78,14 +79,30 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
   // Get days from previous month to fill first week
   const prevMonthDays = [];
   for (let i = startDay - 1; i >= 0; i--) {
-    const day = tz === 'auto' ? dayjs(monthStart).subtract(i + 1, 'day').toDate() : dayjs(monthStart).tz(tz).subtract(i + 1, 'day').toDate();
+    const day =
+      tz === 'auto'
+        ? dayjs(monthStart)
+            .subtract(i + 1, 'day')
+            .toDate()
+        : dayjs(monthStart)
+            .tz(tz)
+            .subtract(i + 1, 'day')
+            .toDate();
     prevMonthDays.push(day);
   }
 
   // Get days from next month to fill last week
   const nextMonthDays = [];
   for (let i = 0; i < endDay; i++) {
-    const day = tz === 'auto' ? dayjs(monthEnd).add(i + 1, 'day').toDate() : dayjs(monthEnd).tz(tz).add(i + 1, 'day').toDate();
+    const day =
+      tz === 'auto'
+        ? dayjs(monthEnd)
+            .add(i + 1, 'day')
+            .toDate()
+        : dayjs(monthEnd)
+            .tz(tz)
+            .add(i + 1, 'day')
+            .toDate();
     nextMonthDays.push(day);
   }
 
@@ -101,7 +118,10 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
   // Handle adding a new event
   const handleAddEvent = (day: Date) => {
     // Create event at 9:00 AM on the selected day
-    const eventDate = tz === 'auto' ? dayjs(day).hour(9).minute(0).second(0).millisecond(0).toDate() : dayjs(day).tz(tz).hour(9).minute(0).second(0).millisecond(0).toDate();
+    const eventDate =
+      tz === 'auto'
+        ? dayjs(day).hour(9).minute(0).second(0).millisecond(0).toDate()
+        : dayjs(day).tz(tz).hour(9).minute(0).second(0).millisecond(0).toDate();
     addEmptyEvent(eventDate);
   };
 

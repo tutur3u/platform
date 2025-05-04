@@ -3,8 +3,8 @@ import EventCard from './EventCard';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import timezone from 'dayjs/plugin/timezone';
 import { useParams } from 'next/navigation';
 
 dayjs.extend(timezone);
@@ -22,8 +22,10 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   // Process events to handle multi-day events
   const processedEvents = allEvents.flatMap((event) => {
     // Parse dates with proper timezone handling
-    const startDay = tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
-    const endDay = tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
+    const startDay =
+      tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
+    const endDay =
+      tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
 
     // Ensure end time is after start time
     if (endDay.isBefore(startDay)) {
@@ -87,12 +89,16 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
 
   // Filter events to only include those visible in the current date range
   const visibleEvents = processedEvents.filter((event) => {
-    const eventStart = tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
+    const eventStart =
+      tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
     const eventStartDay = eventStart.startOf('day');
 
     // Check if the event falls within any of the visible dates
     return dates.some((date) => {
-      const dateDay = tz === 'auto' ? dayjs(date).startOf('day') : dayjs(date).tz(tz).startOf('day');
+      const dateDay =
+        tz === 'auto'
+          ? dayjs(date).startOf('day')
+          : dayjs(date).tz(tz).startOf('day');
       return dateDay.isSame(eventStartDay);
     });
   });
