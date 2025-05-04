@@ -5,7 +5,9 @@ export async function GET(
   _request: Request,
   { params }: { params: { certId: string } }
 ) {
-  const certificate = mockCertificates.find(cert => cert.certificateId === params.certId);
+  const certificate = mockCertificates.find(
+    (cert) => cert.certificateId === params.certId
+  );
 
   if (!certificate) {
     return NextResponse.json(
