@@ -1,5 +1,10 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
 import { HOUR_HEIGHT } from './config';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useState } from 'react';
+
+dayjs.extend(timezone);
 
 const TimeIndicatorLine = ({
   columnIndex,
@@ -8,12 +13,14 @@ const TimeIndicatorLine = ({
   columnIndex: number;
   columnsCount: number;
 }) => {
-  const [now, setNow] = useState(new Date());
+  const { settings } = useCalendar();
+  const tz = settings?.timezone?.timezone;
+  const [now, setNow] = useState(tz === 'auto' ? dayjs() : dayjs().tz(tz));
 
   // Update the time every minute
   useEffect(() => {
     const updateTime = () => {
-      setNow(new Date());
+      setNow(tz === 'auto' ? dayjs() : dayjs().tz(tz));
     };
 
     // Update immediately
@@ -25,9 +32,11 @@ const TimeIndicatorLine = ({
     return () => clearInterval(interval);
   }, []);
 
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const seconds = now.getSeconds();
+  // Use selected timezone
+  const nowTz = tz === 'auto' ? now : now.tz(tz);
+  const hours = nowTz.hour();
+  const minutes = nowTz.minute();
+  const seconds = nowTz.second();
 
   // Calculate total hours with decimal for precise positioning
   const totalHours = hours + minutes / 60 + seconds / 3600;
