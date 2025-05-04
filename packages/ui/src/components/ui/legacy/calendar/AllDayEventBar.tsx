@@ -5,15 +5,19 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import timezone from 'dayjs/plugin/timezone';
-import { Calendar } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
 
 dayjs.extend(isBetween);
 dayjs.extend(timezone);
+
+const MAX_EVENTS_DISPLAY = 2;
 
 const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const { allDayEvents, settings, openModal } = useCalendar();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
+  const [expandedDates, setExpandedDates] = useState<string[]>([]);
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
@@ -66,11 +70,19 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     return null;
   }
 
+  const toggleDateExpansion = (dateKey: string) => {
+    setExpandedDates((prev) =>
+      prev.includes(dateKey)
+        ? prev.filter((d) => d !== dateKey)
+        : [...prev, dateKey]
+    );
+  };
+
   return (
     <div className="flex">
       {/* Label column */}
-      <div className="bg-muted/30 flex w-16 items-center justify-center border-b border-l p-2 font-medium">
-        <Calendar className="text-muted-foreground h-4 w-4" />
+      <div className="flex w-16 items-center justify-center border-b border-l bg-muted/30 p-2 font-medium">
+        <Calendar className="h-4 w-4 text-muted-foreground" />
       </div>
 
       {/* All-day event columns */}
@@ -82,21 +94,39 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         }}
       >
         {visibleDates.map((date) => {
+          const dateKey =
+            tz === 'auto'
+              ? dayjs(date).format('YYYY-MM-DD')
+              : dayjs(date).tz(tz).format('YYYY-MM-DD');
           const dateEvents = getEventsForDate(date);
+
+          // If there are exactly MAX_EVENTS_DISPLAY + 1 events, show all of them
+          const shouldShowAll = dateEvents.length === MAX_EVENTS_DISPLAY + 1;
+          const isExpanded = expandedDates.includes(dateKey) || shouldShowAll;
+
+          const visibleEvents = isExpanded
+            ? dateEvents
+            : dateEvents.slice(0, MAX_EVENTS_DISPLAY);
+
+          // Only show "more" button if there are more than MAX_EVENTS_DISPLAY + 1 events and not expanded
+          const hiddenCount =
+            !isExpanded && !shouldShowAll
+              ? dateEvents.length - MAX_EVENTS_DISPLAY
+              : 0;
 
           return (
             <div
-              key={`all-day-${tz === 'auto' ? dayjs(date).toISOString() : dayjs(date).tz(tz).toISOString()}`}
-              className="hover:bg-muted/20 group mr-[1px] flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r"
+              key={`all-day-${dateKey}`}
+              className="group mr-[1px] flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r hover:bg-muted/20"
             >
-              {dateEvents.map((event) => {
+              {visibleEvents.map((event) => {
                 const { bg, border, text } = getEventStyles(
                   event.color || 'BLUE'
                 );
 
                 return (
                   <div
-                    key={`all-day-event-${event.id}-${tz === 'auto' ? dayjs(date).toISOString() : dayjs(date).tz(tz).toISOString()}`}
+                    key={`all-day-event-${event.id}-${dateKey}`}
                     className={cn(
                       'cursor-pointer truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold',
                       bg,
@@ -119,6 +149,28 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   </div>
                 );
               })}
+
+              {hiddenCount > 0 && (
+                <div
+                  className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                  onClick={() => toggleDateExpansion(dateKey)}
+                >
+                  <ChevronDown className="mr-1 h-3 w-3" />
+                  {hiddenCount} more
+                </div>
+              )}
+
+              {isExpanded &&
+                !shouldShowAll &&
+                dateEvents.length > MAX_EVENTS_DISPLAY && (
+                  <div
+                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                    onClick={() => toggleDateExpansion(dateKey)}
+                  >
+                    <ChevronUp className="mr-1 h-3 w-3" />
+                    Show less
+                  </div>
+                )}
             </div>
           );
         })}
