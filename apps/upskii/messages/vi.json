@@ -2935,7 +2935,8 @@
     "create_description": "Tạo một khóa học mới",
     "edit": "Chỉnh sửa khóa học",
     "name": "Tên khóa học",
-    "edit_description": "Chỉnh sửa khóa học hiện có"
+    "edit_description": "Chỉnh sửa khóa học hiện có",
+    "delete_confirm_title": "Xác nhận xoá \"{name}\""
   },
   "ws-crawlers": {
     "plural": "Công cụ cào dữ liệu",

@@ -10,14 +10,14 @@
   },
   "packageManager": "pnpm@10.10.0",
   "dependencies": {
-    "eslint": "^9.25.1",
+    "eslint": "^9.26.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^3.24.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.25.1",
+    "@eslint/js": "^9.26.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",

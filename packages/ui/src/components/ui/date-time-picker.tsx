@@ -14,18 +14,22 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import { CalendarIcon, Check, Clock, Edit } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface DateTimePickerProps {
   date?: Date;
   setDate: (date: Date) => void;
   showTimeSelect?: boolean;
+  minDate?: Date;
+  minTime?: string;
 }
 
 export function DateTimePicker({
   date,
   setDate,
   showTimeSelect = true,
+  minDate,
+  minTime,
 }: DateTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -33,6 +37,11 @@ export function DateTimePicker({
   const [manualTimeInput, setManualTimeInput] = useState(
     date ? format(date, 'HH:mm') : ''
   );
+
+  // Keep manualTimeInput in sync with date prop
+  useEffect(() => {
+    setManualTimeInput(date ? format(date, 'HH:mm') : '');
+  }, [date]);
 
   const handleSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) return;
@@ -65,9 +74,23 @@ export function DateTimePicker({
 
     if (isNaN(hours) || isNaN(minutes)) return;
 
-    const newDate = new Date(selectedDate);
+    let newDate = new Date(selectedDate);
     newDate.setHours(hours);
     newDate.setMinutes(minutes);
+
+    // If minDate is set and this is the end time picker, and the new time is before or equal to minDate on the same day, increment the date by one day
+    if (
+      minDate &&
+      newDate.getFullYear() === minDate.getFullYear() &&
+      newDate.getMonth() === minDate.getMonth() &&
+      newDate.getDate() === minDate.getDate()
+    ) {
+      const minTimeValue = minDate.getHours() * 60 + minDate.getMinutes();
+      const newTimeValue = newDate.getHours() * 60 + newDate.getMinutes();
+      if (newTimeValue <= minTimeValue) {
+        newDate.setDate(newDate.getDate() + 1);
+      }
+    }
 
     setSelectedDate(newDate);
     setDate(newDate);
@@ -75,10 +98,24 @@ export function DateTimePicker({
 
   const handleManualTimeSubmit = () => {
     try {
-      // Validate time format (HH:MM)
       if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(manualTimeInput)) {
-        handleTimeChange(manualTimeInput);
-        setIsManualTimeEntry(false);
+        if (date) {
+          const [h, m] = manualTimeInput.split(':').map(Number);
+          if (
+            typeof h === 'number' &&
+            !isNaN(h) &&
+            typeof m === 'number' &&
+            !isNaN(m)
+          ) {
+            const newDate = new Date(date);
+            newDate.setHours(h);
+            newDate.setMinutes(m);
+            setSelectedDate(newDate);
+            setDate(newDate);
+            setIsManualTimeEntry(false);
+            return;
+          }
+        }
       }
     } catch (error) {
       console.error('Invalid time format', error);
@@ -86,18 +123,45 @@ export function DateTimePicker({
   };
 
   // Generate time options in 15-minute increments
-  const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
+  let timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
     const hour = Math.floor(i / 4);
     const minute = (i % 4) * 15;
     const formattedHour = hour.toString().padStart(2, '0');
     const formattedMinute = minute.toString().padStart(2, '0');
     const value = `${formattedHour}:${formattedMinute}`;
-
-    // Format for display (12-hour format with AM/PM)
     const display = format(parse(value, 'HH:mm', new Date()), 'h:mm a');
-
     return { value, display };
   });
+
+  // Filter time options for end time picker
+  let filteredTimeOptions = timeOptions;
+  if (minTime && date && minDate) {
+    // Only restrict if the selected date is the same as minDate
+    if (
+      date.getFullYear() === minDate.getFullYear() &&
+      date.getMonth() === minDate.getMonth() &&
+      date.getDate() === minDate.getDate()
+    ) {
+      filteredTimeOptions = timeOptions.filter((time) => time.value > minTime);
+    } else if (date > minDate) {
+      // If end date is after start date, show all times
+      filteredTimeOptions = timeOptions;
+    }
+  }
+  // After filtering, ensure the selected time is always present in the dropdown
+  if (date) {
+    const customValue = `${format(date, 'HH')}:${format(date, 'mm')}`;
+    if (!filteredTimeOptions.some((t) => t.value === customValue)) {
+      filteredTimeOptions = [
+        ...filteredTimeOptions,
+        { value: customValue, display: format(date, 'h:mm a') },
+      ];
+      filteredTimeOptions.sort((a, b) => a.value.localeCompare(b.value));
+    }
+  }
+
+  // If the filtered list is empty, show an error message
+  const noValidTimes = filteredTimeOptions.length === 0;
 
   return (
     <div className="flex flex-col gap-2">
@@ -121,6 +185,7 @@ export function DateTimePicker({
               selected={date}
               onSelect={handleSelect}
               initialFocus
+              disabled={minDate ? { before: minDate } : undefined}
             />
           </PopoverContent>
         </Popover>
@@ -150,23 +215,36 @@ export function DateTimePicker({
               <div className="flex items-center gap-1">
                 <Select
                   value={
-                    date
-                      ? `${format(date, 'HH')}:${format(date, 'mm')}`
-                      : undefined
+                    noValidTimes
+                      ? undefined
+                      : date
+                        ? `${format(date, 'HH')}:${format(date, 'mm')}`
+                        : undefined
                   }
                   onValueChange={handleTimeChange}
+                  disabled={noValidTimes}
                 >
                   <SelectTrigger className="w-[110px]">
-                    <SelectValue placeholder="Select time" />
+                    <SelectValue
+                      placeholder={
+                        noValidTimes ? 'Invalid time selection' : 'Select time'
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    {timeOptions.map((time) => (
+                    {filteredTimeOptions.map((time) => (
                       <SelectItem key={time.value} value={time.value}>
                         {time.display}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {noValidTimes && (
+                  <div className="text-destructive mt-1 text-xs">
+                    No valid end times available. Please select an earlier start
+                    time or check your time selection.
+                  </div>
+                )}
                 <Button
                   size="icon"
                   variant="ghost"
