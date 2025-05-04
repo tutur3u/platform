@@ -1,6 +1,5 @@
 import { getWorkspaceQuizColumns } from './columns';
 import QuizForm from './form';
-import { mockQuizzes } from '@/app/[locale]/(dashboard)/education/quizzes/mock/quizzes-mock-data';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceQuiz } from '@tuturuuu/types/db';
@@ -30,8 +29,7 @@ export default async function WorkspaceQuizzesPage({
   const t = await getTranslations();
   const { wsId } = await params;
 
-  // const { data, count } = await getData(wsId, await searchParams);
-  const { data: _ } = await getData(wsId, await searchParams);
+  const { data, count } = await getData(wsId, await searchParams);
 
   return (
     <>
@@ -45,10 +43,10 @@ export default async function WorkspaceQuizzesPage({
       />
       <Separator className="my-4" />
       <CustomDataTable
-        // data={data}
-        // count={count}
-        data={mockQuizzes}
-        count={mockQuizzes.length}
+        data={data}
+        count={count}
+        // data={mockQuizzes}
+        // count={mockQuizzes.length}
         columnGenerator={getWorkspaceQuizColumns}
         namespace="quiz-data-table"
         defaultVisibility={{
