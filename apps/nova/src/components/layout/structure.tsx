@@ -7,7 +7,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ReactNode, useCallback, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useState } from 'react';
 
 interface NavItem {
   name: string;
@@ -41,6 +41,10 @@ export default function Structure({
   children,
 }: StructureProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  useEffect(() => {
+    setIsCollapsed(window.innerWidth < 768);
+  }, []);
 
   // Add debounced function for saving sidebar sizes
   const debouncedSaveSizes = useCallback(
