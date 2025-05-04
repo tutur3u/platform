@@ -3513,6 +3513,15 @@
   "ws_post_details": {
     "check_all": "Check all"
   },
+  "certificates": {
+    "title": "Certificate of Completion",
+    "certify_text": "This is to certify that",
+    "completion_text": "has successfully completed the course",
+    "completion_date": "Completion Date",
+    "certificate_id": "Certificate ID",
+    "download_button": "Download Certificate",
+    "offered_by": "offered by"
+  },
   "sidebar": {
     "home": "Home",
     "courses": "Courses",
