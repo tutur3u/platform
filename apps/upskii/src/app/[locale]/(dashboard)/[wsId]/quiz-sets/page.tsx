@@ -33,7 +33,7 @@ export default async function WorkspaceQuizzesPage({
 
   const quizSets = data.map((quizSet) => ({
     ...quizSet,
-    href: `/${wsId}/education/quiz-sets/${quizSet.id}`,
+    href: `/${wsId}/quiz-sets/${quizSet.id}`,
   }));
 
   return (

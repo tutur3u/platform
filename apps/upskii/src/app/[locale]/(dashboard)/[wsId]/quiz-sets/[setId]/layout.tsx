@@ -23,7 +23,7 @@ export default async function QuizSetDetailsLayout({
 }: Props) {
   const t = await getTranslations();
   const { wsId, setId } = await params;
-  const commonHref = `/${wsId}/education/quiz-sets/${setId}`;
+  const commonHref = `/${wsId}/quiz-sets/${setId}`;
 
   const data = await getData(setId);
   const linkedQuizzes = await getLinkedQuizzes(setId);

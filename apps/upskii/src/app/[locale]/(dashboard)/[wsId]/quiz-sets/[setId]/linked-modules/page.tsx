@@ -36,7 +36,7 @@ export default async function WorkspaceCoursesPage({
   const modules = data.map((m) => ({
     ...m,
     ws_id: wsId,
-    href: `/${wsId}/education/courses/${m.course_id}/modules/${m.id}`,
+    href: `/${wsId}/courses/${m.course_id}/modules/${m.id}`,
   }));
 
   return (

@@ -91,7 +91,7 @@ export const getQuizSetColumns = (
               }[]
             ).map((module) => (
               <Link
-                href={`/${extraData.wsId}/education/courses/${module.course_id}/modules/${module.module_id}`}
+                href={`/${extraData.wsId}/courses/${module.course_id}/modules/${module.module_id}`}
                 key={`${module.course_name}-${module.module_name}`}
                 className="bg-foreground/5 w-fit rounded border px-2 py-0.5 hover:underline"
               >
