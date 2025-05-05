@@ -4,7 +4,6 @@ import { CertificateProps } from './[certID]/page';
 import { Button } from '@tuturuuu/ui/button';
 import { FileText, ImageIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import html2canvas from 'html2canvas';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 
@@ -36,6 +35,10 @@ export default function Certificate({ certDetails }: CertificateProps) {
           }),
         });
 
+        if (!res.ok) {
+            throw new Error(`Server error: ${res.status} ${res.statusText}`);
+          }
+
         const blob = new Blob([await res.arrayBuffer()], {
           type: 'application/pdf',
         });
@@ -46,32 +49,47 @@ export default function Certificate({ certDetails }: CertificateProps) {
         document.body.appendChild(link);
         link.click();
         link.remove();
+        window.URL.revokeObjectURL(url); // Clean up the URL object
       } catch (error) {
       console.error('Error generating PDF:', error);
     }
   }, [certificateId]);
 
-  const handleDownload = useCallback(() => {
-    const element = document.getElementById('certificate-area');
-    if (element) {
-      html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        scale: 2,
-        logging: false,
-        onclone: (clonedDoc) => {
-          Array.from(clonedDoc.getElementsByTagName('link')).forEach((link) => {
-            link.removeAttribute('integrity');
-            link.removeAttribute('crossorigin');
-          });
+  const handleDownload = useCallback(async () => {
+    try {
+        const res = await fetch('/api/generate-png', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      }).then((canvas) => {
+          body: JSON.stringify({
+            certID: certificateId,
+            title: String(t('title')),
+            certifyText: String(t('certify_text')),
+            completionText: String(t('completion_text')),
+            offeredBy: String(t('offered_by')),
+            completionDateLabel: String(t('completion_date')),
+            certificateIdLabel: String(t('certificate_id')),
+          }),
+        });
+
+          if (!res.ok) {
+            throw new Error(`Server error: ${res.status} ${res.statusText}`);
+          }
+
+        const blob = new Blob([await res.arrayBuffer()], {
+          type: 'image/png',
+        });
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.download = `certificate-${certificateId}-${studentName}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
+        link.href = url;
+        link.download = `${certificateId}.png`;
+        document.body.appendChild(link);
         link.click();
-      });
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+      console.error('Error generating PNG:', error);
     }
   }, [certificateId]);
 

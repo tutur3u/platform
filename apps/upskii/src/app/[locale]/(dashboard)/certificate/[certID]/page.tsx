@@ -1,4 +1,4 @@
-import Certificate from '../getCert';
+import Certificate from '../certificate-page';
 import { DEV_MODE } from '@/constants/common';
 
 export type CertificateProps = {
