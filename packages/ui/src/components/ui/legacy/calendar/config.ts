@@ -1,4 +1,4 @@
-export const HOUR_HEIGHT = 60;
+export const HOUR_HEIGHT = 80;
 export const MAX_HOURS = 24;
 export const DAY_HEIGHT = MAX_HOURS * HOUR_HEIGHT;
 export const MAX_LEVEL = 10;
