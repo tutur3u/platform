@@ -1,5 +1,5 @@
-import NavbarActions from '../(marketing)/navbar-actions';
-import { UserNav } from '../(marketing)/user-nav';
+import NavbarActions from '../../(marketing)/navbar-actions';
+import { UserNav } from '../../(marketing)/user-nav';
 import Structure from '@/components/layout/structure';
 import {
   MAIN_CONTENT_SIZE_COOKIE_NAME,
@@ -22,14 +22,19 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ReactNode, Suspense } from 'react';
 
-export default async function RootLayout({
-  children,
-}: {
+interface LayoutProps {
+  params: Promise<{
+    wsId: string;
+  }>;
   children: ReactNode;
-}) {
+}
+
+export default async function Layout({ children, params }: LayoutProps) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
   const t = await getTranslations();
+
+  const { wsId } = await params;
 
   const {
     data: { user },
@@ -65,7 +70,7 @@ export default async function RootLayout({
     },
     {
       name: t('sidebar.courses'),
-      href: '/courses',
+      href: `/${wsId}/courses/`,
       icon: <BookText className="h-4 w-4" />,
     },
     {
