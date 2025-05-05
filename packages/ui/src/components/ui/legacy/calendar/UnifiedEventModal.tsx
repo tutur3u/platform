@@ -160,9 +160,9 @@ export function UnifiedEventModal() {
 
   // Store previous time values for toggling all-day
   const [prevTimes, setPrevTimes] = useState<{
-    start: string | null;
-    end: string | null;
-  }>({ start: null, end: null });
+    timed: { start: string | null; end: string | null };
+    allday: { start: string | null; end: string | null };
+  }>({ timed: { start: null, end: null }, allday: { start: null, end: null } });
 
   // AI form
   const aiForm = useForm({
@@ -498,15 +498,13 @@ export function UnifiedEventModal() {
       const newEvent = { ...prev, start_at: date.toISOString() };
 
       if (isAllDay) {
-        // If end date is the same as start date and is before or equal, increment end date by one day
-        if (
-          endDate.isSame(newStartDate, 'day') &&
-          (endDate.isBefore(newStartDate) || endDate.isSame(newStartDate))
-        ) {
-          endDate = endDate.add(1, 'day');
+        // For all-day, keep end_at as is if it's after or equal to start_at + 1 day, otherwise set to start + 1 day
+        newEvent.start_at = newStartDate.startOf('day').toISOString();
+        let newEnd = dayjs(prev.end_at).isValid() ? dayjs(prev.end_at) : newStartDate.startOf('day').add(1, 'day');
+        if (!newEnd.isAfter(newStartDate.startOf('day'))) {
+          newEnd = newStartDate.startOf('day').add(1, 'day');
         }
-        newEvent.start_at = newStartDate.utc().startOf('day').toISOString();
-        newEvent.end_at = endDate.utc().startOf('day').toISOString();
+        newEvent.end_at = newEnd.toISOString();
       } else {
         // If end time is before or equal to new start time, set end time to 1 hour after start
         if (!endDate.isAfter(newStartDate)) {
@@ -544,24 +542,29 @@ export function UnifiedEventModal() {
           : dayjs(prev.start_at || '').tz(tz);
       const newEvent = { ...prev };
 
-      // If end is not after start, increment end date by one day and set the entered time
-      if (!newEndDate.isAfter(startDate)) {
-        // Use the time from the user's input, but increment the date by one day
-        newEndDate = newEndDate.add(1, 'day');
+      if (isAllDay) {
+        // For all-day, set end_at to the start of the day after the selected end date
+        let newEnd = newEndDate.startOf('day').add(1, 'day');
+        // Ensure end is not before or equal to start
+        if (!newEnd.isAfter(startDate.startOf('day'))) {
+          newEnd = startDate.startOf('day').add(1, 'day');
+        }
+        newEvent.end_at = newEnd.toISOString();
+        // Don't change start_at here
+      } else {
+        // If end is not after start, increment end date by one day and set the entered time
+        if (!newEndDate.isAfter(startDate)) {
+          // Use the time from the user's input, but increment the date by one day
+          newEndDate = newEndDate.add(1, 'day');
+        }
+        // If end is after start, accept as is
+        newEvent.end_at = newEndDate.toISOString();
       }
-      // If end is after start, accept as is
 
-      newEvent.end_at = newEndDate.toISOString();
-
-      if (!newEndDate.isAfter(startDate)) {
+      if (!dayjs(newEvent.end_at).isAfter(dayjs(newEvent.start_at))) {
         setDateError('End time must be after start time.');
       } else {
         setDateError(null);
-      }
-
-      if (isAllDay) {
-        newEvent.start_at = startDate.utc().startOf('day').toISOString();
-        newEvent.end_at = newEndDate.utc().startOf('day').toISOString();
       }
 
       return newEvent;
@@ -577,48 +580,44 @@ export function UnifiedEventModal() {
         tz === 'auto' ? dayjs(prev.end_at) : dayjs(prev.end_at).tz(tz);
 
       if (checked) {
-        setPrevTimes({
-          start: prev.start_at || null,
-          end: prev.end_at || null,
-        });
-
-        const newStart = startDate.utc().startOf('day');
-        let newEnd = endDate.utc().startOf('day');
-
-        // If the event is within a single day, keep both start and end on that day
-        if (startDate.isSame(endDate, 'day')) {
-          newEnd = newStart;
-        } else if (!newEnd.isAfter(newStart)) {
-          // If end is before or equal to start, increment end by 1 day (for cross-midnight)
-          newEnd = newStart.add(1, 'day');
+        setPrevTimes((old) => ({
+          ...old,
+          timed: { start: prev.start_at || null, end: prev.end_at || null },
+        }));
+        // Restore previous all-day range if it exists
+        if (prevTimes.allday.start && prevTimes.allday.end) {
+          return {
+            ...prev,
+            start_at: prevTimes.allday.start,
+            end_at: prevTimes.allday.end,
+          };
         }
-
+        // Otherwise, default to start + 1 day
+        const newStart = tz === 'auto' ? startDate.startOf('day') : startDate.tz(tz).startOf('day');
+        let newEnd = newStart.add(1, 'day');
         return {
           ...prev,
           start_at: newStart.toISOString(),
           end_at: newEnd.toISOString(),
         };
       } else {
-        // Restore the exact previous start and end date/time, including custom times
-        let newStart = prevTimes.start
-          ? tz === 'auto'
-            ? dayjs(prevTimes.start)
-            : dayjs(prevTimes.start).tz(tz)
-          : tz === 'auto'
-            ? dayjs().startOf('hour')
-            : dayjs().startOf('hour').tz(tz);
-        let newEnd = prevTimes.end
-          ? tz === 'auto'
-            ? dayjs(prevTimes.end)
-            : dayjs(prevTimes.end).tz(tz)
-          : tz === 'auto'
-            ? newStart.add(1, 'hour')
-            : newStart.add(1, 'hour').tz(tz);
-        if (newEnd.isSame(newStart) || newEnd.isBefore(newStart))
-          newEnd =
-            tz === 'auto'
-              ? newStart.add(1, 'hour')
-              : newStart.add(1, 'hour').tz(tz);
+        setPrevTimes((old) => ({
+          ...old,
+          allday: { start: prev.start_at || null, end: prev.end_at || null },
+        }));
+        // Restore previous timed range if it exists
+        if (prevTimes.timed.start && prevTimes.timed.end) {
+          return {
+            ...prev,
+            start_at: prevTimes.timed.start,
+            end_at: prevTimes.timed.end,
+          };
+        }
+        // Otherwise, fallback to default
+        let newStart = tz === 'auto'
+          ? dayjs().startOf('hour')
+          : dayjs().startOf('hour').tz(tz);
+        let newEnd = newStart.add(1, 'hour');
         return {
           ...prev,
           start_at: newStart.toISOString(),
@@ -982,20 +981,22 @@ export function UnifiedEventModal() {
                         />
                         <EventDateTimePicker
                           label="End"
-                          value={new Date(event.end_at || new Date())}
+                          value={(() => {
+                            // For all-day, display end_at - 1 day
+                            if (isAllDay && event.end_at) {
+                              const end = new Date(event.end_at);
+                              end.setDate(end.getDate() - 1);
+                              return end;
+                            }
+                            return new Date(event.end_at || new Date());
+                          })()}
                           onChange={handleEndDateChange}
                           disabled={event.locked}
                           showTimeSelect={!isAllDay}
                           minDate={(() => {
-                            // Only disable dates before the start date, not the start date itself
-                            const start = new Date(
-                              event.start_at || new Date()
-                            );
-                            return new Date(
-                              start.getFullYear(),
-                              start.getMonth(),
-                              start.getDate()
-                            );
+                            // Allow selecting the same day as the start date
+                            const start = new Date(event.start_at || new Date());
+                            return new Date(start.getFullYear(), start.getMonth(), start.getDate());
                           })()}
                           minTime={(() => {
                             const start = new Date(

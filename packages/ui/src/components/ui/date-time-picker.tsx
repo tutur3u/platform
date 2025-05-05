@@ -185,7 +185,7 @@ export function DateTimePicker({
               selected={date}
               onSelect={handleSelect}
               initialFocus
-              disabled={minDate ? { before: minDate } : undefined}
+              disabled={minDate ? { before: new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate()) } : undefined}
             />
           </PopoverContent>
         </Popover>
