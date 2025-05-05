@@ -70,6 +70,15 @@ const CalendarContext = createContext<{
   isModalActive: () => boolean;
   // google calendar API
   syncWithGoogleCalendar: (event: CalendarEvent) => Promise<void>;
+  syncGoogleCalendarNow: (
+    progressCallback?: (progress: {
+      phase: 'fetch' | 'delete' | 'update' | 'insert' | 'complete';
+      current: number;
+      total: number;
+      changesMade: boolean;
+      statusMessage?: string;
+    }) => void
+  ) => Promise<boolean>;
 
   settings: CalendarSettings;
   updateSettings: (settings: Partial<CalendarSettings>) => void;
@@ -98,6 +107,7 @@ const CalendarContext = createContext<{
   isModalActive: () => false,
   // Google Calendar API
   syncWithGoogleCalendar: () => Promise.resolve(),
+  syncGoogleCalendarNow: () => Promise.resolve(false),
 
   settings: defaultCalendarSettings,
   updateSettings: () => undefined,
@@ -118,7 +128,6 @@ export const CalendarProvider = ({
   useQueryClient,
   children,
   initialSettings,
-  enableExperimentalGoogleCalendar = false,
   experimentalGoogleToken,
 }: {
   ws?: Workspace;
@@ -126,7 +135,6 @@ export const CalendarProvider = ({
   useQueryClient: any;
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
-  enableExperimentalGoogleCalendar?: boolean;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
 }) => {
   const queryClient = useQueryClient();
@@ -839,11 +847,7 @@ export const CalendarProvider = ({
       const googleCalendarEventId = eventToDelete?.google_event_id;
 
       // --- Google Calendar Sync (Delete) ---
-      if (
-        googleCalendarEventId &&
-        enableExperimentalGoogleCalendar &&
-        experimentalGoogleToken
-      ) {
+      if (googleCalendarEventId && experimentalGoogleToken) {
         // Check if ID exists and feature enabled
         try {
           const syncResponse = await fetch('/api/v1/calendar/auth/sync', {
@@ -881,11 +885,7 @@ export const CalendarProvider = ({
             syncError
           );
         }
-      } else if (
-        enableExperimentalGoogleCalendar &&
-        experimentalGoogleToken &&
-        !googleCalendarEventId
-      ) {
+      } else if (experimentalGoogleToken && !googleCalendarEventId) {
         console.log(
           `Event ${eventId} has no Google Calendar ID, skipping delete sync.`
         );
@@ -924,73 +924,127 @@ export const CalendarProvider = ({
   const { data: googleData } = useQuery({
     queryKey: ['googleCalendarEvents', ws?.id],
     queryFn: fetchGoogleCalendarEvents,
-    enabled:
-      !!ws?.id && enableExperimentalGoogleCalendar && experimentalGoogleToken,
-    refetchInterval: 60000, // Fetch every 60 seconds
-    staleTime: 1000 * 60, // Data is considered fresh for 1 minute
+    enabled: !!ws?.id && !!experimentalGoogleToken?.id,
+    refetchInterval: 1000 * 60 * 60, // Fetch every 1 hour
+    staleTime: 1000 * 60 * 60, // Data is considered fresh for 1 hour
   });
 
   const googleEvents = useMemo(() => googleData?.events || [], [googleData]);
 
   // Function to synchronize local events with Google Calendar
-  const syncEvents = useCallback(async () => {
-    if (
-      !googleEvents.length ||
-      !enableExperimentalGoogleCalendar ||
-      !experimentalGoogleToken
-    )
-      return;
+  const syncEvents = useCallback(
+    async (
+      progressCallback?: (progress: {
+        phase: 'delete' | 'update' | 'insert' | 'complete';
+        current: number;
+        total: number;
+        changesMade: boolean;
+      }) => void
+    ) => {
+      if (!googleEvents.length || !experimentalGoogleToken) return;
 
-    // Get local events that are synced with Google Calendar
-    const localGoogleEvents: CalendarEvent[] = events.filter(
-      (e: CalendarEvent) => e.google_event_id
-    );
-
-    // Create a set of google_event_id from Google Calendar events for quick lookup
-    const googleEventIds: Set<string | undefined> = new Set(
-      googleEvents.map((e: { google_event_id?: string }) => e.google_event_id)
-    );
-
-    // Identify events to delete: local events not present in Google Calendar
-    const eventsToDelete = localGoogleEvents.filter(
-      (e) => !googleEventIds.has(e.google_event_id)
-    );
-
-    // Delete events that no longer exist on Google Calendar
-    for (const event of eventsToDelete) {
-      try {
-        const supabase = createClient();
-        await supabase
-          .from('workspace_calendar_events')
-          .delete()
-          .eq('id', event.id);
-      } catch (err) {
-        console.error('Failed to delete event:', err);
-      }
-    }
-
-    // Update or add events from Google Calendar
-    for (const gEvent of googleEvents) {
-      const localEvent: CalendarEvent | undefined = localGoogleEvents.find(
-        (e: CalendarEvent) => e.google_event_id === gEvent.google_event_id
+      // Get local events that are synced with Google Calendar
+      const localGoogleEvents: CalendarEvent[] = events.filter(
+        (e: CalendarEvent) => e.google_event_id
       );
-      if (localEvent) {
-        // Check if there are any changes in the event details
-        const hasChanges =
-          localEvent.title !== gEvent.title ||
-          localEvent.description !== gEvent.description ||
-          localEvent.start_at !== gEvent.start_at ||
-          localEvent.end_at !== gEvent.end_at ||
-          localEvent.color !== gEvent.color ||
-          localEvent.location !== gEvent.location ||
-          localEvent.priority !== gEvent.priority;
 
-        if (hasChanges) {
+      // Create a map for faster lookups of local events
+      const localEventMap = new Map<string, CalendarEvent>();
+      localGoogleEvents.forEach((event) => {
+        if (event.google_event_id) {
+          localEventMap.set(event.google_event_id, event);
+        }
+      });
+
+      // Create a set of google_event_id from Google Calendar events for quick lookup
+      const googleEventIds: Set<string | undefined> = new Set(
+        googleEvents.map((e: { google_event_id?: string }) => e.google_event_id)
+      );
+
+      // Identify events to delete: local events not present in Google Calendar
+      const eventsToDelete = localGoogleEvents.filter(
+        (e) => e.google_event_id && !googleEventIds.has(e.google_event_id)
+      );
+
+      // Initialize batch operations - we'll perform these in a more optimized way
+      const eventsToUpdate: Array<{ id: string; data: any }> = [];
+      const eventsToInsert: Array<any> = [];
+      let changesMade = false;
+
+      // Report initial progress
+      if (progressCallback) {
+        progressCallback({
+          phase: 'delete',
+          current: 0,
+          total: eventsToDelete.length,
+          changesMade: false,
+        });
+      }
+
+      // Handle events to delete
+      if (eventsToDelete.length > 0) {
+        changesMade = true;
+        const supabase = createClient();
+
+        // Delete events in batches for better performance
+        const batchSize = 10;
+        for (let i = 0; i < eventsToDelete.length; i += batchSize) {
+          const batch = eventsToDelete.slice(i, i + batchSize);
+          const eventIds = batch.map((e) => e.id);
+
+          // Report progress
+          if (progressCallback) {
+            progressCallback({
+              phase: 'delete',
+              current: i + batch.length,
+              total: eventsToDelete.length,
+              changesMade: true,
+            });
+          }
+
           try {
-            const supabase = createClient();
-            await supabase
+            const { error } = await supabase
               .from('workspace_calendar_events')
-              .update({
+              .delete()
+              .in('id', eventIds);
+
+            if (error) {
+              console.error('Failed to delete events batch:', error);
+            } else {
+              console.log(
+                `Successfully deleted ${batch.length} events that were removed from Google Calendar`
+              );
+            }
+          } catch (err) {
+            console.error('Failed to delete events batch:', err);
+          }
+        }
+      }
+
+      // Gather events to update or insert
+      for (const gEvent of googleEvents) {
+        // Skip events without google_event_id
+        if (!gEvent.google_event_id) continue;
+
+        const localEvent = localEventMap.get(gEvent.google_event_id);
+
+        if (localEvent) {
+          // Check if there are any significant changes in the event details that require an update
+          const hasChanges =
+            localEvent.title !== gEvent.title ||
+            localEvent.description !== (gEvent.description || '') ||
+            localEvent.start_at !== gEvent.start_at ||
+            localEvent.end_at !== gEvent.end_at ||
+            localEvent.color !== gEvent.color ||
+            localEvent.location !== (gEvent.location || '') ||
+            localEvent.priority !== (gEvent.priority || 'medium');
+
+          // Only update if there are actual changes
+          if (hasChanges) {
+            changesMade = true;
+            eventsToUpdate.push({
+              id: localEvent.id,
+              data: {
                 title: gEvent.title,
                 description: gEvent.description || '',
                 start_at: gEvent.start_at,
@@ -998,17 +1052,11 @@ export const CalendarProvider = ({
                 color: gEvent.color || 'BLUE',
                 location: gEvent.location || '',
                 priority: gEvent.priority || 'medium',
-              })
-              .eq('id', localEvent.id);
-          } catch (err) {
-            console.error('Failed to update event:', err);
+              },
+            });
           }
-        }
-      } else {
-        // Add new event from Google Calendar
-        try {
-          // Check for content-based duplicates (same title, description, dates)
-          // even if google_event_id is different
+        } else {
+          // Check for content-based duplicates before adding
           const potentialDuplicates = events.filter(
             (localEvent: CalendarEvent) => {
               return (
@@ -1020,91 +1068,229 @@ export const CalendarProvider = ({
             }
           );
 
-          // If we found a duplicate by content, update it with the Google Event ID
-          // instead of creating a new event
           if (potentialDuplicates.length > 0) {
             console.log(
               `Found content duplicate for Google event "${gEvent.title}"`
             );
 
-            if (!potentialDuplicates[0]) {
-              console.info('No duplicate found');
+            if (potentialDuplicates[0]) {
+              changesMade = true;
+              // Update the existing event with the Google Event ID rather than creating a new one
+              eventsToUpdate.push({
+                id: potentialDuplicates[0].id,
+                data: {
+                  google_event_id: gEvent.google_event_id,
+                },
+              });
               continue;
             }
-
-            // Update the first duplicate with the Google Event ID
-            const supabase = createClient();
-            const { error: updateError } = await supabase
-              .from('workspace_calendar_events')
-              .update({ google_event_id: gEvent.google_event_id })
-              .eq('id', potentialDuplicates[0].id);
-
-            if (updateError) {
-              console.error(
-                'Failed to update duplicate with Google Event ID:',
-                updateError
-              );
-            } else {
-              console.log(`Updated duplicate event with Google Event ID`);
-            }
-
-            // Skip the insertion below
-            continue;
           }
 
-          // No duplicate found, proceed with normal insertion
-          const supabase = createClient();
-          const { error } = await supabase
-            .from('workspace_calendar_events')
-            .insert({
-              title: gEvent.title,
-              description: gEvent.description || '',
-              start_at: gEvent.start_at,
-              end_at: gEvent.end_at,
-              color: gEvent.color || 'BLUE',
-              location: gEvent.location || '',
-              ws_id: ws?.id ?? '',
-              google_event_id: gEvent.google_event_id,
-              locked: gEvent.locked || false,
-              priority: gEvent.priority || 'medium',
-            });
-
-          if (error) throw error;
-        } catch (err) {
-          console.error('Failed to insert event:', err);
+          // No duplicates found, add to insert batch
+          changesMade = true;
+          eventsToInsert.push({
+            title: gEvent.title,
+            description: gEvent.description || '',
+            start_at: gEvent.start_at,
+            end_at: gEvent.end_at,
+            color: gEvent.color || 'BLUE',
+            location: gEvent.location || '',
+            ws_id: ws?.id ?? '',
+            google_event_id: gEvent.google_event_id,
+            locked: gEvent.locked || false,
+            priority: gEvent.priority || 'medium',
+            created_at: new Date().toISOString(),
+          });
         }
       }
-    }
 
-    // Refresh local events by invalidating the query
-    queryClient.invalidateQueries(['calendarEvents', ws?.id]);
-  }, [
-    googleEvents,
-    events,
-    ws?.id,
-    queryClient,
-    enableExperimentalGoogleCalendar,
-  ]);
+      // Process batch updates
+      if (eventsToUpdate.length > 0) {
+        // Report progress for update phase
+        if (progressCallback) {
+          progressCallback({
+            phase: 'update',
+            current: 0,
+            total: eventsToUpdate.length,
+            changesMade: changesMade,
+          });
+        }
+
+        const supabase = createClient();
+        const batchSize = 5; // Smaller batch size for updates to be safer
+
+        for (let i = 0; i < eventsToUpdate.length; i += batchSize) {
+          const batch = eventsToUpdate.slice(i, i + batchSize);
+
+          // Report progress update
+          if (progressCallback) {
+            progressCallback({
+              phase: 'update',
+              current: i + batch.length,
+              total: eventsToUpdate.length,
+              changesMade: changesMade,
+            });
+          }
+
+          // Process each update one by one to ensure reliability
+          for (const item of batch) {
+            try {
+              // Use upsert with onConflict to handle race conditions
+              const { error } = await supabase
+                .from('workspace_calendar_events')
+                .update(item.data)
+                .eq('id', item.id);
+
+              if (error) {
+                // If there's an error, try a direct approach
+                console.error(
+                  `Failed to update event ${item.id}, trying alternative approach:`,
+                  error
+                );
+
+                // Fallback method - get the current event first
+                const { data: currentEvent } = await supabase
+                  .from('workspace_calendar_events')
+                  .select('*')
+                  .eq('id', item.id)
+                  .single();
+
+                if (currentEvent) {
+                  // Then update it
+                  const { error: fallbackError } = await supabase
+                    .from('workspace_calendar_events')
+                    .update({
+                      ...item.data,
+                      id: item.id, // Ensure ID is preserved
+                    })
+                    .eq('id', item.id);
+
+                  if (fallbackError) {
+                    console.error(
+                      `Failed to update event ${item.id} using fallback:`,
+                      fallbackError
+                    );
+                  } else {
+                    console.log(
+                      `Successfully updated event ${item.id} using fallback method`
+                    );
+                  }
+                } else {
+                  console.error(`Event ${item.id} not found for update`);
+                }
+              }
+            } catch (err) {
+              console.error(`Failed to update event ${item.id}:`, err);
+            }
+          }
+        }
+      }
+
+      // Process batch inserts
+      if (eventsToInsert.length > 0) {
+        // Report progress for insert phase
+        if (progressCallback) {
+          progressCallback({
+            phase: 'insert',
+            current: 0,
+            total: eventsToInsert.length,
+            changesMade: changesMade,
+          });
+        }
+
+        const supabase = createClient();
+        const batchSize = 10;
+
+        for (let i = 0; i < eventsToInsert.length; i += batchSize) {
+          const batch = eventsToInsert.slice(i, i + batchSize);
+
+          // Report progress update
+          if (progressCallback) {
+            progressCallback({
+              phase: 'insert',
+              current: i + batch.length,
+              total: eventsToInsert.length,
+              changesMade: changesMade,
+            });
+          }
+
+          try {
+            const { error } = await supabase
+              .from('workspace_calendar_events')
+              .insert(batch);
+
+            if (error) {
+              console.error('Failed to insert events batch:', error);
+
+              // Try inserting one by one as fallback
+              for (const event of batch) {
+                try {
+                  const { error: singleError } = await supabase
+                    .from('workspace_calendar_events')
+                    .insert(event);
+
+                  if (singleError) {
+                    console.error(
+                      `Failed to insert single event:`,
+                      singleError
+                    );
+                  } else {
+                    console.log(`Successfully inserted single event`);
+                  }
+                } catch (singleErr) {
+                  console.error('Failed to insert single event:', singleErr);
+                }
+              }
+            } else {
+              console.log(
+                `Successfully inserted ${batch.length} new events from Google Calendar`
+              );
+            }
+          } catch (err) {
+            console.error('Failed to insert events batch:', err);
+          }
+        }
+      }
+
+      // Report completion
+      if (progressCallback) {
+        progressCallback({
+          phase: 'complete',
+          current: 1,
+          total: 1,
+          changesMade: changesMade,
+        });
+      }
+
+      // Only refresh local events if changes were made
+      if (changesMade) {
+        console.log(
+          'Google Calendar sync: Changes detected, refreshing events'
+        );
+        queryClient.invalidateQueries(['calendarEvents', ws?.id]);
+      } else {
+        console.log(
+          'Google Calendar sync: No changes detected, skipping refresh'
+        );
+      }
+    },
+    [googleEvents, events, ws?.id, queryClient]
+  );
 
   // Set up an interval to sync events every 30 seconds
   useEffect(() => {
-    if (
-      !enableExperimentalGoogleCalendar ||
-      !ws?.id ||
-      !experimentalGoogleToken
-    )
-      return;
+    if (!ws?.id || !experimentalGoogleToken) return;
 
     const interval = setInterval(() => {
       syncEvents();
     }, 30000); // Sync every 30 seconds
 
     return () => clearInterval(interval); // Clean up interval on unmount
-  }, [enableExperimentalGoogleCalendar, ws?.id, syncEvents]);
+  }, [ws?.id, syncEvents]);
   // Google Calendar sync moved to API Route
   const syncWithGoogleCalendar = useCallback(
     async (event: CalendarEvent) => {
-      if (!enableExperimentalGoogleCalendar || !experimentalGoogleToken) {
+      if (!experimentalGoogleToken) {
         return;
       }
 
@@ -1160,7 +1346,7 @@ export const CalendarProvider = ({
         throw error;
       }
     },
-    [enableExperimentalGoogleCalendar, refresh, experimentalGoogleToken]
+    [refresh, experimentalGoogleToken]
   );
 
   // Modal management
@@ -1230,6 +1416,179 @@ export const CalendarProvider = ({
     [isModalHidden, activeEventId]
   );
 
+  // Add this new function for manual Google Calendar sync
+  const syncGoogleCalendarNow = useCallback(
+    async (
+      progressCallback?: (progress: {
+        phase: 'fetch' | 'delete' | 'update' | 'insert' | 'complete';
+        current: number;
+        total: number;
+        changesMade: boolean;
+        statusMessage?: string;
+      }) => void
+    ) => {
+      if (!experimentalGoogleToken || !ws?.id) {
+        console.log(
+          'Cannot sync: Google Calendar integration not enabled or missing token'
+        );
+        return false;
+      }
+
+      try {
+        console.log('Starting manual Google Calendar sync');
+
+        // First, capture current events count for comparison
+        const beforeCount = events.length;
+        const beforeGoogleCount = googleEvents.length;
+
+        // Report fetch starting
+        if (progressCallback) {
+          progressCallback({
+            phase: 'fetch',
+            current: 0,
+            total: 1,
+            changesMade: false,
+            statusMessage: 'Fetching events from Google Calendar...',
+          });
+        }
+
+        // Force fetch the latest events from Google with a cache-busting parameter
+        try {
+          const response = await fetch(
+            '/api/v1/calendar/auth/fetch?force=true&t=' + Date.now()
+          );
+          if (!response.ok) {
+            throw new Error('Failed to fetch Google Calendar events');
+          }
+          const data = await response.json();
+
+          // Update googleEvents directly through queryClient for faster UI response
+          queryClient.setQueryData(['googleCalendarEvents', ws?.id], data);
+
+          console.log(
+            `Fetched ${data.events?.length || 0} events from Google Calendar`
+          );
+
+          // Report fetch complete
+          if (progressCallback) {
+            progressCallback({
+              phase: 'fetch',
+              current: 1,
+              total: 1,
+              changesMade: data.events?.length !== beforeGoogleCount,
+              statusMessage: `Fetched ${data.events?.length || 0} events from Google Calendar`,
+            });
+          }
+        } catch (fetchError) {
+          console.error('Error fetching Google Calendar events:', fetchError);
+
+          if (progressCallback) {
+            progressCallback({
+              phase: 'fetch',
+              current: 0,
+              total: 1,
+              changesMade: false,
+              statusMessage: 'Failed to fetch events from Google Calendar',
+            });
+          }
+
+          return false;
+        }
+
+        // Manually run the sync process with progress tracking
+        let changesMade = false;
+        await syncEvents((progress) => {
+          if (progressCallback) {
+            // Forward the progress updates
+            progressCallback({
+              ...progress,
+              statusMessage:
+                progress.phase === 'delete'
+                  ? `Removing ${progress.total} deleted events (${progress.current}/${progress.total})`
+                  : progress.phase === 'update'
+                    ? `Updating ${progress.total} events (${progress.current}/${progress.total})`
+                    : progress.phase === 'insert'
+                      ? `Adding ${progress.total} new events (${progress.current}/${progress.total})`
+                      : progress.phase === 'complete'
+                        ? 'Sync completed'
+                        : undefined,
+            });
+          }
+
+          // Track if any changes were made
+          if (progress.changesMade) {
+            changesMade = true;
+          }
+        });
+
+        // Force refresh of local events
+        if (changesMade) {
+          if (progressCallback) {
+            progressCallback({
+              phase: 'complete',
+              current: 1,
+              total: 1,
+              changesMade: true,
+              statusMessage: 'Refreshing your calendar...',
+            });
+          }
+
+          await queryClient.invalidateQueries({
+            queryKey: ['calendarEvents', ws?.id],
+            refetchType: 'all',
+          });
+        }
+
+        // Calculate changes
+        const afterCount = getEvents().length;
+        const countDifference = afterCount - beforeCount;
+
+        console.log(
+          `Google Calendar sync complete. Events count changed by ${countDifference}`
+        );
+
+        // Final callback with summary
+        if (progressCallback) {
+          progressCallback({
+            phase: 'complete',
+            current: 1,
+            total: 1,
+            changesMade: changesMade,
+            statusMessage: changesMade
+              ? `Sync complete. ${Math.abs(countDifference)} events ${countDifference >= 0 ? 'added' : 'removed'}.`
+              : 'Sync complete. No changes needed.',
+          });
+        }
+
+        // Return success with indication if changes were made
+        return changesMade || beforeGoogleCount !== googleEvents.length;
+      } catch (error) {
+        console.error('Manual Google Calendar sync failed:', error);
+
+        if (progressCallback) {
+          progressCallback({
+            phase: 'complete',
+            current: 1,
+            total: 1,
+            changesMade: false,
+            statusMessage: 'Sync failed. Please try again.',
+          });
+        }
+
+        return false;
+      }
+    },
+    [
+      experimentalGoogleToken,
+      ws?.id,
+      events.length,
+      googleEvents.length,
+      queryClient,
+      syncEvents,
+      getEvents,
+    ]
+  );
+
   const values = {
     getEvent,
     getCurrentEvents,
@@ -1262,6 +1621,7 @@ export const CalendarProvider = ({
 
     // Google Calendar API
     syncWithGoogleCalendar,
+    syncGoogleCalendarNow,
 
     // Settings API
     settings,

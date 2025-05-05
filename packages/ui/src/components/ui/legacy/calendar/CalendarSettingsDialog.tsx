@@ -47,7 +47,13 @@ import {
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
-import { CalendarIcon, Clock, Paintbrush, Palette } from 'lucide-react';
+import {
+  CalendarClock,
+  CalendarDays,
+  Clock,
+  Paintbrush,
+  Palette,
+} from 'lucide-react';
 import * as React from 'react';
 
 type SettingsSection = {
@@ -58,6 +64,12 @@ type SettingsSection = {
 };
 
 const settingsSections: SettingsSection[] = [
+  {
+    id: 'timezone',
+    name: 'Timezone',
+    icon: CalendarClock,
+    description: 'Set your calendar timezone',
+  },
   {
     id: 'hours',
     name: 'Hours',
@@ -73,7 +85,7 @@ const settingsSections: SettingsSection[] = [
   {
     id: 'googleCalendar',
     name: 'Google Calendar',
-    icon: CalendarIcon,
+    icon: CalendarDays,
     description: 'Connect your Google Calendar to your calendar',
   },
   // {

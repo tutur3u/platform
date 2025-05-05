@@ -2,7 +2,11 @@ import { useCalendar } from '../../../../hooks/use-calendar';
 import AllDayEventBar from './AllDayEventBar';
 import DayTitle from './DayTitle';
 import { cn } from '@tuturuuu/utils/format';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
 import { Clock } from 'lucide-react';
+
+dayjs.extend(timezone);
 
 const WeekdayBar = ({
   locale,
@@ -15,12 +19,14 @@ const WeekdayBar = ({
 }) => {
   const { settings } = useCalendar();
   const showWeekends = settings.appearance.showWeekends;
+  const tz = settings?.timezone?.timezone;
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
     ? dates
     : dates.filter((date) => {
-        const day = date.getDay();
+        const day =
+          tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
@@ -41,25 +47,29 @@ const WeekdayBar = ({
             minWidth: `${visibleDates.length * 120}px`, // Match column width
           }}
         >
-          {visibleDates.map((weekday) => (
-            <div
-              key={`date-${weekday.toLocaleString(locale, { weekday: 'short' })}-${weekday.getDate()}`}
-              className="hover:bg-muted/20 group transition-colors last:border-r-0"
-            >
-              <DayTitle
-                view={view}
-                date={weekday}
-                weekday={weekday.toLocaleString(locale, {
-                  weekday: locale === 'vi' ? 'narrow' : 'short',
-                })}
-              />
-            </div>
-          ))}
+          {visibleDates.map((weekday) => {
+            const dayjsDate =
+              tz === 'auto' ? dayjs(weekday) : dayjs(weekday).tz(tz);
+            return (
+              <div
+                key={`date-${dayjsDate.format('YYYY-MM-DD')}`}
+                className="hover:bg-muted/20 group transition-colors last:border-r-0"
+              >
+                <DayTitle
+                  view={view}
+                  date={dayjsDate.toDate()}
+                  weekday={dayjsDate
+                    .locale(locale)
+                    .format(locale === 'vi' ? 'dd' : 'ddd')}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {/* All-day events bar */}
-      <AllDayEventBar dates={dates} />
+      <AllDayEventBar dates={visibleDates} />
     </div>
   );
 };

@@ -36,7 +36,54 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
+// Define types for our animation data
+interface ParticleData {
+  top: string;
+  left: string;
+  blur: string;
+  xOffset: number;
+  opacity: number;
+  scale: number[];
+  duration: number;
+  delay: number;
+}
+
+interface CodeSnippetData {
+  top: string;
+  left: string;
+  rotation: number;
+  duration: number;
+  delay: number;
+  content: string;
+}
+
+interface FloatingParticleData {
+  top: string;
+  left: string;
+  xOffset: number;
+  duration: number;
+  delay: number;
+}
+
+interface CodeBackgroundData {
+  top: string;
+  left: string;
+  rotation: number;
+  duration: number;
+  delay: number;
+}
+
+interface MoreParticleData {
+  top: string;
+  left: string;
+  blur: string;
+  xOffset: number;
+  opacity: number;
+  duration: number;
+  delay: number;
+}
 
 // Animation variants
 const containerVariants = {
@@ -76,7 +123,7 @@ const floatingVariants = {
   },
 };
 
-export function AboutUsPage() {
+export function AboutUsClient() {
   const t = useTranslations('nova.about');
   const scrollRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -86,6 +133,91 @@ export function AboutUsPage() {
 
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
+
+  // States to hold animation values that will be generated client-side
+  const [particlesData, setParticlesData] = useState<ParticleData[]>([]);
+  const [codeSnippetsData, setCodeSnippetsData] = useState<CodeSnippetData[]>(
+    []
+  );
+  const [floatingParticlesData, setFloatingParticlesData] = useState<
+    FloatingParticleData[]
+  >([]);
+  const [codeBackgroundData, setCodeBackgroundData] = useState<
+    CodeBackgroundData[]
+  >([]);
+  const [moreParticlesData, setMoreParticlesData] = useState<
+    MoreParticleData[]
+  >([]);
+
+  useEffect(() => {
+    // Generate particles data
+    setParticlesData(
+      Array.from({ length: 30 }, () => ({
+        top: `${Math.random() * 100}%`,
+        left: `${Math.random() * 100}%`,
+        blur: Math.random() > 0.8 ? '1px' : '0px',
+        xOffset: Math.random() * 20 - 10,
+        opacity: Math.random() * 0.5 + 0.3,
+        scale: [Math.random() * 0.5 + 0.5, Math.random() * 1 + 1],
+        duration: 5 + Math.random() * 10,
+        delay: Math.random() * 5,
+      }))
+    );
+
+    // Generate code snippets data
+    setCodeSnippetsData(
+      Array.from({ length: 5 }, (_, i) => ({
+        top: `${20 + Math.random() * 60}%`,
+        left: `${Math.random() * 80}%`,
+        rotation: Math.random() * 20 - 10,
+        duration: 8 + Math.random() * 5,
+        delay: Math.random() * 5,
+        content:
+          [
+            'Generate creative solution',
+            'Optimize for clarity',
+            'Enhance user experience',
+            'Design innovative UI',
+            'Create engaging content',
+          ][i % 5] || '',
+      }))
+    );
+
+    // Generate floating particles data
+    setFloatingParticlesData(
+      Array.from({ length: 15 }, () => ({
+        top: `${Math.random() * 100}%`,
+        left: `${Math.random() * 100}%`,
+        xOffset: Math.random() * 10 - 5,
+        duration: 3 + Math.random() * 3,
+        delay: Math.random() * 5,
+      }))
+    );
+
+    // Generate code background data
+    setCodeBackgroundData(
+      Array.from({ length: 10 }, () => ({
+        top: `${Math.random() * 100}%`,
+        left: `${Math.random() * 100}%`,
+        rotation: Math.random() * 20 - 10,
+        duration: 3 + Math.random() * 5,
+        delay: Math.random() * 5,
+      }))
+    );
+
+    // Generate more particles data
+    setMoreParticlesData(
+      Array.from({ length: 20 }, () => ({
+        top: `${Math.random() * 100}%`,
+        left: `${Math.random() * 100}%`,
+        blur: Math.random() > 0.8 ? '1px' : '0px',
+        xOffset: Math.random() * 30 - 15,
+        opacity: Math.random() * 0.5 + 0.3,
+        duration: 5 + Math.random() * 5,
+        delay: Math.random() * 5,
+      }))
+    );
+  }, []);
 
   const getOrganizerInfo = (t: any, tKey: string, type = 'organizers') => ({
     name: t(`${type}.members.${tKey}.name` as unknown as any),
@@ -433,39 +565,39 @@ export function AboutUsPage() {
           }}
         />
 
-        {/* Animated particles */}
-        {[...Array(30)].map((_, i) => (
+        {/* Animated particles - only rendered on client side */}
+        {particlesData.map((particle, i) => (
           <motion.div
             key={i}
             className="bg-primary/40 absolute h-1 w-1 rounded-full"
             style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              filter: `blur(${Math.random() > 0.8 ? '1px' : '0px'})`,
+              top: particle.top,
+              left: particle.left,
+              filter: `blur(${particle.blur})`,
             }}
             animate={{
               y: [0, -100],
-              x: [0, Math.random() * 20 - 10],
-              opacity: [0, Math.random() * 0.5 + 0.3, 0],
-              scale: [Math.random() * 0.5 + 0.5, Math.random() * 1 + 1],
+              x: [0, particle.xOffset],
+              opacity: [0, particle.opacity, 0],
+              scale: particle.scale,
             }}
             transition={{
-              duration: 5 + Math.random() * 10,
+              duration: particle.duration,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: particle.delay,
             }}
           />
         ))}
 
         {/* Animated code snippets */}
-        {[...Array(5)].map((_, i) => (
+        {codeSnippetsData.map((snippet, i) => (
           <motion.div
             key={`code-${i}`}
             className="text-primary/20 absolute font-mono text-xs"
             style={{
-              top: `${20 + Math.random() * 60}%`,
-              left: `${Math.random() * 80}%`,
-              transform: `rotate(${Math.random() * 20 - 10}deg)`,
+              top: snippet.top,
+              left: snippet.left,
+              transform: `rotate(${snippet.rotation}deg)`,
             }}
             initial={{ opacity: 0 }}
             animate={{
@@ -473,12 +605,12 @@ export function AboutUsPage() {
               y: [0, -30],
             }}
             transition={{
-              duration: 8 + Math.random() * 5,
+              duration: snippet.duration,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: snippet.delay,
             }}
           >
-            {`prompt = "${['Generate creative solution', 'Optimize for clarity', 'Enhance user experience', 'Design innovative UI', 'Create engaging content'][i % 5]}"`}
+            {`prompt = "${snippet.content}"`}
           </motion.div>
         ))}
 
@@ -649,23 +781,23 @@ export function AboutUsPage() {
                 />
 
                 {/* Floating particles */}
-                {[...Array(15)].map((_, i) => (
+                {floatingParticlesData.map((particle, i) => (
                   <motion.div
                     key={i}
                     className="bg-primary/40 absolute h-1.5 w-1.5 rounded-full"
                     style={{
-                      top: `${Math.random() * 100}%`,
-                      left: `${Math.random() * 100}%`,
+                      top: particle.top,
+                      left: particle.left,
                     }}
                     animate={{
                       y: [0, -20],
-                      x: [0, Math.random() * 10 - 5],
+                      x: [0, particle.xOffset],
                       opacity: [0, 1, 0],
                     }}
                     transition={{
-                      duration: 3 + Math.random() * 3,
+                      duration: particle.duration,
                       repeat: Infinity,
-                      delay: Math.random() * 5,
+                      delay: particle.delay,
                     }}
                   />
                 ))}
@@ -712,23 +844,23 @@ export function AboutUsPage() {
       <section className="relative w-full py-24">
         <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-30%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
-        {/* Animated code snippets background */}
+        {/* Animated code snippets background - only rendered on client side */}
         <div className="absolute inset-0 overflow-hidden opacity-5">
-          {[...Array(10)].map((_, i) => (
+          {codeBackgroundData.map((code, i) => (
             <motion.div
               key={i}
               className="absolute font-mono text-xs"
               style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                transform: `rotate(${Math.random() * 20 - 10}deg)`,
+                top: code.top,
+                left: code.left,
+                transform: `rotate(${code.rotation}deg)`,
               }}
               initial={{ opacity: 0 }}
               animate={{ opacity: [0.3, 0.7, 0.3] }}
               transition={{
-                duration: 3 + Math.random() * 5,
+                duration: code.duration,
                 repeat: Infinity,
-                delay: Math.random() * 5,
+                delay: code.delay,
               }}
             >
               {`prompt = "Generate a creative solution for ${i}"`}
@@ -1398,25 +1530,25 @@ export function AboutUsPage() {
       <section className="relative w-full py-16">
         <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
-        {/* Animated particles */}
-        {[...Array(20)].map((_, i) => (
+        {/* Animated particles - only rendered client side */}
+        {moreParticlesData.map((particle, i) => (
           <motion.div
             key={`particle-${i}`}
             className="bg-primary/30 absolute h-1 w-1 rounded-full"
             style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              filter: `blur(${Math.random() > 0.8 ? '1px' : '0px'})`,
+              top: particle.top,
+              left: particle.left,
+              filter: `blur(${particle.blur})`,
             }}
             animate={{
               y: [0, -50],
-              x: [0, Math.random() * 30 - 15],
-              opacity: [0, Math.random() * 0.5 + 0.3, 0],
+              x: [0, particle.xOffset],
+              opacity: [0, particle.opacity, 0],
             }}
             transition={{
-              duration: 5 + Math.random() * 5,
+              duration: particle.duration,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: particle.delay,
             }}
           />
         ))}

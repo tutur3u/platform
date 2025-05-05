@@ -223,8 +223,8 @@ export default function ChallengeForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Tabs defaultValue="details" className="w-full">
-          <TabsList className="mb-4 justify-start">
+        <Tabs defaultValue="details">
+          <TabsList className="max-w-full justify-start overflow-x-auto">
             <TabsTrigger value="details">
               <InfoIcon className="h-4 w-4" />
               <span>{t('details.details')}</span>
@@ -247,7 +247,7 @@ export default function ChallengeForm({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="h-[500px]">
+          <ScrollArea className="h-64 md:h-96">
             <TabsContent value="details" className="mt-0">
               <Card>
                 <CardHeader>

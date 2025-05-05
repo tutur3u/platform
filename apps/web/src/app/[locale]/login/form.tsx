@@ -18,35 +18,57 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Mail } from '@tuturuuu/ui/icons';
+import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
 
-const FormSchema = z.object({
+// Schema for OTP-based login
+const OTPFormSchema = z.object({
   email: z.string().email(),
   otp: z.string(),
 });
 
 export default function LoginForm() {
   const supabase = createClient();
-
   const t = useTranslations();
   const locale = useLocale();
+
+  // Schema for password-based login
+  const PasswordFormSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(8, {
+      message: t('login.password_min_length'),
+    }),
+  });
 
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const passwordless = searchParams.get('passwordless') !== 'false';
+
   const [initialized, setInitialized] = useState(false);
   const [readyForAuth, setReadyForAuth] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [loginMethod, setLoginMethod] = useState<'passwordless' | 'password'>(
+    passwordless ? 'passwordless' : 'password'
+  );
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (passwordless) {
+      setLoginMethod('passwordless');
+    } else {
+      setLoginMethod('password');
+    }
+  }, [passwordless]);
 
   useEffect(() => {
     async function checkUser() {
@@ -121,17 +143,33 @@ export default function LoginForm() {
     }
   }, [user, initialized]);
 
-  const form = useForm({
-    resolver: zodResolver(FormSchema),
+  // Form for OTP (passwordless) login
+  const otpForm = useForm({
+    resolver: zodResolver(OTPFormSchema),
     defaultValues: {
       email: DEV_MODE ? 'local@tuturuuu.com' : '',
       otp: '',
     },
   });
 
+  // Form for password-based login
+  const passwordForm = useForm({
+    resolver: zodResolver(PasswordFormSchema),
+    defaultValues: {
+      email: DEV_MODE ? 'local@tuturuuu.com' : '',
+      password: '',
+    },
+  });
+
   useEffect(() => {
-    if (DEV_MODE) form.setFocus('email');
-  }, [DEV_MODE]);
+    if (DEV_MODE) {
+      if (loginMethod === 'passwordless') {
+        otpForm.setFocus('email');
+      } else {
+        passwordForm.setFocus('email');
+      }
+    }
+  }, [DEV_MODE, loginMethod]);
 
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -182,8 +220,8 @@ export default function LoginForm() {
       });
 
       // OTP has been sent
-      form.setValue('otp', '');
-      form.clearErrors('otp');
+      otpForm.setValue('otp', '');
+      otpForm.clearErrors('otp');
       setOtpSent(true);
 
       // Reset cooldown
@@ -213,8 +251,10 @@ export default function LoginForm() {
     } else {
       setLoading(false);
 
-      form.setError('otp', { message: t('login.invalid_verification_code') });
-      form.setValue('otp', '');
+      otpForm.setError('otp', {
+        message: t('login.invalid_verification_code'),
+      });
+      otpForm.setValue('otp', '');
 
       toast({
         title: t('login.failed'),
@@ -223,7 +263,39 @@ export default function LoginForm() {
     }
   };
 
-  async function onSubmit(data: z.infer<typeof FormSchema>) {
+  const loginWithPassword = async (data: {
+    email: string;
+    password: string;
+  }) => {
+    if (!locale || !data.email || !data.password) return;
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // On successful login, reload the page
+      window.location.reload();
+    } catch (error) {
+      setLoading(false);
+      passwordForm.setError('password', {
+        message: t('login.invalid_credentials'),
+      });
+
+      toast({
+        title: t('login.failed'),
+        description: t('login.invalid_credentials'),
+      });
+    }
+  };
+
+  async function onOtpSubmit(data: z.infer<typeof OTPFormSchema>) {
     const { email, otp } = data;
 
     if (!otpSent) await sendOtp({ email });
@@ -238,6 +310,10 @@ export default function LoginForm() {
     }
   }
 
+  async function onPasswordSubmit(data: z.infer<typeof PasswordFormSchema>) {
+    await loginWithPassword(data);
+  }
+
   // Google login function
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -248,19 +324,23 @@ export default function LoginForm() {
     const nextUrl = searchParams.get('nextUrl');
 
     // Build the redirect URL with query parameters
-    let redirectTo = `${window.location.origin}/api/auth/callback`;
-    const params = new URLSearchParams();
+    let redirectURL = `${window.location.origin}/${locale}/login`;
+    const searchParamsArray = [];
 
-    if (returnUrl) params.append('returnUrl', returnUrl);
-    if (nextUrl) params.append('nextUrl', nextUrl);
+    if (returnUrl)
+      searchParamsArray.push(`returnUrl=${encodeURIComponent(returnUrl)}`);
+    if (nextUrl)
+      searchParamsArray.push(`nextUrl=${encodeURIComponent(nextUrl)}`);
 
-    const queryString = params.toString();
-    if (queryString) redirectTo += `?${queryString}`;
+    if (searchParamsArray.length > 0) {
+      redirectURL += `?${searchParamsArray.join('&')}`;
+    }
 
+    // Sign in with Google
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo,
+        redirectTo: redirectURL,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -270,9 +350,10 @@ export default function LoginForm() {
 
     if (error) {
       setLoading(false);
+      console.error('Error signing in with Google:', error);
       toast({
-        title: t('login.failed'),
-        description: error.message,
+        title: 'Error',
+        description: 'Failed to sign in with Google.',
       });
     }
   };
@@ -287,236 +368,307 @@ export default function LoginForm() {
     const nextUrl = searchParams.get('nextUrl');
 
     // Build the redirect URL with query parameters
-    let redirectTo = `${window.location.origin}/api/auth/callback`;
-    const params = new URLSearchParams();
+    let redirectURL = `${window.location.origin}/${locale}/login`;
+    const searchParamsArray = [];
 
-    if (returnUrl) params.append('returnUrl', returnUrl);
-    if (nextUrl) params.append('nextUrl', nextUrl);
+    if (returnUrl)
+      searchParamsArray.push(`returnUrl=${encodeURIComponent(returnUrl)}`);
+    if (nextUrl)
+      searchParamsArray.push(`nextUrl=${encodeURIComponent(nextUrl)}`);
 
-    const queryString = params.toString();
-    if (queryString) redirectTo += `?${queryString}`;
+    if (searchParamsArray.length > 0) {
+      redirectURL += `?${searchParamsArray.join('&')}`;
+    }
 
+    // Sign in with GitHub
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo,
+        redirectTo: redirectURL,
       },
     });
 
     if (error) {
       setLoading(false);
+      console.error('Error signing in with GitHub:', error);
       toast({
-        title: t('login.failed'),
-        description: error.message,
+        title: 'Error',
+        description: 'Failed to sign in with GitHub.',
       });
     }
   };
 
-  if (!readyForAuth)
+  if (!initialized) {
     return (
-      <div className="mt-4 flex h-full w-full items-center justify-center">
-        <LoadingIndicator className="h-10 w-10" />
+      <div className="flex h-full w-full items-center justify-center">
+        <LoadingIndicator />
       </div>
     );
+  }
+
+  if (!readyForAuth) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <LoadingIndicator />
+      </div>
+    );
+  }
 
   return (
-    <Card className="mx-auto mt-8 w-full max-w-md shadow-md">
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              onClick={handleGoogleLogin}
-              disabled={loading || !readyForAuth}
-              className="w-full font-semibold"
-              variant="outline"
-              type="button"
-              size="lg"
-            >
+    <Card className="w-full border-none shadow-lg">
+      <CardContent className="flex flex-col gap-4 p-6">
+        <h2 className="text-center text-2xl font-bold">{t('login.welcome')}</h2>
+
+        <Tabs
+          className="w-full"
+          value={loginMethod}
+          defaultValue={loginMethod}
+          onValueChange={(value) =>
+            setLoginMethod(value as 'passwordless' | 'password')
+          }
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="passwordless">
+              {t('login.passwordless')}
+            </TabsTrigger>
+            <TabsTrigger value="password">
+              {t('login.with_password')}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Passwordless (OTP) Login */}
+          <TabsContent value="passwordless" className="mt-6">
+            <Form {...otpForm}>
+              <form
+                onSubmit={otpForm.handleSubmit(onOtpSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={otpForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('login.email')}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Mail className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                          <Input
+                            className="pl-10"
+                            placeholder={t('login.email_placeholder')}
+                            {...field}
+                            disabled={otpSent || loading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {otpSent && (
+                  <FormField
+                    control={otpForm.control}
+                    name="otp"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('login.verification_code')}</FormLabel>
+                        <FormControl>
+                          <InputOTP
+                            maxLength={maxOTPLength}
+                            {...field}
+                            disabled={loading}
+                          >
+                            <InputOTPGroup className="m-0 w-full">
+                              {Array.from({ length: maxOTPLength }).map(
+                                (_, i) => (
+                                  <InputOTPSlot
+                                    key={i}
+                                    index={i}
+                                    className="flex-1"
+                                  />
+                                )
+                              )}
+                            </InputOTPGroup>
+                          </InputOTP>
+                        </FormControl>
+                        <FormDescription>
+                          {t('login.check_email')}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <Button
+                  type="submit"
+                  variant={loading ? 'outline' : undefined}
+                  className="h-10 w-full"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <LoadingIndicator className="h-4 w-4" />
+                  ) : otpSent ? (
+                    t('login.verify')
+                  ) : (
+                    t('login.continue')
+                  )}
+                </Button>
+
+                {otpSent && (
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 w-full"
+                      disabled={loading || resendCooldown > 0}
+                      onClick={() => {
+                        otpForm.handleSubmit(onOtpSubmit)();
+                      }}
+                    >
+                      {resendCooldown > 0
+                        ? `${t('login.resend')} (${resendCooldown}s)`
+                        : t('login.resend')}
+                    </Button>
+                  </div>
+                )}
+              </form>
+            </Form>
+          </TabsContent>
+
+          {/* Password Login */}
+          <TabsContent value="password" className="mt-6">
+            <Form {...passwordForm}>
+              <form
+                onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={passwordForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('login.email')}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Mail className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                          <Input
+                            className="pl-10"
+                            placeholder={t('login.email_placeholder')}
+                            {...field}
+                            disabled={loading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={passwordForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('login.password')}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Lock className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                          <Input
+                            className="pl-10 pr-10"
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder={t('login.password_placeholder')}
+                            {...field}
+                            disabled={loading}
+                          />
+                          <button
+                            type="button"
+                            className="text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="size-4" />
+                            ) : (
+                              <Eye className="size-4" />
+                            )}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  variant={loading ? 'outline' : undefined}
+                  className="h-10 w-full"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <LoadingIndicator className="h-4 w-4" />
+                  ) : (
+                    t('login.sign_in')
+                  )}
+                </Button>
+
+                <div className="text-center text-sm">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-primary hover:underline"
+                    onClick={() => {
+                      setLoginMethod('passwordless');
+                      passwordForm.reset();
+                    }}
+                  >
+                    {t('login.forgot_password')}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </TabsContent>
+        </Tabs>
+
+        <div className="relative my-2">
+          <Separator />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="bg-card text-muted-foreground px-2 text-xs">
+              {t('login.or')}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          <Button
+            variant="outline"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="relative h-10 w-full"
+          >
+            <div className="absolute left-3">
               <Image
                 src="/media/google-logo.png"
                 alt="Google"
-                width={20}
-                height={20}
+                width={18}
+                height={18}
+                className="object-contain"
               />
-              Google
-            </Button>
-
-            <Button
-              onClick={handleGitHubLogin}
-              disabled={loading || !readyForAuth}
-              className="w-full font-semibold"
-              variant="outline"
-              type="button"
-              size="lg"
-            >
-              <Image
-                src="/media/github-mark.png"
-                alt="GitHub"
-                width={20}
-                height={20}
-              />
-              GitHub
-            </Button>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background text-muted-foreground px-2">
-                {t('login.or_continue_with')}
-              </span>
+            <span>{t('login.continue_with_google')}</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleGitHubLogin}
+            disabled={loading}
+            className="relative h-10 w-full"
+          >
+            <div className="absolute left-3">
+              <Github className="size-4" />
             </div>
-          </div>
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t('login.email_placeholder')}
-                        {...field}
-                        disabled={otpSent || loading || !readyForAuth}
-                        className="h-10"
-                      />
-                    </FormControl>
-
-                    {otpSent || (
-                      <FormDescription>
-                        {t('login.email_description')}
-                      </FormDescription>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="otp"
-                render={({ field }) => (
-                  <FormItem className={otpSent ? '' : 'hidden'}>
-                    <FormLabel>{t('login.otp_code')}</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-col gap-2 md:flex-row">
-                        <InputOTP
-                          maxLength={maxOTPLength}
-                          {...field}
-                          onChange={(value) => {
-                            form.setValue('otp', value);
-                            if (value.length === maxOTPLength)
-                              form.handleSubmit(onSubmit)();
-                          }}
-                          disabled={loading || !readyForAuth}
-                        >
-                          <InputOTPGroup className="w-full justify-center">
-                            {Array.from({ length: maxOTPLength }).map(
-                              (_, index) => (
-                                <InputOTPSlot
-                                  key={index}
-                                  index={index}
-                                  className="max-md:w-full"
-                                />
-                              )
-                            )}
-                          </InputOTPGroup>
-                        </InputOTP>
-
-                        <Button
-                          onClick={() =>
-                            sendOtp({ email: form.getValues('email') })
-                          }
-                          disabled={
-                            loading || resendCooldown > 0 || !readyForAuth
-                          }
-                          className="md:w-full"
-                          variant="secondary"
-                          type="button"
-                        >
-                          {resendCooldown > 0
-                            ? `${t('login.resend')} (${resendCooldown})`
-                            : t('login.resend')}
-                        </Button>
-                      </div>
-                    </FormControl>
-                    {form.formState.errors.otp && (
-                      <FormMessage>
-                        {form.formState.errors.otp.message}
-                      </FormMessage>
-                    )}
-                    <FormDescription>
-                      {t('login.otp_description')}
-                    </FormDescription>
-                  </FormItem>
-                )}
-              />
-
-              {otpSent && DEV_MODE && (
-                <div className="grid gap-2 md:grid-cols-2">
-                  <Link
-                    href={window.location.origin.replace('7803', '8004')}
-                    target="_blank"
-                    className="col-span-full"
-                    aria-disabled={loading}
-                  >
-                    <Button
-                      type="button"
-                      className="w-full"
-                      variant="outline"
-                      disabled={loading}
-                    >
-                      <Mail size={18} className="mr-1" />
-                      {t('login.open_inbucket')}
-                    </Button>
-                  </Link>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full"
-                size="lg"
-                disabled={
-                  loading ||
-                  (otpSent && !form.getValues('otp')) ||
-                  !readyForAuth
-                }
-              >
-                {loading
-                  ? t('login.processing')
-                  : otpSent
-                    ? t('login.verify')
-                    : t('login.continue')}
-              </Button>
-            </form>
-          </Form>
-
-          <Separator className="mt-2" />
-          <div className="text-foreground/50 text-balance text-center text-sm font-semibold">
-            {t('auth.notice-p1')}{' '}
-            <Link
-              href="/terms"
-              target="_blank"
-              className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
-            >
-              {t('auth.tos')}
-            </Link>{' '}
-            {t('common.and')}{' '}
-            <Link
-              href="/privacy"
-              target="_blank"
-              className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
-            >
-              {t('auth.privacy')}
-            </Link>{' '}
-            {t('auth.notice-p2')}.
-          </div>
+            <span>{t('login.continue_with_github')}</span>
+          </Button>
         </div>
       </CardContent>
     </Card>
