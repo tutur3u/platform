@@ -536,7 +536,7 @@ export function UnifiedEventModal() {
 
     setEvent((prev) => {
       let newEndDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
-      const startDate =
+      let startDate =
         tz === 'auto'
           ? dayjs(prev.start_at || '')
           : dayjs(prev.start_at || '').tz(tz);
@@ -574,25 +574,23 @@ export function UnifiedEventModal() {
   // Handle all-day toggle
   const handleAllDayChange = (checked: boolean) => {
     setEvent((prev) => {
-      let startDate =
-        tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
-      let endDate =
-        tz === 'auto' ? dayjs(prev.end_at) : dayjs(prev.end_at).tz(tz);
-
+      let startDate = tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
+      // Backup previous times before updating
+      const timedBackup = prevTimes.timed;
+      const alldayBackup = prevTimes.allday;
       if (checked) {
         setPrevTimes((old) => ({
           ...old,
           timed: { start: prev.start_at || null, end: prev.end_at || null },
         }));
         // Restore previous all-day range if it exists
-        if (prevTimes.allday.start && prevTimes.allday.end) {
+        if (alldayBackup.start && alldayBackup.end) {
           return {
             ...prev,
-            start_at: prevTimes.allday.start,
-            end_at: prevTimes.allday.end,
+            start_at: alldayBackup.start,
+            end_at: alldayBackup.end,
           };
         }
-        // Otherwise, default to start + 1 day
         const newStart = tz === 'auto' ? startDate.startOf('day') : startDate.tz(tz).startOf('day');
         let newEnd = newStart.add(1, 'day');
         return {
@@ -606,17 +604,14 @@ export function UnifiedEventModal() {
           allday: { start: prev.start_at || null, end: prev.end_at || null },
         }));
         // Restore previous timed range if it exists
-        if (prevTimes.timed.start && prevTimes.timed.end) {
+        if (timedBackup.start && timedBackup.end) {
           return {
             ...prev,
-            start_at: prevTimes.timed.start,
-            end_at: prevTimes.timed.end,
+            start_at: timedBackup.start,
+            end_at: timedBackup.end,
           };
         }
-        // Otherwise, fallback to default
-        let newStart = tz === 'auto'
-          ? dayjs().startOf('hour')
-          : dayjs().startOf('hour').tz(tz);
+        let newStart = tz === 'auto' ? dayjs().startOf('hour') : dayjs().startOf('hour').tz(tz);
         let newEnd = newStart.add(1, 'hour');
         return {
           ...prev,
