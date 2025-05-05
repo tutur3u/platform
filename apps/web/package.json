@@ -57,7 +57,7 @@
     "cronstrue": "^2.60.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
-    "framer-motion": "^12.9.4",
+    "framer-motion": "^12.9.5",
     "google-auth-library": "^9.15.1",
     "googleapis": "^148.0.0",
     "html2canvas": "^1.4.1",
@@ -92,7 +92,7 @@
     "use-debounce": "^10.0.4",
     "uuid": "^11.1.0",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
-    "zod": "^3.24.3"
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
