@@ -25,7 +25,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { type Variants, motion } from 'framer-motion';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useMemo, useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function MarketingPage() {
   // Fetch workspaces from the API
@@ -51,7 +51,6 @@ export default function MarketingPage() {
       },
     },
   } as Variants;
-  
 
   return (
     <>
@@ -599,6 +598,6 @@ async function getWorkspaces() {
   if (!response.ok) notFound();
 
   const data = await response.json();
-  console.log("Hello",data);
+  console.log('Hello', data);
   return data as Workspace[];
 }

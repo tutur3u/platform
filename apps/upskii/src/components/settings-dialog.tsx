@@ -16,7 +16,10 @@ interface UserSettingsDialogProps {
   wsId: string;
 }
 
-export default function UserSettingsDialog({ wsId, user }: UserSettingsDialogProps) {
+export default function UserSettingsDialog({
+  wsId,
+  user,
+}: UserSettingsDialogProps) {
   const t = useTranslations();
 
   return (

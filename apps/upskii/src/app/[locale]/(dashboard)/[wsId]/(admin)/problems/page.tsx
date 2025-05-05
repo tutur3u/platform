@@ -32,7 +32,7 @@ export default async function Page({
       </div>
 
       <Suspense fallback={<ProblemCardSkeleton />}>
-        <ProblemsList wsId={wsId}  />
+        <ProblemsList wsId={wsId} />
       </Suspense>
     </div>
   );

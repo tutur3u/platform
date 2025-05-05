@@ -442,7 +442,9 @@ export function SubmissionTable({
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
                             onClick={() =>
-                              router.push(`/${wsId}/submissions/${submission.id}`)
+                              router.push(
+                                `/${wsId}/submissions/${submission.id}`
+                              )
                             }
                           >
                             {t('actions.view-details')}

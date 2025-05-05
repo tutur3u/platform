@@ -34,7 +34,7 @@ interface TeamData {
 export default async function TeamPage({
   params,
 }: {
-  params: Promise<{ wsId: string, teamId: string }>;
+  params: Promise<{ wsId: string; teamId: string }>;
 }) {
   const { wsId, teamId: id } = await params;
 
@@ -47,7 +47,13 @@ export default async function TeamPage({
   );
 }
 
-async function TeamPageContent({ teamId, wsId }: { teamId: string, wsId: string }) {
+async function TeamPageContent({
+  teamId,
+  wsId,
+}: {
+  teamId: string;
+  wsId: string;
+}) {
   const teamData = await fetchTeamData(teamId);
 
   if (!teamData) {
