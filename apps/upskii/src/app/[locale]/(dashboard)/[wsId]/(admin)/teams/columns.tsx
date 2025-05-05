@@ -102,7 +102,7 @@ export const getTeamColumns = (
         />
       ),
       cell: ({ row }) => (
-        <TeamAccordion wsId={t.wsId} teamId={row.getValue('id')} />
+        <TeamAccordion wsId={extraData.wsId} teamId={row.getValue('id')} />
       ),
     },
     {
@@ -124,7 +124,7 @@ export const getTeamColumns = (
     },
     {
       id: 'actions',
-      cell: ({ row }) => <TeamRowActions wsId={t.wsId} row={row} />,
+      cell: ({ row }) => <TeamRowActions wsId={extraData.wsId} row={row} />,
     },
   ];
 };
