@@ -1,11 +1,12 @@
 'use client';
 
-import { LanguageWrapper } from '../(dashboard)/_components/language-wrapper';
-import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-item';
-import { SystemLanguageWrapper } from '../(dashboard)/_components/system-language-wrapper';
-import { ThemeDropdownItems } from '../(dashboard)/_components/theme-dropdown-items';
-import UserSettingsDialog from './settings-dialog';
-import UserPresenceIndicator from '../../../components/user-presence-indicator';
+
+import { LogoutDropdownItem } from '@/app/[locale]/(dashboard)/_components/logout-dropdown-item';
+import { SystemLanguageWrapper } from '@/app/[locale]/(dashboard)/_components/system-language-wrapper';
+import { ThemeDropdownItems } from '@/app/[locale]/(dashboard)/_components/theme-dropdown-items';
+import { LanguageWrapper } from '@/app/[locale]/(dashboard)/_components/language-wrapper';
+import InviteMembersMenuItem from '../../../../components/invite-members-menu-item';
+import UserSettingsDialog from '../../../../components/settings-dialog';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -22,27 +23,22 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Globe,
-  Home,
-  Medal,
-  Palette,
-  Settings,
-  Trophy,
-  User,
-} from '@tuturuuu/ui/icons';
+import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
+import UserPresenceIndicator from '@/components/user-presence-indicator';
 
 export default function UserNavClient({
   user,
+  wsId,
   locale,
   hideMetadata = false,
 }: {
   user: WorkspaceUser | null;
+  wsId: string;
   locale: string | undefined;
   hideMetadata?: boolean;
 }) {
@@ -53,7 +49,7 @@ export default function UserNavClient({
     <>
       {user && (
         <Dialog open={open} onOpenChange={setOpen}>
-          <UserSettingsDialog user={user} />
+          <UserSettingsDialog wsId={wsId} user={user} />
         </Dialog>
       )}
 
@@ -102,7 +98,7 @@ export default function UserNavClient({
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col">
               <Link
-                href={user ? `/profile/${user.id}` : '/settings/account'}
+                href="/settings/account"
                 className="line-clamp-1 w-fit break-all text-sm font-medium hover:underline"
               >
                 {user?.display_name || user?.handle || t('common.unnamed')}
@@ -112,40 +108,13 @@ export default function UserNavClient({
               </p>
             </div>
           </DropdownMenuLabel>
+
           <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <Link href="/home">
-              <DropdownMenuItem className="flex cursor-pointer gap-4">
-                <Home className="h-4 w-4" />
-                <span>{t('common.home')}</span>
-              </DropdownMenuItem>
-            </Link>
-            {user && (
-              <Link href={`/profile/${user.id.replace(/-/g, '')}`}>
-                <DropdownMenuItem className="flex cursor-pointer gap-4">
-                  <User className="h-4 w-4" />
-                  <span>{t('common.profile')}</span>
-                </DropdownMenuItem>
-              </Link>
-            )}
-            <Link href="/challenges">
-              <DropdownMenuItem className="flex cursor-pointer gap-4">
-                <Trophy className="h-4 w-4" />
-                <span>{t('nova.challenges')}</span>
-              </DropdownMenuItem>
-            </Link>
-            <Link href="/leaderboard">
-              <DropdownMenuItem className="flex cursor-pointer gap-4">
-                <Medal className="h-4 w-4" />
-                <span>{t('nova.leaderboard')}</span>
-              </DropdownMenuItem>
-            </Link>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
+
           <DropdownMenuGroup>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Palette className="h-4 w-4" />
+                <Palette className="text-muted-foreground h-4 w-4" />
                 <span className="text-foreground">{t('common.theme')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
@@ -156,7 +125,7 @@ export default function UserNavClient({
             </DropdownMenuSub>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Globe className="h-4 w-4" />
+                <Globe className="text-muted-foreground h-4 w-4" />
                 <span className="text-foreground">{t('common.language')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
@@ -184,7 +153,10 @@ export default function UserNavClient({
               <span>{t('common.settings')}</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
+
+          <InviteMembersMenuItem />
           <DropdownMenuSeparator />
+
           <LogoutDropdownItem />
         </DropdownMenuContent>
       </DropdownMenu>
