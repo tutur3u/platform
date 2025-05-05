@@ -19,11 +19,13 @@ export default function Certificate({ certDetails }: CertificateProps) {
 
   const handlePDF = useCallback(async () => {
     try {
-      const res = await fetch(`/api/v1/certificates/${certificateId}/generate?format=pdf`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const res = await fetch(
+        `/api/v1/certificates/${certificateId}/generate?format=pdf`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({
             certID: certificateId,
             title: String(t('title')),
@@ -33,35 +35,38 @@ export default function Certificate({ certDetails }: CertificateProps) {
             completionDateLabel: String(t('completion_date')),
             certificateIdLabel: String(t('certificate_id')),
           }),
-        });
+        }
+      );
 
-        if (!res.ok) {
-            throw new Error(`Server error: ${res.status} ${res.statusText}`);
-          }
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status} ${res.statusText}`);
+      }
 
-        const blob = new Blob([await res.arrayBuffer()], {
-          type: 'application/pdf',
-        });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${certificateId}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url); // Clean up the URL object
-      } catch (error) {
+      const blob = new Blob([await res.arrayBuffer()], {
+        type: 'application/pdf',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${certificateId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url); // Clean up the URL object
+    } catch (error) {
       console.error('Error generating PDF:', error);
     }
   }, [certificateId]);
 
   const handleDownload = useCallback(async () => {
     try {
-        const res = await fetch(`/api/v1/certificates/${certificateId}/generate?format=png`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const res = await fetch(
+        `/api/v1/certificates/${certificateId}/generate?format=png`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({
             certID: certificateId,
             title: String(t('title')),
@@ -71,24 +76,25 @@ export default function Certificate({ certDetails }: CertificateProps) {
             completionDateLabel: String(t('completion_date')),
             certificateIdLabel: String(t('certificate_id')),
           }),
-        });
+        }
+      );
 
-          if (!res.ok) {
-            throw new Error(`Server error: ${res.status} ${res.statusText}`);
-          }
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status} ${res.statusText}`);
+      }
 
-        const blob = new Blob([await res.arrayBuffer()], {
-          type: 'image/png',
-        });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${certificateId}.png`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-      } catch (error) {
+      const blob = new Blob([await res.arrayBuffer()], {
+        type: 'image/png',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${certificateId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
       console.error('Error generating PNG:', error);
     }
   }, [certificateId]);
