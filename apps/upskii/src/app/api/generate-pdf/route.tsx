@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
   try {
     const { documentData, certID, studentName } = await req.json();
 
-    console.log(`Generating PDF for Cert ID: ${certID}, Student Name: ${studentName}`);
+    console.log(
+      `Generating PDF for Cert ID: ${certID}, Student Name: ${studentName}`
+    );
 
     const pdfBuffer = await generatePdf(documentData);
 
