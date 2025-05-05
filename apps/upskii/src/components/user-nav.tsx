@@ -5,10 +5,8 @@ import { cookies as c } from 'next/headers';
 
 export async function UserNav({
   hideMetadata = false,
-  wsId,
 }: {
   hideMetadata?: boolean;
-  wsId: string;
 }) {
   const cookies = await c();
   const user = await getCurrentUser();
@@ -19,7 +17,6 @@ export async function UserNav({
       user={user}
       locale={currentLocale}
       hideMetadata={hideMetadata}
-      wsId={wsId}
     />
   );
 }

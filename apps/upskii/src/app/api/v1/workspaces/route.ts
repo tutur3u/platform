@@ -42,8 +42,7 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    if (noRedirect) return null;
-    redirect('/login');
+    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
   const { data, error } = await supabase

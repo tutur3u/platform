@@ -212,7 +212,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
           }
         >
-          <UserNav hideMetadata wsId={wsId} />
+          <UserNav hideMetadata />
         </Suspense>
       }
     >

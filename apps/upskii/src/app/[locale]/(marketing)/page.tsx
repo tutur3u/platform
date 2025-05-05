@@ -2,7 +2,6 @@
 
 import GradientHeadline from '../gradient-headline';
 import AiFeatures from './ai-features';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -25,7 +24,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { type Variants, motion } from 'framer-motion';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function MarketingPage() {
   // Fetch workspaces from the API

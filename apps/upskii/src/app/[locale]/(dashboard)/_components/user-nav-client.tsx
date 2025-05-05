@@ -33,12 +33,10 @@ import UserPresenceIndicator from '@/components/user-presence-indicator';
 
 export default function UserNavClient({
   user,
-  wsId,
   locale,
   hideMetadata = false,
 }: {
   user: WorkspaceUser | null;
-  wsId: string;
   locale: string | undefined;
   hideMetadata?: boolean;
 }) {
@@ -49,7 +47,7 @@ export default function UserNavClient({
     <>
       {user && (
         <Dialog open={open} onOpenChange={setOpen}>
-          <UserSettingsDialog wsId={wsId} user={user} />
+          <UserSettingsDialog user={user} />
         </Dialog>
       )}
 
