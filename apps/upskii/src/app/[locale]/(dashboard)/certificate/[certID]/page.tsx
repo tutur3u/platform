@@ -1,3 +1,4 @@
+import { DEV_MODE } from "@/constants/common";
 import Certificate from "../getCert";
 
 
@@ -11,10 +12,21 @@ export type CertificateProps = {
     },
 };
 
-export default async function CertificatePage({ params }: { params: { certID: string } }) {
-    const certID = params.certID;
+interface PageProps {
+  params: Promise<{
+    certID: string;
+  }>;
+}
+
+export default async function CertificatePage({ params }: PageProps) {
+
+    const URL = DEV_MODE ? "http://localhost:7806" : "https://upskii.com";
+
+    const {certID} = await params
+
+    // Available in the mock data: "CERT-2023-10-01-d3c4f4be-7b44-432b-8fe3-b8bcd3a3c2d5", "CERT-2024-03-15-a1b2c3d4-e5f6-4321-9876-123456789abc", "CERT-2024-04-20-98765432-abcd-efgh-ijkl-mnopqrstuvwx"
     
-    const response = await fetch(`http://localhost:7806/api/v1/certificates/${certID}`, {
+    const response = await fetch(`${URL}/api/v1/certificates/${certID}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

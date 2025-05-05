@@ -3,9 +3,11 @@ import { NextResponse } from 'next/server';
 
 export async function GET(
   _request: Request,
-  { params }: { params: { certId: string } }
+  { params }: { params: Promise<{ certId: string }>  }
 ) {
-  const certificate = mockCertificates.find(cert => cert.certificateId === params.certId);
+  // Extract the certificate ID from the request parameters
+  const { certId } = await params;
+  const certificate = mockCertificates.find(cert => cert.certificateId === certId);
 
   if (!certificate) {
     return NextResponse.json(

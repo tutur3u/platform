@@ -3,11 +3,10 @@
 import { useCallback, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { Button } from '@tuturuuu/ui/button';
-import { ImageIcon, PrinterIcon, FileText } from '@tuturuuu/ui/icons';
+import { ImageIcon, FileText } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
-import Image from 'next/image';
-import { CertificateProps } from './page';
+import { CertificateProps } from './[certID]/page';
 
 export default function Certificate({ certDetails }: CertificateProps) {
     const t = useTranslations('certificates');
@@ -31,7 +30,9 @@ export default function Certificate({ certDetails }: CertificateProps) {
       
         for (let i = 0; i < clonedElements.length; i++) {
           const el = clonedElements[i] as HTMLElement;
-          const computedStyle = window.getComputedStyle(originalElements[i]);
+          const originalElement = originalElements[i];
+          if (!originalElement) continue;
+          const computedStyle = window.getComputedStyle(originalElement);
           el.style.cssText = Array.from(computedStyle).reduce((str, prop) => {
             return `${str}${prop}:${computedStyle.getPropertyValue(prop)};`;
           }, '');
