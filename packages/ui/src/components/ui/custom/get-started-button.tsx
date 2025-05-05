@@ -8,15 +8,17 @@ import { usePathname } from 'next/navigation';
 export function GetStartedButton({
   text,
   href,
+  disabled = false,
 }: {
   text: string;
   href: string;
+  disabled?: boolean;
 }) {
   const pathname = usePathname();
   const hidden = pathname === '/login';
 
   return (
-    <Link href={href}>
+    <Link href={href} disabled={disabled}>
       <Button
         className={cn(
           hidden &&

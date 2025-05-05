@@ -2,6 +2,8 @@
 
 import GradientHeadline from '../gradient-headline';
 import AiFeatures from './ai-features';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -22,8 +24,20 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { type Variants, motion } from 'framer-motion';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { useMemo, useState, useEffect } from 'react';
 
 export default function MarketingPage() {
+  // Fetch workspaces from the API
+  const [wsId, setWsId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchWsId() {
+      const workspaces = await getWorkspaces();
+      setWsId(workspaces?.[0]?.id || null);
+    }
+    fetchWsId();
+  }, []);
   // Enhanced floating effect variants with reduced movement for better performance
   const floatingVariants = {
     initial: { y: 0 },
@@ -37,6 +51,7 @@ export default function MarketingPage() {
       },
     },
   } as Variants;
+  
 
   return (
     <>
@@ -96,10 +111,13 @@ export default function MarketingPage() {
             >
               <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
                 transition={{ type: 'spring', stiffness: 400 }}
               >
-                <GetStartedButton text="Get Started" href="/home" />
+                <GetStartedButton
+                  text="Get Started"
+                  href={wsId ? `/${wsId}/home` : '/login'}
+                  disabled={!wsId && wsId !== null}
+                />
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -557,7 +575,11 @@ export default function MarketingPage() {
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              <GetStartedButton text="Get Started" href="/home" />
+              <GetStartedButton
+                text="Get Started"
+                href={wsId ? `/${wsId}/home` : '/login'}
+                disabled={!wsId && wsId !== null}
+              />
               <Link href="/about">
                 <Button variant="outline" className="group">
                   Learn More
@@ -570,4 +592,13 @@ export default function MarketingPage() {
       </div>
     </>
   );
+}
+
+async function getWorkspaces() {
+  const response = await fetch('/api/v1/workspaces');
+  if (!response.ok) notFound();
+
+  const data = await response.json();
+  console.log("Hello",data);
+  return data as Workspace[];
 }
