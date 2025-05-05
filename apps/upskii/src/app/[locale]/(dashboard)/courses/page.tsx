@@ -74,25 +74,25 @@ async function getData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  // if (process.env.NODE_ENV === 'development') {
-  //   // Placing mock data for testing
-  //   const allMock: WorkspaceCourse[] = mockData();
+  if (process.env.NODE_ENV === 'development') {
+    // Placing mock data for testing
+    const allMock: WorkspaceCourse[] = mockData();
 
-  //   const filteredData = allMock.filter((course) =>
-  //     q ? course.name.toLowerCase().includes(q.toLowerCase()) : true
-  //   );
+    const filteredData = allMock.filter((course) =>
+      q ? course.name.toLowerCase().includes(q.toLowerCase()) : true
+    );
 
-  //   const parsedPage = parseInt(page);
-  //   const parsedSize = parseInt(pageSize);
-  //   const start = (parsedPage - 1) * parsedSize;
-  //   const end = parsedPage * parsedSize;
-  //   const paginatedData = filteredData.slice(start, end);
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    const paginatedData = filteredData.slice(start, end);
 
-  //   return {
-  //     data: paginatedData,
-  //     count: filteredData.length,
-  //   };
-  // }
+    return {
+      data: paginatedData,
+      count: filteredData.length,
+    };
+  }
 
   const supabase = await createClient();
 
