@@ -80,6 +80,7 @@
       "core-js",
       "cytoscape",
       "esbuild",
+      "puppeteer",
       "sharp",
       "supabase",
       "unrs-resolver"
