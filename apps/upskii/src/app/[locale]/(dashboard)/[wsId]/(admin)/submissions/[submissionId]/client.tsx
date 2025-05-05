@@ -36,7 +36,6 @@ interface Props {
 }
 
 export default function SubmissionClient({ submission, wsId }: Props) {
-
   const [copied, setCopied] = useState(false);
   const router = useRouter();
 

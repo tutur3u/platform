@@ -60,7 +60,7 @@ export async function generateMetadata({
 export default async function UserProfilePage({
   params,
 }: {
-  params: Promise<{ wsId: string, userId: string }>;
+  params: Promise<{ wsId: string; userId: string }>;
 }) {
   const { wsId, userId: rawUserId } = await params;
 
@@ -368,5 +368,5 @@ export default async function UserProfilePage({
       ) || [],
   };
 
-  return <UserProfileClient wsId={wsId}  profile={profileData} />;
+  return <UserProfileClient wsId={wsId} profile={profileData} />;
 }

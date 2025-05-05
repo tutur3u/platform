@@ -30,7 +30,13 @@ interface Invitation {
   created_at: string;
 }
 
-export function TeamAccordion({ teamId, wsId }: { teamId: string, wsId: string }) { 
+export function TeamAccordion({
+  teamId,
+  wsId,
+}: {
+  teamId: string;
+  wsId: string;
+}) {
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
