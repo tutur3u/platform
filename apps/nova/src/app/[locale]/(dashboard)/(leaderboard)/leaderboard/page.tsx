@@ -113,10 +113,10 @@ async function fetchLeaderboard(
     throw new Error('Error fetching user role:', roleError);
   }
 
-  // Fetch all challenges for filter options
+  // Fetch all challenges with their whitelists in a single query
   const { data: challenges, error: challengesError } = await sbAdmin
     .from('nova_challenges')
-    .select('*')
+    .select('*, nova_challenge_whitelisted_emails(*)')
     .order('title', { ascending: true });
 
   if (challengesError) {
@@ -124,23 +124,13 @@ async function fetchLeaderboard(
     return defaultData;
   }
 
-  // Fetch all whitelists for the challenges
-  const { data: allWhitelists, error: whitelistsError } = await sbAdmin
-    .from('nova_challenge_whitelisted_emails')
-    .select('*')
-    .in(
-      'challenge_id',
-      challenges.map((challenge) => challenge.id)
-    );
-
-  if (whitelistsError) {
-    throw new Error('Error fetching whitelists: ' + whitelistsError.message);
-  }
-
+  // Extract challenges and construct whitelist data
   const userWhitelistedChallengeIds = new Set(
-    allWhitelists
-      ?.filter((whitelist) => whitelist.email === user.email)
-      .map((whitelist) => whitelist.challenge_id) || []
+    challenges.flatMap((challenge) =>
+      challenge.nova_challenge_whitelisted_emails
+        .filter((whitelist) => whitelist.email === user.email)
+        .map((whitelist) => whitelist.challenge_id)
+    )
   );
 
   const { data: managedChallenges, error: managerError } = await sbAdmin
