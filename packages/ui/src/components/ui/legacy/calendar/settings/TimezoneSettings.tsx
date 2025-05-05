@@ -16,14 +16,12 @@ import React from 'react';
 
 export type TimezoneData = {
   timezone: string;
-  autoAdjustDST: boolean;
   showSecondaryTimezone: boolean;
   secondaryTimezone?: string;
 };
 
 export const defaultTimezoneData: TimezoneData = {
   timezone: 'auto',
-  autoAdjustDST: true,
   showSecondaryTimezone: false,
 };
 
@@ -42,26 +40,65 @@ const timezoneGroups: TimezoneGroups = {
     { value: 'auto', label: 'Auto-detect (System)' },
     { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
   ],
-  'North America': [
-    { value: 'America/New_York', label: 'Eastern Time (ET) - UTC-05:00' },
-    { value: 'America/Chicago', label: 'Central Time (CT) - UTC-06:00' },
-    { value: 'America/Denver', label: 'Mountain Time (MT) - UTC-07:00' },
+  'North America (UTC-10 to -4)': [
+    { value: 'America/Adak', label: 'Hawaii-Aleutian Time (HAT) - UTC-10:00' },
+    { value: 'America/Anchorage', label: 'Alaska Time (AKT) - UTC-09:00' },
     { value: 'America/Los_Angeles', label: 'Pacific Time (PT) - UTC-08:00' },
+    { value: 'America/Denver', label: 'Mountain Time (MT) - UTC-07:00' },
+    { value: 'America/Phoenix', label: 'Mountain Time (MT) - UTC-07:00 (No DST)' },
+    { value: 'America/Chicago', label: 'Central Time (CT) - UTC-06:00' },
+    { value: 'America/New_York', label: 'Eastern Time (ET) - UTC-05:00' },
+    { value: 'America/Halifax', label: 'Atlantic Time (AT) - UTC-04:00' },
   ],
-  'Europe': [
+  'South America (UTC-5 to -3)': [
+    { value: 'America/Lima', label: 'Peru Time (PET) - UTC-05:00' },
+    { value: 'America/Caracas', label: 'Venezuela Time (VET) - UTC-04:00' },
+    { value: 'America/Santiago', label: 'Chile Time (CLT) - UTC-04:00' },
+    { value: 'America/Argentina/Buenos_Aires', label: 'Argentina Time (ART) - UTC-03:00' },
+    { value: 'America/Sao_Paulo', label: 'Brasilia Time (BRT) - UTC-03:00' },
+  ],
+  'Europe (UTC+0 to +3)': [
     { value: 'Europe/London', label: 'Greenwich Mean Time (GMT) - UTC+00:00' },
     { value: 'Europe/Paris', label: 'Central European Time (CET) - UTC+01:00' },
+    { value: 'Europe/Berlin', label: 'Central European Time (CET) - UTC+01:00' },
+    { value: 'Europe/Helsinki', label: 'Eastern European Time (EET) - UTC+02:00' },
     { value: 'Europe/Moscow', label: 'Moscow Standard Time (MSK) - UTC+03:00' },
   ],
-  'Asia & Middle East': [
-    { value: 'Asia/Tokyo', label: 'Japan Standard Time (JST) - UTC+09:00' },
-    { value: 'Asia/Shanghai', label: 'China Standard Time (CST) - UTC+08:00' },
-    { value: 'Asia/Kolkata', label: 'India Standard Time (IST) - UTC+05:30' },
+  'Africa (UTC+0 to +3)': [
+    { value: 'Africa/Casablanca', label: 'Morocco Time (WET) - UTC+00:00' },
+    { value: 'Africa/Lagos', label: 'West Africa Time (WAT) - UTC+01:00' },
+    { value: 'Africa/Cairo', label: 'Eastern European Time (EET) - UTC+02:00' },
+    { value: 'Africa/Johannesburg', label: 'South Africa Standard Time (SAST) - UTC+02:00' },
+    { value: 'Africa/Nairobi', label: 'East Africa Time (EAT) - UTC+03:00' },
+  ],
+  'Middle East (UTC+2 to +4)': [
+    { value: 'Asia/Jerusalem', label: 'Israel Standard Time (IST) - UTC+02:00' },
+    { value: 'Asia/Amman', label: 'Eastern European Time (EET) - UTC+02:00' },
+    { value: 'Asia/Riyadh', label: 'Arabia Standard Time (AST) - UTC+03:00' },
+    { value: 'Asia/Tehran', label: 'Iran Standard Time (IRST) - UTC+03:30' },
     { value: 'Asia/Dubai', label: 'Gulf Standard Time (GST) - UTC+04:00' },
   ],
-  'Oceania': [
+  'Asia (UTC+5:30 to +9)': [
+    { value: 'Asia/Kolkata', label: 'India Standard Time (IST) - UTC+05:30' },
+    { value: 'Asia/Kathmandu', label: 'Nepal Time (NPT) - UTC+05:45' },
+    { value: 'Asia/Dhaka', label: 'Bangladesh Standard Time (BST) - UTC+06:00' },
+    { value: 'Asia/Bangkok', label: 'Indochina Time (ICT) - UTC+07:00' },
+    { value: 'Asia/Singapore', label: 'Singapore Time (SGT) - UTC+08:00' },
+    { value: 'Asia/Hong_Kong', label: 'Hong Kong Time (HKT) - UTC+08:00' },
+    { value: 'Asia/Manila', label: 'Philippine Time (PHT) - UTC+08:00' },
+    { value: 'Asia/Shanghai', label: 'China Standard Time (CST) - UTC+08:00' },
+    { value: 'Asia/Tokyo', label: 'Japan Standard Time (JST) - UTC+09:00' },
+    { value: 'Asia/Seoul', label: 'Korea Standard Time (KST) - UTC+09:00' },
+  ],
+  'Oceania (UTC+8 to +12)': [
+    { value: 'Australia/Perth', label: 'Australian Western Time (AWST) - UTC+08:00' },
+    { value: 'Australia/Darwin', label: 'Australian Central Time (ACST) - UTC+09:30 (No DST)' },
+    { value: 'Australia/Adelaide', label: 'Australian Central Time (ACST) - UTC+09:30' },
+    { value: 'Australia/Brisbane', label: 'Australian Eastern Time (AEST) - UTC+10:00 (No DST)' },
     { value: 'Australia/Sydney', label: 'Australian Eastern Time (AEST) - UTC+10:00' },
+    { value: 'Pacific/Guam', label: 'Chamorro Standard Time (ChST) - UTC+10:00' },
     { value: 'Pacific/Auckland', label: 'New Zealand Standard Time (NZST) - UTC+12:00' },
+    { value: 'Pacific/Fiji', label: 'Fiji Time (FJT) - UTC+12:00' },
   ],
 };
 
@@ -139,18 +176,20 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
   };
 
   const handleToggleChange = (field: keyof TimezoneData, checked: boolean) => {
-    // If disabling secondary timezone, clear its value
-    if (field === 'showSecondaryTimezone' && !checked) {
-      onChange({
-        ...value,
-        [field]: checked,
-        secondaryTimezone: undefined,
-      });
-    } else {
-      onChange({
-        ...value,
-        [field]: checked,
-      });
+    // Only handle showSecondaryTimezone toggle
+    if (field === 'showSecondaryTimezone') {
+      if (!checked) {
+        onChange({
+          ...value,
+          showSecondaryTimezone: checked,
+          secondaryTimezone: undefined,
+        });
+      } else {
+        onChange({
+          ...value,
+          showSecondaryTimezone: checked,
+        });
+      }
     }
   };
 
@@ -197,9 +236,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 .filter(tz => !excludeTimezone || tz.value !== excludeTimezone)
                 .map((tz) => {
                   const tzOffset = getUTCOffset(tz.value);
-                  const isDisabled = disabledTimezones.includes(tz.value) || 
-                    (value.autoAdjustDST && primaryOffset && tzOffset === primaryOffset) ||
-                    false;
+                  const isDisabled = disabledTimezones.includes(tz.value);
                   
                   return (
                     <SelectItem 
@@ -208,7 +245,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                       disabled={isDisabled}
                       className={isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                     >
-                      {tz.label}
+                      <span className="block truncate whitespace-nowrap max-w-full">{tz.label}</span>
                       {isDisabled && ' (Selected)'}
                     </SelectItem>
                   );
@@ -234,7 +271,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
           <SelectTrigger id="timezone" className="w-full">
             <SelectValue placeholder="Select timezone" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="overflow-x-hidden w-full max-w-full">
             <div className="sticky top-0 z-10 bg-background p-2">
               <input
                 type="text"
@@ -245,7 +282,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
-            <div className="max-h-[300px] overflow-y-auto">
+            <div className="max-h-[300px] overflow-y-auto overflow-x-hidden w-full">
               {renderTimezoneGroups(
                 filteredTimezones,
                 undefined,
@@ -254,19 +291,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
             </div>
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="auto-timezone"
-          checked={value.autoAdjustDST}
-          onCheckedChange={(checked) =>
-            handleToggleChange('autoAdjustDST', checked)
-          }
-        />
-        <Label htmlFor="auto-timezone">
-          Automatically adjust for daylight saving time
-        </Label>
       </div>
 
       <div className="flex items-center space-x-2">
@@ -292,7 +316,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
             <SelectTrigger id="secondary-timezone" className="w-full">
               <SelectValue placeholder="Select secondary timezone" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="overflow-x-hidden w-full max-w-full">
               <div className="sticky top-0 z-10 bg-background p-2">
                 <input
                   type="text"
@@ -303,7 +327,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
-              <div className="max-h-[300px] overflow-y-auto">
+              <div className="max-h-[300px] overflow-y-auto overflow-x-hidden w-full">
                 {renderTimezoneGroups(
                   filteredSecondaryTimezones,
                   undefined,
