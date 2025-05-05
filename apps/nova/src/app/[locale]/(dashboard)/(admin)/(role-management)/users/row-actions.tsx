@@ -1,8 +1,12 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { Row } from '@tanstack/react-table';
-import { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types/db';
+import {
+  NovaRoleBasic,
+  PlatformUser,
+  User,
+  UserPrivateDetails,
+} from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +37,6 @@ interface NovaUserRowActionsProps {
 export function NovaUsersRowActions({ row }: NovaUserRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
-  const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const user = row.original;
@@ -46,6 +49,9 @@ export function NovaUsersRowActions({ row }: NovaUserRowActionsProps) {
 
     if (res.ok) {
       router.refresh();
+    } else {
+      // Handle error
+      console.error('Failed to delete user');
     }
   };
 
@@ -103,5 +109,47 @@ export function NovaUsersRowActions({ row }: NovaUserRowActionsProps) {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+interface NovaRoleRowActionsProps {
+  row: Row<NovaRoleBasic>;
+}
+
+export function NovaRoleRowActions({ row }: NovaRoleRowActionsProps) {
+  const router = useRouter();
+  const t = useTranslations();
+
+  const data = row.original;
+
+  const deleteNovaRole = async () => {
+    const res = await fetch(`/api/v1/infrastructure/whitelist/${data.email}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) {
+      router.refresh();
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-end gap-2">
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+          >
+            <Ellipsis className="h-4 w-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[160px]">
+          <DropdownMenuItem onClick={deleteNovaRole}>
+            {t('common.delete')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }

@@ -17,8 +17,8 @@ import {
   Code,
   Home,
   List,
-  ShieldCheck,
   Trophy,
+  User,
   Users,
 } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
@@ -106,16 +106,16 @@ export default async function RootLayout({
         ]
       : []),
     {
-      name: t('teams'),
-      href: '/teams',
-      icon: <Users className="h-4 w-4" />,
+      name: t('users'),
+      href: '/users',
+      subItems: [] as { name: string; href: string }[],
+      icon: <User className="h-4 w-4" />,
       requiresRoleManagement: true,
     },
     {
-      name: t('roles'),
-      href: '/roles',
-      subItems: [] as { name: string; href: string }[],
-      icon: <ShieldCheck className="h-4 w-4" />,
+      name: t('teams'),
+      href: '/teams',
+      icon: <Users className="h-4 w-4" />,
       requiresRoleManagement: true,
     },
   ];

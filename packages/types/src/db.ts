@@ -88,6 +88,10 @@ export type NovaChallengeWhitelistedEmail =
 export type NovaProblemTestCase = Tables<'nova_problem_test_cases'>;
 export type NovaProblem = Tables<'nova_problems'>;
 export type NovaRole = Tables<'platform_email_roles'>;
+export type NovaRoleBasic = Pick<
+  Tables<'platform_email_roles'>,
+  'email' | 'enabled' | 'created_at'
+>;
 export type NovaSession = Tables<'nova_sessions'>;
 export type NovaSubmission = Tables<'nova_submissions'>;
 export type NovaSubmissionCriteria = Tables<'nova_submission_criteria'>;
