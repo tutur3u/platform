@@ -1,32 +1,28 @@
+import { CertificateProps } from '@/app/[locale]/(dashboard)/certificate/[certID]/page';
 import { DEV_MODE } from '@/constants/common';
 import { NextRequest } from 'next/server';
 import puppeteer from 'puppeteer';
-import { CertificateProps } from '@/app/[locale]/(dashboard)/certificate/[certID]/page';
-
 
 type format = 'pdf' | 'png';
-
 
 const URL = DEV_MODE ? 'http://localhost:7806' : 'https://upskii.com';
 
 const getCertificateData = async (certID: string) => {
+  // Available in the mock data: "CERT-2023-10-01-d3c4f4be-7b44-432b-8fe3-b8bcd3a3c2d5", "CERT-2024-03-15-a1b2c3d4-e5f6-4321-9876-123456789abc", "CERT-2024-04-20-98765432-abcd-efgh-ijkl-mnopqrstuvwx"
 
-  
-    // Available in the mock data: "CERT-2023-10-01-d3c4f4be-7b44-432b-8fe3-b8bcd3a3c2d5", "CERT-2024-03-15-a1b2c3d4-e5f6-4321-9876-123456789abc", "CERT-2024-04-20-98765432-abcd-efgh-ijkl-mnopqrstuvwx"
-  
-    const response = await fetch(`${URL}/api/v1/certificates/${certID}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+  const response = await fetch(`${URL}/api/v1/certificates/${certID}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch certificate data');
-    }
+  if (!response.ok) {
+    throw new Error('Failed to fetch certificate data');
+  }
 
-    return response.json();
-}
+  return response.json();
+};
 
 const renderHTML = (data: {
   certData: CertificateProps['certDetails'];
@@ -163,14 +159,13 @@ const generatePDF = async (htmlContent: string) => {
   return pdfBuffer;
 };
 
-
 const generatePNG = async (htmlContent: string) => {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
-      // Measure the certificate area's bounding box height
+  // Measure the certificate area's bounding box height
   const certHeight = await page.evaluate(() => {
     const el = document.getElementById('certificate-area');
     if (!el) return 1200; // fallback
@@ -178,34 +173,43 @@ const generatePNG = async (htmlContent: string) => {
     return Math.ceil(rect.height);
   });
 
-  await page.setViewport({ width: 800, height: certHeight, deviceScaleFactor: 2 });
-
-
+  await page.setViewport({
+    width: 800,
+    height: certHeight,
+    deviceScaleFactor: 2,
+  });
 
   const cert = await page.$('#certificate-area');
-    if (!cert) {
-        throw new Error('Certificate area not found');
-    }
+  if (!cert) {
+    throw new Error('Certificate area not found');
+  }
 
-    const pngbuffer = await cert.screenshot({type: 'png'});
-
+  const pngbuffer = await cert.screenshot({ type: 'png' });
 
   await browser.close();
   return pngbuffer;
 };
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ certId: string }>; }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ certId: string }> }
+) {
   try {
-    const {title, certifyText, completionText, offeredBy, completionDateLabel, certificateIdLabel } = await req.json();
+    const {
+      title,
+      certifyText,
+      completionText,
+      offeredBy,
+      completionDateLabel,
+      certificateIdLabel,
+    } = await req.json();
     const { certId } = await params;
 
     const format = req.nextUrl.searchParams.get('format') as format;
 
-
     if (format !== 'pdf' && format !== 'png') {
-        return new Response('Invalid format', { status: 400 });
-        }
-
+      return new Response('Invalid format', { status: 400 });
+    }
 
     if (!certId) {
       return new Response('Certificate ID is required', { status: 400 });
@@ -224,8 +228,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cer
     });
 
     // Generate PDF or PNG based on the format
-    
-  
+
     let fileBuffer;
     if (format === 'pdf') {
       fileBuffer = await generatePDF(certHTML);
