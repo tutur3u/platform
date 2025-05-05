@@ -66,7 +66,7 @@ async function getEmailData(
   if (!supabase) notFound();
 
   const queryBuilder = supabase
-    .from('nova_roles')
+    .from('platform_email_roles')
     .select('*', {
       count: 'exact',
     })

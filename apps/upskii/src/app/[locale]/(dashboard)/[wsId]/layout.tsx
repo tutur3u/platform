@@ -43,7 +43,7 @@ export default async function RootLayout({
   if (!user?.id) redirect('/login');
 
   const { data: whitelisted } = await sbAdmin
-    .from('nova_roles')
+    .from('platform_email_roles')
     .select('enabled, allow_challenge_management, allow_role_management')
     .eq('email', user?.email as string)
     .maybeSingle();

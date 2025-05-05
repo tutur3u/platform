@@ -6,7 +6,7 @@ export async function addWhitelistEmail(email: string, enabled: boolean) {
   const supabase = await createAdminClient();
   if (!supabase) throw new Error('Unauthorized');
 
-  const { error } = await supabase.from('nova_roles').insert([
+  const { error } = await supabase.from('platform_email_roles').insert([
     {
       email,
       enabled,

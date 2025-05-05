@@ -11,7 +11,9 @@ export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
-
+export type User = Tables<'users'>;
+export type UserPrivateDetails = Tables<'user_private_details'>;
+export type PlatformUser = Tables<'platform_user_roles'>;
 export type WorkspaceQuizSet = Tables<'workspace_quiz_sets'> & {
   href?: string;
   usage?: {
@@ -85,7 +87,11 @@ export type NovaChallengeWhitelistedEmail =
   Tables<'nova_challenge_whitelisted_emails'>;
 export type NovaProblemTestCase = Tables<'nova_problem_test_cases'>;
 export type NovaProblem = Tables<'nova_problems'>;
-export type NovaRole = Tables<'nova_roles'>;
+export type NovaRole = Tables<'platform_email_roles'>;
+export type NovaRoleBasic = Pick<
+  Tables<'platform_email_roles'>,
+  'email' | 'enabled' | 'created_at'
+>;
 export type NovaSession = Tables<'nova_sessions'>;
 export type NovaSubmission = Tables<'nova_submissions'>;
 export type NovaSubmissionCriteria = Tables<'nova_submission_criteria'>;

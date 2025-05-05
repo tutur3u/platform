@@ -2491,36 +2491,6 @@ export type Database = {
           },
         ];
       };
-      nova_roles: {
-        Row: {
-          allow_challenge_management: boolean;
-          allow_manage_all_challenges: boolean;
-          allow_role_management: boolean;
-          created_at: string;
-          email: string | null;
-          enabled: boolean;
-          id: string;
-        };
-        Insert: {
-          allow_challenge_management?: boolean;
-          allow_manage_all_challenges?: boolean;
-          allow_role_management?: boolean;
-          created_at?: string;
-          email?: string | null;
-          enabled: boolean;
-          id?: string;
-        };
-        Update: {
-          allow_challenge_management?: boolean;
-          allow_manage_all_challenges?: boolean;
-          allow_role_management?: boolean;
-          created_at?: string;
-          email?: string | null;
-          enabled?: boolean;
-          id?: string;
-        };
-        Relationships: [];
-      };
       nova_sessions: {
         Row: {
           challenge_id: string;
@@ -2941,6 +2911,82 @@ export type Database = {
             foreignKeyName: 'personal_notes_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      platform_email_roles: {
+        Row: {
+          allow_challenge_management: boolean;
+          allow_manage_all_challenges: boolean;
+          allow_role_management: boolean;
+          created_at: string;
+          email: string;
+          enabled: boolean;
+        };
+        Insert: {
+          allow_challenge_management?: boolean;
+          allow_manage_all_challenges?: boolean;
+          allow_role_management?: boolean;
+          created_at?: string;
+          email: string;
+          enabled: boolean;
+        };
+        Update: {
+          allow_challenge_management?: boolean;
+          allow_manage_all_challenges?: boolean;
+          allow_role_management?: boolean;
+          created_at?: string;
+          email?: string;
+          enabled?: boolean;
+        };
+        Relationships: [];
+      };
+      platform_user_roles: {
+        Row: {
+          allow_challenge_management: boolean;
+          allow_manage_all_challenges: boolean;
+          allow_role_management: boolean;
+          created_at: string;
+          enabled: boolean;
+          user_id: string;
+        };
+        Insert: {
+          allow_challenge_management?: boolean;
+          allow_manage_all_challenges?: boolean;
+          allow_role_management?: boolean;
+          created_at?: string;
+          enabled?: boolean;
+          user_id: string;
+        };
+        Update: {
+          allow_challenge_management?: boolean;
+          allow_manage_all_challenges?: boolean;
+          allow_role_management?: boolean;
+          created_at?: string;
+          enabled?: boolean;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'platform_user_roles_user_id_fkey1';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'platform_user_roles_user_id_fkey1';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'platform_user_roles_user_id_fkey1';
+            columns: ['user_id'];
+            isOneToOne: true;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },

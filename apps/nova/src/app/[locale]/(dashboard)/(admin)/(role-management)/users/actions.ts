@@ -11,6 +11,7 @@ export async function addWhitelistEmail(email: string, enabled: boolean) {
       email,
       enabled,
       allow_challenge_management: false,
+      allow_manage_all_challenges: false,
       allow_role_management: false,
     },
   ]);

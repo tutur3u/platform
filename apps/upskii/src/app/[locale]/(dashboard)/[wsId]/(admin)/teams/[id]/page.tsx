@@ -80,7 +80,7 @@ async function getTeamMembersData(id: string) {
   if (!user?.email) notFound();
 
   const { data: roleData, error: roleError } = await supabase
-    .from('nova_roles')
+    .from('platform_email_roles')
     .select('allow_role_management')
     .eq('email', user.email)
     .maybeSingle();

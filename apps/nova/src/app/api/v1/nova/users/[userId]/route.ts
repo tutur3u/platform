@@ -1,44 +1,51 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(req: NextRequest) {
   const {
-    email,
+    userId,
     enabled,
     allow_challenge_management,
     allow_manage_all_challenges,
     allow_role_management,
   } = (await req.json()) as {
-    email: string;
+    userId: string;
     enabled: boolean;
     allow_challenge_management: boolean;
     allow_manage_all_challenges: boolean;
     allow_role_management: boolean;
   };
 
-  if (!email) {
-    return NextResponse.json({ message: 'Email is required' }, { status: 400 });
+  if (!userId) {
+    return NextResponse.json(
+      { message: 'User Id is required' },
+      { status: 400 }
+    );
   }
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const updateData = {
-    email,
     enabled: enabled ?? false,
     allow_challenge_management: allow_challenge_management ?? false,
     allow_manage_all_challenges: allow_manage_all_challenges ?? false,
     allow_role_management: allow_role_management ?? false,
   };
 
+  console.log('update', updateData);
+
   const { error } = await supabase
-    .from('platform_email_roles')
+    .from('platform_user_roles')
     .update(updateData)
-    .eq('email', email);
+    .eq('user_id', userId);
 
   if (error) {
-    console.log(error);
+    console.error('Error updating user roles:', error);
     return NextResponse.json(
-      { message: 'Error fetching AI Models' },
+      { message: 'Error updating user permissions', error: error.message },
       { status: 500 }
     );
   }
@@ -48,20 +55,23 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(
   _: NextRequest,
-  { params }: { params: Promise<{ email: string }> }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
-  const { email } = await params;
+  const { userId } = await params;
 
-  if (!email) {
-    return NextResponse.json({ message: 'Email is required' }, { status: 400 });
+  if (!userId) {
+    return NextResponse.json(
+      { message: 'User Id is required' },
+      { status: 400 }
+    );
   }
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { error } = await supabase
-    .from('platform_email_roles')
+    .from('platform_user_roles')
     .delete()
-    .eq('email', email);
+    .eq('user_id', userId);
 
   if (error) {
     console.log(error);
