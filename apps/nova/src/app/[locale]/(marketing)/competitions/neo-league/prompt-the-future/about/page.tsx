@@ -1,4 +1,4 @@
-import { AboutUsPage } from './client';
+import { AboutUsClient } from './client';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -7,6 +7,6 @@ export const metadata: Metadata = {
     'This competition is a part of the Neo League, a series of competitions that are held annually to promote the use of innovative technologies in Vietnam.',
 };
 
-export default function AboutNeoLeaguePage() {
-  return <AboutUsPage />;
+export default function Page() {
+  return <AboutUsClient />;
 }

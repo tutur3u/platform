@@ -24,7 +24,6 @@ interface StructureProps {
   sidebarContent?: ReactNode;
   actions?: ReactNode;
   userPopover?: ReactNode;
-  className?: string;
   children: ReactNode;
 }
 
@@ -41,28 +40,32 @@ export function Structure({
   sidebarContent,
   actions,
   userPopover,
-  className,
   children,
 }: StructureProps) {
   return (
     <>
       <nav
         id="navbar"
-        className="bg-background/70 fixed z-20 flex w-full flex-none items-center justify-between gap-2 border-b px-6 py-2 backdrop-blur-lg md:hidden"
+        className="fixed inset-x-0 top-0 z-20 max-sm:border-b md:hidden"
       >
-        <div className="flex h-[52px] w-full items-center gap-2">
-          {mobileHeader}
-        </div>
-        <div className="flex h-[52px] w-full items-center gap-2">
-          {userPopover}
-          <Button
-            size="icon"
-            variant="outline"
-            className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+        <div
+          id="navbar-content"
+          className="bg-background/50 px-4 py-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32"
+        >
+          <div className="relative flex items-center justify-between gap-2 md:gap-4">
+            <div className="flex w-full items-center gap-2">{mobileHeader}</div>
+            <div className="flex w-fit items-center gap-2">
+              {userPopover}
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
         </div>
       </nav>
 
@@ -104,13 +107,13 @@ export function Structure({
             <div
               className={cn(
                 'border-foreground/10 items-center border-b p-2 md:flex md:h-16 md:p-0',
-                isCollapsed ? 'justify-center' : ''
+                isCollapsed ? 'justify-center' : 'max-sm:py-1'
               )}
             >
               <div
                 className={cn(
                   'flex h-[52px] w-full items-center justify-center',
-                  isCollapsed ? 'h-[52px]' : 'px-4'
+                  isCollapsed ? 'h-[52px]' : 'px-2 md:px-4'
                 )}
               >
                 <div
@@ -144,10 +147,7 @@ export function Structure({
           <ResizablePanel defaultSize={defaultLayout[1]}>
             <main
               id="main-content"
-              className={cn(
-                'relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pt-20 md:pt-4',
-                className
-              )}
+              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pt-20 md:pt-4"
             >
               {header && <div className="mb-4 hidden md:block">{header}</div>}
               {children}

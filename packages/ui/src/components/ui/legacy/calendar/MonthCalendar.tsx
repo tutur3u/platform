@@ -19,8 +19,12 @@ import {
   isToday,
   startOfMonth,
 } from 'date-fns';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+
+dayjs.extend(timezone);
 
 interface MonthCalendarProps {
   date: Date;
@@ -31,18 +35,19 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, settings } = useCalendar();
   const [currDate, setCurrDate] = useState(date);
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
+  const tz = settings?.timezone?.timezone;
 
   // Update currDate when date prop changes
   useEffect(() => {
     setCurrDate(date);
-  }, [date]);
+  }, [date, tz]);
 
   // Get first day of week from settings
   const firstDayOfWeek = useMemo(() => {
     const settingValue = settings?.appearance?.firstDayOfWeek;
     console.log('Month calendar first day setting:', settingValue);
     return settingValue === 'sunday' ? 0 : settingValue === 'saturday' ? 6 : 1; // 0 = Sunday, 1 = Monday, 6 = Saturday
-  }, [settings?.appearance?.firstDayOfWeek]);
+  }, [settings?.appearance?.firstDayOfWeek, tz]);
 
   // Get weekday labels based on first day of week
   const weekdayLabels = useMemo(() => {
@@ -59,7 +64,7 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
     console.log('Reordered days:', reorderedDays);
 
     return reorderedDays;
-  }, [firstDayOfWeek]);
+  }, [firstDayOfWeek, tz]);
 
   // Get days in month
   const monthStart = startOfMonth(currDate);
@@ -74,16 +79,30 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
   // Get days from previous month to fill first week
   const prevMonthDays = [];
   for (let i = startDay - 1; i >= 0; i--) {
-    const day = new Date(monthStart);
-    day.setDate(day.getDate() - (i + 1));
+    const day =
+      tz === 'auto'
+        ? dayjs(monthStart)
+            .subtract(i + 1, 'day')
+            .toDate()
+        : dayjs(monthStart)
+            .tz(tz)
+            .subtract(i + 1, 'day')
+            .toDate();
     prevMonthDays.push(day);
   }
 
   // Get days from next month to fill last week
   const nextMonthDays = [];
   for (let i = 0; i < endDay; i++) {
-    const day = new Date(monthEnd);
-    day.setDate(day.getDate() + i + 1);
+    const day =
+      tz === 'auto'
+        ? dayjs(monthEnd)
+            .add(i + 1, 'day')
+            .toDate()
+        : dayjs(monthEnd)
+            .tz(tz)
+            .add(i + 1, 'day')
+            .toDate();
     nextMonthDays.push(day);
   }
 
@@ -99,8 +118,10 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
   // Handle adding a new event
   const handleAddEvent = (day: Date) => {
     // Create event at 9:00 AM on the selected day
-    const eventDate = new Date(day);
-    eventDate.setHours(9, 0, 0, 0);
+    const eventDate =
+      tz === 'auto'
+        ? dayjs(day).hour(9).minute(0).second(0).millisecond(0).toDate()
+        : dayjs(day).tz(tz).hour(9).minute(0).second(0).millisecond(0).toDate();
     addEmptyEvent(eventDate);
   };
 

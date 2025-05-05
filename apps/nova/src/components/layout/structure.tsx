@@ -102,7 +102,27 @@ export default function Structure({
     />
   );
 
-  const mobileHeader = <span className="font-semibold">Menu</span>;
+  const mobileHeader = (
+    <Link href="/" className="flex w-fit items-center gap-2">
+      <div
+        className={cn(
+          isCollapsed
+            ? 'flex w-fit items-center justify-center'
+            : 'inline-block w-fit',
+          'flex-none'
+        )}
+      >
+        <Image
+          src="/media/logos/nova-transparent.png"
+          className="h-8 w-8"
+          width={32}
+          height={32}
+          alt="logo"
+        />
+      </div>
+      <LogoTitle text="Nova" />
+    </Link>
+  );
 
   return (
     <BaseStructure
@@ -118,7 +138,6 @@ export default function Structure({
       actions={actions}
       userPopover={userPopover}
       children={children}
-      className="p-0 md:pt-0"
     />
   );
 }

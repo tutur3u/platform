@@ -24,6 +24,7 @@
     "500-msg": "Đã xảy ra lỗi. Vui lòng thử lại sau.",
     "unsaved-changes": "Bạn có thay đổi chưa được lưu.",
     "back-to-home": "Quay lại trang chủ",
+    "back-to-login": "Quay lại đăng nhập",
     "home": "Trang chủ",
     "docs": "Tài liệu",
     "dashboard": "Bảng điều khiển",
@@ -440,10 +441,20 @@
   "reset-password": {
     "reset-password": "Đặt lại mật khẩu",
     "reset-password-desc": "Nhập mật khẩu mới cho tài khoản của bạn",
-    "resetting": "Đang đặt lại"
+    "resetting": "Đang đặt lại",
+    "email-sent": "Email đặt lại mật khẩu đã được gửi",
+    "email-sent-message-1": "Chúng tôi đã gửi email với hướng dẫn đặt lại mật khẩu đến ",
+    "email-sent-message-2": ". Vui lòng kiểm tra email của bạn và làm theo hướng dẫn để đặt lại mật khẩu.",
+    "check-spam": "Nếu bạn không nhận được email trong vòng vài phút, vui lòng kiểm tra thư mục spam hoặc thùng rác.",
+    "new-password": "Mật khẩu mới",
+    "confirm-password": "Xác nhận mật khẩu",
+    "success-message": "Mật khẩu của bạn đã được đặt lại thành công. Bạn có thể đăng nhập bằng mật khẩu mới.",
+    "error-message": "Đã xảy ra lỗi khi đặt lại mật khẩu. Vui lòng thử lại sau."
   },
   "login": {
-    "email_placeholder": "Địa chỉ email",
+    "welcome": "Chào mừng quay lại",
+    "email": "Email",
+    "email_placeholder": "Nhập địa chỉ email của bạn",
     "email_description": "Nhập địa chỉ email của bạn để bắt đầu với Tuturuuu.",
     "otp_code": "Mã xác thực",
     "otp_description": "Nhập mã xác thực được gửi đến địa chỉ email của bạn.",
@@ -457,6 +468,7 @@
     "failed_to_send": "Không thể gửi mã xác thực.",
     "failed_to_verify": "Không thể xác thực địa chỉ email của bạn.",
     "invalid_verification_code": "Mã xác thực không hợp lệ.",
+    "invalid_credentials": "Email hoặc mật khẩu không đúng.",
     "resend": "Gửi lại",
     "processing": "Đang xử lý...",
     "continue": "Tiếp tục",
@@ -465,7 +477,17 @@
     "continue_with_apple": "Tiếp tục với Apple",
     "continue_with_discord": "Tiếp tục với Discord",
     "or_continue_with": "Hoặc tiếp tục với",
-    "verify": "Xác minh"
+    "verify": "Xác minh",
+    "passwordless": "Không mật khẩu",
+    "with_password": "Với mật khẩu",
+    "password": "Mật khẩu",
+    "password_placeholder": "Nhập mật khẩu của bạn",
+    "sign_in": "Đăng nhập",
+    "forgot_password": "Quên mật khẩu?",
+    "or": "hoặc",
+    "check_email": "Kiểm tra email của bạn",
+    "verification_code": "Mã xác thực",
+    "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",
@@ -1676,14 +1698,17 @@
     "logout-description": "Đăng xuất khỏi tài khoản của bạn.",
     "confirm-account-deletion": "Xác nhận xóa tài khoản",
     "change-password": "Đổi mật khẩu",
-    "change-password-description": "Đổi mật khẩu của bạn.",
+    "change-password-description": "Đổi mật khẩu cho tài khoản của bạn.",
+    "reset-password": "Đặt lại mật khẩu",
     "delete-account": "Xóa tài khoản",
     "delete-account-description": "Xóa tài khoản của bạn.",
     "delete-account-message": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản.",
     "new_avatar": "Hình đại diện mới",
     "upload_avatar": "Hình đại diện mới",
     "remove_avatar": "Xóa hình đại diện",
-    "save_avatar": "Lưu hình đại diện"
+    "save_avatar": "Lưu hình đại diện",
+    "full-settings": "Xem tất cả cài đặt",
+    "view-full-settings": "Xem tất cả cài đặt"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",

@@ -198,17 +198,19 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="flex h-[80vh] flex-col gap-4 sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle> {t('edit')}</DialogTitle>
           <DialogDescription>{t('edit-description')}</DialogDescription>
         </DialogHeader>
-        <ChallengeForm
-          challengeId={challenge.id}
-          defaultValues={formattedDefaultValues}
-          onSubmit={onSubmit}
-          isSubmitting={isSubmitting}
-        />
+        <div className="flex-1 overflow-y-auto px-4">
+          <ChallengeForm
+            challengeId={challenge.id}
+            defaultValues={formattedDefaultValues}
+            onSubmit={onSubmit}
+            isSubmitting={isSubmitting}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );

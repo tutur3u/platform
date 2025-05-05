@@ -139,6 +139,7 @@ export default function ChallengesList({ isAdmin, challenges }: Props) {
             <Tabs
               defaultValue="all"
               value={filter}
+              className="overflow-x-auto"
               onValueChange={(v) => setFilter(v as any)}
             >
               <TabsList>

@@ -29,10 +29,10 @@ import { useEffect } from 'react';
 import * as z from 'zod';
 
 const ScoreSchema = z.object({
-  total_tests: z.coerce.number().int().min(0).optional(),
-  passed_tests: z.coerce.number().int().min(0).optional(),
-  total_criteria: z.coerce.number().int().min(0).optional(),
-  sum_criterion_score: z.coerce.number().min(0).optional(),
+  total_tests: z.coerce.number().int().min(0),
+  passed_tests: z.coerce.number().int().min(0),
+  total_criteria: z.coerce.number().int().min(0),
+  sum_criterion_score: z.coerce.number().min(0),
 });
 
 export default function ScoreCalculatorPage() {
@@ -41,10 +41,10 @@ export default function ScoreCalculatorPage() {
   const form = useForm({
     resolver: zodResolver(ScoreSchema),
     defaultValues: {
-      total_tests: undefined,
-      passed_tests: undefined,
-      total_criteria: undefined,
-      sum_criterion_score: undefined,
+      total_tests: 0,
+      passed_tests: 0,
+      total_criteria: 0,
+      sum_criterion_score: 0,
     },
     mode: 'onChange',
   });
@@ -59,10 +59,10 @@ export default function ScoreCalculatorPage() {
   const result = calculateScoreResult(formValues);
 
   function calculateScoreResult(values: z.infer<typeof ScoreSchema>) {
-    const totalTests = values.total_tests || 0;
-    const passedTests = values.passed_tests || 0;
-    const totalCriteria = values.total_criteria || 0;
-    const sumCriterionScore = values.sum_criterion_score || 0;
+    const totalTests = Number(values.total_tests) || 0;
+    const passedTests = Number(values.passed_tests) || 0;
+    const totalCriteria = Number(values.total_criteria) || 0;
+    const sumCriterionScore = Number(values.sum_criterion_score) || 0;
 
     // Don't calculate if all values are empty
     if (
@@ -110,16 +110,8 @@ export default function ScoreCalculatorPage() {
 
   // Add validation to ensure passed tests don't exceed total tests
   useEffect(() => {
-    console.log('totalTests', totalTests);
-    console.log('passedTests', passedTests);
-
     // Only correct if passed tests is greater than total tests
-    if (
-      totalTests !== undefined &&
-      passedTests !== undefined &&
-      parseInt(passedTests as unknown as string) >
-        parseInt(totalTests as unknown as string)
-    ) {
+    if (totalTests !== 0 && passedTests !== 0 && passedTests > totalTests) {
       form.setValue('passed_tests', totalTests);
     }
   }, [totalTests, passedTests]); // Remove passedTests from dependency to prevent jumps
@@ -127,10 +119,9 @@ export default function ScoreCalculatorPage() {
   // Add validation to ensure sum of criterion scores doesn't exceed max possible
   useEffect(() => {
     if (
-      totalCriteria !== undefined &&
-      sumCriterionScore !== undefined &&
-      parseInt(sumCriterionScore as unknown as string) >
-        parseInt(totalCriteria as unknown as string) * 10
+      totalCriteria !== 0 &&
+      sumCriterionScore !== 0 &&
+      sumCriterionScore > totalCriteria * 10
     ) {
       form.setValue('sum_criterion_score', totalCriteria * 10);
     }
