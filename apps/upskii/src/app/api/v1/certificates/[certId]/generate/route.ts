@@ -4,6 +4,8 @@ import puppeteer from 'puppeteer';
 import { CertificateProps } from '@/app/[locale]/(dashboard)/certificate/[certID]/page';
 
 
+type format = 'pdf' | 'png';
+
 
 const URL = DEV_MODE ? 'http://localhost:7806' : 'https://upskii.com';
 
@@ -146,7 +148,7 @@ const renderHTML = (data: {
   return htmlContent;
 };
 
-const generatePdf = async (htmlContent: string) => {
+const generatePDF = async (htmlContent: string) => {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
@@ -161,17 +163,55 @@ const generatePdf = async (htmlContent: string) => {
   return pdfBuffer;
 };
 
-export async function POST(req: NextRequest) {
+
+const generatePNG = async (htmlContent: string) => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+      // Measure the certificate area's bounding box height
+  const certHeight = await page.evaluate(() => {
+    const el = document.getElementById('certificate-area');
+    if (!el) return 1200; // fallback
+    const rect = el.getBoundingClientRect();
+    return Math.ceil(rect.height);
+  });
+
+  await page.setViewport({ width: 800, height: certHeight, deviceScaleFactor: 2 });
+
+
+
+  const cert = await page.$('#certificate-area');
+    if (!cert) {
+        throw new Error('Certificate area not found');
+    }
+
+    const pngbuffer = await cert.screenshot({type: 'png'});
+
+
+  await browser.close();
+  return pngbuffer;
+};
+
+export async function POST(req: NextRequest, { params }: { params: Promise<{ certId: string }>; }) {
   try {
-    const { certID, title, certifyText, completionText, offeredBy, completionDateLabel, certificateIdLabel } = await req.json();
+    const {title, certifyText, completionText, offeredBy, completionDateLabel, certificateIdLabel } = await req.json();
+    const { certId } = await params;
 
-    console.log('Received data:', { certID, title, certifyText, completionText, offeredBy, completionDateLabel, certificateIdLabel });
+    const format = req.nextUrl.searchParams.get('format') as format;
 
-    if (!certID) {
+
+    if (format !== 'pdf' && format !== 'png') {
+        return new Response('Invalid format', { status: 400 });
+        }
+
+
+    if (!certId) {
       return new Response('Certificate ID is required', { status: 400 });
     }
 
-    const certData = await getCertificateData(certID);
+    const certData = await getCertificateData(certId);
 
     const certHTML = renderHTML({
       certData,
@@ -183,14 +223,21 @@ export async function POST(req: NextRequest) {
       certificate_id: certificateIdLabel,
     });
 
-    const pdfBuffer = await generatePdf(certHTML);
+    // Generate PDF or PNG based on the format
+    
   
+    let fileBuffer;
+    if (format === 'pdf') {
+      fileBuffer = await generatePDF(certHTML);
+    } else if (format === 'png') {
+      fileBuffer = await generatePNG(certHTML);
+    }
 
-    return new Response(pdfBuffer, {
+    return new Response(fileBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${certID}.pdf"`,
+        'Content-Type': format === 'pdf' ? 'application/pdf' : 'image/png',
+        'Content-Disposition': `attachment; filename="${certId}.${format}"`,
       },
     });
   } catch (error) {

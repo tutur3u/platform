@@ -19,7 +19,7 @@ export default function Certificate({ certDetails }: CertificateProps) {
 
   const handlePDF = useCallback(async () => {
     try {
-      const res = await fetch('/api/generate-pdf', {
+      const res = await fetch(`/api/v1/certificates/${certificateId}/generate?format=pdf`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ export default function Certificate({ certDetails }: CertificateProps) {
 
   const handleDownload = useCallback(async () => {
     try {
-        const res = await fetch('/api/generate-png', {
+        const res = await fetch(`/api/v1/certificates/${certificateId}/generate?format=png`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
