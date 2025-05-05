@@ -105,40 +105,6 @@ const timezoneGroups: TimezoneGroups = {
 // Flatten timezones for search
 const allTimezones = Object.values(timezoneGroups).flat();
 
-// Helper function to get UTC offset from timezone
-const getUTCOffset = (timezone: string): string | null => {
-  if (timezone === 'auto') {
-    // Use browser's system timezone
-    try {
-      const systemTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (!systemTz) return null;
-      const date = new Date();
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: systemTz,
-        timeZoneName: 'short',
-      });
-      const parts = formatter.formatToParts(date);
-      const offset = parts.find(part => part.type === 'timeZoneName')?.value;
-      return offset || null;
-    } catch {
-      return null;
-    }
-  }
-  if (timezone === 'UTC') return 'UTC+00:00';
-  try {
-    const date = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      timeZoneName: 'short',
-    });
-    const parts = formatter.formatToParts(date);
-    const offset = parts.find(part => part.type === 'timeZoneName')?.value;
-    return offset || null;
-  } catch {
-    return null;
-  }
-};
-
 type TimezoneSettingsProps = {
   value: TimezoneData;
   onChange: (value: TimezoneData) => void;
@@ -222,8 +188,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
     excludeTimezone?: string,
     disabledTimezones: string[] = []
   ) => {
-    const primaryOffset = value.timezone !== 'auto' ? getUTCOffset(value.timezone) : null;
-    
     return (
       <>
         {Object.entries(timezones).map(([group, timezones]) => (
@@ -235,7 +199,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               {timezones
                 .filter(tz => !excludeTimezone || tz.value !== excludeTimezone)
                 .map((tz) => {
-                  const tzOffset = getUTCOffset(tz.value);
                   const isDisabled = disabledTimezones.includes(tz.value);
                   
                   return (
