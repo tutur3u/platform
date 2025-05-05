@@ -4,9 +4,8 @@ import { CertificateProps } from './[certID]/page';
 import { Button } from '@tuturuuu/ui/button';
 import { FileText, ImageIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import html2canvas from 'html2canvas';
 import { useTranslations } from 'next-intl';
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 
 export default function Certificate({ certDetails }: CertificateProps) {
   const t = useTranslations('certificates');
@@ -17,122 +16,86 @@ export default function Certificate({ certDetails }: CertificateProps) {
     certificateId,
     courseLecturer,
   } = certDetails;
-  const printableRef = useRef<HTMLDivElement>(null);
 
   const handlePDF = useCallback(async () => {
-    const printContent = printableRef.current;
-    if (!printContent) return;
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Please allow popups for this website');
-      return;
-    }
-
-    // Clone the content and convert computed styles to inline styles
-    const styledContent = printContent.cloneNode(true) as HTMLElement;
-    const originalElements = printContent.getElementsByTagName('*');
-    const clonedElements = styledContent.getElementsByTagName('*');
-
-    for (let i = 0; i < clonedElements.length; i++) {
-      const el = clonedElements[i] as HTMLElement;
-      const originalElement = originalElements[i];
-      if (!originalElement) continue;
-      const computedStyle = window.getComputedStyle(originalElement);
-      el.style.cssText = Array.from(computedStyle).reduce((str, prop) => {
-        return `${str}${prop}:${computedStyle.getPropertyValue(prop)};`;
-      }, '');
-    }
-
-    const printStyles = `
-          <style>
-            @page {
-              size: A4 landscape;
-              margin: 0;
-            }
-            html, body {
-              margin: 0;
-              padding: 0;
-              width: 100%;
-              height: 100%;
-              font-family: 'Arial', sans-serif;
-              background: white;
-            }
-            #certificate-container {
-              width: 100%;
-              height: 100%;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              box-sizing: border-box;
-              padding: 2cm;
-            }
-          </style>
-        `;
-
-    const printableHTML = `
-          <html>
-            <head>
-              <title>Certificate</title>
-              ${printStyles}
-            </head>
-            <body>
-              <div id="certificate-container">
-                ${styledContent.outerHTML}
-              </div>
-            </body>
-          </html>
-        `;
     try {
-      const res = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          documentData: printableHTML,
-          certID: certificateId,
-          studentName: studentName,
-        }),
-      });
-      if (res.ok) {
-        const blob = new Blob([await res.arrayBuffer()], {
-          type: 'application/pdf',
-        });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${certificateId}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+      const res = await fetch(
+        `/api/v1/certificates/${certificateId}/generate?format=pdf`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            certID: certificateId,
+            title: String(t('title')),
+            certifyText: String(t('certify_text')),
+            completionText: String(t('completion_text')),
+            offeredBy: String(t('offered_by')),
+            completionDateLabel: String(t('completion_date')),
+            certificateIdLabel: String(t('certificate_id')),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status} ${res.statusText}`);
       }
+
+      const blob = new Blob([await res.arrayBuffer()], {
+        type: 'application/pdf',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${certificateId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url); // Clean up the URL object
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
-  }, []);
+  }, [certificateId]);
 
-  const handleDownload = useCallback(() => {
-    const element = document.getElementById('certificate-area');
-    if (element) {
-      html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        scale: 2,
-        logging: false,
-        onclone: (clonedDoc) => {
-          Array.from(clonedDoc.getElementsByTagName('link')).forEach((link) => {
-            link.removeAttribute('integrity');
-            link.removeAttribute('crossorigin');
-          });
-        },
-      }).then((canvas) => {
-        const link = document.createElement('a');
-        link.download = `certificate-${certificateId}-${studentName}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
-        link.click();
+  const handleDownload = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/v1/certificates/${certificateId}/generate?format=png`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            certID: certificateId,
+            title: String(t('title')),
+            certifyText: String(t('certify_text')),
+            completionText: String(t('completion_text')),
+            offeredBy: String(t('offered_by')),
+            completionDateLabel: String(t('completion_date')),
+            certificateIdLabel: String(t('certificate_id')),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status} ${res.statusText}`);
+      }
+
+      const blob = new Blob([await res.arrayBuffer()], {
+        type: 'image/png',
       });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${certificateId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating PNG:', error);
     }
   }, [certificateId]);
 
@@ -141,7 +104,6 @@ export default function Certificate({ certDetails }: CertificateProps) {
       <div className="w-full max-w-4xl">
         <div
           id="certificate-area"
-          ref={printableRef}
           style={{
             background: 'white',
             color: '#000000',
