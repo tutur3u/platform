@@ -140,7 +140,7 @@ export function StorageObjectForm({
   wsId,
   path,
   uploadPath = '',
-  accept = 'image/*',
+  accept = '*',
   onComplete,
   submitLabel,
 }: Props) {
@@ -178,13 +178,21 @@ export function StorageObjectForm({
         [file.name]: 'uploading',
       }));
 
+      const finalPath = path
+        ? joinPath(path, `${generateRandomUUID()}_${file.name}`)
+        : joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`);
+
       const { error } = await supabase.storage
         .from('workspaces')
-        .upload(
-          path ||
-            joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`),
-          file
-        );
+        .upload(finalPath, file);
+
+      // const { error } = await supabase.storage
+      //   .from('workspaces')
+      //   .upload(
+      //     path ||
+      //       joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`),
+      //     file
+      //   );
 
       if (error) {
         setFileStatuses((prev) => ({

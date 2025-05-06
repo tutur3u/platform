@@ -79,6 +79,9 @@ async function getResources({ path }: { path: string }) {
     sortBy: { column: 'created_at', order: 'desc' },
   });
 
+  console.log('Storage path:', path);
+  console.log('Resources:', data, error);
+
   if (error) throw error;
 
   return data;
