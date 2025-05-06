@@ -22,11 +22,11 @@ export default async function Page() {
   if (!user?.id) redirect('/login');
 
   const { data: whitelisted } = await sbAdmin
-    .from('platform_email_roles')
+    .from('platform_user_roles')
     .select(
       'enabled, allow_challenge_management, allow_manage_all_challenges, allow_role_management'
     )
-    .eq('email', user?.email as string)
+    .eq('user_id', user?.id)
     .maybeSingle();
 
   const isAdmin = Boolean(
@@ -81,13 +81,14 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
 
     // Check user's role and permissions
     const { data: userRole, error: roleError } = await sbAdmin
-      .from('platform_email_roles')
+      .from('platform_user_roles')
       .select('*')
-      .eq('email', user.email)
+      .eq('user_id', user.id)
       .single();
 
     if (roleError) {
-      throw new Error('Error fetching user role:', roleError);
+      console.error('Error fetching user role:', roleError);
+      // Continue without special role
     }
 
     const isAdmin =
@@ -109,7 +110,6 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
       throw new Error('Error fetching challenges: ' + challengesError.message);
     }
 
-    // Convert the jsonb array to a usable format
     const challenges = (challengesWithStats || []) as NovaExtendedChallenge[];
 
     // Fetch all whitelists for the challenges
@@ -118,7 +118,7 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
       .select('*')
       .in(
         'challenge_id',
-        challenges.map((challenge) => challenge.id)
+        challenges.map((challenge: NovaExtendedChallenge) => challenge.id)
       );
 
     if (whitelistsError) {
@@ -131,12 +131,19 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
         .map((whitelist) => whitelist.challenge_id) || []
     );
 
-    if (
-      userRole?.allow_challenge_management &&
-      userRole?.allow_manage_all_challenges
-    ) {
+    // Initialize variables with default/empty values
+    let filteredChallenges: NovaExtendedChallenge[] = [];
+    let allCriteria: any[] = [];
+    let allManagers: any[] = [];
+    let managedChallengeIds = new Set();
+
+    // Determine which challenges the user can see based on their role
+    if (isSuperAdmin) {
+      // Super admin - can see and manage everything
+      filteredChallenges = challenges;
+
       // Fetch all criteria for the challenges
-      const { data: allCriteria, error: criteriaError } = await sbAdmin
+      const { data: criteria, error: criteriaError } = await sbAdmin
         .from('nova_challenge_criteria')
         .select('*')
         .in(
@@ -148,57 +155,10 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
         throw new Error('Error fetching criteria: ' + criteriaError.message);
       }
 
-      const { data: managedChallenges, error: managerError } = await sbAdmin
-        .from('nova_challenge_manager_emails')
-        .select('challenge_id')
-        .eq('email', user.email);
+      allCriteria = criteria || [];
 
-      if (managerError) {
-        console.error('Error fetching managed challenges:', managerError);
-      }
-
-      // Build a Set of challenge IDs this admin can manage
-      const managedChallengeIds = new Set(
-        (managedChallenges || []).map((item) => item.challenge_id)
-      );
-
-      let filteredChallenges: NovaExtendedChallenge[] = [];
-
-      // Super admin - can see and manage everything
-      if (isSuperAdmin) {
-        filteredChallenges = challenges;
-      }
-      // Normal admins - can see all user-visible challenges + challenges they can manage
-      else if (userRole?.allow_challenge_management) {
-        filteredChallenges = challenges.filter((challenge) => {
-          // Public challenges (enabled and non-restricted)
-          if (challenge.enabled && !challenge.whitelisted_only) {
-            return true;
-          }
-          // Specifically assigned to manage
-          if (managedChallengeIds.has(challenge.id)) {
-            return true;
-          }
-          // Whitelisted restricted challenges
-          if (userWhitelistedChallengeIds.has(challenge.id)) {
-            return true;
-          }
-
-          return false;
-        });
-      }
-      // Regular Users - can only see enabled non-restricted challenges
-      else {
-        filteredChallenges = challenges.filter(
-          (challenge) =>
-            challenge.enabled &&
-            (!challenge.whitelisted_only ||
-              userWhitelistedChallengeIds.has(challenge.id))
-        );
-      }
-
-      //get all managers of the challenge
-      const { data: allManagers, error: managersError } = await sbAdmin
+      // Get admin list for the challenges
+      const { data: managers, error: managersError } = await sbAdmin
         .from('nova_challenge_manager_emails')
         .select('*');
 
@@ -208,32 +168,109 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
         );
       }
 
-      // Add additional properties to challenges
-      return filteredChallenges.map((challenge) => ({
-        ...challenge,
-        password_salt: challenge.password_salt !== null ? '' : null,
-        password_hash: challenge.password_hash !== null ? '' : null,
-        criteria:
-          allCriteria?.filter((c) => c.challenge_id === challenge.id) || [],
-        whitelists: isAdmin
-          ? allWhitelists?.filter((w) => w.challenge_id === challenge.id) || []
-          : [],
-        canManage:
-          isSuperAdmin || managedChallengeIds.has(challenge.id) || false,
-        managingAdmins:
-          allManagers
-            ?.filter((m) => m.challenge_id === challenge.id)
-            .map((m) => m.email) || [],
-      }));
+      allManagers = managers || [];
+
+      // Even for super admins, track challenges they directly manage
+      const { data: managedChallenges, error: managerError } = await sbAdmin
+        .from('nova_challenge_manager_emails')
+        .select('challenge_id')
+        .eq('email', user.email);
+
+      if (managerError) {
+        console.error('Error fetching managed challenges:', managerError);
+      } else {
+        // Build a Set of challenge IDs this admin can manage
+        managedChallengeIds = new Set(
+          (managedChallenges || []).map((item) => item.challenge_id)
+        );
+      }
+    } else if (userRole?.allow_challenge_management) {
+      // Normal admins - fetch their managed challenges
+      const { data: managedChallenges, error: managerError } = await sbAdmin
+        .from('nova_challenge_manager_emails')
+        .select('challenge_id')
+        .eq('email', user.email);
+
+      if (managerError) {
+        console.error('Error fetching managed challenges:', managerError);
+      } else {
+        // Build a Set of challenge IDs this admin can manage
+        managedChallengeIds = new Set(
+          (managedChallenges || []).map((item) => item.challenge_id)
+        );
+      }
+
+      // Normal admins - can see all user-visible challenges + challenges they can manage
+      filteredChallenges = challenges.filter((challenge) => {
+        // Public challenges (enabled and non-restricted)
+        if (challenge.enabled && !challenge.whitelisted_only) {
+          return true;
+        }
+        // Specifically assigned to manage
+        if (managedChallengeIds.has(challenge.id)) {
+          return true;
+        }
+        // Whitelisted restricted challenges
+        if (userWhitelistedChallengeIds.has(challenge.id)) {
+          return true;
+        }
+
+        return false;
+      });
+
+      // Fetch criteria only for challenges this admin can see
+      const { data: criteria, error: criteriaError } = await sbAdmin
+        .from('nova_challenge_criteria')
+        .select('*')
+        .in(
+          'challenge_id',
+          filteredChallenges.map((challenge) => challenge.id)
+        );
+
+      if (criteriaError) {
+        throw new Error('Error fetching criteria: ' + criteriaError.message);
+      }
+
+      allCriteria = criteria || [];
+
+      // Get all managers
+      const { data: managers, error: managersError } = await sbAdmin
+        .from('nova_challenge_manager_emails')
+        .select('*');
+
+      if (managersError) {
+        throw new Error(
+          `Failed to fetch challenge managers: ${managersError.message}`
+        );
+      }
+
+      allManagers = managers || [];
+    } else {
+      // Regular Users - can only see enabled non-restricted challenges
+      filteredChallenges = challenges.filter(
+        (challenge) =>
+          challenge.enabled &&
+          (!challenge.whitelisted_only ||
+            userWhitelistedChallengeIds.has(challenge.id))
+      );
     }
 
-    // For regular users, filter challenges that they can access
-    return challenges.filter(
-      (challenge) =>
-        challenge.enabled &&
-        (!challenge.whitelisted_only ||
-          userWhitelistedChallengeIds.has(challenge.id))
-    );
+    // Single return point for all user types
+    return filteredChallenges.map((challenge) => ({
+      ...challenge,
+      password_salt: challenge.password_salt !== null ? '' : null,
+      password_hash: challenge.password_hash !== null ? '' : null,
+      criteria:
+        allCriteria?.filter((c) => c.challenge_id === challenge.id) || [],
+      whitelists: isAdmin
+        ? allWhitelists?.filter((w) => w.challenge_id === challenge.id) || []
+        : [],
+      canManage: isSuperAdmin || managedChallengeIds.has(challenge.id) || false,
+      managingAdmins:
+        allManagers
+          ?.filter((m) => m.challenge_id === challenge.id)
+          .map((m) => m.email) || [],
+    }));
   } catch (error) {
     console.error('Error fetching challenges:', error);
     return [];

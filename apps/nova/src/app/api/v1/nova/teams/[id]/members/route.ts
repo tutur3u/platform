@@ -33,9 +33,9 @@ export async function GET(
     }
 
     const { error: roleError } = await supabase
-      .from('platform_email_roles')
+      .from('platform_user_roles')
       .select('*')
-      .eq('email', user.email)
+      .eq('user_id', user.id)
       .eq('allow_role_management', true)
       .single();
 

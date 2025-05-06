@@ -19,9 +19,9 @@ export default async function RootLayout({
   if (!user?.email) redirect('/login');
 
   const { data: whitelisted } = await sbAdmin
-    .from('platform_email_roles')
+    .from('platform_user_roles')
     .select('enabled, allow_challenge_management, allow_role_management')
-    .eq('email', user.email)
+    .eq('user_id', user.id)
     .maybeSingle();
 
   if (

@@ -28,11 +28,11 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: userRole } = await sbAdmin
-    .from('platform_email_roles')
+    .from('platform_user_roles')
     .select(
       'allow_challenge_management, allow_manage_all_challenges, allow_role_management'
     )
-    .eq('email', user.email)
+    .eq('user_id', user.id)
     .single();
 
   if (
@@ -49,9 +49,9 @@ export async function POST(request: NextRequest) {
   ) {
     const { count, error } = await sbAdmin
       .from('nova_challenge_manager_emails')
-      .select('admin_email', { count: 'exact', head: true })
+      .select('email', { count: 'exact', head: true })
       .eq('challenge_id', challengeId)
-      .eq('admin_email', user.email);
+      .eq('email', user.email);
 
     if (error || count === 0) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
@@ -69,17 +69,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify admin exists and can manage challenges
+    // Verify admin exists and can manage challenges in one query
     const { data: adminData, error: adminError } = await sbAdmin
-      .from('platform_email_roles')
-      .select('email, enabled, allow_challenge_management')
-      .eq('email', adminEmail)
+      .from('platform_user_roles')
+      .select(
+        'user_id, enabled, allow_challenge_management, ...users!inner(...user_private_details!inner(email))'
+      )
+      .eq('users.user_private_details.email', adminEmail)
       .eq('enabled', true)
       .single();
 
     if (adminError || !adminData?.allow_challenge_management) {
       return NextResponse.json(
-        { message: 'Invalid admin email' },
+        { message: 'Invalid admin email or insufficient permissions' },
         { status: 400 }
       );
     }
@@ -159,11 +161,11 @@ export async function DELETE(request: NextRequest) {
   }
 
   const { data: userRole } = await sbAdmin
-    .from('platform_email_roles')
+    .from('platform_user_roles')
     .select(
-      'allow_challenge_management, allow_manage_all_challenges, allow_role_management'
+      ' allow_challenge_management, allow_manage_all_challenges, allow_role_management,...users!inner(...user_private_details!inner(email))'
     )
-    .eq('email', user.email)
+    .eq('users.user_private_details.email', user.email)
     .single();
 
   if (
@@ -180,9 +182,9 @@ export async function DELETE(request: NextRequest) {
   ) {
     const { count, error } = await sbAdmin
       .from('nova_challenge_manager_emails')
-      .select('admin_email', { count: 'exact', head: true })
+      .select('email', { count: 'exact', head: true })
       .eq('challenge_id', challengeId)
-      .eq('admin_email', user.email);
+      .eq('email', user.email);
 
     if (error || count === 0) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });

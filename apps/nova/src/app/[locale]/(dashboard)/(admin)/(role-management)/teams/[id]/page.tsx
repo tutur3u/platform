@@ -21,10 +21,10 @@ export default async function TeamDetailsPage({ params }: Props) {
   const t = await getTranslations();
   const { id } = await params;
 
+
   const teamData = await getTeamData(id);
   const membersData = await getTeamMembersData(id);
   const invitationsData = await getTeamInvitationsData(id);
-
   return (
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between">
@@ -78,10 +78,14 @@ async function getTeamMembersData(id: string) {
 
   if (!user?.email) notFound();
 
-  const { data: roleData, error: roleError } = await supabase
-    .from('platform_email_roles')
+  const sbAdmin = await createAdminClient();
+
+  if (!sbAdmin) return [];
+
+  const { data: roleData, error: roleError } = await sbAdmin
+    .from('platform_user_roles')
     .select('allow_role_management')
-    .eq('email', user.email)
+    .eq('user_id', user.id)
     .maybeSingle();
 
   if (roleError) {
@@ -91,7 +95,7 @@ async function getTeamMembersData(id: string) {
 
   if (!roleData?.allow_role_management) notFound();
 
-  const sbAdmin = await createAdminClient();
+  // const sbAdmin = await createAdminClient();
 
   const { data, error } = await sbAdmin
     .from('nova_team_members')

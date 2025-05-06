@@ -35,8 +35,6 @@ export async function PUT(req: NextRequest) {
     allow_role_management: allow_role_management ?? false,
   };
 
-  console.log('update', updateData);
-
   const { error } = await supabase
     .from('platform_user_roles')
     .update(updateData)
