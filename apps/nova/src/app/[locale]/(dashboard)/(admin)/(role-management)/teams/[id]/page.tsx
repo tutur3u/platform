@@ -21,7 +21,6 @@ export default async function TeamDetailsPage({ params }: Props) {
   const t = await getTranslations();
   const { id } = await params;
 
-
   const teamData = await getTeamData(id);
   const membersData = await getTeamMembersData(id);
   const invitationsData = await getTeamInvitationsData(id);
