@@ -835,6 +835,9 @@ importers:
       canvas-confetti:
         specifier: ^1.9.3
         version: 1.9.3
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -880,6 +883,12 @@ importers:
       react-dom:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
+      react-pdf:
+        specifier: ^9.2.1
+        version: 9.2.1(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react-quizlet-flashcard:
+        specifier: ^3.0.0
+        version: 3.0.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       sharp:
         specifier: ^0.34.1
         version: 0.34.1
