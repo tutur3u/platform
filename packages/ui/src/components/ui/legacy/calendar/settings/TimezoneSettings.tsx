@@ -1,17 +1,14 @@
 'use client';
 
 import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SelectGroup,
-  SelectLabel,
-  SelectSeparator,
-} from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@tuturuuu/ui/popover';
+import { Button } from '@tuturuuu/ui/button';
+import { ChevronDown, Check } from 'lucide-react';
 import React from 'react';
 
 export type TimezoneData = {
@@ -34,76 +31,85 @@ type TimezoneGroups = {
   [key: string]: TimezoneOption[];
 };
 
-// Group timezones by continent/region
-const timezoneGroups: TimezoneGroups = {
-  'Auto & UTC': [
-    { value: 'auto', label: 'Auto-detect (System)' },
-    { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
-  ],
-  'North America (UTC-10 to -4)': [
-    { value: 'America/Adak', label: 'Hawaii-Aleutian Time (HAT) - UTC-10:00' },
-    { value: 'America/Anchorage', label: 'Alaska Time (AKT) - UTC-09:00' },
-    { value: 'America/Los_Angeles', label: 'Pacific Time (PT) - UTC-08:00' },
-    { value: 'America/Denver', label: 'Mountain Time (MT) - UTC-07:00' },
-    { value: 'America/Phoenix', label: 'Mountain Time (MT) - UTC-07:00 (No DST)' },
-    { value: 'America/Chicago', label: 'Central Time (CT) - UTC-06:00' },
-    { value: 'America/New_York', label: 'Eastern Time (ET) - UTC-05:00' },
-    { value: 'America/Halifax', label: 'Atlantic Time (AT) - UTC-04:00' },
-  ],
-  'South America (UTC-5 to -3)': [
-    { value: 'America/Lima', label: 'Peru Time (PET) - UTC-05:00' },
-    { value: 'America/Caracas', label: 'Venezuela Time (VET) - UTC-04:00' },
-    { value: 'America/Santiago', label: 'Chile Time (CLT) - UTC-04:00' },
-    { value: 'America/Argentina/Buenos_Aires', label: 'Argentina Time (ART) - UTC-03:00' },
-    { value: 'America/Sao_Paulo', label: 'Brasilia Time (BRT) - UTC-03:00' },
-  ],
-  'Europe (UTC+0 to +3)': [
-    { value: 'Europe/London', label: 'Greenwich Mean Time (GMT) - UTC+00:00' },
-    { value: 'Europe/Paris', label: 'Central European Time (CET) - UTC+01:00' },
-    { value: 'Europe/Berlin', label: 'Central European Time (CET) - UTC+01:00' },
-    { value: 'Europe/Helsinki', label: 'Eastern European Time (EET) - UTC+02:00' },
-    { value: 'Europe/Moscow', label: 'Moscow Standard Time (MSK) - UTC+03:00' },
-  ],
-  'Africa (UTC+0 to +3)': [
-    { value: 'Africa/Casablanca', label: 'Morocco Time (WET) - UTC+00:00' },
-    { value: 'Africa/Lagos', label: 'West Africa Time (WAT) - UTC+01:00' },
-    { value: 'Africa/Cairo', label: 'Eastern European Time (EET) - UTC+02:00' },
-    { value: 'Africa/Johannesburg', label: 'South Africa Standard Time (SAST) - UTC+02:00' },
-    { value: 'Africa/Nairobi', label: 'East Africa Time (EAT) - UTC+03:00' },
-  ],
-  'Middle East (UTC+2 to +4)': [
-    { value: 'Asia/Jerusalem', label: 'Israel Standard Time (IST) - UTC+02:00' },
-    { value: 'Asia/Amman', label: 'Eastern European Time (EET) - UTC+02:00' },
-    { value: 'Asia/Riyadh', label: 'Arabia Standard Time (AST) - UTC+03:00' },
-    { value: 'Asia/Tehran', label: 'Iran Standard Time (IRST) - UTC+03:30' },
-    { value: 'Asia/Dubai', label: 'Gulf Standard Time (GST) - UTC+04:00' },
-  ],
-  'Asia (UTC+5:30 to +9)': [
-    { value: 'Asia/Kolkata', label: 'India Standard Time (IST) - UTC+05:30' },
-    { value: 'Asia/Kathmandu', label: 'Nepal Time (NPT) - UTC+05:45' },
-    { value: 'Asia/Dhaka', label: 'Bangladesh Standard Time (BST) - UTC+06:00' },
-    { value: 'Asia/Bangkok', label: 'Indochina Time (ICT) - UTC+07:00' },
-    { value: 'Asia/Singapore', label: 'Singapore Time (SGT) - UTC+08:00' },
-    { value: 'Asia/Hong_Kong', label: 'Hong Kong Time (HKT) - UTC+08:00' },
-    { value: 'Asia/Manila', label: 'Philippine Time (PHT) - UTC+08:00' },
-    { value: 'Asia/Shanghai', label: 'China Standard Time (CST) - UTC+08:00' },
-    { value: 'Asia/Tokyo', label: 'Japan Standard Time (JST) - UTC+09:00' },
-    { value: 'Asia/Seoul', label: 'Korea Standard Time (KST) - UTC+09:00' },
-  ],
-  'Oceania (UTC+8 to +12)': [
-    { value: 'Australia/Perth', label: 'Australian Western Time (AWST) - UTC+08:00' },
-    { value: 'Australia/Darwin', label: 'Australian Central Time (ACST) - UTC+09:30 (No DST)' },
-    { value: 'Australia/Adelaide', label: 'Australian Central Time (ACST) - UTC+09:30' },
-    { value: 'Australia/Brisbane', label: 'Australian Eastern Time (AEST) - UTC+10:00 (No DST)' },
-    { value: 'Australia/Sydney', label: 'Australian Eastern Time (AEST) - UTC+10:00' },
-    { value: 'Pacific/Guam', label: 'Chamorro Standard Time (ChST) - UTC+10:00' },
-    { value: 'Pacific/Auckland', label: 'New Zealand Standard Time (NZST) - UTC+12:00' },
-    { value: 'Pacific/Fiji', label: 'Fiji Time (FJT) - UTC+12:00' },
-  ],
+// Helper to get numeric offset in minutes and formatted string
+function getTimezoneOffsetInfo(timeZone: string, date: Date = new Date()): { offsetMinutes: number, offsetString: string } {
+  try {
+    const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const tzDate = new Date(date.toLocaleString('en-US', { timeZone }));
+    const offsetMinutes = (tzDate.getTime() - utcDate.getTime()) / 60000;
+    const sign = offsetMinutes >= 0 ? '+' : '-';
+    const absOffset = Math.abs(offsetMinutes);
+    const hours = String(Math.floor(absOffset / 60)).padStart(2, '0');
+    const minutes = String(absOffset % 60).padStart(2, '0');
+    return {
+      offsetMinutes,
+      offsetString: `${sign}${hours}:${minutes}`,
+    };
+  } catch {
+    return { offsetMinutes: 0, offsetString: '+00:00' };
+  }
+}
+
+// Generate timezone list grouped by region/continent and sorted by offset
+const generateTimezoneList = (): TimezoneGroups => {
+  const timezones = Intl.supportedValuesOf('timeZone');
+  const groups: TimezoneGroups = {
+    'Auto & UTC': [
+      { value: 'auto', label: 'Auto-detect (System)' },
+      { value: 'UTC', label: '+00:00 – UTC (Coordinated Universal Time)' },
+    ],
+  };
+
+  // Build a map of region -> array of timezones with offset info
+  const regionMap: Record<string, Array<{ value: string; label: string; offsetMinutes: number; city: string }>> = {};
+
+  timezones.forEach(tz => {
+    const parts = tz.split('/');
+    const region = parts[0] || 'Other';
+    const cityName = parts[parts.length - 1]?.replace(/_/g, ' ') || tz;
+    const date = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      timeZoneName: 'long',
+    });
+    const timeZoneName = formatter.formatToParts(date)
+      .find(part => part.type === 'timeZoneName')?.value || '';
+    const { offsetMinutes, offsetString } = getTimezoneOffsetInfo(tz, date);
+    if (!regionMap[region]) regionMap[region] = [];
+    regionMap[region].push({
+      value: tz,
+      label: `${offsetString} – ${cityName} (${timeZoneName})`,
+      offsetMinutes,
+      city: cityName,
+    });
+  });
+
+  // Sort each region's timezones by offset, then by city name
+  Object.keys(regionMap).forEach(region => {
+    if (regionMap[region]) {
+      regionMap[region]!.sort((a, b) => a.offsetMinutes - b.offsetMinutes || a.city.localeCompare(b.city));
+      groups[region] = regionMap[region]!.map(({ value, label }) => ({ value, label }));
+    }
+  });
+
+  return groups;
 };
 
-// Flatten timezones for search
+const timezoneGroups = generateTimezoneList();
 const allTimezones = Object.values(timezoneGroups).flat();
+
+// Helper function to filter timezones
+const filterTimezones = (query: string): TimezoneGroups => {
+  if (!query) return timezoneGroups;
+  
+  const searchQuery = query.toLowerCase();
+  const filtered = allTimezones.filter(tz => 
+    tz.label.toLowerCase().includes(searchQuery) || 
+    tz.value.toLowerCase().includes(searchQuery)
+  );
+  
+  return { 'Search Results': filtered } as TimezoneGroups;
+};
 
 type TimezoneSettingsProps = {
   value: TimezoneData;
@@ -115,8 +121,57 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
   const [secondarySearchQuery, setSecondarySearchQuery] = React.useState('');
   const [primaryOpen, setPrimaryOpen] = React.useState(false);
   const [secondaryOpen, setSecondaryOpen] = React.useState(false);
+  const [recentTimezones, setRecentTimezones] = React.useState<string[]>([]);
+  const [activeIndex, setActiveIndex] = React.useState<number>(-1);
+  const [activeSecondaryIndex, setActiveSecondaryIndex] = React.useState<number>(-1);
+  const scrollToDetectedRef = React.useRef<HTMLDivElement>(null);
+  const scrollToRegionRef = React.useRef<HTMLDivElement>(null);
+
+  const filteredTimezones = React.useMemo(() => filterTimezones(searchQuery), [searchQuery]);
+  const filteredSecondaryTimezones = React.useMemo(() => filterTimezones(secondarySearchQuery), [secondarySearchQuery]);
+
+  // Flatten filtered timezones for keyboard navigation
+  const flatFilteredTimezones = React.useMemo(() => {
+    return Object.values(filteredTimezones).flat();
+  }, [filteredTimezones]);
+  const flatFilteredSecondaryTimezones = React.useMemo(() => {
+    return Object.values(filteredSecondaryTimezones).flat();
+  }, [filteredSecondaryTimezones]);
+
+  // Get all region group names (excluding 'Auto & UTC')
+  const regionGroupNames = React.useMemo(() => Object.keys(timezoneGroups).filter(g => g !== 'Auto & UTC'), [timezoneGroups]);
+
+  React.useEffect(() => {
+    setActiveIndex(flatFilteredTimezones.findIndex(tz => tz.value === value.timezone));
+  }, [primaryOpen, searchQuery]);
+  React.useEffect(() => {
+    setActiveSecondaryIndex(flatFilteredSecondaryTimezones.findIndex(tz => tz.value === value.secondaryTimezone));
+  }, [secondaryOpen, secondarySearchQuery]);
+
+  // Detect user's timezone on mount
+  React.useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      // If auto is selected, update the timezone
+      if (value.timezone === 'auto') {
+        onChange({
+          ...value,
+          timezone: tz,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to detect timezone:', error);
+    }
+  }, []);
 
   const handleTimezoneChange = (timezone: string) => {
+    // Update recent timezones
+    setRecentTimezones(prev => {
+      const filtered = prev.filter(tz => tz !== timezone);
+      return [timezone, ...filtered].slice(0, 5);
+    });
+
     // If the new primary timezone matches the secondary, clear the secondary
     if (timezone === value.secondaryTimezone) {
       onChange({
@@ -141,128 +196,262 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
     setSecondaryOpen(false);
   };
 
-  const handleToggleChange = (field: keyof TimezoneData, checked: boolean) => {
-    // Only handle showSecondaryTimezone toggle
-    if (field === 'showSecondaryTimezone') {
-      if (!checked) {
+  const handleShowSecondaryChange = (checked: boolean) => {
         onChange({
           ...value,
           showSecondaryTimezone: checked,
-          secondaryTimezone: undefined,
-        });
-      } else {
-        onChange({
-          ...value,
-          showSecondaryTimezone: checked,
-        });
-      }
+      secondaryTimezone: checked ? value.secondaryTimezone : undefined,
+    });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!primaryOpen) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(i => Math.min(i + 1, flatFilteredTimezones.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(i => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' && activeIndex >= 0 && activeIndex < flatFilteredTimezones.length) {
+      e.preventDefault();
+      const tz = flatFilteredTimezones[activeIndex];
+      if (tz) handleTimezoneChange(tz.value);
+    }
+  };
+  const handleSecondaryKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!secondaryOpen) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveSecondaryIndex(i => Math.min(i + 1, flatFilteredSecondaryTimezones.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveSecondaryIndex(i => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' && activeSecondaryIndex >= 0 && activeSecondaryIndex < flatFilteredSecondaryTimezones.length) {
+      e.preventDefault();
+      const tz = flatFilteredSecondaryTimezones[activeSecondaryIndex];
+      if (tz) handleSecondaryTimezoneChange(tz.value);
     }
   };
 
-  const filteredTimezones = React.useMemo(() => {
-    if (!searchQuery) return timezoneGroups;
-    
-    const query = searchQuery.toLowerCase();
-    const filtered = allTimezones.filter(tz => 
-      tz.label.toLowerCase().includes(query) || 
-      tz.value.toLowerCase().includes(query)
-    );
-    
-    return { 'Search Results': filtered } as TimezoneGroups;
-  }, [searchQuery]);
+  // Helper to update active index on mouse/touch
+  const updateActiveIndex = (idx: number, isSecondary = false) => {
+    if (isSecondary) setActiveSecondaryIndex(idx);
+    else setActiveIndex(idx);
+  };
 
-  const filteredSecondaryTimezones = React.useMemo(() => {
-    if (!secondarySearchQuery) return timezoneGroups;
-    
-    const query = secondarySearchQuery.toLowerCase();
-    const filtered = allTimezones.filter(tz => 
-      tz.label.toLowerCase().includes(query) || 
-      tz.value.toLowerCase().includes(query)
-    );
-    
-    return { 'Search Results': filtered } as TimezoneGroups;
-  }, [secondarySearchQuery]);
+  // Handler for jump to region group
+  const handleJumpToRegionGroup = (region: string) => {
+    const groupIdx = regionGroupNames.indexOf(region);
+    if (groupIdx === -1) return;
+    setTimeout(() => {
+      if (!scrollToRegionRef.current) return;
+      const headings = scrollToRegionRef.current.querySelectorAll('[data-region-group]');
+      const heading = headings.item(groupIdx);
+      if (heading) {
+        (heading as HTMLElement).scrollIntoView({ block: 'start' });
+      }
+    }, 0);
+  };
 
   const renderTimezoneGroups = (
     timezones: TimezoneGroups, 
+    selectedTimezone?: string,
     excludeTimezone?: string,
-    disabledTimezones: string[] = []
+    disabledTimezones: string[] = [],
+    onSelect?: (tz: string) => void,
+    activeIdx?: number,
+    _flatList?: TimezoneOption[],
+    isSecondary?: boolean,
   ) => {
+    let itemIdx = -1;
     return (
       <>
-        {Object.entries(timezones).map(([group, timezones]) => (
-          timezones.length > 0 && (
-            <SelectGroup key={group}>
-              <SelectLabel className="px-2 py-1.5 text-sm font-semibold">
+        {Object.entries(timezones).map(([group, tzList], idx, arr) => (
+          tzList.length > 0 && (
+            <div key={group} data-region-group className="py-1">
+              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted rounded-t-md">
                 {group}
-              </SelectLabel>
-              {timezones
+              </div>
+              {tzList
                 .filter(tz => !excludeTimezone || tz.value !== excludeTimezone)
                 .map((tz) => {
+                  itemIdx++;
                   const isDisabled = disabledTimezones.includes(tz.value);
-                  
+                  const isSelected = tz.value === selectedTimezone;
+                  const isActive = activeIdx === itemIdx;
                   return (
-                    <SelectItem 
+                    <button
                       key={tz.value} 
-                      value={tz.value}
+                      role="option"
+                      aria-selected={isSelected}
+                      className={`w-full flex items-center px-2 py-2 text-sm text-left rounded-md transition-colors
+                        ${isSelected ? 'bg-accent text-accent-foreground font-semibold' : ''}
+                        ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'}
+                        ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      onClick={() => !isDisabled && onSelect && onSelect(tz.value)}
                       disabled={isDisabled}
-                      className={isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+                      tabIndex={-1}
+                      ref={el => {
+                        if (isActive && el) el.scrollIntoView({ block: 'nearest' });
+                      }}
+                      onMouseMove={() => updateActiveIndex(itemIdx, isSecondary)}
+                      onTouchStart={() => updateActiveIndex(itemIdx, isSecondary)}
                     >
-                      <span className="block truncate whitespace-nowrap max-w-full">{tz.label}</span>
-                      {isDisabled && ' (Selected)'}
-                    </SelectItem>
+                      <span className="block truncate whitespace-nowrap max-w-full flex-1">{tz.label}</span>
+                      {isSelected && <Check className="ml-2 h-4 w-4 text-primary" />}
+                    </button>
                   );
                 })}
-              <SelectSeparator />
-            </SelectGroup>
+              {idx < arr.length - 1 && <div className="h-px bg-border my-2 mx-2" />}
+            </div>
           )
         ))}
       </>
     );
   };
 
+  const getSelectedTimezoneLabel = (timezone: string) => {
+    if (timezone === 'auto') return 'Auto-detect (System)';
+    const tz = allTimezones.find(t => t.value === timezone);
+    return tz?.label || timezone;
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="timezone">Primary Timezone</Label>
-        <Select 
-          value={value.timezone} 
-          onValueChange={handleTimezoneChange}
-          open={primaryOpen}
-          onOpenChange={setPrimaryOpen}
-        >
-          <SelectTrigger id="timezone" className="w-full">
-            <SelectValue placeholder="Select timezone" />
-          </SelectTrigger>
-          <SelectContent className="overflow-x-hidden w-full max-w-full">
-            <div className="sticky top-0 z-10 bg-background p-2">
+        <Popover open={primaryOpen} onOpenChange={setPrimaryOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={primaryOpen}
+              className="w-full justify-between"
+            >
+              {getSelectedTimezoneLabel(value.timezone)}
+              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="min-w-[var(--radix-popover-trigger-width)] p-0 rounded-lg shadow-lg border bg-popover pointer-events-auto"
+            align="start"
+            role="listbox"
+            tabIndex={0}
+            style={{ touchAction: 'pan-y' }}
+          >
+            <div className="sticky top-0 z-10 bg-background p-2 border-b rounded-t-lg flex flex-col gap-2">
               <input
                 type="text"
                 placeholder="Search timezone..."
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
+                autoFocus
+                onKeyDown={handleKeyDown}
               />
+              <div className="flex flex-wrap gap-1 mb-1">
+                {regionGroupNames.map(region => (
+                  <Button
+                    key={region}
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    className="text-xs px-2 py-1 border border-border rounded"
+                    onClick={() => handleJumpToRegionGroup(region)}
+                  >
+                    {region}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <div className="max-h-[300px] overflow-y-auto overflow-x-hidden w-full">
-              {renderTimezoneGroups(
-                filteredTimezones,
-                undefined,
-                value.secondaryTimezone ? [value.secondaryTimezone] : []
+            <div
+              className="max-h-[320px] overflow-y-auto rounded-b-lg pointer-events-auto"
+              tabIndex={0}
+              onKeyDown={handleKeyDown}
+              role="presentation"
+              style={{ touchAction: 'pan-y' }}
+              ref={el => {
+                scrollToDetectedRef.current = el;
+                scrollToRegionRef.current = el;
+              }}
+            >
+              {recentTimezones.length > 0 && !searchQuery && (
+                <div className="py-1">
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted rounded-t-md">
+                    Recent Timezones
+                  </div>
+                  {recentTimezones.map((tz, idx) => {
+                    const timezone = allTimezones.find(t => t.value === tz);
+                    if (!timezone) return null;
+                    const isSelected = tz === value.timezone;
+                    const isActive = activeIndex === idx;
+                    return (
+                      <button
+                        key={tz}
+                        role="option"
+                        aria-selected={isSelected}
+                        className={`w-full flex items-center px-2 py-2 text-sm text-left rounded-md transition-colors
+                          ${isSelected ? 'bg-accent text-accent-foreground font-semibold' : ''}
+                          ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'}
+                          ${tz === value.secondaryTimezone ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        onClick={() => tz !== value.secondaryTimezone && handleTimezoneChange(tz)}
+                        disabled={tz === value.secondaryTimezone}
+                        tabIndex={-1}
+                        ref={el => {
+                          if (isActive && el) el.scrollIntoView({ block: 'nearest' });
+                        }}
+                        onMouseMove={() => updateActiveIndex(idx)}
+                        onTouchStart={() => updateActiveIndex(idx)}
+                      >
+                        <span className="block truncate whitespace-nowrap max-w-full flex-1">{timezone.label}</span>
+                        {isSelected && <Check className="ml-2 h-4 w-4 text-primary" />}
+                      </button>
+                    );
+                  })}
+                  <div className="h-px bg-border my-2 mx-2" />
+                </div>
               )}
+              {Object.entries(filteredTimezones).map(([group, tzList]) => (
+                tzList.length > 0 && group !== 'Auto & UTC' && (
+                  <div key={group} data-region-group className="py-1">
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted rounded-t-md">
+                      {group}
+                    </div>
+                    {tzList.map((tz, idx) => {
+                      const isDisabled = value.secondaryTimezone ? tz.value === value.secondaryTimezone : false;
+                      const isSelected = tz.value === value.timezone;
+                      const isActive = activeIndex === idx; // This may need to be adjusted for flat index
+                      return (
+                        <button
+                          key={tz.value}
+                          role="option"
+                          aria-selected={isSelected}
+                          className={`w-full flex items-center px-2 py-2 text-sm text-left rounded-md transition-colors
+                            ${isSelected ? 'bg-accent text-accent-foreground font-semibold' : ''}
+                            ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'}
+                            ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          onClick={() => !isDisabled && handleTimezoneChange(tz.value)}
+                          disabled={isDisabled}
+                          tabIndex={-1}
+                        >
+                          <span className="block truncate whitespace-nowrap max-w-full flex-1">{tz.label}</span>
+                          {isSelected && <Check className="ml-2 h-4 w-4 text-primary" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )
+              ))}
             </div>
-          </SelectContent>
-        </Select>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="flex items-center space-x-2">
         <Switch
           id="show-secondary"
           checked={value.showSecondaryTimezone}
-          onCheckedChange={(checked) =>
-            handleToggleChange('showSecondaryTimezone', checked)
-          }
+          onCheckedChange={handleShowSecondaryChange}
         />
         <Label htmlFor="show-secondary">Show secondary timezone</Label>
       </div>
@@ -270,35 +459,56 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
       {value.showSecondaryTimezone && (
         <div className="space-y-2">
           <Label htmlFor="secondary-timezone">Secondary Timezone</Label>
-          <Select
-            value={value.secondaryTimezone || ''}
-            onValueChange={handleSecondaryTimezoneChange}
-            open={secondaryOpen}
-            onOpenChange={setSecondaryOpen}
-          >
-            <SelectTrigger id="secondary-timezone" className="w-full">
-              <SelectValue placeholder="Select secondary timezone" />
-            </SelectTrigger>
-            <SelectContent className="overflow-x-hidden w-full max-w-full">
-              <div className="sticky top-0 z-10 bg-background p-2">
+          <Popover open={secondaryOpen} onOpenChange={setSecondaryOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={secondaryOpen}
+                className="w-full justify-between"
+              >
+                {value.secondaryTimezone ? getSelectedTimezoneLabel(value.secondaryTimezone) : 'Select secondary timezone'}
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="min-w-[var(--radix-popover-trigger-width)] p-0 rounded-lg shadow-lg border bg-popover pointer-events-auto"
+              align="start"
+              role="listbox"
+              tabIndex={0}
+              style={{ touchAction: 'pan-y' }}
+            >
+              <div className="sticky top-0 z-10 bg-background p-2 border-b rounded-t-lg">
                 <input
                   type="text"
                   placeholder="Search timezone..."
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={secondarySearchQuery}
                   onChange={(e) => setSecondarySearchQuery(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
+                  autoFocus
+                  onKeyDown={handleSecondaryKeyDown}
                 />
               </div>
-              <div className="max-h-[300px] overflow-y-auto overflow-x-hidden w-full">
+              <div
+                className="max-h-[320px] overflow-y-auto rounded-b-lg pointer-events-auto"
+                tabIndex={0}
+                onKeyDown={handleSecondaryKeyDown}
+                role="presentation"
+                style={{ touchAction: 'pan-y' }}
+              >
                 {renderTimezoneGroups(
                   filteredSecondaryTimezones,
+                  value.secondaryTimezone,
                   undefined,
-                  [value.timezone]
+                  [value.timezone],
+                  handleSecondaryTimezoneChange,
+                  activeSecondaryIndex,
+                  flatFilteredSecondaryTimezones,
+                  true
                 )}
               </div>
-            </SelectContent>
-          </Select>
+            </PopoverContent>
+          </Popover>
         </div>
       )}
     </div>
