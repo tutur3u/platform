@@ -18,8 +18,9 @@ export function GetStartedButton({
   const hidden = pathname === '/login';
 
   return (
-    <Link href={href} disabled={disabled}>
+    <Link href={href}>
       <Button
+        disabled={disabled}
         className={cn(
           hidden &&
             'text-foreground/50 pointer-events-none select-none bg-transparent opacity-50'
