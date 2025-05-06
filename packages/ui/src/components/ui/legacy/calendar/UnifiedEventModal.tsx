@@ -500,7 +500,9 @@ export function UnifiedEventModal() {
       if (isAllDay) {
         // For all-day, keep end_at as is if it's after or equal to start_at + 1 day, otherwise set to start + 1 day
         newEvent.start_at = newStartDate.startOf('day').toISOString();
-        let newEnd = dayjs(prev.end_at).isValid() ? dayjs(prev.end_at) : newStartDate.startOf('day').add(1, 'day');
+        let newEnd = dayjs(prev.end_at).isValid()
+          ? dayjs(prev.end_at)
+          : newStartDate.startOf('day').add(1, 'day');
         if (!newEnd.isAfter(newStartDate.startOf('day'))) {
           newEnd = newStartDate.startOf('day').add(1, 'day');
         }
@@ -574,7 +576,8 @@ export function UnifiedEventModal() {
   // Handle all-day toggle
   const handleAllDayChange = (checked: boolean) => {
     setEvent((prev) => {
-      let startDate = tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
+      let startDate =
+        tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
       // Backup previous times before updating
       const timedBackup = prevTimes.timed;
       const alldayBackup = prevTimes.allday;
@@ -591,7 +594,10 @@ export function UnifiedEventModal() {
             end_at: alldayBackup.end,
           };
         }
-        const newStart = tz === 'auto' ? startDate.startOf('day') : startDate.tz(tz).startOf('day');
+        const newStart =
+          tz === 'auto'
+            ? startDate.startOf('day')
+            : startDate.tz(tz).startOf('day');
         let newEnd = newStart.add(1, 'day');
         return {
           ...prev,
@@ -611,7 +617,10 @@ export function UnifiedEventModal() {
             end_at: timedBackup.end,
           };
         }
-        let newStart = tz === 'auto' ? dayjs().startOf('hour') : dayjs().startOf('hour').tz(tz);
+        let newStart =
+          tz === 'auto'
+            ? dayjs().startOf('hour')
+            : dayjs().startOf('hour').tz(tz);
         let newEnd = newStart.add(1, 'hour');
         return {
           ...prev,
@@ -990,8 +999,14 @@ export function UnifiedEventModal() {
                           showTimeSelect={!isAllDay}
                           minDate={(() => {
                             // Allow selecting the same day as the start date
-                            const start = new Date(event.start_at || new Date());
-                            return new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                            const start = new Date(
+                              event.start_at || new Date()
+                            );
+                            return new Date(
+                              start.getFullYear(),
+                              start.getMonth(),
+                              start.getDate()
+                            );
                           })()}
                           minTime={(() => {
                             const start = new Date(
