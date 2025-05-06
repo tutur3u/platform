@@ -259,8 +259,9 @@ export function StorageObjectForm({
                 </FormControl>
               ) : (
                 <ScrollArea
-                  className={`${files.length > 3 ? 'h-48' : 'h-auto'
-                    } rounded-md border`}
+                  className={`${
+                    files.length > 3 ? 'h-48' : 'h-auto'
+                  } rounded-md border`}
                 >
                   {files
                     // sort "uploaded" files first, then sort by name
@@ -343,7 +344,7 @@ export function StorageObjectForm({
                             </div>
                           </div>
                           {uploadedAllFiles ||
-                            fileStatuses[file.name] === 'uploaded' ? (
+                          fileStatuses[file.name] === 'uploaded' ? (
                             <Check className="h-5 w-5" />
                           ) : (
                             <Button
