@@ -1,6 +1,6 @@
 import { getWorkspaceCourseColumns } from './columns';
 import CourseForm from './form';
-import { mockData } from './mock/mock-courses';
+//import { mockData } from './mock/mock-courses';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourse } from '@tuturuuu/types/db';
