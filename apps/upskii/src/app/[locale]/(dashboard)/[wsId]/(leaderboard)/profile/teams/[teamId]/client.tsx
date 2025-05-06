@@ -59,7 +59,13 @@ export interface TeamData {
   };
 }
 
-export function TeamProfile({ teamData, wsId }: { teamData: TeamData | null, wsId: string }) {
+export function TeamProfile({
+  teamData,
+  wsId,
+}: {
+  teamData: TeamData | null;
+  wsId: string;
+}) {
   const locale = useLocale();
 
   if (!teamData) {

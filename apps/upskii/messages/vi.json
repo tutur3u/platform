@@ -3519,5 +3519,14 @@
     "quizzes": "Bài kiểm tra",
     "chat": "Trò chuyện",
     "roles": "Vai trò"
+  },
+  "certificates": {
+    "offered_by": "được dạy bởi",
+    "title": "Bằng Chứng Chỉ",
+    "certify_text": "Chứng chỉ này công nhận",
+    "completion_text": "đã hoàn thành khóa học",
+    "completion_date": "Ngày chứng nhận",
+    "certificate_id": "ID Chứng chỉ",
+    "download_button": "Tải xuống"
   }
 }

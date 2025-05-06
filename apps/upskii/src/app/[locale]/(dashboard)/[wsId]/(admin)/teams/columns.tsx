@@ -16,9 +16,14 @@ interface Team {
   invitation_count?: number;
 }
 
-export const getTeamColumns = (t: any, _: any, __:any, extraData:{
-  wsId: string;
-}): ColumnDef<Team>[] => {
+export const getTeamColumns = (
+  t: any,
+  _: any,
+  __: any,
+  extraData: {
+    wsId: string;
+  }
+): ColumnDef<Team>[] => {
   return [
     {
       accessorKey: 'id',
@@ -96,7 +101,9 @@ export const getTeamColumns = (t: any, _: any, __:any, extraData:{
           title={t('team-tabs.overview')}
         />
       ),
-      cell: ({ row }) => <TeamAccordion wsId={t.wsId} teamId={row.getValue('id')} />,
+      cell: ({ row }) => (
+        <TeamAccordion wsId={extraData.wsId} teamId={row.getValue('id')} />
+      ),
     },
     {
       accessorKey: 'created_at',
@@ -117,7 +124,7 @@ export const getTeamColumns = (t: any, _: any, __:any, extraData:{
     },
     {
       id: 'actions',
-      cell: ({ row }) => <TeamRowActions wsId={t.wsId} row={row} />,
+      cell: ({ row }) => <TeamRowActions wsId={extraData.wsId} row={row} />,
     },
   ];
 };

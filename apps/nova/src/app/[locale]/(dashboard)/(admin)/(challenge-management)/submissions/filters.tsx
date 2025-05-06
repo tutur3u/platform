@@ -103,80 +103,78 @@ export function SubmissionFilters({
 
   return (
     <div className="mb-6 rounded-lg border p-4">
-      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-        <div className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
-          <Select
-            value={selectedChallenge || 'all'}
-            onValueChange={onChallengeChange}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by Challenge" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('title')}</SelectItem>
-              {challenges.map((challenge) => (
-                <SelectItem key={challenge.id} value={challenge.id}>
-                  {challenge.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Select
+          value={selectedChallenge || 'all'}
+          onValueChange={onChallengeChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by Challenge" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('title')}</SelectItem>
+            {challenges.map((challenge) => (
+              <SelectItem key={challenge.id} value={challenge.id}>
+                {challenge.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <Select
-            value={selectedProblem || 'all'}
-            onValueChange={onProblemChange}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by Problem" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('all-problems')}</SelectItem>
-              {filteredProblems.map((problem) => (
-                <SelectItem key={problem.id} value={problem.id}>
-                  {problem.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Select
+          value={selectedProblem || 'all'}
+          onValueChange={onProblemChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by Problem" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('all-problems')}</SelectItem>
+            {filteredProblems.map((problem) => (
+              <SelectItem key={problem.id} value={problem.id}>
+                {problem.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <div className="flex items-center space-x-2">
-            {(selectedChallenge || selectedProblem || searchQuery) && (
+        <div className="flex items-center space-x-2">
+          {(selectedChallenge || selectedProblem || searchQuery) && (
+            <Button
+              variant="outline"
+              onClick={onClearFilters}
+              className="whitespace-nowrap"
+            >
+              {t('clear-filters')}
+            </Button>
+          )}
+
+          {setViewMode && (
+            <div className="flex overflow-hidden rounded-md border">
               <Button
-                variant="outline"
-                onClick={onClearFilters}
-                className="whitespace-nowrap"
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewMode('table')}
+                className={cn(
+                  'h-9 rounded-none px-3',
+                  viewMode === 'table' && 'bg-accent text-accent-foreground'
+                )}
               >
-                {t('clear-filters')}
+                <LayoutList className="h-4 w-4" />
               </Button>
-            )}
-
-            {setViewMode && (
-              <div className="flex overflow-hidden rounded-md border">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setViewMode('table')}
-                  className={cn(
-                    'h-9 rounded-none px-3',
-                    viewMode === 'table' && 'bg-accent text-accent-foreground'
-                  )}
-                >
-                  <LayoutList className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setViewMode('grid')}
-                  className={cn(
-                    'h-9 rounded-none px-3',
-                    viewMode === 'grid' && 'bg-accent text-accent-foreground'
-                  )}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  'h-9 rounded-none px-3',
+                  viewMode === 'grid' && 'bg-accent text-accent-foreground'
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
