@@ -29,9 +29,11 @@ export default function FileDisplay({
   useEffect(() => {
     const fetchSignedUrl = async () => {
       if (!file.id || !file.name) return;
+      
+      const fullPath = `${path.endsWith('/') ? path : `${path}/`}${file.name}`;
       const { data, error } = await supabase.storage
         .from('workspaces')
-        .createSignedUrl(`${path}${file.name}`, 3600);
+        .createSignedUrl(fullPath, 3600);
 
       if (error) {
         console.error(error);

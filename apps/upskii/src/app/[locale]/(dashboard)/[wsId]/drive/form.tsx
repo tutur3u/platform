@@ -140,7 +140,7 @@ export function StorageObjectForm({
   wsId,
   path,
   uploadPath = '',
-  accept = 'image/*',
+  accept = '*',
   onComplete,
   submitLabel,
 }: Props) {
@@ -178,13 +178,21 @@ export function StorageObjectForm({
         [file.name]: 'uploading',
       }));
 
+      const finalPath = path
+        ? joinPath(path, `${generateRandomUUID()}_${file.name}`)
+        : joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`);
+
       const { error } = await supabase.storage
         .from('workspaces')
-        .upload(
-          path ||
-            joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`),
-          file
-        );
+        .upload(finalPath, file);
+
+      // const { error } = await supabase.storage
+      //   .from('workspaces')
+      //   .upload(
+      //     path ||
+      //       joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`),
+      //     file
+      //   );
 
       if (error) {
         setFileStatuses((prev) => ({
@@ -251,9 +259,8 @@ export function StorageObjectForm({
                 </FormControl>
               ) : (
                 <ScrollArea
-                  className={`${
-                    files.length > 3 ? 'h-48' : 'h-auto'
-                  } rounded-md border`}
+                  className={`${files.length > 3 ? 'h-48' : 'h-auto'
+                    } rounded-md border`}
                 >
                   {files
                     // sort "uploaded" files first, then sort by name
@@ -336,7 +343,7 @@ export function StorageObjectForm({
                             </div>
                           </div>
                           {uploadedAllFiles ||
-                          fileStatuses[file.name] === 'uploaded' ? (
+                            fileStatuses[file.name] === 'uploaded' ? (
                             <Check className="h-5 w-5" />
                           ) : (
                             <Button
