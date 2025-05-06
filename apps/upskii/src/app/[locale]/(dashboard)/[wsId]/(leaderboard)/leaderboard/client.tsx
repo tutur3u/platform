@@ -196,7 +196,11 @@ export default function LeaderboardClient({
               </Button>
             </Link>
           </div>
-          <TopThreeCards wsId={wsId} topThree={filteredTopThree} teamMode={false} />
+          <TopThreeCards
+            wsId={wsId}
+            topThree={filteredTopThree}
+            teamMode={false}
+          />
 
           <div className="relative my-8 h-px w-full overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>

@@ -57,7 +57,9 @@ export default async function Page({ params }: Props) {
       redirect('/challenges');
     }
 
-    return <ChallengeClient wsId={wsId} challenge={challenge} session={session} />;
+    return (
+      <ChallengeClient wsId={wsId} challenge={challenge} session={session} />
+    );
   } catch (error) {
     console.error('Error loading challenge:', error);
     redirect('/challenges');

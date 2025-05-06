@@ -8,7 +8,7 @@ import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 
 interface Props {
-  params: Promise<{ wsId: string, challengeId: string }>;
+  params: Promise<{ wsId: string; challengeId: string }>;
 }
 
 export default async function Page({ params }: Props) {
