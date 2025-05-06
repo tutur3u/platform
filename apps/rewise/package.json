@@ -25,7 +25,7 @@
     "sb:typegen": "cd ../db && pnpm supabase gen types typescript --local --schema public > src/types/supabase.ts && prettier --write src/types/supabase.ts"
   },
   "dependencies": {
-    "@deepgram/sdk": "^3.12.1",
+    "@deepgram/sdk": "^4.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.6.1",
