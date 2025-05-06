@@ -64,7 +64,6 @@ type SettingsSection = {
 };
 
 const settingsSections: SettingsSection[] = [
-
   {
     id: 'hours',
     name: 'Hours',
