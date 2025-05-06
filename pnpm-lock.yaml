@@ -883,6 +883,9 @@ importers:
       sharp:
         specifier: ^0.34.1
         version: 0.34.1
+      swr:
+        specifier: ^2.3.3
+        version: 2.3.3(react@19.1.0)
       use-debounce:
         specifier: ^10.0.4
         version: 10.0.4(react@19.1.0)

@@ -2319,7 +2319,8 @@
     "bio-max-length": "Bio must have at most {max} words.",
     "display-name-min-error": "Display name must be at least {min} character",
     "display-name-max-error": "Display name must be less than {max} characters",
-    "email-invalid": "Invalid email"
+    "email-invalid": "Invalid email",
+    "view-full-settings": "View full settings"
   },
   "settings-appearance": {
     "appearance": "Appearance",
