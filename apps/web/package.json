@@ -29,7 +29,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.799.0",
+    "@aws-sdk/client-ses": "^3.803.0",
     "@deepgram/sdk": "^3.12.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
