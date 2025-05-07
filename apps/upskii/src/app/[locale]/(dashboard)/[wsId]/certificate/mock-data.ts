@@ -1,4 +1,3 @@
-
 const today = new Date();
 // Format date as DD/MM/YYYY
 const formatDate = (date: Date) => {
