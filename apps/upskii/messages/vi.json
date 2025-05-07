@@ -171,7 +171,8 @@
     "api-key-saved-title": "Key API được lưu",
     "validate": "Kiểm tra",
     "save-api-key": "Lưu trữ",
-    "imagine_placeholder": "Hãy tưởng tượng..."
+    "imagine_placeholder": "Hãy tưởng tượng...",
+    "api-key-saved-desc": "Key API của bạn đã được lưu. \nVui lòng làm mới trang để bắt đầu sử dụng AI."
   },
   "api-key-data-table": {
     "id": "Mã số",

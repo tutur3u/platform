@@ -10,7 +10,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Check, Loader2 } from '@tuturuuu/ui/icons';
+import { Check, Eye, EyeOff, Loader2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
@@ -27,6 +27,7 @@ export default function ApiKeyInput({
   const [saving, setSaving] = useState(false);
   const [validated, setValidated] = useState(false);
   const [validatedKey, setValidatedKey] = useState<string | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
   const router = useRouter();
 
   const FormSchema = z.object({
@@ -107,13 +108,28 @@ export default function ApiKeyInput({
             name="apiKey"
             render={({ field }) => (
               <FormItem className="w-full md:min-w-max md:max-w-lg">
-                <FormControl>
-                  <Input
-                    id="apiKey"
-                    placeholder={t('enter-api-key')}
-                    {...field}
-                  />
-                </FormControl>
+                <div className='relative'>
+                  <FormControl>
+                    <Input
+                      id="apiKey"
+                      placeholder={t('enter-api-key')}
+                      type={showApiKey ? 'text' : 'password'}
+                      {...field}
+                    />
+                  </FormControl>
+                  <button
+                    tabIndex={-1}
+                    type="button"
+                    className="text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                  >
+                    {showApiKey ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
