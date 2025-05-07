@@ -1,5 +1,5 @@
 import type { ResponseMode } from '../../types';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import {
   createAdminClient,
   createClient,
@@ -117,6 +117,11 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
 
         console.log('User message saved to database');
       }
+
+      // Instantiate Model with provided API key
+      const google = createGoogleGenerativeAI({
+        apiKey: apiKey,
+      });
 
       const result = streamText({
         experimental_transform: smoothStream(),

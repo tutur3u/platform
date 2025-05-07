@@ -17,88 +17,93 @@ const AI_PROMPT = '\n\nAssistant:';
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
 
 // eslint-disable-next-line no-undef
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
 
-const genAI = new GoogleGenerativeAI(API_KEY);
+export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
+  return async function handler(req: Request) {
+    try {
+      const {
+        model = DEFAULT_MODEL_NAME,
+        message,
+        previewToken,
+      } = (await req.json()) as {
+        model?: string;
+        message?: string;
+        previewToken?: string;
+      };
 
-export async function POST(req: Request) {
-  try {
-    const {
-      model = DEFAULT_MODEL_NAME,
-      message,
-      previewToken,
-    } = (await req.json()) as {
-      model?: string;
-      message?: string;
-      previewToken?: string;
-    };
+      if (!message)
+        return NextResponse.json('No message provided', { status: 400 });
 
-    if (!message)
-      return NextResponse.json('No message provided', { status: 400 });
+      const supabase = await createClient();
 
-    const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
-    if (!user) return NextResponse.json('Unauthorized', { status: 401 });
+      // eslint-disable-next-line no-undef
+      const apiKey =
+        previewToken ||
+        (options.serverAPIKeyFallback
+          ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
+          : undefined);
+      if (!apiKey) return new Response('Missing API key', { status: 400 });
 
-    // eslint-disable-next-line no-undef
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    if (!apiKey) return new Response('Missing API key', { status: 400 });
-
-    const prompt = buildPrompt([
-      {
-        id: 'initial-message',
-        content: `"${message}"`,
-        role: 'user',
-      },
-    ]);
-
-    const geminiRes = await genAI
-      .getGenerativeModel({ model, generationConfig, safetySettings })
-      .generateContent(prompt);
-
-    const title = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
-
-    if (!title) {
-      return NextResponse.json(
+      const prompt = buildPrompt([
         {
-          message: 'Internal server error.',
+          id: 'initial-message',
+          content: `"${message}"`,
+          role: 'user',
         },
-        { status: 500 }
-      );
-    }
+      ]);
 
-    if (!title) {
-      return NextResponse.json(
-        {
-          message: 'Internal server error.',
-        },
-        { status: 500 }
-      );
-    }
+      const genAI = new GoogleGenerativeAI(apiKey);
 
-    const { data: id, error } = await supabase.rpc('create_ai_chat', {
-      title,
-      message,
-      model: model.toLowerCase(),
-    });
+      const geminiRes = await genAI
+        .getGenerativeModel({ model, generationConfig, safetySettings })
+        .generateContent(prompt);
 
-    if (error) return NextResponse.json(error.message, { status: 500 });
-    return NextResponse.json({ id, title }, { status: 200 });
-  } catch (error: any) {
-    console.log(error);
-    return NextResponse.json(
-      {
-        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
-      },
-      {
-        status: 200,
+      const title = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+
+      if (!title) {
+        return NextResponse.json(
+          {
+            message: 'Internal server error.',
+          },
+          { status: 500 }
+        );
       }
-    );
-  }
+
+      if (!title) {
+        return NextResponse.json(
+          {
+            message: 'Internal server error.',
+          },
+          { status: 500 }
+        );
+      }
+
+      const { data: id, error } = await supabase.rpc('create_ai_chat', {
+        title,
+        message,
+        model: model.toLowerCase(),
+      });
+
+      if (error) return NextResponse.json(error.message, { status: 500 });
+      return NextResponse.json({ id, title }, { status: 200 });
+    } catch (error: any) {
+      console.log(error);
+      return NextResponse.json(
+        {
+          message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+        },
+        {
+          status: 200,
+        }
+      );
+    }
+  };
 }
 
 const normalize = (message: Message) => {
