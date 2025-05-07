@@ -169,7 +169,7 @@
     "api-key-invalid-desc": "Please provide a valid API Key or try again",
     "api-key-required": "Please provide a valid key format",
     "api-key-saved-title": "API key saved",
-    "api-key-saved-desc": "Your API Key has been saved",
+    "api-key-saved-desc": "Your API Key has been saved. Please refresh the page to start using the AI.",
     "validate": "Validate",
     "save-api-key": "Save",
     "imagine_placeholder": "Imagine..."
