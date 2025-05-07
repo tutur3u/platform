@@ -19,7 +19,7 @@
     "@ai-sdk/cohere": "^1.2.9",
     "@ai-sdk/deepgram": "^0.0.1",
     "@ai-sdk/deepinfra": "^0.2.14",
-    "@ai-sdk/deepseek": "^0.2.13",
+    "@ai-sdk/deepseek": "^0.2.14",
     "@ai-sdk/elevenlabs": "^0.0.2",
     "@ai-sdk/fal": "^0.1.10",
     "@ai-sdk/fireworks": "^0.2.13",
