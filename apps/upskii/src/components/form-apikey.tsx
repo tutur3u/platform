@@ -48,7 +48,8 @@ export default function ApiKeyInput({ defaultValue }: { defaultValue?: string | 
             //         body: JSON.stringify({ contents: [{ parts: [{ text: 'Hello' }] }] }),
             //     }
             // );
-            return true;
+            return key ? true : false;
+            // return res.ok;
         } catch {
             return false;
         }
