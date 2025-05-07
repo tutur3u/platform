@@ -68,7 +68,7 @@ export function ConfirmDialog({
     setIsConfirming(true);
 
     try {
-      console.log("wsId", wsId);
+      console.log('wsId', wsId);
       // Check password if challenge is password protected
       if (challenge.password_hash !== null) {
         const response = await fetch(`/api/auth/challenges/verify-password`, {
