@@ -14,6 +14,9 @@ export default async function AIPage({ searchParams }: Props) {
   const { lang: locale } = await searchParams;
   const { data: chats, count } = await getChats();
 
+  // const cookiesStore = await cookies();
+  // const apiKey = cookiesStore.get('apiKey');
+
   const user = await getCurrentUser();
   if (!user?.email) redirect('/login');
 
@@ -27,5 +30,9 @@ export default async function AIPage({ searchParams }: Props) {
 
   if (error || !whitelisted?.enabled) redirect('/not-whitelisted');
 
-  return <Chat chats={chats} count={count} locale={locale} />;
+  return (
+    <div id="main-content">
+      <Chat chats={chats} count={count} locale={locale} />
+    </div>
+  );
 }

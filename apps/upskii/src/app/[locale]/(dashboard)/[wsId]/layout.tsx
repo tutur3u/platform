@@ -15,6 +15,7 @@ import {
 } from '@/lib/workspace-helper';
 import {
   BookText,
+  Bot,
   Cog,
   Home,
   ListTodo,
@@ -115,6 +116,22 @@ export default async function Layout({ children, params }: LayoutProps) {
         withoutPermission('ai_lab'),
     },
     {
+      title: t('sidebar.ai_chat'),
+      href: `/ai-chat`,
+      icon: <Bot className="h-4 w-4" />,
+      experimental: 'alpha',
+      shortcut: 'M',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+    },
+    {
       title: t('sidebar.chat'),
       href: `/${wsId}/chat`,
       icon: <MessageCircleMore className="h-4 w-4" />,
@@ -200,7 +217,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -209,7 +226,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />
