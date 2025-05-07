@@ -1,5 +1,5 @@
 import type { ResponseMode } from '../../types';
-import { createGoogleGenerativeAI, google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import {
   createAdminClient,
   createClient,

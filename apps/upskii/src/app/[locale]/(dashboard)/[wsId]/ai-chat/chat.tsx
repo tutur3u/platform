@@ -312,8 +312,9 @@ const Chat = ({
   }, [pendingPrompt, chat?.id, append]);
 
   useEffect(() => {
-    if (!pathname.includes('/c/') && messages.length === 1) {
-      window.history.replaceState({}, '', `/c/${chat?.id}`);
+    if (!pathname.includes('/c/') && messages.length === 1 && chat?.id) {
+      const basePath = pathname.split('/ai-chat')[0]; // Extract the base path before "/ai-chat"
+      window.history.replaceState({}, '', `${basePath}/c/${chat.id}`);
     }
   }, [chat?.id, pathname, messages]);
 
