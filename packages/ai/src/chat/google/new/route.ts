@@ -17,11 +17,12 @@ const AI_PROMPT = '\n\nAssistant:';
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
 
 // eslint-disable-next-line no-undef
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
 
-const genAI = new GoogleGenerativeAI(API_KEY);
 
-export async function POST(req: Request) {
+
+export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
+
+  return async function handler(req: Request) {
   try {
     const {
       model = DEFAULT_MODEL_NAME,
@@ -45,7 +46,11 @@ export async function POST(req: Request) {
     if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
     // eslint-disable-next-line no-undef
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+      const apiKey =
+        previewToken ||
+        (options.serverAPIKeyFallback
+          ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
+          : undefined);
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const prompt = buildPrompt([
@@ -55,6 +60,8 @@ export async function POST(req: Request) {
         role: 'user',
       },
     ]);
+
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     const geminiRes = await genAI
       .getGenerativeModel({ model, generationConfig, safetySettings })
@@ -99,6 +106,7 @@ export async function POST(req: Request) {
       }
     );
   }
+}
 }
 
 const normalize = (message: Message) => {

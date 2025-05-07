@@ -7,7 +7,7 @@ export const config = {
 };
 
 const POST = createPOST({
-  serverAPIKeyFallback: true,
+  serverAPIKeyFallback: false,
 });
 
 export { POST };

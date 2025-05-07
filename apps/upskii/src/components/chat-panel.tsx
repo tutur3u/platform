@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 interface PresenceUser {
   id: string;
@@ -64,6 +64,8 @@ export interface ChatPanelProps
   disabled?: boolean;
   presenceState?: RealtimePresenceState<PresenceState>;
   currentUserId?: string;
+  apiKey?: string;
+  apiKeyProvided?: boolean;
 }
 
 export function ChatPanel({
@@ -82,6 +84,8 @@ export function ChatPanel({
   setMode,
   disabled,
   currentUserId,
+  apiKey,
+  apiKeyProvided,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
 
@@ -124,16 +128,7 @@ export function ChatPanel({
     );
   };
 
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [apiKeyProvided, setApiKeyProvided] = useState(false);
 
-  useEffect(() => {
-    const storedApiKey = localStorage.getItem('google_api_key');
-    if (storedApiKey) {
-      setApiKey(storedApiKey);
-      setApiKeyProvided(true);
-    }
-  }, []);
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>

@@ -48,6 +48,17 @@ const Chat = ({
   const [mode, setMode] = useState<ResponseMode>('medium');
   const [currentUserId, setCurrentUserId] = useState<string>();
 
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [apiKeyProvided, setApiKeyProvided] = useState(false);
+
+  useEffect(() => {
+    const storedApiKey = localStorage.getItem('google_api_key');
+    if (storedApiKey) {
+      setApiKey(storedApiKey);
+      setApiKeyProvided(true);
+    }
+  }, []);
+
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       id: chat?.id,
@@ -56,25 +67,29 @@ const Chat = ({
       api:
         chat?.model || model?.value
           ? `/api/ai/chat/${(chat?.model
-              ? models
-                  .find((m) => m.value === chat.model)
-                  ?.provider.toLowerCase() || model?.provider.toLowerCase()
-              : model?.provider.toLowerCase()
-            )?.replace(' ', '-')}`
+            ? models
+              .find((m) => m.value === chat.model)
+              ?.provider.toLowerCase() || model?.provider.toLowerCase()
+            : model?.provider.toLowerCase()
+          )?.replace(' ', '-')}`
           : undefined,
       body: {
         id: chat?.id,
         model: chat?.model || model?.value,
         mode,
+        previewToken: apiKey
       },
       onResponse(response) {
-        if (!response.ok)
+        console.log('Response:', response);
+        if (!response.ok) {
           toast({
             title: t('ai_chat.something_went_wrong'),
             description: t('ai_chat.try_again_later'),
           });
+        }
       },
-      onError() {
+      onError(error) {
+        console.log('Chat Error', error);
         toast({
           title: t('ai_chat.something_went_wrong'),
           description: t('ai_chat.try_again_later'),
@@ -131,6 +146,7 @@ const Chat = ({
           body: JSON.stringify({
             id: chat.id,
             model: chat.model,
+            previewToken: apiKey
           }),
         }
       );
@@ -232,6 +248,7 @@ const Chat = ({
         body: JSON.stringify({
           model: model.value,
           message: input,
+          previewToken: apiKey
         }),
       }
     );
@@ -315,12 +332,12 @@ const Chat = ({
               messages={
                 pendingPrompt
                   ? [
-                      {
-                        id: 'pending',
-                        content: pendingPrompt,
-                        role: 'user',
-                      },
-                    ]
+                    {
+                      id: 'pending',
+                      content: pendingPrompt,
+                      role: 'user',
+                    },
+                  ]
                   : messages
               }
               setInput={setInput}
@@ -367,6 +384,8 @@ const Chat = ({
         setMode={setMode}
         disabled={disabled}
         currentUserId={currentUserId}
+        apiKey={apiKey ?? undefined}
+        apiKeyProvided={apiKeyProvided}
       />
     </div>
   );

@@ -196,7 +196,7 @@ export const defaultModel: Model | undefined =
   models.find(
     (model) =>
       model.value === 'gemini-2.0-flash-001' &&
-      model.provider === 'Google Vertex'
+      model.provider === 'Google'
   ) || fallbackModel;
 
 export const providers: Provider[] = models.reduce((acc, model) => {

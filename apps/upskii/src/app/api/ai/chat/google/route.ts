@@ -1,4 +1,4 @@
-import { createPOST } from '@tuturuuu/ai/chat/google/new/route';
+import { createPOST } from '@tuturuuu/ai/chat/google/route';
 
 export const config = {
   maxDuration: 60,
@@ -7,7 +7,7 @@ export const config = {
 };
 
 const POST = createPOST({
-  serverAPIKeyFallback: true,
+  serverAPIKeyFallback: false,
 });
 
 export { POST };
