@@ -28,7 +28,6 @@ interface TopThreeCardsProps {
 export function TopThreeCards({
   topThree,
   teamMode = false,
-  wsId,
 }: TopThreeCardsProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
