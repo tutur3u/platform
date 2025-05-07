@@ -301,16 +301,6 @@ const Chat = ({
   }, [chat?.id, pathname, messages]);
 
 
-  // Check for API_KEY in local storage
-  useEffect(()=> {
-    const apiKey = localStorage.getItem('API_KEY');
-    if (apiKey) {
-        console.log('API_KEY found in local storage:', apiKey);
-    } else {
-        console.log('API_KEY not found in local storage');
-    }
-  })
-
   return (
     <div className="relative">
       <div className={cn('min-h-[calc(100vh-8rem)] pb-32 md:pt-10', className)}>
