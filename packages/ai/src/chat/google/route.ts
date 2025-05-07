@@ -1,5 +1,5 @@
 import type { ResponseMode } from '../../types';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI, google } from '@ai-sdk/google';
 import {
   createAdminClient,
   createClient,
@@ -118,6 +118,16 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
         console.log('User message saved to database');
       }
 
+
+
+      // Instantiate Model with provided API key
+      const google = createGoogleGenerativeAI({
+        apiKey: apiKey
+      });
+
+
+
+
       const result = streamText({
         experimental_transform: smoothStream(),
         model: google(model, {
@@ -141,13 +151,12 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
           ],
         }),
         messages,
-        system: `${systemInstruction}\n\nSYSTEM NOTE: The user has requested that Mira assistant's response must be ${
-          mode === 'short'
-            ? 'extremely short, concise, and to the point. No flashcards or quizzes are included'
-            : mode === 'medium'
-              ? 'medium in length, informative, and provides a good chunk of helpful insights'
-              : 'long, detailed, comprehensive and look into all possible aspects for a perfect answer. Be as long and comprehensive as possible'
-        }.`,
+        system: `${systemInstruction}\n\nSYSTEM NOTE: The user has requested that Mira assistant's response must be ${mode === 'short'
+          ? 'extremely short, concise, and to the point. No flashcards or quizzes are included'
+          : mode === 'medium'
+            ? 'medium in length, informative, and provides a good chunk of helpful insights'
+            : 'long, detailed, comprehensive and look into all possible aspects for a perfect answer. Be as long and comprehensive as possible'
+          }.`,
         onFinish: async (response) => {
           console.log('AI Response:', response);
 
