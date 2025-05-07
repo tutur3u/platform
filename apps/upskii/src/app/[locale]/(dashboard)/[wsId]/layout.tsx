@@ -117,6 +117,22 @@ export default async function Layout({ children, params }: LayoutProps) {
         withoutPermission('ai_lab'),
     },
     {
+      title: t('sidebar.quiz-sets'),
+      href: `/${wsId}/quiz-sets`,
+      icon: <ListTodo className="h-4 w-4" />,
+      experimental: 'alpha',
+      shortcut: 'S',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+    },
+    {
       title: t('sidebar.challenges'),
       href: `/${wsId}/challenges`,
       icon: <ListTodo className="h-4 w-4" />,
