@@ -1,3 +1,4 @@
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import Certificate from '../certificate-page';
 import { DEV_MODE } from '@/constants/common';
 
@@ -35,7 +36,16 @@ export default async function CertificatePage({ params }: PageProps) {
     throw new Error('Failed to fetch certificate');
   }
 
+  const userDetails = await getCurrentUser();
+
+
   const certDetails = await response.json();
+
+  // Replace the student name in the response with the user's name
+  
+  if (userDetails) {
+    certDetails.studentName = userDetails.display_name;
+  }
 
   return (
     <div>

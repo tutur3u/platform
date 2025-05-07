@@ -14,6 +14,7 @@ import {
   verifySecret,
 } from '@/lib/workspace-helper';
 import {
+  Award,
   BookText,
   Bot,
   Cog,
@@ -103,6 +104,22 @@ export default async function Layout({ children, params }: LayoutProps) {
       title: t('sidebar.quizzes'),
       href: `/${wsId}/quizzes`,
       icon: <ListTodo className="h-4 w-4" />,
+      experimental: 'alpha',
+      shortcut: 'Q',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+    },
+    {
+      title: t('sidebar.certificates'),
+      href: `/${wsId}/certificate/CERT-2024-03-15-a1b2c3d4-e5f6-4321-9876-123456789abc`, // TODO: Replace with dynamic certificate ID
+      icon: <Award className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'Q',
       disabled:

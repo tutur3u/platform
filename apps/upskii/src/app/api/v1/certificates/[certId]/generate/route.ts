@@ -1,4 +1,4 @@
-import { CertificateProps } from '@/app/[locale]/(dashboard)/certificate/[certID]/page';
+import { CertificateProps } from '@/app/[locale]/(dashboard)/[wsId]/certificate/[certID]/page';
 import { DEV_MODE } from '@/constants/common';
 import { NextRequest } from 'next/server';
 import puppeteer from 'puppeteer';
