@@ -1,4 +1,3 @@
-import ApiKeyInput from './form-apikey';
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import { type UseChatHelpers } from '@tuturuuu/ai/types';
@@ -6,12 +5,6 @@ import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { Dialog } from '@tuturuuu/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import {
   Bolt,
   Cat,
@@ -63,6 +56,7 @@ export interface PromptProps
   setShowExtraOptions: React.Dispatch<React.SetStateAction<boolean>>;
   toggleChatFileUpload: () => void;
   toggleChatVisibility: () => void;
+  toggleAPIInput: () => void;
   mode: ResponseMode;
   // eslint-disable-next-line no-unused-vars
   setMode: (mode: ResponseMode) => void;
@@ -87,10 +81,10 @@ export function PromptForm({
   setShowExtraOptions,
   toggleChatFileUpload,
   toggleChatVisibility,
+  toggleAPIInput,
   mode,
   setMode,
   disabled,
-  apiKey,
   apiKeyProvided,
 }: PromptProps) {
   const t = useTranslations();
@@ -634,29 +628,20 @@ export function PromptForm({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className={cn(
-                          'transition-all duration-300',
-                          id
-                            ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
-                            : 'pointer-events-auto ml-1 w-10 opacity-100'
-                        )}
-                      >
-                        <KeyRound />
-                        <span className="sr-only">{t('ai_chat.api_key')}</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuLabel>Add your API Key</DropdownMenuLabel>
-                      <ApiKeyInput defaultValue={apiKey ?? ''} />
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={cn(
+                    'transition-all duration-300',
+                    id
+                      ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
+                      : 'pointer-events-auto ml-1 w-10 opacity-100'
+                  )}
+                  onClick={toggleAPIInput}
+                >
+                  <KeyRound />
+                  <span className="sr-only">{t('ai_chat.api_key')}</span>
+                </Button>
               </TooltipTrigger>
               <TooltipContent>{t('ai_chat.api_key')}</TooltipContent>
             </Tooltip>

@@ -164,7 +164,7 @@
     "api_key": "API Key",
     "enter-api-key": "Enter your API Key",
     "api-key-valid-title": "Valid API Key",
-    "api-key-valid-desc": "API Key succesfully validated",
+    "api-key-valid-desc": "API Key succesfully validated and has been saved",
     "api-key-invalid-title": "Invalid API Key",
     "api-key-invalid-desc": "Please provide a valid API Key or try again",
     "api-key-required": "Please provide a valid key format",
@@ -172,7 +172,12 @@
     "api-key-saved-desc": "Your API Key has been saved. Please refresh the page to start using the AI.",
     "validate": "Validate",
     "save-api-key": "Save",
-    "imagine_placeholder": "Imagine..."
+    "imagine_placeholder": "Imagine...",
+    "api_input": "Input API Key",
+    "api_input_description": "Input your API Key to access AI features",
+    "delete-api-key": "Delete API Key",
+    "api-key-deleted-title": "API Key Deleted",
+    "api-key-deleted-desc": "Your API Key has been successfully deleted"
   },
   "api-key-data-table": {
     "id": "ID",
