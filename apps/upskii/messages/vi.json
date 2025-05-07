@@ -157,7 +157,21 @@
     "chatbots": "Thư viện chatbot",
     "my_chatbots": "Chatbot của tôi",
     "my_chatbots_description": "Quản lý chatbot tùy chỉnh của bạn với các lệnh nhắc và câu trả lời của riêng bạn.",
-    "new_chatbot": "Chatbot mới"
+    "new_chatbot": "Chatbot mới",
+    "short_and_concise": "Ngắn gọn và súc tích",
+    "medium_and_informative": "Vừa đủ thông tin",
+    "long_and_detailed": "Dài và chi tiết",
+    "api_key": "Chìa khóa API",
+    "enter-api-key": "Hãy cung cấp chìa khóa API của bạn",
+    "api-key-valid-desc": "API Key hợp lệ",
+    "api-key-invalid-title": "API Key không hợp lệ",
+    "api-key-valid-title": "API Key hợp lệ",
+    "api-key-invalid-desc": "Vui lòng cung cấp API Key hợp lệ hoặc thử lại",
+    "api-key-required": "Vui lòng cung cấp một định dạng hợp lệ",
+    "api-key-saved-title": "Key API được lưu",
+    "validate": "Kiểm tra",
+    "save-api-key": "Lưu trữ",
+    "imagine_placeholder": "Hãy tưởng tượng..."
   },
   "api-key-data-table": {
     "id": "Mã số",

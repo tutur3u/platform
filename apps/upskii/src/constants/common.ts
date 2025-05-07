@@ -5,13 +5,13 @@ export const PROD_MODE = process.env.NODE_ENV === 'production';
 
 export const BASE_URL =
   process.env.BASE_URL || PROD_MODE
-    ? 'https://tuturuuu.com'
-    : 'http://localhost:7805';
+    ? 'https://upskii.com'
+    : 'http://localhost:7806';
 
 export const API_URL =
   process.env.API_URL || PROD_MODE
-    ? 'https://tuturuuu.com/api'
-    : 'http://localhost:7805/api';
+    ? 'https://upskii.com/api'
+    : 'http://localhost:7806/api';
 
 export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 

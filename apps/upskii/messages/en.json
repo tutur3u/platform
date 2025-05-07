@@ -157,7 +157,22 @@
     "chatbots": "Chatbots",
     "my_chatbots": "My Chatbots",
     "my_chatbots_description": "Manage your custom chatbots with your own prompts and responses.",
-    "new_chatbot": "New chatbot"
+    "new_chatbot": "New chatbot",
+    "short_and_concise": "Short and concise",
+    "medium_and_informative": "Medium and informative",
+    "long_and_detailed": "Long and detailed",
+    "api_key": "API Key",
+    "enter-api-key": "Enter your API Key",
+    "api-key-valid-title": "Valid API Key",
+    "api-key-valid-desc": "API Key succesfully validated",
+    "api-key-invalid-title": "Invalid API Key",
+    "api-key-invalid-desc": "Please provide a valid API Key or try again",
+    "api-key-required": "Please provide a valid key format",
+    "api-key-saved-title": "API key saved",
+    "api-key-saved-desc": "Your API Key has been saved",
+    "validate": "Validate",
+    "save-api-key": "Save",
+    "imagine_placeholder": "Imagine..."
   },
   "api-key-data-table": {
     "id": "ID",
