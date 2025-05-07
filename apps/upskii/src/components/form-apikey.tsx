@@ -108,7 +108,7 @@ export default function ApiKeyInput({
             name="apiKey"
             render={({ field }) => (
               <FormItem className="w-full md:min-w-max md:max-w-lg">
-                <div className='relative'>
+                <div className="relative">
                   <FormControl>
                     <Input
                       id="apiKey"
