@@ -1,3 +1,4 @@
+import ApiKeyInput from './form-apikey';
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import { type UseChatHelpers } from '@tuturuuu/ai/types';
@@ -5,7 +6,12 @@ import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { Dialog } from '@tuturuuu/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger } from '@tuturuuu/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import {
   Bolt,
   Cat,
@@ -38,8 +44,6 @@ import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
-import ApiKeyInput from './form-apikey';
-
 
 export type ResponseMode = 'short' | 'medium' | 'long';
 
@@ -87,7 +91,7 @@ export function PromptForm({
   setMode,
   disabled,
   apiKey,
-  apiKeyProvided
+  apiKeyProvided,
 }: PromptProps) {
   const t = useTranslations();
 
@@ -235,11 +239,6 @@ export function PromptForm({
 
   const ENABLE_NEW_UI = DEV_MODE;
 
-
-
-
-
-
   return (
     <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
       <form
@@ -261,13 +260,15 @@ export function PromptForm({
             {apiKeyProvided ? (
               <>
                 <div className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green flex shrink-0 items-center gap-1 rounded border px-2 py-1.5 text-xs font-semibold">
-                  <Check className='h-3 w-3' />
+                  <Check className="h-3 w-3" />
                 </div>
                 {disabled || (
                   <Separator orientation="vertical" className="h-4" />
                 )}
-              </>) :
-              <></>}
+              </>
+            ) : (
+              <></>
+            )}
             {model && (
               <>
                 <div className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange flex shrink-0 items-center gap-1 rounded border px-2 py-1 text-xs font-semibold">
@@ -286,8 +287,6 @@ export function PromptForm({
                 )}
               </>
             )}
-
-
 
             {disabled || (
               <>
@@ -608,9 +607,7 @@ export function PromptForm({
                   </span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                {t('ai_chat.chat_visibility')}
-              </TooltipContent>
+              <TooltipContent>{t('ai_chat.chat_visibility')}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -663,7 +660,6 @@ export function PromptForm({
               </TooltipTrigger>
               <TooltipContent>{t('ai_chat.api_key')}</TooltipContent>
             </Tooltip>
-
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -828,7 +824,7 @@ export function PromptForm({
             // value={[input, caption || ''].filter(Boolean).join(' ')}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              (disabled || !apiKeyProvided)
+              disabled || !apiKeyProvided
                 ? t('ai_chat.imagine_placeholder')
                 : `${t('ai_chat.send_message')}.`
             }

@@ -1,8 +1,13 @@
 /* eslint-disable no-unused-vars */
 import { ChatModelSelector } from './chat-model-selector';
+import { PromptForm } from './prompt-form';
 import { ChatPermissions } from '@/components/chat-permissions';
 import { Model } from '@tuturuuu/ai/models';
-import { ResponseMode, type Message, type UseChatHelpers } from '@tuturuuu/ai/types';
+import {
+  type Message,
+  ResponseMode,
+  type UseChatHelpers,
+} from '@tuturuuu/ai/types';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { AIChat } from '@tuturuuu/types/db';
@@ -16,7 +21,6 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import React, { useEffect, useState } from 'react';
-import { PromptForm } from './prompt-form';
 
 interface PresenceUser {
   id: string;
@@ -190,9 +194,7 @@ export function ChatPanel({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {dialogType === 'files'
-              ? t('upload_files')
-              : t('chat_visibility')}
+            {dialogType === 'files' ? t('upload_files') : t('chat_visibility')}
           </DialogTitle>
           <DialogDescription>
             {dialogType === 'files'
