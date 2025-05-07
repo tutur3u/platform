@@ -1315,8 +1315,8 @@ importers:
         specifier: ^0.2.14
         version: 0.2.14(zod@3.24.4)
       '@ai-sdk/elevenlabs':
-        specifier: ^0.0.2
-        version: 0.0.2(zod@3.24.4)
+        specifier: ^0.0.3
+        version: 0.0.3(zod@3.24.4)
       '@ai-sdk/fal':
         specifier: ^0.1.11
         version: 0.1.11(zod@3.24.4)
@@ -1336,11 +1336,11 @@ importers:
         specifier: ^1.2.9
         version: 1.2.9(zod@3.24.4)
       '@ai-sdk/hume':
-        specifier: ^0.0.1
-        version: 0.0.1(zod@3.24.4)
+        specifier: ^0.0.2
+        version: 0.0.2(zod@3.24.4)
       '@ai-sdk/lmnt':
-        specifier: ^0.0.1
-        version: 0.0.1(zod@3.24.4)
+        specifier: ^0.0.2
+        version: 0.0.2(zod@3.24.4)
       '@ai-sdk/luma':
         specifier: ^0.1.8
         version: 0.1.8(zod@3.24.4)
@@ -1363,8 +1363,8 @@ importers:
         specifier: ^0.2.8
         version: 0.2.8(zod@3.24.4)
       '@ai-sdk/revai':
-        specifier: ^0.0.1
-        version: 0.0.1(zod@3.24.4)
+        specifier: ^0.0.2
+        version: 0.0.2(zod@3.24.4)
       '@ai-sdk/togetherai':
         specifier: ^0.2.14
         version: 0.2.14(zod@3.24.4)
@@ -1974,8 +1974,8 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/elevenlabs@0.0.2':
-    resolution: {integrity: sha512-Y35i3dVssSEpY7LInelN0xr6QjhGyY7CG9c9YZbrtzgAuJOjoirv3YrsrxDJyRCh/aEmwnqUpAYeqQTpYITsNg==}
+  '@ai-sdk/elevenlabs@0.0.3':
+    resolution: {integrity: sha512-QnHVYue5vxWsdMgKqE1OE30dHw4n6NVkzIIB8wGTRlBAkZ05aHWjE0AHTThOCS/QVHxVYDXxGzs1vnWD9FCRjA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -2016,14 +2016,14 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/hume@0.0.1':
-    resolution: {integrity: sha512-Bu662Oyi6VbGaa6BjRwcSQIQ+WvlhD3jOiQhz9UCKzIjPSjJZmzob5GZvlo80zwWwt0Ba0Z2LOshsyk2gxoC5A==}
+  '@ai-sdk/hume@0.0.2':
+    resolution: {integrity: sha512-BIH6WJUAcYsQxrng/CJ4H16/LL8o7w3uthvm2HiWkcf++tzyJBfVxFX82Lz+w41hVZBHyttqxjl79WTi0nXGZQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/lmnt@0.0.1':
-    resolution: {integrity: sha512-fyY8M5yOvv2eS9biOU2bMSoN1DRHnxu9PKEXuwf/whi3oSGsXYWMbZgPHhJf69anDHYipN2wF7TLCLjk1mzysQ==}
+  '@ai-sdk/lmnt@0.0.2':
+    resolution: {integrity: sha512-ufPuEYpNery0sP2ErKbLOWzEHMgnW7B2rQ2H4Ft80tAelid9zOBkKHhXsHzFY2v7bGwHJh7hLt/kJASrir8wEg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -2064,12 +2064,6 @@ packages:
     peerDependencies:
       zod: ^3.23.8
 
-  '@ai-sdk/provider-utils@2.2.7':
-    resolution: {integrity: sha512-kM0xS3GWg3aMChh9zfeM+80vEZfXzR3JEUBdycZLtbRZ2TRT8xOj3WodGHPb06sUK5yD7pAXC/P7ctsi2fvUGQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.23.8
-
   '@ai-sdk/provider-utils@2.2.8':
     resolution: {integrity: sha512-fqhG+4sCVv8x7nFzYnFo19ryhAa3w096Kmc3hWxMQfW/TubPOmt3A6tYZhl4mUfQWWQMsuSkLrtjlWuXBVSGQA==}
     engines: {node: '>=18'}
@@ -2100,8 +2094,8 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/revai@0.0.1':
-    resolution: {integrity: sha512-2SMPUMqEHszsZynSQwcPtP7wUyqPSBkfhYlIB9Mv8r47MxiTVZkNVz0b3B+YWFWfBXLKMikjm7IoZrlG6skKGw==}
+  '@ai-sdk/revai@0.0.2':
+    resolution: {integrity: sha512-EDoHl4qedd7tXqTMNpjI5Znx/aGdtEmsyfzDePAS7Cl7mF4oX/1FONhMqSdEmGPhLttfdhhJ8jzAUA9+himZhg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -9401,10 +9395,10 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.8(zod@3.24.4)
       zod: 3.24.4
 
-  '@ai-sdk/elevenlabs@0.0.2(zod@3.24.4)':
+  '@ai-sdk/elevenlabs@0.0.3(zod@3.24.4)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.7(zod@3.24.4)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.4)
       zod: 3.24.4
 
   '@ai-sdk/fal@0.1.11(zod@3.24.4)':
@@ -9450,16 +9444,16 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.8(zod@3.24.4)
       zod: 3.24.4
 
-  '@ai-sdk/hume@0.0.1(zod@3.24.4)':
+  '@ai-sdk/hume@0.0.2(zod@3.24.4)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.7(zod@3.24.4)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.4)
       zod: 3.24.4
 
-  '@ai-sdk/lmnt@0.0.1(zod@3.24.4)':
+  '@ai-sdk/lmnt@0.0.2(zod@3.24.4)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.7(zod@3.24.4)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.4)
       zod: 3.24.4
 
   '@ai-sdk/luma@0.1.8(zod@3.24.4)':
@@ -9499,13 +9493,6 @@ snapshots:
       secure-json-parse: 2.7.0
       zod: 3.24.4
 
-  '@ai-sdk/provider-utils@2.2.7(zod@3.24.4)':
-    dependencies:
-      '@ai-sdk/provider': 1.1.3
-      nanoid: 3.3.11
-      secure-json-parse: 2.7.0
-      zod: 3.24.4
-
   '@ai-sdk/provider-utils@2.2.8(zod@3.24.4)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
@@ -9537,10 +9524,10 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.8(zod@3.24.4)
       zod: 3.24.4
 
-  '@ai-sdk/revai@0.0.1(zod@3.24.4)':
+  '@ai-sdk/revai@0.0.2(zod@3.24.4)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.7(zod@3.24.4)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.4)
       zod: 3.24.4
 
   '@ai-sdk/togetherai@0.2.14(zod@3.24.4)':
