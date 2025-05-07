@@ -6,7 +6,7 @@ import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { Model, defaultModel, models } from '@tuturuuu/ai/models';
 import { useChat } from '@tuturuuu/ai/react';
-import { ResponseMode, type Message } from '@tuturuuu/ai/types';
+import { type Message, ResponseMode } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { AIChat } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -299,7 +299,6 @@ const Chat = ({
       window.history.replaceState({}, '', `/c/${chat?.id}`);
     }
   }, [chat?.id, pathname, messages]);
-
 
   return (
     <div className="relative">

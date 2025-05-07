@@ -75,9 +75,7 @@ export function ChatModelSelector({
                     value={`${m.provider}-${m.value}`}
                     onSelect={(currentValue) => {
                       if (m.disabled) return;
-                      if (
-                        currentValue === `${model?.provider}-${model?.value}`
-                      )
+                      if (currentValue === `${model?.provider}-${model?.value}`)
                         return;
 
                       onChange(
@@ -106,7 +104,6 @@ export function ChatModelSelector({
                 ))}
             </CommandGroup>
           </CommandList>
-
         </Command>
 
         <div>
@@ -121,7 +118,6 @@ export function ChatModelSelector({
           </div>
           <Separator className="my-2" />
           <div className="p-2 pt-0">
-
             <div className="text-sm">{previewModel?.description}</div>
             {previewModel?.context != undefined && (
               <>
@@ -140,5 +136,3 @@ export function ChatModelSelector({
     </Popover>
   );
 }
-
-
