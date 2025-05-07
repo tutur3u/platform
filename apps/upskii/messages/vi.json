@@ -3535,7 +3535,8 @@
     "chat": "Trò chuyện",
     "roles": "Vai trò",
     "ai_chat": "Trò chuyện với AI",
-    "certificates": "Chứng chỉ"
+    "certificates": "Chứng chỉ",
+    "challenges": "Các thử thách"
   },
   "certificates": {
     "offered_by": "được dạy bởi",

@@ -117,6 +117,22 @@ export default async function Layout({ children, params }: LayoutProps) {
         withoutPermission('ai_lab'),
     },
     {
+      title: t('sidebar.challenges'),
+      href: `/${wsId}/challenges`,
+      icon: <ListTodo className="h-4 w-4" />,
+      experimental: 'alpha',
+      shortcut: 'L',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+    },
+    {
       title: t('sidebar.certificates'),
       href: `/${wsId}/certificate/CERT-2024-03-15-a1b2c3d4-e5f6-4321-9876-123456789abc`, // TODO: Replace with dynamic certificate ID
       icon: <Award className="h-4 w-4" />,

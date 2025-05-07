@@ -32,7 +32,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               {t('ws-courses.singular')}
             </div>
             <Link
-              href={`/${wsId}/education/courses/${courseId}`}
+              href={`/${wsId}/courses/${courseId}`}
               className="line-clamp-1 text-lg font-bold hover:underline md:text-2xl"
             >
               {data.name || t('common.unknown')}

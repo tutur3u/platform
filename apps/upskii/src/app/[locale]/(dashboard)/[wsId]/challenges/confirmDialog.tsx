@@ -41,12 +41,14 @@ interface ConfirmDialogProps {
   mode: 'start' | 'resume';
   challenge: NovaChallenge;
   trigger: React.ReactNode;
+  wsId: string;
 }
 
 export function ConfirmDialog({
   mode = 'start',
   challenge,
   trigger,
+  wsId,
 }: ConfirmDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -66,6 +68,7 @@ export function ConfirmDialog({
     setIsConfirming(true);
 
     try {
+      console.log("wsId", wsId);
       // Check password if challenge is password protected
       if (challenge.password_hash !== null) {
         const response = await fetch(`/api/auth/challenges/verify-password`, {
@@ -117,7 +120,7 @@ export function ConfirmDialog({
         if (response.ok) {
           // Invalidate challenges query to update the UI with the new session
           queryClient.invalidateQueries({ queryKey: ['challenges'] });
-          router.push(`/challenges/${challenge.id}`);
+          router.push(`/${wsId}/challenges/${challenge.id}`);
         } else {
           toast({
             title: 'Failed to start challenge.',
@@ -128,7 +131,7 @@ export function ConfirmDialog({
         }
       } else {
         // Resume existing session
-        router.push(`/challenges/${challenge.id}`);
+        router.push(`/${wsId}/challenges/${challenge.id}`);
       }
     } catch (error) {
       console.error('Error starting challenge', error);
