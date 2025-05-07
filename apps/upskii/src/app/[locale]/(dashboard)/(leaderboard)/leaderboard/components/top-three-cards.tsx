@@ -247,7 +247,7 @@ export function TopThreeCards({
               />
 
               {/* Rank number in hexagon */}
-              <div className="absolute left-1/2 top-8 -translate-x-1/2 scale-75 sm:scale-100 dark:top-8">
+              <div className="absolute top-8 left-1/2 -translate-x-1/2 scale-75 sm:scale-100 dark:top-8">
                 <div className="relative">
                   <div
                     className="hex-shape flex h-14 w-14 items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 shadow dark:shadow-none"
@@ -290,7 +290,7 @@ export function TopThreeCards({
 
               {/* Trophy or medal icon with glow */}
               <motion.div
-                className="relative mb-6 mt-4 dark:mt-4"
+                className="relative mt-4 mb-6 dark:mt-4"
                 animate={
                   prefersReducedMotion
                     ? {}
@@ -381,7 +381,7 @@ export function TopThreeCards({
                 {index === 0 && !prefersReducedMotion && (
                   <>
                     <motion.div
-                      className="absolute -right-2 -top-2 z-20"
+                      className="absolute -top-2 -right-2 z-20"
                       animate={{
                         rotate: [-10, 10, -10],
                         scale: [1, 1.2, 1],
@@ -395,7 +395,7 @@ export function TopThreeCards({
                       <Sparkles className="h-5 w-5 text-yellow-500 dark:text-yellow-300" />
                     </motion.div>
                     <motion.div
-                      className="absolute -left-2 bottom-0 z-20"
+                      className="absolute bottom-0 -left-2 z-20"
                       animate={{
                         rotate: [10, -10, 10],
                         scale: [1, 1.1, 1],
@@ -472,8 +472,8 @@ export function TopThreeCards({
 
               {/* View profile button */}
               <Link
-                href={`/${wsId}/${teamMode ? 'profile/teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
-                className="mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 transition-opacity hover:bg-gray-200 group-hover:opacity-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                href={`/${teamMode ? 'profile/teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
+                className="mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 {t('view-profile')} <ExternalLink className="ml-1 h-3 w-3" />
               </Link>

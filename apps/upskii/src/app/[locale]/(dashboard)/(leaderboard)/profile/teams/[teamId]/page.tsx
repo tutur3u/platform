@@ -57,7 +57,7 @@ async function TeamPageContent({
   const teamData = await fetchTeamData(teamId);
 
   if (!teamData) {
-    redirect(`/${wsId}/profile/teams`);
+    redirect(`/profile/teams`);
   }
 
   return <TeamProfile wsId={wsId} teamData={teamData} />;
