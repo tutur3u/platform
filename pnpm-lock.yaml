@@ -1339,8 +1339,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1(zod@3.24.4)
       '@ai-sdk/lmnt':
-        specifier: ^0.0.1
-        version: 0.0.1(zod@3.24.4)
+        specifier: ^0.0.2
+        version: 0.0.2(zod@3.24.4)
       '@ai-sdk/luma':
         specifier: ^0.1.8
         version: 0.1.8(zod@3.24.4)
@@ -2022,8 +2022,8 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/lmnt@0.0.1':
-    resolution: {integrity: sha512-fyY8M5yOvv2eS9biOU2bMSoN1DRHnxu9PKEXuwf/whi3oSGsXYWMbZgPHhJf69anDHYipN2wF7TLCLjk1mzysQ==}
+  '@ai-sdk/lmnt@0.0.2':
+    resolution: {integrity: sha512-ufPuEYpNery0sP2ErKbLOWzEHMgnW7B2rQ2H4Ft80tAelid9zOBkKHhXsHzFY2v7bGwHJh7hLt/kJASrir8wEg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -9456,10 +9456,10 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.7(zod@3.24.4)
       zod: 3.24.4
 
-  '@ai-sdk/lmnt@0.0.1(zod@3.24.4)':
+  '@ai-sdk/lmnt@0.0.2(zod@3.24.4)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.7(zod@3.24.4)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.24.4)
       zod: 3.24.4
 
   '@ai-sdk/luma@0.1.8(zod@3.24.4)':
