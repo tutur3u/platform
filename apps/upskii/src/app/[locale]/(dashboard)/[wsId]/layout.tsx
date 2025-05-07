@@ -117,7 +117,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     },
     {
       title: t('sidebar.ai_chat'),
-      href: `/ai-chat`,
+      href: `/${wsId}/ai-chat`,
       icon: <Bot className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'M',

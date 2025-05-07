@@ -30,9 +30,5 @@ export default async function AIPage({ searchParams }: Props) {
 
   if (error || !whitelisted?.enabled) redirect('/not-whitelisted');
 
-  return (
-    <div id="main-content">
-      <Chat chats={chats} count={count} locale={locale} />
-    </div>
-  );
+  return <Chat chats={chats} count={count} locale={locale} />;
 }
