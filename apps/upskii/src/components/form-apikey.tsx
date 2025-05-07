@@ -27,7 +27,6 @@ export default function ApiKeyInput({
   const [validated, setValidated] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
 
-
   useEffect(() => {
     if (defaultValue) {
       setValidated(true);
@@ -58,7 +57,15 @@ export default function ApiKeyInput({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: 'Hello! Please just respond with "Ok" if I was able to reach you!' }] }],
+            contents: [
+              {
+                parts: [
+                  {
+                    text: 'Hello! Please just respond with "Ok" if I was able to reach you!',
+                  },
+                ],
+              },
+            ],
           }),
         }
       );
@@ -105,8 +112,6 @@ export default function ApiKeyInput({
     });
   }
 
-
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSave)} className="grid gap-4">
@@ -144,11 +149,7 @@ export default function ApiKeyInput({
           />
 
           {!validated && (
-            <Button
-              type="submit"
-              size="default"
-              disabled={!apiKey || saving}
-            >
+            <Button type="submit" size="default" disabled={!apiKey || saving}>
               {saving ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
@@ -157,7 +158,6 @@ export default function ApiKeyInput({
               <span className="ml-2">{t('validate')}</span>
             </Button>
           )}
-
 
           {validated && (
             <Button
