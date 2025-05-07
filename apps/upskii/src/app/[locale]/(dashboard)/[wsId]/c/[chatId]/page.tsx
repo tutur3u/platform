@@ -1,4 +1,5 @@
-
+import Chat from '../../ai-chat/chat';
+import { getChats } from '../../ai-chat/helper';
 import { type Message } from '@tuturuuu/ai/types';
 import {
   createAdminClient,
@@ -7,8 +8,6 @@ import {
 import { AIChat } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { notFound, redirect } from 'next/navigation';
-import { getChats } from '../../ai-chat/helper';
-import Chat from '../../ai-chat/chat';
 
 interface Props {
   params: Promise<{
