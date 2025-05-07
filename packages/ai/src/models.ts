@@ -195,8 +195,7 @@ const fallbackModel = models.find((model) => !model.disabled);
 export const defaultModel: Model | undefined =
   models.find(
     (model) =>
-      model.value === 'gemini-2.0-flash-001' &&
-      model.provider === 'Google'
+      model.value === 'gemini-2.0-flash-001' && model.provider === 'Google'
   ) || fallbackModel;
 
 export const providers: Provider[] = models.reduce((acc, model) => {

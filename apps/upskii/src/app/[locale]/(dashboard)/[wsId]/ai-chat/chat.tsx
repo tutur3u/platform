@@ -67,17 +67,17 @@ const Chat = ({
       api:
         chat?.model || model?.value
           ? `/api/ai/chat/${(chat?.model
-            ? models
-              .find((m) => m.value === chat.model)
-              ?.provider.toLowerCase() || model?.provider.toLowerCase()
-            : model?.provider.toLowerCase()
-          )?.replace(' ', '-')}`
+              ? models
+                  .find((m) => m.value === chat.model)
+                  ?.provider.toLowerCase() || model?.provider.toLowerCase()
+              : model?.provider.toLowerCase()
+            )?.replace(' ', '-')}`
           : undefined,
       body: {
         id: chat?.id,
         model: chat?.model || model?.value,
         mode,
-        previewToken: apiKey
+        previewToken: apiKey,
       },
       onResponse(response) {
         console.log('Response:', response);
@@ -146,7 +146,7 @@ const Chat = ({
           body: JSON.stringify({
             id: chat.id,
             model: chat.model,
-            previewToken: apiKey
+            previewToken: apiKey,
           }),
         }
       );
@@ -248,7 +248,7 @@ const Chat = ({
         body: JSON.stringify({
           model: model.value,
           message: input,
-          previewToken: apiKey
+          previewToken: apiKey,
         }),
       }
     );
@@ -333,12 +333,12 @@ const Chat = ({
               messages={
                 pendingPrompt
                   ? [
-                    {
-                      id: 'pending',
-                      content: pendingPrompt,
-                      role: 'user',
-                    },
-                  ]
+                      {
+                        id: 'pending',
+                        content: pendingPrompt,
+                        role: 'user',
+                      },
+                    ]
                   : messages
               }
               setInput={setInput}

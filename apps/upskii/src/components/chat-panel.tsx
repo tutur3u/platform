@@ -128,8 +128,6 @@ export function ChatPanel({
     );
   };
 
-
-
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
       <div className="from-muted/30 to-muted/30 dark:from-background/0 dark:to-background/80 pointer-events-none fixed inset-x-0 bottom-0 bg-gradient-to-b from-0% to-50% dark:from-10%">
