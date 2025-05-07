@@ -7,7 +7,7 @@ export const config = {
 };
 
 const PATCH = createPATCH({
-  serverAPIKeyFallback: true,
+  serverAPIKeyFallback: false,
 });
 
 export { PATCH };

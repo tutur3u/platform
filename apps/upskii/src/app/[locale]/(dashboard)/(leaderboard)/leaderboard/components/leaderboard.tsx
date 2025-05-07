@@ -66,7 +66,6 @@ export function Leaderboard({
   challenges = [],
   selectedChallenge = 'all',
   problems = [],
-  wsId,
 }: LeaderboardProps) {
   const prefersReducedMotion = useReducedMotion();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
