@@ -231,7 +231,7 @@ export function PromptForm({
     };
   }, []);
 
-  // if (!element) return null;
+  if (!element) return null;
 
   const ENABLE_NEW_UI = DEV_MODE;
 
