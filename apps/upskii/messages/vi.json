@@ -3534,7 +3534,8 @@
     "quizzes": "Bài kiểm tra",
     "chat": "Trò chuyện",
     "roles": "Vai trò",
-    "ai_chat": "Trò chuyện với AI"
+    "ai_chat": "Trò chuyện với AI",
+    "certificates": "Chứng chỉ"
   },
   "certificates": {
     "offered_by": "được dạy bởi",
