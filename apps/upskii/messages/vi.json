@@ -2333,7 +2333,8 @@
     "bio-max-length": "Bio phải ít hơn {max} từ.",
     "display-name-min-error": "Tên hiển thị phải ít nhất {min} kí tự",
     "display-name-max-error": "Tên hiển thị phải ít hơn {max} kí tự",
-    "email-invalid": "Email không hợp lệ"
+    "email-invalid": "Email không hợp lệ",
+    "view-full-settings": "Xem cài đặt đầy đủ"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
