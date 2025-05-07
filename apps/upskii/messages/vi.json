@@ -163,7 +163,7 @@
     "long_and_detailed": "Dài và chi tiết",
     "api_key": "Chìa khóa API",
     "enter-api-key": "Hãy cung cấp chìa khóa API của bạn",
-    "api-key-valid-desc": "API Key hợp lệ",
+    "api-key-valid-desc": "API Key hợp lệ và đã được lưu trữ",
     "api-key-invalid-title": "API Key không hợp lệ",
     "api-key-valid-title": "API Key hợp lệ",
     "api-key-invalid-desc": "Vui lòng cung cấp API Key hợp lệ hoặc thử lại",
@@ -172,7 +172,12 @@
     "validate": "Kiểm tra",
     "save-api-key": "Lưu trữ",
     "imagine_placeholder": "Hãy tưởng tượng...",
-    "api-key-saved-desc": "Key API của bạn đã được lưu. \nVui lòng làm mới trang để bắt đầu sử dụng AI."
+    "api-key-saved-desc": "Key API của bạn đã được lưu. \nVui lòng làm mới trang để bắt đầu sử dụng AI.",
+    "api_input": "Nhập API Key",
+    "api_input_description": "Nhập chìa khóa API của bạn để sử dụng những tính năng AI",
+    "delete-api-key": "Xóa chìa khóa API",
+    "api-key-deleted-title": "Chìa khóa API đã được xóa",
+    "api-key-deleted-desc": "Chìa khóa API của bạn đã được xóa"
   },
   "api-key-data-table": {
     "id": "Mã số",
