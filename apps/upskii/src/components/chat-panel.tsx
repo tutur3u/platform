@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { ChatModelSelector } from './chat-model-selector';
+import ApiKeyInput from './form-apikey';
 import { PromptForm } from './prompt-form';
 import { ChatPermissions } from '@/components/chat-permissions';
 import { Model } from '@tuturuuu/ai/models';
@@ -21,7 +22,6 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
-import ApiKeyInput from './form-apikey';
 
 interface PresenceUser {
   id: string;
@@ -91,7 +91,9 @@ export function ChatPanel({
   const t = useTranslations('ai_chat');
 
   const [showDialog, setShowDialog] = useState(false);
-  const [dialogType, setDialogType] = useState<'files' | 'visibility' | 'api'>();
+  const [dialogType, setDialogType] = useState<
+    'files' | 'visibility' | 'api'
+  >();
   const [showExtraOptions, setShowExtraOptions] = useState(false);
 
   const [files, setFiles] = useState<StatedFile[]>([]);
@@ -192,14 +194,18 @@ export function ChatPanel({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {dialogType === 'files' ? t('upload_files') : dialogType === 'api' ? t('api_input') : t('chat_visibility')}
+            {dialogType === 'files'
+              ? t('upload_files')
+              : dialogType === 'api'
+                ? t('api_input')
+                : t('chat_visibility')}
           </DialogTitle>
           <DialogDescription>
             {dialogType === 'files'
               ? t('upload_file_description')
               : dialogType === 'api'
-              ? t('api_input_description')
-              : t('chat_visibility_description')}
+                ? t('api_input_description')
+                : t('chat_visibility_description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -229,7 +235,7 @@ export function ChatPanel({
 
         {dialogType === 'api' && (
           <div className="grid gap-4">
-            <ApiKeyInput defaultValue={apiKey}/>
+            <ApiKeyInput defaultValue={apiKey} />
           </div>
         )}
       </DialogContent>

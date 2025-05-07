@@ -628,20 +628,20 @@ export function PromptForm({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className={cn(
-                          'transition-all duration-300',
-                          id
-                            ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
-                            : 'pointer-events-auto ml-1 w-10 opacity-100'
-                        )}
-                        onClick={toggleAPIInput}
-                      >
-                        <KeyRound />
-                        <span className="sr-only">{t('ai_chat.api_key')}</span>
-                      </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={cn(
+                    'transition-all duration-300',
+                    id
+                      ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
+                      : 'pointer-events-auto ml-1 w-10 opacity-100'
+                  )}
+                  onClick={toggleAPIInput}
+                >
+                  <KeyRound />
+                  <span className="sr-only">{t('ai_chat.api_key')}</span>
+                </Button>
               </TooltipTrigger>
               <TooltipContent>{t('ai_chat.api_key')}</TooltipContent>
             </Tooltip>
