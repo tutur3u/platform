@@ -1,5 +1,5 @@
-import { Filter } from '@/app/[locale]/(dashboard)/[wsId]/users/filters';
 import { SectionProps } from './index';
+import { Filter } from '@/app/[locale]/(dashboard)/[wsId]/users/filters';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
