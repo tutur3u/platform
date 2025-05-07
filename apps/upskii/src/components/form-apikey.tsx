@@ -14,8 +14,7 @@ import { Check, Eye, EyeOff, Loader2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as z from 'zod';
 
 export default function ApiKeyInput({
@@ -26,12 +25,19 @@ export default function ApiKeyInput({
   const t = useTranslations('ai_chat');
   const [saving, setSaving] = useState(false);
   const [validated, setValidated] = useState(false);
-  const [validatedKey, setValidatedKey] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
-  const router = useRouter();
+
+  useEffect(() => {
+    if (defaultValue) {
+      setValidated(true);
+    }
+  }, [defaultValue]);
 
   const FormSchema = z.object({
-    apiKey: z.string().min(1, { message: t('api-key-required') }),
+    apiKey: z
+      .string()
+      .min(1, { message: t('api-key-required') })
+      .regex(/^AIza[0-9A-Za-z\-_]{35}$/, { message: t('api-key-required') }),
   });
 
   const form = useForm({
@@ -45,22 +51,36 @@ export default function ApiKeyInput({
 
   async function validateApiKey(key: string): Promise<boolean> {
     try {
-      // const res = await fetch(
-      //     `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`,
-      //     {
-      //         method: 'POST',
-      //         headers: { 'Content-Type': 'application/json' },
-      //         body: JSON.stringify({ contents: [{ parts: [{ text: 'Hello' }] }] }),
-      //     }
-      // );
-      return key ? true : false;
-      // return res.ok;
-    } catch {
-      return false;
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: 'Hello! Please just respond with "Ok" if I was able to reach you!',
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+      if (res.ok) {
+        return true;
+      } else {
+        console.error('Response error:', await res.text());
+      }
+    } catch (err) {
+      console.error('Fetch error:', err);
     }
+    return false;
   }
 
-  async function onValidate(data: z.infer<typeof FormSchema>) {
+  async function onSave(data: z.infer<typeof FormSchema>) {
     setSaving(true);
     const isValid = await validateApiKey(data.apiKey);
 
@@ -71,37 +91,30 @@ export default function ApiKeyInput({
         variant: 'destructive',
       });
       setValidated(false);
-      setValidatedKey(null);
     } else {
       toast({
         title: t('api-key-valid-title'),
         description: t('api-key-valid-desc'),
       });
       setValidated(true);
-      setValidatedKey(data.apiKey);
+      localStorage.setItem('google_api_key', data.apiKey);
     }
-
     setSaving(false);
   }
 
-  async function onSave() {
-    setSaving(true);
-    if (validatedKey) {
-      localStorage.setItem('google_api_key', validatedKey);
-      toast({
-        title: t('api-key-saved-title'),
-        description: t('api-key-saved-desc'),
-      });
-      setValidated(false);
-      setValidatedKey(null);
-    }
-    setSaving(false);
-    router.refresh();
+  async function onDelete() {
+    localStorage.removeItem('google_api_key');
+    form.reset({ apiKey: '' });
+    setValidated(false);
+    toast({
+      title: t('api-key-deleted-title'),
+      description: t('api-key-deleted-desc'),
+    });
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onValidate)} className="grid gap-4">
+      <form onSubmit={form.handleSubmit(onSave)} className="grid gap-4">
         <div className="flex flex-col gap-2">
           <FormField
             control={form.control}
@@ -135,27 +148,25 @@ export default function ApiKeyInput({
             )}
           />
 
-          <Button
-            type="submit"
-            size="default"
-            disabled={!apiKey || saving || validated}
-          >
-            {saving ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Check className="h-5 w-5" />
-            )}
-            <span className="ml-2">{t('validate')}</span>
-          </Button>
+          {!validated && (
+            <Button type="submit" size="default" disabled={!apiKey || saving}>
+              {saving ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Check className="h-5 w-5" />
+              )}
+              <span className="ml-2">{t('validate')}</span>
+            </Button>
+          )}
 
           {validated && (
             <Button
               type="button"
+              variant="destructive"
+              onClick={onDelete}
               size="default"
-              onClick={onSave}
-              disabled={saving}
             >
-              {t('save-api-key')}
+              {t('delete-api-key')}
             </Button>
           )}
         </div>
