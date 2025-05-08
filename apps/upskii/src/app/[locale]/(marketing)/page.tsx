@@ -113,7 +113,7 @@ export default function MarketingPage() {
               >
                 <GetStartedButton
                   text="Get Started"
-                  href={wsId ? `/${wsId}/home` : '/login'}
+                  href={wsId ? `/${wsId}/home` : '/onboarding'}
                   disabled={!wsId && wsId !== null}
                 />
               </motion.div>
