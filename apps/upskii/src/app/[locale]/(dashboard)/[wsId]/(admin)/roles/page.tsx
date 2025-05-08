@@ -1,95 +1,166 @@
-import WhitelistEmailClient from './client-page';
-import { getNovaRoleColumns } from './columns';
+import { roleColumns } from './columns';
+import { RoleForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { permissions, totalPermissions } from '@/lib/permissions';
+import { getPermissions } from '@/lib/workspace-helper';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceRole } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
-import { notFound } from 'next/navigation';
-
-interface SearchParams {
-  q?: string;
-  page?: string;
-  pageSize?: string;
-}
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<SearchParams>;
+  searchParams: Promise<{
+    q?: string;
+    page?: string;
+    pageSize?: string;
+  }>;
 }
 
-export default async function WhitelistPage({ params, searchParams }: Props) {
-  const t = await getTranslations();
+export default async function WorkspaceRolesPage({
+  params,
+  searchParams,
+}: Props) {
+  const supabase = await createClient();
   const { wsId } = await params;
 
-  const { emailData, emailCount } = await getEmailData(
+  const { withoutPermission } = await getPermissions({
     wsId,
-    await searchParams
-  );
+  });
+
+  if (withoutPermission('manage_workspace_roles'))
+    redirect(`/${wsId}/settings`);
+
+  const {
+    data: rawData,
+    defaultData,
+    count,
+  } = await getRoles(wsId, await searchParams);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const t = await getTranslations();
+
+  const data = rawData.map((role) => ({
+    ...role,
+    ws_id: wsId,
+  }));
+
+  const permissionsCount = totalPermissions({ wsId, user });
 
   return (
-    <div className="p-4 md:p-8">
+    <>
       <FeatureSummary
-        pluralTitle={t('ws-ai-whitelist-emails.plural')}
-        singularTitle={t('ws-ai-whitelist-emails.singular')}
-        description={t('ws-ai-whitelist-emails.description')}
-        createTitle={t('ws-ai-whitelist-emails.create')}
-        createDescription={t('ws-ai-whitelist-emails.create_description')}
-        form={<WhitelistEmailClient wsId={wsId} />}
+        pluralTitle={t('ws-roles.plural')}
+        singularTitle={t('ws-roles.singular')}
+        description={t('ws-roles.description')}
+        createTitle={t('ws-roles.create')}
+        createDescription={t('ws-roles.create_description')}
+        form={<RoleForm wsId={wsId} user={user} />}
+        defaultData={defaultData}
+        secondaryTriggerTitle={`${t('ws-roles.manage_default_permissions')} (${
+          permissions({ wsId, user }).filter((p) =>
+            defaultData.permissions.some((dp) => dp.id === p.id && dp.enabled)
+          ).length
+        }/${permissionsCount})`}
+        secondaryTitle={t('ws-roles.default_permissions')}
+        secondaryDescription={t('ws-roles.default_permissions_description')}
+        showDefaultFormAsSecondary
+        requireExpansion
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={emailData}
-        columnGenerator={getNovaRoleColumns}
-        count={emailCount}
+        extraData={permissionsCount}
+        columnGenerator={roleColumns}
+        namespace="workspace-role-data-table"
+        data={data}
+        count={count}
         defaultVisibility={{
           id: false,
           created_at: false,
         }}
       />
-    </div>
+    </>
   );
 }
 
-async function getEmailData(
+async function getRoles(
   wsId: string,
   {
     q,
     page = '1',
     pageSize = '10',
-    retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
+  }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = await createAdminClient();
-  if (!supabase) notFound();
+  const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .from('nova_roles')
-    .select('*', {
-      count: 'exact',
-    })
+  const rolesQuery = supabase
+    .from('workspace_roles')
+    .select(
+      'id, name, permissions:workspace_role_permissions(id:permission, enabled), workspace_role_members(role_id.count()), created_at',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('email', `%${q}%`);
+  if (q) rolesQuery.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
     const parsedSize = parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
+    rolesQuery.range(start, end).limit(parsedSize);
   }
 
-  const { data, error, count } = await queryBuilder;
-  if (error) {
-    if (!retry) throw error;
-    return getEmailData(wsId, { q, pageSize, retry: false });
-  }
+  const defaultPermissionsQuery = supabase
+    .from('workspace_default_permissions')
+    .select('id:permission, enabled, created_at')
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
 
-  return {
-    emailData: data,
-    emailCount: count,
+  const [rolesRes, defaultPermissionsRes] = await Promise.all([
+    rolesQuery,
+    defaultPermissionsQuery,
+  ]);
+
+  const { data: roleData, error, count } = rolesRes;
+  const { data: defaultPermissionsData, error: defaultPermissionsError } =
+    defaultPermissionsRes;
+
+  if (error) throw error;
+  if (defaultPermissionsError) throw defaultPermissionsError;
+
+  const defaultData = {
+    id: 'DEFAULT',
+    name: 'DEFAULT',
+    permissions: defaultPermissionsData.map((p) => ({
+      id: p.id,
+      enabled: p.enabled,
+    })),
+  };
+
+  const data = roleData.map(
+    ({ id, name, permissions, workspace_role_members, created_at }) => ({
+      id,
+      name,
+      permissions,
+      user_count: workspace_role_members?.[0]?.count,
+      created_at,
+    })
+  );
+
+  return { data, defaultData, count } as {
+    data: WorkspaceRole[];
+    defaultData: WorkspaceRole;
+    count: number;
   };
 }
