@@ -75,6 +75,16 @@ type TimeRangePickerProps = {
   compact?: boolean;
 };
 
+// Utility to ensure time is always in HH:mm format for UI
+function normalizeTimeString(time: string): string {
+  if (typeof time !== 'string') return '00:00';
+  const parts = time.split(':');
+  const h = parts[0] !== undefined ? Number(parts[0]) : 0;
+  const m = parts[1] !== undefined ? Number(parts[1]) : 0;
+  if (isNaN(h) || isNaN(m)) return '00:00';
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+}
+
 export function TimeRangePicker({
   label,
   value,
@@ -483,7 +493,7 @@ export function TimeRangePicker({
                         <Input
                           id={`${key}-start-${blockIndex}`}
                           type="time"
-                          value={block.startTime}
+                          value={normalizeTimeString(block.startTime)}
                           min={blockIndex > 0 ? safeTimeRanges[key]?.timeBlocks?.[blockIndex - 1]?.endTime ?? '00:00' : '00:00'}
                           max={block.endTime}
                           step="60"
@@ -518,7 +528,7 @@ export function TimeRangePicker({
                         <Input
                           id={`${key}-end-${blockIndex}`}
                           type="time"
-                          value={block.endTime}
+                          value={normalizeTimeString(block.endTime)}
                           min={block.startTime}
                           max={blockIndex < (safeTimeRanges[key]?.timeBlocks?.length ?? 0) - 1 ? safeTimeRanges[key]?.timeBlocks?.[blockIndex + 1]?.startTime ?? '23:59' : '23:59'}
                           step="60"
