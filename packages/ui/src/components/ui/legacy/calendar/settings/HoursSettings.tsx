@@ -42,19 +42,19 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
       // If no data exists, create default settings
       if (!data || data.length === 0) {
-        const defaultSettings = [
+        const defaultSettings: { type: "WORK" | "PERSONAL" | "MEETING"; data: WeekTimeRanges; ws_id: string }[] = [
           {
-            type: 'PERSONAL',
+            type: "PERSONAL",
             data: defaultWeekTimeRanges,
             ws_id: wsId,
           },
           {
-            type: 'WORK',
+            type: "WORK",
             data: defaultWeekTimeRanges,
             ws_id: wsId,
           },
           {
-            type: 'MEETING',
+            type: "MEETING",
             data: defaultWeekTimeRanges,
             ws_id: wsId,
           },
