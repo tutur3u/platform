@@ -21,7 +21,9 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const dragStartRef = useRef<{ date: Date; y: number } | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
   const tz = settings?.timezone?.timezone;
-  const [hoveredSlot, setHoveredSlot] = useState<'hour' | 'half-hour' | null>(null);
+  const [hoveredSlot, setHoveredSlot] = useState<'hour' | 'half-hour' | null>(
+    null
+  );
   const [showBothLabels, setShowBothLabels] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipLocked, setTooltipLocked] = useState(false);
@@ -331,7 +333,9 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     rafRef.current = null;
   };
 
-  const handleSlotMouseMove = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  const handleSlotMouseMove = (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
     const offset = 8;
     const flipOffset = 16;
     let x = e.clientX + offset;
@@ -444,7 +448,7 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
           <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
             {formatTime(hour)}
           </span>
-          <span className="text-muted-foreground/70 absolute left-2 bottom-2 text-xs font-medium">
+          <span className="text-muted-foreground/70 absolute bottom-2 left-2 text-xs font-medium">
             {formatTime(hour, 30)}
           </span>
         </>
@@ -453,7 +457,7 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
           {formatTime(hour)}
         </span>
       ) : hoveredSlot === 'half-hour' ? (
-        <span className="text-muted-foreground/70 absolute left-2 bottom-2 text-xs font-medium">
+        <span className="text-muted-foreground/70 absolute bottom-2 left-2 text-xs font-medium">
           {formatTime(hour, 30)}
         </span>
       ) : null}
@@ -488,7 +492,7 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
           id={tooltipId}
           role="tooltip"
           aria-live="polite"
-          className="pointer-events-none bg-neutral-900 text-white rounded-md px-3 py-1.5 shadow-lg text-xs font-medium"
+          className="pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg"
           style={{
             position: 'fixed',
             left: cursorPosRef.current.x,

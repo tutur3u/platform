@@ -1,5 +1,16 @@
 'use client';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -9,17 +20,6 @@ import { cn } from '@tuturuuu/utils/format';
 import { Copy, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from '@tuturuuu/ui/alert-dialog';
 
 export type TimeBlock = {
   startTime: string;
@@ -103,43 +103,67 @@ export function TimeRangePicker({
   // Ensure each day has a valid timeBlocks array
   const safeTimeRanges: WeekTimeRanges = {
     monday: {
-      enabled: !!timeRanges.monday && typeof timeRanges.monday.enabled === 'boolean' ? timeRanges.monday.enabled : false,
+      enabled:
+        !!timeRanges.monday && typeof timeRanges.monday.enabled === 'boolean'
+          ? timeRanges.monday.enabled
+          : false,
       timeBlocks: Array.isArray(timeRanges.monday?.timeBlocks)
         ? timeRanges.monday.timeBlocks.map((b) => ({ ...b }))
         : [defaultTimeBlock],
     },
     tuesday: {
-      enabled: !!timeRanges.tuesday && typeof timeRanges.tuesday.enabled === 'boolean' ? timeRanges.tuesday.enabled : false,
+      enabled:
+        !!timeRanges.tuesday && typeof timeRanges.tuesday.enabled === 'boolean'
+          ? timeRanges.tuesday.enabled
+          : false,
       timeBlocks: Array.isArray(timeRanges.tuesday?.timeBlocks)
         ? timeRanges.tuesday.timeBlocks.map((b) => ({ ...b }))
         : [defaultTimeBlock],
     },
     wednesday: {
-      enabled: !!timeRanges.wednesday && typeof timeRanges.wednesday.enabled === 'boolean' ? timeRanges.wednesday.enabled : false,
+      enabled:
+        !!timeRanges.wednesday &&
+        typeof timeRanges.wednesday.enabled === 'boolean'
+          ? timeRanges.wednesday.enabled
+          : false,
       timeBlocks: Array.isArray(timeRanges.wednesday?.timeBlocks)
         ? timeRanges.wednesday.timeBlocks.map((b) => ({ ...b }))
         : [defaultTimeBlock],
     },
     thursday: {
-      enabled: !!timeRanges.thursday && typeof timeRanges.thursday.enabled === 'boolean' ? timeRanges.thursday.enabled : false,
+      enabled:
+        !!timeRanges.thursday &&
+        typeof timeRanges.thursday.enabled === 'boolean'
+          ? timeRanges.thursday.enabled
+          : false,
       timeBlocks: Array.isArray(timeRanges.thursday?.timeBlocks)
         ? timeRanges.thursday.timeBlocks.map((b) => ({ ...b }))
         : [defaultTimeBlock],
     },
     friday: {
-      enabled: !!timeRanges.friday && typeof timeRanges.friday.enabled === 'boolean' ? timeRanges.friday.enabled : false,
+      enabled:
+        !!timeRanges.friday && typeof timeRanges.friday.enabled === 'boolean'
+          ? timeRanges.friday.enabled
+          : false,
       timeBlocks: Array.isArray(timeRanges.friday?.timeBlocks)
         ? timeRanges.friday.timeBlocks.map((b) => ({ ...b }))
         : [defaultTimeBlock],
     },
     saturday: {
-      enabled: !!timeRanges.saturday && typeof timeRanges.saturday.enabled === 'boolean' ? timeRanges.saturday.enabled : false,
+      enabled:
+        !!timeRanges.saturday &&
+        typeof timeRanges.saturday.enabled === 'boolean'
+          ? timeRanges.saturday.enabled
+          : false,
       timeBlocks: Array.isArray(timeRanges.saturday?.timeBlocks)
         ? timeRanges.saturday.timeBlocks.map((b) => ({ ...b }))
         : [defaultTimeBlock],
     },
     sunday: {
-      enabled: !!timeRanges.sunday && typeof timeRanges.sunday.enabled === 'boolean' ? timeRanges.sunday.enabled : false,
+      enabled:
+        !!timeRanges.sunday && typeof timeRanges.sunday.enabled === 'boolean'
+          ? timeRanges.sunday.enabled
+          : false,
       timeBlocks: Array.isArray(timeRanges.sunday?.timeBlocks)
         ? timeRanges.sunday.timeBlocks.map((b) => ({ ...b }))
         : [defaultTimeBlock],
@@ -149,7 +173,8 @@ export function TimeRangePicker({
   // Helper to convert time string to minutes
   const timeToMinutes = (t: string) => {
     const [h, m] = t.split(':').map(Number);
-    if (typeof h !== 'number' || isNaN(h) || typeof m !== 'number' || isNaN(m)) return 0;
+    if (typeof h !== 'number' || isNaN(h) || typeof m !== 'number' || isNaN(m))
+      return 0;
     return h * 60 + m;
   };
   // Helper to convert minutes to time string
@@ -160,26 +185,50 @@ export function TimeRangePicker({
   };
 
   // Validation for a single block
-  const validateTimeRange = (startTime: string, endTime: string, prevEnd?: string, nextStart?: string): { isValid: boolean; message?: string; correctedEnd?: string; correctedStart?: string } => {
+  const validateTimeRange = (
+    startTime: string,
+    endTime: string,
+    prevEnd?: string,
+    nextStart?: string
+  ): {
+    isValid: boolean;
+    message?: string;
+    correctedEnd?: string;
+    correctedStart?: string;
+  } => {
     const startMin = timeToMinutes(startTime);
     const endMin = timeToMinutes(endTime);
     if (endMin <= startMin) {
       return { isValid: false, message: 'End time must be after start time' };
     }
     if (endMin - startMin < 30) {
-      return { isValid: false, message: 'Time block must be at least 30 minutes' };
+      return {
+        isValid: false,
+        message: 'Time block must be at least 30 minutes',
+      };
     }
     if (startMin < 0) {
-      return { isValid: false, message: 'Start time cannot be before 12:00 AM' };
+      return {
+        isValid: false,
+        message: 'Start time cannot be before 12:00 AM',
+      };
     }
     if (endMin > 1439) {
       return { isValid: false, message: 'End time cannot be after 11:59 PM' };
     }
     if (prevEnd && startMin < timeToMinutes(prevEnd)) {
-      return { isValid: false, message: 'Start time overlaps with previous block', correctedStart: prevEnd };
+      return {
+        isValid: false,
+        message: 'Start time overlaps with previous block',
+        correctedStart: prevEnd,
+      };
     }
     if (nextStart && endMin > timeToMinutes(nextStart)) {
-      return { isValid: false, message: 'End time overlaps with next block', correctedEnd: nextStart };
+      return {
+        isValid: false,
+        message: 'End time overlaps with next block',
+        correctedEnd: nextStart,
+      };
     }
     return { isValid: true };
   };
@@ -252,7 +301,8 @@ export function TimeRangePicker({
     if (!block) return;
 
     const prevBlock = blockIndex > 0 ? blocks[blockIndex - 1] : undefined;
-    const nextBlock = blockIndex < blocks.length - 1 ? blocks[blockIndex + 1] : undefined;
+    const nextBlock =
+      blockIndex < blocks.length - 1 ? blocks[blockIndex + 1] : undefined;
     const prevEnd = prevBlock?.endTime;
     const nextStart = nextBlock?.startTime;
 
@@ -260,12 +310,13 @@ export function TimeRangePicker({
       ...block,
       [field]: newValue,
     };
-    const { isValid, message, correctedEnd, correctedStart } = validateTimeRange(
-      field === 'startTime' ? newValue : updatedBlock.startTime,
-      field === 'endTime' ? newValue : updatedBlock.endTime,
-      prevEnd,
-      nextStart
-    );
+    const { isValid, message, correctedEnd, correctedStart } =
+      validateTimeRange(
+        field === 'startTime' ? newValue : updatedBlock.startTime,
+        field === 'endTime' ? newValue : updatedBlock.endTime,
+        prevEnd,
+        nextStart
+      );
     if (!isValid) {
       // Auto-correct if possible
       if (correctedEnd) {
@@ -304,7 +355,7 @@ export function TimeRangePicker({
     }
     const dayRange = newTimeRanges[day];
     if (!dayRange) return;
-    
+
     const blocks = dayRange.timeBlocks || [];
     if (blocks.length <= 1) return;
 
@@ -326,7 +377,9 @@ export function TimeRangePicker({
       if (key !== activeDay) {
         newTimeRanges[key] = {
           ...newTimeRanges[key], // preserve enabled status
-          timeBlocks: currentDaySettings.timeBlocks.map(block => ({ ...block })),
+          timeBlocks: currentDaySettings.timeBlocks.map((block) => ({
+            ...block,
+          })),
         };
       }
     });
@@ -362,7 +415,11 @@ export function TimeRangePicker({
           {label && <Label className="text-base">{label}</Label>}
           <AlertDialog open={showCopyDialog} onOpenChange={setShowCopyDialog}>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" onClick={handleCopyToAllDays} disabled={pendingCopy}>
+              <Button
+                variant="outline"
+                onClick={handleCopyToAllDays}
+                disabled={pendingCopy}
+              >
                 <Copy className="h-4 w-4" />
                 <span>Copy to all days</span>
               </Button>
@@ -371,12 +428,18 @@ export function TimeRangePicker({
               <AlertDialogHeader>
                 <AlertDialogTitle>Copy to all days?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will overwrite the hours for all days with the current day's settings. Are you sure you want to continue?
+                  This will overwrite the hours for all days with the current
+                  day's settings. Are you sure you want to continue?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmCopyToAllDays} disabled={pendingCopy}>Yes, copy to all days</AlertDialogAction>
+                <AlertDialogAction
+                  onClick={confirmCopyToAllDays}
+                  disabled={pendingCopy}
+                >
+                  Yes, copy to all days
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -449,10 +512,16 @@ export function TimeRangePicker({
                       size="sm"
                       className={cn('gap-1', compact && 'h-6 text-xs')}
                       onClick={() => addTimeBlock(key)}
-                      disabled={!safeTimeRanges[key]?.enabled || !canAddMoreBlocks(key)}
-                      aria-disabled={!safeTimeRanges[key]?.enabled || !canAddMoreBlocks(key)}
+                      disabled={
+                        !safeTimeRanges[key]?.enabled || !canAddMoreBlocks(key)
+                      }
+                      aria-disabled={
+                        !safeTimeRanges[key]?.enabled || !canAddMoreBlocks(key)
+                      }
                     >
-                      <Plus className={cn('h-3.5 w-3.5', compact && 'h-3 w-3')} />
+                      <Plus
+                        className={cn('h-3.5 w-3.5', compact && 'h-3 w-3')}
+                      />
                       <span className="text-xs">
                         {!canAddMoreBlocks(key)
                           ? 'Maximum blocks reached'
@@ -463,7 +532,8 @@ export function TimeRangePicker({
                 </TooltipTrigger>
                 <TooltipContent>
                   {!canAddMoreBlocks(key)
-                    ? addBlockDisabledReason(key) || 'No time left in the day for a 30-minute block'
+                    ? addBlockDisabledReason(key) ||
+                      'No time left in the day for a 30-minute block'
                     : 'Add a new time block'}
                 </TooltipContent>
               </Tooltip>
@@ -480,7 +550,7 @@ export function TimeRangePicker({
                 {safeTimeRanges[key]?.timeBlocks?.map((block, blockIndex) => (
                   <div
                     key={blockIndex}
-                    className="hover:bg-muted/30 flex items-center gap-2 rounded-md border border-muted bg-muted/10 p-3 transition-colors shadow-sm"
+                    className="hover:bg-muted/30 border-muted bg-muted/10 flex items-center gap-2 rounded-md border p-3 shadow-sm transition-colors"
                   >
                     <div className="grid flex-1 grid-cols-2 gap-2">
                       <div className="space-y-1">
@@ -494,7 +564,13 @@ export function TimeRangePicker({
                           id={`${key}-start-${blockIndex}`}
                           type="time"
                           value={normalizeTimeString(block.startTime)}
-                          min={blockIndex > 0 ? safeTimeRanges[key]?.timeBlocks?.[blockIndex - 1]?.endTime ?? '00:00' : '00:00'}
+                          min={
+                            blockIndex > 0
+                              ? (safeTimeRanges[key]?.timeBlocks?.[
+                                  blockIndex - 1
+                                ]?.endTime ?? '00:00')
+                              : '00:00'
+                          }
                           max={block.endTime}
                           step="60"
                           onChange={(e) =>
@@ -510,8 +586,8 @@ export function TimeRangePicker({
                             compact && 'h-7 text-xs',
                             'bg-background text-foreground',
                             'appearance-none',
-                            'border border-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-primary',
+                            'border-muted border',
+                            'focus:ring-primary focus:outline-none focus:ring-2'
                           )}
                           autoComplete="off"
                           spellCheck={false}
@@ -530,7 +606,14 @@ export function TimeRangePicker({
                           type="time"
                           value={normalizeTimeString(block.endTime)}
                           min={block.startTime}
-                          max={blockIndex < (safeTimeRanges[key]?.timeBlocks?.length ?? 0) - 1 ? safeTimeRanges[key]?.timeBlocks?.[blockIndex + 1]?.startTime ?? '23:59' : '23:59'}
+                          max={
+                            blockIndex <
+                            (safeTimeRanges[key]?.timeBlocks?.length ?? 0) - 1
+                              ? (safeTimeRanges[key]?.timeBlocks?.[
+                                  blockIndex + 1
+                                ]?.startTime ?? '23:59')
+                              : '23:59'
+                          }
                           step="60"
                           onChange={(e) =>
                             handleTimeChange(
@@ -545,8 +628,8 @@ export function TimeRangePicker({
                             compact && 'h-7 text-xs',
                             'bg-background text-foreground',
                             'appearance-none',
-                            'border border-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-primary',
+                            'border-muted border',
+                            'focus:ring-primary focus:outline-none focus:ring-2'
                           )}
                           autoComplete="off"
                           spellCheck={false}

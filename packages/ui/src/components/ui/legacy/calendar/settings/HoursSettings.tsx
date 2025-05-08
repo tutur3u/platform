@@ -1,6 +1,10 @@
 'use client';
 
-import { TimeRangePicker, WeekTimeRanges, defaultWeekTimeRanges } from './TimeRangePicker';
+import {
+  TimeRangePicker,
+  WeekTimeRanges,
+  defaultWeekTimeRanges,
+} from './TimeRangePicker';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -37,7 +41,9 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
       if (error) {
         console.error('Error fetching hours:', error);
-        toast.error('Failed to load hour settings. Please refresh or try again later.');
+        toast.error(
+          'Failed to load hour settings. Please refresh or try again later.'
+        );
         return;
       }
 
@@ -45,9 +51,21 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
       if (!data || data.length === 0) {
         const makeDefaultData = () => structuredClone(defaultWeekTimeRanges);
         const defaultSettings = [
-          { type: "PERSONAL" as const, data: JSON.stringify(makeDefaultData()), ws_id: wsId },
-          { type: "WORK" as const, data: JSON.stringify(makeDefaultData()), ws_id: wsId },
-          { type: "MEETING" as const, data: JSON.stringify(makeDefaultData()), ws_id: wsId },
+          {
+            type: 'PERSONAL' as const,
+            data: JSON.stringify(makeDefaultData()),
+            ws_id: wsId,
+          },
+          {
+            type: 'WORK' as const,
+            data: JSON.stringify(makeDefaultData()),
+            ws_id: wsId,
+          },
+          {
+            type: 'MEETING' as const,
+            data: JSON.stringify(makeDefaultData()),
+            ws_id: wsId,
+          },
         ];
 
         const { error: insertError } = await supabase
@@ -69,18 +87,34 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
       }
 
       setValue({
-        personalHours: isValidWeekTimeRanges(safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)) ? safeParse(data?.find((h) => h.type === 'PERSONAL')?.data) : defaultWeekTimeRanges,
-        workHours: isValidWeekTimeRanges(safeParse(data?.find((h) => h.type === 'WORK')?.data)) ? safeParse(data?.find((h) => h.type === 'WORK')?.data) : defaultWeekTimeRanges,
-        meetingHours: isValidWeekTimeRanges(safeParse(data?.find((h) => h.type === 'MEETING')?.data)) ? safeParse(data?.find((h) => h.type === 'MEETING')?.data) : defaultWeekTimeRanges,
+        personalHours: isValidWeekTimeRanges(
+          safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)
+        )
+          ? safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)
+          : defaultWeekTimeRanges,
+        workHours: isValidWeekTimeRanges(
+          safeParse(data?.find((h) => h.type === 'WORK')?.data)
+        )
+          ? safeParse(data?.find((h) => h.type === 'WORK')?.data)
+          : defaultWeekTimeRanges,
+        meetingHours: isValidWeekTimeRanges(
+          safeParse(data?.find((h) => h.type === 'MEETING')?.data)
+        )
+          ? safeParse(data?.find((h) => h.type === 'MEETING')?.data)
+          : defaultWeekTimeRanges,
       });
     };
 
     fetchHours();
   }, [wsId]);
 
-  const [activeTab, setActiveTab] = useState<'work' | 'meeting' | 'personal'>('work');
+  const [activeTab, setActiveTab] = useState<'work' | 'meeting' | 'personal'>(
+    'work'
+  );
 
-  const handlePersonalHoursChange = async (newHours?: WeekTimeRanges | null) => {
+  const handlePersonalHoursChange = async (
+    newHours?: WeekTimeRanges | null
+  ) => {
     if (!newHours) {
       toast.error('No hours provided');
       return;
@@ -95,11 +129,14 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
     const { error } = await supabase
       .from('workspace_calendar_hour_settings')
-      .upsert({
-        data: JSON.stringify(newHours),
-        type: 'PERSONAL',
-        ws_id: wsId,
-      }, { onConflict: 'ws_id,type' });
+      .upsert(
+        {
+          data: JSON.stringify(newHours),
+          type: 'PERSONAL',
+          ws_id: wsId,
+        },
+        { onConflict: 'ws_id,type' }
+      );
 
     if (error) {
       console.error('Error updating personal hours:', error);
@@ -125,11 +162,14 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
     const { error } = await supabase
       .from('workspace_calendar_hour_settings')
-      .upsert({
-        data: JSON.stringify(newHours),
-        type: 'WORK',
-        ws_id: wsId,
-      }, { onConflict: 'ws_id,type' });
+      .upsert(
+        {
+          data: JSON.stringify(newHours),
+          type: 'WORK',
+          ws_id: wsId,
+        },
+        { onConflict: 'ws_id,type' }
+      );
 
     if (error) {
       console.error('Error updating work hours:', error);
@@ -155,11 +195,14 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
     const { error } = await supabase
       .from('workspace_calendar_hour_settings')
-      .upsert({
-        data: JSON.stringify(newHours),
-        type: 'MEETING',
-        ws_id: wsId,
-      }, { onConflict: 'ws_id,type' });
+      .upsert(
+        {
+          data: JSON.stringify(newHours),
+          type: 'MEETING',
+          ws_id: wsId,
+        },
+        { onConflict: 'ws_id,type' }
+      );
 
     if (error) {
       console.error('Error updating meeting hours:', error);
@@ -302,11 +345,20 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 // Type guard for WeekTimeRanges
 function isValidWeekTimeRanges(obj: any): obj is WeekTimeRanges {
   if (!obj || typeof obj !== 'object') return false;
-  const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-  return days.every(day =>
-    obj[day] &&
-    typeof obj[day].enabled === 'boolean' &&
-    Array.isArray(obj[day].timeBlocks)
+  const days = [
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+    'sunday',
+  ];
+  return days.every(
+    (day) =>
+      obj[day] &&
+      typeof obj[day].enabled === 'boolean' &&
+      Array.isArray(obj[day].timeBlocks)
   );
 }
 
