@@ -48,7 +48,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
-    "framer-motion": "^12.10.1",
+    "framer-motion": "^12.10.4",
     "html2canvas": "^1.4.1",
     "jotai": "^2.12.4",
     "juice": "^11.0.1",
