@@ -1003,7 +1003,9 @@ export function UnifiedEventModal() {
                           showTimeSelect={!isAllDay}
                           minDate={(() => {
                             // Allow selecting the same day as the start date
-                            const start = new Date(event.start_at || new Date());
+                            const start = new Date(
+                              event.start_at || new Date()
+                            );
                             return new Date(
                               start.getFullYear(),
                               start.getMonth(),
@@ -1011,7 +1013,9 @@ export function UnifiedEventModal() {
                             );
                           })()}
                           minTime={(() => {
-                            const start = new Date(event.start_at || new Date());
+                            const start = new Date(
+                              event.start_at || new Date()
+                            );
                             const end = new Date(event.end_at || new Date());
                             // Only apply minTime if start and end are on the same day
                             if (
