@@ -14,7 +14,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import { CalendarIcon, Check, Clock, Edit } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface DateTimePickerProps {
   date?: Date;
@@ -22,6 +22,22 @@ interface DateTimePickerProps {
   showTimeSelect?: boolean;
   minDate?: Date;
   minTime?: string;
+  scrollIntoViewOnOpen?: boolean;
+  pickerButtonRef?: React.RefObject<HTMLButtonElement | null>;
+}
+
+// Utility to find the nearest scrollable parent
+function getScrollableParent(node: HTMLElement | null): HTMLElement | null {
+  if (!node) return null;
+  let parent = node.parentElement;
+  while (parent) {
+    const style = window.getComputedStyle(parent);
+    if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && parent.scrollHeight > parent.clientHeight) {
+      return parent;
+    }
+    parent = parent.parentElement;
+  }
+  return null;
 }
 
 export function DateTimePicker({
@@ -30,6 +46,8 @@ export function DateTimePicker({
   showTimeSelect = true,
   minDate,
   minTime,
+  scrollIntoViewOnOpen = false,
+  pickerButtonRef,
 }: DateTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -37,21 +55,52 @@ export function DateTimePicker({
   const [manualTimeInput, setManualTimeInput] = useState(
     date ? format(date, 'HH:mm') : ''
   );
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   // Keep manualTimeInput in sync with date prop
   useEffect(() => {
     setManualTimeInput(date ? format(date, 'HH:mm') : '');
   }, [date]);
 
+  // Enhanced auto-scroll logic
+  useEffect(() => {
+    if (isCalendarOpen && scrollIntoViewOnOpen && pickerButtonRef?.current) {
+      const button = pickerButtonRef.current;
+      const scrollParent = getScrollableParent(button);
+
+      if (scrollParent) {
+        const buttonRect = button.getBoundingClientRect();
+        const parentRect = scrollParent.getBoundingClientRect();
+        const estimatedPopoverHeight = 350; // px, adjust if your popover is taller/shorter
+        const padding = 16; // px
+        // If the bottom of the popover would be below the scroll area, scroll it into view
+        if (buttonRect.bottom + estimatedPopoverHeight > parentRect.bottom) {
+          scrollParent.scrollTop += (buttonRect.bottom + estimatedPopoverHeight) - parentRect.bottom + padding;
+        }
+      }
+    }
+  }, [isCalendarOpen, scrollIntoViewOnOpen, pickerButtonRef]);
+
+  // Handle scroll into view when calendar opens
+  useEffect(() => {
+    if (isCalendarOpen && scrollIntoViewOnOpen) {
+      if (popoverRef.current) {
+        popoverRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else if (pickerButtonRef?.current) {
+        pickerButtonRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [isCalendarOpen, scrollIntoViewOnOpen, pickerButtonRef]);
+
+  // Handle click outside to close calendar (handled at modal level for better UX)
+
   const handleSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) return;
-
     // Preserve the time if the date already exists
     if (date) {
       selectedDate.setHours(date.getHours());
       selectedDate.setMinutes(date.getMinutes());
     }
-
     setSelectedDate(selectedDate);
     setDate(selectedDate);
     setIsCalendarOpen(false);
@@ -96,7 +145,9 @@ export function DateTimePicker({
     setDate(newDate);
   };
 
-  const handleManualTimeSubmit = () => {
+  const handleManualTimeSubmit = (e?: React.KeyboardEvent) => {
+    if (e && e.key !== 'Enter') return;
+    
     try {
       if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(manualTimeInput)) {
         if (date) {
@@ -119,6 +170,15 @@ export function DateTimePicker({
       }
     } catch (error) {
       console.error('Invalid time format', error);
+    }
+  };
+
+  // Handle keyboard input for manual time entry
+  const handleManualTimeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleManualTimeSubmit(e);
+    } else if (e.key === 'Escape') {
+      setIsManualTimeEntry(false);
     }
   };
 
@@ -164,11 +224,12 @@ export function DateTimePicker({
   const noValidTimes = filteredTimeOptions.length === 0;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" ref={popoverRef}>
       <div className="flex gap-2">
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <Button
+              ref={pickerButtonRef}
               variant="outline"
               className={cn(
                 'w-full justify-start text-left font-normal',
@@ -179,11 +240,15 @@ export function DateTimePicker({
               {date ? format(date, 'PPP') : <span>Pick a date</span>}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
+          <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={4} avoidCollisions={false}>
             <Calendar
               mode="single"
               selected={date}
               onSelect={handleSelect}
+              onSubmit={(date) => {
+                handleSelect(date);
+                setIsCalendarOpen(false);
+              }}
               initialFocus
               disabled={
                 minDate
@@ -209,13 +274,14 @@ export function DateTimePicker({
                 <Input
                   value={manualTimeInput}
                   onChange={(e) => setManualTimeInput(e.target.value)}
+                  onKeyDown={handleManualTimeKeyDown}
                   placeholder="HH:MM"
                   className="w-[90px]"
                 />
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={handleManualTimeSubmit}
+                  onClick={() => handleManualTimeSubmit()}
                   className="h-8 w-8"
                 >
                   <Check className="h-4 w-4" />
@@ -241,7 +307,7 @@ export function DateTimePicker({
                       }
                     />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
+                  <SelectContent className="max-h-[300px]" position="popper" side="bottom" sideOffset={4}>
                     {filteredTimeOptions.map((time) => (
                       <SelectItem key={time.value} value={time.value}>
                         {time.display}
