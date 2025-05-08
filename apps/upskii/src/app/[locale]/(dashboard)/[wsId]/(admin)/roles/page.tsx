@@ -76,7 +76,10 @@ export default async function WorkspaceRolesPage({
       />
       <Separator className="my-4" />
       <CustomDataTable
-        extraData={permissionsCount}
+        extraData={{
+          permissionsCount,
+          user,
+        }}
         columnGenerator={roleColumns}
         namespace="workspace-role-data-table"
         data={data}

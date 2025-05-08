@@ -2,6 +2,7 @@
 
 import { RoleRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { WorkspaceRole } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { UserCircle } from '@tuturuuu/ui/icons';
@@ -11,7 +12,10 @@ export const roleColumns = (
   t: any,
   namespace: string | undefined,
   _?: any[],
-  extraData?: any
+  extraData?: {
+    permissionsCount: number;
+    user: SupabaseUser;
+  }
 ): ColumnDef<WorkspaceRole>[] => [
   // {
   //   id: 'select',
@@ -81,7 +85,9 @@ export const roleColumns = (
               .length ?? '-'}
           </span>
           <span className="opacity-50">/</span>
-          <span className="text-dynamic-blue">{extraData}</span>
+          <span className="text-dynamic-blue">
+            {extraData?.permissionsCount}
+          </span>
         </span>
       </div>
     ),
@@ -122,6 +128,7 @@ export const roleColumns = (
   {
     id: 'actions',
     header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
-    cell: ({ row }) => <RoleRowActions row={row} />,
+    cell: ({ row }) =>
+      extraData?.user && <RoleRowActions row={row} user={extraData.user} />,
   },
 ];

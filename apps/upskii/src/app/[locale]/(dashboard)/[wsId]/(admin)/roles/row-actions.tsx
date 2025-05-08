@@ -20,9 +20,10 @@ import { useState } from 'react';
 
 interface RoleRowActionsProps {
   row: Row<WorkspaceRole>;
+  user: SupabaseUser;
 }
 
-export function RoleRowActions({ row }: RoleRowActionsProps) {
+export function RoleRowActions({ row, user }: RoleRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
@@ -62,7 +63,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
@@ -81,13 +82,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         title={t('ws-roles.edit')}
         editDescription={t('ws-roles.edit_description')}
         setOpen={setShowEditDialog}
-        form={
-          <RoleForm
-            wsId={data.ws_id}
-            user={{} as unknown as SupabaseUser}
-            data={data}
-          />
-        }
+        form={<RoleForm wsId={data.ws_id} user={user} data={data} />}
         requireExpansion
       />
     </div>
