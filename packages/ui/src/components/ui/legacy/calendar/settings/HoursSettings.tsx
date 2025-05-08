@@ -1,6 +1,10 @@
 'use client';
 
-import { TimeRangePicker, WeekTimeRanges, defaultWeekTimeRanges } from './TimeRangePicker';
+import {
+  TimeRangePicker,
+  WeekTimeRanges,
+  defaultWeekTimeRanges,
+} from './TimeRangePicker';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -78,18 +82,28 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
       }
 
       setValue({
-        personalHours: data?.find((h) => h.type === 'PERSONAL')?.data as WeekTimeRanges || defaultWeekTimeRanges,
-        workHours: data?.find((h) => h.type === 'WORK')?.data as WeekTimeRanges || defaultWeekTimeRanges,
-        meetingHours: data?.find((h) => h.type === 'MEETING')?.data as WeekTimeRanges || defaultWeekTimeRanges,
+        personalHours:
+          (data?.find((h) => h.type === 'PERSONAL')?.data as WeekTimeRanges) ||
+          defaultWeekTimeRanges,
+        workHours:
+          (data?.find((h) => h.type === 'WORK')?.data as WeekTimeRanges) ||
+          defaultWeekTimeRanges,
+        meetingHours:
+          (data?.find((h) => h.type === 'MEETING')?.data as WeekTimeRanges) ||
+          defaultWeekTimeRanges,
       });
     };
 
     fetchHours();
   }, [wsId]);
 
-  const [activeTab, setActiveTab] = useState<'work' | 'meeting' | 'personal'>('work');
+  const [activeTab, setActiveTab] = useState<'work' | 'meeting' | 'personal'>(
+    'work'
+  );
 
-  const handlePersonalHoursChange = async (newHours?: WeekTimeRanges | null) => {
+  const handlePersonalHoursChange = async (
+    newHours?: WeekTimeRanges | null
+  ) => {
     if (!newHours) {
       toast.error('No hours provided');
       return;
