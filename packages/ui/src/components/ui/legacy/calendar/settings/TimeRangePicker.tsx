@@ -102,6 +102,7 @@ export function TimeRangePicker({
   // Helper to convert time string to minutes
   const timeToMinutes = (t: string) => {
     const [h, m] = t.split(':').map(Number);
+    if (typeof h !== 'number' || isNaN(h) || typeof m !== 'number' || isNaN(m)) return 0;
     return h * 60 + m;
   };
   // Helper to convert minutes to time string
