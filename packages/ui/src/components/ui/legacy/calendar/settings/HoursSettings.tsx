@@ -1,6 +1,6 @@
 'use client';
 
-import { TimeRangePicker, WeekTimeRanges } from './TimeRangePicker';
+import { TimeRangePicker, WeekTimeRanges, defaultWeekTimeRanges } from './TimeRangePicker';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -20,11 +20,11 @@ type HoursSettingsProps = {
 };
 
 export function HoursSettings({ wsId }: HoursSettingsProps) {
-  const [value, setValue] = useState<{
-    personalHours?: WeekTimeRanges | null;
-    workHours?: WeekTimeRanges | null;
-    meetingHours?: WeekTimeRanges | null;
-  } | null>(null);
+  const [value, setValue] = useState<HoursSettingsData>({
+    personalHours: defaultWeekTimeRanges,
+    workHours: defaultWeekTimeRanges,
+    meetingHours: defaultWeekTimeRanges,
+  });
 
   useEffect(() => {
     const fetchHours = async () => {
@@ -36,30 +36,60 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
         .eq('ws_id', wsId);
 
       if (error) {
-        console.error(error);
+        console.error('Error fetching hours:', error);
+        return;
+      }
+
+      // If no data exists, create default settings
+      if (!data || data.length === 0) {
+        const defaultSettings = [
+          {
+            type: 'PERSONAL',
+            data: defaultWeekTimeRanges,
+            ws_id: wsId,
+          },
+          {
+            type: 'WORK',
+            data: defaultWeekTimeRanges,
+            ws_id: wsId,
+          },
+          {
+            type: 'MEETING',
+            data: defaultWeekTimeRanges,
+            ws_id: wsId,
+          },
+        ];
+
+        const { error: insertError } = await supabase
+          .from('workspace_calendar_hour_settings')
+          .insert(defaultSettings);
+
+        if (insertError) {
+          console.error('Error creating default settings:', insertError);
+          return;
+        }
+
+        setValue({
+          personalHours: defaultWeekTimeRanges,
+          workHours: defaultWeekTimeRanges,
+          meetingHours: defaultWeekTimeRanges,
+        });
         return;
       }
 
       setValue({
-        personalHours: data?.find((h) => h.type === 'PERSONAL')
-          ?.data as WeekTimeRanges | null,
-        workHours: data?.find((h) => h.type === 'WORK')
-          ?.data as WeekTimeRanges | null,
-        meetingHours: data?.find((h) => h.type === 'MEETING')
-          ?.data as WeekTimeRanges | null,
+        personalHours: data?.find((h) => h.type === 'PERSONAL')?.data as WeekTimeRanges || defaultWeekTimeRanges,
+        workHours: data?.find((h) => h.type === 'WORK')?.data as WeekTimeRanges || defaultWeekTimeRanges,
+        meetingHours: data?.find((h) => h.type === 'MEETING')?.data as WeekTimeRanges || defaultWeekTimeRanges,
       });
     };
 
     fetchHours();
   }, [wsId]);
 
-  const [activeTab, setActiveTab] = useState<'work' | 'meeting' | 'personal'>(
-    'work'
-  );
+  const [activeTab, setActiveTab] = useState<'work' | 'meeting' | 'personal'>('work');
 
-  const handlePersonalHoursChange = async (
-    newHours?: WeekTimeRanges | null
-  ) => {
+  const handlePersonalHoursChange = async (newHours?: WeekTimeRanges | null) => {
     if (!newHours) {
       toast.error('No hours provided');
       return;
@@ -79,10 +109,12 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
         type: 'PERSONAL',
         ws_id: wsId,
       })
-      .eq('ws_id', wsId);
+      .eq('ws_id', wsId)
+      .eq('type', 'PERSONAL');
 
     if (error) {
-      console.error(error);
+      console.error('Error updating personal hours:', error);
+      toast.error('Failed to update personal hours');
       return;
     }
 
@@ -108,10 +140,13 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
         data: newHours,
         type: 'WORK',
         ws_id: wsId,
-      });
+      })
+      .eq('ws_id', wsId)
+      .eq('type', 'WORK');
 
     if (error) {
-      console.error(error);
+      console.error('Error updating work hours:', error);
+      toast.error('Failed to update work hours');
       return;
     }
 
@@ -137,10 +172,13 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
         data: newHours,
         type: 'MEETING',
         ws_id: wsId,
-      });
+      })
+      .eq('ws_id', wsId)
+      .eq('type', 'MEETING');
 
     if (error) {
-      console.error(error);
+      console.error('Error updating meeting hours:', error);
+      toast.error('Failed to update meeting hours');
       return;
     }
 
