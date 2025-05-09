@@ -1,5 +1,6 @@
 import { CertificateProps } from '@/app/[locale]/(dashboard)/[wsId]/certificate/[certID]/page';
 import { DEV_MODE } from '@/constants/common';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { NextRequest } from 'next/server';
 import puppeteer from 'puppeteer';
 
@@ -21,7 +22,17 @@ const getCertificateData = async (certID: string) => {
     throw new Error('Failed to fetch certificate data');
   }
 
-  return response.json();
+  const userDetails = await getCurrentUser();
+
+  const certDetails = await response.json();
+
+  // Replace the student name in the response with the user's name
+
+  if (userDetails) {
+    certDetails.studentName = userDetails.display_name;
+  }
+
+  return certDetails;
 };
 
 const renderHTML = (data: {
