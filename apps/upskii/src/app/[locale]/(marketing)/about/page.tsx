@@ -217,9 +217,7 @@ export default function AboutPage() {
       >
         <div className="bg-primary/5 rounded-xl p-12">
           <div className="mb-8 text-center">
-            <h2 className="mb-2 text-3xl font-bold">
-              {t('impact.title')}
-            </h2>
+            <h2 className="mb-2 text-3xl font-bold">{t('impact.title')}</h2>
             <p className="text-muted-foreground mx-auto max-w-2xl">
               {t('impact.description')}
             </p>
@@ -262,9 +260,7 @@ export default function AboutPage() {
           viewport={{ once: true }}
           className="mb-8 text-center"
         >
-          <h2 className="mb-2 text-3xl font-bold">
-            {t('values.title')}
-          </h2>
+          <h2 className="mb-2 text-3xl font-bold">{t('values.title')}</h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
             {t('values.description')}
           </p>
@@ -318,9 +314,7 @@ export default function AboutPage() {
           viewport={{ once: true }}
           className="mb-8 text-center"
         >
-          <h2 className="mb-2 text-3xl font-bold">
-            {t('team.title')}
-          </h2>
+          <h2 className="mb-2 text-3xl font-bold">{t('team.title')}</h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
             {t('team.description')}
           </p>
@@ -369,31 +363,26 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="space-y-6"
           >
-            <h2 className="text-3xl font-bold">
-              {t('approach.title')}
-            </h2>
-            <p className="text-muted-foreground">
-              {t('approach.description')}
-            </p>
+            <h2 className="text-3xl font-bold">{t('approach.title')}</h2>
+            <p className="text-muted-foreground">{t('approach.description')}</p>
 
             <div className="space-y-4">
               {[
                 {
-                  title: t("approach.approach-1.title"),
-                  description: t("approach.approach-1.description"),
+                  title: t('approach.approach-1.title'),
+                  description: t('approach.approach-1.description'),
                 },
                 {
-                  title: t("approach.approach-2.title"),
-                  description: t("approach.approach-2.description"),
+                  title: t('approach.approach-2.title'),
+                  description: t('approach.approach-2.description'),
                 },
                 {
-                  
-                  title: t("approach.approach-3.title"),
-                  description: t("approach.approach-3.description"),
+                  title: t('approach.approach-3.title'),
+                  description: t('approach.approach-3.description'),
                 },
                 {
-                  title: t("approach.approach-4.title"),
-                  description: t("approach.approach-4.description"),
+                  title: t('approach.approach-4.title'),
+                  description: t('approach.approach-4.description'),
                 },
               ].map((item, index) => (
                 <motion.div
@@ -490,9 +479,7 @@ export default function AboutPage() {
         className="text-center"
       >
         <div className="bg-primary/5 mx-auto max-w-3xl rounded-xl p-8">
-          <h2 className="mb-4 text-2xl font-bold">
-            {t('cta-section.title')}
-          </h2>
+          <h2 className="mb-4 text-2xl font-bold">{t('cta-section.title')}</h2>
           <p className="text-muted-foreground mb-6">
             {t('cta-section.description')}
           </p>
