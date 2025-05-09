@@ -118,7 +118,7 @@ export const CertificateDocument: React.FC<{ data: CertificateData }> = ({
     <Page size="A4" orientation="landscape" style={styles.page}>
       <View style={styles.container}>
         <Image
-          src={`${URL}/media/logos/watermark.png`}
+          src="/media/logos/watermark.png"
           style={styles.watermark}
         />
 

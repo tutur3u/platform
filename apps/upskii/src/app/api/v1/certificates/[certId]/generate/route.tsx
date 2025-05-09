@@ -1,11 +1,9 @@
 import { CertificateDocument } from './certificate-document';
 import { CertificateData, Format } from './types';
-import { DEV_MODE } from '@/constants/common';
 import { renderToStream } from '@react-pdf/renderer';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { NextRequest } from 'next/server';
 
-const URL = DEV_MODE ? 'http://localhost:7806' : 'https://upskii.com';
 
 const getCertificateData = async (certID: string) => {
   const response = await fetch(`${URL}/api/v1/certificates/${certID}`, {
