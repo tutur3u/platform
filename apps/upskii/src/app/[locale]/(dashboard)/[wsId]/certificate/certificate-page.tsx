@@ -21,7 +21,7 @@ export default function Certificate({ certDetails }: CertificateProps) {
   const handlePDF = useCallback(async () => {
     try {
       const res = await fetch(
-        `/api/v1/certificates/${certificateId}/generate?format=pdf`,
+        `/api/v1/certificates/${certificateId}/generate`,
         {
           method: 'POST',
           headers: {

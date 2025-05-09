@@ -1,5 +1,5 @@
 import { CertificateDocument } from './certificate-document';
-import { CertificateData, Format } from './types';
+import { CertificateData } from './types';
 import { renderToStream } from '@react-pdf/renderer';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { NextRequest } from 'next/server';
@@ -42,11 +42,6 @@ export async function POST(
     } = await req.json();
     const { certId } = await params;
 
-    const format = req.nextUrl.searchParams.get('format') as Format;
-
-    if (format !== 'pdf' && format !== 'png') {
-      return new Response('Invalid format', { status: 400 });
-    }
 
     if (!certId) {
       return new Response('Certificate ID is required', { status: 400 });
