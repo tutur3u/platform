@@ -4,9 +4,9 @@ import { CertificateProps } from './[certID]/page';
 import { Button } from '@tuturuuu/ui/button';
 import { FileText, ImageIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import html2canvas from 'html2canvas';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
-import html2canvas from 'html2canvas';
 
 export default function Certificate({ certDetails }: CertificateProps) {
   const t = useTranslations('certificates');
@@ -59,7 +59,7 @@ export default function Certificate({ certDetails }: CertificateProps) {
     }
   }, [certificateId]);
 
- const handlePNG = useCallback(() => {
+  const handlePNG = useCallback(() => {
     const element = document.getElementById('certificate-area');
     if (element) {
       html2canvas(element, {
