@@ -1,6 +1,12 @@
-import { Document, Page, View, Text, StyleSheet, Image } from '@react-pdf/renderer';
 import { CertificateData } from './types';
-
+import {
+  Document,
+  Image,
+  Page,
+  StyleSheet,
+  Text,
+  View,
+} from '@react-pdf/renderer';
 
 // Create styles
 const styles = StyleSheet.create({
@@ -105,11 +111,16 @@ const styles = StyleSheet.create({
   },
 });
 
-export const CertificateDocument: React.FC<{ data: CertificateData }> = ({ data }) => (
+export const CertificateDocument: React.FC<{ data: CertificateData }> = ({
+  data,
+}) => (
   <Document>
     <Page size="A4" orientation="landscape" style={styles.page}>
       <View style={styles.container}>
-        <Image src={`${URL}/media/logos/watermark.png`} style={styles.watermark} />
+        <Image
+          src={`${URL}/media/logos/watermark.png`}
+          style={styles.watermark}
+        />
 
         {/* Header */}
         <View style={styles.header}>
@@ -131,14 +142,18 @@ export const CertificateDocument: React.FC<{ data: CertificateData }> = ({ data 
         <View style={styles.footer}>
           <View style={styles.footerBlock}>
             <Text style={styles.footerLabel}>Completion Date:</Text>
-            <Text style={styles.footerValue}>{data.certData.completionDate}</Text>
+            <Text style={styles.footerValue}>
+              {data.certData.completionDate}
+            </Text>
           </View>
           <View style={styles.footerBlockRight}>
             <Text style={styles.footerLabelRight}>Certificate ID:</Text>
-            <Text style={styles.footerValue}>{data.certData.certificateId}</Text>
+            <Text style={styles.footerValue}>
+              {data.certData.certificateId}
+            </Text>
           </View>
         </View>
       </View>
     </Page>
   </Document>
-); 
+);

@@ -1,9 +1,9 @@
-import { DEV_MODE } from '@/constants/common';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { NextRequest } from 'next/server';
-import { renderToStream } from '@react-pdf/renderer';
 import { CertificateDocument } from './certificate-document';
 import { CertificateData, Format } from './types';
+import { DEV_MODE } from '@/constants/common';
+import { renderToStream } from '@react-pdf/renderer';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { NextRequest } from 'next/server';
 
 const URL = DEV_MODE ? 'http://localhost:7806' : 'https://upskii.com';
 
@@ -72,7 +72,7 @@ export async function POST(
       chunks.push(Buffer.from(chunk));
     }
     const buffer = Buffer.concat(chunks);
-    
+
     return new Response(buffer, {
       status: 200,
       headers: {
@@ -84,4 +84,4 @@ export async function POST(
     console.error('PDF generation failed:', error);
     return new Response('Error generating PDF', { status: 500 });
   }
-} 
+}

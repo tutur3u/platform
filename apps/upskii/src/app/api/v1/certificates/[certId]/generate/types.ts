@@ -10,4 +10,4 @@ export interface CertificateData {
   certificate_id: string;
 }
 
-export type Format = 'pdf' | 'png'; 
+export type Format = 'pdf' | 'png';
