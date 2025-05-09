@@ -1161,6 +1161,92 @@
           "answer": "Để được hỗ trợ kỹ thuật, hãy truy cập Trung tâm Trợ giúp của chúng tôi hoặc liên hệ với đội ngũ hỗ trợ của chúng tôi thông qua trang \"Liên hệ\". Bao gồm chi tiết về sự cố, bao gồm bất kỳ thông báo lỗi nào, thiết bị của bạn và thông tin trình duyệt."
         }
       }
+    },
+    "contact": {
+      "page": {
+        "badge": "Liên Hệ",
+        "title": "Liên Hệ Chúng Tôi",
+        "description": "Có câu hỏi hoặc cần hỗ trợ? Chúng tôi luôn sẵn sàng giúp đỡ. Hãy liên hệ với đội ngũ của chúng tôi và chúng tôi sẽ phản hồi sớm nhất có thể."
+      },
+      "info": {
+        "title": "Thông Tin Liên Hệ",
+        "email": {
+          "label": "Email",
+          "value": "support@upskii.com"
+        },
+        "phone": {
+          "label": "Điện Thoại",
+          "value": "+1 (123) 456-7890"
+        },
+        "address": {
+          "label": "Địa Chỉ",
+          "value": "Văn phòng vật lý sắp ra mắt"
+        },
+        "hours": {
+          "title": "Giờ Hỗ Trợ",
+          "weekdays": {
+            "days": "Thứ Hai - Thứ Sáu",
+            "hours": "9:00 - 18:00 EST"
+          },
+          "saturday": {
+            "days": "Thứ Bảy",
+            "hours": "10:00 - 16:00 EST"
+          },
+          "sunday": {
+            "days": "Chủ Nhật",
+            "hours": "Đóng Cửa"
+          }
+        }
+      },
+      "quick_links": {
+        "title": "Liên Kết Nhanh",
+        "faq": "Câu Hỏi Thường Gặp",
+        "guide": "Hướng Dẫn Nền Tảng"
+      },
+      "form": {
+        "title": "Gửi Tin Nhắn Cho Chúng Tôi",
+        "fields": {
+          "name": {
+            "label": "Họ Tên",
+            "placeholder": "Tên của bạn",
+            "error": "Tên phải có ít nhất 2 ký tự."
+          },
+          "email": {
+            "label": "Email",
+            "placeholder": "email.cua.ban@example.com",
+            "error": "Vui lòng nhập địa chỉ email hợp lệ."
+          },
+          "subject": {
+            "label": "Chủ Đề",
+            "placeholder": "Chọn một chủ đề",
+            "description": "Chọn chủ đề mô tả chính xác nhất yêu cầu của bạn.",
+            "error": "Vui lòng chọn một chủ đề.",
+            "options": {
+              "general_inquiry": "Câu Hỏi Chung",
+              "technical_support": "Hỗ Trợ Kỹ Thuật",
+              "billing": "Thanh Toán & Hóa Đơn",
+              "teacher_verification": "Xác Minh Giáo Viên",
+              "course_issue": "Vấn Đề Về Khóa Học",
+              "partnership": "Cơ Hội Hợp Tác",
+              "feedback": "Phản Hồi & Đề Xuất"
+            }
+          },
+          "message": {
+            "label": "Tin Nhắn",
+            "placeholder": "Vui lòng mô tả chi tiết câu hỏi hoặc vấn đề của bạn...",
+            "error": "Tin nhắn phải có ít nhất 10 ký tự."
+          }
+        },
+        "buttons": {
+          "submit": "Gửi Tin Nhắn",
+          "submitting": "Đang Gửi Tin Nhắn...",
+          "send_another": "Gửi Tin Nhắn Khác"
+        },
+        "success": {
+          "title": "Đã Gửi Tin Nhắn!",
+          "description": "Cảm ơn bạn đã liên hệ với chúng tôi. Chúng tôi đã nhận được tin nhắn của bạn và sẽ phản hồi trong thời gian sớm nhất."
+        }
+      }
     }
   },
   "home": {

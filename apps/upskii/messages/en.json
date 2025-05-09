@@ -1162,6 +1162,91 @@
           "answer": "For technical support, visit our Help Center or contact our support team through the \"Contact\" page. Include details about the issue, including any error messages, your device, and browser information."
         }
       }
+    },
+    "contact": {
+      "page": {
+        "badge": "Get in Touch",
+        "title": "Contact Us",
+        "description": "Have questions or need support? We're here to help. Reach out to our team and we'll get back to you as soon as possible."
+      },
+      "info": {
+        "title": "Contact Information",
+        "email": {
+          "label": "Email",
+          "value": "support@upskii.com"
+        },
+        "phone": {
+          "label": "Phone"
+        },
+        "address": {
+          "label": "Address",
+          "value": "Physical office coming soon"
+        },
+        "hours": {
+          "title": "Support Hours",
+          "weekdays": {
+            "days": "Monday - Friday",
+            "hours": "9:00 AM - 6:00 PM EST"
+          },
+          "saturday": {
+            "days": "Saturday",
+            "hours": "10:00 AM - 4:00 PM EST"
+          },
+          "sunday": {
+            "days": "Sunday",
+            "hours": "Closed"
+          }
+        }
+      },
+      "quick_links": {
+        "title": "Quick Links",
+        "faq": "FAQ",
+        "guide": "Platform Guide"
+      },
+      "form": {
+        "title": "Send Us a Message",
+        "fields": {
+          "name": {
+            "label": "Name",
+            "placeholder": "Your name",
+            "error": "Name must be at least 2 characters."
+          },
+          "email": {
+            "label": "Email",
+            "placeholder": "your.email@example.com",
+            "error": "Please enter a valid email address."
+          },
+          "subject": {
+            "label": "Subject",
+            "placeholder": "Select a subject",
+            "description": "Select the topic that best describes your inquiry.",
+            "error": "Please select a subject.",
+            "options": {
+              "general_inquiry": "General Inquiry",
+              "technical_support": "Technical Support",
+              "billing": "Billing & Payments",
+              "teacher_verification": "Teacher Verification",
+              "course_issue": "Course Issue",
+              "partnership": "Partnership Opportunity",
+              "feedback": "Feedback & Suggestions"
+            }
+          },
+          "message": {
+            "label": "Message",
+            "placeholder": "Please describe your question or issue in detail...",
+            "error": "Message must be at least 10 characters."
+          }
+        },
+        "buttons": {
+          "submit": "Send Message",
+          "submitting": "Sending Message...",
+          "send_another": "Send Another Message"
+        },
+        "success": {
+          "title": "Message Sent!",
+          "description": "Thank you for contacting us. We've received your message and will get back to you shortly."
+        }
+      }
     }
   },
   "home": {
