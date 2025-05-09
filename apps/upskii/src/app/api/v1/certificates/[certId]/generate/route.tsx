@@ -7,7 +7,7 @@ import { CertificateData, Format } from './types';
 
 const URL = DEV_MODE ? 'http://localhost:7806' : 'https://upskii.com';
 
-export const getCertificateData = async (certID: string) => {
+const getCertificateData = async (certID: string) => {
   const response = await fetch(`${URL}/api/v1/certificates/${certID}`, {
     method: 'GET',
     headers: {
