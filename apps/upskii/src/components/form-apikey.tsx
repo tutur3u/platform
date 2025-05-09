@@ -15,7 +15,9 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import * as z from 'zod';
+
 
 export default function ApiKeyInput({
   defaultValue,
@@ -26,6 +28,7 @@ export default function ApiKeyInput({
   const [saving, setSaving] = useState(false);
   const [validated, setValidated] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (defaultValue) {
@@ -82,34 +85,74 @@ export default function ApiKeyInput({
 
   async function onSave(data: z.infer<typeof FormSchema>) {
     setSaving(true);
-    const isValid = await validateApiKey(data.apiKey);
+    try {
+      const isValid = await validateApiKey(data.apiKey);
 
-    if (!isValid) {
+      if (!isValid) {
+        toast({
+          title: t('api-key-invalid-title'),
+          description: t('api-key-invalid-desc'),
+          variant: 'destructive',
+        });
+        setValidated(false);
+        return;
+      }
+
+      const response = await fetch('/api/ai/chat/google/key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ apiKey: data.apiKey }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save API key');
+      }
+
+      toast({
+        title: t('api-key-valid-title'),
+        description: t('api-key-valid-desc'),
+      });
+      setValidated(true);
+      router.refresh();
+    } catch (error) {
       toast({
         title: t('api-key-invalid-title'),
         description: t('api-key-invalid-desc'),
         variant: 'destructive',
       });
       setValidated(false);
-    } else {
-      toast({
-        title: t('api-key-valid-title'),
-        description: t('api-key-valid-desc'),
-      });
-      setValidated(true);
-      localStorage.setItem('google_api_key', data.apiKey);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   async function onDelete() {
-    localStorage.removeItem('google_api_key');
-    form.reset({ apiKey: '' });
-    setValidated(false);
-    toast({
-      title: t('api-key-deleted-title'),
-      description: t('api-key-deleted-desc'),
-    });
+    try {
+      const response = await fetch('/api/ai/chat/google/key', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete API key');
+      }
+
+      form.reset({ apiKey: '' });
+      setValidated(false);
+      toast({
+        title: t('api-key-deleted-title'),
+        description: t('api-key-deleted-desc'),
+      });
+
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: t('api-key-invalid-title'),
+        description: t('api-key-invalid-desc'),
+        variant: 'destructive',
+      });
+    }
   }
 
   return (
