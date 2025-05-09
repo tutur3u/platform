@@ -20,7 +20,6 @@ import {
   Cog,
   Home,
   ListTodo,
-  MessageCircleMore,
   ShieldCheck,
 } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
