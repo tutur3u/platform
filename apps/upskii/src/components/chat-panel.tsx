@@ -86,7 +86,6 @@ export function ChatPanel({
   disabled,
   currentUserId,
   apiKey,
-  apiKeyProvided,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
 
@@ -185,7 +184,6 @@ export function ChatPanel({
               setMode={setMode}
               disabled={disabled}
               apiKey={apiKey}
-              apiKeyProvided={apiKeyProvided}
             />
           </div>
         </div>

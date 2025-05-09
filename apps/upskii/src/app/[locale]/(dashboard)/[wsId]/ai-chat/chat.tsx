@@ -24,6 +24,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   locale: string;
   noEmptyPage?: boolean;
   disabled?: boolean;
+  initialApiKey?: string | null;
 }
 
 const Chat = ({
@@ -36,6 +37,7 @@ const Chat = ({
   locale,
   noEmptyPage,
   disabled,
+  initialApiKey,
 }: ChatProps) => {
   const t = useTranslations();
 
@@ -47,17 +49,6 @@ const Chat = ({
   const [model, setModel] = useState<Model | undefined>(inputModel);
   const [mode, setMode] = useState<ResponseMode>('medium');
   const [currentUserId, setCurrentUserId] = useState<string>();
-
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [apiKeyProvided, setApiKeyProvided] = useState(false);
-
-  useEffect(() => {
-    const storedApiKey = localStorage.getItem('google_api_key');
-    if (storedApiKey) {
-      setApiKey(storedApiKey);
-      setApiKeyProvided(true);
-    }
-  }, []);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
@@ -77,7 +68,7 @@ const Chat = ({
         id: chat?.id,
         model: chat?.model || model?.value,
         mode,
-        previewToken: apiKey,
+        previewToken: initialApiKey,
       },
       onResponse(response) {
         console.log('Response:', response);
@@ -146,7 +137,7 @@ const Chat = ({
           body: JSON.stringify({
             id: chat.id,
             model: chat.model,
-            previewToken: apiKey,
+            previewToken: initialApiKey,
           }),
         }
       );
@@ -248,7 +239,7 @@ const Chat = ({
         body: JSON.stringify({
           model: model.value,
           message: input,
-          previewToken: apiKey,
+          previewToken: initialApiKey,
         }),
       }
     );
@@ -385,8 +376,7 @@ const Chat = ({
         setMode={setMode}
         disabled={disabled}
         currentUserId={currentUserId}
-        apiKey={apiKey ?? undefined}
-        apiKeyProvided={apiKeyProvided}
+        apiKey={initialApiKey ?? undefined}
       />
     </div>
   );
