@@ -181,22 +181,6 @@ export default async function Layout({ children, params }: LayoutProps) {
         withoutPermission('ai_lab'),
     },
     {
-      title: t('sidebar.chat'),
-      href: `/${wsId}/chat`,
-      icon: <MessageCircleMore className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'M',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
-    },
-    {
       title: t('sidebar.roles'),
       href: `/${wsId}/roles`,
       // subItems: [] as { name: string; href: string }[],
