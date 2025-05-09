@@ -2,8 +2,8 @@ import Chat from './chat';
 import { getChats } from './helper';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 interface Props {
   searchParams: Promise<{
@@ -31,5 +31,7 @@ export default async function AIPage({ searchParams }: Props) {
 
   if (error || !whitelisted?.enabled) redirect('/not-whitelisted');
 
-  return <Chat chats={chats} count={count} locale={locale} initialApiKey={apiKey} />;
+  return (
+    <Chat chats={chats} count={count} locale={locale} initialApiKey={apiKey} />
+  );
 }
