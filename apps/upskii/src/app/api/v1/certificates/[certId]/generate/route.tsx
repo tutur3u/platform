@@ -3,9 +3,10 @@ import { CertificateData } from './types';
 import { renderToStream } from '@react-pdf/renderer';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { NextRequest } from 'next/server';
+import { BASE_URL } from '@/constants/common';
 
 const getCertificateData = async (certID: string) => {
-  const response = await fetch(`${URL}/api/v1/certificates/${certID}`, {
+  const response = await fetch(`${BASE_URL}/api/v1/certificates/${certID}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
