@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { apiKey } = await request.json();
-    
+
     if (!apiKey) {
       return NextResponse.json(
         { error: 'API key is required' },
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       path: '/',
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      httpOnly: true
+      httpOnly: true,
     });
 
     revalidatePath('/ai-chat');
@@ -47,4 +47,4 @@ export async function DELETE() {
       { status: 500 }
     );
   }
-} 
+}
