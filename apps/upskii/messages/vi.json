@@ -966,6 +966,120 @@
           "button": "Trở Thành Giáo Viên"
         }
       }
+    },
+    "about": {
+      "hero": {
+        "badge": "Về Chúng Tôi",
+        "title": "Sứ Mệnh Của Chúng Tôi Là Chuyển Đổi Giáo Dục",
+        "description": "Chúng tôi đang xây dựng một nền tảng trao quyền cho các nhà giáo dục và học viên thông qua công nghệ, làm cho giáo dục chất lượng cao trở nên dễ tiếp cận với tất cả mọi người, ở mọi nơi."
+      },
+      "mission-vision": {
+        "slogan-1": "Giáo Dục Cho Mọi Người,",
+        "slogan-2": "Mọi Nơi",
+        "mission": {
+          "title": "Sứ Mệnh Của Chúng Tôi",
+          "description": "Sứ mệnh của chúng tôi là dân chủ hóa giáo dục bằng cách cung cấp một nền tảng kết nối các nhà giáo dục nhiệt huyết với những người học nhiệt tình từ khắp nơi trên thế giới. Chúng tôi tin rằng giáo dục chất lượng nên dễ tiếp cận với tất cả mọi người, bất kể vị trí hay xuất thân."
+        },
+        "vision": {
+          "title": "Tầm Nhìn Của Chúng Tôi",
+          "description": "Chúng tôi hình dung một thế giới nơi bất kỳ ai cũng có thể học bất cứ điều gì, bất cứ lúc nào, bất cứ nơi đâu. Một tương lai nơi công nghệ nâng cao trải nghiệm học tập, nơi AI hỗ trợ cả giáo viên và học viên, và nơi giáo dục được cá nhân hóa theo nhu cầu và phong cách học tập của từng cá nhân."
+        },
+        "button": "Khám Phá Nền Tảng Của Chúng Tôi"
+      },
+      "impact": {
+        "title": "Tác Động Của Chúng Tôi",
+        "description": "Chúng tôi tự hào về sự khác biệt mà chúng tôi đang tạo ra trong giáo dục trên toàn thế giới.",
+        "impact-1": "Người Học Tích Cực",
+        "impact-2": "Giáo Viên Đã Xác Minh",
+        "impact-3": "Khóa Học Có Sẵn",
+        "impact-4": "Chứng Chỉ Đã Cấp"
+      },
+      "values": {
+        "title": "Giá Trị Cốt Lõi Của Chúng Tôi",
+        "description": "Những nguyên tắc hướng dẫn mọi việc chúng tôi làm.",
+        "value-1": {
+          "title": "Giáo Dục Dễ Tiếp Cận",
+          "description": "Chúng tôi tin rằng giáo dục chất lượng nên có sẵn cho tất cả mọi người, bất kể vị trí hay xuất thân."
+        },
+        "value-2": {
+          "title": "Cộng Đồng",
+          "description": "Chúng tôi nuôi dưỡng các cộng đồng hòa nhập nơi các nhà giáo dục và người học có thể kết nối, hợp tác và cùng nhau phát triển."
+        },
+        "value-3": {
+          "title": "Đổi Mới",
+          "description": "Chúng tôi liên tục phát triển nền tảng của mình với công nghệ tiên tiến để nâng cao trải nghiệm dạy và học."
+        },
+        "value-4": {
+          "title": "Học Tập Suốt Đời",
+          "description": "Chúng tôi hỗ trợ hành trình phát triển cá nhân và nghề nghiệp liên tục trong suốt cuộc đời."
+        },
+        "value-5": {
+          "title": "Chính Trực",
+          "description": "Chúng tôi duy trì các tiêu chuẩn đạo đức cao và tính minh bạch trong tất cả các hoạt động và mối quan hệ của mình."
+        },
+        "value-6": {
+          "title": "Lấy Người Học Làm Trung Tâm",
+          "description": "Chúng tôi thiết kế nền tảng của mình với nhu cầu và trải nghiệm của người học ở vị trí hàng đầu trong các quyết định của chúng tôi."
+        }
+      },
+      "team": {
+        "title": "Gặp Gỡ Đội Ngũ Lãnh Đạo Của Chúng Tôi",
+        "description": "Các nhà giáo dục và chuyên gia công nghệ nhiệt huyết cam kết chuyển đổi giáo dục trực tuyến.",
+        "member-1": {
+          "role": "CEO & Đồng Sáng Lập",
+          "bio": "Cựu giám đốc điều hành công nghệ giáo dục với hơn 15 năm kinh nghiệm trong đổi mới EdTech."
+        },
+        "member-2": {
+          "role": "CTO & Đồng Sáng Lập",
+          "bio": "Nhà nghiên cứu AI và kiến trúc sư phần mềm chuyên về công nghệ giáo dục và học tập cá nhân hóa."
+        },
+        "member-3": {
+          "role": "Giám Đốc Học Tập",
+          "bio": "Nhà tâm lý học giáo dục với chuyên môn trong phát triển chương trình giảng dạy và phương pháp học tập trực tuyến."
+        },
+        "member-4": {
+          "role": "Giám Đốc Sản Phẩm",
+          "bio": "Lãnh đạo sản phẩm với kinh nghiệm xây dựng các nền tảng giáo dục lấy người dùng làm trung tâm và các giải pháp học tập có thể mở rộng."
+        }
+      },
+      "approach": {
+        "title": "Cách Tiếp Cận Của Chúng Tôi",
+        "description": "Chúng tôi kết hợp các nguyên tắc giáo dục truyền thống với công nghệ đổi mới để tạo ra trải nghiệm học tập hấp dẫn, hiệu quả và dễ tiếp cận.",
+        "approach-1": {
+          "title": "Thiết Kế Lấy Con Người Làm Trung Tâm",
+          "description": "Nền tảng của chúng tôi được thiết kế với các nhà giáo dục và người học trong tâm trí, tập trung vào giao diện trực quan và trải nghiệm mượt mà."
+        },
+        "approach-2": {
+          "title": "Học Tập Được Tăng Cường Bởi AI",
+          "description": "Chúng tôi tận dụng trí tuệ nhân tạo để cá nhân hóa trải nghiệm học tập, cung cấp phản hồi ngay lập tức và hỗ trợ các nhà giáo dục trong việc tạo nội dung."
+        },
+        "approach-3": {
+          "title": "Hợp Tác Cộng Đồng",
+          "description": "Chúng tôi thúc đẩy kết nối giữa học viên và giáo viên trên toàn cầu, tạo ra môi trường học tập hợp tác."
+        },
+        "approach-4": {
+          "title": "Cải Tiến Liên Tục",
+          "description": "Chúng tôi thường xuyên cập nhật nền tảng của mình dựa trên phản hồi của người dùng và nghiên cứu và công nghệ giáo dục mới nổi."
+        },
+        "detail-1": {
+          "title": "Học Tập Cá Nhân Hóa",
+          "description": "Được điều chỉnh theo nhu cầu cá nhân"
+        },
+        "detail-2": {
+          "title": "Tích Hợp AI",
+          "description": "Hỗ trợ học tập tiên tiến"
+        },
+        "detail-3": {
+          "title": "Chứng Nhận",
+          "description": "Chứng chỉ được công nhận bởi ngành"
+        }
+      },
+      "cta-section": {
+        "title": "Tham Gia Hành Trình Giáo Dục Của Chúng Tôi",
+        "description": "Dù bạn là học viên háo hức học hỏi hay nhà giáo dục sẵn sàng chia sẻ kiến thức của mình, nền tảng của chúng tôi được xây dựng dành cho bạn.",
+        "button": "Khám Phá Nền Tảng",
+        "contact-button": "Liên Hệ Với Chúng Tôi"
+      }
     }
   },
   "home": {

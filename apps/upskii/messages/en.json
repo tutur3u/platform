@@ -923,27 +923,27 @@
           "description": "Leverage powerful tools and features to create engaging courses.",
           "feature-1": {
             "title": "Video Management",
-            "description":"Upload, edit, and manage video content with our integrated video hosting solution."
+            "description": "Upload, edit, and manage video content with our integrated video hosting solution."
           },
           "feature-2": {
             "title": "AI Content Generation",
-            "description":"Create quizzes, assignments, and supplementary content with AI assistance."
+            "description": "Create quizzes, assignments, and supplementary content with AI assistance."
           },
           "feature-3": {
             "title": "Live Teaching",
-            "description":"Host live classes, webinars, and interactive sessions with your students."
+            "description": "Host live classes, webinars, and interactive sessions with your students."
           },
           "feature-4": {
             "title": "Student Analytics",
-            "description":"Track student progress, engagement, and performance with detailed analytics."
+            "description": "Track student progress, engagement, and performance with detailed analytics."
           },
           "feature-5": {
             "title": "Assessment Tools",
-            "description":"Create various types of assessments including quizzes, assignments, and projects."
+            "description": "Create various types of assessments including quizzes, assignments, and projects."
           },
           "feature-6": {
             "title": "Certificate Designer",
-            "description":"Design custom certificates that will be automatically issued to successful students."
+            "description": "Design custom certificates that will be automatically issued to successful students."
           }
         },
         "tips": {
@@ -965,6 +965,120 @@
           "description": "Join our community of educators and reach students around the world with your expertise.",
           "button": "Become a Teacher"
         }
+      }
+    },
+    "about": {
+      "hero": {
+        "badge": "About Us",
+        "title": "Our Mission is to Transform Education",
+        "description": "We're building a platform that empowers educators and students through technology, making high-quality education accessible to everyone, everywhere."
+      },
+      "mission-vision": {
+        "slogan-1": "Education for Everyone,",
+        "slogan-2": "Everywhere",
+        "mission": {
+          "title": "Our Mission",
+          "description": "Our mission is to democratize education by providing a platform that connects passionate educators with eager learners from around the world. We believe that quality education should be accessible to everyone, regardless of location or background."
+        },
+        "vision": {
+          "title": "Our Vision",
+          "description": "We envision a world where anyone can learn anything, anytime, anywhere. A future where technology enhances the learning experience, where AI assists both teachers and students, and where education is personalized to each individual's needs and learning style."
+        },
+        "button": "Explore Our Platform"
+      },
+      "impact": {
+        "title": "Our Impact",
+        "description": "We're proud of the difference we're making in education around the world.",
+        "impact-1": "Active Learners",
+        "impact-2": "Verified Teachers",
+        "impact-3": "Courses Available",
+        "impact-4": "Certificates Issued"
+      },
+      "values": {
+        "title": "Our Core Values",
+        "description": "The principles that guide everything we do.",
+        "value-1": {
+          "title": "Accessible Education",
+          "description": "We believe quality education should be available to everyone, regardless of location or background."
+        },
+        "value-2": {
+          "title": "Community",
+          "description": "We foster inclusive communities where educators and learners can connect, collaborate, and grow together."
+        },
+        "value-3": {
+          "title": "Innovation",
+          "description": "We continuously evolve our platform with cutting-edge technology to enhance the teaching and learning experience."
+        },
+        "value-4": {
+          "title": "Lifelong Learning",
+          "description": "We support the journey of continuous personal and professional development throughout life."
+        },
+        "value-5": {
+          "title": "Integrity",
+          "description": "We maintain high ethical standards and transparency in all our operations and relationships."
+        },
+        "value-6": {
+          "title": "Student-Centered",
+          "description": "We design our platform with the needs and experiences of learners at the forefront of our decisions."
+        }
+      },
+      "team": {
+        "title": "Meet Our Leadership Team",
+        "description": "Passionate educators and technologists committed to transforming online education.",
+        "member-1": {
+          "role": "CEO & Co-Founder",
+          "bio": "Former education technology executive with over 15 years of experience in EdTech innovation."
+        },
+        "member-2": {
+          "role": "CTO & Co-Founder",
+          "bio": "AI researcher and software architect specializing in educational technology and personalized learning."
+        },
+        "member-3": {
+          "role": "Chief Learning Officer",
+          "bio": "Educational psychologist with expertise in curriculum development and online learning methodologies."
+        },
+        "member-4": {
+          "role": "Chief Product Officer",
+          "bio": "Product leader with experience building user-centered educational platforms and scalable learning solutions."
+        }
+      },
+      "approach": {
+        "title": "Our Approach",
+        "description": "We combine traditional educational principles with innovative technology to create a learning experience that is engaging, effective, and accessible.",
+        "approach-1": {
+          "title": "Human-Centered Design",
+          "description": "Our platform is designed with educators and learners in mind, focusing on intuitive interfaces and seamless experiences."
+        },
+        "approach-2": {
+          "title": "AI-Enhanced Learning",
+          "description": "We leverage artificial intelligence to personalize learning experiences, provide immediate feedback, and support educators in content creation."
+        },
+        "approach-3": {
+          "title": "Community Collaboration",
+          "description": "We foster connections between students and teachers across the globe, creating a collaborative learning environment."
+        },
+        "approach-4": {
+          "title": "Continuous Improvement",
+          "description": "We regularly update our platform based on user feedback and emerging educational research and technologies."
+        },
+        "detail-1": {
+          "title": "Personalized Learning",
+          "description": "Tailored to individual needs"
+        },
+        "detail-2": {
+          "title": "AI Integration",
+          "description": "Advanced learning assistance"
+        },
+        "detail-3": {
+          "title": "Certification",
+          "description": "Industry-recognized credentials"
+        }
+      },
+      "cta-section": {
+        "title": "Join Our Educational Journey",
+        "description": "Whether you're a student eager to learn or an educator ready to share your knowledge, our platform is built for you.",
+        "button": "Explore Platform",
+        "contact-button": "Contact Us"
       }
     }
   },
