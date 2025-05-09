@@ -1,9 +1,9 @@
 import { CertificateDocument } from './certificate-document';
 import { CertificateData } from './types';
+import { BASE_URL } from '@/constants/common';
 import { renderToStream } from '@react-pdf/renderer';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { NextRequest } from 'next/server';
-import { BASE_URL } from '@/constants/common';
 
 const getCertificateData = async (certID: string) => {
   const response = await fetch(`${BASE_URL}/api/v1/certificates/${certID}`, {
