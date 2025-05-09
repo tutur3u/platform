@@ -724,6 +724,250 @@
     "vitals": "Vitals",
     "vital-groups": "Vital Groups"
   },
+  "boarding-pages": {
+    "home": {
+      "hero": {
+        "badge": "Transform Your Learning Journey",
+        "title-1": "Your Complete",
+        "title-2": "Educational Platform",
+        "description": "A modern learning platform that empowers educators and students with AI-enhanced features, interactive content, and real-time collaboration tools.",
+        "platform-guide": "Platform Guide"
+      },
+      "key-features": {
+        "badge": "Platform Features",
+        "title": "Everything You Need for Modern Education",
+        "description": "Our platform combines powerful teaching tools with an intuitive learning experience",
+        "feature-1": {
+          "title": "Course Creation & Management",
+          "description": "Create and manage course content with ease, including videos, PDFs, and interactive quizzes."
+        },
+        "feature-2": {
+          "title": "AI-Enhanced Learning",
+          "description": "Personalized learning experiences powered by AI to generate quizzes, provide feedback, and assist teachers."
+        },
+        "feature-3": {
+          "title": "Live Classes & Interaction",
+          "description": "Host live classes with video conferencing, real-time chat, and interactive sessions."
+        },
+        "feature-4": {
+          "title": "Certificates & Achievements",
+          "description": "Automatically issue certificates and badges upon course completion to recognize achievements."
+        },
+        "feature-5": {
+          "title": "Community & Collaboration",
+          "description": "Foster a collaborative learning environment with discussion forums and peer learning."
+        },
+        "feature-6": {
+          "title": "Course Marketplace",
+          "description": "Browse, purchase, and enroll in a wide variety of courses offered by verified educators."
+        }
+      },
+      "for-teachers": {
+        "badge": "For Educators",
+        "title": "Empower Your Teaching",
+        "description": "Our platform provides educators with powerful tools to create engaging content, interact with students, and track progress.",
+        "details-1": "Create and manage courses with ease",
+        "details-2": "Upload videos and learning materials",
+        "details-3": "Generate AI-powered quizzes and assessments",
+        "details-4": "Host live classes and webinars",
+        "details-5": "Issue certificates to students",
+        "button": "Become a Teacher",
+        "feature-1": {
+          "title": "Course Creation",
+          "description": "Intuitive tools to build and organize your course content"
+        },
+        "feature-2": {
+          "title": "Student Management",
+          "description": "Track student progress, engagement, and provide personalized feedback"
+        },
+        "feature-3": {
+          "title": "AI Teaching Assistant",
+          "description": "Generate content, quizzes, and get help with planning your lessons"
+        }
+      },
+      "for-students": {
+        "badge": "For Students",
+        "title": "Learn at Your Own Pace",
+        "description": "Access high-quality courses, interact with instructors and peers, and earn certificates to showcase your skills.",
+        "details-1": "Browse courses from verified educators",
+        "details-2": "Learn with interactive videos and materials",
+        "details-3": "Get AI-powered learning recommendations",
+        "details-4": "Join live classes and discussions",
+        "details-5": "Earn certificates and badges",
+        "course-categories": {
+          "title": "Course Categories",
+          "category-1": "Programming & Development",
+          "category-2": "Business & Entrepreneurship",
+          "category-3": "Digital Marketing",
+          "category-4": "Design & Creativity",
+          "category-5": "Personal Development",
+          "category-6": "Language Learning",
+          "footer": "Explore hundreds of courses across various categories"
+        },
+        "button": "Find Courses"
+      },
+      "multilingual-support": {
+        "badge": "Multilingual Support",
+        "title": "Learn in Your Language",
+        "description": "Our platform supports multiple languages, including English and Vietnamese, making education accessible to everyone.",
+        "details-1": "Fully bilingual interface (English/Vietnamese)",
+        "details-2": "Course content in multiple languages",
+        "details-3": "Language-specific learning resources",
+        "details-4": "Localized support and community"
+      },
+      "cta-section": {
+        "badge": "Get Started Today",
+        "title": "Join Our Educational Community",
+        "description": "Start your learning journey or begin creating and sharing your knowledge with students around the world.",
+        "button": "Learn More"
+      },
+      "common": {
+        "get-started": "Get Started"
+      }
+    },
+    "guide": {
+      "hero": {
+        "badge": "Platform Guide",
+        "title": "How to Use Our Platform",
+        "description": "A comprehensive guide to help you get started and make the most of our educational platform."
+      },
+      "for-students": {
+        "title": "For Students",
+        "detailed-guide": {
+          "title": "Getting Started",
+          "description": "Follow these simple steps to begin your learning journey.",
+          "step-1": {
+            "title": "Create Your Account",
+            "description": "Sign up using your email or Google account. Verify your email to activate your account and set up your profile with basic information."
+          },
+          "step-2": {
+            "title": "Explore Course Catalog",
+            "description": "Browse through our diverse range of courses. Use filters to find courses by subject, difficulty level, duration, or instructor rating."
+          },
+          "step-3": {
+            "title": "Enroll in Courses",
+            "description": "Choose courses that match your interests and learning goals. Enroll in free courses instantly or complete payment for premium courses."
+          },
+          "step-4": {
+            "title": "Start Learning",
+            "description": "Access course materials, watch video lectures, complete assignments, and participate in discussions to enhance your learning experience."
+          }
+        },
+        "key-features": {
+          "title": "Key Features",
+          "description": "Discover powerful tools and features designed to enhance your learning experience.",
+          "feature-1": {
+            "title": "Video Lectures",
+            "description": "High-quality video content with interactive elements and the ability to take notes as you watch."
+          },
+          "feature-2": {
+            "title": "Course Materials",
+            "description": "Access downloadable resources, reading materials, and supplementary content."
+          },
+          "feature-3": {
+            "title": "Discussion Forums",
+            "description": "Engage with instructors and fellow students to clarify doubts and share insights."
+          },
+          "feature-4": {
+            "title": "AI Learning Assistant",
+            "description": "Get personalized help, explanations, and learning recommendations from our AI tutor."
+          },
+          "feature-5": {
+            "title": "Certificates",
+            "description": "Earn verified certificates upon course completion to showcase your achievements."
+          },
+          "feature-6": {
+            "title": "Learning Dashboard",
+            "description": "Track your progress, manage enrolled courses, and view recommendations."
+          }
+        },
+        "tips": {
+          "title": "Tips for Success",
+          "description": "Make the most of your learning journey with these helpful tips.",
+          "tip-1": "Set a regular study schedule to build consistency",
+          "tip-2": "Take notes while watching lectures and reading materials",
+          "tip-3": "Actively participate in discussion forums and Q&A sessions",
+          "tip-4": "Complete all assignments and quizzes to reinforce learning",
+          "tip-5": "Use the AI tutor when you need additional help or clarification",
+          "tip-6": "Connect with fellow students to form study groups",
+          "tip-7": "Apply what you learn through practical exercises",
+          "tip-8": "Provide feedback to instructors to improve course quality",
+          "tip-9": "Take breaks between study sessions to avoid burnout",
+          "tip-10": "Set realistic learning goals and track your progress"
+        }
+      },
+      "for-teachers": {
+        "title": "For Teachers",
+        "detailed-guide": {
+          "title": "Becoming a Teacher",
+          "description": "Follow these steps to start creating and sharing your knowledge on our platform.",
+          "step-1": {
+            "title": "Apply for Teacher Status",
+            "description": "Sign up for an account, then apply for teacher verification by providing your credentials and background information for review."
+          },
+          "step-2": {
+            "title": "Set Up Your Teacher Profile",
+            "description": "Complete your educator profile with your expertise, teaching experience, education, and a professional photo to build trust with potential students."
+          },
+          "step-3": {
+            "title": "Create Your First Course",
+            "description": "Use our course builder to design your curriculum, upload content, create assessments, and set up interactive elements."
+          },
+          "step-4": {
+            "title": "Publish and Promote",
+            "description": "Submit your course for review, set pricing (if applicable), and use our platform tools to promote your course to potential students."
+          }
+        },
+        "key-features": {
+          "title": "Teacher Tools",
+          "description": "Leverage powerful tools and features to create engaging courses.",
+          "feature-1": {
+            "title": "Video Management",
+            "description":"Upload, edit, and manage video content with our integrated video hosting solution."
+          },
+          "feature-2": {
+            "title": "AI Content Generation",
+            "description":"Create quizzes, assignments, and supplementary content with AI assistance."
+          },
+          "feature-3": {
+            "title": "Live Teaching",
+            "description":"Host live classes, webinars, and interactive sessions with your students."
+          },
+          "feature-4": {
+            "title": "Student Analytics",
+            "description":"Track student progress, engagement, and performance with detailed analytics."
+          },
+          "feature-5": {
+            "title": "Assessment Tools",
+            "description":"Create various types of assessments including quizzes, assignments, and projects."
+          },
+          "feature-6": {
+            "title": "Certificate Designer",
+            "description":"Design custom certificates that will be automatically issued to successful students."
+          }
+        },
+        "tips": {
+          "title": "Best Practices",
+          "description": "Tips and strategies to help you create engaging courses and build a successful teaching career.",
+          "tip-1": "Structure your course content in a logical, progressive sequence",
+          "tip-2": "Keep video lectures concise (5-10 minutes) and focused on a single topic",
+          "tip-3": "Include a mix of content types: videos, readings, activities, discussions",
+          "tip-4": "Provide clear learning objectives at the beginning of each section",
+          "tip-5": "Use AI tools to generate supplementary content and assessments",
+          "tip-6": "Respond promptly to student questions and discussion posts",
+          "tip-7": "Schedule regular live sessions to engage directly with your students",
+          "tip-8": "Update course content regularly to keep it current and relevant",
+          "tip-9": "Gather and respond to student feedback to improve your course",
+          "tip-10": "Use analytics to identify areas where students might be struggling"
+        },
+        "cta-section": {
+          "title": "Ready to Share Your Knowledge?",
+          "description": "Join our community of educators and reach students around the world with your expertise.",
+          "button": "Become a Teacher"
+        }
+      }
+    }
+  },
   "home": {
     "headline": "Your intelligent shortcut",
     "subheadline": "Take control of workflows, supercharged by AI",

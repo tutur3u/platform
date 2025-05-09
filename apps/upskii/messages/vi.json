@@ -724,6 +724,250 @@
     "vitals": "Chỉ số",
     "vital-groups": "Nhóm chỉ số"
   },
+  "boarding-pages": {
+    "home": {
+      "hero": {
+        "badge": "Chuyển Đổi Hành Trình Học Tập Của Bạn",
+        "title-1": "Nền Tảng Giáo Dục",
+        "title-2": "Toàn Diện Của Bạn",
+        "description": "Một nền tảng học tập hiện đại trao quyền cho giáo viên và học viên với các tính năng tăng cường bởi AI, nội dung tương tác và công cụ hợp tác thời gian thực.",
+        "platform-guide": "Hướng Dẫn Nền Tảng"
+      },
+      "key-features": {
+        "badge": "Tính Năng Nền Tảng",
+        "title": "Tất Cả Những Gì Bạn Cần Cho Giáo Dục Hiện Đại",
+        "description": "Nền tảng của chúng tôi kết hợp các công cụ giảng dạy mạnh mẽ với trải nghiệm học tập trực quan",
+        "feature-1": {
+          "title": "Tạo & Quản Lý Khóa Học",
+          "description": "Tạo và quản lý nội dung khóa học một cách dễ dàng, bao gồm video, PDF và bài kiểm tra tương tác."
+        },
+        "feature-2": {
+          "title": "Học Tập Tăng Cường Bởi AI",
+          "description": "Trải nghiệm học tập cá nhân hóa được hỗ trợ bởi AI để tạo bài kiểm tra, cung cấp phản hồi và hỗ trợ giáo viên."
+        },
+        "feature-3": {
+          "title": "Lớp Học Trực Tiếp & Tương Tác",
+          "description": "Tổ chức các lớp học trực tiếp với hội nghị video, trò chuyện thời gian thực và các phiên tương tác."
+        },
+        "feature-4": {
+          "title": "Chứng Chỉ & Thành Tựu",
+          "description": "Tự động cấp chứng chỉ và huy hiệu khi hoàn thành khóa học để ghi nhận thành tích."
+        },
+        "feature-5": {
+          "title": "Cộng Đồng & Hợp Tác",
+          "description": "Nuôi dưỡng môi trường học tập hợp tác với diễn đàn thảo luận và học tập từ đồng đẳng."
+        },
+        "feature-6": {
+          "title": "Thị Trường Khóa Học",
+          "description": "Duyệt, mua và đăng ký vào nhiều khóa học đa dạng được cung cấp bởi các nhà giáo dục đã xác minh."
+        }
+      },
+      "for-teachers": {
+        "badge": "Dành Cho Nhà Giáo Dục",
+        "title": "Trao Quyền Cho Việc Giảng Dạy Của Bạn",
+        "description": "Nền tảng của chúng tôi cung cấp cho nhà giáo dục các công cụ mạnh mẽ để tạo nội dung hấp dẫn, tương tác với học viên và theo dõi tiến độ.",
+        "details-1": "Tạo và quản lý khóa học một cách dễ dàng",
+        "details-2": "Tải lên video và tài liệu học tập",
+        "details-3": "Tạo bài kiểm tra và đánh giá được hỗ trợ bởi AI",
+        "details-4": "Tổ chức các lớp học trực tiếp và hội thảo trực tuyến",
+        "details-5": "Cấp chứng chỉ cho học viên",
+        "button": "Trở Thành Giáo Viên",
+        "feature-1": {
+          "title": "Tạo Khóa Học",
+          "description": "Công cụ trực quan để xây dựng và tổ chức nội dung khóa học của bạn"
+        },
+        "feature-2": {
+          "title": "Quản Lý Học Viên",
+          "description": "Theo dõi tiến độ, sự tham gia của học viên và cung cấp phản hồi cá nhân hóa"
+        },
+        "feature-3": {
+          "title": "Trợ Lý Giảng Dạy AI",
+          "description": "Tạo nội dung, bài kiểm tra và nhận sự hỗ trợ lập kế hoạch bài giảng"
+        }
+      },
+      "for-students": {
+        "badge": "Dành Cho Học Viên",
+        "title": "Học Theo Nhịp Độ Riêng Của Bạn",
+        "description": "Truy cập khóa học chất lượng cao, tương tác với giảng viên và bạn học, và nhận chứng chỉ để thể hiện kỹ năng của bạn.",
+        "details-1": "Duyệt khóa học từ nhà giáo dục đã xác minh",
+        "details-2": "Học với video và tài liệu tương tác",
+        "details-3": "Nhận đề xuất học tập được hỗ trợ bởi AI",
+        "details-4": "Tham gia lớp học trực tiếp và thảo luận",
+        "details-5": "Nhận chứng chỉ và huy hiệu",
+        "course-categories": {
+          "title": "Danh Mục Khóa Học",
+          "category-1": "Lập Trình & Phát Triển",
+          "category-2": "Kinh Doanh & Khởi Nghiệp",
+          "category-3": "Marketing Kỹ Thuật Số",
+          "category-4": "Thiết Kế & Sáng Tạo",
+          "category-5": "Phát Triển Cá Nhân",
+          "category-6": "Học Ngôn Ngữ",
+          "footer": "Khám phá hàng trăm khóa học trên nhiều danh mục khác nhau"
+        },
+        "button": "Tìm Khóa Học"
+      },
+      "multilingual-support": {
+        "badge": "Hỗ Trợ Đa Ngôn Ngữ",
+        "title": "Học Bằng Ngôn Ngữ Của Bạn",
+        "description": "Nền tảng của chúng tôi hỗ trợ nhiều ngôn ngữ, bao gồm tiếng Anh và tiếng Việt, giúp giáo dục trở nên dễ tiếp cận với mọi người.",
+        "details-1": "Giao diện hoàn toàn song ngữ (Anh/Việt)",
+        "details-2": "Nội dung khóa học bằng nhiều ngôn ngữ",
+        "details-3": "Tài nguyên học tập theo từng ngôn ngữ cụ thể",
+        "details-4": "Hỗ trợ và cộng đồng địa phương hóa"
+      },
+      "cta-section": {
+        "badge": "Bắt Đầu Ngay Hôm Nay",
+        "title": "Tham Gia Cộng Đồng Giáo Dục Của Chúng Tôi",
+        "description": "Bắt đầu hành trình học tập của bạn hoặc bắt đầu tạo và chia sẻ kiến thức của bạn với học viên trên toàn thế giới.",
+        "button": "Tìm Hiểu Thêm"
+      },
+      "common": {
+        "get-started": "Bắt Đầu"
+      }
+    },
+    "guide": {
+      "hero": {
+        "badge": "Hướng Dẫn Nền Tảng",
+        "title": "Cách Sử Dụng Nền Tảng Của Chúng Tôi",
+        "description": "Hướng dẫn toàn diện giúp bạn bắt đầu và tận dụng tối đa nền tảng giáo dục của chúng tôi."
+      },
+      "for-students": {
+        "title": "Dành Cho Học Viên",
+        "detailed-guide": {
+          "title": "Bắt Đầu",
+          "description": "Làm theo các bước đơn giản này để bắt đầu hành trình học tập của bạn.",
+          "step-1": {
+            "title": "Tạo Tài Khoản Của Bạn",
+            "description": "Đăng ký bằng email hoặc tài khoản Google của bạn. Xác minh email để kích hoạt tài khoản và thiết lập hồ sơ của bạn với thông tin cơ bản."
+          },
+          "step-2": {
+            "title": "Khám Phá Danh Mục Khóa Học",
+            "description": "Duyệt qua các khóa học đa dạng của chúng tôi. Sử dụng bộ lọc để tìm khóa học theo chủ đề, cấp độ khó, thời lượng hoặc đánh giá giảng viên."
+          },
+          "step-3": {
+            "title": "Đăng Ký Khóa Học",
+            "description": "Chọn khóa học phù hợp với sở thích và mục tiêu học tập của bạn. Đăng ký các khóa học miễn phí ngay lập tức hoặc hoàn tất thanh toán cho các khóa học cao cấp."
+          },
+          "step-4": {
+            "title": "Bắt Đầu Học",
+            "description": "Truy cập tài liệu khóa học, xem bài giảng video, hoàn thành bài tập và tham gia thảo luận để nâng cao trải nghiệm học tập của bạn."
+          }
+        },
+        "key-features": {
+          "title": "Tính Năng Chính",
+          "description": "Khám phá các công cụ và tính năng mạnh mẽ được thiết kế để nâng cao trải nghiệm học tập của bạn.",
+          "feature-1": {
+            "title": "Bài Giảng Video",
+            "description": "Nội dung video chất lượng cao với các yếu tố tương tác và khả năng ghi chú khi bạn xem."
+          },
+          "feature-2": {
+            "title": "Tài Liệu Khóa Học",
+            "description": "Truy cập tài nguyên có thể tải xuống, tài liệu đọc và nội dung bổ sung."
+          },
+          "feature-3": {
+            "title": "Diễn Đàn Thảo Luận",
+            "description": "Tương tác với giảng viên và các học viên khác để làm rõ thắc mắc và chia sẻ hiểu biết."
+          },
+          "feature-4": {
+            "title": "Trợ Lý Học Tập AI",
+            "description": "Nhận trợ giúp cá nhân hóa, giải thích và đề xuất học tập từ trợ lý AI của chúng tôi."
+          },
+          "feature-5": {
+            "title": "Chứng Chỉ",
+            "description": "Nhận chứng chỉ được xác minh khi hoàn thành khóa học để thể hiện thành tích của bạn."
+          },
+          "feature-6": {
+            "title": "Bảng Điều Khiển Học Tập",
+            "description": "Theo dõi tiến độ của bạn, quản lý các khóa học đã đăng ký và xem các đề xuất."
+          }
+        },
+        "tips": {
+          "title": "Mẹo Để Thành Công",
+          "description": "Tận dụng tối đa hành trình học tập của bạn với những mẹo hữu ích này.",
+          "tip-1": "Thiết lập lịch học đều đặn để xây dựng tính nhất quán",
+          "tip-2": "Ghi chú trong khi xem bài giảng và đọc tài liệu",
+          "tip-3": "Tích cực tham gia vào diễn đàn thảo luận và phiên hỏi đáp",
+          "tip-4": "Hoàn thành tất cả bài tập và bài kiểm tra để củng cố việc học",
+          "tip-5": "Sử dụng trợ lý AI khi bạn cần trợ giúp thêm hoặc làm rõ",
+          "tip-6": "Kết nối với các học viên khác để hình thành nhóm học tập",
+          "tip-7": "Áp dụng những gì bạn học thông qua các bài tập thực hành",
+          "tip-8": "Cung cấp phản hồi cho giảng viên để cải thiện chất lượng khóa học",
+          "tip-9": "Nghỉ giải lao giữa các buổi học để tránh kiệt sức",
+          "tip-10": "Đặt mục tiêu học tập thực tế và theo dõi tiến độ của bạn"
+        }
+      },
+      "for-teachers": {
+        "title": "Dành Cho Giáo Viên",
+        "detailed-guide": {
+          "title": "Trở Thành Giáo Viên",
+          "description": "Làm theo các bước này để bắt đầu tạo và chia sẻ kiến thức của bạn trên nền tảng của chúng tôi.",
+          "step-1": {
+            "title": "Đăng Ký Tư Cách Giáo Viên",
+            "description": "Đăng ký tài khoản, sau đó đăng ký xác minh giáo viên bằng cách cung cấp thông tin về bằng cấp và lý lịch của bạn để xem xét."
+          },
+          "step-2": {
+            "title": "Thiết Lập Hồ Sơ Giáo Viên",
+            "description": "Hoàn thành hồ sơ giáo viên của bạn với chuyên môn, kinh nghiệm giảng dạy, trình độ học vấn và ảnh chuyên nghiệp để xây dựng niềm tin với học viên tiềm năng."
+          },
+          "step-3": {
+            "title": "Tạo Khóa Học Đầu Tiên",
+            "description": "Sử dụng công cụ tạo khóa học để thiết kế chương trình giảng dạy, tải lên nội dung, tạo bài đánh giá và thiết lập các yếu tố tương tác."
+          },
+          "step-4": {
+            "title": "Xuất Bản và Quảng Bá",
+            "description": "Gửi khóa học của bạn để xem xét, thiết lập giá (nếu có) và sử dụng các công cụ nền tảng để quảng bá khóa học đến các học viên tiềm năng."
+          }
+        },
+        "key-features": {
+          "title": "Công Cụ Giáo Viên",
+          "description": "Tận dụng các công cụ và tính năng mạnh mẽ để tạo khóa học hấp dẫn.",
+          "feature-1": {
+            "title": "Quản Lý Video",
+            "description":"Tải lên, chỉnh sửa và quản lý nội dung video với giải pháp lưu trữ video tích hợp của chúng tôi."
+          },
+          "feature-2": {
+            "title": "Tạo Nội Dung Bằng AI",
+            "description":"Tạo bài kiểm tra, bài tập và nội dung bổ sung với sự hỗ trợ của AI."
+          },
+          "feature-3": {
+            "title": "Giảng Dạy Trực Tiếp",
+            "description":"Tổ chức các lớp học trực tiếp, hội thảo trực tuyến và các phiên tương tác với học viên của bạn."
+          },
+          "feature-4": {
+            "title": "Phân Tích Học Viên",
+            "description":"Theo dõi tiến độ, sự tham gia và hiệu suất của học viên với phân tích chi tiết."
+          },
+          "feature-5": {
+            "title": "Công Cụ Đánh Giá",
+            "description":"Tạo nhiều loại đánh giá khác nhau bao gồm các bài kiểm tra, bài tập và dự án."
+          },
+          "feature-6": {
+            "title": "Trình Thiết Kế Chứng Chỉ",
+            "description":"Thiết kế chứng chỉ tùy chỉnh sẽ được tự động cấp cho các học viên thành công."
+          }
+        },
+        "tips": {
+          "title": "Phương Pháp Tốt Nhất",
+          "description": "Mẹo và chiến lược để giúp bạn tạo khóa học hấp dẫn và xây dựng sự nghiệp giảng dạy thành công.",
+          "tip-1": "Cấu trúc nội dung khóa học của bạn theo một trình tự hợp lý, tiến bộ",
+          "tip-2": "Giữ bài giảng video ngắn gọn (5-10 phút) và tập trung vào một chủ đề duy nhất",
+          "tip-3": "Bao gồm nhiều loại nội dung: video, bài đọc, hoạt động, thảo luận",
+          "tip-4": "Cung cấp mục tiêu học tập rõ ràng ở đầu mỗi phần",
+          "tip-5": "Sử dụng công cụ AI để tạo nội dung bổ sung và bài đánh giá",
+          "tip-6": "Phản hồi nhanh chóng các câu hỏi của học viên và bài đăng thảo luận",
+          "tip-7": "Lên lịch các buổi học trực tiếp thường xuyên để tương tác trực tiếp với học viên",
+          "tip-8": "Cập nhật nội dung khóa học thường xuyên để giữ cho nó cập nhật và phù hợp",
+          "tip-9": "Thu thập và phản hồi phản hồi của học viên để cải thiện khóa học của bạn",
+          "tip-10": "Sử dụng phân tích để xác định các lĩnh vực mà học viên có thể đang gặp khó khăn"
+        },
+        "cta-section": {
+          "title": "Bạn Săn Sàng Chia Sẻ Kiến Thức?",
+          "description": "Tham gia cộng đồng giáo viên của chúng tôi và bắt đầu tạo khóa học của riêng bạn.",
+          "button": "Trở Thành Giáo Viên"
+        }
+      }
+    }
+  },
   "home": {
     "headline": "Lối tắt thông minh của bạn",
     "subheadline": "Quản lý công việc, siêu tốc độ cùng AI",
