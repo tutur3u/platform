@@ -59,13 +59,25 @@ export default function Certificate({ certDetails }: CertificateProps) {
     }
   }, [certificateId]);
 
-  const handlePNG = useCallback(async () => {
+ const handlePNG = useCallback(() => {
     const element = document.getElementById('certificate-area');
     if (element) {
-      html2canvas(element).then((canvas) => {
+      html2canvas(element, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        scale: 2,
+        logging: false,
+        onclone: (clonedDoc) => {
+          Array.from(clonedDoc.getElementsByTagName('link')).forEach((link) => {
+            link.removeAttribute('integrity');
+            link.removeAttribute('crossorigin');
+          });
+        },
+      }).then((canvas) => {
         const link = document.createElement('a');
-        link.download = `certificate-${certificateId}.png`;
-        link.href = canvas.toDataURL();
+        link.download = `certificate-${certificateId}-${studentName}.png`;
+        link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
       });
     }
@@ -77,16 +89,16 @@ export default function Certificate({ certDetails }: CertificateProps) {
         <div
           id="certificate-area"
           style={{
+            position: 'relative',
             background: 'white',
             color: '#000000',
             padding: '4rem',
             borderRadius: '1rem',
             boxShadow: '0 10px 15px rgba(0, 0, 0, 0.1)',
             border: '1px solid #e5e7eb',
-            position: 'relative',
+            overflow: 'hidden',
           }}
         >
-          {/* Watermark image for the certificate */}
           <img
             src="/media/logos/watermark.png"
             style={{
@@ -99,6 +111,7 @@ export default function Certificate({ certDetails }: CertificateProps) {
               zIndex: 0,
               objectFit: 'contain',
               objectPosition: 'center',
+              pointerEvents: 'none',
             }}
             alt="Certificate watermark"
           />
