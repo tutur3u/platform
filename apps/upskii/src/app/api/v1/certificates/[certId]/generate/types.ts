@@ -9,4 +9,3 @@ export interface CertificateData {
   completion_date: string;
   certificate_id: string;
 }
-

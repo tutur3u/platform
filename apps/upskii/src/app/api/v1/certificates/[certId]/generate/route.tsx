@@ -4,7 +4,6 @@ import { renderToStream } from '@react-pdf/renderer';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { NextRequest } from 'next/server';
 
-
 const getCertificateData = async (certID: string) => {
   const response = await fetch(`${URL}/api/v1/certificates/${certID}`, {
     method: 'GET',
@@ -41,7 +40,6 @@ export async function POST(
       certificateIdLabel,
     } = await req.json();
     const { certId } = await params;
-
 
     if (!certId) {
       return new Response('Certificate ID is required', { status: 400 });
