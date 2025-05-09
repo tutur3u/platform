@@ -6,6 +6,7 @@ import { FileText, ImageIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
+import html2canvas from 'html2canvas';
 
 export default function Certificate({ certDetails }: CertificateProps) {
   const t = useTranslations('certificates');
@@ -58,44 +59,15 @@ export default function Certificate({ certDetails }: CertificateProps) {
     }
   }, [certificateId]);
 
-  const handleDownload = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `/api/v1/certificates/${certificateId}/generate?format=png`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            certID: certificateId,
-            title: String(t('title')),
-            certifyText: String(t('certify_text')),
-            completionText: String(t('completion_text')),
-            offeredBy: String(t('offered_by')),
-            completionDateLabel: String(t('completion_date')),
-            certificateIdLabel: String(t('certificate_id')),
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(`Server error: ${res.status} ${res.statusText}`);
-      }
-
-      const blob = new Blob([await res.arrayBuffer()], {
-        type: 'image/png',
+  const handlePNG = useCallback(async () => {
+    const element = document.getElementById('certificate-area');
+    if (element) {
+      html2canvas(element).then((canvas) => {
+        const link = document.createElement('a');
+        link.download = `certificate-${certificateId}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
       });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${certificateId}.png`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error generating PNG:', error);
     }
   }, [certificateId]);
 
@@ -115,19 +87,20 @@ export default function Certificate({ certDetails }: CertificateProps) {
           }}
         >
           {/* Watermark image for the certificate */}
-          <div
+          <img
+            src="/media/logos/watermark.png"
             style={{
-              backgroundImage: 'url(/media/logos/light.png)',
-              backgroundPosition: 'center',
-              backgroundSize: '400px',
-              opacity: 0.15,
               position: 'absolute',
               top: 0,
               left: 0,
-              right: 0,
-              bottom: 0,
+              width: '100%',
+              height: '100%',
+              opacity: 0.12,
               zIndex: 0,
+              objectFit: 'contain',
+              objectPosition: 'center',
             }}
+            alt="Certificate watermark"
           />
 
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
@@ -210,7 +183,7 @@ export default function Certificate({ certDetails }: CertificateProps) {
         </div>
 
         <div className="mt-6 flex justify-center gap-2">
-          <Button onClick={handleDownload}>
+          <Button onClick={handlePNG}>
             <ImageIcon className="mr-1 h-4 w-4" />
             {t('download_button')} (PNG)
           </Button>
