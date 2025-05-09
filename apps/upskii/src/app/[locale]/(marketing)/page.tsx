@@ -366,9 +366,7 @@ export default function MarketingPage() {
                 viewport={{ once: true }}
                 className="order-1 space-y-6 md:order-2"
               >
-                <Badge variant="outline">
-                  {t('for-students.badge')}
-                </Badge>
+                <Badge variant="outline">{t('for-students.badge')}</Badge>
                 <h2 className="text-3xl font-bold md:text-4xl">
                   {t('for-students.title')}
                 </h2>

@@ -403,28 +403,36 @@ export default function GuidePage() {
                 <GuideStep
                   number={1}
                   title={t('for-teachers.detailed-guide.step-1.title')}
-                  description={t('for-teachers.detailed-guide.step-1.description')}
+                  description={t(
+                    'for-teachers.detailed-guide.step-1.description'
+                  )}
                   icon={<User className="h-5 w-5" />}
                   delay={0.1}
                 />
                 <GuideStep
                   number={2}
                   title={t('for-teachers.detailed-guide.step-2.title')}
-                  description={t('for-teachers.detailed-guide.step-2.description')}
+                  description={t(
+                    'for-teachers.detailed-guide.step-2.description'
+                  )}
                   icon={<School className="h-5 w-5" />}
                   delay={0.2}
                 />
                 <GuideStep
                   number={3}
                   title={t('for-teachers.detailed-guide.step-3.title')}
-                  description={t('for-teachers.detailed-guide.step-3.description')}
+                  description={t(
+                    'for-teachers.detailed-guide.step-3.description'
+                  )}
                   icon={<BookOpen className="h-5 w-5" />}
                   delay={0.3}
                 />
                 <GuideStep
                   number={4}
                   title={t('for-teachers.detailed-guide.step-4.title')}
-                  description={t('for-teachers.detailed-guide.step-4.description')}
+                  description={t(
+                    'for-teachers.detailed-guide.step-4.description'
+                  )}
                   icon={<GraduationCap className="h-5 w-5" />}
                   delay={0.4}
                 />
@@ -453,37 +461,49 @@ export default function GuidePage() {
                 <FeatureCard
                   icon={<Video className="h-6 w-6" />}
                   title={t('for-teachers.key-features.feature-1.title')}
-                  description={t('for-teachers.key-features.feature-1.description')}
+                  description={t(
+                    'for-teachers.key-features.feature-1.description'
+                  )}
                   delay={0.1}
                 />
                 <FeatureCard
                   icon={<Brain className="h-6 w-6" />}
                   title={t('for-teachers.key-features.feature-2.title')}
-                  description={t('for-teachers.key-features.feature-2.description')}
+                  description={t(
+                    'for-teachers.key-features.feature-2.description'
+                  )}
                   delay={0.2}
                 />
                 <FeatureCard
                   icon={<MessageSquare className="h-6 w-6" />}
                   title={t('for-teachers.key-features.feature-3.title')}
-                  description={t('for-teachers.key-features.feature-3.description')}
+                  description={t(
+                    'for-teachers.key-features.feature-3.description'
+                  )}
                   delay={0.3}
                 />
                 <FeatureCard
                   icon={<LayoutGrid className="h-6 w-6" />}
                   title={t('for-teachers.key-features.feature-4.title')}
-                  description={t('for-teachers.key-features.feature-4.description')}
+                  description={t(
+                    'for-teachers.key-features.feature-4.description'
+                  )}
                   delay={0.4}
                 />
                 <FeatureCard
                   icon={<FileText className="h-6 w-6" />}
                   title={t('for-teachers.key-features.feature-5.title')}
-                  description={t('for-teachers.key-features.feature-5.description')}
+                  description={t(
+                    'for-teachers.key-features.feature-5.description'
+                  )}
                   delay={0.5}
                 />
                 <FeatureCard
                   icon={<GraduationCap className="h-6 w-6" />}
                   title={t('for-teachers.key-features.feature-6.title')}
-                  description={t('for-teachers.key-features.feature-6.description')}
+                  description={t(
+                    'for-teachers.key-features.feature-6.description'
+                  )}
                   delay={0.6}
                 />
               </div>

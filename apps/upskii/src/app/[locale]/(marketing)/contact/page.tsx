@@ -52,9 +52,7 @@ export default function ContactPage() {
     () =>
       z.object({
         name: z.string().min(2, { message: t('form.fields.name.error') }),
-        email: z
-          .string()
-          .email({ message: t('form.fields.email.error') }),
+        email: z.string().email({ message: t('form.fields.email.error') }),
         subject: z.string().min(1, { message: t('form.fields.subject.error') }),
         message: z
           .string()
