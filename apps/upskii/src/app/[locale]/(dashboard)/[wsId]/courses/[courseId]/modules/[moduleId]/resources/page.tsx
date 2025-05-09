@@ -78,7 +78,7 @@ async function getResources({ path }: { path: string }) {
   const { data, error } = await supabase.storage.from('workspaces').list(path, {
     sortBy: { column: 'created_at', order: 'desc' },
   });
-  
+
   console.log('Storage path:', path);
   console.log('Resources:', data, error);
 
