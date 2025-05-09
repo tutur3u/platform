@@ -1,14 +1,43 @@
 import ProblemCardSkeleton from './ProblemCardSkeleton';
+import { getProblemColumns } from './columns';
 import CreateProblemDialog from './createProblemDialog';
-import ProblemCard from './problemCard';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
-import { Plus } from '@tuturuuu/ui/icons';
+import { Filter, Plus } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
+// Import Filter icon
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
-export default async function Page() {
+interface SearchParams {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+  challengeId?: string;
+}
+
+interface Props {
+  searchParams: SearchParams;
+}
+
+export default async function Page({ searchParams }: Props) {
   const t = await getTranslations('nova');
+
+  const { problemsData, problemsCount } = await getProblemsData({
+    q: (await searchParams).q,
+    page: (await searchParams).page,
+    pageSize: (await searchParams).pageSize,
+  });
+  const { challenges } = await getChallenges();
 
   return (
     <div className="container mx-auto p-6">
@@ -24,44 +53,86 @@ export default async function Page() {
         />
       </div>
 
+      <Separator className="my-4" />
+
       <Suspense fallback={<ProblemCardSkeleton />}>
-        <ProblemsList />
+        <CustomDataTable
+          data={problemsData}
+          columnGenerator={getProblemColumns}
+          count={problemsCount}
+          defaultVisibility={{
+            id: false,
+            created_at: false,
+          }}
+        />
       </Suspense>
     </div>
   );
 }
 
-async function ProblemsList() {
-  const problems = await fetchProblems();
+async function getChallenges() {
+  const supabase = await createClient();
 
-  return problems.length > 0 ? (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {problems.map((problem) => (
-        <ProblemCard key={problem.id} problem={problem} />
-      ))}
-    </div>
-  ) : (
-    <div className="col-span-full text-center">
-      <p className="text-muted-foreground">No problems available.</p>
-    </div>
-  );
+  const { data: challenges, error } = await supabase
+    .from('nova_challenges')
+    .select('id, title')
+    .order('title', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching challenges:', error);
+    return { challenges: [] };
+  }
+
+  return { challenges: challenges || [] };
 }
 
-async function fetchProblems() {
-  const database = await createClient();
-  const { data: problems, error } = await database
+async function getProblemsData({
+  q,
+  page = '1',
+  pageSize = '10',
+  challengeId,
+}: {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+  challengeId?: string;
+} = {}) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
     .from('nova_problems')
     .select(
       `*,
-      test_cases:nova_problem_test_cases(*),
-      challenge:nova_challenges(title)`
+    test_cases:nova_problem_test_cases(*),
+    challenge:nova_challenges(id, title)
+    `,
+      { count: 'exact' }
     )
-    .order('created_at', { ascending: false });
+    .order('title', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching problems:', error.message);
-    return [];
+  if (challengeId) {
+    queryBuilder.eq('challenge_id', challengeId);
   }
 
-  return problems;
+  if (q) queryBuilder.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+
+  // Add filter by challenge ID if provided
+
+  if (page && pageSize) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize - 1;
+    queryBuilder.range(start, end);
+  }
+
+  const { data, error, count } = await queryBuilder;
+  if (error) {
+    return getProblemsData({ q, page, pageSize });
+  }
+
+  return {
+    problemsData: data || [],
+    problemsCount: count || 0,
+  };
 }

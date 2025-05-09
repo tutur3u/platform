@@ -96,6 +96,14 @@ export type NovaSubmissionWithScoresAndCriteria =
     criteria: NovaChallengeCriteria[];
   };
 
+export type ExtendedNovaProblem = NovaProblem & {
+  test_cases?: NovaProblemTestCase[];
+  challenge?: {
+    id: string;
+    title: string;
+  };
+};
+
 export type NovaExtendedChallenge = NovaChallenge & {
   criteria?: NovaChallengeCriteria[];
   whitelists?: NovaChallengeWhitelistedEmail[];
