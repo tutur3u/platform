@@ -1,7 +1,6 @@
 import { UserNavWrapper } from './user-nav-wrapper';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { defaultLocale, supportedLocales } from '@/i18n/routing';
-import { getWorkspaces } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { LanguageWrapper } from '@tuturuuu/ui/custom/language-wrapper';
