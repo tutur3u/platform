@@ -142,7 +142,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
           ) : undefined
         }
       />
-      <CourseSection
+      {/* <CourseSection
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets`}
         title={t('ws-quiz-sets.plural')}
         icon={<ListTodo className="h-5 w-5" />}
@@ -158,7 +158,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
             </div>
           ) : undefined
         }
-      />
+      /> */}
       <CourseSection
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/flashcards`}
         title={t('ws-flashcards.plural')}
