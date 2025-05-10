@@ -56,9 +56,12 @@ export const config = {
      * - pdf
      * - gif
      * - webp
+     * - ttf (font files)
+     * - woff
+     * - woff2
      */
 
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp|ttf|woff|woff2)$).*)',
   ],
 };
 
