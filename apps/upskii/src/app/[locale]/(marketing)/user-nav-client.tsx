@@ -51,7 +51,6 @@ export default function UserNavClient({
   const t = useTranslations();
   const [open, setOpen] = useState(false);
 
-
   return (
     <>
       {user && (

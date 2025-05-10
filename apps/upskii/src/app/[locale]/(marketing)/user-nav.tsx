@@ -1,8 +1,7 @@
 import UserNavClient from './user-nav-client';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
-
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspaces } from '@/lib/workspace-helper';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { cookies as c } from 'next/headers';
 
 export async function UserNav({
