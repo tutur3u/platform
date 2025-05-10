@@ -75,6 +75,7 @@
   ],
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
       "@vercel/speed-insights",
       "canvas",
       "core-js",
