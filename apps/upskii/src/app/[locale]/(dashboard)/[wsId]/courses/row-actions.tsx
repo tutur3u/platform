@@ -101,7 +101,7 @@ export function WorkspaceCourseRowActions({
         title={t('ws-flashcards.edit')}
         editDescription={t('ws-flashcards.edit_description')}
         setOpen={setShowEditDialog}
-        form={<WorkspaceCourseForm wsId={data.ws_id} data={data} />}
+        form={<WorkspaceCourseForm wsId={data.ws_id} data={{ ...data, description: data.description ?? '' }} />}
       />
 
       <ModifiableDialogTrigger

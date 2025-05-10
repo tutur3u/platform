@@ -6,4 +6,5 @@ export interface UserGroup extends Entity {
   amount?: number;
   sessions?: string[];
   href?: string;
+  description?: string;
 }

@@ -67,7 +67,9 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
               {link}
             </Link>
             <Separator className="my-2" />
-            <YoutubeEmbed key={index} embedId={extractYoutubeId(link)} />
+            <div className="aspect-video w-full">
+              <YoutubeEmbed key={index} embedId={extractYoutubeId(link)} />
+            </div>
           </div>
         ))}
     </div>

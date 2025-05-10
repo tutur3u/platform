@@ -33,6 +33,7 @@ export function WorkspaceCourseModuleRowActions({
   const t = useTranslations();
 
   const data = row.original;
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const deleteWorkspaceCourseModule = async () => {
     const res = await fetch(
@@ -83,7 +84,7 @@ export function WorkspaceCourseModuleRowActions({
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteWorkspaceCourseModule}>
+          <DropdownMenuItem onClick={() => setShowDeleteDialog(true)}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -101,6 +102,27 @@ export function WorkspaceCourseModuleRowActions({
             courseId={courseId}
             data={data}
           />
+        }
+      />
+
+      <ModifiableDialogTrigger
+        data={data}
+        open={showDeleteDialog}
+        title={t('ws-courses.delete_confirm_title', { name: data.name })}
+        editDescription={t('common.confirm_delete_description')}
+        setOpen={setShowDeleteDialog}
+        form={
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button variant="destructive" onClick={deleteWorkspaceCourseModule}>
+              {t('common.delete')}
+            </Button>
+          </div>
         }
       />
     </div>
