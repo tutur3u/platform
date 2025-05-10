@@ -9,7 +9,7 @@ export default async function WorkspaceInvites() {
   const workspaces = await getWorkspaces();
   const workspaceInvites = await getWorkspaceInvites();
 
-  if (workspaces?.[0]?.id) redirect(`/${workspaces[0].id}`);
+  if (workspaces?.[0]?.id) redirect(`/${workspaces[0].id}/home`);
 
   return (
     <div className="scrollbar-none grid h-full w-full gap-4 overflow-y-auto">
