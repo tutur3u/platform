@@ -48,12 +48,7 @@ export default async function Page({ params }: Props) {
       .eq('id', submissionId)
       .single();
 
-    if (
-      error ||
-      !submission ||
-      !submission.problem_id ||
-      !submission.session?.challenge_id
-    ) {
+    if (error || !submission || !submission.problem_id) {
       console.error('Error fetching submission:', error);
       return notFound();
     }
@@ -63,6 +58,11 @@ export default async function Page({ params }: Props) {
       .select('*, ...nova_challenge_criteria!inner(name, description)')
       .eq('submission_id', submissionId);
 
+    if (errorCriteria || !submissionCriteria) {
+      console.error('Error fetching submission criteria:', errorCriteria);
+      return notFound();
+    }
+
     const { data: testCases, error: errorTestCases } = await sbAdmin
       .from('nova_submission_test_cases')
       .select(
@@ -70,32 +70,27 @@ export default async function Page({ params }: Props) {
       )
       .eq('submission_id', submissionId);
 
+    if (errorTestCases || !testCases) {
+      console.error('Error fetching submission test cases:', errorTestCases);
+      return notFound();
+    }
+
     const { data: problem, error: errorProblem } = await sbAdmin
       .from('nova_problems')
       .select('*')
       .eq('id', submission.problem_id)
       .single();
 
-    const { data: challenge, error: errorChallenge } = await sbAdmin
-      .from('nova_challenges')
-      .select('*')
-      .eq('id', submission.session?.challenge_id)
-      .single();
-
-    if (errorCriteria || !submissionCriteria) {
-      console.error('Error fetching submission criteria:', errorCriteria);
-      return notFound();
-    }
-
-    if (errorTestCases || !testCases) {
-      console.error('Error fetching submission test cases:', errorTestCases);
-      return notFound();
-    }
-
     if (errorProblem || !problem) {
       console.error('Error fetching problem:', errorProblem);
       return notFound();
     }
+
+    const { data: challenge, error: errorChallenge } = await sbAdmin
+      .from('nova_challenges')
+      .select('*')
+      .eq('id', problem.challenge_id)
+      .single();
 
     if (errorChallenge || !challenge) {
       console.error('Error fetching challenge:', errorChallenge);
