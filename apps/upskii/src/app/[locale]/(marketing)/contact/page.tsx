@@ -37,23 +37,29 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import * as z from 'zod';
 
-// Form validation schema
-const contactFormSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
-  subject: z.string().min(1, { message: 'Please select a subject.' }),
-  message: z
-    .string()
-    .min(10, { message: 'Message must be at least 10 characters.' }),
-});
-
 export default function ContactPage() {
+  const t = useTranslations('boarding-pages.contact');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Form validation schema
+  const contactFormSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(2, { message: t('form.fields.name.error') }),
+        email: z.string().email({ message: t('form.fields.email.error') }),
+        subject: z.string().min(1, { message: t('form.fields.subject.error') }),
+        message: z
+          .string()
+          .min(10, { message: t('form.fields.message.error') }),
+      }),
+    []
+  );
 
   const form = useForm<z.infer<typeof contactFormSchema>>({
     resolver: zodResolver(contactFormSchema),
@@ -88,14 +94,13 @@ export default function ContactPage() {
         >
           <Badge variant="outline" className="mb-4">
             <MessageSquare className="mr-2 h-4 w-4" />
-            Get in Touch
+            {t('page.badge')}
           </Badge>
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-            Contact Us
+            {t('page.title')}
           </h1>
           <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-            Have questions or need support? We're here to help. Reach out to our
-            team and we'll get back to you as soon as possible.
+            {t('page.description')}
           </p>
         </motion.div>
       </div>
@@ -110,15 +115,17 @@ export default function ContactPage() {
         >
           <div className="space-y-6">
             <Card className="overflow-hidden p-6">
-              <h2 className="mb-4 text-xl font-bold">Contact Information</h2>
+              <h2 className="mb-4 text-xl font-bold">{t('info.title')}</h2>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="text-primary mt-0.5 rounded-full">
                     <Mail className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-medium">Email</p>
-                    <p className="text-muted-foreground">support@upskii.com</p>
+                    <p className="font-medium">{t('info.email.label')}</p>
+                    <p className="text-muted-foreground">
+                      {t('info.email.value')}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -126,7 +133,7 @@ export default function ContactPage() {
                     <Phone className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-medium">Phone</p>
+                    <p className="font-medium">{t('info.phone.label')}</p>
                     <p className="text-muted-foreground">+1 (123) 456-7890</p>
                   </div>
                 </div>
@@ -135,8 +142,8 @@ export default function ContactPage() {
                     <MapPin className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-medium">Address</p>
-                    <p>Physical office coming soon</p>
+                    <p className="font-medium">{t('info.address.label')}</p>
+                    <p>{t('info.address.value')}</p>
                     {/* <p className="text-muted-foreground">
                       123 Education Street
                       <br />
@@ -150,37 +157,41 @@ export default function ContactPage() {
 
               <Separator className="my-6" />
 
-              <h3 className="mb-4 text-lg font-semibold">Support Hours</h3>
+              <h3 className="mb-4 text-lg font-semibold">
+                {t('info.hours.title')}
+              </h3>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span>Monday - Friday</span>
-                  <span>9:00 AM - 6:00 PM EST</span>
+                  <span>{t('info.hours.weekdays.days')}</span>
+                  <span>{t('info.hours.weekdays.hours')}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Saturday</span>
-                  <span>10:00 AM - 4:00 PM EST</span>
+                  <span>{t('info.hours.saturday.days')}</span>
+                  <span>{t('info.hours.saturday.hours')}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Sunday</span>
-                  <span>Closed</span>
+                  <span>{t('info.hours.sunday.days')}</span>
+                  <span>{t('info.hours.sunday.hours')}</span>
                 </div>
               </div>
             </Card>
 
             <Card className="bg-primary/5 overflow-hidden p-6">
-              <h3 className="mb-4 text-lg font-semibold">Quick Links</h3>
+              <h3 className="mb-4 text-lg font-semibold">
+                {t('quick_links.title')}
+              </h3>
               <div className="grid grid-cols-1 gap-2">
                 <Link href="/faq">
                   <Button variant="outline" className="w-full justify-start">
                     <FileQuestion className="mr-2 h-4 w-4" />
-                    FAQ
+                    {t('quick_links.faq')}
                     <ArrowRight className="ml-auto h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/guide">
                   <Button variant="outline" className="w-full justify-start">
                     <Headphones className="mr-2 h-4 w-4" />
-                    Platform Guide
+                    {t('quick_links.guide')}
                     <ArrowRight className="ml-auto h-4 w-4" />
                   </Button>
                 </Link>
@@ -202,18 +213,19 @@ export default function ContactPage() {
                 <div className="bg-primary/10 text-primary mb-4 rounded-full p-3">
                   <SendHorizontal className="h-8 w-8" />
                 </div>
-                <h2 className="mb-2 text-2xl font-bold">Message Sent!</h2>
+                <h2 className="mb-2 text-2xl font-bold">
+                  {t('form.success.title')}
+                </h2>
                 <p className="text-muted-foreground mb-6 max-w-md">
-                  Thank you for contacting us. We've received your message and
-                  will get back to you shortly.
+                  {t('form.success.description')}
                 </p>
                 <Button onClick={() => setIsSubmitted(false)}>
-                  Send Another Message
+                  {t('form.buttons.send_another')}
                 </Button>
               </div>
             ) : (
               <>
-                <h2 className="mb-6 text-xl font-bold">Send Us a Message</h2>
+                <h2 className="mb-6 text-xl font-bold">{t('form.title')}</h2>
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit(onSubmit)}
@@ -225,12 +237,14 @@ export default function ContactPage() {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Name</FormLabel>
+                            <FormLabel>{t('form.fields.name.label')}</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <User className="text-muted-foreground absolute left-3 top-2.5 h-4 w-4" />
                                 <Input
-                                  placeholder="Your name"
+                                  placeholder={t(
+                                    'form.fields.name.placeholder'
+                                  )}
                                   className="pl-10"
                                   {...field}
                                 />
@@ -246,12 +260,16 @@ export default function ContactPage() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel>
+                              {t('form.fields.email.label')}
+                            </FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <AtSign className="text-muted-foreground absolute left-3 top-2.5 h-4 w-4" />
                                 <Input
-                                  placeholder="your.email@example.com"
+                                  placeholder={t(
+                                    'form.fields.email.placeholder'
+                                  )}
                                   className="pl-10"
                                   {...field}
                                 />
@@ -268,42 +286,54 @@ export default function ContactPage() {
                       name="subject"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Subject</FormLabel>
+                          <FormLabel>
+                            {t('form.fields.subject.label')}
+                          </FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             defaultValue={field.value}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select a subject" />
+                                <SelectValue
+                                  placeholder={t(
+                                    'form.fields.subject.placeholder'
+                                  )}
+                                />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="general_inquiry">
-                                General Inquiry
+                                {t(
+                                  'form.fields.subject.options.general_inquiry'
+                                )}
                               </SelectItem>
                               <SelectItem value="technical_support">
-                                Technical Support
+                                {t(
+                                  'form.fields.subject.options.technical_support'
+                                )}
                               </SelectItem>
                               <SelectItem value="billing">
-                                Billing & Payments
+                                {t('form.fields.subject.options.billing')}
                               </SelectItem>
                               <SelectItem value="teacher_verification">
-                                Teacher Verification
+                                {t(
+                                  'form.fields.subject.options.teacher_verification'
+                                )}
                               </SelectItem>
                               <SelectItem value="course_issue">
-                                Course Issue
+                                {t('form.fields.subject.options.course_issue')}
                               </SelectItem>
                               <SelectItem value="partnership">
-                                Partnership Opportunity
+                                {t('form.fields.subject.options.partnership')}
                               </SelectItem>
                               <SelectItem value="feedback">
-                                Feedback & Suggestions
+                                {t('form.fields.subject.options.feedback')}
                               </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            Select the topic that best describes your inquiry.
+                            {t('form.fields.subject.description')}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -315,10 +345,12 @@ export default function ContactPage() {
                       name="message"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Message</FormLabel>
+                          <FormLabel>
+                            {t('form.fields.message.label')}
+                          </FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Please describe your question or issue in detail..."
+                              placeholder={t('form.fields.message.placeholder')}
                               className="min-h-32"
                               {...field}
                             />
@@ -335,10 +367,10 @@ export default function ContactPage() {
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? (
-                        <>Sending Message...</>
+                        <>{t('form.buttons.submitting')}</>
                       ) : (
                         <>
-                          Send Message
+                          {t('form.buttons.submit')}
                           <SendHorizontal className="ml-2 h-4 w-4" />
                         </>
                       )}

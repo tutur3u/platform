@@ -7,12 +7,28 @@ export const models: {
   disabled?: boolean;
 }[] = [
   {
+    value: 'gemini-2.5-pro-preview-05-06',
+    label: 'gemini-2.5-pro-preview-05-06',
+    provider: 'Google',
+    description:
+      'Gemini 2.5 Pro Preview 05-06 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+    context: 1024 * 1024,
+  },
+  {
+    value: 'gemini-2.5-pro-exp-03-25',
+    label: 'gemini-2.5-pro-exp-03-25',
+    provider: 'Google',
+    description:
+      'Gemini 2.5 Pro Exp 03-25 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+    context: 1024 * 1024,
+  },
+  {
     value: 'gemini-2.0-pro-exp-02-05',
     label: 'gemini-2.0-pro-exp-02-05',
     provider: 'Google',
     description:
       'Gemini 2.0 Pro Exp 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
-    context: 2000000,
+    context: 1024 * 1024,
   },
   {
     value: 'gemini-2.0-flash-001',
@@ -195,8 +211,7 @@ const fallbackModel = models.find((model) => !model.disabled);
 export const defaultModel: Model | undefined =
   models.find(
     (model) =>
-      model.value === 'gemini-2.0-flash-001' &&
-      model.provider === 'Google Vertex'
+      model.value === 'gemini-2.0-flash-001' && model.provider === 'Google'
   ) || fallbackModel;
 
 export const providers: Provider[] = models.reduce((acc, model) => {

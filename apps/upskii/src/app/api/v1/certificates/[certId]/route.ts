@@ -1,4 +1,4 @@
-import { mockCertificates } from '@/app/[locale]/(dashboard)/certificate/mock-data';
+import { mockCertificates } from '@/app/[locale]/(dashboard)/[wsId]/certificate/mock-data';
 import { NextResponse } from 'next/server';
 
 export async function GET(

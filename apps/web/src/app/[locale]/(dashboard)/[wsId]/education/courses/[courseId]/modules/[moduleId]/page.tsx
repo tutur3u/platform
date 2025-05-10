@@ -69,7 +69,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   return (
     <div className="grid gap-4">
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/content`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
         rawContent={data.content as any | undefined}
@@ -81,7 +81,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/resources`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/resources`}
         title={t('course-details-tabs.resources')}
         icon={<Paperclip className="h-5 w-5" />}
         content={
@@ -112,7 +112,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/youtube-links`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/youtube-links`}
         title={t('course-details-tabs.youtube_links')}
         icon={<Youtube className="h-5 w-5" />}
         content={
@@ -126,7 +126,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/quizzes`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes`}
         title={t('ws-quizzes.plural')}
         icon={<ListTodo className="h-5 w-5" />}
         content={
@@ -143,7 +143,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/quiz-sets`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets`}
         title={t('ws-quiz-sets.plural')}
         icon={<ListTodo className="h-5 w-5" />}
         content={
@@ -160,7 +160,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/flashcards`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/flashcards`}
         title={t('ws-flashcards.plural')}
         icon={<SwatchBook className="h-5 w-5" />}
         content={
@@ -177,7 +177,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/extra-content`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/extra-content`}
         title={t('course-details-tabs.extra_reading')}
         icon={<BookText className="h-5 w-5" />}
         rawContent={data.extra_content as any | undefined}

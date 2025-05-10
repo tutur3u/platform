@@ -129,7 +129,7 @@ export default function SubmissionClient({ submission, wsId }: Props) {
                 size="sm"
                 onClick={() => {
                   if (submission.user?.id) {
-                    router.push(`/${wsId}/profile/${submission.user.id}`);
+                    router.push(`/profile/${submission.user.id}`);
                   }
                 }}
                 className="w-full"

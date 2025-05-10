@@ -14,11 +14,12 @@ import {
   verifySecret,
 } from '@/lib/workspace-helper';
 import {
+  Award,
   BookText,
+  Bot,
   Cog,
   Home,
   ListTodo,
-  MessageCircleMore,
   ShieldCheck,
 } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
@@ -115,9 +116,57 @@ export default async function Layout({ children, params }: LayoutProps) {
         withoutPermission('ai_lab'),
     },
     {
-      title: t('sidebar.chat'),
-      href: `/${wsId}/chat`,
-      icon: <MessageCircleMore className="h-4 w-4" />,
+      title: t('sidebar.quiz-sets'),
+      href: `/${wsId}/quiz-sets`,
+      icon: <ListTodo className="h-4 w-4" />,
+      experimental: 'alpha',
+      shortcut: 'S',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+    },
+    {
+      title: t('sidebar.challenges'),
+      href: `/${wsId}/challenges`,
+      icon: <ListTodo className="h-4 w-4" />,
+      experimental: 'alpha',
+      shortcut: 'L',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+    },
+    {
+      title: t('sidebar.certificates'),
+      href: `/${wsId}/certificate/CERT-2024-03-15-a1b2c3d4-e5f6-4321-9876-123456789abc`, // TODO: Replace with dynamic certificate ID
+      icon: <Award className="h-4 w-4" />,
+      experimental: 'alpha',
+      shortcut: 'Q',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+    },
+    {
+      title: t('sidebar.ai_chat'),
+      href: `/${wsId}/ai-chat`,
+      icon: <Bot className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'M',
       disabled:
