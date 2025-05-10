@@ -41,13 +41,16 @@ export default function UserNavClient({
   user,
   locale,
   hideMetadata = false,
+  wsId,
 }: {
   user: WorkspaceUser | null;
   locale: string | undefined;
   hideMetadata?: boolean;
+  wsId?: string;
 }) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
+
 
   return (
     <>
@@ -114,7 +117,7 @@ export default function UserNavClient({
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <Link href="/home">
+            <Link href={wsId ? `/${wsId}/home` : '/onboarding'}>
               <DropdownMenuItem className="flex cursor-pointer gap-4">
                 <Home className="h-4 w-4" />
                 <span>{t('common.home')}</span>
