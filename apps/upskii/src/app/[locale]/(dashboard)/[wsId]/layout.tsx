@@ -20,7 +20,6 @@ import {
   Cog,
   Home,
   ListTodo,
-  MessageCircleMore,
   ShieldCheck,
 } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
@@ -168,22 +167,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       title: t('sidebar.ai_chat'),
       href: `/${wsId}/ai-chat`,
       icon: <Bot className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'M',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
-    },
-    {
-      title: t('sidebar.chat'),
-      href: `/${wsId}/chat`,
-      icon: <MessageCircleMore className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'M',
       disabled:
