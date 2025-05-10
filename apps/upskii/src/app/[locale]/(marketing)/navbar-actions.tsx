@@ -19,7 +19,6 @@ export default async function NavbarActions({
     data: { user: sbUser },
   } = await supabase.auth.getUser();
 
-
   return (
     <div className="relative">
       <div className="flex items-center gap-1">
@@ -29,10 +28,7 @@ export default async function NavbarActions({
           </>
         ) : (
           <>
-            <GetStartedButton
-              text={t('home.get-started')}
-              href="/onboarding"
-            />
+            <GetStartedButton text={t('home.get-started')} href="/onboarding" />
             <LanguageWrapper
               cookieName={LOCALE_COOKIE_NAME}
               defaultLocale={defaultLocale}
