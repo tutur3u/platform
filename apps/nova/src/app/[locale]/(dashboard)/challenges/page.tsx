@@ -30,12 +30,10 @@ export default async function Page() {
     .from('nova_roles')
     .select('*')
     .eq('email', user.email)
-    .maybeSingle();
+    .single();
 
   if (roleError || !userRole) {
-    throw new Error(
-      `Error fetching user role: ${roleError?.message || 'User role not found'}`
-    );
+    throw new Error(`Error fetching user role: ${roleError}`);
   }
 
   const isAdmin = userRole.allow_challenge_management;
@@ -84,11 +82,10 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
       .from('nova_roles')
       .select('*')
       .eq('email', user.email)
-      .maybeSingle();
+      .single();
+
     if (roleError || !userRole) {
-      throw new Error(
-        `Error fetching user role: ${roleError?.message || 'User role not found'}`
-      );
+      throw new Error(`Error fetching user role: ${roleError}`);
     }
 
     const isAdmin = userRole.allow_challenge_management;
