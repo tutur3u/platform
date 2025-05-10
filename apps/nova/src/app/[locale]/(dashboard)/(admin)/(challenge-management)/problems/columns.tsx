@@ -65,7 +65,15 @@ export function getProblemColumns(
         <DataTableColumnHeader t={t} column={column} title="Challenge Title" />
       ),
       cell: ({ row }) => {
-        return row.original.challenge?.title || 'Not assigned';
+        const isHighlighted =
+          _extraData?.filteredChallengeId &&
+          row.original.challenge_id === _extraData.filteredChallengeId;
+
+        return (
+          <span className={isHighlighted ? 'text-primary font-semibold' : ''}>
+            {row.original.challenge?.title || 'Not assigned'}
+          </span>
+        );
       },
     },
     {

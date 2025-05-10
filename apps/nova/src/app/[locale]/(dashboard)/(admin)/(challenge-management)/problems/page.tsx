@@ -1,19 +1,11 @@
 import ProblemCardSkeleton from './ProblemCardSkeleton';
 import { getProblemColumns } from './columns';
 import CreateProblemDialog from './createProblemDialog';
+import ChallengeFilter from './filter';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
-import { Filter, Plus } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-// Import Filter icon
+import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
@@ -32,12 +24,18 @@ interface Props {
 export default async function Page({ searchParams }: Props) {
   const t = await getTranslations('nova');
 
+  // Get available challenges for the filter
+  const { challenges } = await getChallenges();
+
+  // Get the challenge ID filter from URL
+  const challengeId = (await searchParams).challengeId;
+
   const { problemsData, problemsCount } = await getProblemsData({
     q: (await searchParams).q,
     page: (await searchParams).page,
     pageSize: (await searchParams).pageSize,
+    challengeId,
   });
-  const { challenges } = await getChallenges();
 
   return (
     <div className="container mx-auto p-6">
@@ -53,6 +51,13 @@ export default async function Page({ searchParams }: Props) {
         />
       </div>
 
+      <div className="mb-4">
+        <ChallengeFilter
+          challenges={challenges}
+          initialChallengeId={challengeId}
+        />
+      </div>
+
       <Separator className="my-4" />
 
       <Suspense fallback={<ProblemCardSkeleton />}>
@@ -64,6 +69,7 @@ export default async function Page({ searchParams }: Props) {
             id: false,
             created_at: false,
           }}
+          extraData={{ filteredChallengeId: challengeId }}
         />
       </Suspense>
     </div>
@@ -73,17 +79,17 @@ export default async function Page({ searchParams }: Props) {
 async function getChallenges() {
   const supabase = await createClient();
 
-  const { data: challenges, error } = await supabase
+  const { data, error } = await supabase
     .from('nova_challenges')
     .select('id, title')
-    .order('title', { ascending: true });
+    .order('title');
 
   if (error) {
     console.error('Error fetching challenges:', error);
     return { challenges: [] };
   }
 
-  return { challenges: challenges || [] };
+  return { challenges: data || [] };
 }
 
 async function getProblemsData({
