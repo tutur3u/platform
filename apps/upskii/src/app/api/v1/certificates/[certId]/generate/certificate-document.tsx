@@ -2,12 +2,23 @@ import { CertificateData } from './types';
 import { BASE_URL } from '@/constants/common';
 import {
   Document,
+  Font,
   Image,
   Page,
   StyleSheet,
   Text,
   View,
 } from '@react-pdf/renderer';
+
+Font.register({
+  family: 'Roboto',
+  fonts: [
+    { src: `${BASE_URL}/fonts/Roboto-Regular.ttf` },
+    { src: `${BASE_URL}/fonts/Roboto-Medium.ttf`, fontWeight: 'medium' },
+    { src: `${BASE_URL}/fonts/Roboto-Bold.ttf`, fontWeight: 'bold' },
+    { src: `${BASE_URL}/fonts/Roboto-Light.ttf`, fontWeight: 'light' },
+  ],
+});
 
 // Create styles
 const styles = StyleSheet.create({
@@ -45,6 +56,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1f2937',
     textAlign: 'center',
+    fontFamily: 'Roboto',
   },
   separator: {
     height: 1,
@@ -61,24 +73,29 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#000000',
     textAlign: 'center',
+    fontFamily: 'Roboto',
+    fontWeight: 'light',
   },
   name: {
     fontSize: 30,
     fontWeight: 'bold',
     color: '#1f2937',
     textAlign: 'center',
+    fontFamily: 'Roboto',
   },
   course: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1f2937',
     textAlign: 'center',
+    fontFamily: 'Roboto',
   },
   instructor: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1f2937',
     textAlign: 'center',
+    fontFamily: 'Roboto',
   },
   footer: {
     display: 'flex',
@@ -100,10 +117,14 @@ const styles = StyleSheet.create({
   footerLabel: {
     fontSize: 14,
     color: '#4b5563',
+    fontFamily: 'Roboto',
+    fontWeight: 'light',
   },
   footerLabelRight: {
     fontSize: 14,
     color: '#4b5563',
+    fontFamily: 'Roboto',
+    fontWeight: 'light',
   },
   footerValue: {
     fontSize: 14,
