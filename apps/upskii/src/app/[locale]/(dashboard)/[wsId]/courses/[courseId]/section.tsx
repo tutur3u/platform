@@ -36,30 +36,34 @@ export async function CourseSection({
 
   return (
     <div className="border-foreground/10 bg-foreground/5 rounded-lg border p-4">
-      {href ? (
-        <Link
-          href={href}
-          className="flex w-fit items-center gap-2 text-lg font-semibold hover:underline md:text-2xl"
-        >
-          {icon}
-          {title}
-        </Link>
-      ) : (
-        <div className="flex items-center gap-2 text-lg font-semibold md:text-2xl">
-          {icon}
-          {title}
-        </div>
-      )}
-      {hideContent || (
-        <>
-          <Separator className="my-2" />
-          {isContentEmpty ? (
-            <div className="opacity-50">{t('common.no_content_yet')}.</div>
+      <details open>
+        <summary className="group flex justify-between">
+          {href ? (
+            <Link
+              href={href}
+              className="flex w-fit items-center gap-2 text-lg font-semibold hover:underline md:text-2xl"
+            >
+              {icon}
+              {title}
+            </Link>
           ) : (
-            content
+            <div className="flex items-center gap-2 text-lg font-semibold md:text-2xl">
+              {icon}
+              {title}
+            </div>
           )}
-        </>
-      )}
+        </summary>
+        {hideContent || (
+          <>
+            <Separator className="my-2" />
+            {isContentEmpty ? (
+              <div className="opacity-50">{t('common.no_content_yet')}.</div>
+            ) : (
+              content
+            )}
+          </>
+        )}
+      </details>
     </div>
   );
 }

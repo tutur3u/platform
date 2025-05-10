@@ -22,11 +22,13 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { type Variants, motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function MarketingPage() {
+  const t = useTranslations('boarding-pages.home');
   // Fetch workspaces from the API
   const [wsId, setWsId] = useState<string | null>(null);
 
@@ -73,9 +75,7 @@ export default function MarketingPage() {
                   whileHover={{ opacity: 1 }}
                 />
                 <Sparkles className="mr-2 h-4 w-4" />
-                <span className="relative z-10">
-                  Transform Your Learning Journey
-                </span>
+                <span className="relative z-10">{t('hero.badge')}</span>
               </Badge>
             </motion.div>
 
@@ -85,9 +85,9 @@ export default function MarketingPage() {
               transition={{ delay: 0.2, duration: 0.6 }}
               className="text-foreground mb-6 text-balance text-center text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl"
             >
-              Your Complete
+              {t('hero.title-1')}
               <br />
-              <GradientHeadline title="Educational Platform" />
+              <GradientHeadline title={t('hero.title-2')} />
             </motion.h1>
 
             <motion.div
@@ -96,9 +96,7 @@ export default function MarketingPage() {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="text-foreground/50 mb-8 max-w-2xl text-balance text-center text-lg"
             >
-              A modern learning platform that empowers educators and students
-              with AI-enhanced features, interactive content, and real-time
-              collaboration tools.
+              {t('hero.description')}
             </motion.div>
 
             <motion.div
@@ -112,7 +110,7 @@ export default function MarketingPage() {
                 transition={{ type: 'spring', stiffness: 400 }}
               >
                 <GetStartedButton
-                  text="Get Started"
+                  text={t('common.get-started')}
                   href={wsId ? `/${wsId}/home` : '/onboarding'}
                   disabled={!wsId && wsId !== null}
                 />
@@ -134,7 +132,7 @@ export default function MarketingPage() {
                       transition={{ duration: 0.5 }}
                     />
                     <span className="relative z-10 flex items-center">
-                      Platform Guide
+                      {t('hero.platform-guide')}
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </span>
                   </Button>
@@ -149,14 +147,13 @@ export default function MarketingPage() {
           <div className="mx-auto max-w-6xl px-4">
             <div className="mb-16 text-center">
               <Badge variant="outline" className="mb-4">
-                Platform Features
+                {t('key-features.badge')}
               </Badge>
               <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-                Everything You Need for Modern Education
+                {t('key-features.title')}
               </h2>
               <p className="text-muted-foreground">
-                Our platform combines powerful teaching tools with an intuitive
-                learning experience
+                {t('key-features.description')}
               </p>
             </div>
 
@@ -164,44 +161,38 @@ export default function MarketingPage() {
               {[
                 {
                   icon: <Video className="h-6 w-6" />,
-                  title: 'Course Creation & Management',
-                  description:
-                    'Create and manage course content with ease, including videos, PDFs, and interactive quizzes.',
+                  title: t('key-features.feature-1.title'),
+                  description: t('key-features.feature-1.description'),
                   gradient: 'from-blue-500/20 via-primary/20 to-indigo-500/20',
                 },
                 {
                   icon: <Brain className="h-6 w-6" />,
-                  title: 'AI-Enhanced Learning',
-                  description:
-                    'Personalized learning experiences powered by AI to generate quizzes, provide feedback, and assist teachers.',
+                  title: t('key-features.feature-2.title'),
+                  description: t('key-features.feature-2.description'),
                   gradient: 'from-purple-500/20 via-primary/20 to-blue-500/20',
                 },
                 {
                   icon: <MessageSquare className="h-6 w-6" />,
-                  title: 'Live Classes & Interaction',
-                  description:
-                    'Host live classes with video conferencing, real-time chat, and interactive sessions.',
+                  title: t('key-features.feature-3.title'),
+                  description: t('key-features.feature-3.description'),
                   gradient: 'from-emerald-500/20 via-primary/20 to-teal-500/20',
                 },
                 {
                   icon: <BookOpen className="h-6 w-6" />,
-                  title: 'Certificates & Achievements',
-                  description:
-                    'Automatically issue certificates and badges upon course completion to recognize achievements.',
+                  title: t('key-features.feature-4.title'),
+                  description: t('key-features.feature-4.description'),
                   gradient: 'from-amber-500/20 via-primary/20 to-orange-500/20',
                 },
                 {
                   icon: <Users className="h-6 w-6" />,
-                  title: 'Community & Collaboration',
-                  description:
-                    'Foster a collaborative learning environment with discussion forums and peer learning.',
+                  title: t('key-features.feature-5.title'),
+                  description: t('key-features.feature-5.description'),
                   gradient: 'from-pink-500/20 via-primary/20 to-rose-500/20',
                 },
                 {
                   icon: <School className="h-6 w-6" />,
-                  title: 'Course Marketplace',
-                  description:
-                    'Browse, purchase, and enroll in a wide variety of courses offered by verified educators.',
+                  title: t('key-features.feature-6.title'),
+                  description: t('key-features.feature-6.description'),
                   gradient: 'from-cyan-500/20 via-primary/20 to-sky-500/20',
                 },
               ].map((feature, index) => (
@@ -260,21 +251,20 @@ export default function MarketingPage() {
                 viewport={{ once: true }}
                 className="space-y-6"
               >
-                <Badge variant="outline">For Educators</Badge>
+                <Badge variant="outline">{t('for-teachers.badge')}</Badge>
                 <h2 className="text-3xl font-bold md:text-4xl">
-                  Empower Your Teaching
+                  {t('for-teachers.title')}
                 </h2>
                 <p className="text-foreground/60">
-                  Our platform provides educators with powerful tools to create
-                  engaging content, interact with students, and track progress.
+                  {t('for-teachers.description')}
                 </p>
                 <div className="space-y-4">
                   {[
-                    'Create and manage courses with ease',
-                    'Upload videos and learning materials',
-                    'Generate AI-powered quizzes and assessments',
-                    'Host live classes and webinars',
-                    'Issue certificates to students',
+                    t('for-teachers.details-1'),
+                    t('for-teachers.details-2'),
+                    t('for-teachers.details-3'),
+                    t('for-teachers.details-4'),
+                    t('for-teachers.details-5'),
                   ].map((item, index) => (
                     <motion.div
                       key={index}
@@ -299,7 +289,7 @@ export default function MarketingPage() {
                   <Link href="/guide#for-teachers">
                     <Button className="mt-4">
                       <span className="relative z-10 flex items-center gap-2">
-                        Become a Teacher
+                        {t('for-teachers.button')}
                         <RocketIcon className="h-4 w-4" />
                       </span>
                     </Button>
@@ -325,21 +315,18 @@ export default function MarketingPage() {
                       {[
                         {
                           icon: <GraduationCap className="h-5 w-5" />,
-                          title: 'Course Creation',
-                          description:
-                            'Intuitive tools to build and organize your course content',
+                          title: t('for-teachers.feature-1.title'),
+                          description: t('for-teachers.feature-1.description'),
                         },
                         {
                           icon: <Users className="h-5 w-5" />,
-                          title: 'Student Management',
-                          description:
-                            'Track student progress, engagement, and provide personalized feedback',
+                          title: t('for-teachers.feature-2.title'),
+                          description: t('for-teachers.feature-2.description'),
                         },
                         {
                           icon: <Brain className="h-5 w-5" />,
-                          title: 'AI Teaching Assistant',
-                          description:
-                            'Generate content, quizzes, and get help with planning your lessons',
+                          title: t('for-teachers.feature-3.title'),
+                          description: t('for-teachers.feature-3.description'),
                         },
                       ].map((item, index) => (
                         <motion.div
@@ -379,21 +366,20 @@ export default function MarketingPage() {
                 viewport={{ once: true }}
                 className="order-1 space-y-6 md:order-2"
               >
-                <Badge variant="outline">For Students</Badge>
+                <Badge variant="outline">{t('for-students.badge')}</Badge>
                 <h2 className="text-3xl font-bold md:text-4xl">
-                  Learn at Your Own Pace
+                  {t('for-students.title')}
                 </h2>
                 <p className="text-foreground/60">
-                  Access high-quality courses, interact with instructors and
-                  peers, and earn certificates to showcase your skills.
+                  {t('for-students.description')}
                 </p>
                 <div className="space-y-4">
                   {[
-                    'Browse courses from verified educators',
-                    'Learn with interactive videos and materials',
-                    'Get AI-powered learning recommendations',
-                    'Join live classes and discussions',
-                    'Earn certificates and badges',
+                    t('for-students.details-1'),
+                    t('for-students.details-2'),
+                    t('for-students.details-3'),
+                    t('for-students.details-4'),
+                    t('for-students.details-5'),
                   ].map((item, index) => (
                     <motion.div
                       key={index}
@@ -418,7 +404,7 @@ export default function MarketingPage() {
                   <Link href="/guide#for-students">
                     <Button className="mt-4">
                       <span className="relative z-10 flex items-center gap-2">
-                        Find Courses
+                        {t('for-students.button')}
                         <ArrowRight className="h-4 w-4" />
                       </span>
                     </Button>
@@ -434,16 +420,18 @@ export default function MarketingPage() {
               >
                 <Card className="border-foreground/10 bg-foreground/5 overflow-hidden">
                   <div className="space-y-4 p-6">
-                    <h3 className="text-xl font-bold">Course Categories</h3>
+                    <h3 className="text-xl font-bold">
+                      {t('for-students.course-categories.title')}
+                    </h3>
                     <Separator className="bg-foreground/10" />
                     <div className="grid grid-cols-2 gap-3">
                       {[
-                        'Programming & Development',
-                        'Business & Entrepreneurship',
-                        'Digital Marketing',
-                        'Design & Creativity',
-                        'Personal Development',
-                        'Language Learning',
+                        t('for-students.course-categories.category-1'),
+                        t('for-students.course-categories.category-2'),
+                        t('for-students.course-categories.category-3'),
+                        t('for-students.course-categories.category-4'),
+                        t('for-students.course-categories.category-5'),
+                        t('for-students.course-categories.category-6'),
                       ].map((category, index) => (
                         <motion.div
                           key={index}
@@ -459,7 +447,7 @@ export default function MarketingPage() {
                     </div>
                     <Separator className="bg-foreground/10" />
                     <p className="text-muted-foreground text-sm">
-                      Explore hundreds of courses across various categories
+                      {t('for-students.course-categories.footer')}
                     </p>
                   </div>
                 </Card>
@@ -484,20 +472,21 @@ export default function MarketingPage() {
                 viewport={{ once: true }}
                 className="space-y-6"
               >
-                <Badge variant="outline">Multilingual Support</Badge>
+                <Badge variant="outline">
+                  {t('multilingual-support.badge')}
+                </Badge>
                 <h2 className="text-3xl font-bold md:text-4xl">
-                  Learn in Your Language
+                  {t('multilingual-support.title')}
                 </h2>
                 <p className="text-foreground/60">
-                  Our platform supports multiple languages, including English
-                  and Vietnamese, making education accessible to everyone.
+                  {t('multilingual-support.description')}
                 </p>
                 <div className="space-y-4">
                   {[
-                    'Fully bilingual interface (English/Vietnamese)',
-                    'Course content in multiple languages',
-                    'Language-specific learning resources',
-                    'Localized support and community',
+                    t('multilingual-support.details-1'),
+                    t('multilingual-support.details-2'),
+                    t('multilingual-support.details-3'),
+                    t('multilingual-support.details-4'),
                   ].map((item, index) => (
                     <motion.div
                       key={index}
@@ -557,14 +546,13 @@ export default function MarketingPage() {
           >
             <Badge variant="outline" className="mb-4">
               <Sparkles className="mr-2 h-4 w-4" />
-              Get Started Today
+              {t('cta-section.badge')}
             </Badge>
             <h2 className="mb-4 text-4xl font-bold md:text-5xl">
-              Join Our Educational Community
+              {t('cta-section.title')}
             </h2>
             <p className="text-muted-foreground mb-8">
-              Start your learning journey or begin creating and sharing your
-              knowledge with students around the world.
+              {t('cta-section.description')}
             </p>
             <motion.div
               className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
@@ -574,13 +562,13 @@ export default function MarketingPage() {
               transition={{ delay: 0.2 }}
             >
               <GetStartedButton
-                text="Get Started"
+                text={t('common.get-started')}
                 href={wsId ? `/${wsId}/home` : '/login'}
                 disabled={!wsId && wsId !== null}
               />
               <Link href="/about">
                 <Button variant="outline" className="group">
-                  Learn More
+                  {t('cta-section.button')}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
