@@ -2252,8 +2252,8 @@
         "preview-available-description": " When participants can preview this challenge before it starts.",
         "open-at": "Open at",
         "open-at-description": "When the challenge starts",
-        "end-at": "Open at",
-        "end-at-description": "When the challenge starts"
+        "end-at": "Close at",
+        "end-at-description": "When the challenge ends"
       },
       "cards": {
         "disabled": "Disabled",

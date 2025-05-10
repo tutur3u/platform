@@ -71,16 +71,11 @@ export default function ChallengeCard({
   >('disabled');
   const t = useTranslations('nova.challenge.cards');
 
-  // Memoize attempt calculations
-  const hasRemainingAttempts = useMemo(
-    () => (challenge.total_sessions || 0) < challenge.max_attempts,
-    [challenge.total_sessions, challenge.max_attempts]
-  );
+  const hasRemainingAttempts =
+    (challenge.total_sessions || 0) < challenge.max_attempts;
 
-  const hasRemainingDailyAttempts = useMemo(
-    () => (challenge.daily_sessions || 0) < challenge.max_daily_attempts,
-    [challenge.daily_sessions, challenge.max_daily_attempts]
-  );
+  const hasRemainingDailyAttempts =
+    (challenge.daily_sessions || 0) < challenge.max_daily_attempts;
 
   const updateStatus = useCallback(() => {
     if (!challenge.enabled) {
