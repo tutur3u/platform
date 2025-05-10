@@ -1,7 +1,9 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "globalDependencies": ["**/.env.*local"],
+  "globalDependencies": [
+    "**/.env.*local"
+  ],
   "globalEnv": [
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "NEXT_PUBLIC_SUPABASE_URL",
@@ -16,6 +18,10 @@
     "GOOGLE_GENERATIVE_AI_API_KEY",
     "GOOGLE_VERTEX_PROJECT",
     "GOOGLE_VERTEX_LOCATION",
+    "GOOGLE_VERTEX_EMAIL",
+    "GOOGLE_VERTEX_CLIENT_ID",
+    "GOOGLE_VERTEX_PRIVATE_KEY",
+    "GOOGLE_VERTEX_PRIVATE_KEY_ID",
     "GOOGLE_APPLICATION_CREDENTIALS",
     "DEFAULT_AI_MODEL",
     "CF_ACCOUNT_ID",
@@ -32,12 +38,22 @@
   ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**"
+      ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": [
+        "^lint"
+      ]
     },
     "dev": {
       "cache": false,
