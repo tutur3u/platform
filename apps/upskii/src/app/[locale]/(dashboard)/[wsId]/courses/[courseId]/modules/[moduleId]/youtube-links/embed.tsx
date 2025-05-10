@@ -9,7 +9,7 @@ export const YoutubeEmbed = ({ embedId }: { embedId: string | undefined }) => {
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowFullScreen
       title="Embedded youtube"
-      className="w-full h-full rounded-lg"
+      className="h-full w-full rounded-lg"
     />
   ) : (
     <div>{t('ws-course-modules.invalid_youtube_link')}.</div>
