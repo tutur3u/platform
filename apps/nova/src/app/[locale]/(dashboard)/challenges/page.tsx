@@ -176,7 +176,7 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
     }
 
     // Regular users only see challenges that are enabled or they're whitelisted for
-    return challenges.filter((challenge) => {
+    const filteredChallenges = challenges.filter((challenge) => {
       const previewableAt = challenge.previewable_at
         ? new Date(challenge.previewable_at)
         : null;
@@ -189,6 +189,12 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
         (previewableAt ? now >= previewableAt : true)
       );
     });
+
+    return filteredChallenges.map((challenge) => ({
+      ...challenge,
+      password_salt: challenge.password_salt !== null ? '' : null,
+      password_hash: challenge.password_hash !== null ? '' : null,
+    }));
   } catch (error) {
     console.error('Error fetching challenges:', error);
     return [];
