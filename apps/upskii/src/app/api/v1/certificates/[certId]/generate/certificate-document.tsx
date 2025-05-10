@@ -10,15 +10,14 @@ import {
   View,
 } from '@react-pdf/renderer';
 
-
-Font.register({ 
-  family: 'Roboto', 
+Font.register({
+  family: 'Roboto',
   fonts: [
     { src: `${BASE_URL}/fonts/Roboto-Regular.ttf` },
     { src: `${BASE_URL}/fonts/Roboto-Medium.ttf`, fontWeight: 'medium' },
     { src: `${BASE_URL}/fonts/Roboto-Bold.ttf`, fontWeight: 'bold' },
     { src: `${BASE_URL}/fonts/Roboto-Light.ttf`, fontWeight: 'light' },
-  ]
+  ],
 });
 
 // Create styles
