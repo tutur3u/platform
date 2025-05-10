@@ -13,7 +13,7 @@ export async function UserNav({
   const user = await getCurrentUser();
   const currentLocale = cookies.get(LOCALE_COOKIE_NAME)?.value;
 
-  const workspaces = await getWorkspaces();
+  const workspaces = await getWorkspaces(true);
   const wsId = workspaces?.[0]?.id;
 
   return (
