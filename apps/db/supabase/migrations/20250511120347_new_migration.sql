@@ -1,0 +1,3 @@
+alter table "public"."workspace_courses" add column "description" text default ''::text;
+
+
