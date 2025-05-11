@@ -107,9 +107,9 @@ export type NovaExtendedChallenge = NovaChallenge & {
 };
 
 export type NovaSubmissionData = NovaSubmissionWithScores & {
-  session?: NovaSession;
-  problem?: NovaProblem;
-  challenge?: NovaChallenge;
+  session: NovaSession | null;
+  problem: NovaProblem;
+  challenge: NovaChallenge;
   criteria: (NovaSubmissionCriteria & { name: string; description: string })[];
   test_cases: (NovaSubmissionTestCase & {
     input: string;
