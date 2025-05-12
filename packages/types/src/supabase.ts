@@ -6790,6 +6790,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
+      count_search_users: {
+        Args: { search_query: string };
+        Returns: number;
+      };
       create_ai_chat: {
         Args: { title: string; message: string; model: string };
         Returns: string;
@@ -7165,6 +7169,27 @@ export type Database = {
       revoke_all_cross_app_tokens: {
         Args: { p_user_id: string };
         Returns: undefined;
+      };
+      search_users: {
+        Args: { search_query: string; page_number: number; page_size: number };
+        Returns: {
+          id: string;
+          display_name: string;
+          deleted: boolean;
+          avatar_url: string;
+          handle: string;
+          bio: string;
+          created_at: string;
+          user_id: string;
+          enabled: boolean;
+          allow_challenge_management: boolean;
+          allow_manage_all_challenges: boolean;
+          allow_role_management: boolean;
+          email: string;
+          new_email: string;
+          birthday: string;
+          team_name: string[];
+        }[];
       };
       search_users_by_name: {
         Args: {

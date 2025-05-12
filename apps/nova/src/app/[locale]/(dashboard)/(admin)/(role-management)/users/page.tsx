@@ -111,6 +111,39 @@ async function getUserData({
     const sbAdmin = await createAdminClient();
     if (!sbAdmin) notFound();
 
+    // If there's a search query, use the RPC function
+    if (q) {
+      const { data, error } = await sbAdmin.rpc('search_users', {
+        search_query: q,
+        page_number: parseInt(page),
+        page_size: parseInt(pageSize),
+      });
+
+      if (error) {
+        console.error('Error searching users:', error);
+        return { userData: [], userCount: 0 };
+      }
+
+      // Get count for pagination
+      const { data: countData, error: countError } = await sbAdmin.rpc(
+        'count_search_users',
+        {
+          search_query: q,
+        }
+      );
+
+      if (countError) {
+        console.error('Error getting count:', countError);
+        return { userData: data || [], userCount: data?.length || 0 };
+      }
+
+      return {
+        userData: data || [],
+        userCount: countData || 0,
+      };
+    }
+
+    // Regular query for when there's no search
     const queryBuilder = sbAdmin
       .from('platform_user_roles')
       .select(
@@ -120,12 +153,6 @@ async function getUserData({
         }
       )
       .order('created_at', { ascending: false });
-
-    if (q) {
-      // With separate calls:
-      queryBuilder.or(`users.display_name.ilike.%${q}%`);
-      queryBuilder.or(`user_private_details.email.ilike.%${q}%`);
-    }
 
     // Handle pagination
     const parsedPage = parseInt(page);
@@ -145,7 +172,10 @@ async function getUserData({
       userData:
         data.map(({ nova_team_members, ...user }) => ({
           ...user,
-          team_name: nova_team_members.map((member) => member.team_name),
+          team_name:
+            nova_team_members
+              ?.map((member) => member.team_name)
+              .filter(Boolean) || [],
         })) || [],
       userCount: count || 0,
     };
