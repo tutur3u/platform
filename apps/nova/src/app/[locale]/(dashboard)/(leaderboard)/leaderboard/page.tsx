@@ -104,9 +104,9 @@ async function fetchLeaderboard(
 
   // Check user's role and permissions
   const { data: userRole, error: roleError } = await sbAdmin
-    .from('nova_roles')
+    .from('platform_user_roles')
     .select('*')
-    .eq('email', user.email)
+    .eq('user_id', user.id)
     .single();
 
   if (roleError) {
