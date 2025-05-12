@@ -12,7 +12,6 @@ import {
   FileText,
   GraduationCap,
   LayoutGrid,
-  Lightbulb,
   MessageSquare,
   Play,
   School,
@@ -22,6 +21,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 // Guide step component
@@ -95,6 +95,7 @@ function FeatureCard({
 }
 
 export default function GuidePage() {
+  const t = useTranslations('boarding-pages.guide');
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
       <div className="mb-12">
@@ -106,14 +107,13 @@ export default function GuidePage() {
         >
           <Badge variant="outline" className="mb-4">
             <Compass className="mr-2 h-4 w-4" />
-            Platform Guide
+            {t('hero.badge')}
           </Badge>
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-            How to Use Our Platform
+            {t('hero.title')}
           </h1>
           <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-            A comprehensive guide to help you get started and make the most of
-            our educational platform.
+            {t('hero.description')}
           </p>
         </motion.div>
       </div>
@@ -121,8 +121,12 @@ export default function GuidePage() {
       <Tabs defaultValue="students" className="w-full">
         <div className="mb-8 flex justify-center">
           <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="students">For Students</TabsTrigger>
-            <TabsTrigger value="teachers">For Teachers</TabsTrigger>
+            <TabsTrigger value="students">
+              {t('for-students.title')}
+            </TabsTrigger>
+            <TabsTrigger value="teachers">
+              {t('for-teachers.title')}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -137,38 +141,48 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">Getting Started</h2>
+                <h2 className="mb-2 text-3xl font-bold">
+                  {t('for-students.detailed-guide.title')}
+                </h2>
                 <p className="text-muted-foreground">
-                  Follow these simple steps to begin your learning journey.
+                  {t('for-students.detailed-guide.description')}
                 </p>
               </motion.div>
 
               <div className="space-y-8">
                 <GuideStep
                   number={1}
-                  title="Create Your Account"
-                  description="Sign up using your email or Google account. Verify your email to activate your account and set up your profile with basic information."
+                  title={t('for-students.detailed-guide.step-1.title')}
+                  description={t(
+                    'for-students.detailed-guide.step-1.description'
+                  )}
                   icon={<User className="h-5 w-5" />}
                   delay={0.1}
                 />
                 <GuideStep
                   number={2}
-                  title="Explore Course Catalog"
-                  description="Browse through our diverse range of courses. Use filters to find courses by subject, difficulty level, duration, or instructor rating."
+                  title={t('for-students.detailed-guide.step-2.title')}
+                  description={t(
+                    'for-students.detailed-guide.step-2.description'
+                  )}
                   icon={<Compass className="h-5 w-5" />}
                   delay={0.2}
                 />
                 <GuideStep
                   number={3}
-                  title="Enroll in Courses"
-                  description="Choose courses that match your interests and learning goals. Enroll in free courses instantly or complete payment for premium courses."
+                  title={t('for-students.detailed-guide.step-3.title')}
+                  description={t(
+                    'for-students.detailed-guide.step-3.description'
+                  )}
                   icon={<BookOpen className="h-5 w-5" />}
                   delay={0.3}
                 />
                 <GuideStep
                   number={4}
-                  title="Start Learning"
-                  description="Access course materials, watch video lectures, complete assignments, and participate in discussions to enhance your learning experience."
+                  title={t('for-students.detailed-guide.step-4.title')}
+                  description={t(
+                    'for-students.detailed-guide.step-4.description'
+                  )}
                   icon={<Play className="h-5 w-5" />}
                   delay={0.4}
                 />
@@ -185,48 +199,61 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">Key Features</h2>
+                <h2 className="mb-2 text-3xl font-bold">
+                  {t('for-students.key-features.title')}
+                </h2>
                 <p className="text-muted-foreground">
-                  Discover powerful tools and features designed to enhance your
-                  learning experience.
+                  {t('for-students.key-features.description')}
                 </p>
               </motion.div>
 
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <FeatureCard
                   icon={<Video className="h-6 w-6" />}
-                  title="Video Lectures"
-                  description="High-quality video content with interactive elements and the ability to take notes as you watch."
+                  title={t('for-students.key-features.feature-1.title')}
+                  description={t(
+                    'for-students.key-features.feature-1.description'
+                  )}
                   delay={0.1}
                 />
                 <FeatureCard
                   icon={<FileText className="h-6 w-6" />}
-                  title="Course Materials"
-                  description="Access downloadable resources, reading materials, and supplementary content."
+                  title={t('for-students.key-features.feature-2.title')}
+                  description={t(
+                    'for-students.key-features.feature-2.description'
+                  )}
                   delay={0.2}
                 />
                 <FeatureCard
                   icon={<MessageSquare className="h-6 w-6" />}
-                  title="Discussion Forums"
-                  description="Engage with instructors and fellow students to clarify doubts and share insights."
+                  title={t('for-students.key-features.feature-3.title')}
+                  description={t(
+                    'for-students.key-features.feature-3.description'
+                  )}
                   delay={0.3}
                 />
                 <FeatureCard
                   icon={<Brain className="h-6 w-6" />}
-                  title="AI Learning Assistant"
-                  description="Get personalized help, explanations, and learning recommendations from our AI tutor."
+                  title={t('for-students.key-features.feature-4.title')}
+                  description={t(
+                    'for-students.key-features.feature-4.description'
+                  )}
                   delay={0.4}
                 />
                 <FeatureCard
                   icon={<GraduationCap className="h-6 w-6" />}
-                  title="Certificates"
-                  description="Earn verified certificates upon course completion to showcase your achievements."
+                  title={t('for-students.key-features.feature-5.title')}
+                  description={t(
+                    'for-students.key-features.feature-5.description'
+                  )}
                   delay={0.5}
                 />
                 <FeatureCard
                   icon={<LayoutGrid className="h-6 w-6" />}
-                  title="Learning Dashboard"
-                  description="Track your progress, manage enrolled courses, and view recommendations."
+                  title={t('for-students.key-features.feature-6.title')}
+                  description={t(
+                    'for-students.key-features.feature-6.description'
+                  )}
                   delay={0.6}
                 />
               </div>
@@ -242,10 +269,11 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">Tips for Success</h2>
+                <h2 className="mb-2 text-3xl font-bold">
+                  {t('for-students.tips.title')}
+                </h2>
                 <p className="text-muted-foreground">
-                  Make the most of your learning journey with these helpful
-                  tips.
+                  {t('for-students.tips.description')}
                 </p>
               </motion.div>
 
@@ -258,11 +286,11 @@ export default function GuidePage() {
                 >
                   <div className="space-y-4">
                     {[
-                      'Set a regular study schedule to build consistency',
-                      'Take notes while watching lectures and reading materials',
-                      'Actively participate in discussion forums and Q&A sessions',
-                      'Complete all assignments and quizzes to reinforce learning',
-                      'Use the AI tutor when you need additional help or clarification',
+                      t('for-students.tips.tip-1'),
+                      t('for-students.tips.tip-2'),
+                      t('for-students.tips.tip-3'),
+                      t('for-students.tips.tip-4'),
+                      t('for-students.tips.tip-5'),
                     ].map((tip, index) => (
                       <motion.div
                         key={index}
@@ -289,11 +317,11 @@ export default function GuidePage() {
                 >
                   <div className="space-y-4">
                     {[
-                      'Connect with fellow students to form study groups',
-                      'Apply what you learn through practical exercises',
-                      'Provide feedback to instructors to improve course quality',
-                      'Take breaks between study sessions to avoid burnout',
-                      'Set realistic learning goals and track your progress',
+                      t('for-students.tips.tip-6'),
+                      t('for-students.tips.tip-7'),
+                      t('for-students.tips.tip-8'),
+                      t('for-students.tips.tip-9'),
+                      t('for-students.tips.tip-10'),
                     ].map((tip, index) => (
                       <motion.div
                         key={index}
@@ -317,7 +345,7 @@ export default function GuidePage() {
             <Separator />
 
             {/* CTA Section */}
-            <motion.section
+            {/* <motion.section
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -348,7 +376,7 @@ export default function GuidePage() {
                   </Link>
                 </div>
               </div>
-            </motion.section>
+            </motion.section> */}
           </div>
         </TabsContent>
 
@@ -363,39 +391,48 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">Becoming a Teacher</h2>
+                <h2 className="mb-2 text-3xl font-bold">
+                  {t('for-teachers.detailed-guide.title')}
+                </h2>
                 <p className="text-muted-foreground">
-                  Follow these steps to start creating and sharing your
-                  knowledge on our platform.
+                  {t('for-teachers.detailed-guide.description')}
                 </p>
               </motion.div>
 
               <div className="space-y-8">
                 <GuideStep
                   number={1}
-                  title="Apply for Teacher Status"
-                  description="Sign up for an account, then apply for teacher verification by providing your credentials and background information for review."
+                  title={t('for-teachers.detailed-guide.step-1.title')}
+                  description={t(
+                    'for-teachers.detailed-guide.step-1.description'
+                  )}
                   icon={<User className="h-5 w-5" />}
                   delay={0.1}
                 />
                 <GuideStep
                   number={2}
-                  title="Set Up Your Teacher Profile"
-                  description="Complete your educator profile with your expertise, teaching experience, education, and a professional photo to build trust with potential students."
+                  title={t('for-teachers.detailed-guide.step-2.title')}
+                  description={t(
+                    'for-teachers.detailed-guide.step-2.description'
+                  )}
                   icon={<School className="h-5 w-5" />}
                   delay={0.2}
                 />
                 <GuideStep
                   number={3}
-                  title="Create Your First Course"
-                  description="Use our course builder to design your curriculum, upload content, create assessments, and set up interactive elements."
+                  title={t('for-teachers.detailed-guide.step-3.title')}
+                  description={t(
+                    'for-teachers.detailed-guide.step-3.description'
+                  )}
                   icon={<BookOpen className="h-5 w-5" />}
                   delay={0.3}
                 />
                 <GuideStep
                   number={4}
-                  title="Publish and Promote"
-                  description="Submit your course for review, set pricing (if applicable), and use our platform tools to promote your course to potential students."
+                  title={t('for-teachers.detailed-guide.step-4.title')}
+                  description={t(
+                    'for-teachers.detailed-guide.step-4.description'
+                  )}
                   icon={<GraduationCap className="h-5 w-5" />}
                   delay={0.4}
                 />
@@ -412,48 +449,61 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">Teacher Tools</h2>
+                <h2 className="mb-2 text-3xl font-bold">
+                  {t('for-teachers.key-features.title')}
+                </h2>
                 <p className="text-muted-foreground">
-                  Powerful features to help you create engaging courses and
-                  manage your students effectively.
+                  {t('for-teachers.key-features.description')}
                 </p>
               </motion.div>
 
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <FeatureCard
                   icon={<Video className="h-6 w-6" />}
-                  title="Video Management"
-                  description="Upload, edit, and manage video content with our integrated video hosting solution."
+                  title={t('for-teachers.key-features.feature-1.title')}
+                  description={t(
+                    'for-teachers.key-features.feature-1.description'
+                  )}
                   delay={0.1}
                 />
                 <FeatureCard
                   icon={<Brain className="h-6 w-6" />}
-                  title="AI Content Generation"
-                  description="Create quizzes, assignments, and supplementary content with AI assistance."
+                  title={t('for-teachers.key-features.feature-2.title')}
+                  description={t(
+                    'for-teachers.key-features.feature-2.description'
+                  )}
                   delay={0.2}
                 />
                 <FeatureCard
                   icon={<MessageSquare className="h-6 w-6" />}
-                  title="Live Teaching"
-                  description="Host live classes, webinars, and interactive sessions with your students."
+                  title={t('for-teachers.key-features.feature-3.title')}
+                  description={t(
+                    'for-teachers.key-features.feature-3.description'
+                  )}
                   delay={0.3}
                 />
                 <FeatureCard
                   icon={<LayoutGrid className="h-6 w-6" />}
-                  title="Student Analytics"
-                  description="Track student progress, engagement, and performance with detailed analytics."
+                  title={t('for-teachers.key-features.feature-4.title')}
+                  description={t(
+                    'for-teachers.key-features.feature-4.description'
+                  )}
                   delay={0.4}
                 />
                 <FeatureCard
                   icon={<FileText className="h-6 w-6" />}
-                  title="Assessment Tools"
-                  description="Create various types of assessments including quizzes, assignments, and projects."
+                  title={t('for-teachers.key-features.feature-5.title')}
+                  description={t(
+                    'for-teachers.key-features.feature-5.description'
+                  )}
                   delay={0.5}
                 />
                 <FeatureCard
                   icon={<GraduationCap className="h-6 w-6" />}
-                  title="Certificate Designer"
-                  description="Design custom certificates that will be automatically issued to successful students."
+                  title={t('for-teachers.key-features.feature-6.title')}
+                  description={t(
+                    'for-teachers.key-features.feature-6.description'
+                  )}
                   delay={0.6}
                 />
               </div>
@@ -469,10 +519,11 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">Best Practices</h2>
+                <h2 className="mb-2 text-3xl font-bold">
+                  {t('for-teachers.tips.title')}
+                </h2>
                 <p className="text-muted-foreground">
-                  Tips and strategies to help you create engaging courses and
-                  build a successful teaching career.
+                  {t('for-teachers.tips.description')}
                 </p>
               </motion.div>
 
@@ -485,11 +536,11 @@ export default function GuidePage() {
                 >
                   <div className="space-y-4">
                     {[
-                      'Structure your course content in a logical, progressive sequence',
-                      'Keep video lectures concise (5-10 minutes) and focused on a single topic',
-                      'Include a mix of content types: videos, readings, activities, discussions',
-                      'Provide clear learning objectives at the beginning of each section',
-                      'Use AI tools to generate supplementary content and assessments',
+                      t('for-teachers.tips.tip-1'),
+                      t('for-teachers.tips.tip-1'),
+                      t('for-teachers.tips.tip-1'),
+                      t('for-teachers.tips.tip-1'),
+                      t('for-teachers.tips.tip-1'),
                     ].map((practice, index) => (
                       <motion.div
                         key={index}
@@ -516,11 +567,11 @@ export default function GuidePage() {
                 >
                   <div className="space-y-4">
                     {[
-                      'Respond promptly to student questions and discussion posts',
-                      'Schedule regular live sessions to engage directly with your students',
-                      'Update course content regularly to keep it current and relevant',
-                      'Gather and respond to student feedback to improve your course',
-                      'Use analytics to identify areas where students might be struggling',
+                      t('for-teachers.tips.tip-6'),
+                      t('for-teachers.tips.tip-7'),
+                      t('for-teachers.tips.tip-8'),
+                      t('for-teachers.tips.tip-9'),
+                      t('for-teachers.tips.tip-10'),
                     ].map((practice, index) => (
                       <motion.div
                         key={index}
@@ -555,11 +606,10 @@ export default function GuidePage() {
                   <School className="h-6 w-6" />
                 </div>
                 <h2 className="mb-4 text-2xl font-bold">
-                  Ready to Share Your Knowledge?
+                  {t('cta-section.title')}
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  Join our community of educators and reach students around the
-                  world with your expertise.
+                  {t('cta-section.description')}
                 </p>
                 <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                   <Link href="/login?teacher=true">

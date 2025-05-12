@@ -4699,6 +4699,7 @@ export type Database = {
       workspace_courses: {
         Row: {
           created_at: string;
+          description: string | null;
           id: string;
           is_public: boolean;
           is_published: boolean;
@@ -4707,6 +4708,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          description?: string | null;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
@@ -4715,6 +4717,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          description?: string | null;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;

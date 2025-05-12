@@ -1,5 +1,11 @@
 import ScoreBadge from '@/components/common/ScoreBadge';
 import { NovaSubmissionData } from '@tuturuuu/types/db';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import {
@@ -160,6 +166,82 @@ export function SubmissionCard({
                     }
                   />
                 )}
+
+              {/* Detailed Test Cases */}
+              <div className="mt-4">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="test-cases">
+                    <AccordionTrigger className="text-sm font-medium">
+                      View Test Case Details
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-3">
+                        {submission.test_cases?.map((testcase, index) => (
+                          <div
+                            key={testcase.test_case_id ?? index}
+                            className={`rounded-md border p-3 ${
+                              testcase.matched
+                                ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
+                                : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
+                            }`}
+                          >
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="text-sm font-medium">
+                                Test Case {index + 1}
+                              </span>
+                              <div className="flex items-center">
+                                {testcase.matched ? (
+                                  <CheckCircle2 className="mr-1 h-4 w-4 text-emerald-500" />
+                                ) : (
+                                  <XCircle className="mr-1 h-4 w-4 text-red-500" />
+                                )}
+                                <span
+                                  className={`text-xs font-medium ${
+                                    testcase.matched
+                                      ? 'text-emerald-500'
+                                      : 'text-red-500'
+                                  }`}
+                                >
+                                  {testcase.matched ? 'PASS' : 'FAIL'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
+                              <div className="space-y-1">
+                                <p className="font-medium">Input:</p>
+                                <pre className="bg-background max-h-24 overflow-auto whitespace-pre-wrap rounded p-2">
+                                  {testcase.input}
+                                </pre>
+                              </div>
+
+                              <div className="space-y-1">
+                                <p className="font-medium">Expected Output:</p>
+                                <pre className="bg-background max-h-24 overflow-auto whitespace-pre-wrap rounded p-2">
+                                  {testcase.output}
+                                </pre>
+                              </div>
+
+                              <div className="space-y-1 md:col-span-2">
+                                <p className="font-medium">Your Output:</p>
+                                <pre
+                                  className={`max-h-24 overflow-auto whitespace-pre-wrap rounded p-2 ${
+                                    testcase.matched
+                                      ? 'bg-emerald-100 dark:bg-emerald-900/20'
+                                      : 'bg-red-100 dark:bg-red-900/20'
+                                  }`}
+                                >
+                                  {testcase.output || 'No output produced'}
+                                </pre>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
             </div>
           </div>
         ) : (

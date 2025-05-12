@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { getLocale } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 export const revalidate = 60;
@@ -86,17 +87,104 @@ async function fetchLeaderboard(
   };
 
   const limit = 20;
+
+  const supabase = await createClient();
+
+  // Get current user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id || !user?.email) {
+    throw new Error('Auth error or missing user');
+  }
+
   const sbAdmin = await createAdminClient();
 
-  // Fetch all challenges for filter options
+  // Check user's role and permissions
+  const { data: userRole, error: roleError } = await sbAdmin
+    .from('nova_roles')
+    .select('*')
+    .eq('email', user.email)
+    .single();
+
+  if (roleError) {
+    throw new Error('Error fetching user role:', roleError);
+  }
+
+  // Fetch all challenges with their whitelists in a single query
   const { data: challenges, error: challengesError } = await sbAdmin
     .from('nova_challenges')
-    .select('id, title')
+    .select('*, nova_challenge_whitelisted_emails(*)')
     .order('title', { ascending: true });
 
   if (challengesError) {
     console.error('Error fetching challenges:', challengesError.message);
     return defaultData;
+  }
+
+  // Extract challenges and construct whitelist data
+  const userWhitelistedChallengeIds = new Set(
+    challenges.flatMap((challenge) =>
+      challenge.nova_challenge_whitelisted_emails
+        .filter((whitelist) => whitelist.email === user.email)
+        .map((whitelist) => whitelist.challenge_id)
+    )
+  );
+
+  const { data: managedChallenges, error: managerError } = await sbAdmin
+    .from('nova_challenge_manager_emails')
+    .select('challenge_id')
+    .eq('email', user.email);
+
+  if (managerError) {
+    console.error('Error fetching managed challenges:', managerError);
+  }
+
+  // Build a Set of challenge IDs this admin can manage
+  const managedChallengeIds = new Set(
+    (managedChallenges || []).map((item) => item.challenge_id)
+  );
+
+  let filteredChallenges: {
+    id: string;
+    title: string;
+  }[] = [];
+
+  if (
+    userRole?.allow_challenge_management &&
+    userRole?.allow_manage_all_challenges
+  ) {
+    filteredChallenges = challenges;
+  }
+  // Normal admins - can see all user-visible challenges + challenges they can manage
+  else if (userRole?.allow_challenge_management) {
+    filteredChallenges = challenges.filter((challenge) => {
+      // Public challenges (enabled and non-restricted)
+      if (challenge.enabled && !challenge.whitelisted_only) {
+        return true;
+      }
+      // Specifically assigned to manage
+      if (managedChallengeIds.has(challenge.id)) {
+        return true;
+      }
+      // Whitelisted restricted challenges
+      if (userWhitelistedChallengeIds.has(challenge.id)) {
+        return true;
+      }
+
+      return false;
+    });
+  }
+  // Regular Users - can only see enabled non-restricted challenges
+  else {
+    filteredChallenges = challenges.filter(
+      (challenge) =>
+        challenge.enabled &&
+        (!challenge.whitelisted_only ||
+          userWhitelistedChallengeIds.has(challenge.id))
+    );
   }
 
   let rankedData: LeaderboardEntry[] = [];
@@ -124,6 +212,16 @@ async function fetchLeaderboard(
         (entry.challenge_scores as Record<string, number>) || {},
     }));
   } else {
+    const allowedChallengeId = filteredChallenges.find(
+      (challenge) => challenge.id === challengeId
+    )?.id;
+
+    if (!allowedChallengeId) {
+      const urlSearchParams = new URLSearchParams();
+      urlSearchParams.delete('challenge');
+      return redirect(`/leaderboard?${urlSearchParams.toString()}`);
+    }
+
     // Fetch user data for a specific challenge
     const { data: challengeLeaderboardData, error: challengeLeaderboardError } =
       await sbAdmin
@@ -211,11 +309,6 @@ async function fetchLeaderboard(
 
   const topThree = rankedData.slice(0, 3);
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const currentUser = rankedData.find((entry) => entry.id === user?.id);
 
   // Get basic info
@@ -234,7 +327,7 @@ async function fetchLeaderboard(
     data: paginatedData,
     topThree,
     basicInfo,
-    challenges: challenges || [],
+    challenges: filteredChallenges,
     hasMore: rankedData.length > page * limit,
     totalPages,
   };

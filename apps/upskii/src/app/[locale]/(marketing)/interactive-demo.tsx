@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Bot, MessageSquare, Send, Sparkles, User } from '@tuturuuu/ui/icons';

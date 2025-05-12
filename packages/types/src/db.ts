@@ -102,6 +102,14 @@ export type NovaSubmissionWithScoresAndCriteria =
     criteria: NovaChallengeCriteria[];
   };
 
+export type ExtendedNovaProblem = NovaProblem & {
+  test_cases?: NovaProblemTestCase[];
+  challenge?: {
+    id: string;
+    title: string;
+  };
+};
+
 export type NovaExtendedChallenge = NovaChallenge & {
   criteria?: NovaChallengeCriteria[];
   whitelists?: NovaChallengeWhitelistedEmail[];
@@ -113,9 +121,9 @@ export type NovaExtendedChallenge = NovaChallenge & {
 };
 
 export type NovaSubmissionData = NovaSubmissionWithScores & {
-  session?: NovaSession;
-  problem?: NovaProblem;
-  challenge?: NovaChallenge;
+  session: NovaSession | null;
+  problem: NovaProblem;
+  challenge: NovaChallenge;
   criteria: (NovaSubmissionCriteria & { name: string; description: string })[];
   test_cases: (NovaSubmissionTestCase & {
     input: string;

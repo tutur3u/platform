@@ -19,6 +19,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -127,6 +128,7 @@ function ValueCard({
 }
 
 export default function AboutPage() {
+  const t = useTranslations('boarding-pages.about');
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
       <div className="mb-16">
@@ -138,15 +140,13 @@ export default function AboutPage() {
         >
           <Badge variant="outline" className="mb-4">
             <InfoIcon className="mr-2 h-4 w-4" />
-            About Us
+            {t('hero.badge')}
           </Badge>
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-            Our Mission is to Transform Education
+            {t('hero.title')}
           </h1>
           <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-            We're building a platform that empowers educators and students
-            through technology, making high-quality education accessible to
-            everyone, everywhere.
+            {t('hero.description')}
           </p>
         </motion.div>
       </div>
@@ -164,9 +164,9 @@ export default function AboutPage() {
               <div className="from-primary/10 absolute inset-0 rounded-xl bg-gradient-to-br via-transparent to-transparent" />
               <div className="relative flex h-full items-center justify-center p-8">
                 <div className="from-primary bg-gradient-to-r via-purple-500 to-blue-500 bg-clip-text text-center text-4xl font-bold text-transparent md:text-5xl">
-                  Education for Everyone,
+                  {t('mission-vision.slogan-1')}
                   <br />
-                  Everywhere
+                  {t('mission-vision.slogan-2')}
                 </div>
               </div>
             </div>
@@ -179,30 +179,27 @@ export default function AboutPage() {
             className="order-1 space-y-6 md:order-2"
           >
             <div>
-              <h2 className="mb-4 text-3xl font-bold">Our Mission</h2>
+              <h2 className="mb-4 text-3xl font-bold">
+                {t('mission-vision.mission.title')}
+              </h2>
               <p className="text-muted-foreground">
-                Our mission is to democratize education by providing a platform
-                that connects passionate educators with eager learners from
-                around the world. We believe that quality education should be
-                accessible to everyone, regardless of location or background.
+                {t('mission-vision.mission.description')}
               </p>
             </div>
 
             <div>
-              <h2 className="mb-4 text-3xl font-bold">Our Vision</h2>
+              <h2 className="mb-4 text-3xl font-bold">
+                {t('mission-vision.vision.title')}
+              </h2>
               <p className="text-muted-foreground">
-                We envision a world where anyone can learn anything, anytime,
-                anywhere. A future where technology enhances the learning
-                experience, where AI assists both teachers and students, and
-                where education is personalized to each individual's needs and
-                learning style.
+                {t('mission-vision.vision.description')}
               </p>
             </div>
 
             <div className="pt-4">
               <Link href="/guide">
                 <Button>
-                  Explore Our Platform
+                  {t('mission-vision.button')}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -220,10 +217,9 @@ export default function AboutPage() {
       >
         <div className="bg-primary/5 rounded-xl p-12">
           <div className="mb-8 text-center">
-            <h2 className="mb-2 text-3xl font-bold">Our Impact</h2>
+            <h2 className="mb-2 text-3xl font-bold">{t('impact.title')}</h2>
             <p className="text-muted-foreground mx-auto max-w-2xl">
-              We're proud of the difference we're making in education around the
-              world.
+              {t('impact.description')}
             </p>
           </div>
 
@@ -231,25 +227,25 @@ export default function AboutPage() {
             <StatCard
               icon={<Users className="h-8 w-8" />}
               value="100,000+"
-              label="Active Learners"
+              label={t('impact.impact-1')}
               delay={0.1}
             />
             <StatCard
               icon={<School className="h-8 w-8" />}
               value="5,000+"
-              label="Verified Teachers"
+              label={t('impact.impact-2')}
               delay={0.2}
             />
             <StatCard
               icon={<BookOpen className="h-8 w-8" />}
               value="2,500+"
-              label="Courses Available"
+              label={t('impact.impact-3')}
               delay={0.3}
             />
             <StatCard
               icon={<Award className="h-8 w-8" />}
               value="250,000+"
-              label="Certificates Issued"
+              label={t('impact.impact-4')}
               delay={0.4}
             />
           </div>
@@ -264,47 +260,47 @@ export default function AboutPage() {
           viewport={{ once: true }}
           className="mb-8 text-center"
         >
-          <h2 className="mb-2 text-3xl font-bold">Our Core Values</h2>
+          <h2 className="mb-2 text-3xl font-bold">{t('values.title')}</h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
-            The principles that guide everything we do.
+            {t('values.description')}
           </p>
         </motion.div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <ValueCard
             icon={<BookOpen className="h-6 w-6" />}
-            title="Accessible Education"
-            description="We believe quality education should be available to everyone, regardless of location or background."
+            title={t('values.value-1.title')}
+            description={t('values.value-1.description')}
             delay={0.1}
           />
           <ValueCard
             icon={<Users className="h-6 w-6" />}
-            title="Community"
-            description="We foster inclusive communities where educators and learners can connect, collaborate, and grow together."
+            title={t('values.value-2.title')}
+            description={t('values.value-2.description')}
             delay={0.2}
           />
           <ValueCard
             icon={<Brain className="h-6 w-6" />}
-            title="Innovation"
-            description="We continuously evolve our platform with cutting-edge technology to enhance the teaching and learning experience."
+            title={t('values.value-3.title')}
+            description={t('values.value-3.description')}
             delay={0.3}
           />
           <ValueCard
             icon={<Lightbulb className="h-6 w-6" />}
-            title="Lifelong Learning"
-            description="We support the journey of continuous personal and professional development throughout life."
+            title={t('values.value-4.title')}
+            description={t('values.value-4.description')}
             delay={0.4}
           />
           <ValueCard
             icon={<HeartHandshake className="h-6 w-6" />}
-            title="Integrity"
-            description="We maintain high ethical standards and transparency in all our operations and relationships."
+            title={t('values.value-5.title')}
+            description={t('values.value-5.description')}
             delay={0.5}
           />
           <ValueCard
             icon={<Compass className="h-6 w-6" />}
-            title="Student-Centered"
-            description="We design our platform with the needs and experiences of learners at the forefront of our decisions."
+            title={t('values.value-6.title')}
+            description={t('values.value-6.description')}
             delay={0.6}
           />
         </div>
@@ -318,39 +314,38 @@ export default function AboutPage() {
           viewport={{ once: true }}
           className="mb-8 text-center"
         >
-          <h2 className="mb-2 text-3xl font-bold">Meet Our Leadership Team</h2>
+          <h2 className="mb-2 text-3xl font-bold">{t('team.title')}</h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
-            Passionate educators and technologists committed to transforming
-            online education.
+            {t('team.description')}
           </p>
         </motion.div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <TeamMemberCard
             name="Sarah Johnson"
-            role="CEO & Co-Founder"
-            bio="Former education technology executive with over 15 years of experience in EdTech innovation."
+            role={t('team.member-1.role')}
+            bio={t('team.member-1.description')}
             imageSrc="/media/background/team1.jpg"
             delay={0.1}
           />
           <TeamMemberCard
             name="David Chen"
-            role="CTO & Co-Founder"
-            bio="AI researcher and software architect specializing in educational technology and personalized learning."
+            role={t('team.member-2.role')}
+            bio={t('team.member-2.description')}
             imageSrc="/media/background/team2.jpg"
             delay={0.2}
           />
           <TeamMemberCard
             name="Maria Rodriguez"
-            role="Chief Learning Officer"
-            bio="Educational psychologist with expertise in curriculum development and online learning methodologies."
+            role={t('team.member-3.role')}
+            bio={t('team.member-3.description')}
             imageSrc="/media/background/team3.jpg"
             delay={0.3}
           />
           <TeamMemberCard
             name="James Wilson"
-            role="Chief Product Officer"
-            bio="Product leader with experience building user-centered educational platforms and scalable learning solutions."
+            role={t('team.member-4.role')}
+            bio={t('team.member-4.description')}
             imageSrc="/media/background/team4.jpg"
             delay={0.4}
           />
@@ -368,34 +363,26 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="space-y-6"
           >
-            <h2 className="text-3xl font-bold">Our Approach</h2>
-            <p className="text-muted-foreground">
-              We combine traditional educational principles with innovative
-              technology to create a learning experience that is engaging,
-              effective, and accessible.
-            </p>
+            <h2 className="text-3xl font-bold">{t('approach.title')}</h2>
+            <p className="text-muted-foreground">{t('approach.description')}</p>
 
             <div className="space-y-4">
               {[
                 {
-                  title: 'Human-Centered Design',
-                  description:
-                    'Our platform is designed with educators and learners in mind, focusing on intuitive interfaces and seamless experiences.',
+                  title: t('approach.approach-1.title'),
+                  description: t('approach.approach-1.description'),
                 },
                 {
-                  title: 'AI-Enhanced Learning',
-                  description:
-                    'We leverage artificial intelligence to personalize learning experiences, provide immediate feedback, and support educators in content creation.',
+                  title: t('approach.approach-2.title'),
+                  description: t('approach.approach-2.description'),
                 },
                 {
-                  title: 'Community Collaboration',
-                  description:
-                    'We foster connections between students and teachers across the globe, creating a collaborative learning environment.',
+                  title: t('approach.approach-3.title'),
+                  description: t('approach.approach-3.description'),
                 },
                 {
-                  title: 'Continuous Improvement',
-                  description:
-                    'We regularly update our platform based on user feedback and emerging educational research and technologies.',
+                  title: t('approach.approach-4.title'),
+                  description: t('approach.approach-4.description'),
                 },
               ].map((item, index) => (
                 <motion.div
@@ -434,9 +421,11 @@ export default function AboutPage() {
                       <BookOpen className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">Personalized Learning</h3>
+                      <h3 className="font-semibold">
+                        {t('approach.detail-1.title')}
+                      </h3>
                       <p className="text-muted-foreground text-sm">
-                        Tailored to individual needs
+                        {t('approach.detail-1.description')}
                       </p>
                     </div>
                   </div>
@@ -449,9 +438,11 @@ export default function AboutPage() {
                       <Brain className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">AI Integration</h3>
+                      <h3 className="font-semibold">
+                        {t('approach.detail-2.title')}
+                      </h3>
                       <p className="text-muted-foreground text-sm">
-                        Advanced learning assistance
+                        {t('approach.detail-2.description')}
                       </p>
                     </div>
                   </div>
@@ -464,9 +455,11 @@ export default function AboutPage() {
                       <GraduationCap className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">Certification</h3>
+                      <h3 className="font-semibold">
+                        {t('approach.detail-3.title')}
+                      </h3>
                       <p className="text-muted-foreground text-sm">
-                        Industry-recognized credentials
+                        {t('approach.detail-3.description')}
                       </p>
                     </div>
                   </div>
@@ -486,23 +479,20 @@ export default function AboutPage() {
         className="text-center"
       >
         <div className="bg-primary/5 mx-auto max-w-3xl rounded-xl p-8">
-          <h2 className="mb-4 text-2xl font-bold">
-            Join Our Educational Journey
-          </h2>
+          <h2 className="mb-4 text-2xl font-bold">{t('cta-section.title')}</h2>
           <p className="text-muted-foreground mb-6">
-            Whether you're a student eager to learn or an educator ready to
-            share your knowledge, our platform is built for you.
+            {t('cta-section.description')}
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link href="/guide">
               <Button size="lg">
-                Explore Platform
+                {t('cta-section.button')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
             <Link href="/contact">
               <Button variant="outline" size="lg">
-                Contact Us
+                {t('cta-section.contact-button')}
               </Button>
             </Link>
           </div>

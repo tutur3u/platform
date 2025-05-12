@@ -322,6 +322,7 @@ export default function ChallengeCard({
                       {t('retry-challenges')} <ArrowRight className="h-4 w-4" />
                     </Button>
                   }
+                  wsId={wsId}
                 />
               ) : (
                 <Button className="w-full gap-2" disabled>
@@ -350,6 +351,7 @@ export default function ChallengeCard({
                 {t('resume-challenge')} <ArrowRight className="h-4 w-4" />
               </Button>
             }
+            wsId={wsId}
           />
         );
       }
@@ -363,6 +365,7 @@ export default function ChallengeCard({
               {t('start-challenge')} <ArrowRight className="h-4 w-4" />
             </Button>
           }
+          wsId={wsId}
         />
       );
     }

@@ -44,9 +44,9 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         // Check if the date falls within the event's date range
         return dayjs(dateStr).isBetween(
           eventStart.startOf('day'),
-          eventEnd.endOf('day'),
+          eventEnd.startOf('day'),
           'day',
-          '[]'
+          '[)'
         );
       })
       .map((event) => {

@@ -12,25 +12,30 @@ export const fetchFullSubmission = async (submissionId: string) => {
     .select('*, ...nova_challenge_criteria!inner(name, description)')
     .eq('submission_id', submissionId);
 
-  const { data: testCases, error: errorTestCases } = await sbAdmin
-    .from('nova_submission_test_cases')
-    .select(
-      '*, ...nova_problem_test_cases!inner(input, expected_output:output)'
-    )
-    .eq('submission_id', submissionId);
+  const { data: submissionTestCases, error: errorSubmissionTestCases } =
+    await sbAdmin
+      .from('nova_submission_test_cases')
+      .select(
+        '*, ...nova_problem_test_cases!inner(input, expected_output:output, hidden)'
+      )
+      .eq('nova_problem_test_cases.hidden', false)
+      .eq('submission_id', submissionId);
 
   if (errorCriteria || !submissionCriteria) {
     console.error('Error fetching submission criteria:', errorCriteria);
     return;
   }
 
-  if (errorTestCases || !testCases) {
-    console.error('Error fetching submission test cases:', errorTestCases);
+  if (errorSubmissionTestCases || !submissionTestCases) {
+    console.error(
+      'Error fetching submission test cases:',
+      errorSubmissionTestCases
+    );
     return;
   }
 
   return {
     criteria: submissionCriteria,
-    test_cases: testCases,
+    test_cases: submissionTestCases,
   };
 };

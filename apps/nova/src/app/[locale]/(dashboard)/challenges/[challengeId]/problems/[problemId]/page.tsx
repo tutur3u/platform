@@ -64,10 +64,10 @@ export default async function Page({ params }: Props) {
       test_cases: problem.test_cases.filter((t) => t.problem_id === problemId),
     }));
 
-    const currentProblem = problems.find((p) => p.id === problemId);
     const currentProblemIndex = problems.findIndex((p) => p.id === problemId);
+    const currentProblem = problems[currentProblemIndex];
 
-    if (!session) {
+    if (!currentProblem) {
       redirect('/challenges');
     }
 
@@ -79,9 +79,7 @@ export default async function Page({ params }: Props) {
         session={session}
         submissions={submissions}
         currentProblemIndex={currentProblemIndex}
-        problem={
-          currentProblem as NovaProblem & { test_cases: NovaProblemTestCase[] }
-        }
+        problem={currentProblem}
       />
     );
   } catch (error) {

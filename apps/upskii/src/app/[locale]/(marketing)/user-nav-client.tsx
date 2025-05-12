@@ -4,8 +4,8 @@ import { LanguageWrapper } from '../(dashboard)/_components/language-wrapper';
 import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-item';
 import { SystemLanguageWrapper } from '../(dashboard)/_components/system-language-wrapper';
 import { ThemeDropdownItems } from '../(dashboard)/_components/theme-dropdown-items';
+import UserPresenceIndicator from '../../../components/user-presence-indicator';
 import UserSettingsDialog from './settings-dialog';
-import UserPresenceIndicator from './user-presence-indicator';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -41,10 +41,12 @@ export default function UserNavClient({
   user,
   locale,
   hideMetadata = false,
+  wsId,
 }: {
   user: WorkspaceUser | null;
   locale: string | undefined;
   hideMetadata?: boolean;
+  wsId?: string;
 }) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
@@ -114,7 +116,7 @@ export default function UserNavClient({
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <Link href="/home">
+            <Link href={wsId ? `/${wsId}/home` : '/onboarding'}>
               <DropdownMenuItem className="flex cursor-pointer gap-4">
                 <Home className="h-4 w-4" />
                 <span>{t('common.home')}</span>

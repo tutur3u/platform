@@ -79,32 +79,27 @@ export default async function RootLayout({
       requiresChallengeManagement: true,
     },
     {
-      name: t('submissions'),
-      href: '/submissions',
-      icon: <Box className="h-4 w-4" />,
-      requiresChallengeManagement: true,
-    },
-    {
       name: t('sessions'),
       href: '/sessions',
       icon: <Activity className="h-4 w-4" />,
       requiresChallengeManagement: true,
     },
     {
+      name: t('submissions'),
+      href: '/submissions',
+      icon: <Box className="h-4 w-4" />,
+      requiresChallengeManagement: true,
+    },
+    {
+      name: t('leaderboard'),
+      href: '/leaderboard',
+      icon: <Trophy className="h-4 w-4" />,
+    },
+    {
       name: t('score-calculator'),
       href: '/score-calculator',
       icon: <Calculator className="h-4 w-4" />,
     },
-    ...(whitelisted.allow_challenge_management ||
-    whitelisted.allow_role_management
-      ? [
-          {
-            name: t('leaderboard'),
-            href: '/leaderboard',
-            icon: <Trophy className="h-4 w-4" />,
-          },
-        ]
-      : []),
     {
       name: t('users'),
       href: '/users',
