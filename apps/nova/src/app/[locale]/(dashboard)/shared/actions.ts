@@ -2,7 +2,7 @@
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
-export const fetchFullSubmission = async (submissionId: string) => {
+export const getFullSubmission = async (submissionId: string) => {
   if (!submissionId) return;
 
   const sbAdmin = await createAdminClient();

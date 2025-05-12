@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchFullSubmission } from './actions';
+import { getFullSubmission } from './actions';
 import { SubmissionCard } from './submission-card';
 import {
   NovaProblem,
@@ -24,7 +24,7 @@ interface Props {
   problem: NovaProblem & {
     test_cases: NovaProblemTestCase[];
   };
-  session: NovaSession;
+  session?: NovaSession;
   submissions: NovaSubmissionWithScores[];
 }
 
@@ -54,23 +54,21 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
   // Split submissions between current and past sessions
   const currentSubmissions = submissions?.filter(
-    (s) => s.session_id === session.id
+    (s) => s.session_id === session?.id
   );
 
   const pastSubmissions = submissions?.filter(
-    (s) => s.session_id !== session.id
+    (s) => s.session_id !== session?.id
   );
 
   const remainingAttempts =
     currentSubmissions === undefined
       ? null
-      : currentSubmissions.length > MAX_ATTEMPTS
-        ? 0
-        : MAX_ATTEMPTS - currentSubmissions.length;
+      : Math.max(MAX_ATTEMPTS - currentSubmissions.length, 0);
 
   const getSubmissions = useCallback(async () => {
     router.refresh();
-  }, [problem.id, session.id, router]);
+  }, [problem.id, session?.id, router]);
 
   // Process the submission queue
   const processQueue = useCallback(async () => {
@@ -93,7 +91,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
     });
 
     try {
-      const data = await fetchFullSubmission(submissionId);
+      const data = await getFullSubmission(submissionId);
       if (data) {
         const submission = submissions.find((s) => s.id === submissionId);
         if (submission) {
@@ -228,7 +226,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt,
-            sessionId: session.id,
+            sessionId: session?.id,
           }),
         }
       );
@@ -389,7 +387,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                 <TabsList className="mb-4 grid w-full grid-cols-2">
                   <TabsTrigger value="current" className="relative">
                     Current Session
-                    {currentSubmissions && currentSubmissions.length > 0 && (
+                    {currentSubmissions.length > 0 && (
                       <Badge variant="secondary" className="ml-2">
                         {currentSubmissions.length}
                       </Badge>
@@ -397,7 +395,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                   </TabsTrigger>
                   <TabsTrigger value="past" className="relative">
                     Past Sessions
-                    {pastSubmissions && pastSubmissions.length > 0 && (
+                    {pastSubmissions.length > 0 && (
                       <Badge variant="secondary" className="ml-2">
                         {pastSubmissions.length}
                       </Badge>
@@ -406,7 +404,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                 </TabsList>
 
                 <TabsContent value="current" className="space-y-4">
-                  {currentSubmissions && currentSubmissions.length === 0 ? (
+                  {currentSubmissions.length === 0 ? (
                     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                       <Clock className="text-muted-foreground mb-2 h-10 w-10" />
                       <h3 className="text-lg font-medium">
@@ -438,7 +436,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                 </TabsContent>
 
                 <TabsContent value="past" className="space-y-4">
-                  {pastSubmissions && pastSubmissions.length === 0 ? (
+                  {pastSubmissions.length === 0 ? (
                     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                       <Clock className="text-muted-foreground mb-2 h-10 w-10" />
                       <h3 className="text-lg font-medium">

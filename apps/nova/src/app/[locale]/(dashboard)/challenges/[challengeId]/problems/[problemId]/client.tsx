@@ -2,9 +2,9 @@
 
 import ProblemComponent from '../../../../shared/problem-component';
 import PromptComponent from '../../../../shared/prompt-component';
+import PromptForm from '../../../../shared/prompt-form';
 import TestCaseComponent from '../../../../shared/test-case-component';
 import ChallengeHeader from './challengeHeader';
-import PromptForm from './prompt-form';
 import {
   NovaChallenge,
   NovaChallengeCriteria,
