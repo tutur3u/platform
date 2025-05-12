@@ -33,6 +33,7 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import {
   Loader2,
   Mail,
+  Pencil,
   Trash,
   User,
   UserPlus,
@@ -68,6 +69,9 @@ export default function TeamDetailsClient({
   const [invitations, setInvitations] =
     useState<PlatformUser[]>(initialInvitations);
   const [isInviteLoading, setIsInviteLoading] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newTeamName, setNewTeamName] = useState(teamData.name);
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
 
   const emailFormSchema = z.object({
     email: z.string().email({
@@ -81,6 +85,42 @@ export default function TeamDetailsClient({
       email: '',
     },
   });
+
+  const updateTeamName = async () => {
+    if (!newTeamName.trim() || newTeamName === teamData.name) {
+      setIsEditingName(false);
+      setNewTeamName(teamData.name);
+      return;
+    }
+
+    try {
+      setIsUpdatingName(true);
+
+      const res = await fetch(`/api/v1/nova/teams/${teamId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: newTeamName.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        // Update the local team data
+        teamData.name = newTeamName.trim();
+        setIsEditingName(false);
+        toast.success('New team name updated successfully');
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to set new name');
+        setNewTeamName(teamData.name); // Reset to original name
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to set new name');
+      setNewTeamName(teamData.name); // Reset to original name
+    } finally {
+      setIsUpdatingName(false);
+    }
+  };
 
   const removeMember = async (userId: string) => {
     try {
@@ -167,9 +207,62 @@ export default function TeamDetailsClient({
         <Card className="md:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="space-y-1">
-              <CardTitle className="text-2xl font-bold">
-                {teamData.name}
-              </CardTitle>
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={newTeamName}
+                    onChange={(e) => setNewTeamName(e.target.value)}
+                    className="max-w-xs"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        updateTeamName();
+                      } else if (e.key === 'Escape') {
+                        setIsEditingName(false);
+                        setNewTeamName(teamData.name);
+                      }
+                    }}
+                  />
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditingName(false);
+                        setNewTeamName(teamData.name);
+                      }}
+                      disabled={isUpdatingName}
+                    >
+                      {t('common.cancel')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={updateTeamName}
+                      disabled={!newTeamName.trim() || isUpdatingName}
+                    >
+                      {isUpdatingName ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
+                      {t('common.save')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-2xl font-bold">
+                    {teamData.name}
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setIsEditingName(true)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <CardDescription>
                 {t('teams.created')}{' '}
                 {moment(teamData.created_at).format('MMMM DD, YYYY')}

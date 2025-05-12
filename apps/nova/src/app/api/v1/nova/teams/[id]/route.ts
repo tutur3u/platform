@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient, createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -41,7 +41,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     const { id } = await params;
     const { name } = await request.json();
@@ -52,7 +52,6 @@ export async function PATCH(
         { status: 400 }
       );
     }
-
     const { data, error } = await supabase
       .from('nova_teams')
       .update({ name })
@@ -63,7 +62,6 @@ export async function PATCH(
     if (error) {
       throw error;
     }
-
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Error updating team:', error);
