@@ -18,7 +18,7 @@ export const fetchFullSubmission = async (submissionId: string) => {
       .select(
         '*, ...nova_problem_test_cases!inner(input, expected_output:output, hidden)'
       )
-      .eq('hidden', false)
+      .eq('nova_problem_test_cases.hidden', false)
       .eq('submission_id', submissionId);
 
   if (errorCriteria || !submissionCriteria) {

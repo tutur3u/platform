@@ -3,12 +3,17 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   NovaChallengeCriteria,
+  NovaProblemTestCase,
   NovaSubmission,
   NovaSubmissionCriteria,
+  NovaSubmissionTestCase,
 } from '@tuturuuu/types/db';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 
 export type ExtendedNovaSubmission = NovaSubmission & {
+  test_cases: (NovaProblemTestCase & {
+    result: NovaSubmissionTestCase;
+  })[];
   total_tests: number;
   passed_tests: number;
   test_case_score: number;
@@ -35,6 +40,10 @@ export async function fetchSubmissions(
     .select(
       `
       *,
+      test_cases:nova_problem_test_cases(
+        *,
+        results:nova_submission_test_cases(*)
+      ),
       criteria:nova_challenge_criteria(
         *,
         results:nova_submission_criteria(*)
@@ -51,6 +60,15 @@ export async function fetchSubmissions(
 
   return submissions
     .map((submission) => {
+      // Map testcases to expected format
+      const testcases = submission.test_cases.map((testcase) => ({
+        ...testcase,
+        results: undefined,
+        result: testcase.results.find(
+          (result) => result.submission_id === submission.id
+        ),
+      }));
+
       // Map criteria to expected format
       const criteria = submission.criteria.map((criterion) => ({
         ...criterion,
@@ -64,6 +82,7 @@ export async function fetchSubmissions(
       return {
         ...submission,
         overall_assessment: '',
+        test_cases: testcases,
         total_tests: submission.total_tests || 0,
         passed_tests: submission.passed_tests || 0,
         test_case_score: submission.test_case_score || 0,
