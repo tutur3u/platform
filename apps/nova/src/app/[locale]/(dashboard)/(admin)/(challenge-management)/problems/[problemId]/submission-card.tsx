@@ -1,120 +1,44 @@
+import { ExtendedNovaSubmission } from './actions';
 import ScoreBadge from '@/components/common/ScoreBadge';
-import { NovaSubmissionData } from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
-import {
-  CheckCircle2,
-  Clock,
-  Loader2,
-  RefreshCw,
-  User,
-  XCircle,
-} from '@tuturuuu/ui/icons';
+import { CheckCircle2, Clock, XCircle } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { useEffect } from 'react';
 
 interface SubmissionCardProps {
-  submission: Partial<NovaSubmissionData>;
-  isCurrent: boolean;
-  onRequestFetch?: (submissionId: string) => void;
-  isLoading?: boolean;
-  queuePosition?: number;
+  submission: ExtendedNovaSubmission;
 }
 
-export function SubmissionCard({
-  submission,
-  isCurrent,
-  onRequestFetch,
-  isLoading = false,
-  queuePosition,
-}: SubmissionCardProps) {
-  useEffect(() => {
-    // Only request fetch if we don't already have the full data
-    if (!submission.id || submission.criteria || !onRequestFetch) return;
-    onRequestFetch(submission.id);
-  }, [submission.id, submission.criteria, onRequestFetch]);
-
-  const isDetailsFetched = !!submission.criteria || !!submission.test_cases;
-  const showSkeleton = isLoading && !isDetailsFetched;
-
+export function SubmissionCard({ submission }: SubmissionCardProps) {
   return (
-    <Card
-      key={submission.id}
-      className={`overflow-hidden transition-all duration-200 ${isCurrent ? '' : 'border-muted-foreground/20'} ${showSkeleton ? 'opacity-90' : ''}`}
-    >
+    <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {submission.created_at && (
-              <span className="text-muted-foreground text-xs">
-                <Clock className="mr-1 inline h-3 w-3" />
-                {new Date(submission.created_at).toLocaleString()}
-              </span>
-            )}
+          <span className="text-muted-foreground text-xs">
+            <Clock className="mr-1 inline h-3 w-3" />
+            {new Date(submission.created_at).toLocaleString()}
+          </span>
 
-            {!isCurrent && (
-              <Badge variant="outline" className="text-xs">
-                <User className="mr-1 h-3 w-3" />
-                Past Session
-              </Badge>
-            )}
-
-            {isLoading && (
-              <Badge variant="secondary" className="animate-pulse text-xs">
-                {queuePosition === 0 ? (
-                  <>
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                    Loading details...
-                  </>
-                ) : (
-                  <>
-                    <Clock className="mr-1 h-3 w-3" />
-                    Queued {queuePosition ? `(${queuePosition})` : ''}
-                  </>
-                )}
-              </Badge>
-            )}
-
-            {!isLoading && !isDetailsFetched && submission.id && (
-              <Badge
-                variant="outline"
-                className="hover:bg-secondary cursor-pointer text-xs"
-                onClick={() => onRequestFetch?.(submission.id!)}
-              >
-                <RefreshCw className="mr-1 h-3 w-3" />
-                Load details
-              </Badge>
-            )}
-          </div>
-
-          {submission.total_score != null ? (
-            <ScoreBadge
-              score={submission.total_score}
-              maxScore={10}
-              className="px-2 py-0"
-            >
-              {submission.total_score.toFixed(2)}/10
-            </ScoreBadge>
-          ) : (
-            showSkeleton && <Skeleton className="h-6 w-16" />
-          )}
+          <ScoreBadge
+            score={submission.total_score}
+            maxScore={10}
+            className="px-2 py-0"
+          >
+            {submission.total_score.toFixed(2)}/10
+          </ScoreBadge>
         </div>
       </CardHeader>
-      <CardContent
-        className={`space-y-6 ${showSkeleton ? 'animate-pulse' : ''}`}
-      >
+      <CardContent className="space-y-6">
         <div>
           <h3 className="text-foreground mb-1 text-sm font-medium">Prompt:</h3>
           <div className="bg-muted rounded-md p-2 text-sm">
@@ -122,24 +46,32 @@ export function SubmissionCard({
           </div>
         </div>
 
+        {/* Overall Assessment - moved to top for better visibility */}
+        {submission.overall_assessment && (
+          <div className="space-y-2">
+            <h3 className="text-foreground mb-1 text-sm font-medium">
+              Overall Assessment:
+            </h3>
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30">
+              <p className="text-sm">{submission.overall_assessment}</p>
+            </div>
+          </div>
+        )}
+
         {/* Test Case Evaluation */}
-        {submission.total_tests && submission.total_tests > 0 ? (
+        {submission.total_tests > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-muted-foreground text-xs font-medium">
                 Test Case Evaluation:
               </h3>
-              {submission.test_case_score != null ? (
-                <ScoreBadge
-                  score={submission.test_case_score}
-                  maxScore={10}
-                  className="px-2 py-0"
-                >
-                  {submission.test_case_score.toFixed(2)}/10
-                </ScoreBadge>
-              ) : (
-                showSkeleton && <Skeleton className="h-5 w-14" />
-              )}
+              <ScoreBadge
+                score={submission.test_case_score}
+                maxScore={10}
+                className="px-2 py-0"
+              >
+                {submission.test_case_score.toFixed(2)}/10
+              </ScoreBadge>
             </div>
             <div className="space-y-2 rounded-md border p-4">
               <div>
@@ -148,24 +80,17 @@ export function SubmissionCard({
                   test cases
                 </span>
               </div>
-              {submission.passed_tests != null &&
-                submission.total_tests != null && (
-                  <Progress
-                    value={
-                      (submission.passed_tests / submission.total_tests) * 100
-                    }
-                    className="h-2 w-full"
-                    indicatorClassName={
-                      submission.test_case_score != null &&
-                      submission.test_case_score >= 8
-                        ? 'bg-emerald-500'
-                        : submission.test_case_score != null &&
-                            submission.test_case_score >= 5
-                          ? 'bg-amber-500'
-                          : 'bg-red-500'
-                    }
-                  />
-                )}
+              <Progress
+                value={(submission.passed_tests / submission.total_tests) * 100}
+                className="h-2 w-full"
+                indicatorClassName={
+                  submission.test_case_score >= 8
+                    ? 'bg-emerald-500'
+                    : submission.test_case_score >= 5
+                      ? 'bg-amber-500'
+                      : 'bg-red-500'
+                }
+              />
 
               {/* Detailed Test Cases */}
               <div className="mt-4">
@@ -176,11 +101,11 @@ export function SubmissionCard({
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-3">
-                        {submission.test_cases?.map((testcase, index) => (
+                        {submission.test_cases.map((testcase, index) => (
                           <div
-                            key={testcase.test_case_id ?? index}
+                            key={testcase.id ?? index}
                             className={`rounded-md border p-3 ${
-                              testcase.matched
+                              testcase.result?.matched
                                 ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
                                 : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
                             }`}
@@ -190,19 +115,19 @@ export function SubmissionCard({
                                 Test Case {index + 1}
                               </span>
                               <div className="flex items-center">
-                                {testcase.matched ? (
+                                {testcase.result?.matched ? (
                                   <CheckCircle2 className="mr-1 h-4 w-4 text-emerald-500" />
                                 ) : (
                                   <XCircle className="mr-1 h-4 w-4 text-red-500" />
                                 )}
                                 <span
                                   className={`text-xs font-medium ${
-                                    testcase.matched
+                                    testcase.result?.matched
                                       ? 'text-emerald-500'
                                       : 'text-red-500'
                                   }`}
                                 >
-                                  {testcase.matched ? 'PASS' : 'FAIL'}
+                                  {testcase.result?.matched ? 'PASS' : 'FAIL'}
                                 </span>
                               </div>
                             </div>
@@ -226,12 +151,13 @@ export function SubmissionCard({
                                 <p className="font-medium">Your Output:</p>
                                 <pre
                                   className={`max-h-24 overflow-auto whitespace-pre-wrap rounded p-2 ${
-                                    testcase.matched
+                                    testcase.result?.matched
                                       ? 'bg-emerald-100 dark:bg-emerald-900/20'
                                       : 'bg-red-100 dark:bg-red-900/20'
                                   }`}
                                 >
-                                  {testcase.output || 'No output produced'}
+                                  {testcase.result?.output ||
+                                    'No output produced'}
                                 </pre>
                               </div>
                             </div>
@@ -244,66 +170,51 @@ export function SubmissionCard({
               </div>
             </div>
           </div>
-        ) : (
-          showSkeleton && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-5 w-14" />
-              </div>
-              <Skeleton className="h-24 w-full" />
-            </div>
-          )
         )}
 
         {/* Criteria Evaluation */}
-        {submission.total_criteria && submission.total_criteria > 0 ? (
+        {submission.total_criteria > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-muted-foreground text-xs font-medium">
-                Criteria Evaluation
-                {isCurrent ? '' : ': (Hover to see Feedback)'}
+                Criteria Evaluation:
               </h3>
-              {submission.criteria_score != null ? (
-                <ScoreBadge
-                  score={submission.criteria_score}
-                  maxScore={10}
-                  className="px-2 py-0"
-                >
-                  {submission.criteria_score.toFixed(2)}/10
-                </ScoreBadge>
-              ) : (
-                showSkeleton && <Skeleton className="h-5 w-14" />
-              )}
+              <ScoreBadge
+                score={submission.criteria_score}
+                maxScore={10}
+                className="px-2 py-0"
+              >
+                {submission.criteria_score.toFixed(2)}/10
+              </ScoreBadge>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {submission.criteria?.map((cs) => {
                 if (!cs) return null;
 
                 return (
-                  <HoverCard key={cs.criteria_id}>
+                  <HoverCard key={cs.result.criteria_id}>
                     <HoverCardTrigger asChild>
                       <div
                         className={`flex cursor-pointer items-center justify-between rounded-md border p-2 ${
-                          cs.score >= 8
+                          cs.result.score >= 8
                             ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
-                            : cs.score >= 5
+                            : cs.result.score >= 5
                               ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'
                               : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          {cs.score >= 8 ? (
+                          {cs.result.score >= 8 ? (
                             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                          ) : cs.score >= 5 ? (
+                          ) : cs.result.score >= 5 ? (
                             <Clock className="h-4 w-4 text-amber-500" />
                           ) : (
                             <XCircle className="h-4 w-4 text-red-500" />
                           )}
                           <span className="text-sm">{cs.name}</span>
                         </div>
-                        <ScoreBadge score={cs.score} maxScore={10}>
-                          {cs.score}/10
+                        <ScoreBadge score={cs.result.score} maxScore={10}>
+                          {cs.result.score}/10
                         </ScoreBadge>
                       </div>
                     </HoverCardTrigger>
@@ -311,7 +222,7 @@ export function SubmissionCard({
                       <div className="space-y-2">
                         <h4 className="font-medium">Feedback</h4>
                         <p className="text-muted-foreground text-sm">
-                          {cs.feedback}
+                          {cs.result.feedback}
                         </p>
                       </div>
                     </HoverCardContent>
@@ -320,21 +231,6 @@ export function SubmissionCard({
               })}
             </div>
           </div>
-        ) : (
-          showSkeleton && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-4 w-36" />
-                <Skeleton className="h-5 w-14" />
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            </div>
-          )
         )}
       </CardContent>
     </Card>
