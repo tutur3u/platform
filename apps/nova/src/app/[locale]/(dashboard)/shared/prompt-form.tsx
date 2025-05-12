@@ -52,19 +52,20 @@ export default function PromptForm({ problem, session, submissions }: Props) {
   const submissionQueueRef = useRef<string[]>([]);
   const isFetchingRef = useRef(false);
 
+  const isAdmin = !session;
+
   // Split submissions between current and past sessions
-  const currentSubmissions = submissions?.filter(
+  const currentSubmissions = submissions.filter(
     (s) => s.session_id === session?.id
   );
 
-  const pastSubmissions = submissions?.filter(
+  const pastSubmissions = submissions.filter(
     (s) => s.session_id !== session?.id
   );
 
-  const remainingAttempts =
-    currentSubmissions === undefined
-      ? null
-      : Math.max(MAX_ATTEMPTS - currentSubmissions.length, 0);
+  const remainingAttempts = isAdmin
+    ? null
+    : Math.max(MAX_ATTEMPTS - currentSubmissions.length, 0);
 
   const getSubmissions = useCallback(async () => {
     router.refresh();
@@ -91,7 +92,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
     });
 
     try {
-      const data = await getFullSubmission(submissionId);
+      const data = await getFullSubmission(submissionId, isAdmin);
       if (data) {
         const submission = submissions.find((s) => s.id === submissionId);
         if (submission) {
@@ -194,11 +195,6 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
     if (prompt.length > problem.max_prompt_length) {
       setError('Prompt length exceeds the maximum allowed length.');
-      return;
-    }
-
-    if (remainingAttempts === null) {
-      setError('The server is loading...');
       return;
     }
 
@@ -328,17 +324,13 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                       onChange={(e) => setPrompt(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder={
-                        remainingAttempts !== null
-                          ? remainingAttempts === 0
-                            ? 'Maximum attempts reached'
-                            : 'Write your prompt here...'
-                          : 'The server is loading...'
+                        remainingAttempts === 0
+                          ? 'Maximum attempts reached'
+                          : 'Write your prompt here...'
                       }
                       className="min-h-[200px] flex-1 resize-none"
                       maxLength={problem.max_prompt_length}
-                      disabled={
-                        remainingAttempts === null || remainingAttempts === 0
-                      }
+                      disabled={remainingAttempts === 0}
                     />
 
                     <div className="mt-4 flex justify-end">
@@ -347,7 +339,6 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                         disabled={
                           !prompt.trim() ||
                           isSubmitting ||
-                          remainingAttempts === null ||
                           remainingAttempts === 0
                         }
                         className="gap-2"
