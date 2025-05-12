@@ -102,7 +102,6 @@ async function getProblem(
     const { data: testCases, error: testcaseError } = await supabase
       .from('nova_problem_test_cases')
       .select('*')
-      .eq('hidden', false)
       .eq('problem_id', problemId);
 
     if (testcaseError) {
