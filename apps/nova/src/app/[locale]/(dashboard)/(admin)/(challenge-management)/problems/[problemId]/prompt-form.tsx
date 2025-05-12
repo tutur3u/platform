@@ -5,13 +5,6 @@ import { SubmissionCard } from './submission-card';
 import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Clock, PlayCircle } from '@tuturuuu/ui/icons';
@@ -19,11 +12,6 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import React, { useCallback, useEffect, useState } from 'react';
-
-type TestResult = {
-  input: string;
-  output: string;
-};
 
 interface Props {
   problem: NovaProblem & {
@@ -33,11 +21,7 @@ interface Props {
 
 export default function PromptForm({ problem }: Props) {
   const [prompt, setPrompt] = useState('');
-  const [customTestCase, setCustomTestCase] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<TestResult | null>(null);
-  const [allTestResults, setAllTestResults] = useState<TestResult[]>([]);
   const [submissions, setSubmissions] = useState<ExtendedNovaSubmission[]>([]);
   const [activeTab, setActiveTab] = useState('prompt');
 
@@ -104,112 +88,10 @@ export default function PromptForm({ problem }: Props) {
     }
   };
 
-  const handleTestCustomCase = async () => {
-    if (!prompt.trim() || !customTestCase.trim() || isTesting) return;
-
-    setIsTesting(true);
-
-    try {
-      const response = await fetch(
-        `/api/v1/problems/${problem.id}/custom-testcase`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prompt,
-            input: customTestCase,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to test prompt');
-      }
-
-      const data = await response.json();
-
-      setTestResult({
-        input: data.response.input,
-        output: data.response.output,
-      });
-    } catch (error) {
-      console.error('Error testing prompt:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to test prompt. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
-  const handleTestAllCases = async () => {
-    if (!prompt.trim() || isTesting) return;
-
-    setIsTesting(true);
-
-    try {
-      const testPromises = problem.test_cases.map(async (testcase, index) => {
-        const response = await fetch(
-          `/api/v1/problems/${problem.id}/custom-testcase`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              prompt,
-              input: testcase.input,
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to test case ${index + 1}`);
-        }
-
-        const data = await response.json();
-
-        return {
-          input: data.response.input,
-          output: data.response.output,
-        };
-      });
-
-      const settledResults = await Promise.allSettled(testPromises);
-      const results = settledResults
-        .filter(
-          (result): result is PromiseFulfilledResult<TestResult> =>
-            result.status === 'fulfilled'
-        )
-        .map((result) => result.value);
-
-      setAllTestResults(results);
-
-      toast({
-        title: 'Test completed',
-        description: 'All test cases have been processed.',
-      });
-    } catch (error) {
-      console.error('Error testing all cases:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to test all cases. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="mb-4 grid w-full grid-cols-3">
+      <TabsList className="mb-4 grid w-full grid-cols-2">
         <TabsTrigger value="prompt">Prompt</TabsTrigger>
-        <TabsTrigger value="test">Test</TabsTrigger>
         <TabsTrigger value="submissions">
           Submissions
           {submissions.length > 0 && (
@@ -255,97 +137,6 @@ export default function PromptForm({ problem }: Props) {
               Submit
             </Button>
           </div>
-        </div>
-      </TabsContent>
-
-      <TabsContent value="test" className="space-y-4">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Custom Test Case</CardTitle>
-              <CardDescription>
-                Enter a custom test case to see how your prompt would perform on
-                it. This won't count against your submission attempts.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                value={customTestCase}
-                onChange={(e) => setCustomTestCase(e.target.value)}
-                placeholder="Enter your test case input here..."
-                className="h-24 resize-none"
-              />
-
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleTestCustomCase}
-                  disabled={
-                    !prompt.trim() || !customTestCase.trim() || isTesting
-                  }
-                  className="gap-2"
-                >
-                  {isTesting ? (
-                    <LoadingIndicator className="h-4 w-4" />
-                  ) : (
-                    <PlayCircle className="h-4 w-4" />
-                  )}
-                  Test
-                </Button>
-              </div>
-
-              {testResult && (
-                <div className="mt-4">
-                  <h3 className="mb-2 text-sm font-medium">Output:</h3>
-                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
-                    {testResult.output}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Test All Cases</CardTitle>
-              <CardDescription>
-                Test your prompt against all test cases. This won't count
-                against your submission attempts.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleTestAllCases}
-                    disabled={!prompt.trim() || isTesting}
-                    className="gap-2"
-                  >
-                    {isTesting ? (
-                      <LoadingIndicator className="h-4 w-4" />
-                    ) : (
-                      <PlayCircle className="h-4 w-4" />
-                    )}
-                    Test All Cases
-                  </Button>
-                </div>
-
-                {allTestResults.map((result, index) => (
-                  <div key={index} className="space-y-2">
-                    <h3 className="text-sm font-medium">
-                      Test Case {index + 1}:
-                    </h3>
-                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
-                      {result.input}
-                    </div>
-                    <h3 className="text-sm font-medium">Output:</h3>
-                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
-                      {result.output}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </TabsContent>
 
