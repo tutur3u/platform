@@ -40,7 +40,7 @@
     "@mantine/hooks": "^8.0.0",
     "@octokit/auth-app": "^7.2.1",
     "@octokit/rest": "^21.1.1",
-    "@react-email/components": "^0.0.40",
+    "@react-email/components": "^0.0.41",
     "@tanstack/react-query": "^5.76.0",
     "@tanstack/react-table": "^8.21.3",
     "@tuturuuu/ai": "workspace:*",

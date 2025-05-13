@@ -8,7 +8,7 @@
   },
   "packageManager": "pnpm@10.10.0",
   "dependencies": {
-    "@react-email/components": "^0.0.40",
+    "@react-email/components": "^0.0.41",
     "@react-email/tailwind": "^1.0.5",
     "react": "^19.1.0",
     "react-email": "^4.0.13"
