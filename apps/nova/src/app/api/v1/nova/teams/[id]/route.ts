@@ -1,8 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { Users } from '@tuturuuu/ui/icons';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -31,10 +27,12 @@ export async function GET(
     };
 
     return NextResponse.json({ data: transformedData });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching team:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch team' },
+      {
+        error: error.message || 'Failed to fetch team',
+      },
       { status: 500 }
     );
   }
@@ -45,44 +43,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const client = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await client.auth.getUser();
-
-    if (authError || !user || !user.email) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const { data: userRole, error: roleError } = await client
-      .from('nova_roles')
-      .select('allow_role_management')
-      .eq('email', user.email)
-      .single();
-
-    if (roleError) {
-      console.error('Error checking user permissions:', roleError);
-      return NextResponse.json(
-        { error: 'Failed to verify permissions' },
-        { status: 500 }
-      );
-    }
-
-    const isRoleAdmin = userRole?.allow_role_management;
-
-    if (!isRoleAdmin) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const supabase = await createAdminClient();
+    const supabase = await createClient();
 
     const { id } = await params;
     const { name } = await request.json();
@@ -104,10 +65,12 @@ export async function PATCH(
       throw error;
     }
     return NextResponse.json({ data });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating team:', error);
     return NextResponse.json(
-      { error: 'Failed to update team' },
+      {
+        error: error.message || 'Unknown error occurred',
+      },
       { status: 500 }
     );
   }
@@ -129,10 +92,12 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting team:', error);
     return NextResponse.json(
-      { error: 'Failed to delete team' },
+      {
+        error: error.message || 'Failed to delete team',
+      },
       { status: 500 }
     );
   }
