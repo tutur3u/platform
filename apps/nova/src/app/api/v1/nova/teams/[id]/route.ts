@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { Users } from '@tuturuuu/ui/icons';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -44,6 +45,43 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const client = await createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await client.auth.getUser();
+
+    if (authError || !user || !user.email) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const { data: userRole, error: roleError } = await client
+      .from('nova_roles')
+      .select('allow_role_management')
+      .eq('email', user.email)
+      .single();
+
+    if (roleError) {
+      console.error('Error checking user permissions:', roleError);
+      return NextResponse.json(
+        { error: 'Failed to verify permissions' },
+        { status: 500 }
+      );
+    }
+
+    const isRoleAdmin = userRole?.allow_role_management;
+
+    if (!isRoleAdmin) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const supabase = await createAdminClient();
 
     const { id } = await params;
