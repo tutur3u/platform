@@ -152,7 +152,8 @@ async function getUserData({
           count: 'exact',
         }
       )
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .order('user_id');
 
     // Handle pagination
     const parsedPage = parseInt(page);
