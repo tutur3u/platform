@@ -5,11 +5,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type {
-  NovaChallengeCriteria,
   NovaProblem,
   NovaSession,
   NovaSubmissionCriteria,
-  NovaSubmissionWithScores,
+  NovaSubmissionWithScoresAndCriteria,
 } from '@tuturuuu/types/db';
 
 // Helper interfaces for return types
@@ -17,10 +16,6 @@ interface SessionDetails {
   session: NovaSession;
   problems: NovaProblem[];
 }
-
-type NovaSubmissionWithScoresAndCriteria = NovaSubmissionWithScores & {
-  criteria: NovaChallengeCriteria[];
-};
 
 /**
  * Fetches user-accessible data (sessions and submissions) using the regular client
