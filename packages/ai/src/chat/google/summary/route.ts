@@ -5,6 +5,7 @@ import {
 } from '@google/generative-ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Message } from 'ai';
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -15,9 +16,8 @@ const model = 'gemini-2.0-flash-001';
 
 export function createPATCH(options: { serverAPIKeyFallback?: boolean } = {}) {
   return async function handler(req: NextRequest) {
-    const { id, previewToken } = (await req.json()) as {
+    const { id } = (await req.json()) as {
       id?: string;
-      previewToken?: string;
     };
 
     try {
@@ -26,7 +26,7 @@ export function createPATCH(options: { serverAPIKeyFallback?: boolean } = {}) {
       // eslint-disable-next-line no-undef
       // eslint-disable-next-line no-undef
       const apiKey =
-        previewToken ||
+        (await cookies()).get('google_api_key')?.value ||
         (options.serverAPIKeyFallback
           ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
           : undefined);
