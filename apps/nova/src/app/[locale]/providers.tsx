@@ -1,4 +1,5 @@
 import { ClientProviders } from './client-providers';
+import { Toaster } from '@tuturuuu/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 
@@ -11,6 +12,7 @@ export function Providers({ children }: { children: ReactNode }) {
       enableSystem
     >
       <ClientProviders>{children}</ClientProviders>
+      <Toaster />
     </ThemeProvider>
   );
 }
