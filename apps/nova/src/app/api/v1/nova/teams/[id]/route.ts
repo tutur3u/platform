@@ -27,10 +27,12 @@ export async function GET(
     };
 
     return NextResponse.json({ data: transformedData });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching team:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch team' },
+      {
+        error: error.message || 'Failed to fetch team',
+      },
       { status: 500 }
     );
   }
@@ -52,7 +54,6 @@ export async function PATCH(
         { status: 400 }
       );
     }
-
     const { data, error } = await supabase
       .from('nova_teams')
       .update({ name })
@@ -63,12 +64,13 @@ export async function PATCH(
     if (error) {
       throw error;
     }
-
     return NextResponse.json({ data });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating team:', error);
     return NextResponse.json(
-      { error: 'Failed to update team' },
+      {
+        error: error.message || 'Unknown error occurred',
+      },
       { status: 500 }
     );
   }
@@ -90,10 +92,12 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting team:', error);
     return NextResponse.json(
-      { error: 'Failed to delete team' },
+      {
+        error: error.message || 'Failed to delete team',
+      },
       { status: 500 }
     );
   }

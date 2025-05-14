@@ -2752,7 +2752,8 @@
   "onboarding": {
     "just-a-moment": "Just a moment...",
     "just-a-moment-desc": "Accept a workspace invite to get started.",
-    "no-invites": "You have no pending invites."
+    "no-invites": "You have no pending invites.",
+    "back-to-home": "Back to Home"
   },
   "platform-token-usage": {
     "hourly_total_from_last_12_hours": "Hourly total token from last 12 hours",
