@@ -4,8 +4,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { cookies } from 'next/headers'; 
 import { CoreMessage, smoothStream, streamText } from 'ai';
+import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'edge';
