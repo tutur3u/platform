@@ -91,7 +91,7 @@ export default async function Page({ params }: Props) {
 async function getProblem(
   problemId: string
 ): Promise<ExtendedNovaProblem | null> {
-  const sbAdmin = await createClient();
+  const sbAdmin = await createAdminClient();
 
   try {
     // Fetch problem details
