@@ -177,7 +177,7 @@ export function ThemeDropdownItems() {
         {t('blue')}
       </DropdownMenuItem> */}
 
-      <DropdownMenuSeparator />
+      <DropdownMenuSeparator className='hidden md:block' />
 
       <DropdownMenuItem
         className="cursor-pointer"

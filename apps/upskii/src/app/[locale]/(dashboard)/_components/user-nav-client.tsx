@@ -7,6 +7,7 @@ import { LogoutDropdownItem } from '@/app/[locale]/(dashboard)/_components/logou
 import { SystemLanguageWrapper } from '@/app/[locale]/(dashboard)/_components/system-language-wrapper';
 import { ThemeDropdownItems } from '@/app/[locale]/(dashboard)/_components/theme-dropdown-items';
 import UserPresenceIndicator from '@/components/user-presence-indicator';
+import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -39,6 +40,7 @@ export default function UserNavClient({
   locale: string | undefined;
   hideMetadata?: boolean;
 }) {
+  const isMobile = useIsMobile();
   const t = useTranslations();
   const [open, setOpen] = useState(false);
 
@@ -50,7 +52,7 @@ export default function UserNavClient({
         </Dialog>
       )}
 
-      <DropdownMenu modal={false}>
+      <DropdownMenu modal={isMobile}>
         <DropdownMenuTrigger asChild>
           <button
             className={cn(
@@ -87,9 +89,9 @@ export default function UserNavClient({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className="w-56"
-          side="right"
-          align="end"
+          className="w-[90vw] md:w-56"
+          side={isMobile ? 'top' : 'right'}
+          align={isMobile ? 'center' : 'end'}
           forceMount
         >
           <DropdownMenuLabel className="font-normal">
@@ -109,39 +111,70 @@ export default function UserNavClient({
           <DropdownMenuSeparator />
 
           <DropdownMenuGroup>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Palette className="text-muted-foreground h-4 w-4" />
-                <span className="text-foreground">{t('common.theme')}</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent sideOffset={4}>
-                  <ThemeDropdownItems />
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Globe className="text-muted-foreground h-4 w-4" />
-                <span className="text-foreground">{t('common.language')}</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent sideOffset={4}>
-                  <LanguageWrapper
-                    locale="en"
-                    label="English"
-                    currentLocale={locale}
-                  />
-                  <LanguageWrapper
-                    locale="vi"
-                    label="Tiếng Việt"
-                    currentLocale={locale}
-                  />
-                  <DropdownMenuSeparator />
-                  <SystemLanguageWrapper currentLocale={locale} />
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
+            {isMobile ? (
+              <>
+                <DropdownMenuLabel>{t('common.theme')}</DropdownMenuLabel>
+                <ThemeDropdownItems />
+                <DropdownMenuSeparator />
+              </>
+            ) : (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Palette className="text-muted-foreground h-4 w-4" />
+                  <span className="text-foreground">{t('common.theme')}</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent sideOffset={4}>
+                    <ThemeDropdownItems />
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            )}
+            {isMobile ? (
+              <>
+                <DropdownMenuLabel>{t('common.language')}</DropdownMenuLabel>
+                <LanguageWrapper
+                  locale="en"
+                  label="English"
+                  currentLocale={locale}
+                />
+                <LanguageWrapper
+                  locale="vi"
+                  label="Tiếng Việt"
+                  currentLocale={locale}
+                />
+                <SystemLanguageWrapper currentLocale={locale} />
+                <DropdownMenuSeparator />
+              </>
+            ) : (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Globe className="text-muted-foreground h-4 w-4" />
+                  <span className="text-foreground">
+                    {t('common.language')}
+                  </span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent
+                    sideOffset={4}
+                    className="w-[90vw] md:w-auto"
+                  >
+                    <LanguageWrapper
+                      locale="en"
+                      label="English"
+                      currentLocale={locale}
+                    />
+                    <LanguageWrapper
+                      locale="vi"
+                      label="Tiếng Việt"
+                      currentLocale={locale}
+                    />
+                    <DropdownMenuSeparator />
+                    <SystemLanguageWrapper currentLocale={locale} />
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            )}
             <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => setOpen(true)}
