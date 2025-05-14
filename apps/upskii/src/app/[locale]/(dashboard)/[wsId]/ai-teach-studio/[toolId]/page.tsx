@@ -30,7 +30,7 @@ export default function ToolDetailsPage({
   const t = useTranslations();
   const tool = tools.find((tool) => tool.id === toolId);
   if (!tool) notFound();
-  
+
   return (
     <div className="container mx-auto space-y-4 py-8">
       <Button
