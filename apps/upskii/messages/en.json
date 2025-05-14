@@ -566,7 +566,8 @@
     "searching": "Searching",
     "or": "Or",
     "joined": "Joined",
-    "guide": "Guide"
+    "guide": "Guide",
+    "example_content": "Example content"
   },
   "contact": {
     "title": "Contact us",
@@ -4078,6 +4079,7 @@
     "roles": "Roles",
     "ai_chat": "AI Chat",
     "certificates": "Certificates",
-    "challenges": "Challenges"
+    "challenges": "Challenges",
+    "ai_teach_studio": "AI Teaching Studio"
   }
 }
