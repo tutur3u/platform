@@ -45,9 +45,11 @@ export default function NotificationAction({
 
     if (res.ok) {
       queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      console.log("Response: ", res);
       router.refresh();
       onSuccess?.();
       onEnd?.();
+      // router.push(`/${wsId}/home`);
       return;
     }
 
