@@ -62,7 +62,7 @@ export default async function NotificationPopover() {
         <Button
           variant="ghost"
           size="icon"
-          className="group relative hidden flex-none transition-all md:flex"
+          className="group relative flex-none transition-all flex"
         >
           <Bell className="h-6 w-6" />
           {notifications.length > 0 && (
@@ -74,14 +74,14 @@ export default async function NotificationPopover() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="start">
-        <div className="px-4 py-2 font-semibold">
+      <PopoverContent className="shadow-xl w-11/12 md:w-80 lg:w-96 py-3.5 md:py-4 px-2 md:px-3 lg:px-4.5" align="start">
+        <div className="px-4 py-2 font-semibold text-xl md:font-bold md:text-lg lg:text-xl">
           {t('notifications')}
           {notifications.length > 0 && ` (${notifications.length})`}
         </div>
-        <Separator />
+        <Separator className="mb-3 lg:mb-4" />
         <ScrollArea
-          className={`p-2 ${
+          className={`p-4 md:p-2 ${
             notifications.length === 0
               ? 'h-20'
               : notifications.length > 3
@@ -93,12 +93,12 @@ export default async function NotificationPopover() {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className="bg-foreground/5 mb-2 rounded-lg border p-2 pb-2 last:mb-0"
+                className="bg-foreground/5 mb-5 md:mb-4 rounded-lg border px-3 md:px-3.5 py-4 md:py-4.5 last:mb-0"
               >
-                <div className="text-sm font-medium leading-none">
+                <div className="text-base font-medium leading-none">
                   {notification.title}
                 </div>
-                <div className="text-foreground/80 mb-2 mt-1 text-sm">
+                <div className="text-foreground/80 mb-2.5 md:mb-3 mt-1 text-sm">
                   {notification.description}
                 </div>
 
