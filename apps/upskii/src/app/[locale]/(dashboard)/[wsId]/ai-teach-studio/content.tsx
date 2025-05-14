@@ -65,7 +65,7 @@ export default function PageContent({
       });
       router.push(`/${wsId}/home`);
     } else {
-      console.log("open", open, "value", value);
+      console.log('open', open, 'value', value);
       setOpen(value);
     }
   };
