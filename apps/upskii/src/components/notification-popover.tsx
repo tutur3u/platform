@@ -62,7 +62,7 @@ export default async function NotificationPopover() {
         <Button
           variant="ghost"
           size="icon"
-          className="group relative flex-none transition-all flex"
+          className="group relative flex flex-none transition-all"
         >
           <Bell className="h-6 w-6" />
           {notifications.length > 0 && (
@@ -74,8 +74,11 @@ export default async function NotificationPopover() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="shadow-xl w-11/12 md:w-80 lg:w-96 py-3.5 md:py-4 px-2 md:px-3 lg:px-4.5" align="start">
-        <div className="px-4 py-2 font-semibold text-xl md:font-bold md:text-lg lg:text-xl">
+      <PopoverContent
+        className="lg:px-4.5 w-11/12 px-2 py-3.5 shadow-xl md:w-80 md:px-3 md:py-4 lg:w-96"
+        align="start"
+      >
+        <div className="px-4 py-2 text-xl font-semibold md:text-lg md:font-bold lg:text-xl">
           {t('notifications')}
           {notifications.length > 0 && ` (${notifications.length})`}
         </div>
@@ -93,12 +96,12 @@ export default async function NotificationPopover() {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className="bg-foreground/5 mb-5 md:mb-4 rounded-lg border px-3 md:px-3.5 py-4 md:py-4.5 last:mb-0"
+                className="bg-foreground/5 md:py-4.5 mb-5 rounded-lg border px-3 py-4 last:mb-0 md:mb-4 md:px-3.5"
               >
                 <div className="text-base font-medium leading-none">
                   {notification.title}
                 </div>
-                <div className="text-foreground/80 mb-2.5 md:mb-3 mt-1 text-sm">
+                <div className="text-foreground/80 mb-2.5 mt-1 text-sm md:mb-3">
                   {notification.description}
                 </div>
 
