@@ -5,6 +5,7 @@ import {
 } from '@google/generative-ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Message } from 'ai';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -21,14 +22,9 @@ const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
 export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
   return async function handler(req: Request) {
     try {
-      const {
-        model = DEFAULT_MODEL_NAME,
-        message,
-        previewToken,
-      } = (await req.json()) as {
+      const { model = DEFAULT_MODEL_NAME, message } = (await req.json()) as {
         model?: string;
         message?: string;
-        previewToken?: string;
       };
 
       if (!message)
@@ -42,12 +38,10 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
 
       if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
-      // eslint-disable-next-line no-undef
-      const apiKey =
-        previewToken ||
-        (options.serverAPIKeyFallback
-          ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
-          : undefined);
+      const apiKey = options.serverAPIKeyFallback
+        ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
+        : (await cookies()).get('google_api_key')?.value;
+
       if (!apiKey) return new Response('Missing API key', { status: 400 });
 
       const prompt = buildPrompt([

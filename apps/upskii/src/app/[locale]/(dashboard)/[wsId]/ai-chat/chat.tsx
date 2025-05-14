@@ -68,7 +68,6 @@ const Chat = ({
         id: chat?.id,
         model: chat?.model || model?.value,
         mode,
-        previewToken: initialApiKey,
       },
       onResponse(response) {
         console.log('Response:', response);
@@ -137,7 +136,6 @@ const Chat = ({
           body: JSON.stringify({
             id: chat.id,
             model: chat.model,
-            previewToken: initialApiKey,
           }),
         }
       );
@@ -239,7 +237,6 @@ const Chat = ({
         body: JSON.stringify({
           model: model.value,
           message: input,
-          previewToken: initialApiKey,
         }),
       }
     );
