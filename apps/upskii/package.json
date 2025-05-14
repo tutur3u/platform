@@ -34,7 +34,7 @@
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.6.1",
     "@react-pdf/renderer": "^4.3.0",
-    "@tanstack/react-query": "^5.76.0",
+    "@tanstack/react-query": "^5.76.1",
     "@tanstack/react-table": "^8.21.3",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -82,7 +82,7 @@
     "@next/bundle-analyzer": "^15.3.2",
     "@next/eslint-plugin-next": "^15.3.2",
     "@tanstack/eslint-plugin-query": "^5.74.7",
-    "@tanstack/react-query-devtools": "^5.76.0",
+    "@tanstack/react-query-devtools": "^5.76.1",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
@@ -91,9 +91,9 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.16",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.15.17",
+    "@types/node": "^22.15.18",
     "@types/react": "^19.1.4",
-    "@types/react-dom": "^19.1.4",
+    "@types/react-dom": "^19.1.5",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
@@ -108,5 +108,5 @@
   "overrides": {
     "react-is": "^19.1.0"
   },
-  "packageManager": "pnpm@10.10.0"
+  "packageManager": "pnpm@10.11.0"
 }
