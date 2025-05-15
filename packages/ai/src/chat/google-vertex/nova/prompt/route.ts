@@ -638,7 +638,7 @@ async function checkUserPermissions({
 
   // Admin users can always submit without restrictions
   if (isAdmin) {
-    return { canSubmit: true, remainingAttempts: Infinity, message: null };
+    return { canSubmit: true, remainingAttempts: -1, message: null };
   }
 
   // For non-admin users, validate session and submission count
