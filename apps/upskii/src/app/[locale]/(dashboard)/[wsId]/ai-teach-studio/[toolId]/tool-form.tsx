@@ -12,7 +12,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export function ToolForm({ tool }: { tool: Tool }) {
+export function ToolForm({ wsId, tool }: { wsId: string; tool: Tool }) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -38,7 +38,7 @@ export function ToolForm({ tool }: { tool: Tool }) {
 
     const { id } = (await res.json()) as AIChat;
     if (id) {
-      router.push(`/c/${id}`);
+      router.push(`/${wsId}/c/${id}`);
       router.refresh();
     }
   };

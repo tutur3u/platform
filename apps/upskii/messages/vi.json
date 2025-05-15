@@ -566,7 +566,8 @@
     "searching": "Đang tìm kiếm",
     "or": "Hoặc",
     "joined": "Tham gia",
-    "guide": "Hướng dẫn"
+    "guide": "Hướng dẫn",
+    "example_content": "Nội dung mẫu"
   },
   "contact": {
     "title": "Liên hệ với chúng tôi",
@@ -4068,7 +4069,8 @@
     "roles": "Vai trò",
     "ai_chat": "Trò chuyện với AI",
     "certificates": "Chứng chỉ",
-    "challenges": "Các thử thách"
+    "challenges": "Các thử thách",
+    "ai_teach_studio": "Công cụ giảng dạy AI"
   },
   "certificates": {
     "offered_by": "được dạy bởi",

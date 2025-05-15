@@ -2,16 +2,16 @@
 
 import ProblemComponent from '../../../../shared/problem-component';
 import PromptComponent from '../../../../shared/prompt-component';
+import PromptForm from '../../../../shared/prompt-form';
 import TestCaseComponent from '../../../../shared/test-case-component';
 import ChallengeHeader from './challengeHeader';
-import PromptForm from './prompt-form';
 import {
   NovaChallenge,
   NovaChallengeCriteria,
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
-  type NovaSubmissionWithScores,
+  NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -230,7 +230,7 @@ export default function ChallengeClient({
                     <ProblemComponent problem={problem} />
                   </TabsContent>
                   <TabsContent value="test-cases" className="m-0 p-4">
-                    <TestCaseComponent testCases={problem.test_cases || []} />
+                    <TestCaseComponent testCases={problem.test_cases} />
                   </TabsContent>
                 </Tabs>
               </CardContent>
