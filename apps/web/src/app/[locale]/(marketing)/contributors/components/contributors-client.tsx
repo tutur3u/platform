@@ -237,8 +237,8 @@ export default function ContributorsClient({
 
       {/* Enhanced Background Effects */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
+        <div className="bg-size-[24px_24px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)]" />
+        <div className="bg-size-[120px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: [0.1, 0.15, 0.1] }}
@@ -284,7 +284,7 @@ export default function ContributorsClient({
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="from-primary/40 absolute -inset-1 -z-10 rounded-lg bg-linear-to-r via-purple-500/40 to-pink-500/40 blur-lg"
+              className="from-primary/40 bg-linear-to-r absolute -inset-1 -z-10 rounded-lg via-purple-500/40 to-pink-500/40 blur-lg"
             />
             Our Amazing
           </span>{' '}
@@ -359,7 +359,7 @@ export default function ContributorsClient({
           className="relative"
         >
           <Card className="border-primary/10 group overflow-hidden">
-            <div className="from-primary/10 via-primary/5 absolute inset-0 bg-linear-to-br to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+            <div className="from-primary/10 via-primary/5 bg-linear-to-br absolute inset-0 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
             <div className="relative p-6 sm:p-8">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -493,7 +493,7 @@ export default function ContributorsClient({
                   >
                     <div className="mb-4 flex items-center justify-between">
                       <div className="relative">
-                        <div className="from-primary absolute -inset-0.5 rounded-full bg-linear-to-r to-purple-600 opacity-75 blur-sm group-hover:opacity-100" />
+                        <div className="from-primary bg-linear-to-r absolute -inset-0.5 rounded-full to-purple-600 opacity-75 blur-sm group-hover:opacity-100" />
                         <img
                           src={contributor.avatar_url}
                           alt={contributor.login}
@@ -897,11 +897,11 @@ export default function ContributorsClient({
         viewport={{ once: true }}
         className="relative"
       >
-        <Card className="border-primary/10 from-background via-background to-primary/5 group relative overflow-hidden bg-linear-to-br">
+        <Card className="border-primary/10 from-background via-background to-primary/5 bg-linear-to-br group relative overflow-hidden">
           <div className="absolute inset-0">
             <div className="bg-primary/5 absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <motion.div
-              className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[20px_20px]"
+              className="bg-size-[20px_20px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)]"
               animate={{
                 backgroundPosition: ['0% 0%', '100% 100%'],
               }}

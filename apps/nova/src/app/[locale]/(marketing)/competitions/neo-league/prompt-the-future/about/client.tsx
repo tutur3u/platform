@@ -435,7 +435,7 @@ export function AboutUsClient() {
 
             <div
               className={cn(
-                'absolute inset-x-0 top-0 h-1.5 bg-linear-to-r',
+                'bg-linear-to-r absolute inset-x-0 top-0 h-1.5',
                 tierColors[sponsor.tier]
               )}
             />
@@ -456,7 +456,7 @@ export function AboutUsClient() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    'mt-2 bg-linear-to-r bg-clip-text text-transparent',
+                    'bg-linear-to-r mt-2 bg-clip-text text-transparent',
                     tierColors[sponsor.tier]
                   )}
                 >
@@ -765,7 +765,7 @@ export function AboutUsClient() {
               <div className="border-primary/20 bg-foreground/5 relative aspect-video overflow-hidden rounded-xl border">
                 {/* Animated gradient background */}
                 <motion.div
-                  className="from-primary/20 absolute inset-0 bg-linear-to-br via-purple-500/10 to-blue-500/5"
+                  className="from-primary/20 bg-linear-to-br absolute inset-0 via-purple-500/10 to-blue-500/5"
                   animate={{
                     background: [
                       'linear-gradient(to bottom right, rgba(var(--primary-rgb), 0.2), rgba(147, 51, 234, 0.1), rgba(59, 130, 246, 0.05))',
@@ -809,13 +809,13 @@ export function AboutUsClient() {
                     whileInView={{ scale: 1, opacity: 1 }}
                     viewport={{ once: true }}
                     transition={{ type: 'spring', stiffness: 100 }}
-                    className="from-primary/30 mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br to-purple-500/20 backdrop-blur-sm"
+                    className="from-primary/30 bg-linear-to-br mb-4 flex h-24 w-24 items-center justify-center rounded-full to-purple-500/20 backdrop-blur-sm"
                   >
                     <RocketIcon className="text-primary h-10 w-10" />
                   </motion.div>
 
                   <motion.h3
-                    className="from-primary mb-2 bg-linear-to-r via-purple-500 to-blue-500 bg-clip-text text-center text-2xl font-bold text-transparent"
+                    className="from-primary bg-linear-to-r mb-2 via-purple-500 to-blue-500 bg-clip-text text-center text-2xl font-bold text-transparent"
                     initial={{ y: 10, opacity: 0 }}
                     whileInView={{ y: 0, opacity: 1 }}
                     viewport={{ once: true }}
@@ -948,7 +948,7 @@ export function AboutUsClient() {
                       </motion.div>
                     </div>
                     <motion.h3
-                      className="from-primary mb-2 bg-linear-to-r to-purple-500 bg-clip-text text-center text-xl font-bold text-transparent"
+                      className="from-primary bg-linear-to-r mb-2 to-purple-500 bg-clip-text text-center text-xl font-bold text-transparent"
                       whileHover={{ scale: 1.02 }}
                     >
                       {t('prompt-intro.cards.language-title')}
@@ -1016,7 +1016,7 @@ export function AboutUsClient() {
                       </motion.div>
                     </div>
                     <motion.h3
-                      className="mb-2 bg-linear-to-r from-purple-500 to-blue-500 bg-clip-text text-center text-xl font-bold text-transparent"
+                      className="bg-linear-to-r mb-2 from-purple-500 to-blue-500 bg-clip-text text-center text-xl font-bold text-transparent"
                       whileHover={{ scale: 1.02 }}
                     >
                       {t('prompt-intro.cards.creativity-title')}
@@ -1091,7 +1091,7 @@ export function AboutUsClient() {
                       </motion.div>
                     </div>
                     <motion.h3
-                      className="to-primary mb-2 bg-linear-to-r from-blue-500 bg-clip-text text-center text-xl font-bold text-transparent"
+                      className="to-primary bg-linear-to-r mb-2 from-blue-500 bg-clip-text text-center text-xl font-bold text-transparent"
                       whileHover={{ scale: 1.02 }}
                     >
                       {t('prompt-intro.cards.future-work-title')}
@@ -1175,7 +1175,7 @@ export function AboutUsClient() {
                 className="relative"
               >
                 <div className="border-primary/10 bg-foreground/5 relative aspect-square overflow-hidden rounded-2xl border">
-                  <div className="from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent" />
+                  <div className="from-primary/10 bg-linear-to-br absolute inset-0 via-transparent to-transparent" />
 
                   {/* Interactive prompt visualization */}
                   <div className="absolute inset-0 flex items-center justify-center p-8">
@@ -1266,7 +1266,7 @@ export function AboutUsClient() {
                 </p>
 
                 <div className="border-primary/10 relative h-40 overflow-hidden rounded-lg border">
-                  <div className="from-primary/10 absolute inset-0 bg-linear-to-r to-transparent" />
+                  <div className="from-primary/10 bg-linear-to-r absolute inset-0 to-transparent" />
                   <motion.div
                     className="absolute inset-0 flex items-center justify-center"
                     animate={{
@@ -1303,7 +1303,7 @@ export function AboutUsClient() {
                 </p>
 
                 <div className="border-primary/10 relative h-40 overflow-hidden rounded-lg border">
-                  <div className="to-primary/10 absolute inset-0 bg-linear-to-r from-transparent" />
+                  <div className="to-primary/10 bg-linear-to-r absolute inset-0 from-transparent" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="grid grid-cols-2 gap-4">
                       <motion.div

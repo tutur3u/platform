@@ -384,7 +384,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
             </Button>
           </PopoverTrigger>
           <PopoverContent
-            className="bg-popover pointer-events-auto min-w-(--radix-popover-trigger-width) rounded-lg border p-0 shadow-lg"
+            className="bg-popover min-w-(--radix-popover-trigger-width) pointer-events-auto rounded-lg border p-0 shadow-lg"
             align="start"
             role="listbox"
             tabIndex={0}
@@ -537,7 +537,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               </Button>
             </PopoverTrigger>
             <PopoverContent
-              className="bg-popover pointer-events-auto min-w-(--radix-popover-trigger-width) rounded-lg border p-0 shadow-lg"
+              className="bg-popover min-w-(--radix-popover-trigger-width) pointer-events-auto rounded-lg border p-0 shadow-lg"
               align="start"
               role="listbox"
               tabIndex={0}

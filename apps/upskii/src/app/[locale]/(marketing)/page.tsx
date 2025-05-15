@@ -220,7 +220,7 @@ export default function MarketingPage() {
 
                     {/* Animated gradient background */}
                     <motion.div
-                      className={`absolute inset-0 -z-10 bg-linear-to-br ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100`}
+                      className={`bg-linear-to-br absolute inset-0 -z-10 ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100`}
                       animate={{
                         scale: [1, 1.2, 1],
                         rotate: [0, 5, 0],
@@ -304,7 +304,7 @@ export default function MarketingPage() {
                 className="relative"
               >
                 <div className="bg-background/30 relative aspect-video rounded-xl border backdrop-blur-sm">
-                  <div className="from-primary/10 absolute inset-0 rounded-xl bg-linear-to-br via-transparent to-transparent" />
+                  <div className="from-primary/10 bg-linear-to-br absolute inset-0 rounded-xl via-transparent to-transparent" />
                   <div className="relative p-8">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}

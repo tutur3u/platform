@@ -94,7 +94,7 @@ const HeroSection = () => {
           transition={{ delay: 0.8, duration: 0.8 }}
           className="relative mt-8 w-full max-w-5xl"
         >
-          <div className="border-foreground/10 from-primary/10 dark:border-foreground/5 dark:from-primary/20 flex aspect-video items-center justify-center rounded-xl border bg-linear-to-br via-purple-500/10 to-blue-500/10 shadow-lg dark:via-purple-500/20 dark:to-blue-500/20">
+          <div className="border-foreground/10 from-primary/10 dark:border-foreground/5 dark:from-primary/20 bg-linear-to-br flex aspect-video items-center justify-center rounded-xl border via-purple-500/10 to-blue-500/10 shadow-lg dark:via-purple-500/20 dark:to-blue-500/20">
             <div className="p-8 text-center">
               <Image
                 src="/famigo-mockup.jpg"

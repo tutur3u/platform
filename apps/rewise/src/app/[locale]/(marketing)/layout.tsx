@@ -51,7 +51,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
 
   return (
-    <div className="from-dynamic-light-red/10 via-dynamic-light-pink/5 to-dynamic-light-blue/10 flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto bg-linear-to-br">
+    <div className="from-dynamic-light-red/10 via-dynamic-light-pink/5 to-dynamic-light-blue/10 bg-linear-to-br flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto">
       {/* <div className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue absolute -z-20 h-full w-full bg-linear-to-r" /> */}
       <Structure
         locale={locale}

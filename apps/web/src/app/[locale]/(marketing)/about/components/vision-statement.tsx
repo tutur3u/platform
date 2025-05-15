@@ -36,7 +36,7 @@ export function VisionStatement() {
           }}
           className="absolute inset-0 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
+        <div className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
       </div>
 
       <div className="relative">
@@ -70,7 +70,7 @@ export function VisionStatement() {
           <motion.div
             initial={{ opacity: 0 }}
             whileHover={{ opacity: 1 }}
-            className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-cyan-500/5 to-transparent transition-opacity duration-300"
+            className="bg-linear-to-br absolute inset-0 from-blue-500/10 via-cyan-500/5 to-transparent transition-opacity duration-300"
           />
           <motion.div
             animate={{
@@ -82,7 +82,7 @@ export function VisionStatement() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+            className="bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
           />
           <motion.div
             animate={{
@@ -94,7 +94,7 @@ export function VisionStatement() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="absolute -bottom-8 -left-8 h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+            className="bg-linear-to-br absolute -bottom-8 -left-8 h-24 w-24 rounded-xl from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
           />
 
           <blockquote className="pointer-events-none relative">
@@ -148,7 +148,7 @@ export function VisionStatement() {
             initial={{ scaleX: 0 }}
             whileHover={{ scaleX: 1 }}
             transition={{ duration: 0.3 }}
-            className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-linear-to-r"
+            className="from-primary/20 to-primary/5 bg-linear-to-r absolute bottom-0 left-0 right-0 h-1 origin-left"
           />
         </motion.div>
       </div>

@@ -87,8 +87,8 @@ export default function SecurityPage() {
     <main className="container relative space-y-24 py-16 md:py-24">
       {/* Enhanced Background Effects */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
+        <div className="bg-size-[24px_24px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)]" />
+        <div className="bg-size-[120px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: [0.1, 0.15, 0.1] }}
@@ -147,7 +147,7 @@ export default function SecurityPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
-                  className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent"
+                  className="bg-linear-to-br absolute inset-0 from-purple-500/10 via-pink-500/5 to-transparent"
                 />
                 <div className="pointer-events-none relative p-6">
                   <div className="bg-primary/10 group-hover:bg-primary/20 mb-6 flex h-12 w-12 items-center justify-center rounded-xl transition-colors">
@@ -173,8 +173,8 @@ export default function SecurityPage() {
       >
         <Card className="group relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="from-primary/10 absolute inset-0 bg-linear-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[20px_20px]" />
+            <div className="from-primary/10 bg-linear-to-br absolute inset-0 via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="bg-size-[20px_20px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)]" />
           </div>
 
           <div className="relative grid gap-12 p-8 md:grid-cols-2 md:p-12">
@@ -205,7 +205,7 @@ export default function SecurityPage() {
                   href="mailto:security@tuturuuu.com"
                   className="bg-foreground text-background hover:bg-foreground/90 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
                 >
-                  <div className="from-primary/20 to-primary/0 absolute inset-0 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="from-primary/20 to-primary/0 bg-linear-to-r absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <Mail className="relative h-5 w-5" />
                   <span className="relative">Contact Security Team</span>
                 </motion.a>
@@ -216,14 +216,14 @@ export default function SecurityPage() {
                   rel="noopener noreferrer"
                   className="bg-foreground/10 hover:bg-foreground/20 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
                 >
-                  <div className="from-primary/10 to-primary/0 absolute inset-0 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="from-primary/10 to-primary/0 bg-linear-to-r absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <FileText className="relative h-5 w-5" />
                   <span className="relative">Security Policy</span>
                 </motion.a>
 
                 <Link href="/security/bug-bounty">
                   <motion.div className="bg-foreground/10 hover:bg-foreground/20 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300">
-                    <div className="from-primary/10 to-primary/0 absolute inset-0 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="from-primary/10 to-primary/0 bg-linear-to-r absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <Trophy className="relative h-5 w-5" />
                     <span className="relative">Bug Bounty Hall of Fame</span>
                   </motion.div>
@@ -231,7 +231,7 @@ export default function SecurityPage() {
 
                 <Link href="/contributors">
                   <motion.div className="bg-foreground/10 hover:bg-foreground/20 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300">
-                    <div className="from-primary/10 to-primary/0 absolute inset-0 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="from-primary/10 to-primary/0 bg-linear-to-r absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <Users className="relative h-5 w-5" />
                     <span className="relative">Contributors</span>
                   </motion.div>

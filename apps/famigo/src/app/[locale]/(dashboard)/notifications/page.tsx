@@ -192,7 +192,7 @@ export default function NotificationsPage() {
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-blue-500/80 to-purple-500/80">
+          <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-blue-500/80 to-purple-500/80">
             <Bell className="h-5 w-5 text-white" />
           </div>
           <div>
