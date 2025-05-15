@@ -512,7 +512,7 @@ const PlanCard = ({
           plan.popular && 'border-primary shadow-lg',
           plan.name === 'Business' && 'col-span-full lg:col-span-1',
           plan.name === 'Enterprise' &&
-            'border-foreground/50 from-dynamic-light-red/30 via-dynamic-light-pink/40 to-dynamic-light-blue/60 text-background col-span-full border-2 bg-linear-to-br'
+            'border-foreground/50 from-dynamic-light-red/30 via-dynamic-light-pink/40 to-dynamic-light-blue/60 text-background bg-linear-to-br col-span-full border-2'
         )}
       >
         {plan.popular && (
@@ -691,7 +691,7 @@ export default function PricingPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="from-primary/5 via-primary/2 absolute left-0 right-0 top-0 -z-10 h-[400px] rounded-t-lg bg-linear-to-b to-transparent"
+        className="from-primary/5 via-primary/2 bg-linear-to-b absolute left-0 right-0 top-0 -z-10 h-[400px] rounded-t-lg to-transparent"
       />
 
       <motion.div
@@ -929,7 +929,7 @@ export default function PricingPage() {
         transition={{ duration: 0.6 }}
         className="mt-24"
       >
-        <Card className="from-primary/20 to-primary/5 overflow-hidden bg-linear-to-br p-8">
+        <Card className="from-primary/20 to-primary/5 bg-linear-to-br overflow-hidden p-8">
           <div className="grid gap-8 md:grid-cols-2">
             <div>
               <h2 className="mb-4 text-3xl font-bold">Enterprise Solutions</h2>

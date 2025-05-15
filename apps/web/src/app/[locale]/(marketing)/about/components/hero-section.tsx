@@ -37,8 +37,8 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_700px_at_30%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_70%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[40px] opacity-20" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[40px] opacity-20" />
+        <div className="bg-size-[40px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] opacity-20" />
+        <div className="bg-size-[40px] absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] opacity-20" />
       </div>
 
       <motion.div
@@ -51,7 +51,7 @@ export function HeroSection() {
           variant="secondary"
           className="hover:bg-primary/20 relative mb-6 cursor-default transition-colors"
         >
-          <span className="from-primary via-primary/80 to-primary relative bg-linear-to-r bg-clip-text text-transparent">
+          <span className="from-primary via-primary/80 to-primary bg-linear-to-r relative bg-clip-text text-transparent">
             Our Vision
           </span>
         </Badge>
@@ -98,7 +98,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 + index * 0.1 }}
             whileHover={{ scale: 1.05 }}
-            className="from-foreground/5 to-foreground/10 hover:from-primary/10 hover:to-primary/5 flex cursor-default items-center gap-2 rounded-full bg-linear-to-r px-4 py-2 transition-colors"
+            className="from-foreground/5 to-foreground/10 hover:from-primary/10 hover:to-primary/5 bg-linear-to-r flex cursor-default items-center gap-2 rounded-full px-4 py-2 transition-colors"
           >
             <span className="text-primary">{badge.icon}</span>
             <span className="text-foreground/80 text-sm font-medium">

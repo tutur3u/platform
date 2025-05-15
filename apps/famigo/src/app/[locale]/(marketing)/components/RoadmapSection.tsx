@@ -80,8 +80,8 @@ const RoadmapSection = () => {
         </div>
 
         {/* Decorative light rays */}
-        <div className="via-primary/20 absolute left-0 top-1/3 h-[500px] w-px bg-linear-to-b from-transparent to-transparent"></div>
-        <div className="absolute right-0 top-2/3 h-[300px] w-px bg-linear-to-b from-transparent via-blue-500/20 to-transparent"></div>
+        <div className="via-primary/20 bg-linear-to-b absolute left-0 top-1/3 h-[500px] w-px from-transparent to-transparent"></div>
+        <div className="bg-linear-to-b absolute right-0 top-2/3 h-[300px] w-px from-transparent via-blue-500/20 to-transparent"></div>
       </div>
     </section>
   );

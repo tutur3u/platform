@@ -83,7 +83,7 @@ export default function FamiPage() {
     <div className="container mx-auto flex h-[calc(100vh-6rem)] max-w-4xl flex-col gap-4 px-4 py-8">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-purple-500/80 to-blue-500/80">
+          <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-purple-500/80 to-blue-500/80">
             <BrainCircuit className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -160,7 +160,7 @@ export default function FamiPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex justify-start"
               >
-                <div className="flex max-w-[80%] gap-3 rounded-2xl bg-linear-to-r from-purple-500/10 to-blue-500/10 p-4 dark:from-purple-500/20 dark:to-blue-500/20">
+                <div className="bg-linear-to-r flex max-w-[80%] gap-3 rounded-2xl from-purple-500/10 to-blue-500/10 p-4 dark:from-purple-500/20 dark:to-blue-500/20">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-linear-to-r from-purple-500 to-blue-500 text-white">
                       F
@@ -189,7 +189,7 @@ export default function FamiPage() {
           <Button
             onClick={handleSendMessage}
             size="icon"
-            className="h-10 w-10 rounded-full bg-linear-to-r from-purple-600 to-blue-600 dark:from-purple-500 dark:to-blue-500"
+            className="bg-linear-to-r h-10 w-10 rounded-full from-purple-600 to-blue-600 dark:from-purple-500 dark:to-blue-500"
           >
             <Send className="h-4 w-4 text-white" />
           </Button>

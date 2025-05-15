@@ -161,7 +161,7 @@ export default function AboutPage() {
             className="relative order-2 md:order-1"
           >
             <div className="bg-primary/5 relative aspect-square rounded-xl border backdrop-blur-sm">
-              <div className="from-primary/10 absolute inset-0 rounded-xl bg-linear-to-br via-transparent to-transparent" />
+              <div className="from-primary/10 bg-linear-to-br absolute inset-0 rounded-xl via-transparent to-transparent" />
               <div className="relative flex h-full items-center justify-center p-8">
                 <div className="from-primary bg-linear-to-r via-purple-500 to-blue-500 bg-clip-text text-center text-4xl font-bold text-transparent md:text-5xl">
                   {t('mission-vision.slogan-1')}

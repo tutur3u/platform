@@ -66,7 +66,7 @@ const FeaturesSection = () => {
                 <p className="text-muted-foreground mb-2 text-sm font-medium">
                   Experience Famigo in Action
                 </p>
-                <div className="from-primary/20 mx-auto mb-2 flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br to-blue-500/20">
+                <div className="from-primary/20 bg-linear-to-br mx-auto mb-2 flex h-20 w-20 items-center justify-center rounded-full to-blue-500/20">
                   <BrainCircuit className="text-primary h-8 w-8" />
                 </div>
                 <h3 className="text-xl font-bold">Watch Demo Video</h3>

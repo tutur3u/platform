@@ -184,9 +184,9 @@ export default function LeaderboardClient({
           </div>
 
           <div className="relative my-8 h-px w-full overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
+            <div className="bg-linear-to-r absolute inset-0 from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
             <motion.div
-              className="absolute inset-0 h-px w-1/3 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500"
+              className="bg-linear-to-r absolute inset-0 h-px w-1/3 from-blue-500 via-purple-500 to-pink-500"
               animate={{ x: ['-100%', '400%'] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />

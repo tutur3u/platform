@@ -153,7 +153,7 @@ export default function MarketingPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="from-background via-background to-dynamic-light-pink/10 relative min-h-[calc(100vh-3.5rem+53px)] w-full bg-linear-to-b"
+        className="from-background via-background to-dynamic-light-pink/10 bg-linear-to-b relative min-h-[calc(100vh-3.5rem+53px)] w-full"
       >
         {/* Enhanced Animated Background Patterns */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -167,7 +167,7 @@ export default function MarketingPage() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="absolute -left-32 top-0 h-80 w-[20rem] rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-160 sm:w-160"
+            className="bg-linear-to-br sm:h-160 sm:w-160 absolute -left-32 top-0 h-80 w-[20rem] rounded-full from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64"
           />
           <motion.div
             animate={{
@@ -179,7 +179,7 @@ export default function MarketingPage() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="absolute -right-32 top-[30%] h-70 w-70 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-140 sm:w-140"
+            className="h-70 w-70 bg-linear-to-br sm:h-140 sm:w-140 absolute -right-32 top-[30%] rounded-full from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64"
           />
           <motion.div
             animate={{
@@ -191,10 +191,10 @@ export default function MarketingPage() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="absolute -bottom-32 left-1/2 h-90 w-90 -translate-x-1/2 rounded-full bg-linear-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64 sm:h-180 sm:w-180"
+            className="h-90 w-90 bg-linear-to-br sm:h-180 sm:w-180 absolute -bottom-32 left-1/2 -translate-x-1/2 rounded-full from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64"
           />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
+          <div className="bg-size-[24px_24px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)]" />
+          <div className="bg-size-[120px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: [0.1, 0.15, 0.1] }}
@@ -228,7 +228,7 @@ export default function MarketingPage() {
               }}
               className="relative"
             >
-              <div className="from-primary/20 absolute inset-0 -z-10 rounded-full bg-linear-to-br via-transparent to-transparent opacity-50 blur-lg transition-all duration-300 group-hover:opacity-100" />
+              <div className="from-primary/20 bg-linear-to-br absolute inset-0 -z-10 rounded-full via-transparent to-transparent opacity-50 blur-lg transition-all duration-300 group-hover:opacity-100" />
               <Image
                 src="/media/logos/transparent.png"
                 width={200}
@@ -247,9 +247,9 @@ export default function MarketingPage() {
             transition={{ delay: 0.2 }}
             className="relative text-center"
           >
-            <div className="from-primary/20 via-primary/10 to-primary/20 absolute -inset-x-4 -inset-y-2 rounded-xl bg-linear-to-r opacity-0 blur-xl transition-all duration-300 group-hover:opacity-100" />
+            <div className="from-primary/20 via-primary/10 to-primary/20 bg-linear-to-r absolute -inset-x-4 -inset-y-2 rounded-xl opacity-0 blur-xl transition-all duration-300 group-hover:opacity-100" />
             <h1 className="text-foreground relative mx-auto mb-4 text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
-              <span className="from-primary/20 to-primary/10 absolute -inset-1 rounded-lg bg-linear-to-r opacity-0 blur transition-all duration-300 group-hover:opacity-100" />
+              <span className="from-primary/20 to-primary/10 bg-linear-to-r absolute -inset-1 rounded-lg opacity-0 blur transition-all duration-300 group-hover:opacity-100" />
               <GradientHeadline title={t('landing.headline')} />
             </h1>
             <h2 className="text-foreground mb-12 text-balance text-lg font-bold tracking-tight md:text-2xl lg:text-3xl">
@@ -340,9 +340,9 @@ export default function MarketingPage() {
         onMouseEnter={handleFeatureHover}
       >
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.03)_1px,transparent_1px)] bg-size-[20px_20px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
+          <div className="bg-size-[20px_20px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.03)_1px,transparent_1px)]" />
+          <div className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
+          <div className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
         </div>
 
         <div className="relative mx-auto max-w-6xl px-4">
@@ -370,7 +370,7 @@ export default function MarketingPage() {
             >
               <Card className="relative h-full overflow-hidden">
                 <div className="bg-primary/5 group-hover:bg-primary/10 relative flex h-full flex-col p-8 transition-all duration-300">
-                  <div className="from-primary/10 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-all duration-300 group-hover:opacity-100" />
+                  <div className="from-primary/10 bg-linear-to-br absolute inset-0 via-transparent to-transparent opacity-0 transition-all duration-300 group-hover:opacity-100" />
                   <div className="relative">
                     <div className="bg-primary/10 mb-6 inline-flex rounded-full p-3">
                       <Brain className="text-primary h-8 w-8" />
@@ -422,7 +422,7 @@ export default function MarketingPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="from-primary/20 to-primary/5 bg-linear-to-r absolute bottom-0 left-0 right-0 h-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </div>
               </Card>
             </motion.div>
@@ -476,7 +476,7 @@ export default function MarketingPage() {
                 <Card className="relative h-full overflow-hidden transition-all duration-300 hover:shadow-xl">
                   <div className="flex h-full flex-col p-6">
                     <div
-                      className={`absolute inset-0 bg-linear-to-br opacity-0 ${feature.gradient} transition-opacity duration-300 group-hover:opacity-100`}
+                      className={`bg-linear-to-br absolute inset-0 opacity-0 ${feature.gradient} transition-opacity duration-300 group-hover:opacity-100`}
                     />
                     <div className="relative">
                       <div className="bg-primary/10 mb-6 inline-flex rounded-full p-3">
@@ -610,7 +610,7 @@ export default function MarketingPage() {
               <Card className="relative h-full overflow-hidden">
                 <div className="bg-primary/5 group-hover:bg-primary/10 flex h-full flex-col p-6 transition-all duration-300">
                   <div
-                    className={`absolute inset-0 bg-linear-to-br opacity-0 ${product.gradient} transition-opacity duration-300 group-hover:opacity-100`}
+                    className={`bg-linear-to-br absolute inset-0 opacity-0 ${product.gradient} transition-opacity duration-300 group-hover:opacity-100`}
                   />
                   <div className="relative">
                     <div className="text-primary mb-4 flex items-center justify-between">
@@ -693,7 +693,7 @@ export default function MarketingPage() {
             <Link key={industry} href={`/solutions/${industry}`}>
               <Card className="group relative h-full overflow-hidden">
                 <div className="bg-primary/5 hover:bg-primary/10 flex h-full flex-col items-center justify-center p-6 text-center transition-all duration-300">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[10px_10px] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="bg-size-[10px_10px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <div className="relative flex flex-col items-center">
                     <div className="bg-primary/10 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
                       {industry === 'manufacturing' && (
@@ -763,7 +763,7 @@ export default function MarketingPage() {
             className="group"
           >
             <Card className="bg-primary/5 relative h-full overflow-hidden p-8">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[10px_10px] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <div className="bg-size-[10px_10px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <div className="relative">
                 <div className="border-primary/10 bg-background/50 mb-6 inline-flex rounded-full border p-3 backdrop-blur-sm">
                   <Building2 className="text-primary h-8 w-8" />
@@ -793,7 +793,7 @@ export default function MarketingPage() {
             className="group"
           >
             <Card className="bg-primary/5 relative h-full overflow-hidden p-8">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[10px_10px] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <div className="bg-size-[10px_10px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <div className="relative">
                 <div className="border-primary/10 bg-background/50 mb-6 inline-flex rounded-full border p-3 backdrop-blur-sm">
                   <Users2 className="text-primary h-8 w-8" />
@@ -913,15 +913,15 @@ export default function MarketingPage() {
                 <Card className="relative h-full overflow-hidden">
                   <div className="bg-primary/5 group-hover:bg-primary/10 flex h-full flex-col p-8 transition-all duration-300">
                     <div className="absolute inset-0">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[10px_10px] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-0 transition-opacity duration-300 group-hover:opacity-20" />
-                      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-0 transition-opacity duration-300 group-hover:opacity-20" />
+                      <div className="bg-size-[10px_10px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-0 transition-opacity duration-300 group-hover:opacity-20" />
+                      <div className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-0 transition-opacity duration-300 group-hover:opacity-20" />
                     </div>
                     <div className="relative">
                       <div className="relative mb-6">
                         <div className="bg-foreground text-background relative flex h-16 w-16 items-center justify-center rounded-full">
                           <div className="bg-primary/20 absolute -inset-1 animate-pulse rounded-full blur-sm" />
-                          <div className="from-primary/20 to-primary/5 absolute inset-0 rounded-full bg-linear-to-br opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                          <div className="from-primary/20 to-primary/5 bg-linear-to-br absolute inset-0 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                           <span className="relative text-2xl font-bold">
                             {index + 1}
                           </span>
@@ -976,7 +976,7 @@ export default function MarketingPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="from-primary/20 to-primary/5 bg-linear-to-r absolute bottom-0 left-0 right-0 h-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   </div>
                 </Card>
               </motion.div>
@@ -1187,8 +1187,8 @@ export default function MarketingPage() {
                 <Card className="relative h-full overflow-hidden">
                   <div className="bg-primary/5 group-hover:bg-primary/10 flex h-full flex-col p-6 transition-all duration-300">
                     <div className="absolute inset-0">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[10px_10px] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-0 transition-opacity duration-300 group-hover:opacity-20" />
+                      <div className="bg-size-[10px_10px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-0 transition-opacity duration-300 group-hover:opacity-20" />
                     </div>
                     <div className="relative">
                       <div className="mb-6 flex items-center justify-between">
@@ -1265,7 +1265,7 @@ export default function MarketingPage() {
                         </div>
                       )}
                     </div>
-                    <div className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="from-primary/20 to-primary/5 bg-linear-to-r absolute bottom-0 left-0 right-0 h-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   </div>
                 </Card>
               </motion.div>
@@ -1306,8 +1306,8 @@ export default function MarketingPage() {
                 <Card className="relative h-full overflow-hidden">
                   <div className="bg-primary/5 group-hover:bg-primary/10 flex h-full flex-col items-center justify-center p-6 text-center transition-all duration-300">
                     <div className="absolute inset-0">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[10px_10px] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-0 transition-opacity duration-300 group-hover:opacity-20" />
+                      <div className="bg-size-[10px_10px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-0 transition-opacity duration-300 group-hover:opacity-20" />
                     </div>
                     <div className="relative flex flex-col items-center">
                       <div className="bg-primary/10 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
@@ -1360,7 +1360,7 @@ export default function MarketingPage() {
         <div className="absolute inset-0">
           <div className="animate-aurora absolute inset-0 opacity-10" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.1)_1px,transparent_1px)] bg-size-[20px_20px]" />
+          <div className="bg-size-[20px_20px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.1)_1px,transparent_1px)]" />
         </div>
 
         <div className="relative mx-auto px-4">
@@ -1390,7 +1390,7 @@ export default function MarketingPage() {
                   href="/login"
                   className="bg-foreground text-background group relative w-full overflow-hidden rounded-lg px-8 py-3 transition-transform hover:scale-105 sm:w-auto"
                 >
-                  <div className="from-primary/20 to-primary/0 absolute inset-0 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="from-primary/20 to-primary/0 bg-linear-to-r absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <span className="relative flex items-center justify-center gap-2 font-medium">
                     {t('landing.cta.primary_button')}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -1400,7 +1400,7 @@ export default function MarketingPage() {
                   href="/contact"
                   className="bg-primary/10 group relative w-full overflow-hidden rounded-lg px-8 py-3 transition-transform hover:scale-105 sm:w-auto"
                 >
-                  <div className="from-primary/10 to-primary/5 absolute inset-0 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="from-primary/10 to-primary/5 bg-linear-to-r absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <span className="relative flex items-center justify-center gap-2 font-medium">
                     {t('landing.cta.secondary_button')}
                     <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />

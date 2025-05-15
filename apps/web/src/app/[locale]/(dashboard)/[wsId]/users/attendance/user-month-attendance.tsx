@@ -221,7 +221,7 @@ export default function UserMonthAttendance({
   return (
     <div className={cn('rounded-lg', noOutline || 'border p-4')}>
       <div className="mb-2 flex w-full items-center border-b pb-2">
-        <div className="aspect-square h-12 w-12 flex-none rounded-lg bg-linear-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
+        <div className="bg-linear-to-br aspect-square h-12 w-12 flex-none rounded-lg from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
         <div className="flex w-full items-start justify-between gap-2">
           <div className="ml-2 flex h-12 w-[calc(100%-3.5rem)] flex-col justify-between">
             <div className="flex items-center justify-between gap-1">
@@ -255,7 +255,7 @@ export default function UserMonthAttendance({
             <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
-                <div className="bg-foreground/20 mx-2 h-4 w-px rotate-30" />
+                <div className="bg-foreground/20 rotate-30 mx-2 h-4 w-px" />
                 <span className="text-lg font-semibold md:text-xl">
                   {thisMonth}
                 </span>

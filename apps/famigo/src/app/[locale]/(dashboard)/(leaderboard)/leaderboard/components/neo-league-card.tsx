@@ -42,7 +42,7 @@ export function NeoLeagueCard() {
       transition={{ duration: 0.5 }}
       className={`relative overflow-hidden rounded-lg border ${
         isRound1Selected
-          ? 'border-purple-400/40 bg-linear-to-br from-purple-50/90 via-indigo-50/50 to-blue-50/70 dark:border-purple-500/30 dark:from-purple-950/30 dark:via-indigo-950/20 dark:to-blue-950/10'
+          ? 'bg-linear-to-br border-purple-400/40 from-purple-50/90 via-indigo-50/50 to-blue-50/70 dark:border-purple-500/30 dark:from-purple-950/30 dark:via-indigo-950/20 dark:to-blue-950/10'
           : 'bg-card border-slate-200 dark:border-slate-800'
       } p-4 shadow-sm`}
     >
@@ -84,8 +84,8 @@ export function NeoLeagueCard() {
         </>
       ) : (
         <>
-          <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-linear-to-br from-slate-500/5 to-blue-500/5 blur-2xl" />
-          <div className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-linear-to-tr from-slate-500/5 to-blue-500/5 blur-2xl" />
+          <div className="bg-linear-to-br absolute -right-12 -top-12 h-32 w-32 rounded-full from-slate-500/5 to-blue-500/5 blur-2xl" />
+          <div className="bg-linear-to-tr absolute -bottom-12 -left-12 h-32 w-32 rounded-full from-slate-500/5 to-blue-500/5 blur-2xl" />
         </>
       )}
 

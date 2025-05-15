@@ -237,7 +237,7 @@ export function Structure({
           />
         </Link>
       </div>
-      <div className="bg-foreground/20 mx-2 h-4 w-px flex-none rotate-30" />
+      <div className="bg-foreground/20 rotate-30 mx-2 h-4 w-px flex-none" />
       <div className="flex items-center gap-2 break-all text-lg font-semibold">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>

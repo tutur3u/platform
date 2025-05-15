@@ -189,9 +189,7 @@ const DynamicIsland = () => {
               transition: 'opacity 500ms',
             }}
           >
-            <div className="line-clamp-1 max-w-48 font-semibold">
-              {title}
-            </div>
+            <div className="line-clamp-1 max-w-48 font-semibold">{title}</div>
             {events && events.length > 0 ? (
               <div>{formatDuration(timeLeft)} left</div>
             ) : (

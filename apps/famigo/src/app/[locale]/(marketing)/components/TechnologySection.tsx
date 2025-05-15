@@ -126,9 +126,9 @@ const TechnologySection = () => {
           >
             {/* AI visualization */}
             <div className="border-foreground/10 bg-background/30 dark:border-foreground/5 relative rounded-xl border backdrop-blur-sm">
-              <div className="from-primary/10 absolute inset-0 rounded-xl bg-linear-to-br via-transparent to-transparent"></div>
+              <div className="from-primary/10 bg-linear-to-br absolute inset-0 rounded-xl via-transparent to-transparent"></div>
               <div className="relative p-8">
-                <div className="flex aspect-square items-center justify-center rounded-xl bg-linear-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20">
+                <div className="bg-linear-to-br flex aspect-square items-center justify-center rounded-xl from-blue-500/20 via-purple-500/20 to-pink-500/20">
                   <div className="text-center">
                     <div className="border-foreground/10 bg-background/40 mx-auto flex h-32 w-32 items-center justify-center rounded-full border backdrop-blur-md">
                       <span className="text-5xl">👨‍👩‍👧‍👦</span>

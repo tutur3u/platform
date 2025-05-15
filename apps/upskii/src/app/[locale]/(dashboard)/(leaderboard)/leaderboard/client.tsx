@@ -203,9 +203,9 @@ export default function LeaderboardClient({
           />
 
           <div className="relative my-8 h-px w-full overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
+            <div className="bg-linear-to-r absolute inset-0 from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
             <motion.div
-              className="absolute inset-0 h-px w-1/3 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500"
+              className="bg-linear-to-r absolute inset-0 h-px w-1/3 from-blue-500 via-purple-500 to-pink-500"
               animate={{ x: ['-100%', '400%'] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />
@@ -348,7 +348,7 @@ export default function LeaderboardClient({
                 </Card>
 
                 <Card className="overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-                  <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-yellow-400 to-yellow-600" />
+                  <div className="bg-linear-to-r absolute inset-x-0 top-0 h-1 from-yellow-400 to-yellow-600" />
                   <CardContent className="p-6">
                     <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
                       {t('rewards.current-rewards')}

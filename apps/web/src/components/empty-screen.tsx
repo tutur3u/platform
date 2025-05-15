@@ -84,7 +84,7 @@ export function EmptyScreen({
         <div className="flex flex-col items-center justify-center text-center">
           <h1 className="mb-2 text-lg font-semibold">
             {t('welcome_to')}{' '}
-            <span className="from-dynamic-red via-dynamic-purple to-dynamic-sky overflow-hidden bg-linear-to-r bg-clip-text font-bold text-transparent">
+            <span className="from-dynamic-red via-dynamic-purple to-dynamic-sky bg-linear-to-r overflow-hidden bg-clip-text font-bold text-transparent">
               Rewise
             </span>
             .

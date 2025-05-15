@@ -45,11 +45,11 @@ export function MainNavigationMenu() {
         ))}
 
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="hover:bg-background/30 group bg-linear-to-r font-semibold transition-all duration-300">
+          <NavigationMenuTrigger className="hover:bg-background/30 bg-linear-to-r group font-semibold transition-all duration-300">
             {t('common.resources')}
           </NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="from-background via-background/95 to-background/90 grid w-[400px] gap-3 bg-linear-to-br p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
+            <ul className="from-background via-background/95 to-background/90 bg-linear-to-br grid w-[400px] gap-3 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
               <Card className="bg-primary/5 col-span-full mb-2 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <BookText className="h-4 w-4" />

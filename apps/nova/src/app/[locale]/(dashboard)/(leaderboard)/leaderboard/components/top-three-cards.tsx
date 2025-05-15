@@ -168,14 +168,14 @@ export function TopThreeCards({
               }}
             >
               {/* Light/dark mode backgrounds */}
-              <div className="absolute inset-0 -z-10 bg-linear-to-b from-gray-50 to-white opacity-100 dark:opacity-0"></div>
-              <div className="absolute inset-0 -z-10 bg-linear-to-b from-slate-900 to-slate-950 opacity-0 dark:opacity-100"></div>
+              <div className="bg-linear-to-b absolute inset-0 -z-10 from-gray-50 to-white opacity-100 dark:opacity-0"></div>
+              <div className="bg-linear-to-b absolute inset-0 -z-10 from-slate-900 to-slate-950 opacity-0 dark:opacity-100"></div>
 
               {/* Animated background gradient */}
               <div className="absolute inset-0 -z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
                 <motion.div
                   className={cn(
-                    'absolute inset-0 bg-linear-to-br opacity-20 dark:opacity-30',
+                    'bg-linear-to-br absolute inset-0 opacity-20 dark:opacity-30',
                     styles.gradientClass
                   )}
                   animate={{
@@ -249,7 +249,7 @@ export function TopThreeCards({
               <div className="absolute left-1/2 top-8 -translate-x-1/2 scale-75 sm:scale-100 dark:top-8">
                 <div className="relative">
                   <div
-                    className="hex-shape flex h-14 w-14 items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 shadow dark:shadow-none"
+                    className="hex-shape bg-linear-to-br flex h-14 w-14 items-center justify-center from-gray-100 to-gray-200 shadow dark:shadow-none"
                     style={{
                       background:
                         index === 0

@@ -72,7 +72,7 @@ export default function ChatLink({
             isActive
               ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-linear-to-br text-white hover:text-white'
               : urlToLoad === link.href
-                ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground animate-pulse bg-linear-to-br'
+                ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground bg-linear-to-br animate-pulse'
                 : 'bg-foreground/5 hover:bg-foreground/10',
             link.disabled &&
               link.showDisabled &&
@@ -147,7 +147,7 @@ export default function ChatLink({
               isActive
                 ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-linear-to-br text-white hover:text-white'
                 : urlToLoad === link.href
-                  ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground animate-pulse bg-linear-to-br'
+                  ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground bg-linear-to-br animate-pulse'
                   : 'bg-foreground/5 hover:bg-foreground/10',
               link.disabled &&
                 link.showDisabled &&

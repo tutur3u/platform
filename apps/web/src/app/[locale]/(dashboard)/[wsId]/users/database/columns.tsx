@@ -285,9 +285,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-32">
-        {row.getValue('guardian') || '-'}
-      </div>
+      <div className="line-clamp-1 w-32">{row.getValue('guardian') || '-'}</div>
     ),
   },
   {
@@ -313,9 +311,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-32">
-        {row.getValue('address') || '-'}
-      </div>
+      <div className="line-clamp-1 w-32">{row.getValue('address') || '-'}</div>
     ),
   },
   {

@@ -37,7 +37,7 @@ export default function DocumentPageContent({ document }: Props) {
       </div>
 
       <div className="overflow-auto py-6">
-        <div className="mx-auto max-w-(--breakpoint-xl) px-4">
+        <div className="max-w-(--breakpoint-xl) mx-auto px-4">
           <div className="bg-background rounded-lg border p-6 shadow-sm">
             {/* <BlockEditor document={document.content as any} editable={false} /> */}
           </div>

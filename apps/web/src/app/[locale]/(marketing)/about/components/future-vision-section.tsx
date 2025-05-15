@@ -78,7 +78,7 @@ export function FutureVisionSection() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px]"
+          className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)]"
         />
       </div>
 
@@ -119,7 +119,7 @@ export function FutureVisionSection() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="from-primary relative bg-linear-to-r via-blue-500 to-cyan-500 bg-size-[200%_auto] bg-clip-text text-transparent"
+              className="from-primary bg-linear-to-r bg-size-[200%_auto] relative via-blue-500 to-cyan-500 bg-clip-text text-transparent"
             >
               Building Tomorrow
             </motion.span>
@@ -157,7 +157,7 @@ export function FutureVisionSection() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
-                  className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-cyan-500/5 to-transparent transition-opacity duration-300"
+                  className="bg-linear-to-br absolute inset-0 from-blue-500/10 via-cyan-500/5 to-transparent transition-opacity duration-300"
                 />
                 <motion.div
                   animate={{
@@ -169,7 +169,7 @@ export function FutureVisionSection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+                  className="bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
                 />
                 <div className="pointer-events-none relative p-8">
                   <motion.div
@@ -219,7 +219,7 @@ export function FutureVisionSection() {
                   initial={{ scaleX: 0 }}
                   whileHover={{ scaleX: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-linear-to-r"
+                  className="from-primary/20 to-primary/5 bg-linear-to-r absolute bottom-0 left-0 right-0 h-1 origin-left"
                 />
               </div>
             </motion.div>

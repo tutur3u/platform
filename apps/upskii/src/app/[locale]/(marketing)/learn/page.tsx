@@ -183,7 +183,7 @@ export default function LearnPage() {
 
   return (
     <div className="container relative mx-auto space-y-16 p-6">
-      <div className="from-background to-background/50 absolute inset-0 bg-linear-to-b" />
+      <div className="from-background to-background/50 bg-linear-to-b absolute inset-0" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
