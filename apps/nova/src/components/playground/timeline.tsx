@@ -43,7 +43,7 @@ export function Timeline({
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <ScrollArea className="flex-grow">
+        <ScrollArea className="grow">
           <div className="flex space-x-2">
             {visibleChallenges.map((challenge) => (
               <Button

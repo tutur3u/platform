@@ -149,7 +149,7 @@ export default function LeaderboardClient({
                   transition={{ duration: 2, repeat: Infinity }}
                 />
               </div>
-              <h2 className="bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500 bg-clip-text text-xl font-bold text-transparent dark:from-yellow-400 dark:via-amber-400 dark:to-orange-400">
+              <h2 className="bg-linear-to-r from-yellow-500 via-amber-500 to-orange-500 bg-clip-text text-xl font-bold text-transparent dark:from-yellow-400 dark:via-amber-400 dark:to-orange-400">
                 {t('top-performers.title')}
               </h2>
               {selectedChallenge !== 'all' && (
@@ -184,9 +184,9 @@ export default function LeaderboardClient({
           </div>
 
           <div className="relative my-8 h-px w-full overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
+            <div className="bg-linear-to-r absolute inset-0 from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
             <motion.div
-              className="absolute inset-0 h-px w-1/3 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+              className="bg-linear-to-r absolute inset-0 h-px w-1/3 from-blue-500 via-purple-500 to-pink-500"
               animate={{ x: ['-100%', '400%'] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />
@@ -194,7 +194,7 @@ export default function LeaderboardClient({
         </div>
 
         <div className="flex flex-col gap-6 md:flex-row md:items-start">
-          <div className="flex w-full flex-grow flex-col gap-6">
+          <div className="flex w-full grow flex-col gap-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

@@ -198,7 +198,7 @@ export function Nav({
     >
       <nav
         className={cn(
-          'grid px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2',
+          'grid px-2 group-data-[collapsed=true]:justify-center group-data-[collapsed=true]:px-2',
           isCollapsed ? 'gap-1' : 'gap-4'
         )}
       >

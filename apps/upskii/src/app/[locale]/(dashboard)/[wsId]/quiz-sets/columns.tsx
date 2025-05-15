@@ -57,7 +57,7 @@ export const getQuizSetColumns = (
     cell: ({ row }) => (
       <Link
         href={row.original.href || '#'}
-        className="min-w-[8rem] font-semibold hover:underline"
+        className="min-w-32 font-semibold hover:underline"
       >
         {row.getValue('name') || '-'}
       </Link>
@@ -73,7 +73,7 @@ export const getQuizSetColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="flex min-w-[8rem] flex-wrap gap-1 font-semibold">
+      <div className="flex min-w-32 flex-wrap gap-1 font-semibold">
         {(
           row.getValue('linked_modules') as unknown as
             | {

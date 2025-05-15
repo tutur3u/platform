@@ -100,7 +100,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
           ref={ref}
           className={`bg-secondary/10 pointer-events-auto backdrop-blur-lg md:m-4 ${
             currentView
-              ? 'h-[32rem] w-[32rem] rounded-t-lg border-t md:rounded-lg md:border'
+              ? 'h-128 w-lg rounded-t-lg border-t md:rounded-lg md:border'
               : 'mb-4 h-14 rounded-lg border p-2'
           } transition-all duration-300`}
         >

@@ -144,7 +144,7 @@ export default function ContactPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -left-[8rem] top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="bg-linear-to-br sm:h-160 sm:w-160 absolute -left-32 top-0 h-80 w-[20rem] rounded-full from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64"
         />
         <motion.div
           animate={{
@@ -156,7 +156,7 @@ export default function ContactPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -right-[8rem] top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="h-70 w-70 bg-linear-to-br sm:h-140 sm:w-140 absolute -right-32 top-[30%] rounded-full from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64"
         />
         <motion.div
           animate={{
@@ -168,14 +168,14 @@ export default function ContactPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -bottom-32 left-1/2 h-[22.5rem] w-[22.5rem] -translate-x-1/2 rounded-full bg-gradient-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64 sm:h-[45rem] sm:w-[45rem]"
+          className="h-90 w-90 bg-linear-to-br sm:h-180 sm:w-180 absolute -bottom-32 left-1/2 -translate-x-1/2 rounded-full from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64"
         />
       </div>
 
       {/* Enhanced Background Patterns */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:120px] opacity-20" />
+        <div className="bg-size-[24px_24px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)]" />
+        <div className="bg-size-[120px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: [0.1, 0.15, 0.1] }}
@@ -201,8 +201,8 @@ export default function ContactPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_700px_at_30%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_70%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:40px] opacity-20" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:40px] opacity-20" />
+            <div className="bg-size-[40px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] opacity-20" />
+            <div className="bg-size-[40px] absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] opacity-20" />
           </div>
 
           <motion.div
@@ -218,7 +218,7 @@ export default function ContactPage() {
             }}
             className="bg-primary/10 group relative mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl"
           >
-            <div className="animate-spin-slow absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20" />
+            <div className="animate-spin-slow bg-linear-to-r absolute -inset-1 rounded-2xl from-purple-500/20 via-pink-500/20 to-purple-500/20" />
             <div className="bg-background/80 absolute inset-[2px] rounded-xl backdrop-blur-sm" />
             <MessageCircle className="text-primary relative h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
@@ -233,7 +233,7 @@ export default function ContactPage() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              className="from-primary bg-linear-to-r bg-size-[200%_auto] relative via-purple-500 to-pink-500 bg-clip-text text-transparent"
             >
               Let&apos;s Build Together
             </motion.span>
@@ -264,7 +264,7 @@ export default function ContactPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="from-primary relative bg-gradient-to-r via-blue-500 to-cyan-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary bg-linear-to-r bg-size-[200%_auto] relative via-blue-500 to-cyan-500 bg-clip-text text-transparent"
                 >
                   Get in Touch
                 </motion.span>
@@ -282,7 +282,7 @@ export default function ContactPage() {
                       <motion.div
                         initial={{ opacity: 0 }}
                         whileHover={{ opacity: 1 }}
-                        className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
+                        className="bg-linear-to-br absolute inset-0 from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
                       />
                       <motion.div
                         animate={{
@@ -294,7 +294,7 @@ export default function ContactPage() {
                           repeat: Infinity,
                           ease: 'linear',
                         }}
-                        className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                        className="bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                       />
                       <div className="relative flex flex-col gap-4">
                         <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
@@ -349,7 +349,7 @@ export default function ContactPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="from-primary relative bg-gradient-to-r via-orange-500 to-red-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary bg-linear-to-r bg-size-[200%_auto] relative via-orange-500 to-red-500 bg-clip-text text-transparent"
                 >
                   Why Choose Us
                 </motion.span>
@@ -367,7 +367,7 @@ export default function ContactPage() {
                       <motion.div
                         initial={{ opacity: 0 }}
                         whileHover={{ opacity: 1 }}
-                        className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-red-500/5 to-transparent transition-opacity duration-300"
+                        className="bg-linear-to-br absolute inset-0 from-orange-500/10 via-red-500/5 to-transparent transition-opacity duration-300"
                       />
                       <motion.div
                         animate={{
@@ -379,7 +379,7 @@ export default function ContactPage() {
                           repeat: Infinity,
                           ease: 'linear',
                         }}
-                        className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
+                        className="bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
                       />
                       <div className="relative flex items-start gap-4">
                         <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
@@ -426,7 +426,7 @@ export default function ContactPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="from-primary relative bg-gradient-to-r via-green-500 to-emerald-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary bg-linear-to-r bg-size-[200%_auto] relative via-green-500 to-emerald-500 bg-clip-text text-transparent"
                 >
                   Connect with Our Founder
                 </motion.span>
@@ -436,7 +436,7 @@ export default function ContactPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
-                  className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent transition-opacity duration-300"
+                  className="bg-linear-to-br absolute inset-0 from-green-500/10 via-emerald-500/5 to-transparent transition-opacity duration-300"
                 />
                 <motion.div
                   animate={{
@@ -448,7 +448,7 @@ export default function ContactPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
+                  className="bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
                 />
                 <div className="relative flex flex-col gap-4">
                   <div>
@@ -499,7 +499,7 @@ export default function ContactPage() {
                   repeat: Infinity,
                   ease: 'linear',
                 }}
-                className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                className="from-primary bg-linear-to-r bg-size-[200%_auto] relative via-purple-500 to-pink-500 bg-clip-text text-transparent"
               >
                 Send Us a Message
               </motion.span>
@@ -509,7 +509,7 @@ export default function ContactPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 whileHover={{ opacity: 1 }}
-                className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
+                className="bg-linear-to-br absolute inset-0 from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
               />
               <motion.div
                 animate={{
@@ -521,7 +521,7 @@ export default function ContactPage() {
                   repeat: Infinity,
                   ease: 'linear',
                 }}
-                className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                className="bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
               />
               <div className="bg-primary/5 p-6">
                 <p className="text-foreground/80">

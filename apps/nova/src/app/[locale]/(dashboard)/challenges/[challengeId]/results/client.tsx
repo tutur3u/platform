@@ -250,7 +250,7 @@ export default function ResultClient({
         {error && (
           <div className="mb-4 rounded-md bg-red-50 p-4 text-red-700">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <XCircle className="h-5 w-5 text-red-400" />
               </div>
               <div className="ml-3">

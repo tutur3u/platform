@@ -29,9 +29,7 @@ export const MonthHeader: React.FC<{
   >
     <div className="flex items-center gap-1">
       {hideYear || thisYear}
-      {hideYear || (
-        <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
-      )}
+      {hideYear || <div className="bg-foreground/20 rotate-30 mx-2 h-4 w-px" />}
       <span className="text-lg font-semibold md:text-xl">{thisMonth}</span>
     </div>
     {!hideControls && (

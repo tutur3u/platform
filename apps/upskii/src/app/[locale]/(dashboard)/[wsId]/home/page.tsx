@@ -30,7 +30,7 @@ export default async function HomePage({
         </p>
       </div>
       <div className="mb-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+        <Card className="bg-linear-to-br from-blue-500 to-purple-600 text-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
@@ -43,7 +43,7 @@ export default async function HomePage({
             </CardDescription>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-green-500 to-teal-600 text-white">
+        <Card className="bg-linear-to-br from-green-500 to-teal-600 text-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Code className="h-5 w-5" />
@@ -56,7 +56,7 @@ export default async function HomePage({
             </CardDescription>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
+        <Card className="bg-linear-to-br from-yellow-500 to-orange-600 text-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5" />
@@ -69,7 +69,7 @@ export default async function HomePage({
             </CardDescription>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-red-500 to-pink-600 text-white">
+        <Card className="bg-linear-to-br from-red-500 to-pink-600 text-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5" />

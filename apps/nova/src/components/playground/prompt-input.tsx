@@ -62,9 +62,9 @@ export function PromptInput({
           Prompt Engineering Workbench
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-grow flex-col">
+      <CardContent className="flex grow flex-col">
         <Textarea
-          className="mb-4 flex-grow resize-none"
+          className="mb-4 grow resize-none"
           placeholder="Enter your prompt here..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}

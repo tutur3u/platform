@@ -70,9 +70,9 @@ export default function ChatLink({
             isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
             'whitespace-normal font-semibold',
             isActive
-              ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-gradient-to-br text-white hover:text-white'
+              ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-linear-to-br text-white hover:text-white'
               : urlToLoad === link.href
-                ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground animate-pulse bg-gradient-to-br'
+                ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground bg-linear-to-br animate-pulse'
                 : 'bg-foreground/5 hover:bg-foreground/10',
             link.disabled &&
               link.showDisabled &&
@@ -145,9 +145,9 @@ export default function ChatLink({
               isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
               'whitespace-normal font-semibold',
               isActive
-                ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-gradient-to-br text-white hover:text-white'
+                ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-linear-to-br text-white hover:text-white'
                 : urlToLoad === link.href
-                  ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground animate-pulse bg-gradient-to-br'
+                  ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground bg-linear-to-br animate-pulse'
                   : 'bg-foreground/5 hover:bg-foreground/10',
               link.disabled &&
                 link.showDisabled &&
