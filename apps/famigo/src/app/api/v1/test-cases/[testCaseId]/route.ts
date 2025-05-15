@@ -88,10 +88,10 @@ export async function PUT(request: Request, { params }: Params) {
 
     const updateData: any = {};
 
-    if (body.problemId) updateData.problem_id = body.problemId;
-    if (body.input) updateData.input = body.input;
-    if (body.output) updateData.output = body.output;
-    if (body.hidden) updateData.hidden = body.hidden;
+    if (body.problemId !== undefined) updateData.problem_id = body.problemId;
+    if (body.input !== undefined) updateData.input = body.input;
+    if (body.output !== undefined) updateData.output = body.output;
+    if (body.hidden !== undefined) updateData.hidden = body.hidden;
 
     const { data: updatedTestcase, error: updateError } = await supabase
       .from('nova_problem_test_cases')
