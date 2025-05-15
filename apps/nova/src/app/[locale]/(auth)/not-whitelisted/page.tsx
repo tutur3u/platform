@@ -9,13 +9,13 @@ export default async function NotWhitelistedPage() {
   const t = await getTranslations();
   const user = await getCurrentUser();
 
-  if (!user?.email) redirect('/login');
+  if (!user?.id) redirect('/login');
   const sbAdmin = await createAdminClient();
 
   const { data } = await sbAdmin
-    .from('nova_roles')
+    .from('platform_user_roles')
     .select('enabled')
-    .eq('email', user?.email)
+    .eq('user_id', user?.id)
     .maybeSingle();
 
   if (data?.enabled) redirect('/home');

@@ -47,6 +47,7 @@ export interface DataTableProps<TData, TValue> {
   toolbarImportContent?: ReactNode;
   toolbarExportContent?: ReactNode;
   className?: string;
+  preserveParams?: string[];
   onRefresh?: () => void;
   // eslint-disable-next-line no-unused-vars
   onSearch?: (query: string) => void;

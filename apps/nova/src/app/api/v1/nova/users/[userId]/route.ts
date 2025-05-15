@@ -33,7 +33,7 @@ export async function PUT(req: NextRequest) {
   };
 
   const { error } = await supabase
-    .from('nova_roles')
+    .from('platform_user_roles')
     .update(updateData)
     .eq('user_id', userId);
 
@@ -64,7 +64,7 @@ export async function DELETE(
   const supabase = await createAdminClient();
 
   const { error } = await supabase
-    .from('nova_roles')
+    .from('platform_user_roles')
     .delete()
     .eq('user_id', userId);
 

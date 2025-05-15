@@ -19,7 +19,7 @@ export default function WhitelistEmailClient({ wsId, onFinish }: Props) {
 
   const handleSubmit = async (values: { email: string }) => {
     try {
-      await addWhitelistEmail(values.email, true);
+      await addWhitelistEmail(values.email, false);
       toast({
         title: t('common.success'),
         description: t('common.email_added'),

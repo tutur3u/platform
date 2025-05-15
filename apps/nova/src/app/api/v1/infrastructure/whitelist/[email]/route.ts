@@ -1,37 +1,28 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(req: NextRequest) {
-  const {
-    email,
-    enabled,
-    allow_challenge_management,
-    allow_manage_all_challenges,
-    allow_role_management,
-  } = (await req.json()) as {
+  const { email, enabled } = (await req.json()) as {
     email: string;
     enabled: boolean;
-    allow_challenge_management: boolean;
-    allow_manage_all_challenges: boolean;
-    allow_role_management: boolean;
   };
 
   if (!email) {
     return NextResponse.json({ message: 'Email is required' }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const updateData = {
     email,
     enabled: enabled ?? false,
-    allow_challenge_management: allow_challenge_management ?? false,
-    allow_manage_all_challenges: allow_manage_all_challenges ?? false,
-    allow_role_management: allow_role_management ?? false,
   };
 
   const { error } = await supabase
-    .from('nova_roles')
+    .from('platform_email_roles')
     .update(updateData)
     .eq('email', email);
 
@@ -59,7 +50,7 @@ export async function DELETE(
   const supabase = await createClient();
 
   const { error } = await supabase
-    .from('nova_roles')
+    .from('platform_email_roles')
     .delete()
     .eq('email', email);
 

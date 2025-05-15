@@ -1453,7 +1453,7 @@
     "error-500-description": "Something went wrong. Please try again later.",
     "dashboard": "Dashboard",
     "problems": "Problems",
-    "roles": "Roles",
+    "users": "Users",
     "create-problem": "Create Problem",
     "view-leaderboard": "View leaderboard",
     "challenges-page": {
