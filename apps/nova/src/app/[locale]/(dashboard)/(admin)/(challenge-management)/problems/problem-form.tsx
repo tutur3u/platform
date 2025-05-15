@@ -69,20 +69,18 @@ const formSchema = z.object({
 export type ProblemFormValues = z.infer<typeof formSchema>;
 
 interface ProblemFormProps {
-  problemId?: string;
+  isEditing?: boolean;
   defaultValues?: ProblemFormValues;
   onSubmit: (values: ProblemFormValues) => void;
   isSubmitting: boolean;
 }
 
 export default function ProblemForm({
-  problemId,
+  isEditing = false,
   defaultValues,
   onSubmit,
   isSubmitting,
 }: ProblemFormProps) {
-  const isEditing = !!problemId;
-
   const [challenges, setChallenges] = useState<NovaChallenge[]>([]);
 
   // Initialize form with default values
@@ -181,7 +179,7 @@ export default function ProblemForm({
                         <FormControl>
                           <Textarea
                             placeholder="Enter problem description"
-                            className="min-h-[150px]"
+                            className="min-h-32"
                             {...field}
                           />
                         </FormControl>
