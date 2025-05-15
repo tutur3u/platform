@@ -42,7 +42,8 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       .minute(midHour ? 30 : 0)
       .second(0)
       .millisecond(0);
-    addEmptyEvent(newDate.toDate());
+    const correctDate = newDate.add(1, 'day');
+    addEmptyEvent(correctDate.toDate());
   };
 
   // Round to 15 minute intervals
