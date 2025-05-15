@@ -572,10 +572,9 @@ export const CalendarProvider = ({
     (date: Date) => {
       // TOD0: Fix this weird workaround in the future
       const selectedDate = dayjs(date);
-      const correctDate = selectedDate.add(1, 'day');
 
       // Round to nearest 15-minute interval
-      const start_at = roundToNearest15Minutes(correctDate.toDate());
+      const start_at = roundToNearest15Minutes(selectedDate.toDate());
       const end_at = new Date(start_at);
 
       // Use default task duration from settings if available
