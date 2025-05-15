@@ -46,7 +46,7 @@ function GuideStep({
       transition={{ delay }}
       className="flex gap-4"
     >
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold">
           {number}
         </div>
@@ -300,7 +300,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="bg-primary/10 text-primary mt-0.5 flex-shrink-0 rounded-full p-1">
+                        <div className="bg-primary/10 text-primary mt-0.5 shrink-0 rounded-full p-1">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{tip}</span>
@@ -331,7 +331,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="bg-primary/10 text-primary mt-0.5 flex-shrink-0 rounded-full p-1">
+                        <div className="bg-primary/10 text-primary mt-0.5 shrink-0 rounded-full p-1">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{tip}</span>
@@ -550,7 +550,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="bg-primary/10 text-primary mt-0.5 flex-shrink-0 rounded-full p-1">
+                        <div className="bg-primary/10 text-primary mt-0.5 shrink-0 rounded-full p-1">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{practice}</span>
@@ -581,7 +581,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="bg-primary/10 text-primary mt-0.5 flex-shrink-0 rounded-full p-1">
+                        <div className="bg-primary/10 text-primary mt-0.5 shrink-0 rounded-full p-1">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{practice}</span>

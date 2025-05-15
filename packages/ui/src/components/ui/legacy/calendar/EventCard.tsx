@@ -967,7 +967,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
               'absolute right-2 top-2 rounded-full p-0.5 opacity-0 shadow-sm',
               'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
               {
-                '!opacity-0':
+                'opacity-0!':
                   isDragging || isResizing || updateStatus !== 'idle',
               } // Hide during interaction or status updates
             )}
@@ -984,7 +984,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
           {updateStatus === 'syncing' && (
             <div className="bg-background/5 pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
               {/* <div
-                className="animate-shimmer h-full w-full bg-gradient-to-r from-transparent via-background/10 to-transparent"
+                className="animate-shimmer h-full w-full bg-linear-to-r from-transparent via-background/10 to-transparent"
                 style={{ backgroundSize: '200% 100%' }}
               /> */}
               <div className="bg-background/30 absolute right-2 top-2 rounded-full p-1">
@@ -1028,7 +1028,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
               >
                 {locked && (
                   <Lock
-                    className="mt-0.5 inline-block h-3 w-3 flex-shrink-0 -translate-y-0.5 opacity-70"
+                    className="mt-0.5 inline-block h-3 w-3 shrink-0 -translate-y-0.5 opacity-70"
                     aria-label="Event locked"
                   />
                 )}

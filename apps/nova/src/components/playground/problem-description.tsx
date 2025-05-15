@@ -23,7 +23,7 @@ export function ProblemDescription({ challenge }: ProblemDescriptionProps) {
           <Badge variant="secondary">{challenge.topic}</Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow p-0">
+      <CardContent className="grow p-0">
         <ScrollArea className="h-full">
           <div className="space-y-4 p-6">
             <div className="prose dark:prose-invert">

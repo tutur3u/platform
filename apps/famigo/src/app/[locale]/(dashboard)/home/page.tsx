@@ -45,7 +45,7 @@ export default function HomePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="mb-10 rounded-xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 p-6 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-pink-500/20"
+        className="bg-linear-to-r mb-10 rounded-xl from-blue-500/10 via-purple-500/10 to-pink-500/10 p-6 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-pink-500/20"
       >
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <div>
@@ -83,7 +83,7 @@ export default function HomePage() {
       <h2 className="mb-6 text-2xl font-bold">Core Features</h2>
       <div className="mb-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-          <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 pb-2 dark:from-purple-500/20 dark:to-blue-500/20">
+          <CardHeader className="bg-linear-to-r from-purple-500/10 to-blue-500/10 pb-2 dark:from-purple-500/20 dark:to-blue-500/20">
             <CardTitle className="flex items-center gap-2">
               <BrainCircuit className="h-5 w-5 text-purple-500" />
               AI Communication Mediator
@@ -102,7 +102,7 @@ export default function HomePage() {
         </Card>
 
         <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-          <CardHeader className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 pb-2 dark:from-pink-500/20 dark:to-rose-500/20">
+          <CardHeader className="bg-linear-to-r from-pink-500/10 to-rose-500/10 pb-2 dark:from-pink-500/20 dark:to-rose-500/20">
             <CardTitle className="flex items-center gap-2">
               <SmilePlus className="h-5 w-5 text-pink-500" />
               Daily Family Updates
@@ -121,7 +121,7 @@ export default function HomePage() {
         </Card>
 
         <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-          <CardHeader className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 pb-2 dark:from-blue-500/20 dark:to-cyan-500/20">
+          <CardHeader className="bg-linear-to-r from-blue-500/10 to-cyan-500/10 pb-2 dark:from-blue-500/20 dark:to-cyan-500/20">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-blue-500" />
               Smart Family Calendar
@@ -212,7 +212,7 @@ export default function HomePage() {
       {/* Upcoming Calendar */}
       <h2 className="mb-6 text-2xl font-bold">Upcoming Family Events</h2>
       <div className="mb-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div className="border-foreground/10 dark:border-foreground/5 rounded-lg border bg-gradient-to-br from-blue-500/5 to-purple-500/5 p-4 backdrop-blur-sm dark:from-blue-500/10 dark:to-purple-500/10">
+        <div className="border-foreground/10 dark:border-foreground/5 bg-linear-to-br rounded-lg border from-blue-500/5 to-purple-500/5 p-4 backdrop-blur-sm dark:from-blue-500/10 dark:to-purple-500/10">
           <div className="mb-2 flex justify-between">
             <Badge className="bg-blue-500/20 text-blue-600 dark:bg-blue-500/30 dark:text-blue-400">
               Saturday
@@ -241,7 +241,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="border-foreground/10 dark:border-foreground/5 rounded-lg border bg-gradient-to-br from-pink-500/5 to-orange-500/5 p-4 backdrop-blur-sm dark:from-pink-500/10 dark:to-orange-500/10">
+        <div className="border-foreground/10 dark:border-foreground/5 bg-linear-to-br rounded-lg border from-pink-500/5 to-orange-500/5 p-4 backdrop-blur-sm dark:from-pink-500/10 dark:to-orange-500/10">
           <div className="mb-2 flex justify-between">
             <Badge className="bg-pink-500/20 text-pink-600 dark:bg-pink-500/30 dark:text-pink-400">
               Sunday
@@ -265,7 +265,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="border-foreground/10 dark:border-foreground/5 rounded-lg border bg-gradient-to-br from-green-500/5 to-teal-500/5 p-4 backdrop-blur-sm dark:from-green-500/10 dark:to-teal-500/10">
+        <div className="border-foreground/10 dark:border-foreground/5 bg-linear-to-br rounded-lg border from-green-500/5 to-teal-500/5 p-4 backdrop-blur-sm dark:from-green-500/10 dark:to-teal-500/10">
           <div className="mb-2 flex justify-between">
             <Badge className="bg-green-500/20 text-green-600 dark:bg-green-500/30 dark:text-green-400">
               Next Week
@@ -298,7 +298,7 @@ export default function HomePage() {
         <Link href="/family/chat">
           <Button
             size="lg"
-            className="gap-2 border-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+            className="bg-linear-to-r gap-2 border-0 from-purple-600 to-blue-600 text-white"
           >
             Family Chat <MessageCircle className="h-4 w-4" />
           </Button>

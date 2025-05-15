@@ -24,7 +24,7 @@ export const getColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+      <div className="line-clamp-1 min-w-32">{row.getValue('id')}</div>
     ),
   },
   {
@@ -39,7 +39,7 @@ export const getColumns = (
     cell: ({ row }) => (
       <Link
         href={`/${extraData.wsId}/crawlers/${row.getValue('id')}`}
-        className="min-w-[4rem]"
+        className="min-w-16"
         rel="noreferrer"
       >
         <span className="line-clamp-1 font-semibold hover:underline">
@@ -80,7 +80,7 @@ export const getColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         {moment(row.getValue('created_at')).fromNow()}
       </div>
     ),

@@ -425,12 +425,12 @@ export default function ChallengeCard({
             </DropdownMenu>
           )}
         </CardHeader>
-        <CardContent className="flex-grow">
+        <CardContent className="grow">
           <p className="text-muted-foreground mb-4">{challenge.description}</p>
 
           <div className="grid gap-2">
             <div className="flex items-center">
-              <Clock className="text-primary h-4 w-4 flex-shrink-0" />
+              <Clock className="text-primary h-4 w-4 shrink-0" />
               <span className="text-muted-foreground ml-2 text-sm">
                 {t('duration')}: {formatDuration(challenge.duration)}
               </span>

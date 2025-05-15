@@ -117,7 +117,7 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           return (
             <div
               key={`all-day-${dateKey}`}
-              className="hover:bg-muted/20 group mr-[1px] flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r"
+              className="hover:bg-muted/20 group mr-px flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r"
             >
               {visibleEvents.map((event) => {
                 const { bg, border, text } = getEventStyles(

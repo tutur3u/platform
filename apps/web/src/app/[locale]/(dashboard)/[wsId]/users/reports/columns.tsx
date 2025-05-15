@@ -66,7 +66,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 min-w-[8rem] max-w-[24rem]">
+      <div className="line-clamp-2 min-w-32 max-w-[24rem]">
         {row.getValue('user_name') || '-'}
       </div>
     ),
@@ -83,7 +83,7 @@ export const getUserReportColumns = (
     cell: ({ row }) => (
       <Link
         href={row.original.href || '#'}
-        className="line-clamp-2 min-w-[8rem] max-w-[24rem] hover:underline"
+        className="line-clamp-2 min-w-32 max-w-[24rem] hover:underline"
       >
         {row.getValue('title') || '-'}
       </Link>
@@ -99,7 +99,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 min-w-[8rem] whitespace-pre-wrap">
+      <div className="line-clamp-2 min-w-32 whitespace-pre-wrap">
         {row.getValue('content') || '-'}
       </div>
     ),
@@ -114,7 +114,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 min-w-[8rem] whitespace-pre-wrap">
+      <div className="line-clamp-2 min-w-32 whitespace-pre-wrap">
         {row.getValue('feedback') || '-'}
       </div>
     ),
@@ -129,7 +129,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('creator_name') || '-'}</div>
+      <div className="min-w-32">{row.getValue('creator_name') || '-'}</div>
     ),
   },
   {

@@ -108,7 +108,7 @@ export const secretColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="line-clamp-1 max-w-[8rem] break-all">
+        <div className="line-clamp-1 max-w-32 break-all">
           {row.getValue('id')}
         </div>
       ),
@@ -146,7 +146,7 @@ export const secretColumns = (
         const isBool = value === 'true' || value === 'false';
         if (!isBool) {
           return (
-            <div className="line-clamp-1 max-w-[8rem] break-all">
+            <div className="line-clamp-1 max-w-32 break-all">
               {value || '-'}
             </div>
           );
@@ -180,7 +180,7 @@ export const secretColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="line-clamp-2 max-w-[8rem] break-all">
+        <div className="line-clamp-2 max-w-32 break-all">
           {row.getValue('created_at')
             ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
             : '-'}

@@ -188,7 +188,7 @@ export default function CalendarPage() {
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500/80 to-purple-500/80">
+          <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-blue-500/80 to-purple-500/80">
             <CalendarIcon className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -200,7 +200,7 @@ export default function CalendarPage() {
         </div>
         <Button
           size="sm"
-          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+          className="bg-linear-to-r from-blue-600 to-purple-600 text-white"
         >
           <Plus className="mr-1 h-4 w-4" /> New Event
         </Button>
@@ -430,7 +430,7 @@ export default function CalendarPage() {
         <div className="flex flex-col gap-6">
           {/* Family Members Schedule */}
           <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20">
+            <CardHeader className="bg-linear-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20">
               <CardTitle className="text-base">Family Members</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -490,7 +490,7 @@ export default function CalendarPage() {
 
           {/* Upcoming Events */}
           <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-pink-500/10 to-orange-500/10 dark:from-pink-500/20 dark:to-orange-500/20">
+            <CardHeader className="bg-linear-to-r from-pink-500/10 to-orange-500/10 dark:from-pink-500/20 dark:to-orange-500/20">
               <CardTitle className="text-base">Upcoming Events</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
@@ -526,7 +526,7 @@ export default function CalendarPage() {
 
           {/* Tips */}
           <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-green-500/10 to-teal-500/10 dark:from-green-500/20 dark:to-teal-500/20">
+            <CardHeader className="bg-linear-to-r from-green-500/10 to-teal-500/10 dark:from-green-500/20 dark:to-teal-500/20">
               <CardTitle className="text-base">Scheduling Tips</CardTitle>
             </CardHeader>
             <CardContent className="p-4">

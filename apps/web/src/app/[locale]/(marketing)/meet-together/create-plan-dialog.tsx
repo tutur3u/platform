@@ -159,13 +159,13 @@ export default function CreatePlanDialog({ plan }: Props) {
         >
           <div
             className={cn(
-              'animate-tilt from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 absolute -inset-px rounded-lg bg-gradient-to-r opacity-70 blur-lg transition-all',
+              'animate-tilt from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 bg-linear-to-r absolute -inset-px rounded-lg opacity-70 blur-lg transition-all',
               missingFields ||
                 creating ||
                 'group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'
             )}
           />
-          <div className="from-dynamic-light-red/60 via-dynamic-light-pink/60 to-dynamic-light-blue/60 relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r px-8 py-2 font-bold text-white transition-all md:text-lg">
+          <div className="from-dynamic-light-red/60 via-dynamic-light-pink/60 to-dynamic-light-blue/60 bg-linear-to-r relative inline-flex w-full items-center justify-center rounded-lg px-8 py-2 font-bold text-white transition-all md:text-lg">
             {t('create_plan')}
           </div>
         </button>
@@ -178,7 +178,7 @@ export default function CreatePlanDialog({ plan }: Props) {
         >
           <div
             className={cn(
-              'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r',
+              'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r',
               missingFields || creating
                 ? 'opacity-10'
                 : 'group-hover:opacity-30',
@@ -186,7 +186,7 @@ export default function CreatePlanDialog({ plan }: Props) {
             )}
           />
           <div
-            className={`from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r px-8 py-2 font-bold text-white transition-all md:text-lg`}
+            className={`from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue relative inline-flex w-full items-center justify-center rounded-lg bg-linear-to-r px-8 py-2 font-bold text-white transition-all md:text-lg`}
           >
             {t('create_plan')}
           </div>
