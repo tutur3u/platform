@@ -141,7 +141,7 @@ export default function EditProblemDialog({
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-4">
           <ProblemForm
-            problemId={problem.id}
+            isEditing={true}
             defaultValues={formattedDefaultValues}
             onSubmit={onSubmit}
             isSubmitting={isSubmitting}

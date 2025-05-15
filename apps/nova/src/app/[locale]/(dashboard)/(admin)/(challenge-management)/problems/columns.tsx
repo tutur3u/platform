@@ -165,17 +165,15 @@ function ActionCell({ problem }: { problem: ExtendedNovaProblem }) {
             </Link>
           </DropdownMenuItem>
 
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-            <EditProblemDialog
-              problem={problem}
-              trigger={
-                <div className="flex w-full items-center">
-                  <Edit className="mr-2 h-4 w-4" />
-                  <span>Edit</span>
-                </div>
-              }
-            />
-          </DropdownMenuItem>
+          <EditProblemDialog
+            problem={problem}
+            trigger={
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <Edit className="mr-2 h-4 w-4" />
+                <span>Edit</span>
+              </DropdownMenuItem>
+            }
+          />
 
           <DropdownMenuSeparator />
 

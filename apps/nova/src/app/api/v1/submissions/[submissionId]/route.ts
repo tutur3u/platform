@@ -86,9 +86,9 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const updateData: any = {};
-    if (body.prompt) updateData.prompt = body.prompt;
-    if (body.problemId) updateData.problem_id = body.problemId;
-    if (body.sessionId) updateData.session_id = body.sessionId;
+    if (body.prompt !== undefined) updateData.prompt = body.prompt;
+    if (body.problemId !== undefined) updateData.problem_id = body.problemId;
+    if (body.sessionId !== undefined) updateData.session_id = body.sessionId;
     updateData.user_id = user.id;
 
     const { data: updatedSubmission, error: updateError } = await supabase
