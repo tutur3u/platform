@@ -39,6 +39,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
             </Link>
           </h1>
         }
+        description={<div>{data.description || t('common.unknown')}</div>}
       />
       <Separator className="my-4" />
       {children}

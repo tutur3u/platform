@@ -2,16 +2,16 @@
 
 import ProblemComponent from '../../../../shared/problem-component';
 import PromptComponent from '../../../../shared/prompt-component';
+import PromptForm from '../../../../shared/prompt-form';
 import TestCaseComponent from '../../../../shared/test-case-component';
 import ChallengeHeader from './challengeHeader';
-import PromptForm from './prompt-form';
 import {
   NovaChallenge,
   NovaChallengeCriteria,
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
-  type NovaSubmissionWithScores,
+  NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -31,9 +31,7 @@ import { useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
-  problems: (NovaProblem & {
-    test_cases: NovaProblemTestCase[];
-  })[];
+  problems: NovaProblem[];
 };
 
 interface Props {
@@ -46,7 +44,7 @@ interface Props {
 
 export default function ChallengeClient({
   currentProblemIndex,
-  problem: currentProblem,
+  problem,
   challenge,
   session,
   submissions,
@@ -159,11 +157,7 @@ export default function ChallengeClient({
         href.startsWith('data:') ||
         href.startsWith('vbscript:')
       )
-        if (
-          href.includes(
-            `/challenges/${challenge.id}/problems/${currentProblem.id}`
-          )
-        )
+        if (href.includes(`/challenges/${challenge.id}/problems/${problem.id}`))
           return;
 
       if (!isNavigationConfirmed) {
@@ -233,12 +227,10 @@ export default function ChallengeClient({
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="problem" className="m-0 p-4">
-                    <ProblemComponent problem={currentProblem} />
+                    <ProblemComponent problem={problem} />
                   </TabsContent>
                   <TabsContent value="test-cases" className="m-0 p-4">
-                    <TestCaseComponent
-                      testCases={currentProblem.test_cases || []}
-                    />
+                    <TestCaseComponent testCases={problem.test_cases} />
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -248,7 +240,7 @@ export default function ChallengeClient({
           <div className="relative flex h-full w-full flex-col gap-4 overflow-hidden">
             <PromptComponent>
               <PromptForm
-                problem={currentProblem}
+                problem={problem}
                 session={session}
                 submissions={submissions}
               />

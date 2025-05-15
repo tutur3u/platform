@@ -26,8 +26,8 @@ export default function TestCaseComponent({
             Test Cases
           </CardTitle>
           <CardDescription>
-            These test cases below are just part of the ones used to evaluate
-            your prompt when submitted.
+            This may include just part of the test cases used to evaluate your
+            prompt when submitted.
           </CardDescription>
         </CardHeader>
         <CardContent>

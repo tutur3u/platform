@@ -1,3 +1,8 @@
+import {
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Separator } from '@tuturuuu/ui/separator';
 import { isEqual } from 'lodash';
 import { getTranslations } from 'next-intl/server';
@@ -35,31 +40,38 @@ export async function CourseSection({
       : !content);
 
   return (
-    <div className="border-foreground/10 bg-foreground/5 rounded-lg border p-4">
-      {href ? (
-        <Link
-          href={href}
-          className="flex w-fit items-center gap-2 text-lg font-semibold hover:underline md:text-2xl"
-        >
-          {icon}
-          {title}
-        </Link>
-      ) : (
-        <div className="flex items-center gap-2 text-lg font-semibold md:text-2xl">
-          {icon}
-          {title}
-        </div>
-      )}
-      {hideContent || (
-        <>
-          <Separator className="my-2" />
-          {isContentEmpty ? (
-            <div className="opacity-50">{t('common.no_content_yet')}.</div>
-          ) : (
-            content
-          )}
-        </>
-      )}
-    </div>
+    <AccordionItem
+      value={title}
+      className="border-foreground/10 bg-foreground/5 rounded-lg border px-4"
+    >
+      <AccordionTrigger className="items-center">
+        {href ? (
+          <Link
+            href={href}
+            className="flex w-fit items-center gap-2 text-lg font-semibold hover:underline md:text-2xl"
+          >
+            {icon}
+            {title}
+          </Link>
+        ) : (
+          <div className="flex items-center gap-2 text-lg font-semibold md:text-2xl">
+            {icon}
+            {title}
+          </div>
+        )}
+      </AccordionTrigger>
+      <AccordionContent>
+        {hideContent || (
+          <>
+            <Separator className="my-2" />
+            {isContentEmpty ? (
+              <div className="opacity-50">{t('common.no_content_yet')}.</div>
+            ) : (
+              content
+            )}
+          </>
+        )}
+      </AccordionContent>
+    </AccordionItem>
   );
 }

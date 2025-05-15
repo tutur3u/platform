@@ -9,6 +9,7 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import { Accordion } from '@tuturuuu/ui/accordion';
 import {
   BookText,
   Goal,
@@ -67,7 +68,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   }));
 
   return (
-    <div className="grid gap-4">
+    <Accordion type="multiple" className="grid gap-4">
       <CourseSection
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
@@ -142,7 +143,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
           ) : undefined
         }
       />
-      <CourseSection
+      {/* <CourseSection
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets`}
         title={t('ws-quiz-sets.plural')}
         icon={<ListTodo className="h-5 w-5" />}
@@ -158,7 +159,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
             </div>
           ) : undefined
         }
-      />
+      /> */}
       <CourseSection
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/flashcards`}
         title={t('ws-flashcards.plural')}
@@ -188,7 +189,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
             : undefined
         }
       />
-    </div>
+    </Accordion>
   );
 }
 

@@ -21,8 +21,21 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const dragStartRef = useRef<{ date: Date; y: number } | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
   const tz = settings?.timezone?.timezone;
+  const [hoveredSlot, setHoveredSlot] = useState<'hour' | 'half-hour' | null>(
+    null
+  );
+  const [showBothLabels, setShowBothLabels] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipLocked, setTooltipLocked] = useState(false);
+  const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const cursorPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const rafRef = useRef<number | null>(null);
 
   const id = `cell-${date}-${hour}`;
+
+  // Add a stable tooltip id for aria-describedby
+  const tooltipId = `calendar-tooltip-${id}`;
 
   // Format time for display - only show when hovering
   const formatTime = (hour: number, minute: number = 0) => {
@@ -288,6 +301,95 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     [isDragging, date, yToTime, addEmptyEventWithDuration]
   );
 
+  // Helper to handle mouse enter for each slot
+  const handleSlotMouseEnter = (slot: 'hour' | 'half-hour') => {
+    setHoveredSlot(slot);
+    if (!tooltipLocked) {
+      setShowBothLabels(false);
+      setShowTooltip(false);
+      if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+      hoverTimeout.current = setTimeout(() => {
+        setShowBothLabels(true);
+        setShowTooltip(true);
+        setTooltipLocked(true);
+      }, 1000);
+    } else {
+      setShowTooltip(true);
+    }
+  };
+
+  // Helper to handle mouse leave for each slot
+  const handleSlotMouseLeave = () => {
+    setHoveredSlot(null);
+    // Do not reset tooltip/labels here; only reset on cell leave
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+  };
+
+  // Throttled tooltip position update
+  const updateTooltipPosition = () => {
+    if (tooltipRef.current) {
+      tooltipRef.current.style.left = `${cursorPosRef.current.x}px`;
+      tooltipRef.current.style.top = `${cursorPosRef.current.y}px`;
+    }
+    rafRef.current = null;
+  };
+
+  const handleSlotMouseMove = (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    const offset = 8;
+    const flipOffset = 16;
+    let x = e.clientX + offset;
+    let y = e.clientY + offset;
+    const tooltipWidth = 200;
+    const tooltipHeight = 40;
+    const padding = 8;
+    if (x + tooltipWidth > window.innerWidth - padding) {
+      x = e.clientX - tooltipWidth - flipOffset;
+    }
+    if (y + tooltipHeight > window.innerHeight - padding) {
+      y = e.clientY - tooltipHeight - flipOffset;
+    }
+    cursorPosRef.current = { x, y };
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(updateTooltipPosition);
+    }
+    if (tooltipLocked) {
+      setShowTooltip(true);
+    }
+  };
+
+  // Handle leaving the cell: reset everything
+  const handleCellMouseLeave = () => {
+    setIsHovering(false);
+    setHoveredSlot(null);
+    setShowBothLabels(false);
+    setShowTooltip(false);
+    setTooltipLocked(false);
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+  };
+
+  const handleSlotFocus = (slot: 'hour' | 'half-hour') => {
+    setHoveredSlot(slot);
+    if (!tooltipLocked) {
+      setShowBothLabels(false);
+      setShowTooltip(false);
+      if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+      hoverTimeout.current = setTimeout(() => {
+        setShowBothLabels(true);
+        setShowTooltip(true);
+        setTooltipLocked(true);
+      }, 1000);
+    } else {
+      setShowTooltip(true);
+    }
+  };
+
+  const handleSlotBlur = () => {
+    setHoveredSlot(null);
+    setShowTooltip(false);
+  };
+
   // Set up event listeners
   useEffect(() => {
     const cell = cellRef.current;
@@ -314,6 +416,13 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     };
   }, [handleMouseDown, handleMouseMove, handleMouseUp]);
 
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
   return (
     <div
       id={id}
@@ -330,40 +439,74 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         e.preventDefault();
       }}
       onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseLeave={handleCellMouseLeave}
       data-hour={hour}
       data-date={date}
     >
+      {/* Show only the hovered label before 1s, both after 1s */}
+      {showBothLabels ? (
+        <>
+          <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
+            {formatTime(hour)}
+          </span>
+          <span className="text-muted-foreground/70 absolute bottom-2 left-2 text-xs font-medium">
+            {formatTime(hour, 30)}
+          </span>
+        </>
+      ) : hoveredSlot === 'hour' ? (
+        <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
+          {formatTime(hour)}
+        </span>
+      ) : hoveredSlot === 'half-hour' ? (
+        <span className="text-muted-foreground/70 absolute bottom-2 left-2 text-xs font-medium">
+          {formatTime(hour, 30)}
+        </span>
+      ) : null}
       {/* Full cell clickable area */}
       <button
         className="absolute inset-0 h-1/2 w-full cursor-pointer focus:outline-none"
         onClick={() => handleCreateEvent()}
-        title={`Create event at ${formatTime(hour)}`}
-      >
-        {/* Only show time on hover */}
-        {isHovering && (
-          <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
-            {formatTime(hour)}
-          </span>
-        )}
-      </button>
-
+        onMouseEnter={() => handleSlotMouseEnter('hour')}
+        onMouseLeave={handleSlotMouseLeave}
+        onMouseMove={handleSlotMouseMove}
+        onFocus={() => handleSlotFocus('hour')}
+        onBlur={handleSlotBlur}
+        aria-describedby={tooltipId}
+      />
       {/* Half-hour marker */}
       <div className="border-border/30 absolute left-0 right-0 top-1/2 border-t border-dashed" />
-
       {/* Half-hour clickable area */}
       <button
         className="absolute inset-x-0 top-1/2 h-1/2 cursor-pointer focus:outline-none"
         onClick={() => handleCreateEvent(true)}
-        title={`Create event at ${formatTime(hour, 30)}`}
-      >
-        {/* Only show time on hover */}
-        {isHovering && (
-          <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
-            {formatTime(hour, 30)}
-          </span>
-        )}
-      </button>
+        onMouseEnter={() => handleSlotMouseEnter('half-hour')}
+        onMouseLeave={handleSlotMouseLeave}
+        onMouseMove={handleSlotMouseMove}
+        onFocus={() => handleSlotFocus('half-hour')}
+        onBlur={handleSlotBlur}
+        aria-describedby={tooltipId}
+      />
+      {/* Custom tooltip near cursor, only one at a time, fixed position, only after 1s */}
+      {showTooltip && hoveredSlot && (
+        <div
+          ref={tooltipRef}
+          id={tooltipId}
+          role="tooltip"
+          aria-live="polite"
+          className="pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg"
+          style={{
+            position: 'fixed',
+            left: cursorPosRef.current.x,
+            top: cursorPosRef.current.y,
+            minWidth: 120,
+            maxWidth: 200,
+            zIndex: 10000,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {`Create an event at ${hoveredSlot === 'hour' ? formatTime(hour) : formatTime(hour, 30)}`}
+        </div>
+      )}
     </div>
   );
 };

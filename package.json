@@ -61,7 +61,7 @@
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "pnpm@10.10.0",
+  "packageManager": "pnpm@10.11.0",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -75,6 +75,7 @@
   ],
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
       "@vercel/speed-insights",
       "canvas",
       "core-js",

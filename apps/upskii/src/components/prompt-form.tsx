@@ -8,7 +8,6 @@ import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   Bolt,
   Cat,
-  Check,
   File,
   FileText,
   Globe,
@@ -62,7 +61,6 @@ export interface PromptProps
   setMode: (mode: ResponseMode) => void;
   disabled?: boolean;
   apiKey?: string | null;
-  apiKeyProvided?: boolean;
 }
 
 export function PromptForm({
@@ -85,7 +83,7 @@ export function PromptForm({
   mode,
   setMode,
   disabled,
-  apiKeyProvided,
+  apiKey,
 }: PromptProps) {
   const t = useTranslations();
 
@@ -251,18 +249,6 @@ export function PromptForm({
       >
         <div className="mb-2 flex items-center justify-between gap-2">
           <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
-            {apiKeyProvided ? (
-              <>
-                <div className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green flex shrink-0 items-center gap-1 rounded border px-2 py-1.5 text-xs font-semibold">
-                  <Check className="h-3 w-3" />
-                </div>
-                {disabled || (
-                  <Separator orientation="vertical" className="h-4" />
-                )}
-              </>
-            ) : (
-              <></>
-            )}
             {model && (
               <>
                 <div className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange flex shrink-0 items-center gap-1 rounded border px-2 py-1 text-xs font-semibold">
@@ -809,14 +795,14 @@ export function PromptForm({
             // value={[input, caption || ''].filter(Boolean).join(' ')}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              disabled || !apiKeyProvided
+              disabled || !apiKey
                 ? t('ai_chat.imagine_placeholder')
                 : `${t('ai_chat.send_message')}.`
             }
             spellCheck={false}
             maxRows={7}
             className="scrollbar-none placeholder-foreground/50 focus-within:outline-hidden w-full resize-none bg-transparent py-2 sm:text-sm"
-            disabled={disabled || !apiKeyProvided}
+            disabled={disabled || !apiKey}
           />
         </div>
       </form>

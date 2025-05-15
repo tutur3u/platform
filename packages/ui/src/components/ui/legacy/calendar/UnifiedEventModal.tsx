@@ -101,6 +101,8 @@ const AIFormSchema = z.object({
 
 export function UnifiedEventModal() {
   const { toast } = useToast();
+  const startPickerRef = useRef<HTMLButtonElement>(null);
+  const endPickerRef = useRef<HTMLButtonElement>(null);
 
   const {
     activeEvent,
@@ -982,6 +984,8 @@ export function UnifiedEventModal() {
                           onChange={handleStartDateChange}
                           disabled={event.locked}
                           showTimeSelect={!isAllDay}
+                          scrollIntoViewOnOpen={true}
+                          pickerButtonRef={startPickerRef}
                         />
                         <EventDateTimePicker
                           label="End"
@@ -1023,6 +1027,8 @@ export function UnifiedEventModal() {
                             }
                             return undefined;
                           })()}
+                          scrollIntoViewOnOpen={true}
+                          pickerButtonRef={endPickerRef}
                         />
                       </div>
                     </div>

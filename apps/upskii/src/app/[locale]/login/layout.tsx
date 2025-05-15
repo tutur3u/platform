@@ -1,3 +1,4 @@
+import { getWorkspaces } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
 import React from 'react';
@@ -10,7 +11,16 @@ export default async function Layout({ children }: LayoutProps) {
   const supabase = await createClient();
   const { data: user } = await supabase.auth.getUser();
 
-  if (user) redirect('/home');
+  const workspaces = await getWorkspaces();
+  const wsId = workspaces?.[0]?.id;
+
+  if (wsId) {
+    redirect(`/${wsId}/home`);
+  }
+
+  if (user) {
+    redirect('/onboarding');
+  }
 
   return (
     <>

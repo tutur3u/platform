@@ -20,7 +20,7 @@ export function ToolForm({ tool }: { tool: Tool }) {
   const [formData, setFormData] = useState(tool);
 
   const createChat = async (input: string) => {
-    const res = await fetch(`/api/ai/chat/google-vertex/new`, {
+    const res = await fetch(`/api/ai/chat/google/new`, {
       method: 'POST',
       body: JSON.stringify({
         model: 'gemini-1.5-flash-002',

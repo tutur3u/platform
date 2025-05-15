@@ -11,7 +11,6 @@ import {
   NovaSession,
   type NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -64,14 +63,14 @@ export default async function Page({ params }: Props) {
       test_cases: problem.test_cases.filter((t) => t.problem_id === problemId),
     }));
 
-    const currentProblem = problems.find((p) => p.id === problemId);
     const currentProblemIndex = problems.findIndex((p) => p.id === problemId);
+    const currentProblem = problems[currentProblemIndex];
 
-    if (!session) {
+    if (!currentProblem) {
       redirect('/challenges');
     }
 
-    const submissions = await fetchSubmissions(problemId);
+    const submissions = await getSubmissions(problemId);
 
     return (
       <ChallengeClient
@@ -79,9 +78,7 @@ export default async function Page({ params }: Props) {
         session={session}
         submissions={submissions}
         currentProblemIndex={currentProblemIndex}
-        problem={
-          currentProblem as NovaProblem & { test_cases: NovaProblemTestCase[] }
-        }
+        problem={currentProblem}
       />
     );
   } catch (error) {
@@ -186,13 +183,20 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
   }
 }
 
-async function fetchSubmissions(
+async function getSubmissions(
   problemId: string
 ): Promise<NovaSubmissionWithScores[]> {
   const sbAdmin = await createAdminClient();
-  const user = await getCurrentSupabaseUser();
+  const supabase = await createClient();
 
-  if (!user) throw new Error('User not found');
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id) {
+    throw new Error('Unauthorized');
+  }
 
   const { data: submissions, error } = await sbAdmin
     .from('nova_submissions_with_scores')
