@@ -95,9 +95,10 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const updateData: any = {};
-    if (body.title) updateData.title = body.title;
-    if (body.description) updateData.description = body.description;
-    if (body.maxPromptLength) {
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.description !== undefined)
+      updateData.description = body.description;
+    if (body.maxPromptLength !== undefined) {
       if (body.maxPromptLength <= 0) {
         return NextResponse.json(
           { message: 'Max prompt length must be a positive number' },
@@ -106,9 +107,12 @@ export async function PUT(request: Request, { params }: Params) {
       }
       updateData.max_prompt_length = body.maxPromptLength;
     }
-    if (body.exampleInput) updateData.example_input = body.exampleInput;
-    if (body.exampleOutput) updateData.example_output = body.exampleOutput;
-    if (body.challengeId) updateData.challenge_id = body.challengeId;
+    if (body.exampleInput !== undefined)
+      updateData.example_input = body.exampleInput;
+    if (body.exampleOutput !== undefined)
+      updateData.example_output = body.exampleOutput;
+    if (body.challengeId !== undefined)
+      updateData.challenge_id = body.challengeId;
 
     const { data: updatedProblem, error: updateError } = await supabase
       .from('nova_problems')
