@@ -257,7 +257,7 @@ export function RaceInsights({
                     <div className="ml-2 flex-1">
                       <div className="bg-muted h-2 overflow-hidden rounded-full">
                         <div
-                          className="h-full bg-gradient-to-r from-green-500 to-green-400"
+                          className="h-full bg-linear-to-r from-green-500 to-green-400"
                           style={{
                             width: `${100 - (horse.speed / 10) * 100}%`,
                           }}

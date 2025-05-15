@@ -207,11 +207,11 @@ export default function MarketingPage() {
                     {t('feature-event')}
                   </Badge>
 
-                  <h2 className="from-primary via-dynamic-purple to-dynamic-blue mb-4 text-balance bg-gradient-to-r bg-clip-text text-4xl font-bold text-transparent">
+                  <h2 className="from-primary via-dynamic-purple to-dynamic-blue mb-4 text-balance bg-linear-to-r bg-clip-text text-4xl font-bold text-transparent">
                     NEO League {t('season')} 1
                   </h2>
 
-                  <div className="from-dynamic-purple to-dynamic-red mb-6 bg-gradient-to-r bg-clip-text text-3xl font-bold text-transparent">
+                  <div className="from-dynamic-purple to-dynamic-red mb-6 bg-linear-to-r bg-clip-text text-3xl font-bold text-transparent">
                     Prompt The Future
                   </div>
                 </motion.div>
@@ -309,7 +309,7 @@ export default function MarketingPage() {
                                 key={index}
                                 className="text-muted-foreground flex items-start gap-2"
                               >
-                                <CheckCircle className="text-primary mt-1 h-4 w-4 flex-shrink-0" />
+                                <CheckCircle className="text-primary mt-1 h-4 w-4 shrink-0" />
                                 <span>{objective}</span>
                               </li>
                             ))}
@@ -434,7 +434,7 @@ export default function MarketingPage() {
                 className="relative"
               >
                 <div className="bg-background/30 relative aspect-video rounded-xl border backdrop-blur-sm">
-                  <div className="from-primary/10 absolute inset-0 rounded-xl bg-gradient-to-br via-transparent to-transparent" />
+                  <div className="from-primary/10 absolute inset-0 rounded-xl bg-linear-to-br via-transparent to-transparent" />
                   <div className="relative p-8">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}

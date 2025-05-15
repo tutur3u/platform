@@ -58,7 +58,7 @@ export function ChatModelSelector({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="flex w-[calc(100vw-2rem)] flex-col-reverse rounded-b-none p-0 md:grid md:w-[48rem] md:grid-cols-2 xl:w-[64rem]"
+        className="flex w-[calc(100vw-2rem)] flex-col-reverse rounded-b-none p-0 md:grid md:w-3xl md:grid-cols-2 xl:w-5xl"
         sideOffset={8}
         onInteractOutside={() => setOpen(false)}
       >
@@ -111,7 +111,7 @@ export function ChatModelSelector({
             <div className="text-sm font-semibold opacity-80">
               {previewModel?.provider}{' '}
             </div>
-            <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
+            <div className="bg-foreground/20 mx-2 h-4 w-px rotate-30" />
             <div className="line-clamp-1 font-mono text-xs">
               {previewModel?.label}
             </div>

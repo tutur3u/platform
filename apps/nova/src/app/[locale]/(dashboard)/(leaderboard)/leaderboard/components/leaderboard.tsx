@@ -131,7 +131,7 @@ export function Leaderboard({
       className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_0_25px_rgba(0,0,0,0.3)]"
     >
       {/* Enhanced gradient border effect */}
-      <div className="absolute -inset-[1px] -z-10 rounded-xl bg-gradient-to-r from-transparent via-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px">
+      <div className="absolute -inset-px -z-10 rounded-xl bg-linear-to-r from-transparent via-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px">
         <motion.div
           className="absolute inset-0 rounded-xl opacity-0 dark:opacity-30"
           style={{
@@ -505,7 +505,7 @@ export function Leaderboard({
                                     return (
                                       <motion.div
                                         key={challenge.id}
-                                        className={`relative h-full bg-gradient-to-r ${colorClass}`}
+                                        className={`relative h-full bg-linear-to-r ${colorClass}`}
                                         initial={{ width: 0 }}
                                         animate={{ width: `${percentage}%` }}
                                         transition={{
@@ -624,7 +624,7 @@ export function Leaderboard({
                                           return (
                                             <motion.div
                                               key={`${problem.id}-${i}`}
-                                              className={`relative h-full bg-gradient-to-r ${colorClass}`}
+                                              className={`relative h-full bg-linear-to-r ${colorClass}`}
                                               initial={{ width: 0 }}
                                               animate={{
                                                 width: `${percentage}%`,

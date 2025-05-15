@@ -108,7 +108,7 @@ const LogoComponent = ({
     )}
   >
     <Link href="/" className="group relative block">
-      <div className="from-primary/20 absolute inset-0 -z-10 rounded-full bg-gradient-to-br via-transparent to-transparent opacity-50 blur-lg transition-all duration-300 group-hover:opacity-100" />
+      <div className="from-primary/20 absolute inset-0 -z-10 rounded-full bg-linear-to-br via-transparent to-transparent opacity-50 blur-lg transition-all duration-300 group-hover:opacity-100" />
       <Image
         src="/media/logos/transparent.png"
         width={300}
@@ -461,7 +461,7 @@ const slides: Slide[] = [
           transition={{ type: 'spring', duration: 0.8 }}
           className="relative"
         >
-          <div className="from-primary/20 absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-br via-transparent to-transparent opacity-50 blur-xl" />
+          <div className="from-primary/20 absolute inset-0 -z-10 animate-pulse rounded-full bg-linear-to-br via-transparent to-transparent opacity-50 blur-xl" />
           <Image
             src="/media/logos/transparent.png"
             width={300}
@@ -556,7 +556,7 @@ const slides: Slide[] = [
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
               className={cn(
-                'group relative overflow-hidden rounded-xl bg-gradient-to-br p-6',
+                'group relative overflow-hidden rounded-xl bg-linear-to-br p-6',
                 problem.gradient
               )}
             >
@@ -571,7 +571,7 @@ const slides: Slide[] = [
               <div className="relative flex flex-col gap-4">
                 <div
                   className={cn(
-                    'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br',
+                    'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-br',
                     problem.color
                   )}
                 >
@@ -717,7 +717,7 @@ const slides: Slide[] = [
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
               className={cn(
-                'group relative overflow-hidden rounded-xl bg-gradient-to-br p-6',
+                'group relative overflow-hidden rounded-xl bg-linear-to-br p-6',
                 solution.gradient
               )}
             >
@@ -732,7 +732,7 @@ const slides: Slide[] = [
               <div className="relative flex flex-col gap-6">
                 <div
                   className={cn(
-                    'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br',
+                    'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-br',
                     solution.color
                   )}
                 >
@@ -870,7 +870,7 @@ const slides: Slide[] = [
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
               className={cn(
-                'group relative overflow-hidden rounded-xl bg-gradient-to-br p-6',
+                'group relative overflow-hidden rounded-xl bg-linear-to-br p-6',
                 metric.gradient
               )}
             >
@@ -885,7 +885,7 @@ const slides: Slide[] = [
               <div className="relative flex flex-col gap-3">
                 <div
                   className={cn(
-                    'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br',
+                    'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-br',
                     metric.color
                   )}
                 >
@@ -1198,7 +1198,7 @@ const slides: Slide[] = [
             className="bg-foreground/5 hover:bg-foreground/10 group relative overflow-hidden rounded-xl p-6 transition-colors"
           >
             <div
-              className={`absolute inset-0 bg-gradient-to-br ${value.color} opacity-50 transition-opacity duration-300 group-hover:opacity-100`}
+              className={`absolute inset-0 bg-linear-to-br ${value.color} opacity-50 transition-opacity duration-300 group-hover:opacity-100`}
             />
             <div className="relative space-y-4">
               <div className="flex items-center gap-3">
@@ -1415,7 +1415,7 @@ const slides: Slide[] = [
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent p-5"
+          className="group relative overflow-hidden rounded-xl bg-linear-to-br from-emerald-500/20 via-emerald-500/10 to-transparent p-5"
         >
           <div className="absolute right-3 top-3 opacity-10">
             <ArrowUpRight className="h-16 w-16 text-emerald-500" />
@@ -1468,7 +1468,7 @@ const slides: Slide[] = [
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-transparent p-5"
+          className="group relative overflow-hidden rounded-xl bg-linear-to-br from-amber-500/20 via-amber-500/10 to-transparent p-5"
         >
           <div className="absolute right-3 top-3 opacity-10">
             <Shield className="h-16 w-16 text-amber-500" />
@@ -1526,7 +1526,7 @@ const slides: Slide[] = [
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500/20 via-blue-500/10 to-transparent p-5"
+          className="group relative overflow-hidden rounded-xl bg-linear-to-br from-blue-500/20 via-blue-500/10 to-transparent p-5"
         >
           <div className="absolute right-3 top-3 opacity-10">
             <Rocket className="h-16 w-16 text-blue-500" />
@@ -1584,7 +1584,7 @@ const slides: Slide[] = [
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4 }}
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-red-500/20 via-red-500/10 to-transparent p-5"
+          className="group relative overflow-hidden rounded-xl bg-linear-to-br from-red-500/20 via-red-500/10 to-transparent p-5"
         >
           <div className="absolute right-3 top-3 opacity-10">
             <Shield className="h-16 w-16 text-red-500" />
@@ -2554,14 +2554,14 @@ const slides: Slide[] = [
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
-              className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-xl bg-gradient-to-br to-transparent p-6"
+              className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-xl bg-linear-to-br to-transparent p-6"
             >
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
-                        'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br',
+                        'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-br',
                         phase.color
                       )}
                     >
@@ -2680,7 +2680,7 @@ const slides: Slide[] = [
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.6 + i * 0.1 }}
-              className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-xl bg-gradient-to-br to-transparent p-6"
+              className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-xl bg-linear-to-br to-transparent p-6"
             >
               <div
                 className={cn(
@@ -2693,7 +2693,7 @@ const slides: Slide[] = [
               <div className="relative flex flex-col gap-3">
                 <div
                   className={cn(
-                    'from-background/80 to-background flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br',
+                    'from-background/80 to-background flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-br',
                     metric.color
                   )}
                 >
@@ -2722,7 +2722,7 @@ const slides: Slide[] = [
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
-            className="from-foreground/5 via-foreground/5 rounded-xl bg-gradient-to-br to-transparent p-6 md:col-span-8"
+            className="from-foreground/5 via-foreground/5 rounded-xl bg-linear-to-br to-transparent p-6 md:col-span-8"
           >
             <h3 className="mb-6 flex items-center gap-2 text-xl font-bold">
               <TrendingUp className="text-primary h-5 w-5" />
@@ -2809,7 +2809,7 @@ const slides: Slide[] = [
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="from-foreground/5 via-foreground/5 rounded-xl bg-gradient-to-br to-transparent p-6"
+              className="from-foreground/5 via-foreground/5 rounded-xl bg-linear-to-br to-transparent p-6"
             >
               <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
                 <Target className="text-primary h-5 w-5" />
@@ -2851,13 +2851,13 @@ const slides: Slide[] = [
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 + i * 0.1 }}
-                    className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-lg bg-gradient-to-br to-transparent p-4"
+                    className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-lg bg-linear-to-br to-transparent p-4"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div
                           className={cn(
-                            'from-background/80 to-background flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br',
+                            'from-background/80 to-background flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br',
                             metric.color
                           )}
                         >
@@ -2932,7 +2932,7 @@ const slides: Slide[] = [
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.4 + i * 0.1 }}
-              className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-xl bg-gradient-to-br to-transparent p-6"
+              className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-xl bg-linear-to-br to-transparent p-6"
             >
               <div className="mb-4 flex items-center gap-2">
                 <div className="bg-primary/10 text-primary rounded-full p-2">

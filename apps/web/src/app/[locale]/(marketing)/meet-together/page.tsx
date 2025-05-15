@@ -22,7 +22,7 @@ export default async function MeetTogetherPage() {
     <div className="flex w-full flex-col items-center">
       <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
         <div className="flex flex-col items-center">
-          <h1 className="text-foreground mx-auto mb-2 text-balance text-center text-2xl font-bold !leading-tight tracking-tight md:text-4xl lg:text-6xl">
+          <h1 className="text-foreground mx-auto mb-2 text-balance text-center text-2xl font-bold leading-tight! tracking-tight md:text-4xl lg:text-6xl">
             {t('headline-p1')}{' '}
             <GradientHeadline>{t('headline-p2')}</GradientHeadline>.
           </h1>

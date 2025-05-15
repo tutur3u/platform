@@ -8,8 +8,8 @@ export default async function Login() {
   const t = await getTranslations();
 
   return (
-    <div className="from-background to-background/90 relative flex h-full w-full flex-col items-center justify-center bg-gradient-to-b p-6 py-16 sm:p-8 lg:py-32">
-      <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-70"></div>
+    <div className="from-background to-background/90 relative flex h-full w-full flex-col items-center justify-center bg-linear-to-b p-6 py-16 sm:p-8 lg:py-32">
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] opacity-70"></div>
       <div className="z-10 flex w-full max-w-[400px] flex-col items-center space-y-6">
         <Link href="/" className="group mb-2 flex items-center justify-center">
           <Image

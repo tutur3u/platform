@@ -298,7 +298,7 @@ export default function ChangelogPage() {
           className="pointer-events-none fixed left-8 top-1/2 hidden -translate-y-1/2 lg:block"
         >
           <div className="relative flex flex-col items-start gap-6">
-            <div className="from-foreground/5 via-foreground/10 to-foreground/5 absolute left-[5px] top-0 h-full w-[2px] bg-gradient-to-b" />
+            <div className="from-foreground/5 via-foreground/10 to-foreground/5 absolute left-[5px] top-0 h-full w-[2px] bg-linear-to-b" />
 
             {filteredUpdates.map((monthlyUpdate) => (
               <Link
@@ -357,7 +357,7 @@ export default function ChangelogPage() {
                 </motion.h2>
 
                 <div className="relative space-y-8">
-                  <div className="from-foreground/5 via-foreground/10 to-foreground/5 absolute left-8 top-0 hidden h-full w-[2px] bg-gradient-to-b lg:block" />
+                  <div className="from-foreground/5 via-foreground/10 to-foreground/5 absolute left-8 top-0 hidden h-full w-[2px] bg-linear-to-b lg:block" />
 
                   {monthlyUpdate.updates.map((update, updateIndex) => (
                     <motion.div
@@ -379,9 +379,9 @@ export default function ChangelogPage() {
 
                       <Card className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                         <div className="absolute inset-0 overflow-hidden">
-                          <div className="absolute inset-0 bg-gradient-to-r opacity-100 transition-opacity duration-500 group-hover:opacity-100" />
+                          <div className="absolute inset-0 bg-linear-to-r opacity-100 transition-opacity duration-500 group-hover:opacity-100" />
                           <div
-                            className={`bg-gradient-to-r ${getUpdateGradient(update.type)} absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
+                            className={`bg-linear-to-r ${getUpdateGradient(update.type)} absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
                           />
                         </div>
 

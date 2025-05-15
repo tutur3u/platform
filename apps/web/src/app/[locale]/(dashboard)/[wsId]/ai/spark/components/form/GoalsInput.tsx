@@ -566,7 +566,7 @@ export function GoalsInput({
 
         <Button
           type="button"
-          className="from-primary to-primary/90 hover:from-primary/90 hover:to-primary mt-6 w-full bg-gradient-to-r"
+          className="from-primary to-primary/90 hover:from-primary/90 hover:to-primary mt-6 w-full bg-linear-to-r"
           onClick={handleSubmit}
           disabled={isLoading}
         >

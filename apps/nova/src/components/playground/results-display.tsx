@@ -13,7 +13,7 @@ export function ResultsDisplay({ results, isLoading }: ResultsDisplayProps) {
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium">Results</CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow">
+      <CardContent className="grow">
         <ScrollArea className="h-full">
           {isLoading ? (
             <div className="flex h-full items-center justify-center">

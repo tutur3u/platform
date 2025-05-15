@@ -40,7 +40,7 @@ export default async function MeetTogetherPlanDetailsPage({ params }: Props) {
             <div className="text-foreground flex w-full max-w-6xl flex-col gap-6 p-4 md:px-8 lg:gap-14 lg:px-14">
               <div className="flex w-full flex-col items-center">
                 <UtilityButtons plan={plan} platformUser={platformUser} />
-                <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl font-semibold !leading-tight md:mb-4 lg:text-3xl">
+                <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl font-semibold leading-tight! md:mb-4 lg:text-3xl">
                   {plan.name} <EditPlanDialog plan={plan} />
                 </p>
 

@@ -197,7 +197,7 @@ export default function TeamClient({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="from-primary/30 to-primary/10 absolute -inset-0.5 rounded-full bg-gradient-to-br blur-md"
+                className="from-primary/30 to-primary/10 absolute -inset-0.5 rounded-full bg-linear-to-br blur-md"
               />
               <Avatar className="border-background h-24 w-24 border-2 shadow-md">
                 <AvatarImage src={undefined} />
@@ -207,7 +207,7 @@ export default function TeamClient({
               </Avatar>
 
               {/* Dynamic rank badge */}
-              <div className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-xs font-bold text-white shadow-lg">
+              <div className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-amber-500 to-yellow-400 text-xs font-bold text-white shadow-lg">
                 #{teamData.rank || '?'}
               </div>
             </div>
@@ -221,7 +221,7 @@ export default function TeamClient({
                 </Badge>
                 +
                 {teamData.rank && (
-                  <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white">
+                  <Badge className="bg-linear-to-r from-amber-500 to-yellow-400 text-white">
                     <Trophy className="mr-1 h-3.5 w-3.5" />
                     {teamData.rank <= 20
                       ? 'Top 15%'
@@ -287,7 +287,7 @@ export default function TeamClient({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="dark:via-background rounded-xl border bg-gradient-to-br from-amber-50 via-white to-amber-50 p-6 shadow-sm dark:from-amber-950/20 dark:to-amber-950/20"
+            className="dark:via-background rounded-xl border bg-linear-to-br from-amber-50 via-white to-amber-50 p-6 shadow-sm dark:from-amber-950/20 dark:to-amber-950/20"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -370,7 +370,7 @@ export default function TeamClient({
                           return (
                             <motion.div
                               key={challenge.id}
-                              className={`relative h-full bg-gradient-to-r ${colorClass}`}
+                              className={`relative h-full bg-linear-to-r ${colorClass}`}
                               initial={{ width: 0 }}
                               animate={{ width: `${percentage}%` }}
                               transition={{
@@ -456,7 +456,7 @@ export default function TeamClient({
                             </div>
                             <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                               <motion.div
-                                className="absolute left-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                                className="absolute left-0 h-full rounded-full bg-linear-to-r from-blue-500 to-purple-500"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${percentage}%` }}
                                 transition={{
@@ -729,7 +729,7 @@ export default function TeamClient({
 
                       <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 sm:w-32 dark:bg-gray-800">
                         <motion.div
-                          className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                          className="h-full bg-linear-to-r from-blue-500 to-purple-500"
                           initial={{ width: 0 }}
                           animate={{
                             width: `${member.contribution_percentage}%`,
@@ -832,7 +832,7 @@ export default function TeamClient({
                           </div>
                           <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                             <motion.div
-                              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                              className="h-full rounded-full bg-linear-to-r from-blue-500 to-purple-500"
                               initial={{ width: 0 }}
                               animate={{
                                 width: `${member.contribution_percentage}%`,

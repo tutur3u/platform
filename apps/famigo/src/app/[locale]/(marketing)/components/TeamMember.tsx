@@ -82,7 +82,7 @@ const TeamMember = ({
       className="border-foreground/10 bg-background/50 dark:border-foreground/5 dark:bg-background/20 rounded-xl border p-6 text-center backdrop-blur-sm"
     >
       <div
-        className={`mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br ${getGradientClasses()} shadow-md`}
+        className={`mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br ${getGradientClasses()} shadow-md`}
       >
         <div className={getIconColorClass()}>{icon}</div>
       </div>
@@ -91,7 +91,7 @@ const TeamMember = ({
       <p className="text-muted-foreground text-sm">{bio}</p>
 
       {/* Add hover effect with a gradient line */}
-      <div className="via-foreground/20 mx-auto mt-4 h-1 w-0 rounded-full bg-gradient-to-r from-transparent to-transparent transition-all duration-300 group-hover:w-full"></div>
+      <div className="via-foreground/20 mx-auto mt-4 h-1 w-0 rounded-full bg-linear-to-r from-transparent to-transparent transition-all duration-300 group-hover:w-full"></div>
     </motion.div>
   );
 };

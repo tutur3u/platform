@@ -78,7 +78,7 @@ export function AchievementsSection() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px]"
+          className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px]"
         />
       </div>
 
@@ -119,7 +119,7 @@ export function AchievementsSection() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              className="from-primary relative bg-linear-to-r via-purple-500 to-pink-500 bg-size-[200%_auto] bg-clip-text text-transparent"
             >
               Our Achievements
             </motion.span>
@@ -157,7 +157,7 @@ export function AchievementsSection() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
-                  className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
+                  className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
                 />
                 <motion.div
                   animate={{
@@ -169,7 +169,7 @@ export function AchievementsSection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                  className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                 />
                 <div className="pointer-events-none relative p-8">
                   <motion.div
@@ -219,7 +219,7 @@ export function AchievementsSection() {
                   initial={{ scaleX: 0 }}
                   whileHover={{ scaleX: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                  className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-linear-to-r"
                 />
               </div>
             </motion.div>

@@ -23,7 +23,7 @@ export const getColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+      <div className="line-clamp-1 min-w-32">{row.getValue('id')}</div>
     ),
   },
   {
@@ -36,7 +36,7 @@ export const getColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link href={row.original.href || '#'} className="min-w-[8rem]">
+      <Link href={row.original.href || '#'} className="min-w-32">
         <span className="font-semibold hover:underline">
           {row.getValue('name') || '-'}
         </span>
@@ -53,7 +53,7 @@ export const getColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-[8rem]">
+      <div className="line-clamp-1 w-32">
         {row.getValue('description') || '-'}
       </div>
     ),
@@ -68,7 +68,7 @@ export const getColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-[2rem]">{row.getValue('columns')}</div>
+      <div className="line-clamp-1 w-8">{row.getValue('columns')}</div>
     ),
   },
   {
@@ -81,7 +81,7 @@ export const getColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-[2rem]">{row.getValue('rows')}</div>
+      <div className="line-clamp-1 w-8">{row.getValue('rows')}</div>
     ),
   },
   {
@@ -94,7 +94,7 @@ export const getColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
       </div>
     ),

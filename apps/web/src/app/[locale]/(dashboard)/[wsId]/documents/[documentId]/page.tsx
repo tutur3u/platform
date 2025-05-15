@@ -272,7 +272,7 @@ export default function DocumentDetailsPage({ params }: Props) {
 
   return (
     <div className="bg-background relative flex h-screen flex-col">
-      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
+      <div className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-4">
             <Button

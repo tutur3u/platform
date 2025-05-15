@@ -12,7 +12,7 @@ const ProblemSection = () => {
       className="bg-foreground/5 dark:bg-foreground/[0.02] relative w-full py-24"
     >
       {/* Background patterns */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--background-rgb),0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(var(--background-rgb),0.01)_1px,transparent_1px)] bg-[size:14px_24px]"></div>
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--background-rgb),0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(var(--background-rgb),0.01)_1px,transparent_1px)] bg-size-[14px_24px]"></div>
 
       <div className="mx-auto max-w-6xl px-4">
         <motion.div
@@ -66,10 +66,10 @@ const ProblemSection = () => {
 
         {/* Visual element - decorative line connecting the problems */}
         <div className="relative mt-12 hidden md:block">
-          <div className="right-1/6 left-1/6 via-foreground/10 absolute top-0 h-px bg-gradient-to-r from-transparent to-transparent"></div>
-          <div className="from-foreground/10 absolute left-1/2 top-0 h-8 w-px -translate-x-1/2 bg-gradient-to-b to-transparent"></div>
+          <div className="right-1/6 left-1/6 via-foreground/10 absolute top-0 h-px bg-linear-to-r from-transparent to-transparent"></div>
+          <div className="from-foreground/10 absolute left-1/2 top-0 h-8 w-px -translate-x-1/2 bg-linear-to-b to-transparent"></div>
           <div className="border-foreground/10 bg-background/50 absolute left-1/2 top-8 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border text-xs font-medium">
-            <span className="from-primary bg-gradient-to-r to-blue-500 bg-clip-text text-transparent">
+            <span className="from-primary bg-linear-to-r to-blue-500 bg-clip-text text-transparent">
               Famigo
             </span>
           </div>

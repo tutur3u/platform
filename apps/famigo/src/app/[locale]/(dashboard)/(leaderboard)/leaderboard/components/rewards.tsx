@@ -7,14 +7,14 @@ export default function Rewards() {
 
   return (
     <Card className="border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-yellow-400 to-yellow-600" />
+      <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-yellow-400 to-yellow-600" />
       <CardContent className="p-6">
         <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
           {t('rewards.current-rewards')}
         </h3>
         <ul className="space-y-3">
           <li className="flex items-center gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
               <Trophy className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div>
@@ -27,7 +27,7 @@ export default function Rewards() {
             </div>
           </li>
           <li className="flex items-center gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
               <Medal className="h-4 w-4 text-gray-600 dark:text-gray-400" />
             </div>
             <div>
@@ -40,7 +40,7 @@ export default function Rewards() {
             </div>
           </li>
           <li className="flex items-center gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
               <Medal className="h-4 w-4 text-amber-700 dark:text-amber-500" />
             </div>
             <div>
@@ -53,7 +53,7 @@ export default function Rewards() {
             </div>
           </li>
           <li className="flex items-center gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
               <Award className="h-4 w-4 text-purple-700 dark:text-purple-400" />
             </div>
             <div>
@@ -66,7 +66,7 @@ export default function Rewards() {
             </div>
           </li>
           <li className="flex items-center gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-900/30">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-900/30">
               <Target className="h-4 w-4 text-pink-700 dark:text-pink-400" />
             </div>
             <div>
@@ -79,7 +79,7 @@ export default function Rewards() {
             </div>
           </li>
           <li className="flex items-center gap-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
               <Clock className="h-4 w-4 text-blue-700 dark:text-blue-400" />
             </div>
             <div>

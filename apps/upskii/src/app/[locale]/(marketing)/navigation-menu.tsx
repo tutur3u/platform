@@ -72,7 +72,7 @@ const ListItem = React.forwardRef<
           ref={ref}
           className={cn(
             'outline-hidden group relative block h-full select-none space-y-1 rounded-md p-4 leading-none no-underline transition-all duration-300',
-            'via-primary/10 to-primary/5 hover:bg-gradient-to-br',
+            'via-primary/10 to-primary/5 hover:bg-linear-to-br',
             'opacity-90 hover:opacity-100',
             'hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]',
             disabled && 'cursor-not-allowed opacity-50',

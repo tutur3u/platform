@@ -130,8 +130,8 @@ export default function BugBountyPage() {
 
       {/* Enhanced Background Effects */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:120px] opacity-20" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: [0.1, 0.15, 0.1] }}
@@ -177,12 +177,12 @@ export default function BugBountyPage() {
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="from-primary/40 absolute -inset-1 -z-10 rounded-lg bg-gradient-to-r via-purple-500/40 to-pink-500/40 blur-lg"
+              className="from-primary/40 absolute -inset-1 -z-10 rounded-lg bg-linear-to-r via-purple-500/40 to-pink-500/40 blur-lg"
             />
             Thank You
           </span>{' '}
           for Your{' '}
-          <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <span className="from-primary bg-linear-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
             Security Contribution
           </span>
         </h1>
@@ -208,9 +208,9 @@ export default function BugBountyPage() {
       >
         <Card className="border-primary/10 group relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="from-primary/10 absolute inset-0 bg-gradient-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="from-primary/10 absolute inset-0 bg-linear-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <motion.div
-              className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:20px_20px]"
+              className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[20px_20px]"
               animate={{
                 backgroundPosition: ['0% 0%', '100% 100%'],
               }}
@@ -231,8 +231,8 @@ export default function BugBountyPage() {
                 animate={controls}
                 className="relative"
               >
-                <div className="from-primary/20 absolute -inset-3 rounded-full bg-gradient-to-r via-purple-500/20 to-pink-500/20 blur-md" />
-                <div className="from-primary relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br via-purple-500/80 to-pink-500/80">
+                <div className="from-primary/20 absolute -inset-3 rounded-full bg-linear-to-r via-purple-500/20 to-pink-500/20 blur-md" />
+                <div className="from-primary relative flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br via-purple-500/80 to-pink-500/80">
                   <Trophy className="h-10 w-10 text-white" />
                 </div>
               </motion.div>
@@ -297,7 +297,7 @@ export default function BugBountyPage() {
             <motion.div
               initial={{ opacity: 0 }}
               whileHover={{ opacity: 1 }}
-              className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent"
+              className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent"
             />
             <div className="relative p-8 md:p-10">
               <div className="mb-8 flex flex-wrap items-center gap-4">
@@ -403,9 +403,9 @@ export default function BugBountyPage() {
       >
         <Card className="border-primary/10 group relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="from-primary/10 absolute inset-0 bg-gradient-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="from-primary/10 absolute inset-0 bg-linear-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <motion.div
-              className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:20px_20px]"
+              className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[20px_20px]"
               animate={{
                 backgroundPosition: ['0% 0%', '100% 100%'],
               }}
@@ -430,7 +430,7 @@ export default function BugBountyPage() {
 
               <div className="space-y-4 text-center md:text-left">
                 <h2 className="text-foreground text-3xl font-bold">
-                  <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                  <span className="from-primary bg-linear-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
                     Join Our Bug Bounty Program
                   </span>
                 </h2>
@@ -445,7 +445,7 @@ export default function BugBountyPage() {
                   href="mailto:security@tuturuuu.com"
                   className="bg-foreground text-background hover:bg-foreground/90 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
                 >
-                  <div className="from-primary/20 to-primary/0 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="from-primary/20 to-primary/0 absolute inset-0 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <Mail className="relative h-5 w-5" />
                   <span className="relative">Contact Security Team</span>
                 </motion.a>
@@ -456,7 +456,7 @@ export default function BugBountyPage() {
                   rel="noopener noreferrer"
                   className="bg-foreground/10 hover:bg-foreground/20 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
                 >
-                  <div className="from-primary/10 to-primary/0 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="from-primary/10 to-primary/0 absolute inset-0 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <GithubIcon className="relative h-5 w-5" />
                   <span className="relative">Security Policy</span>
                 </motion.a>

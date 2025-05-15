@@ -84,7 +84,7 @@ export function LeaderboardFilters({
 
             {/* Animated glow effect on focus */}
             <motion.div
-              className="absolute -inset-[1px] -z-10 rounded-md opacity-0 blur-sm transition-opacity duration-300 group-focus-within:opacity-100"
+              className="absolute -inset-px -z-10 rounded-md opacity-0 blur-sm transition-opacity duration-300 group-focus-within:opacity-100"
               style={{
                 background: 'linear-gradient(to right, #3B82F6, #8B5CF6)',
               }}

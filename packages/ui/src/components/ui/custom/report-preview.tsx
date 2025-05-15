@@ -87,12 +87,12 @@ export default function ReportPreview({
             !!getConfig('REPORT_FEEDBACK_TEXT')) && (
             <div className="border-foreground/50 my-4 flex flex-col justify-stretch rounded border-2 text-sm md:flex-row">
               {getConfig('REPORT_CONTENT_TEXT') && (
-                <div className="md:flex-[2]">
+                <div className="md:flex-2">
                   <div className="flex h-16 items-center justify-center whitespace-pre-wrap p-2 text-center text-sm font-bold">
                     {getConfig('REPORT_CONTENT_TEXT')}
                   </div>
                   <div
-                    className={`border-foreground/50 min-h-[6rem] text-ellipsis whitespace-pre-line break-words border-t-2 p-2 font-semibold ${
+                    className={`border-foreground/50 min-h-24 text-ellipsis whitespace-pre-line break-words border-t-2 p-2 font-semibold ${
                       !data?.content ? 'text-center underline' : 'text-left'
                     }`}
                   >
@@ -109,11 +109,11 @@ export default function ReportPreview({
                 )}
 
               {getConfig('REPORT_SCORE_TEXT') && (
-                <div className="border-foreground/50 flex-[1]">
+                <div className="border-foreground/50 flex-1">
                   <div className="flex h-16 flex-col items-center justify-center whitespace-pre-wrap p-2 text-sm font-bold">
                     {getConfig('REPORT_SCORE_TEXT')}
                   </div>
-                  <div className="border-foreground/50 flex min-h-[6rem] justify-center text-ellipsis whitespace-pre-line break-words border-t-2 p-2 text-center">
+                  <div className="border-foreground/50 flex min-h-24 justify-center text-ellipsis whitespace-pre-line break-words border-t-2 p-2 text-center">
                     <span
                       className={
                         data?.score
@@ -134,12 +134,12 @@ export default function ReportPreview({
                 )}
 
               {getConfig('REPORT_FEEDBACK_TEXT') && (
-                <div className="flex-[2]">
+                <div className="flex-2">
                   <div className="flex h-16 items-center justify-center whitespace-pre-wrap p-2 text-sm font-bold">
                     {getConfig('REPORT_FEEDBACK_TEXT')}
                   </div>
                   <div
-                    className={`border-foreground/50 min-h-[6rem] text-ellipsis whitespace-pre-line break-words border-t-2 p-2 font-semibold ${
+                    className={`border-foreground/50 min-h-24 text-ellipsis whitespace-pre-line break-words border-t-2 p-2 font-semibold ${
                       !data?.feedback ? 'text-center underline' : 'text-left'
                     }`}
                   >

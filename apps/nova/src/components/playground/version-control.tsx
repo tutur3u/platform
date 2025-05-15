@@ -22,7 +22,7 @@ export function VersionControl({
 }: VersionControlProps) {
   return (
     <div className="mb-4 flex items-center space-x-4">
-      <div className="flex-grow">
+      <div className="grow">
         <Select
           value={version.toString()}
           onValueChange={(value) => onLoad(parseInt(value))}

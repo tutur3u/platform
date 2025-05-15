@@ -51,7 +51,7 @@ export const storageObjectsColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+      <div className="line-clamp-1 min-w-32">{row.getValue('id')}</div>
     ),
   },
   {
@@ -66,7 +66,7 @@ export const storageObjectsColumns = (
     cell: ({ row }) => {
       if (row.getValue('id'))
         return (
-          <div className="flex min-w-[8rem] items-center gap-2 font-semibold">
+          <div className="flex min-w-32 items-center gap-2 font-semibold">
             <FileText className="h-4 w-4" />
             {(row.getValue('name') as string | undefined)?.replace(
               /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
@@ -82,7 +82,7 @@ export const storageObjectsColumns = (
       const basePath = searchParams.get('path') ?? '';
 
       return (
-        <div className="min-w-[8rem] font-semibold">
+        <div className="min-w-32 font-semibold">
           <Link
             href={{
               pathname,
@@ -122,7 +122,7 @@ export const storageObjectsColumns = (
     ),
     cell: ({ row }) =>
       row.getValue('name') === '...' ? null : (
-        <div className="min-w-[8rem]">
+        <div className="min-w-32">
           {row.original?.metadata?.size !== undefined
             ? formatBytes(row.original.metadata.size)
             : '-'}
@@ -140,7 +140,7 @@ export const storageObjectsColumns = (
     ),
     cell: ({ row }) =>
       row.getValue('name') === '...' ? null : (
-        <div className="min-w-[8rem]">
+        <div className="min-w-32">
           {row.getValue('created_at')
             ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
             : '-'}

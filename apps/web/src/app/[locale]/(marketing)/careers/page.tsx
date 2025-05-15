@@ -191,7 +191,7 @@ export default function CareersPage() {
             ease: 'linear',
           }}
           style={{ y }}
-          className="absolute -left-[8rem] top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="absolute -left-32 top-0 h-80 w-[20rem] rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-160 sm:w-160"
         />
         <motion.div
           animate={{
@@ -204,7 +204,7 @@ export default function CareersPage() {
             ease: 'linear',
           }}
           style={{ y: opacity }}
-          className="absolute -right-[8rem] top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="absolute -right-32 top-[30%] h-70 w-70 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-140 sm:w-140"
         />
         <motion.div
           animate={{
@@ -216,15 +216,15 @@ export default function CareersPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -bottom-32 left-1/2 h-[22.5rem] w-[22.5rem] -translate-x-1/2 rounded-full bg-gradient-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64 sm:h-[45rem] sm:w-[45rem]"
+          className="absolute -bottom-32 left-1/2 h-90 w-90 -translate-x-1/2 rounded-full bg-linear-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64 sm:h-180 sm:w-180"
         />
       </div>
 
       <div className="container space-y-16 px-4 pt-12 sm:space-y-24 sm:pt-16">
         {/* Enhanced Background Patterns */}
         <div className="pointer-events-none fixed inset-0 -z-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:120px] opacity-20" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: [0.1, 0.15, 0.1] }}
@@ -249,8 +249,8 @@ export default function CareersPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_700px_at_30%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_70%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:40px] opacity-20" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:40px] opacity-20" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[40px] opacity-20" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[40px] opacity-20" />
           </div>
 
           <motion.div
@@ -263,7 +263,7 @@ export default function CareersPage() {
               variant="secondary"
               className="hover:bg-primary/20 relative mb-6 cursor-default transition-colors"
             >
-              <span className="from-primary via-primary/80 to-primary relative bg-gradient-to-r bg-clip-text text-transparent">
+              <span className="from-primary via-primary/80 to-primary relative bg-linear-to-r bg-clip-text text-transparent">
                 Join Our Vision
               </span>
             </Badge>
@@ -277,12 +277,12 @@ export default function CareersPage() {
           >
             Shape{' '}
             <span className="inline-block">
-              <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              <span className="from-primary bg-linear-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
                 Tomorrow's
               </span>
             </span>{' '}
             <br />
-            <span className="from-primary bg-gradient-to-r via-blue-500 to-cyan-500 bg-clip-text text-transparent">
+            <span className="from-primary bg-linear-to-r via-blue-500 to-cyan-500 bg-clip-text text-transparent">
               Technology
             </span>
           </motion.h1>
@@ -296,7 +296,7 @@ export default function CareersPage() {
             At Tuturuuu, we're building a world-class team starting from
             Vietnam, with a vision to expand globally. We're looking for
             visionaries who share our passion for{' '}
-            <strong className="from-primary to-primary/60 bg-gradient-to-r bg-clip-text font-bold text-transparent">
+            <strong className="from-primary to-primary/60 bg-linear-to-r bg-clip-text font-bold text-transparent">
               creating beautiful, impactful technology
             </strong>{' '}
             that makes a difference in people's lives.
@@ -310,7 +310,7 @@ export default function CareersPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 + index * 0.1 }}
                 whileHover={{ scale: 1.05 }}
-                className="from-foreground/5 to-foreground/10 hover:from-primary/10 hover:to-primary/5 flex cursor-default items-center gap-2 rounded-full bg-gradient-to-r px-4 py-2 transition-colors"
+                className="from-foreground/5 to-foreground/10 hover:from-primary/10 hover:to-primary/5 flex cursor-default items-center gap-2 rounded-full bg-linear-to-r px-4 py-2 transition-colors"
               >
                 <span className="text-primary">{badge.icon}</span>
                 <span className="text-foreground/80 text-sm font-medium">
@@ -331,17 +331,17 @@ export default function CareersPage() {
           <div className="absolute inset-0 -z-10">
             <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
             <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
           </div>
 
           <div className="relative mx-auto max-w-6xl">
             <Card className="group relative overflow-hidden">
               <div className="absolute inset-0">
-                <div className="from-primary/10 absolute inset-0 bg-gradient-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
-                <div className="absolute -left-32 -top-32 h-64 w-64 rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl" />
-                <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
+                <div className="from-primary/10 absolute inset-0 bg-linear-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[20px_20px]" />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
+                <div className="absolute -left-32 -top-32 h-64 w-64 rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl" />
+                <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
               </div>
 
               <div className="relative grid gap-12 p-4 md:grid-cols-2 md:p-12">
@@ -351,14 +351,14 @@ export default function CareersPage() {
                     whileHover={{ scale: 1 }}
                     className="bg-primary/10 group-hover:bg-primary/20 relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl transition-colors duration-300 md:mx-0"
                   >
-                    <div className="animate-spin-slow absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20" />
+                    <div className="animate-spin-slow absolute -inset-1 rounded-2xl bg-linear-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20" />
                     <div className="bg-background/80 absolute inset-[2px] rounded-xl backdrop-blur-sm" />
                     <Mail className="text-primary relative h-10 w-10" />
                   </motion.div>
 
                   <div className="space-y-4 text-center md:text-left">
                     <h2 className="text-foreground text-4xl font-bold">
-                      <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                      <span className="from-primary bg-linear-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
                         Shape the Future with Us
                       </span>
                     </h2>
@@ -375,7 +375,7 @@ export default function CareersPage() {
                       className="bg-foreground text-background hover:bg-foreground/90 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
                     >
-                      <div className="from-primary/20 to-primary/0 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="from-primary/20 to-primary/0 absolute inset-0 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       <Mail className="relative h-5 w-5" />
                       <span className="relative">Get in Touch</span>
                     </motion.a>
@@ -387,7 +387,7 @@ export default function CareersPage() {
                       className="bg-foreground/10 hover:bg-foreground/20 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
                     >
-                      <div className="from-primary/10 to-primary/0 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="from-primary/10 to-primary/0 absolute inset-0 bg-linear-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       <Github className="relative h-5 w-5" />
                       <span className="relative">View Our Work</span>
                     </motion.a>
@@ -417,7 +417,7 @@ export default function CareersPage() {
 
                 <div className="relative">
                   <div className="bg-foreground/5 group relative overflow-hidden rounded-2xl p-4 backdrop-blur-sm md:p-8">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <div className="relative space-y-6">
                       <h3 className="text-foreground text-balance text-center text-2xl font-bold">
                         What We're Looking For
@@ -521,7 +521,7 @@ export default function CareersPage() {
               }}
               className="absolute inset-0 bg-[conic-gradient(from_270deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
           </div>
 
           <div className="relative text-center">
@@ -561,7 +561,7 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary relative bg-linear-to-r via-purple-500 to-pink-500 bg-size-[200%_auto] bg-clip-text text-transparent"
                 >
                   Our Values
                 </motion.span>
@@ -599,7 +599,7 @@ export default function CareersPage() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
+                      className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
                     />
                     <motion.div
                       animate={{
@@ -611,7 +611,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -661,7 +661,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-linear-to-r"
                     />
                   </div>
                 </motion.div>
@@ -701,7 +701,7 @@ export default function CareersPage() {
               }}
               className="absolute inset-0 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
           </div>
 
           <div className="relative text-center">
@@ -741,7 +741,7 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="from-primary relative bg-gradient-to-r via-blue-500 to-cyan-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary relative bg-linear-to-r via-blue-500 to-cyan-500 bg-size-[200%_auto] bg-clip-text text-transparent"
                 >
                   Benefits & Perks
                 </motion.span>
@@ -779,7 +779,7 @@ export default function CareersPage() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent transition-opacity duration-300"
+                      className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-cyan-500/5 to-transparent transition-opacity duration-300"
                     />
                     <motion.div
                       animate={{
@@ -791,7 +791,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -841,7 +841,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-linear-to-r"
                     />
                   </div>
                 </motion.div>
@@ -890,7 +890,7 @@ export default function CareersPage() {
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px]"
+              className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px]"
             />
           </div>
 
@@ -931,7 +931,7 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="from-primary relative bg-gradient-to-r via-orange-500 to-red-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary relative bg-linear-to-r via-orange-500 to-red-500 bg-size-[200%_auto] bg-clip-text text-transparent"
                 >
                   Cultural Pillars
                 </motion.span>
@@ -968,7 +968,7 @@ export default function CareersPage() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-red-500/5 to-transparent transition-opacity duration-300"
+                      className="absolute inset-0 bg-linear-to-br from-orange-500/10 via-red-500/5 to-transparent transition-opacity duration-300"
                     />
                     <motion.div
                       animate={{
@@ -980,7 +980,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
+                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-linear-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -1030,7 +1030,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-linear-to-r"
                     />
                   </div>
                 </motion.div>
@@ -1080,7 +1080,7 @@ export default function CareersPage() {
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px]"
+              className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px]"
             />
           </div>
 
@@ -1121,7 +1121,7 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="from-primary relative bg-gradient-to-r via-green-500 to-emerald-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary relative bg-linear-to-r via-green-500 to-emerald-500 bg-size-[200%_auto] bg-clip-text text-transparent"
                 >
                   Team Highlights
                 </motion.span>
@@ -1158,7 +1158,7 @@ export default function CareersPage() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent transition-opacity duration-300"
+                      className="absolute inset-0 bg-linear-to-br from-green-500/10 via-emerald-500/5 to-transparent transition-opacity duration-300"
                     />
                     <motion.div
                       animate={{
@@ -1170,7 +1170,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
+                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-linear-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -1220,7 +1220,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-linear-to-r"
                     />
                   </div>
                 </motion.div>

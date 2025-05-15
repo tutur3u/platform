@@ -55,7 +55,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+      <div className="line-clamp-1 min-w-32">{row.getValue('id')}</div>
     ),
   },
   {
@@ -69,7 +69,7 @@ export const getUserColumns = (
     ),
     cell: ({ row }) => {
       const avatarUrl = row.getValue('avatar_url') as string | undefined;
-      if (!avatarUrl) return <div className="min-w-[8rem]">-</div>;
+      if (!avatarUrl) return <div className="min-w-32">-</div>;
 
       return (
         <Image
@@ -77,7 +77,7 @@ export const getUserColumns = (
           height={128}
           src={avatarUrl}
           alt="Avatar"
-          className="aspect-square min-w-[8rem] rounded-lg object-cover"
+          className="aspect-square min-w-32 rounded-lg object-cover"
         />
       );
     },
@@ -92,7 +92,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link href={row.original.href || '#'} className="min-w-[8rem]">
+      <Link href={row.original.href || '#'} className="min-w-32">
         {Array.isArray(row.getValue('linked_users')) &&
         row.getValue<WorkspaceUser[]>('linked_users').length !== 0 ? (
           <TooltipProvider>
@@ -145,7 +145,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link href={row.original.href || '#'} className="min-w-[8rem]">
+      <Link href={row.original.href || '#'} className="min-w-32">
         {Array.isArray(row.getValue('linked_users')) &&
         row.getValue<WorkspaceUser[]>('linked_users').length !== 0 ? (
           <TooltipProvider>
@@ -219,7 +219,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="w-[8rem]">
+      <div className="w-32">
         {row.getValue('gender')
           ? t(row.getValue<string>('gender').toLowerCase())
           : '-'}
@@ -239,7 +239,7 @@ export const getUserColumns = (
       const age = moment().diff(row.getValue('birthday'), 'years');
 
       return (
-        <div className="grid min-w-[8rem] gap-1">
+        <div className="grid min-w-32 gap-1">
           <div>
             {row.getValue('birthday')
               ? dayjs(row.getValue('birthday'))
@@ -270,7 +270,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-[8rem]">
+      <div className="line-clamp-1 w-32">
         {row.getValue('ethnicity') || '-'}
       </div>
     ),
@@ -285,7 +285,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-[8rem]">
+      <div className="line-clamp-1 w-32">
         {row.getValue('guardian') || '-'}
       </div>
     ),
@@ -313,7 +313,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-[8rem]">
+      <div className="line-clamp-1 w-32">
         {row.getValue('address') || '-'}
       </div>
     ),
@@ -328,7 +328,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-[8rem]">{row.getValue('note') || '-'}</div>
+      <div className="line-clamp-1 w-32">{row.getValue('note') || '-'}</div>
     ),
   },
   {
@@ -341,7 +341,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-[8rem]">
+      <div className="line-clamp-1 w-32">
         {row.getValue('group_count') || '-'}
       </div>
     ),
@@ -356,7 +356,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         {Array.isArray(row.getValue('linked_users')) &&
         row.getValue<WorkspaceUser[]>('linked_users').length !== 0
           ? row.getValue<WorkspaceUser[]>('linked_users').map((u) => (
@@ -378,7 +378,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
       </div>
     ),
@@ -393,7 +393,7 @@ export const getUserColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         {moment(row.getValue('updated_at')).format('DD/MM/YYYY')}
       </div>
     ),
@@ -460,7 +460,7 @@ export const getUserColumns = (
     ),
     // eslint-disable-next-line no-unused-vars
     cell: ({ row: _ }) => (
-      <div className="line-clamp-1 w-[8rem]">
+      <div className="line-clamp-1 w-32">
         {/* {row.getValue(field.id) || '-'} */}-
       </div>
     ),

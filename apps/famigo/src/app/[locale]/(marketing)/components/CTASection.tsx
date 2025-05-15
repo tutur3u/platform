@@ -9,7 +9,7 @@ const CTASection = () => {
   return (
     <section className="relative w-full overflow-hidden py-24">
       {/* Colorful background elements */}
-      <div className="from-background via-background/95 to-background absolute inset-0 bg-gradient-to-b"></div>
+      <div className="from-background via-background/95 to-background absolute inset-0 bg-linear-to-b"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-20%,rgba(var(--primary-rgb),0.15),transparent)] dark:bg-[radial-gradient(circle_800px_at_50%_-20%,rgba(var(--primary-rgb),0.2),transparent)]"></div>
 
       {/* Decorative elements */}
@@ -30,7 +30,7 @@ const CTASection = () => {
           Join Our Mission
         </Badge>
 
-        <h2 className="from-primary dark:from-primary mb-4 bg-gradient-to-r via-blue-500 to-purple-500 bg-clip-text text-4xl font-bold text-transparent md:text-5xl dark:via-blue-400 dark:to-purple-400">
+        <h2 className="from-primary dark:from-primary mb-4 bg-linear-to-r via-blue-500 to-purple-500 bg-clip-text text-4xl font-bold text-transparent md:text-5xl dark:via-blue-400 dark:to-purple-400">
           Be Part of the Family Connection Revolution
         </h2>
 

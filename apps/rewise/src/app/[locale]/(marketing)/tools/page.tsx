@@ -6,7 +6,7 @@ export default function ToolsPage() {
   return (
     <div className="grid gap-8 py-8">
       <section>
-        <h2 className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue mb-4 w-fit bg-gradient-to-br bg-clip-text py-1 text-xl font-bold text-transparent lg:text-3xl">
+        <h2 className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue mb-4 w-fit bg-linear-to-br bg-clip-text py-1 text-xl font-bold text-transparent lg:text-3xl">
           Recommended For You
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -40,7 +40,7 @@ export default function ToolsPage() {
       </section>
 
       <section>
-        <h2 className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue mb-4 w-fit bg-gradient-to-br bg-clip-text py-1 text-xl font-bold text-transparent lg:text-3xl">
+        <h2 className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue mb-4 w-fit bg-linear-to-br bg-clip-text py-1 text-xl font-bold text-transparent lg:text-3xl">
           All Tools
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

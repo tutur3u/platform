@@ -54,7 +54,7 @@ export default function UserMonthAttendanceSkeleton() {
   return (
     <div className="animate-pulse rounded-lg border p-4 opacity-50">
       <div className="mb-2 flex w-full items-center border-b pb-2">
-        <div className="aspect-square h-10 w-10 rounded-lg bg-gradient-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
+        <div className="aspect-square h-10 w-10 rounded-lg bg-linear-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
         <div className="ml-2 w-full">
           <div className="flex items-center justify-between gap-1">
             <div className="bg-foreground/5 line-clamp-1 h-6 w-32 rounded font-semibold text-zinc-900 hover:underline dark:text-zinc-200" />
@@ -68,7 +68,7 @@ export default function UserMonthAttendanceSkeleton() {
             <div className="mb-4 flex items-center justify-between gap-4 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
-                <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
+                <div className="bg-foreground/20 mx-2 h-4 w-px rotate-30" />
                 <span className="text-lg font-semibold md:text-xl">
                   {thisMonth}
                 </span>

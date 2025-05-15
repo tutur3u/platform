@@ -161,9 +161,9 @@ export default function AboutPage() {
             className="relative order-2 md:order-1"
           >
             <div className="bg-primary/5 relative aspect-square rounded-xl border backdrop-blur-sm">
-              <div className="from-primary/10 absolute inset-0 rounded-xl bg-gradient-to-br via-transparent to-transparent" />
+              <div className="from-primary/10 absolute inset-0 rounded-xl bg-linear-to-br via-transparent to-transparent" />
               <div className="relative flex h-full items-center justify-center p-8">
-                <div className="from-primary bg-gradient-to-r via-purple-500 to-blue-500 bg-clip-text text-center text-4xl font-bold text-transparent md:text-5xl">
+                <div className="from-primary bg-linear-to-r via-purple-500 to-blue-500 bg-clip-text text-center text-4xl font-bold text-transparent md:text-5xl">
                   {t('mission-vision.slogan-1')}
                   <br />
                   {t('mission-vision.slogan-2')}
@@ -393,7 +393,7 @@ export default function AboutPage() {
                   transition={{ delay: index * 0.1 }}
                   className="flex items-start gap-3"
                 >
-                  <div className="bg-primary/10 text-primary mt-1 flex-shrink-0 rounded-full p-1">
+                  <div className="bg-primary/10 text-primary mt-1 shrink-0 rounded-full p-1">
                     <CheckCircle className="h-4 w-4" />
                   </div>
                   <div>
