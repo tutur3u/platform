@@ -40,7 +40,15 @@ export default function TestCaseComponent({
                     <div className="space-y-2">
                       <p className="ml-2 text-sm font-medium">Input</p>
                       <div className="bg-muted rounded-md p-3 font-mono text-sm">
-                        {testcase.input}
+                        {testcase.input ? (
+                          <p className="whitespace-pre-wrap">
+                            {testcase.input}
+                          </p>
+                        ) : (
+                          <p className="text-muted-foreground italic">
+                            No input available
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -48,7 +56,15 @@ export default function TestCaseComponent({
                         Output (Expected)
                       </p>
                       <div className="bg-muted rounded-md p-3 font-mono text-sm">
-                        {testcase.output}
+                        {testcase.output ? (
+                          <p className="whitespace-pre-wrap">
+                            {testcase.output}
+                          </p>
+                        ) : (
+                          <p className="text-muted-foreground italic">
+                            No output available
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
