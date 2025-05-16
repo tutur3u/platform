@@ -1,4 +1,4 @@
-import CalendarCell from './CalendarCell';
+import { CalendarCell } from './calendar-cell';
 import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 
@@ -7,13 +7,13 @@ interface CalendarColumnProps {
   last: boolean;
 }
 
-const CalendarColumn = ({ date, last }: CalendarColumnProps) => {
+export const CalendarColumn = ({ date, last }: CalendarColumnProps) => {
   const hours = Array.from(Array(24).keys());
 
   return (
     <div
       className={cn(
-        'border-border/30 relative grid border border-r',
+        'relative grid border border-r border-border/30',
         last && 'border-r-border'
       )}
       style={{
@@ -29,5 +29,3 @@ const CalendarColumn = ({ date, last }: CalendarColumnProps) => {
     </div>
   );
 };
-
-export default CalendarColumn;

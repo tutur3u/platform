@@ -1,168 +1,20 @@
-'use client';
-
-import { CalendarProvider, useCalendar } from '../../../../hooks/use-calendar';
-import CalendarHeader from './CalendarHeader';
-import { CalendarSettingsDialog } from './CalendarSettingsDialog';
-import CalendarViewWithTrail from './CalendarViewWithTrail';
-import MonthCalendar from './MonthCalendar';
-import { UnifiedEventModal } from './UnifiedEventModal';
-import WeekdayBar from './WeekdayBar';
-import { CalendarSettings } from './settings/CalendarSettingsContext';
+import { CalendarHeader } from './calendar-header';
+import { CalendarViewWithTrail } from './calendar-view-with-trail';
+import { CreateEventButton } from './create-event-button';
+import { EventModal } from './event-modal';
+import { MonthCalendar } from './month-calendar';
+import { SettingsButton } from './settings-button';
+import type { CalendarSettings } from './settings/CalendarSettingsContext';
+import { WeekdayBar } from './weekday-bar';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  type CalendarView,
-  useViewTransition,
-} from '@tuturuuu/ui/hooks/use-view-transition';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import type { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
+import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { cn } from '@tuturuuu/utils/format';
-import { PlusIcon, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-const CreateEventButton = () => {
-  const { openModal } = useCalendar();
-
-  return (
-    <div className="fixed bottom-6 right-6 z-10 flex gap-2">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            size="icon"
-            className="h-14 w-14 rounded-full shadow-lg"
-            onClick={() => openModal()}
-          >
-            <PlusIcon className="h-6 w-6" />
-            <span className="sr-only">Create new event</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Create new event</TooltipContent>
-      </Tooltip>
-    </div>
-  );
-};
-
-// Settings button component
-const SettingsButton = ({
-  wsId,
-  experimentalGoogleToken,
-  // initialSettings,
-  onSaveSettings,
-}: {
-  wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
-  initialSettings?: Partial<CalendarSettings>;
-  onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
-}) => {
-  const [open, setOpen] = useState(false);
-  const { updateSettings, settings } = useCalendar();
-
-  const handleSaveSettings = async (newSettings: CalendarSettings) => {
-    console.log('Saving settings from dialog:', newSettings);
-
-    // Update the calendar context with the new settings
-    updateSettings(newSettings);
-
-    // Call the parent's onSaveSettings if provided
-    if (onSaveSettings) {
-      await onSaveSettings(newSettings);
-    }
-
-    // Force localStorage save
-    try {
-      localStorage.setItem('calendarSettings', JSON.stringify(newSettings));
-      console.log('Manually saved settings to localStorage');
-    } catch (error) {
-      console.error('Failed to manually save settings to localStorage:', error);
-    }
-  };
-
-  return (
-    <div className="fixed bottom-24 right-6 z-10 flex gap-2">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full shadow-lg"
-            onClick={() => setOpen(true)}
-          >
-            <Settings className="h-5 w-5" />
-            <span className="sr-only">Calendar settings</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Calendar settings</TooltipContent>
-      </Tooltip>
-      <CalendarSettingsDialog
-        wsId={wsId}
-        open={open}
-        onOpenChange={setOpen}
-        experimentalGoogleToken={experimentalGoogleToken}
-        initialSettings={settings}
-        onSave={handleSaveSettings}
-      />
-    </div>
-  );
-};
-
-export const Calendar = ({
-  t,
-  locale,
-  useQuery,
-  useQueryClient,
-  workspace,
-  disabled,
-  initialSettings,
-  enableHeader = true,
-  experimentalGoogleToken,
-  onSaveSettings,
-  externalState,
-}: {
-  t: any;
-  locale: string;
-  useQuery: any;
-  useQueryClient: any;
-  workspace?: Workspace;
-  disabled?: boolean;
-  initialSettings?: Partial<CalendarSettings>;
-  enableHeader?: boolean;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
-  onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
-  externalState?: {
-    date: Date;
-    setDate: React.Dispatch<React.SetStateAction<Date>>;
-    view: 'day' | '4-days' | 'week' | 'month';
-    setView: React.Dispatch<
-      React.SetStateAction<'day' | '4-days' | 'week' | 'month'>
-    >;
-    availableViews: { value: string; label: string; disabled?: boolean }[];
-  };
-}) => {
-  return (
-    <CalendarProvider
-      ws={workspace}
-      useQuery={useQuery}
-      useQueryClient={useQueryClient}
-      initialSettings={initialSettings}
-      experimentalGoogleToken={experimentalGoogleToken}
-    >
-      <CalendarContent
-        t={t}
-        locale={locale}
-        disabled={disabled}
-        workspace={workspace}
-        initialSettings={initialSettings}
-        enableHeader={enableHeader}
-        experimentalGoogleToken={experimentalGoogleToken}
-        onSaveSettings={onSaveSettings}
-        externalState={externalState}
-      />
-    </CalendarProvider>
-  );
-};
-
-// Separate component to access the CalendarProvider context
-const CalendarContent = ({
+export const CalendarContent = ({
   t,
   locale,
   disabled,
@@ -521,7 +373,7 @@ const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="scrollbar-none relative flex-1 overflow-hidden">
+      <div className="relative scrollbar-none flex-1 overflow-hidden">
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar date={dates[0]} workspace={workspace} />
         ) : (
@@ -531,7 +383,7 @@ const CalendarContent = ({
 
       {disabled ? null : (
         <>
-          {workspace && <UnifiedEventModal />}
+          {workspace && <EventModal />}
           <CreateEventButton />
           {workspace?.id && (
             <SettingsButton
@@ -546,5 +398,3 @@ const CalendarContent = ({
     </div>
   );
 };
-
-export default Calendar;

@@ -4,7 +4,7 @@ interface MonthCellProps {
   hasGrid: boolean;
 }
 
-export default function MonthCell({ date, key, hasGrid }: MonthCellProps) {
+export function MonthCell({ date, key, hasGrid }: MonthCellProps) {
   const today = new Date();
 
   // check if date is today
@@ -15,7 +15,7 @@ export default function MonthCell({ date, key, hasGrid }: MonthCellProps) {
       key={key}
       className={`${
         hasGrid
-          ? 'border-b border-r border-zinc-800 text-xl font-semibold'
+          ? 'border-r border-b border-zinc-800 text-xl font-semibold'
           : 'text-sm'
       } flex justify-center`}
     >

@@ -1,4 +1,4 @@
-import MonthCell from './MonthCell';
+import { MonthCell } from './month-cell';
 
 interface MonthProps {
   hasGrid: boolean;
@@ -6,7 +6,7 @@ interface MonthProps {
   year: number;
 }
 
-export default function Month({ hasGrid, month, year }: MonthProps) {
+export function Month({ hasGrid, month, year }: MonthProps) {
   // array of months
   const months = [
     'January',
@@ -89,7 +89,7 @@ export default function Month({ hasGrid, month, year }: MonthProps) {
       {hasGrid || <div>{months[month]}</div>}
       <div
         className={`${
-          hasGrid ? `border-l border-t border-zinc-800` : ``
+          hasGrid ? `border-t border-l border-zinc-800` : ``
         } grid grid-cols-7`}
       >
         {Array.from({ length: getMonthDaysLength() + 1 }).map((_, index) => (

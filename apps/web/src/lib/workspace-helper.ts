@@ -39,8 +39,6 @@ export async function getWorkspace(id: string, requireUserRole = false) {
     joined: workspaceJoined,
   };
 
-  console.log('ws', ws);
-
   return ws as Workspace;
 }
 

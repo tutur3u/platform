@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 
 dayjs.extend(timezone);
 
-const TimeIndicatorLine = ({
+export const TimeIndicatorLine = ({
   columnIndex,
   columnsCount,
 }: {
@@ -52,12 +52,10 @@ const TimeIndicatorLine = ({
       }}
     >
       {/* Left dot */}
-      <div className="absolute -left-[4px] -top-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" />
+      <div className="absolute -top-[4px] -left-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" />
 
       {/* Right dot */}
       {/* <div className="absolute -top-[4px] -right-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" /> */}
     </div>
   );
 };
-
-export default TimeIndicatorLine;
