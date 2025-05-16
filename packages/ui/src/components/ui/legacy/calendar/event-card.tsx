@@ -910,7 +910,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           ref={cardRef}
           id={`event-${id}`}
           className={cn(
-            'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 transition-colors duration-300 select-none',
+            'pointer-events-auto absolute max-w-none select-none overflow-hidden rounded-l rounded-r-md border-l-2 transition-colors duration-300',
             'group transition-all hover:ring-1 focus:outline-none',
             {
               'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
@@ -950,13 +950,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         >
           {/* Continuation indicators for multi-day events */}
           {showStartIndicator && (
-            <div className="absolute top-1/2 left-2 -translate-x-1 -translate-y-1/2">
+            <div className="absolute left-2 top-1/2 -translate-x-1 -translate-y-1/2">
               <ArrowLeft className={`h-3 w-3 ${text}`} />
             </div>
           )}
 
           {showEndIndicator && (
-            <div className="absolute top-1/2 right-2 translate-x-1 -translate-y-1/2">
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 translate-x-1">
               <ArrowRight className={`h-3 w-3 ${text}`} />
             </div>
           )}
@@ -964,7 +964,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           {/* Edit button overlay */}
           <div
             className={cn(
-              'absolute top-2 right-2 rounded-full p-0.5 opacity-0 shadow-sm',
+              'absolute right-2 top-2 rounded-full p-0.5 opacity-0 shadow-sm',
               'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
               {
                 'opacity-0!':
@@ -982,33 +982,33 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
           {/* Status indicators */}
           {updateStatus === 'syncing' && (
-            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/5">
+            <div className="bg-background/5 pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
               {/* <div
                 className="animate-shimmer h-full w-full bg-linear-to-r from-transparent via-background/10 to-transparent"
                 style={{ backgroundSize: '200% 100%' }}
               /> */}
-              <div className="absolute top-2 right-2 rounded-full bg-background/30 p-1">
+              <div className="bg-background/30 absolute right-2 top-2 rounded-full p-1">
                 <RefreshCw className="h-3 w-3 animate-spin" />
               </div>
             </div>
           )}
 
           {updateStatus === 'success' && (
-            <div className="pointer-events-none absolute top-2 right-2 z-20">
-              <Check className="h-3 w-3 text-dynamic-light-green" />
+            <div className="pointer-events-none absolute right-2 top-2 z-20">
+              <Check className="text-dynamic-light-green h-3 w-3" />
             </div>
           )}
 
           {updateStatus === 'error' && (
-            <div className="pointer-events-none absolute top-2 right-2 z-20">
-              <AlertTriangle className="h-3 w-3 text-dynamic-light-red" />
+            <div className="pointer-events-none absolute right-2 top-2 z-20">
+              <AlertTriangle className="text-dynamic-light-red h-3 w-3" />
             </div>
           )}
 
           <div
             ref={contentRef}
             className={cn(
-              'flex h-full flex-col text-left select-none',
+              'flex h-full select-none flex-col text-left',
               duration <= 0.25 ? 'px-1 py-0' : 'p-1',
               duration <= 0.5 ? 'text-xs' : 'text-sm',
               _isMultiDay && 'items-start'
@@ -1080,7 +1080,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             <div
               ref={handleRef}
               className={cn(
-                'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/20',
+                'hover:bg-primary/20 absolute inset-x-0 bottom-0 cursor-s-resize',
                 'h-2 transition-colors'
               )}
               aria-label="Resize event"
@@ -1132,70 +1132,70 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               onClick={() => handleColorChange('RED')}
               className="flex items-center gap-2"
             >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-red/80 bg-calendar-bg-red"></div>
+              <div className="border-dynamic-light-red/80 bg-calendar-bg-red h-4 w-4 flex-none rounded-full border"></div>
               <span>Red</span>
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => handleColorChange('BLUE')}
               className="flex items-center gap-2"
             >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-blue/80 bg-calendar-bg-blue"></div>
+              <div className="border-dynamic-light-blue/80 bg-calendar-bg-blue h-4 w-4 flex-none rounded-full border"></div>
               <span>Blue</span>
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => handleColorChange('GREEN')}
               className="flex items-center gap-2"
             >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-green/80 bg-calendar-bg-green"></div>
+              <div className="border-dynamic-light-green/80 bg-calendar-bg-green h-4 w-4 flex-none rounded-full border"></div>
               <span>Green</span>
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => handleColorChange('YELLOW')}
               className="flex items-center gap-2"
             >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-yellow/80 bg-calendar-bg-yellow"></div>
+              <div className="border-dynamic-light-yellow/80 bg-calendar-bg-yellow h-4 w-4 flex-none rounded-full border"></div>
               <span>Yellow</span>
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => handleColorChange('PURPLE')}
               className="flex items-center gap-2"
             >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-purple/80 bg-calendar-bg-purple"></div>
+              <div className="border-dynamic-light-purple/80 bg-calendar-bg-purple h-4 w-4 flex-none rounded-full border"></div>
               <span>Purple</span>
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => handleColorChange('PINK')}
               className="flex items-center gap-2"
             >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-pink/80 bg-calendar-bg-pink"></div>
+              <div className="border-dynamic-light-pink/80 bg-calendar-bg-pink h-4 w-4 flex-none rounded-full border"></div>
               <span>Pink</span>
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => handleColorChange('ORANGE')}
               className="flex items-center gap-2"
             >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-orange/80 bg-calendar-bg-orange"></div>
+              <div className="border-dynamic-light-orange/80 bg-calendar-bg-orange h-4 w-4 flex-none rounded-full border"></div>
               <span>Orange</span>
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => handleColorChange('INDIGO')}
               className="flex items-center gap-2"
             >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-indigo/80 bg-calendar-bg-indigo"></div>
+              <div className="border-dynamic-light-indigo/80 bg-calendar-bg-indigo h-4 w-4 flex-none rounded-full border"></div>
               <span>Indigo</span>
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => handleColorChange('CYAN')}
               className="flex items-center gap-2"
             >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-cyan/80 bg-calendar-bg-cyan"></div>
+              <div className="border-dynamic-light-cyan/80 bg-calendar-bg-cyan h-4 w-4 flex-none rounded-full border"></div>
               <span>Cyan</span>
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => handleColorChange('GRAY')}
               className="flex items-center gap-2"
             >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-gray/80 bg-calendar-bg-gray"></div>
+              <div className="border-dynamic-light-gray/80 bg-calendar-bg-gray h-4 w-4 flex-none rounded-full border"></div>
               <span>Gray</span>
             </ContextMenuItem>
           </ContextMenuSubContent>

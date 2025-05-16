@@ -42,7 +42,7 @@ export const SettingsButton = ({
   };
 
   return (
-    <div className="fixed right-6 bottom-24 z-10 flex gap-2">
+    <div className="fixed bottom-24 right-6 z-10 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button

@@ -429,7 +429,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       ref={cellRef}
       className={cn(
         'calendar-cell relative transition-colors',
-        hour !== 0 && 'border-t border-border/30',
+        hour !== 0 && 'border-border/30 border-t',
         isHovering ? 'bg-muted/20' : 'hover:bg-muted/10'
       )}
       style={{
@@ -446,19 +446,19 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       {/* Show only the hovered label before 1s, both after 1s */}
       {showBothLabels ? (
         <>
-          <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">
+          <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
             {formatTime(hour)}
           </span>
-          <span className="absolute bottom-2 left-2 text-xs font-medium text-muted-foreground/70">
+          <span className="text-muted-foreground/70 absolute bottom-2 left-2 text-xs font-medium">
             {formatTime(hour, 30)}
           </span>
         </>
       ) : hoveredSlot === 'hour' ? (
-        <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">
+        <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
           {formatTime(hour)}
         </span>
       ) : hoveredSlot === 'half-hour' ? (
-        <span className="absolute bottom-2 left-2 text-xs font-medium text-muted-foreground/70">
+        <span className="text-muted-foreground/70 absolute bottom-2 left-2 text-xs font-medium">
           {formatTime(hour, 30)}
         </span>
       ) : null}
@@ -474,7 +474,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         aria-describedby={tooltipId}
       />
       {/* Half-hour marker */}
-      <div className="absolute top-1/2 right-0 left-0 border-t border-dashed border-border/30" />
+      <div className="border-border/30 absolute left-0 right-0 top-1/2 border-t border-dashed" />
       {/* Half-hour clickable area */}
       <button
         className="absolute inset-x-0 top-1/2 h-1/2 cursor-pointer focus:outline-none"
