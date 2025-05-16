@@ -10,6 +10,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { checkPermission } from '@tuturuuu/utils/nova/submissions/check-permission';
 import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -60,7 +61,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ problemId: string }> }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const sbAdmin = await createAdminClient();
 
   let submissionId: string | null = null;
@@ -76,9 +77,10 @@ export async function POST(
 
     const {
       data: { user },
-    } = await (await supabase).auth.getUser();
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (authError || !user?.id) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -118,6 +120,15 @@ export async function POST(
       );
     }
 
+    const { canSubmit, message } = await checkPermission({
+      problemId,
+      sessionId: sessionId || null,
+    });
+
+    if (!canSubmit) {
+      return NextResponse.json({ message }, { status: 401 });
+    }
+
     // Add plagiarism detection check against problem description
     const plagiarismSchema = z.object({
       similarity_score: z.number().min(0).max(1),
@@ -131,20 +142,20 @@ export async function POST(
         model: vertexModel,
         schema: plagiarismSchema,
         prompt: `
-Task: Determine if the user's submitted prompt is substantially similar to the problem description, examples, or expected outputs.
+          Task: Determine if the user's submitted prompt is substantially similar to the problem description, examples, or expected outputs.
 
-Problem Description: """${problem.description}"""
-Example Input: """${problem.example_input}"""
-Example Output: """${problem.example_output}"""
-User Prompt: """${prompt}"""
+          Problem Description: """${problem.description}"""
+          Example Input: """${problem.example_input}"""
+          Example Output: """${problem.example_output}"""
+          User Prompt: """${prompt}"""
 
-Return a JSON object with:
-- similarity_score: a number between 0 (completely different) and 1 (identical or nearly identical)
-- is_plagiarism: boolean, true if this appears to be a direct copy with minimal modification
-- reasoning: brief explanation of your assessment
+          Return a JSON object with:
+          - similarity_score: a number between 0 (completely different) and 1 (identical or nearly identical)
+          - is_plagiarism: boolean, true if this appears to be a direct copy with minimal modification
+          - reasoning: brief explanation of your assessment
 
-Be lenient in this evaluation - it's acceptable for submissions to incorporate elements from the problem description as long as they add meaningful prompt engineering value. Only flag submissions as plagiarism if they are nearly identical copies with little to no original contribution.
-`,
+          Be lenient in this evaluation - it's acceptable for submissions to incorporate elements from the problem description as long as they add meaningful prompt engineering value. Only flag submissions as plagiarism if they are nearly identical copies with little to no original contribution.
+          `,
         temperature: 0.1,
       });
 
@@ -263,68 +274,68 @@ Be lenient in this evaluation - it's acceptable for submissions to incorporate e
     });
 
     const systemInstruction = `
-# Prompt Engineering Evaluation System
+      # Prompt Engineering Evaluation System
 
-You are an expert evaluator in a prompt engineering competition. Your task is to accurately and objectively assess submissions based on predefined criteria.
+      You are an expert evaluator in a prompt engineering competition. Your task is to accurately and objectively assess submissions based on predefined criteria.
 
-## Input Information
-You will receive:
-- Problem title and description (may be in any language)
-- Example input/output pairs (may be in any language)
-- Test case inputs
-- Evaluation criteria
-- User's submitted prompt/solution (may be in any language)
+      ## Input Information
+      You will receive:
+      - Problem title and description (may be in any language)
+      - Example input/output pairs (may be in any language)
+      - Test case inputs
+      - Evaluation criteria
+      - User's submitted prompt/solution (may be in any language)
 
-## Your Evaluation Process
-Follow this systematic approach:
+      ## Your Evaluation Process
+      Follow this systematic approach:
 
-1. **Analyze the Problem**: Thoroughly understand the problem requirements regardless of language
-   - Identify core objectives and constraints
-   - Note any edge cases or special considerations
+      1. **Analyze the Problem**: Thoroughly understand the problem requirements regardless of language
+        - Identify core objectives and constraints
+        - Note any edge cases or special considerations
 
-2. **Similarity Consideration**: Be aware that for short or straightforward problems, similarity to the problem description is expected
-   - Do NOT penalize users for necessary inclusion of problem elements
-   - Focus on evaluating the effectiveness of the prompt rather than its originality
-   - Only consider similarity problematic if the submission adds no instructional value
+      2. **Similarity Consideration**: Be aware that for short or straightforward problems, similarity to the problem description is expected
+        - Do NOT penalize users for necessary inclusion of problem elements
+        - Focus on evaluating the effectiveness of the prompt rather than its originality
+        - Only consider similarity problematic if the submission adds no instructional value
 
-3. **Process Test Cases**: For each test case:
-   - Apply the user's prompt/solution to generate an appropriate output
-   - Document your reasoning process
-   - Record both the generated output and your reasoning
-   - IMPORTANT: Evaluate whether the prompt effectively guides an AI to produce correct outputs
+      3. **Process Test Cases**: For each test case:
+        - Apply the user's prompt/solution to generate an appropriate output
+        - Document your reasoning process
+        - Record both the generated output and your reasoning
+        - IMPORTANT: Evaluate whether the prompt effectively guides an AI to produce correct outputs
 
-4. **Evaluate Against Criteria**: For each criterion:
-   - Assess how effectively the submission addresses the specific criterion
-   - Provide a score from 0-10 (decimal values allowed)
-   - Give detailed feedback with specific examples from the submission
-   - Identify key strengths and suggest specific improvements
-   - Ensure the prompt provides useful guidance for generating correct outputs
+      4. **Evaluate Against Criteria**: For each criterion:
+        - Assess how effectively the submission addresses the specific criterion
+        - Provide a score from 0-10 (decimal values allowed)
+        - Give detailed feedback with specific examples from the submission
+        - Identify key strengths and suggest specific improvements
+        - Ensure the prompt provides useful guidance for generating correct outputs
 
-5. **Multi-language Considerations**:
-   - Evaluate the solution's effectiveness regardless of language
-   - Focus on functionality and approach, not linguistic elements
-   - Consider cultural/regional context when relevant
+      5. **Multi-language Considerations**:
+        - Evaluate the solution's effectiveness regardless of language
+        - Focus on functionality and approach, not linguistic elements
+        - Consider cultural/regional context when relevant
 
-## Scoring Guidelines
+      ## Scoring Guidelines
 
-| Score | Description |
-|-------|-------------|
-| 9-10  | Exceptional: The submission demonstrates masterful understanding and execution, with innovative approaches that effectively address all aspects of the problem. The solution is elegant, efficient, and shows deep insight. |
-| 7-8.9 | Strong: The submission shows strong understanding and good execution with minor limitations. Most aspects are well-addressed with only small inefficiencies or missed optimizations. |
-| 5-6.9 | Adequate: The submission demonstrates basic understanding with some effective elements but has notable limitations or inefficiencies. Core requirements are met, but implementation could be significantly improved. |
-| 3-4.9 | Limited: The submission shows partial understanding but has significant gaps, errors, or inefficient approaches. It addresses some aspects but misses key components. |
-| 1-2.9 | Minimal: The submission attempts to address the problem but is mostly incorrect or ineffective. Major misconceptions or fundamental errors are present. |
-| 0-0.9 | Insufficient: The submission is entirely off-topic, irrelevant, or simply restates the problem without providing any solution approach. |
+      | Score | Description |
+      |-------|-------------|
+      | 9-10  | Exceptional: The submission demonstrates masterful understanding and execution, with innovative approaches that effectively address all aspects of the problem. The solution is elegant, efficient, and shows deep insight. |
+      | 7-8.9 | Strong: The submission shows strong understanding and good execution with minor limitations. Most aspects are well-addressed with only small inefficiencies or missed optimizations. |
+      | 5-6.9 | Adequate: The submission demonstrates basic understanding with some effective elements but has notable limitations or inefficiencies. Core requirements are met, but implementation could be significantly improved. |
+      | 3-4.9 | Limited: The submission shows partial understanding but has significant gaps, errors, or inefficient approaches. It addresses some aspects but misses key components. |
+      | 1-2.9 | Minimal: The submission attempts to address the problem but is mostly incorrect or ineffective. Major misconceptions or fundamental errors are present. |
+      | 0-0.9 | Insufficient: The submission is entirely off-topic, irrelevant, or simply restates the problem without providing any solution approach. |
 
-## Output Format Requirements
-- Structure your evaluation according to the JSON schema provided
-- Provide specific, actionable feedback for each criterion
-- Ensure scores align with the detailed rubric above
-- CRITICAL: Return ONLY a valid JSON object without any markdown formatting or additional text
+      ## Output Format Requirements
+      - Structure your evaluation according to the JSON schema provided
+      - Provide specific, actionable feedback for each criterion
+      - Ensure scores align with the detailed rubric above
+      - CRITICAL: Return ONLY a valid JSON object without any markdown formatting or additional text
 
-Here is the problem context:
-${JSON.stringify(ctx)}
-`;
+      Here is the problem context:
+      ${JSON.stringify(ctx)}
+    `;
 
     let evaluation;
 
@@ -353,37 +364,20 @@ ${JSON.stringify(ctx)}
         problem_id: problemId,
         session_id: sessionId,
         user_id: user.id,
-        overall_assessment: evaluation.overallAssessment || '',
+        overall_assessment: evaluation.overallAssessment,
       })
       .select('id')
       .single();
 
     if (submissionError) {
       console.error('Submission error:', submissionError);
-      // If the error is due to missing columns, proceed without those fields
-      const { data: fallbackSubmission, error: fallbackError } = await sbAdmin
-        .from('nova_submissions')
-        .insert({
-          prompt,
-          problem_id: problemId,
-          session_id: sessionId,
-          user_id: user.id,
-          overall_assessment: evaluation.overallAssessment || '',
-        })
-        .select('id')
-        .single();
-
-      if (fallbackError) {
-        return NextResponse.json(
-          { message: 'Failed to create submission record' },
-          { status: 500 }
-        );
-      }
-
-      submissionId = fallbackSubmission.id;
-    } else {
-      submissionId = submission.id;
+      return NextResponse.json(
+        { message: 'Failed to create submission record' },
+        { status: 500 }
+      );
     }
+
+    submissionId = submission.id;
 
     // Step 4: Save test case results
     const testCaseEvaluation = evaluation.testCaseEvaluation || [];
@@ -403,56 +397,56 @@ ${JSON.stringify(ctx)}
 
         // --- Enhanced LLM-based evaluation ---
         const evaluationPrompt = `
-# Output Evaluation Task
+          # Output Evaluation Task
 
-You are tasked with evaluating whether a language model's output matches the expected output for a prompt engineering problem. This evaluation is critical for determining the effectiveness of a user's prompt.
+          You are tasked with evaluating whether a language model's output matches the expected output for a prompt engineering problem. This evaluation is critical for determining the effectiveness of a user's prompt.
 
-## Context
-- **Problem Description**: """${problem.description}"""
-- **Input**: """${testCase.input}"""
-- **Expected Output**: """${matchingTestCase.output}"""
-- **Model Output**: """${testCase.output}"""
-- **User's Prompt that generated this output**: """${prompt}"""
+          ## Context
+          - **Problem Description**: """${problem.description}"""
+          - **Input**: """${testCase.input}"""
+          - **Expected Output**: """${matchingTestCase.output}"""
+          - **Model Output**: """${testCase.output}"""
+          - **User's Prompt that generated this output**: """${prompt}"""
 
-## Evaluation Instructions
+          ## Evaluation Instructions
 
-1. **Semantic Equivalence Analysis**:
-   - Determine if the outputs convey the same meaning and fulfill the same function
-   - Consider paraphrasing, synonyms, formatting differences, and alternative expressions
-   - Account for valid variations in style, tone, or presentation
-   - For numerical outputs, check mathematical equivalence rather than exact format
+          1. **Semantic Equivalence Analysis**:
+            - Determine if the outputs convey the same meaning and fulfill the same function
+            - Consider paraphrasing, synonyms, formatting differences, and alternative expressions
+            - Account for valid variations in style, tone, or presentation
+            - For numerical outputs, check mathematical equivalence rather than exact format
 
-2. **Contextual Appropriateness**:
-   - Assess if both outputs satisfy the requirements specified in the problem description
-   - Consider whether differences affect functionality or are merely stylistic
-   - Verify that the output provides a correct solution to the specific input
+          2. **Contextual Appropriateness**:
+            - Assess if both outputs satisfy the requirements specified in the problem description
+            - Consider whether differences affect functionality or are merely stylistic
+            - Verify that the output provides a correct solution to the specific input
 
-3. **Language Considerations**:
-   - If outputs are in different languages, focus on whether they convey equivalent information
-   - Account for cultural or linguistic variations in expression
+          3. **Language Considerations**:
+            - If outputs are in different languages, focus on whether they convey equivalent information
+            - Account for cultural or linguistic variations in expression
 
-4. **Strictness of Evaluation**:
-   - Be strict with correctness - the model output must correctly address the input
-   - Minor formatting differences are acceptable, but logical/functional correctness is essential
-   - Focus particularly on whether the user's prompt effectively guided the AI to generate the correct output
+          4. **Strictness of Evaluation**:
+            - Be strict with correctness - the model output must correctly address the input
+            - Minor formatting differences are acceptable, but logical/functional correctness is essential
+            - Focus particularly on whether the user's prompt effectively guided the AI to generate the correct output
 
-5. **Prompt Effectiveness Analysis**:
-   - Consider whether the user's prompt effectively guided the model to produce a correct output
-   - Look for clear, specific instructions in the prompt that helped the model understand what was needed
-   - Note if the prompt fails to provide sufficient guidance or merely copies problem information
+          5. **Prompt Effectiveness Analysis**:
+            - Consider whether the user's prompt effectively guided the model to produce a correct output
+            - Look for clear, specific instructions in the prompt that helped the model understand what was needed
+            - Note if the prompt fails to provide sufficient guidance or merely copies problem information
 
-## Decision Framework
-- **Match (true)**: Outputs are functionally equivalent and correctly solve the problem
-- **No Match (false)**: Outputs differ in meaningful ways that affect their function, accuracy or correctness
+          ## Decision Framework
+          - **Match (true)**: Outputs are functionally equivalent and correctly solve the problem
+          - **No Match (false)**: Outputs differ in meaningful ways that affect their function, accuracy or correctness
 
-## Required Response Format
-Provide your evaluation as a JSON object with three fields:
-- **matched**: boolean (true/false) indicating semantic equivalence
-- **confidence**: number (0-1) indicating your confidence level
-- **reasoning**: brief explanation of your assessment, including specific differences if not matched
+          ## Required Response Format
+          Provide your evaluation as a JSON object with three fields:
+          - **matched**: boolean (true/false) indicating semantic equivalence
+          - **confidence**: number (0-1) indicating your confidence level
+          - **reasoning**: brief explanation of your assessment, including specific differences if not matched
 
-Focus on objective assessment rather than subjective judgment.
-`;
+          Focus on objective assessment rather than subjective judgment.
+        `;
 
         let isMatch = false;
         let confidence = 0;
