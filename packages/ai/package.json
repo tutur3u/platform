@@ -41,6 +41,7 @@
     "@ai-sdk/xai": "^1.2.16",
     "@google/generative-ai": "^0.24.1",
     "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
     "ai": "^4.3.15",
     "eslint": "^9.26.0",
     "next": "^15.3.2",
