@@ -1,5 +1,6 @@
 'use client';
 
+import { useCalendar } from '../../../../hooks/use-calendar';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -22,7 +23,6 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useCalendar } from '../../../../hooks/use-calendar';
 
 dayjs.extend(timezone);
 
@@ -32,7 +32,8 @@ interface MonthCalendarProps {
 }
 
 const MonthCalendar = ({ date }: MonthCalendarProps) => {
-  const { getCurrentEvents, addEmptyEvent, openModal, settings } = useCalendar();
+  const { getCurrentEvents, addEmptyEvent, openModal, settings } =
+    useCalendar();
   const [currDate, setCurrDate] = useState(date);
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
   const tz = settings?.timezone?.timezone;
@@ -287,7 +288,7 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
                         className="w-80"
                       >
                         <div className="space-y-2">
-                          <h4 className="font-medium break-words line-clamp-2">
+                          <h4 className="line-clamp-2 break-words font-medium">
                             {event.title || 'Untitled event'}
                           </h4>
                           {event.description && (
