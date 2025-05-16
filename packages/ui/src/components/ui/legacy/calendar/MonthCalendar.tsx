@@ -287,7 +287,7 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
                         className="w-80"
                       >
                         <div className="space-y-2">
-                          <h4 className="font-medium">
+                          <h4 className="font-medium overflow-hidden text-ellipsis">
                             {event.title || 'Untitled event'}
                           </h4>
                           {event.description && (
