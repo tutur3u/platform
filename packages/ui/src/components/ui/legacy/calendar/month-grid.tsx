@@ -1,4 +1,4 @@
-import MonthCell from './MonthCell';
+import { MonthCell } from './month-cell';
 
 interface MonthProps {
   hasGrid: boolean;
@@ -6,7 +6,7 @@ interface MonthProps {
   year: number;
 }
 
-export default function Month({ hasGrid, month, year }: MonthProps) {
+export function Month({ hasGrid, month, year }: MonthProps) {
   // array of months
   const months = [
     'January',

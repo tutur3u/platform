@@ -1,6 +1,6 @@
 'use client';
 
-import { ColorPicker, colorMap } from './settings/ColorPicker';
+import { ColorPicker, colorMap } from './settings/color-picker';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';

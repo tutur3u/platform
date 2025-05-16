@@ -1,7 +1,7 @@
-import TimeIndicatorLine from './TimeIndicatorLine';
+import { TimeIndicatorLine } from './time-indicator-line';
 import { isSameDay } from 'date-fns';
 
-const TimeIndicator = ({ dates }: { dates: Date[] }) => {
+export const TimeIndicator = ({ dates }: { dates: Date[] }) => {
   const now = new Date();
 
   // Find the index of today's date in the dates array
@@ -17,5 +17,3 @@ const TimeIndicator = ({ dates }: { dates: Date[] }) => {
     </>
   );
 };
-
-export default TimeIndicator;

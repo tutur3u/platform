@@ -1,7 +1,7 @@
-import CalendarMatrix from './CalendarMatrix';
-import TimeIndicator from './TimeIndicator';
+import { CalendarMatrix } from './calendar-matrix';
+import { TimeIndicator } from './time-indicator';
 
-const CalendarView = ({ dates }: { dates: Date[] }) => {
+export const CalendarView = ({ dates }: { dates: Date[] }) => {
   const columns = dates.length;
 
   // Create a dynamic grid template based on the number of columns
@@ -20,5 +20,3 @@ const CalendarView = ({ dates }: { dates: Date[] }) => {
     </div>
   );
 };
-
-export default CalendarView;

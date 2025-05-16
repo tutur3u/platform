@@ -13,7 +13,7 @@ interface CalendarCellProps {
   hour: number;
 }
 
-const CalendarCell = ({ date, hour }: CalendarCellProps) => {
+export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const { addEmptyEvent, addEmptyEventWithDuration, settings } = useCalendar();
   const [isHovering, setIsHovering] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -510,5 +510,3 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     </div>
   );
 };
-
-export default CalendarCell;

@@ -11,7 +11,7 @@ interface DayTitleProps {
   weekday: string;
 }
 
-export default function DayTitle({ date, weekday }: DayTitleProps) {
+export function DayTitle({ date, weekday }: DayTitleProps) {
   const { settings } = useCalendar();
   const tz = settings?.timezone?.timezone;
   const today = tz === 'auto' ? dayjs() : dayjs().tz(tz);

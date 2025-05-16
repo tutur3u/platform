@@ -1,7 +1,7 @@
 'use client';
 
 import { useCalendar } from '../../../../hooks/use-calendar';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   HoverCard,
@@ -31,7 +31,7 @@ interface MonthCalendarProps {
   workspace?: Workspace;
 }
 
-const MonthCalendar = ({ date }: MonthCalendarProps) => {
+export const MonthCalendar = ({ date }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal, settings } =
     useCalendar();
   const [currDate, setCurrDate] = useState(date);
@@ -319,5 +319,3 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
     </div>
   );
 };
-
-export default MonthCalendar;

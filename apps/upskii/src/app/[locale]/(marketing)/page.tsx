@@ -2,7 +2,7 @@
 
 import GradientHeadline from '../gradient-headline';
 import AiFeatures from './ai-features';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -304,7 +304,7 @@ export default function MarketingPage() {
                 className="relative"
               >
                 <div className="bg-background/30 relative aspect-video rounded-xl border backdrop-blur-sm">
-                  <div className="from-primary/10 bg-linear-to-br absolute inset-0 rounded-xl via-transparent to-transparent" />
+                  <div className="bg-linear-to-br from-primary/10 absolute inset-0 rounded-xl via-transparent to-transparent" />
                   <div className="relative p-8">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -585,6 +585,5 @@ async function getWorkspaces() {
   if (!response.ok) notFound();
 
   const data = await response.json();
-  console.log('Hello', data);
   return data as Workspace[];
 }

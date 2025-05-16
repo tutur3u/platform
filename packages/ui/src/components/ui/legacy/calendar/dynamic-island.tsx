@@ -1,11 +1,11 @@
-import { useCalendar } from '@/hooks/useCalendar';
-import { getCardColor } from '@/utils/color-helper';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { Play, StopCircle } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 
-const DynamicIsland = () => {
+export const DynamicIsland = () => {
   const { getCurrentEvents, getUpcomingEvent, isEditing } = useCalendar();
 
   const events = getCurrentEvents();
@@ -158,7 +158,9 @@ const DynamicIsland = () => {
   const hasEvents = events?.length > 0 || !!upcomingEvent;
   const hidden = isEditing() || !hasEvents;
 
-  const color = isUpcoming ? upcomingEvent?.color : events?.[0]?.color;
+  const color =
+    (isUpcoming ? upcomingEvent?.color : events?.[0]?.color) ?? 'BLUE';
+  const { bg, text } = getEventStyles(color);
 
   return (
     <div
@@ -167,9 +169,7 @@ const DynamicIsland = () => {
       }`}
     >
       <div
-        className={`flex max-w-4xl items-center gap-4 rounded-lg border px-8 py-2 shadow-xl backdrop-blur-xl ${getCardColor(
-          color
-        )} ${hidden ? 'opacity-0' : 'opacity-100'} ${
+        className={`flex max-w-4xl items-center gap-4 rounded-lg border px-8 py-2 shadow-xl backdrop-blur-xl ${bg} ${text} ${hidden ? 'opacity-0' : 'opacity-100'} ${
           isUpcoming
             ? 'w-[calc(min(20rem,100%))] justify-center text-center'
             : isRunning
@@ -202,10 +202,7 @@ const DynamicIsland = () => {
           {pomodoroCycles > 0 && (
             <>
               {!isRunning && (
-                <Separator
-                  orientation="vertical"
-                  className={` ${getCardColor(color)}`}
-                />
+                <Separator orientation="vertical" className={bg} />
               )}
 
               <div>
@@ -232,9 +229,7 @@ const DynamicIsland = () => {
         {pomodoroCycles > 0 && (
           <button
             onClick={startTimer}
-            className={`aspect-square h-fit justify-self-end rounded-lg border p-1 ${getCardColor(
-              color
-            )} transition`}
+            className={`aspect-square h-fit justify-self-end rounded-lg border p-1 ${bg} transition`}
           >
             {startAt ? (
               <StopCircle className="h-6 w-6" />
@@ -247,5 +242,3 @@ const DynamicIsland = () => {
     </div>
   );
 };
-
-export default DynamicIsland;

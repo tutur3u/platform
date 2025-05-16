@@ -1,6 +1,6 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -100,7 +100,7 @@ export default function InvitationCard({
                 ? `https://avatar.vercel.sh/${workspace.name}.png`
                 : undefined
             }
-            alt={workspace.name}
+            alt={workspace.name ?? ''}
           />
           <AvatarFallback>
             {workspace.name?.slice(0, 2).toUpperCase() || 'WS'}

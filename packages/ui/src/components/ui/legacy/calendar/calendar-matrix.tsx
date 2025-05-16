@@ -1,6 +1,7 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
-import EventCard from './EventCard';
+import { CalendarColumn } from './calendar-column';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
+import { EventCard } from './event-card';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
@@ -10,7 +11,30 @@ import { useParams } from 'next/navigation';
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
 
-const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
+export const CalendarMatrix = ({ dates }: { dates: Date[] }) => {
+  return (
+    <>
+      <CalendarBaseMatrix dates={dates} />
+      <CalendarEventMatrix dates={dates} />
+    </>
+  );
+};
+
+export const CalendarBaseMatrix = ({ dates }: { dates: Date[] }) => {
+  return (
+    <>
+      {dates.map((_, index) => (
+        <CalendarColumn
+          key={`cal-col-${index}`}
+          date={dates[index]!.toISOString().split('T')[0] as string}
+          last={index === dates.length - 1}
+        />
+      ))}
+    </>
+  );
+};
+
+export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const params = useParams();
   const wsId = params?.wsId as string;
   const { eventsWithoutAllDays, settings } = useCalendar();
@@ -271,5 +295,3 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
     </div>
   );
 };
-
-export default CalendarEventMatrix;

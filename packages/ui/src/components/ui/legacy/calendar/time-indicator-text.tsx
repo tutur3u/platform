@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 
 dayjs.extend(timezone);
 
-const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
+export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   const { settings } = useCalendar();
   const tz = settings?.timezone?.timezone;
   const [now, setNow] = useState(tz === 'auto' ? dayjs() : dayjs().tz(tz));
@@ -59,5 +59,3 @@ const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
     </div>
   );
 };
-
-export default TimeIndicatorText;

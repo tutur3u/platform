@@ -13,7 +13,7 @@ dayjs.extend(timezone);
 
 const MAX_EVENTS_DISPLAY = 2;
 
-const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
+export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const { allDayEvents, settings, openModal } = useCalendar();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
@@ -178,5 +178,3 @@ const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     </div>
   );
 };
-
-export default AllDayEventBar;
