@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 
 dayjs.extend(timezone);
 
-const TimeIndicatorLine = ({
+export const TimeIndicatorLine = ({
   columnIndex,
   columnsCount,
 }: {
@@ -59,5 +59,3 @@ const TimeIndicatorLine = ({
     </div>
   );
 };
-
-export default TimeIndicatorLine;

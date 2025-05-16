@@ -1,21 +1,21 @@
 'use client';
 
-import { AppearanceData, defaultAppearanceData } from './AppearanceSettings';
+import { AppearanceData, defaultAppearanceData } from './appearance-settings';
 import {
   CategoryColorsData,
   defaultCategoryColors,
-} from './CategoryColorsSettings';
+} from './category-color-settings';
 import {
   NotificationData,
   defaultNotificationData,
-} from './NotificationSettings';
+} from './notification-settings';
 import {
   SmartSchedulingData,
   defaultSmartSchedulingData,
-} from './SmartSchedulingSettings';
-import { TaskSettingsData, defaultTaskSettings } from './TaskSettings';
-import { WeekTimeRanges, defaultWeekTimeRanges } from './TimeRangePicker';
-import { TimezoneData, defaultTimezoneData } from './TimezoneSettings';
+} from './smart-scheduling-settings';
+import { TaskSettingsData, defaultTaskSettings } from './task-settings';
+import { WeekTimeRanges, defaultWeekTimeRanges } from './time-range-picker';
+import { TimezoneData, defaultTimezoneData } from './timezone-settings';
 import {
   ReactNode,
   createContext,

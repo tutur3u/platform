@@ -4,7 +4,7 @@ interface MonthCellProps {
   hasGrid: boolean;
 }
 
-export default function MonthCell({ date, key, hasGrid }: MonthCellProps) {
+export function MonthCell({ date, key, hasGrid }: MonthCellProps) {
   const today = new Date();
 
   // check if date is today

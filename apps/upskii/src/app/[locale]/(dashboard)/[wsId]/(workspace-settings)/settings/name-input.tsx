@@ -21,12 +21,12 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  defaultValue?: string;
+  defaultValue?: string | null;
   disabled?: boolean;
 }
 
 const FormSchema = z.object({
-  name: z.string().min(1).max(50),
+  name: z.string().min(1).max(50).optional(),
 });
 
 export default function NameInput({
@@ -42,7 +42,7 @@ export default function NameInput({
   const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: defaultValue,
+      name: defaultValue ?? undefined,
     },
   });
 

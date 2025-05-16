@@ -1,9 +1,8 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import type { Workspace } from '@tuturuuu/types/primitives/Workspace';
-import { Calendar } from '@tuturuuu/ui/legacy/calendar/Calendar';
+import { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
+import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
 
 export default function CalendarClientPage({
@@ -17,7 +16,7 @@ export default function CalendarClientPage({
   const locale = useLocale();
 
   return (
-    <Calendar
+    <SmartCalendar
       t={t}
       locale={locale}
       workspace={workspace}

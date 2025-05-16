@@ -4,7 +4,7 @@ import {
   TimeRangePicker,
   WeekTimeRanges,
   defaultWeekTimeRanges,
-} from './TimeRangePicker';
+} from './time-range-picker';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';

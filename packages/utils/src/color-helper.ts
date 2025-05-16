@@ -102,7 +102,7 @@ export const getEventStyles = (
     },
   } as const;
 
-  const normalizedColor = color.toUpperCase();
+  const normalizedColor = color?.toUpperCase() ?? 'BLUE';
   const colorStyle = colorStyles[normalizedColor as keyof typeof colorStyles];
 
   if (!colorStyle) return colorStyles.BLUE;

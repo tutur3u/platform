@@ -53,7 +53,7 @@ interface EventCardProps {
   level?: number; // Level for stacking events
 }
 
-export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
+export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const {
     id,
     title,

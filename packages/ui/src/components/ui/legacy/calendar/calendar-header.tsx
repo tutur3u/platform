@@ -13,7 +13,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-export default function CalendarHeader({
+export function CalendarHeader({
   t,
   locale,
   date,

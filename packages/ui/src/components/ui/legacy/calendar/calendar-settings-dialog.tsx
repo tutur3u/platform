@@ -1,18 +1,18 @@
 'use client';
 
-import { AppearanceSettings } from './settings/AppearanceSettings';
+import { AppearanceSettings } from './settings/appearance-settings';
+import { CategoryColorsSettings } from './settings/category-color-settings';
+import { GoogleCalendarSettings } from './settings/google-calendar-settings';
+import { HoursSettings } from './settings/hour-settings';
+import { NotificationSettings } from './settings/notification-settings';
 import {
   CalendarSettings,
   CalendarSettingsProvider,
   useCalendarSettings,
-} from './settings/CalendarSettingsContext';
-import { CategoryColorsSettings } from './settings/CategoryColorsSettings';
-import { GoogleCalendarSettings } from './settings/GoogleCalendarSettings';
-import { HoursSettings } from './settings/HoursSettings';
-import { NotificationSettings } from './settings/NotificationSettings';
-import { SmartSchedulingSettings } from './settings/SmartSchedulingSettings';
-import { TaskSettings } from './settings/TaskSettings';
-import { TimezoneSettings } from './settings/TimezoneSettings';
+} from './settings/settings-context';
+import { SmartSchedulingSettings } from './settings/smart-scheduling-settings';
+import { TaskSettings } from './settings/task-settings';
+import { TimezoneSettings } from './settings/timezone-settings';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import {
   Breadcrumb,

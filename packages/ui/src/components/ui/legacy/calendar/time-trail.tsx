@@ -6,7 +6,7 @@ import timezone from 'dayjs/plugin/timezone';
 
 dayjs.extend(timezone);
 
-const TimeTrail = () => {
+export const TimeTrail = () => {
   // Get settings from context
   const { settings } = useCalendar();
   const tz = settings?.timezone?.timezone;
@@ -50,5 +50,3 @@ const TimeTrail = () => {
     </div>
   );
 };
-
-export default TimeTrail;

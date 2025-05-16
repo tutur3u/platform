@@ -14,7 +14,7 @@ import {
   EventTitleInput,
   EventToggleSwitch,
   OverlapWarning,
-} from './EventFormComponents';
+} from './event-form-components';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
@@ -99,7 +99,7 @@ const AIFormSchema = z.object({
   // priority: z.enum(['low', 'medium', 'high']).default('medium'),
 });
 
-export function UnifiedEventModal() {
+export function EventModal() {
   const { toast } = useToast();
   const startPickerRef = useRef<HTMLButtonElement>(null);
   const endPickerRef = useRef<HTMLButtonElement>(null);

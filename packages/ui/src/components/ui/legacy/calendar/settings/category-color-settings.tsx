@@ -1,6 +1,6 @@
 'use client';
 
-import { CategoryColor, colorMap } from './ColorPicker';
+import { CategoryColor, colorMap } from './color-picker';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
