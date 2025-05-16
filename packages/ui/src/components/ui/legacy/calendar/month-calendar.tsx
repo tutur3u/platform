@@ -31,8 +31,9 @@ interface MonthCalendarProps {
   workspace?: Workspace;
 }
 
-export const MonthCalendar = ({ date }: MonthCalendarProps) => {
-  const { getCurrentEvents, addEmptyEvent, settings } = useCalendar();
+const MonthCalendar = ({ date }: MonthCalendarProps) => {
+  const { getCurrentEvents, addEmptyEvent, openModal, settings } =
+    useCalendar();
   const [currDate, setCurrDate] = useState(date);
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
   const tz = settings?.timezone?.timezone;
@@ -272,10 +273,11 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                       <HoverCardTrigger asChild>
                         <div
                           className={cn(
-                            'flex cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                            'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
                             bg,
                             text
                           )}
+                          onClick={() => openModal(event.id)}
                         >
                           {event.title || 'Untitled event'}
                         </div>
@@ -286,7 +288,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                         className="w-80"
                       >
                         <div className="space-y-2">
-                          <h4 className="font-medium">
+                          <h4 className="line-clamp-2 break-words font-medium">
                             {event.title || 'Untitled event'}
                           </h4>
                           {event.description && (
