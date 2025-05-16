@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
+import { Workspace } from '@tuturuuu/types/db';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
   CalendarSettings,

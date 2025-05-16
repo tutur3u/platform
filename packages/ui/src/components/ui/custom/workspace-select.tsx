@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -180,7 +180,7 @@ export function WorkspaceSelect({
   return (
     <>
       {hideLeading || (
-        <div className="bg-foreground/20 rotate-30 mx-2 h-4 w-px flex-none" />
+        <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
       )}
       <Dialog
         open={showNewWorkspaceDialog}
@@ -201,7 +201,7 @@ export function WorkspaceSelect({
               aria-label="Select a workspace"
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full whitespace-normal text-start'
+                'w-full text-start whitespace-normal'
               )}
               disabled={!workspaces || workspaces.length === 0}
             >
@@ -488,7 +488,7 @@ async function fetchWorkspaces() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return [] as Workspace[];
+  if (!user) return [];
 
   const { data: workspaces, error: error } = await supabase
     .from('workspaces')
@@ -497,6 +497,6 @@ async function fetchWorkspaces() {
     )
     .eq('workspace_members.user_id', user.id);
 
-  if (error) return [] as Workspace[];
-  return workspaces as Workspace[];
+  if (error) return [];
+  return workspaces;
 }

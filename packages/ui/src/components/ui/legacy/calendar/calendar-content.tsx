@@ -6,8 +6,10 @@ import { MonthCalendar } from './month-calendar';
 import { SettingsButton } from './settings-button';
 import type { CalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import type { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types/db';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';

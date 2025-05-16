@@ -4,7 +4,7 @@ import { CalendarProvider } from '../../../../hooks/use-calendar';
 import { CalendarContent } from './calendar-content';
 import { CalendarSettings } from './settings/settings-context';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 
 export const SmartCalendar = ({
   t,

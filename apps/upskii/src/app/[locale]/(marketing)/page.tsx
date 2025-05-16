@@ -2,7 +2,7 @@
 
 import GradientHeadline from '../gradient-headline';
 import AiFeatures from './ai-features';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -71,7 +71,7 @@ export default function MarketingPage() {
                 className="group relative mb-8 overflow-hidden border-transparent backdrop-blur-sm"
               >
                 <motion.div
-                  className="bg-foreground/10 absolute inset-0 opacity-100 transition-opacity"
+                  className="absolute inset-0 bg-foreground/10 opacity-100 transition-opacity"
                   whileHover={{ opacity: 1 }}
                 />
                 <Sparkles className="mr-2 h-4 w-4" />
@@ -83,7 +83,7 @@ export default function MarketingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="text-foreground mb-6 text-balance text-center text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl"
+              className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl lg:text-7xl"
             >
               {t('hero.title-1')}
               <br />
@@ -94,7 +94,7 @@ export default function MarketingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
-              className="text-foreground/50 mb-8 max-w-2xl text-balance text-center text-lg"
+              className="mb-8 max-w-2xl text-center text-lg text-balance text-foreground/50"
             >
               {t('hero.description')}
             </motion.div>
@@ -126,7 +126,7 @@ export default function MarketingPage() {
                     className="group relative overflow-hidden"
                   >
                     <motion.span
-                      className="bg-primary/10 absolute inset-0"
+                      className="absolute inset-0 bg-primary/10"
                       initial={{ x: '-100%' }}
                       whileHover={{ x: '100%' }}
                       transition={{ duration: 0.5 }}
@@ -205,10 +205,10 @@ export default function MarketingPage() {
                   whileHover={{ scale: 1.02 }}
                   className="group"
                 >
-                  <Card className="border-primary/10 bg-foreground/10 relative h-full overflow-hidden">
+                  <Card className="relative h-full overflow-hidden border-primary/10 bg-foreground/10">
                     <div className="relative z-10 flex h-full flex-col space-y-4 p-6">
                       <div className="flex items-center gap-4">
-                        <div className="bg-primary/10 text-primary rounded-full p-3">
+                        <div className="rounded-full bg-primary/10 p-3 text-primary">
                           {feature.icon}
                         </div>
                       </div>
@@ -220,7 +220,7 @@ export default function MarketingPage() {
 
                     {/* Animated gradient background */}
                     <motion.div
-                      className={`bg-linear-to-br absolute inset-0 -z-10 ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100`}
+                      className={`absolute inset-0 -z-10 bg-linear-to-br ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100`}
                       animate={{
                         scale: [1, 1.2, 1],
                         rotate: [0, 5, 0],
@@ -240,7 +240,7 @@ export default function MarketingPage() {
 
         {/* For Teachers Section */}
         <section id="for-teachers" className="relative w-full py-24">
-          <div className="bg-primary/5 absolute inset-0" />
+          <div className="absolute inset-0 bg-primary/5" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
           <div className="relative mx-auto max-w-6xl px-4">
@@ -274,7 +274,7 @@ export default function MarketingPage() {
                       transition={{ delay: index * 0.1 }}
                       className="flex items-center gap-2"
                     >
-                      <div className="bg-primary/10 text-primary rounded-full p-1">
+                      <div className="rounded-full bg-primary/10 p-1 text-primary">
                         <CheckCircle className="h-4 w-4" />
                       </div>
                       <span>{item}</span>
@@ -303,8 +303,8 @@ export default function MarketingPage() {
                 viewport={{ once: true }}
                 className="relative"
               >
-                <div className="bg-background/30 relative aspect-video rounded-xl border backdrop-blur-sm">
-                  <div className="from-primary/10 bg-linear-to-br absolute inset-0 rounded-xl via-transparent to-transparent" />
+                <div className="relative aspect-video rounded-xl border bg-background/30 backdrop-blur-sm">
+                  <div className="absolute inset-0 rounded-xl bg-linear-to-br from-primary/10 via-transparent to-transparent" />
                   <div className="relative p-8">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -335,14 +335,14 @@ export default function MarketingPage() {
                           whileInView={{ opacity: 1, y: 0 }}
                           viewport={{ once: true }}
                           transition={{ delay: index * 0.1 }}
-                          className="bg-background/10 flex items-start gap-4 rounded-lg border p-4 backdrop-blur-sm"
+                          className="flex items-start gap-4 rounded-lg border bg-background/10 p-4 backdrop-blur-sm"
                         >
-                          <div className="bg-foreground/10 text-primary rounded-full p-2">
+                          <div className="rounded-full bg-foreground/10 p-2 text-primary">
                             {item.icon}
                           </div>
                           <div>
                             <h3 className="font-semibold">{item.title}</h3>
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-sm text-muted-foreground">
                               {item.description}
                             </p>
                           </div>
@@ -389,7 +389,7 @@ export default function MarketingPage() {
                       transition={{ delay: index * 0.1 }}
                       className="flex items-center gap-2"
                     >
-                      <div className="bg-primary/10 text-primary rounded-full p-1">
+                      <div className="rounded-full bg-primary/10 p-1 text-primary">
                         <CheckCircle className="h-4 w-4" />
                       </div>
                       <span>{item}</span>
@@ -418,7 +418,7 @@ export default function MarketingPage() {
                 viewport={{ once: true }}
                 className="relative order-2 md:order-1"
               >
-                <Card className="border-foreground/10 bg-foreground/5 overflow-hidden">
+                <Card className="overflow-hidden border-foreground/10 bg-foreground/5">
                   <div className="space-y-4 p-6">
                     <h3 className="text-xl font-bold">
                       {t('for-students.course-categories.title')}
@@ -439,14 +439,14 @@ export default function MarketingPage() {
                           whileInView={{ opacity: 1, scale: 1 }}
                           viewport={{ once: true }}
                           transition={{ delay: index * 0.05 }}
-                          className="bg-foreground/10 hover:border-primary/20 rounded-lg border border-transparent p-3 text-sm transition-colors"
+                          className="rounded-lg border border-transparent bg-foreground/10 p-3 text-sm transition-colors hover:border-primary/20"
                         >
                           {category}
                         </motion.div>
                       ))}
                     </div>
                     <Separator className="bg-foreground/10" />
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {t('for-students.course-categories.footer')}
                     </p>
                   </div>
@@ -461,7 +461,7 @@ export default function MarketingPage() {
 
         {/* Multilingual Support Section */}
         <section className="relative w-full py-24">
-          <div className="bg-primary/5 absolute inset-0" />
+          <div className="absolute inset-0 bg-primary/5" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
           <div className="relative mx-auto max-w-6xl px-4">
@@ -496,7 +496,7 @@ export default function MarketingPage() {
                       transition={{ delay: index * 0.1 }}
                       className="flex items-center gap-2"
                     >
-                      <div className="bg-primary/10 text-primary rounded-full p-1">
+                      <div className="rounded-full bg-primary/10 p-1 text-primary">
                         <CheckCircle className="h-4 w-4" />
                       </div>
                       <span>{item}</span>
@@ -515,7 +515,7 @@ export default function MarketingPage() {
                   <Card className="border-foreground/10 bg-foreground/5 p-6">
                     <div className="flex flex-col items-center text-center">
                       <h3 className="mb-2 text-xl font-bold">English</h3>
-                      <p className="text-muted-foreground mb-4 text-sm">
+                      <p className="mb-4 text-sm text-muted-foreground">
                         Access our full platform and all courses in English
                       </p>
                       <div className="text-4xl font-bold">EN</div>
@@ -524,7 +524,7 @@ export default function MarketingPage() {
                   <Card className="border-foreground/10 bg-foreground/5 p-6">
                     <div className="flex flex-col items-center text-center">
                       <h3 className="mb-2 text-xl font-bold">Tiếng Việt</h3>
-                      <p className="text-muted-foreground mb-4 text-sm">
+                      <p className="mb-4 text-sm text-muted-foreground">
                         Truy cập nền tảng và các khóa học bằng tiếng Việt
                       </p>
                       <div className="text-4xl font-bold">VI</div>
@@ -551,7 +551,7 @@ export default function MarketingPage() {
             <h2 className="mb-4 text-4xl font-bold md:text-5xl">
               {t('cta-section.title')}
             </h2>
-            <p className="text-muted-foreground mb-8">
+            <p className="mb-8 text-muted-foreground">
               {t('cta-section.description')}
             </p>
             <motion.div
@@ -585,6 +585,5 @@ async function getWorkspaces() {
   if (!response.ok) notFound();
 
   const data = await response.json();
-  console.log('Hello', data);
   return data as Workspace[];
 }

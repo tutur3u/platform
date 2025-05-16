@@ -1,8 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import type { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
 

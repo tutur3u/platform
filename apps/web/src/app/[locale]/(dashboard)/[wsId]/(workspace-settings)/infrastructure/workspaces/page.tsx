@@ -1,9 +1,7 @@
 import WorkspaceCard from '../../../../../../../components/cards/WorkspaceCard';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Separator } from '@tuturuuu/ui/separator';
-import { notFound } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -34,9 +32,9 @@ export default async function InfrastructureWorkspacesPage({ params }: Props) {
 
 async function getWorkspaces() {
   const supabaseAdmin = await createAdminClient();
-  if (!supabaseAdmin) notFound();
+  if (!supabaseAdmin) return [];
 
   const { data } = await supabaseAdmin.from('workspaces').select('*');
 
-  return data as Workspace[];
+  return data || [];
 }

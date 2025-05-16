@@ -4,7 +4,7 @@ import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Breadcrumb,
@@ -148,7 +148,7 @@ export function Structure({
 
       <Suspense
         fallback={
-          <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
+          <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
         }
       >
         <WorkspaceSelect
@@ -237,8 +237,8 @@ export function Structure({
           />
         </Link>
       </div>
-      <div className="bg-foreground/20 rotate-30 mx-2 h-4 w-px flex-none" />
-      <div className="flex items-center gap-2 break-all text-lg font-semibold">
+      <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
+      <div className="flex items-center gap-2 text-lg font-semibold break-all">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}
