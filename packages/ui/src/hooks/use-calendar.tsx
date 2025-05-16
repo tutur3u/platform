@@ -6,7 +6,7 @@ import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
   CalendarSettings,
   defaultCalendarSettings,
-} from '@tuturuuu/ui/legacy/calendar/settings/CalendarSettingsContext';
+} from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';

@@ -4,7 +4,7 @@ import { CreateEventButton } from './create-event-button';
 import { EventModal } from './event-modal';
 import { MonthCalendar } from './month-calendar';
 import { SettingsButton } from './settings-button';
-import type { CalendarSettings } from './settings/CalendarSettingsContext';
+import type { CalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import type { Workspace } from '@tuturuuu/types/primitives/Workspace';

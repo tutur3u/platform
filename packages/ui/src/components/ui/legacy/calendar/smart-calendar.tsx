@@ -2,7 +2,7 @@
 
 import { CalendarProvider } from '../../../../hooks/use-calendar';
 import { CalendarContent } from './calendar-content';
-import { CalendarSettings } from './settings/CalendarSettingsContext';
+import { CalendarSettings } from './settings/settings-context';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 

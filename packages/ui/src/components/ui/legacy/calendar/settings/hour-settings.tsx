@@ -4,7 +4,7 @@ import {
   TimeRangePicker,
   WeekTimeRanges,
   defaultWeekTimeRanges,
-} from './TimeRangePicker';
+} from './time-range-picker';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -229,10 +229,10 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-muted/30 rounded-md p-4">
+      <div className="rounded-md bg-muted/30 p-4">
         <div className="flex items-start gap-2">
-          <Clock className="text-muted-foreground mt-0.5 h-4 w-4" />
-          <div className="text-muted-foreground text-sm">
+          <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
+          <div className="text-sm text-muted-foreground">
             <p>
               Configure your available hours for different activities. These
               settings help the calendar optimize scheduling and provide better
