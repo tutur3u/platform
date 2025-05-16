@@ -29,7 +29,7 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
     <div
       ref={calendarViewRef}
       id="calendar-view"
-      className="flex h-full overflow-y-auto scroll-smooth rounded-b-lg border-b border-l border-border text-center dark:border-zinc-800"
+      className="border-border flex h-full overflow-y-auto scroll-smooth rounded-b-lg border-b border-l text-center dark:border-zinc-800"
       style={{
         scrollbarWidth: 'thin',
         scrollbarColor: 'rgba(0,0,0,0.2) transparent',
