@@ -272,7 +272,7 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
                       <HoverCardTrigger asChild>
                         <div
                           className={cn(
-                            'flex cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                            'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
                             bg,
                             text
                           )}
