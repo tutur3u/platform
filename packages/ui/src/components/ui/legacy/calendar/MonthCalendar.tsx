@@ -1,6 +1,5 @@
 'use client';
 
-import { useCalendar } from '../../../../hooks/use-calendar';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -23,6 +22,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
 
 dayjs.extend(timezone);
 
@@ -32,7 +32,7 @@ interface MonthCalendarProps {
 }
 
 const MonthCalendar = ({ date }: MonthCalendarProps) => {
-  const { getCurrentEvents, addEmptyEvent, settings } = useCalendar();
+  const { getCurrentEvents, addEmptyEvent, openModal, settings } = useCalendar();
   const [currDate, setCurrDate] = useState(date);
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
   const tz = settings?.timezone?.timezone;
@@ -272,10 +272,11 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
                       <HoverCardTrigger asChild>
                         <div
                           className={cn(
-                            'flex cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                            'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
                             bg,
                             text
                           )}
+                          onClick={() => openModal(event.id)}
                         >
                           {event.title || 'Untitled event'}
                         </div>
@@ -286,7 +287,7 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
                         className="w-80"
                       >
                         <div className="space-y-2">
-                          <h4 className="font-medium">
+                          <h4 className="font-medium break-words line-clamp-2">
                             {event.title || 'Untitled event'}
                           </h4>
                           {event.description && (
