@@ -210,29 +210,47 @@ export function SubmissionCard({
                             <div className="grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
                               <div className="space-y-1">
                                 <p className="font-medium">Input:</p>
-                                <pre className="bg-background max-h-24 overflow-auto whitespace-pre-wrap rounded p-2">
-                                  {testcase.input}
-                                </pre>
+                                {testcase.input ? (
+                                  <pre className="bg-background max-h-24 overflow-auto whitespace-pre-wrap rounded p-2">
+                                    {testcase.input}
+                                  </pre>
+                                ) : (
+                                  <p className="text-muted-foreground italic">
+                                    No input available
+                                  </p>
+                                )}
                               </div>
 
                               <div className="space-y-1">
                                 <p className="font-medium">Expected Output:</p>
-                                <pre className="bg-background max-h-24 overflow-auto whitespace-pre-wrap rounded p-2">
-                                  {testcase.output}
-                                </pre>
+                                {testcase.expected_output ? (
+                                  <pre className="bg-background max-h-24 overflow-auto whitespace-pre-wrap rounded p-2">
+                                    {testcase.expected_output}
+                                  </pre>
+                                ) : (
+                                  <p className="text-muted-foreground italic">
+                                    No expected output available
+                                  </p>
+                                )}
                               </div>
 
                               <div className="space-y-1 md:col-span-2">
                                 <p className="font-medium">Your Output:</p>
-                                <pre
-                                  className={`max-h-24 overflow-auto whitespace-pre-wrap rounded p-2 ${
-                                    testcase.matched
-                                      ? 'bg-emerald-100 dark:bg-emerald-900/20'
-                                      : 'bg-red-100 dark:bg-red-900/20'
-                                  }`}
-                                >
-                                  {testcase.output || 'No output produced'}
-                                </pre>
+                                {testcase.output ? (
+                                  <pre
+                                    className={`max-h-24 overflow-auto whitespace-pre-wrap rounded p-2 ${
+                                      testcase.matched
+                                        ? 'bg-emerald-100 dark:bg-emerald-900/20'
+                                        : 'bg-red-100 dark:bg-red-900/20'
+                                    }`}
+                                  >
+                                    {testcase.output}
+                                  </pre>
+                                ) : (
+                                  <p className="text-muted-foreground italic">
+                                    No output produced
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </div>
