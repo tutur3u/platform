@@ -1,10 +1,10 @@
 'use client';
 
-import { addWhitelistEmail } from './actions';
-import WhitelistEmailForm from './form';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import WhitelistEmailForm from './form';
+import { addWhitelistEmail } from './actions';
 
 interface Props {
   wsId: string;
