@@ -1,13 +1,13 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { CalendarColumn } from './calendar-column';
+import { DAY_HEIGHT, MAX_LEVEL } from './config';
+import { EventCard } from './event-card';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { CalendarColumn } from './calendar-column';
-import { DAY_HEIGHT, MAX_LEVEL } from './config';
-import { EventCard } from './event-card';
 
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
@@ -16,13 +16,25 @@ export const CalendarMatrix = ({ dates }: { dates: Date[] }) => {
   const [isDragging, setIsDragging] = useState(false);
   return (
     <>
-      <CalendarBaseMatrix dates={dates} isDragging={isDragging} setIsDragging={setIsDragging} />
+      <CalendarBaseMatrix
+        dates={dates}
+        isDragging={isDragging}
+        setIsDragging={setIsDragging}
+      />
       <CalendarEventMatrix dates={dates} />
     </>
   );
 };
 
-export const CalendarBaseMatrix = ({ dates, isDragging, setIsDragging }: { dates: Date[], isDragging: boolean, setIsDragging: (v: boolean) => void }) => {
+export const CalendarBaseMatrix = ({
+  dates,
+  isDragging,
+  setIsDragging,
+}: {
+  dates: Date[];
+  isDragging: boolean;
+  setIsDragging: (v: boolean) => void;
+}) => {
   return (
     <>
       {dates.map((_, index) => (

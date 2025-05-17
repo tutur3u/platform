@@ -1,11 +1,11 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { HOUR_HEIGHT } from './config';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
 
 dayjs.extend(timezone);
 
@@ -43,25 +43,27 @@ const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
         zIndex: 11, // Lower z-index to stay below UI controls but above events
       }}
     >
-      <div className={cn(
-        'w-full h-full flex flex-col justify-between p-1',
-        height > 40 ? 'opacity-100' : 'opacity-0',
-        'transition-opacity'
-      )}>
-        <div className="text-xs font-semibold text-left left-2 absolute">
+      <div
+        className={cn(
+          'flex h-full w-full flex-col justify-between p-1',
+          height > 40 ? 'opacity-100' : 'opacity-0',
+          'transition-opacity'
+        )}
+      >
+        <div className="absolute left-2 text-left text-xs font-semibold">
           {format(startDate, 'h:mm a')}
         </div>
-        <div className="text-xs font-semibold text-left left-2 absolute bottom-1">
+        <div className="absolute bottom-1 left-2 text-left text-xs font-semibold">
           {format(endDate, 'h:mm a')}
         </div>
       </div>
       <div
         className={cn(
-          'text-xs font-semibold rounded absolute whitespace-nowrap pointer-events-none',
+          'pointer-events-none absolute whitespace-nowrap rounded text-xs font-semibold',
           // More compact styling for short durations
           height < 60
-            ? 'right-1 top-1/2 -translate-y-1/2 px-1 py-0.5 bg-white/90 shadow-sm rounded-md text-[10px]'
-            : 'right-2 top-1 px-1.5 py-0.5 bg-white/90 shadow-sm rounded-md',
+            ? 'right-1 top-1/2 -translate-y-1/2 rounded-md bg-white/90 px-1 py-0.5 text-[10px] shadow-sm'
+            : 'right-2 top-1 rounded-md bg-white/90 px-1.5 py-0.5 shadow-sm',
           text
         )}
         style={{
@@ -73,8 +75,7 @@ const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
       >
         {durationMinutes < 60
           ? `${durationMinutes}m` // Shorter format for minutes
-          : `${Math.floor(durationMinutes / 60)}h${durationMinutes % 60 ? ` ${durationMinutes % 60}m` : ''}`
-        }
+          : `${Math.floor(durationMinutes / 60)}h${durationMinutes % 60 ? ` ${durationMinutes % 60}m` : ''}`}
       </div>
     </div>
   );
@@ -99,7 +100,12 @@ const findScrollContainer = (el: HTMLElement | null): HTMLElement | null => {
 
 const GRID_SNAP = HOUR_HEIGHT / 4; // 15 minutes per grid
 
-export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: CalendarCellProps) => {
+export const CalendarCell = ({
+  date,
+  hour,
+  isDragging,
+  setIsDragging,
+}: CalendarCellProps) => {
   const { addEmptyEvent, addEmptyEventWithDuration, settings } = useCalendar();
   const [isHovering, setIsHovering] = useState(false);
   const cellRef = useRef<HTMLDivElement>(null);
@@ -112,7 +118,9 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
     isReversed: boolean;
   } | null>(null);
   const tz = settings?.timezone?.timezone;
-  const [hoveredSlot, setHoveredSlot] = useState<'hour' | 'half-hour' | number | null>(null);
+  const [hoveredSlot, setHoveredSlot] = useState<
+    'hour' | 'half-hour' | number | null
+  >(null);
   const [showBothLabels, setShowBothLabels] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipLocked, setTooltipLocked] = useState(false);
@@ -230,8 +238,10 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
       if (container && cellRef.current) {
         const containerRect = container.getBoundingClientRect();
         const cellRect = cellRef.current.getBoundingClientRect();
-        dragStartYInContainer.current = e.clientY + container.scrollTop - containerRect.top;
-        cellTopInContainer.current = cellRect.top + container.scrollTop - containerRect.top;
+        dragStartYInContainer.current =
+          e.clientY + container.scrollTop - containerRect.top;
+        cellTopInContainer.current =
+          cellRect.top + container.scrollTop - containerRect.top;
       }
       // Set dragging state immediately
       setIsDragging(true);
@@ -254,11 +264,13 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
       if (!container) return;
       const containerRect = container.getBoundingClientRect();
       // Calculate current Y in container
-      const currentYInContainer = e.clientY + container.scrollTop - containerRect.top;
+      const currentYInContainer =
+        e.clientY + container.scrollTop - containerRect.top;
       const startYInContainer = dragStartYInContainer.current;
       const cellTop = cellTopInContainer.current;
       // Snap both start and current Y to the 15-minute grid
-      const snapToGrid = (value: number) => Math.round(value / GRID_SNAP) * GRID_SNAP;
+      const snapToGrid = (value: number) =>
+        Math.round(value / GRID_SNAP) * GRID_SNAP;
       const snappedStartY = snapToGrid(startYInContainer - cellTop);
       const snappedCurrentY = snapToGrid(currentYInContainer - cellTop);
       const top = Math.min(snappedStartY, snappedCurrentY);
@@ -274,7 +286,7 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
       const endDate = getTimeFromY(snappedCurrentY);
       const roundedStartDate = roundToNearest15Minutes(startDate);
       const roundedEndDate = roundToNearest15Minutes(endDate);
-      
+
       if (!isDragging) return;
       const isReversed = roundedEndDate.getTime() < roundedStartDate.getTime();
       const actualStartDate = isReversed ? roundedEndDate : roundedStartDate;
@@ -304,7 +316,11 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
     if (!isDragging) return;
     const onScroll = () => {
       // Simulate a mousemove event to update preview
-      const fakeEvent = { ...window.event, pageY: window.event ? (window.event as MouseEvent).pageY : 0, clientY: window.event ? (window.event as MouseEvent).clientY : 0 } as MouseEvent;
+      const fakeEvent = {
+        ...window.event,
+        pageY: window.event ? (window.event as MouseEvent).pageY : 0,
+        clientY: window.event ? (window.event as MouseEvent).clientY : 0,
+      } as MouseEvent;
       enhancedHandleMouseMove(fakeEvent);
     };
     container.addEventListener('scroll', onScroll);
@@ -351,10 +367,12 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
       const container = scrollContainerRef.current;
       if (!container || !cellRef.current) return;
       const containerRect = container.getBoundingClientRect();
-      const currentYInContainer = e.clientY + container.scrollTop - containerRect.top;
+      const currentYInContainer =
+        e.clientY + container.scrollTop - containerRect.top;
       const startYInContainer = dragStartYInContainer.current;
       const cellTop = cellTopInContainer.current;
-      const snapToGrid = (value: number) => Math.round(value / GRID_SNAP) * GRID_SNAP;
+      const snapToGrid = (value: number) =>
+        Math.round(value / GRID_SNAP) * GRID_SNAP;
       const snappedStartY = snapToGrid(startYInContainer - cellTop);
       const snappedCurrentY = snapToGrid(currentYInContainer - cellTop);
       const getTimeFromY = (y: number) => {
@@ -384,7 +402,14 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
       }
       dragStartRef.current = null;
     },
-    [isDragging, yToTime, getCellDate, addEmptyEvent, addEmptyEventWithDuration, setIsDragging]
+    [
+      isDragging,
+      yToTime,
+      getCellDate,
+      addEmptyEvent,
+      addEmptyEventWithDuration,
+      setIsDragging,
+    ]
   );
 
   // Helper to handle mouse enter for each slot
@@ -533,8 +558,8 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
       data-date={date}
     >
       {/* Show only the hovered label before 1s, both after 1s */}
-      {!isDragging && (
-        showBothLabels ? (
+      {!isDragging &&
+        (showBothLabels ? (
           <>
             <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
               {formatTime(hour)}
@@ -551,13 +576,10 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
           <span className="text-muted-foreground/70 absolute bottom-2 left-2 text-xs font-medium">
             {formatTime(hour, 30)}
           </span>
-        ) : null
-      )}
+        ) : null)}
 
       {/* Drag preview overlay */}
-      {dragPreview && (
-        <DragPreview {...dragPreview} />
-      )}
+      {dragPreview && <DragPreview {...dragPreview} />}
 
       {/* Full cell clickable area (hour) */}
       <button
@@ -565,7 +587,9 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
         onClick={() => handleCreateEvent()}
         onMouseEnter={() => handleSlotMouseEnter('hour')}
         onMouseLeave={handleSlotMouseLeave}
-        onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => handleSlotMouseMove(e as any, 'hour')}
+        onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) =>
+          handleSlotMouseMove(e as any, 'hour')
+        }
         onFocus={() => handleSlotFocus('hour')}
         onBlur={handleSlotBlur}
         aria-describedby={tooltipId}
@@ -576,7 +600,9 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
         style={{ background: 'transparent' }}
         onMouseEnter={() => handleSlotMouseEnter(15)}
         onMouseLeave={handleSlotMouseLeave}
-        onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => handleSlotMouseMove(e as any, 15)}
+        onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) =>
+          handleSlotMouseMove(e as any, 15)
+        }
         aria-describedby={tooltipId}
         tabIndex={-1}
       />
@@ -587,7 +613,9 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
         onClick={() => handleCreateEvent(true)}
         onMouseEnter={() => handleSlotMouseEnter('half-hour')}
         onMouseLeave={handleSlotMouseLeave}
-        onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => handleSlotMouseMove(e as any, 'half-hour')}
+        onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) =>
+          handleSlotMouseMove(e as any, 'half-hour')
+        }
         onFocus={() => handleSlotFocus('half-hour')}
         onBlur={handleSlotBlur}
         aria-describedby={tooltipId}
@@ -598,7 +626,9 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
         style={{ background: 'transparent' }}
         onMouseEnter={() => handleSlotMouseEnter(45)}
         onMouseLeave={handleSlotMouseLeave}
-        onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => handleSlotMouseMove(e as any, 45)}
+        onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) =>
+          handleSlotMouseMove(e as any, 45)
+        }
         aria-describedby={tooltipId}
         tabIndex={-1}
       />
@@ -624,8 +654,8 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
             typeof hoveredSlot === 'number'
               ? formatTime(hour, hoveredSlot)
               : hoveredSlot === 'hour'
-              ? formatTime(hour)
-              : formatTime(hour, 30)
+                ? formatTime(hour)
+                : formatTime(hour, 30)
           }`}
         </div>
       )}
