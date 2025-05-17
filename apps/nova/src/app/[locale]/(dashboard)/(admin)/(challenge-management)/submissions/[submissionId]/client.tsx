@@ -29,7 +29,7 @@ export default function SubmissionClient({
         <div className="space-y-1">
           <Link
             href="/submissions"
-            className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:underline"
+            className="text-muted-foreground mb-2 flex items-center gap-1 text-sm hover:underline"
           >
             <ArrowLeft className="h-4 w-4" /> Back to submissions
           </Link>
@@ -64,9 +64,9 @@ export default function SubmissionClient({
           <CardContent>
             <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4">
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">User</p>
+                <p className="text-muted-foreground text-sm">User</p>
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary/70" />
+                  <User className="text-primary/70 h-4 w-4" />
                   <span className="font-medium">
                     {submission.user.display_name || 'Anonymous'}
                   </span>
@@ -74,9 +74,9 @@ export default function SubmissionClient({
               </div>
 
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Problem</p>
+                <p className="text-muted-foreground text-sm">Problem</p>
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-primary/70" />
+                  <BookOpen className="text-primary/70 h-4 w-4" />
                   <span className="font-medium">
                     {submission.problem.title || 'Unknown Problem'}
                   </span>
@@ -85,9 +85,9 @@ export default function SubmissionClient({
 
               {submission.created_at && (
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Submitted</p>
+                  <p className="text-muted-foreground text-sm">Submitted</p>
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-primary/70" />
+                    <Calendar className="text-primary/70 h-4 w-4" />
                     <span className="font-medium">
                       {new Date(submission.created_at!).toLocaleDateString()}
                     </span>
@@ -97,9 +97,9 @@ export default function SubmissionClient({
 
               {submission.created_at && (
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Time</p>
+                  <p className="text-muted-foreground text-sm">Time</p>
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary/70" />
+                    <Clock className="text-primary/70 h-4 w-4" />
                     <span className="font-medium">
                       {new Date(submission.created_at).toLocaleTimeString()}
                     </span>
@@ -112,7 +112,7 @@ export default function SubmissionClient({
 
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Total Score</p>
+                <p className="text-muted-foreground text-sm">Total Score</p>
                 <div>
                   <Badge
                     variant={
@@ -132,7 +132,7 @@ export default function SubmissionClient({
               </div>
 
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Test Case Score</p>
+                <p className="text-muted-foreground text-sm">Test Case Score</p>
                 <div>
                   <Badge
                     variant={
@@ -154,7 +154,7 @@ export default function SubmissionClient({
               </div>
 
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Criteria Score</p>
+                <p className="text-muted-foreground text-sm">Criteria Score</p>
                 <div>
                   <Badge
                     variant={

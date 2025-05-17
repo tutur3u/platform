@@ -230,11 +230,11 @@ export default function SideBySideDiff({
   return (
     <div className={cn('overflow-hidden rounded-md border', className)}>
       {/* Headers */}
-      <div className="grid grid-cols-2 border-b bg-muted/30">
-        <div className="border-r px-4 py-2 text-xs font-medium text-muted-foreground">
+      <div className="bg-muted/30 grid grid-cols-2 border-b">
+        <div className="text-muted-foreground border-r px-4 py-2 text-xs font-medium">
           {leftTitle}
         </div>
-        <div className="px-4 py-2 text-xs font-medium text-muted-foreground">
+        <div className="text-muted-foreground px-4 py-2 text-xs font-medium">
           {rightTitle}
         </div>
       </div>
@@ -245,11 +245,11 @@ export default function SideBySideDiff({
         <div className="border-r">
           <div className="relative font-mono text-xs">
             {showLineNumbers && (
-              <div className="absolute top-0 bottom-0 left-0 w-[28px] flex-shrink-0 border-r bg-muted/20 select-none">
+              <div className="bg-muted/20 absolute bottom-0 left-0 top-0 w-[28px] flex-shrink-0 select-none border-r">
                 {diffData.leftLines.map((line) => (
                   <div
                     key={`left-line-${line.lineNumber}`}
-                    className="sticky left-0 flex h-6 items-center justify-end px-1 text-[10px] text-muted-foreground"
+                    className="text-muted-foreground sticky left-0 flex h-6 items-center justify-end px-1 text-[10px]"
                   >
                     {line.lineNumber}
                   </div>
@@ -261,7 +261,7 @@ export default function SideBySideDiff({
                 <div
                   key={`left-content-${line.lineNumber}`}
                   className={cn(
-                    'min-h-[24px] px-2 py-1 leading-snug break-all whitespace-pre-wrap',
+                    'min-h-[24px] whitespace-pre-wrap break-all px-2 py-1 leading-snug',
                     line.type === 'removed' &&
                       'border-l-2 border-red-500 bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300',
                     line.type === 'modified' &&
@@ -279,11 +279,11 @@ export default function SideBySideDiff({
         <div>
           <div className="relative font-mono text-xs">
             {showLineNumbers && (
-              <div className="absolute top-0 bottom-0 left-0 w-[28px] flex-shrink-0 border-r bg-muted/20 select-none">
+              <div className="bg-muted/20 absolute bottom-0 left-0 top-0 w-[28px] flex-shrink-0 select-none border-r">
                 {diffData.rightLines.map((line) => (
                   <div
                     key={`right-line-${line.lineNumber}`}
-                    className="sticky left-0 flex h-6 items-center justify-end px-1 text-[10px] text-muted-foreground"
+                    className="text-muted-foreground sticky left-0 flex h-6 items-center justify-end px-1 text-[10px]"
                   >
                     {line.lineNumber}
                   </div>
@@ -295,7 +295,7 @@ export default function SideBySideDiff({
                 <div
                   key={`right-content-${line.lineNumber}`}
                   className={cn(
-                    'min-h-[24px] px-2 py-1 leading-snug break-all whitespace-pre-wrap',
+                    'min-h-[24px] whitespace-pre-wrap break-all px-2 py-1 leading-snug',
                     line.type === 'added' &&
                       'border-l-2 border-green-500 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300',
                     line.type === 'modified' &&
