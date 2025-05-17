@@ -343,9 +343,6 @@ export function SubmissionTable({
                         <p className="text-muted-foreground">
                           {t('empty-state.no-submissions')}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {t('empty-state.try-different-filters')}
-                        </p>
                       </div>
                     )}
                   </TableCell>

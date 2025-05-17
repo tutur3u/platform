@@ -96,14 +96,14 @@ export default async function SubmissionsList({
     `)
     .order('display_name');
 
-  // Transform users data to match UserOption interface
+ 
   const userOptions = (users || []).map(user => ({
     id: user.id,
     display_name: user.display_name || 'Unknown User',
     email: user.user_private_details?.email || ''
   }));
 
-  // Begin submissions query
+ 
   let query = sbAdmin.from('nova_submissions_with_scores').select(
     `
       *,
@@ -131,7 +131,6 @@ export default async function SubmissionsList({
     );
   }
 
-  // Apply challenge filter if provided
   if (selectedChallenge) {
     const { data: matchingProblemIds } = await sbAdmin
       .from('nova_problems')
@@ -144,7 +143,6 @@ export default async function SubmissionsList({
     }
   }
 
-  // Apply problem filter if provided
   if (selectedProblem) {
     query = query.eq('problem_id', selectedProblem);
   }
@@ -178,10 +176,8 @@ export default async function SubmissionsList({
     .order(actualSortField, { ascending: sortDirection === 'asc' })
     .range(from, to);
 
-  // Handle error more gracefully
   if (submissionsError) {
     console.error('Error fetching submissions:', submissionsError);
-    // Instead of throwing, return empty results
     return (
       <div className="w-full space-y-2">
         <SubmissionOverview stats={stats} />
@@ -227,7 +223,6 @@ export default async function SubmissionsList({
     emailMap.set(detail.user_id, detail.email);
   });
 
-  // Enhance submissions with email information
   const submissions: SubmissionWithDetails[] = (submissionsData?.map((sub) => ({
     ...sub,
     user: {

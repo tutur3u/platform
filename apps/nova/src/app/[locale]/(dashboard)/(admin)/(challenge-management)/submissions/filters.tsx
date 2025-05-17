@@ -194,6 +194,9 @@ export function SubmissionFilters({
             onChange={(e) => {
               setUserSearch(e.target.value);
               setUserDropdownOpen(true);
+              if (e.target.value === '') {
+                onUserChange(''); // Clear user filter when search bar is empty
+              }
             }}
             className="h-8 mb-2"
             autoComplete="off"
@@ -206,16 +209,6 @@ export function SubmissionFilters({
               tabIndex={-1}
               onBlur={() => setTimeout(() => setUserDropdownOpen(false), 150)}
             >
-              <div
-                className={`cursor-pointer px-4 py-2 hover:bg-accent ${selectedUser === 'all' ? 'font-semibold' : ''}`}
-                onMouseDown={() => {
-                  onUserChange('all');
-                  setUserDropdownOpen(false);
-                  if (userInputRef.current) userInputRef.current.blur();
-                }}
-              >
-                {allUsersLabel}
-              </div>
               {filteredUsers.map((user) => (
                 <div
                   key={user.id}
@@ -223,6 +216,7 @@ export function SubmissionFilters({
                   onMouseDown={() => {
                     onUserChange(user.id);
                     setUserDropdownOpen(false);
+                    setUserSearch(user.email);
                     if (userInputRef.current) userInputRef.current.blur();
                   }}
                 >
