@@ -87,23 +87,23 @@ export default async function SubmissionsList({
   // Fetch users for filtering
   const { data: users = [] } = await sbAdmin
     .from('users')
-    .select(`
+    .select(
+      `
       id,
       display_name,
       user_private_details (
         email
       )
-    `)
+    `
+    )
     .order('display_name');
 
- 
-  const userOptions = (users || []).map(user => ({
+  const userOptions = (users || []).map((user) => ({
     id: user.id,
     display_name: user.display_name || 'Unknown User',
-    email: user.user_private_details?.email || ''
+    email: user.user_private_details?.email || '',
   }));
 
- 
   let query = sbAdmin.from('nova_submissions_with_scores').select(
     `
       *,
@@ -124,7 +124,6 @@ export default async function SubmissionsList({
     { count: 'exact' }
   );
 
-  
   if (searchQuery) {
     query = query.or(
       `prompt.ilike.%${searchQuery}%,feedback.ilike.%${searchQuery}%`
