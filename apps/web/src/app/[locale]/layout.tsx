@@ -13,11 +13,15 @@ import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import { Inter } from 'next/font/google';
+import { Oxygen } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
-const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
+const font = Oxygen({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['300', '400', '700'],
+  display: 'block',
+});
 
 interface Props {
   children: ReactNode;
@@ -116,7 +120,7 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'bg-background overflow-y-scroll antialiased',
+          'overflow-y-scroll bg-background antialiased',
           font.className
         )}
       >
