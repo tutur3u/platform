@@ -1,4 +1,6 @@
+import OutputDiff from '@/components/common/OutputDiff';
 import ScoreBadge from '@/components/common/ScoreBadge';
+import SideBySideDiff from '@/components/common/SideBySideDiff';
 import { NovaSubmissionData } from '@tuturuuu/types/db';
 import {
   Accordion,
@@ -7,6 +9,7 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import {
   HoverCard,
@@ -16,14 +19,25 @@ import {
 import {
   CheckCircle2,
   Clock,
+  Code,
+  Compass,
+  EyeIcon,
+  FileCode,
+  Info,
   Loader2,
   RefreshCw,
+  Split,
+  TextCursor,
+  ThumbsUp,
   User,
   XCircle,
 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { useEffect } from 'react';
+import { Switch } from '@tuturuuu/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { useEffect, useState } from 'react';
 
 interface SubmissionCardProps {
   submission: Partial<NovaSubmissionData>;
@@ -40,6 +54,9 @@ export function SubmissionCard({
   isLoading = false,
   queuePosition,
 }: SubmissionCardProps) {
+  const [activeTab, setActiveTab] = useState<string>('test-cases');
+  const [expandedTestCase, setExpandedTestCase] = useState<string | null>(null);
+
   useEffect(() => {
     // Only request fetch if we don't already have the full data
     if (!submission.id || submission.criteria || !onRequestFetch) return;
@@ -49,19 +66,63 @@ export function SubmissionCard({
   const isDetailsFetched = !!submission.criteria || !!submission.test_cases;
   const showSkeleton = isLoading && !isDetailsFetched;
 
+  // Calculate progress color based on score
+  const getProgressColor = (score: number) => {
+    if (score >= 8) return 'bg-emerald-500';
+    if (score >= 5) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+
+  // Get confidence badge color
+  const getConfidenceBadge = (confidence: number | null | undefined) => {
+    if (confidence === null || confidence === undefined) return null;
+
+    if (confidence >= 0.9) {
+      return (
+        <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+          Very High
+        </Badge>
+      );
+    } else if (confidence >= 0.7) {
+      return (
+        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+          High
+        </Badge>
+      );
+    } else if (confidence >= 0.5) {
+      return (
+        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+          Medium
+        </Badge>
+      );
+    } else if (confidence >= 0.3) {
+      return (
+        <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
+          Low
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+          Very Low
+        </Badge>
+      );
+    }
+  };
+
   return (
     <Card
       key={submission.id}
-      className={`overflow-hidden transition-all duration-200 ${isCurrent ? '' : 'border-muted-foreground/20'} ${showSkeleton ? 'opacity-90' : ''}`}
+      className={`overflow-hidden transition-all duration-200 ${isCurrent ? 'border-primary/50 shadow-md' : 'border-muted-foreground/20'} ${showSkeleton ? 'opacity-90' : ''}`}
     >
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <CardHeader className="pt-4 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {submission.created_at && (
-              <span className="text-muted-foreground text-xs">
+              <Badge variant="outline" className="text-xs">
                 <Clock className="mr-1 inline h-3 w-3" />
                 {new Date(submission.created_at).toLocaleString()}
-              </span>
+              </Badge>
             )}
 
             {!isCurrent && (
@@ -88,14 +149,15 @@ export function SubmissionCard({
             )}
 
             {!isLoading && !isDetailsFetched && submission.id && (
-              <Badge
+              <Button
                 variant="outline"
-                className="hover:bg-secondary cursor-pointer text-xs"
+                size="sm"
+                className="h-7 gap-1 text-xs"
                 onClick={() => onRequestFetch?.(submission.id!)}
               >
-                <RefreshCw className="mr-1 h-3 w-3" />
+                <RefreshCw className="h-3 w-3" />
                 Load details
-              </Badge>
+              </Button>
             )}
           </div>
 
@@ -103,257 +165,538 @@ export function SubmissionCard({
             <ScoreBadge
               score={submission.total_score}
               maxScore={10}
-              className="px-2 py-0"
+              className="h-8 px-3 py-1 text-sm font-semibold"
             >
               {submission.total_score.toFixed(2)}/10
             </ScoreBadge>
           ) : (
-            showSkeleton && <Skeleton className="h-6 w-16" />
+            showSkeleton && <Skeleton className="h-8 w-20" />
           )}
         </div>
       </CardHeader>
+
       <CardContent
         className={`space-y-6 ${showSkeleton ? 'animate-pulse' : ''}`}
       >
-        <div>
-          <h3 className="text-foreground mb-1 text-sm font-medium">Prompt:</h3>
-          <div className="bg-muted rounded-md p-2 text-sm">
-            {submission.prompt}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <FileCode className="h-4 w-4 text-primary/70" />
+            <h3 className="text-sm font-medium text-foreground">Prompt</h3>
+          </div>
+          <div className="rounded-md border bg-muted/50 p-3 text-sm whitespace-pre-line">
+            {submission.prompt ||
+              (showSkeleton && <Skeleton className="h-16 w-full" />)}
           </div>
         </div>
 
-        {/* Test Case Evaluation */}
-        {submission.total_tests && submission.total_tests > 0 ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-muted-foreground text-xs font-medium">
-                Test Case Evaluation:
-              </h3>
-              {submission.test_case_score != null ? (
-                <ScoreBadge
-                  score={submission.test_case_score}
-                  maxScore={10}
-                  className="px-2 py-0"
-                >
-                  {submission.test_case_score.toFixed(2)}/10
-                </ScoreBadge>
-              ) : (
-                showSkeleton && <Skeleton className="h-5 w-14" />
-              )}
-            </div>
-            <div className="space-y-2 rounded-md border p-4">
-              <div>
-                <span className="text-sm">
-                  Passed {submission.passed_tests} of {submission.total_tests}{' '}
-                  test cases
-                </span>
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-4"
+        >
+          <TabsList className="w-full">
+            <TabsTrigger value="test-cases" className="flex-1">
+              <div className="flex items-center gap-1">
+                <Code className="h-4 w-4" />
+                <span>Test Cases</span>
               </div>
-              {submission.passed_tests != null &&
-                submission.total_tests != null && (
-                  <Progress
-                    value={
-                      (submission.passed_tests / submission.total_tests) * 100
-                    }
-                    className="h-2 w-full"
-                    indicatorClassName={
-                      submission.test_case_score != null &&
-                      submission.test_case_score >= 8
-                        ? 'bg-emerald-500'
-                        : submission.test_case_score != null &&
-                            submission.test_case_score >= 5
-                          ? 'bg-amber-500'
-                          : 'bg-red-500'
-                    }
-                  />
-                )}
+              {submission.test_case_score != null && (
+                <span className="ml-2 inline-block">
+                  <ScoreBadge
+                    score={submission.test_case_score}
+                    maxScore={10}
+                    className="px-1.5 py-0 text-xs"
+                  >
+                    {submission.test_case_score.toFixed(1)}
+                  </ScoreBadge>
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="criteria" className="flex-1">
+              <div className="flex items-center gap-1">
+                <Compass className="h-4 w-4" />
+                <span>Criteria</span>
+              </div>
+              {submission.criteria_score != null && (
+                <span className="ml-2 inline-block">
+                  <ScoreBadge
+                    score={submission.criteria_score}
+                    maxScore={10}
+                    className="px-1.5 py-0 text-xs"
+                  >
+                    {submission.criteria_score.toFixed(1)}
+                  </ScoreBadge>
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-              {/* Detailed Test Cases */}
-              <div className="mt-4">
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="test-cases">
-                    <AccordionTrigger className="text-sm font-medium">
-                      View Test Case Details
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-3">
-                        {submission.test_cases?.map((testcase, index) => (
-                          <div
-                            key={testcase.test_case_id ?? index}
-                            className={`rounded-md border p-3 ${
-                              testcase.matched
-                                ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
-                                : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
-                            }`}
+          {/* Test Cases Tab */}
+          <TabsContent value="test-cases" className="space-y-4 pt-2">
+            {submission.total_tests && submission.total_tests > 0 ? (
+              <div className="space-y-4">
+                <div className="space-y-2 rounded-md border bg-card p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {submission.test_case_score != null &&
+                      submission.test_case_score >= 8 ? (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                      ) : submission.test_case_score != null &&
+                        submission.test_case_score >= 5 ? (
+                        <Clock className="h-5 w-5 text-amber-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                      <span className="font-medium">
+                        Passed {submission.passed_tests} of{' '}
+                        {submission.total_tests} test cases
+                      </span>
+                    </div>
+                    {submission.test_case_score != null && (
+                      <ScoreBadge
+                        score={submission.test_case_score}
+                        maxScore={10}
+                        className="px-2 py-0"
+                      >
+                        {submission.test_case_score.toFixed(2)}/10
+                      </ScoreBadge>
+                    )}
+                  </div>
+
+                  {submission.passed_tests != null &&
+                    submission.total_tests != null && (
+                      <div className="pt-1">
+                        <div className="mb-1 flex justify-between text-xs">
+                          <span className="text-muted-foreground">
+                            Progress
+                          </span>
+                          <span className="font-medium">
+                            {Math.round(
+                              (submission.passed_tests /
+                                submission.total_tests) *
+                                100
+                            )}
+                            %
+                          </span>
+                        </div>
+                        <Progress
+                          value={
+                            (submission.passed_tests / submission.total_tests) *
+                            100
+                          }
+                          className="h-2 w-full"
+                          indicatorClassName={
+                            submission.test_case_score != null
+                              ? getProgressColor(submission.test_case_score)
+                              : 'bg-primary'
+                          }
+                        />
+                      </div>
+                    )}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">Test Case Details</h4>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">
+                          Line Numbers
+                        </span>
+                        <Switch
+                          checked={false}
+                          className="data-[state=checked]:bg-primary"
+                          disabled
+                        />
+                      </div>
+
+                      {submission.test_cases &&
+                        submission.test_cases.length > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() =>
+                              setExpandedTestCase(
+                                expandedTestCase ? null : 'all'
+                              )
+                            }
                           >
-                            <div className="mb-2 flex items-center justify-between">
-                              <span className="text-sm font-medium">
-                                Test Case {index + 1}
-                              </span>
-                              <div className="flex items-center">
+                            {expandedTestCase ? 'Collapse all' : 'Expand all'}
+                          </Button>
+                        )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {submission.test_cases?.map((testcase, index) => (
+                      <Accordion
+                        key={testcase.test_case_id ?? index}
+                        type="single"
+                        collapsible
+                        value={
+                          expandedTestCase === 'all'
+                            ? `test-${index}`
+                            : undefined
+                        }
+                        onValueChange={(value) => {
+                          if (value === `test-${index}`) {
+                            setExpandedTestCase(`test-${index}`);
+                          } else if (expandedTestCase === `test-${index}`) {
+                            setExpandedTestCase(null);
+                          }
+                        }}
+                        className="w-full rounded-md border shadow-sm"
+                      >
+                        <AccordionItem
+                          value={`test-${index}`}
+                          className="border-none"
+                        >
+                          <AccordionTrigger
+                            className={`px-4 py-3 ${
+                              testcase.matched
+                                ? 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50'
+                                : 'bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50'
+                            } rounded-t-md`}
+                          >
+                            <div className="flex w-full items-center justify-between pr-2">
+                              <div className="flex items-center gap-2">
                                 {testcase.matched ? (
-                                  <CheckCircle2 className="mr-1 h-4 w-4 text-emerald-500" />
+                                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                 ) : (
-                                  <XCircle className="mr-1 h-4 w-4 text-red-500" />
+                                  <XCircle className="h-4 w-4 text-red-500" />
                                 )}
+                                <span className="text-sm font-medium">
+                                  Test Case {index + 1}
+                                </span>
+
+                                {testcase.confidence !== undefined &&
+                                  testcase.confidence !== null && (
+                                    <div className="ml-2 flex items-center gap-1">
+                                      <ThumbsUp className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-xs text-muted-foreground">
+                                        {(testcase.confidence * 100).toFixed(0)}
+                                        % confidence
+                                      </span>
+                                    </div>
+                                  )}
+                              </div>
+                              <div className="flex items-center gap-2">
                                 <span
-                                  className={`text-xs font-medium ${
+                                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                     testcase.matched
-                                      ? 'text-emerald-500'
-                                      : 'text-red-500'
+                                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
                                   }`}
                                 >
                                   {testcase.matched ? 'PASS' : 'FAIL'}
                                 </span>
                               </div>
                             </div>
-
-                            <div className="grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
-                              <div className="space-y-1">
-                                <p className="font-medium">Input:</p>
-                                {testcase.input ? (
-                                  <pre className="bg-background max-h-24 overflow-auto whitespace-pre-wrap rounded p-2">
-                                    {testcase.input}
-                                  </pre>
-                                ) : (
-                                  <p className="text-muted-foreground italic">
-                                    No input available
-                                  </p>
-                                )}
+                          </AccordionTrigger>
+                          <AccordionContent className="p-0">
+                            <div className="px-4 pt-2 pb-2">
+                              <div className="mb-4 rounded-md border bg-muted/20 p-3">
+                                <h5 className="mb-2 text-xs font-medium">
+                                  Input
+                                </h5>
+                                <pre className="max-h-24 overflow-auto rounded-md border bg-background p-2 text-xs whitespace-pre-wrap">
+                                  {testcase.input || 'No input provided'}
+                                </pre>
                               </div>
 
-                              <div className="space-y-1">
-                                <p className="font-medium">Expected Output:</p>
-                                {testcase.expected_output ? (
-                                  <pre className="bg-background max-h-24 overflow-auto whitespace-pre-wrap rounded p-2">
-                                    {testcase.expected_output}
-                                  </pre>
-                                ) : (
-                                  <p className="text-muted-foreground italic">
-                                    No expected output available
-                                  </p>
-                                )}
+                              {/* Test Case Reasoning */}
+                              {testcase.reasoning && (
+                                <div className="mb-4 rounded-md border bg-muted/20 p-3">
+                                  <div className="mb-2 flex items-center justify-between">
+                                    <h5 className="flex items-center text-xs font-medium">
+                                      <Info className="mr-1 h-3.5 w-3.5 text-primary/70" />
+                                      Reasoning
+                                    </h5>
+
+                                    {testcase.confidence !== undefined && (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground">
+                                          Confidence:
+                                        </span>
+                                        {getConfidenceBadge(
+                                          testcase.confidence
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="rounded border bg-background p-2 text-sm text-muted-foreground">
+                                    {testcase.reasoning}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <Tabs
+                              defaultValue="side-by-side"
+                              className="px-4 pb-4"
+                            >
+                              <div className="mb-3 flex items-center justify-between">
+                                <span className="text-sm font-medium">
+                                  Output Comparison
+                                </span>
+                                <TabsList>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <TabsTrigger
+                                        value="side-by-side"
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <Split className="h-4 w-4" />
+                                      </TabsTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      Side by Side
+                                    </TooltipContent>
+                                  </Tooltip>
+
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <TabsTrigger
+                                        value="inline"
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <TextCursor className="h-4 w-4" />
+                                      </TabsTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      Inline Diff
+                                    </TooltipContent>
+                                  </Tooltip>
+
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <TabsTrigger
+                                        value="raw"
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <Code className="h-4 w-4" />
+                                      </TabsTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      Raw View
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TabsList>
                               </div>
 
-                              <div className="space-y-1 md:col-span-2">
-                                <p className="font-medium">Your Output:</p>
-                                {testcase.output ? (
-                                  <pre
-                                    className={`max-h-24 overflow-auto whitespace-pre-wrap rounded p-2 ${
-                                      testcase.matched
-                                        ? 'bg-emerald-100 dark:bg-emerald-900/20'
-                                        : 'bg-red-100 dark:bg-red-900/20'
-                                    }`}
-                                  >
-                                    {testcase.output}
-                                  </pre>
-                                ) : (
-                                  <p className="text-muted-foreground italic">
-                                    No output produced
-                                  </p>
-                                )}
+                              <TabsContent
+                                value="side-by-side"
+                                className="mt-0"
+                              >
+                                <SideBySideDiff
+                                  left={testcase.expected_output || ''}
+                                  right={testcase.output || ''}
+                                  leftTitle="Expected Output"
+                                  rightTitle="Your Output"
+                                  showLineNumbers={false}
+                                  className="max-h-[300px] overflow-auto"
+                                />
+                              </TabsContent>
+
+                              <TabsContent value="inline" className="mt-0">
+                                <div className="space-y-2">
+                                  <OutputDiff
+                                    expected={testcase.expected_output || ''}
+                                    actual={testcase.output || ''}
+                                    className="max-h-[300px]"
+                                  />
+                                </div>
+                              </TabsContent>
+
+                              <TabsContent value="raw" className="mt-0">
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                  <div className="space-y-2">
+                                    <h5 className="text-xs font-medium text-muted-foreground">
+                                      Expected Output:
+                                    </h5>
+                                    <pre className="max-h-[300px] overflow-auto rounded-md border bg-background p-2 text-xs whitespace-pre-wrap">
+                                      {testcase.expected_output ||
+                                        'No expected output'}
+                                    </pre>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <h5 className="text-xs font-medium text-muted-foreground">
+                                      Your Output:
+                                    </h5>
+                                    <pre
+                                      className={`max-h-[300px] overflow-auto rounded-md border p-2 text-xs whitespace-pre-wrap ${
+                                        testcase.matched
+                                          ? 'bg-emerald-50 dark:bg-emerald-900/20'
+                                          : 'bg-red-50 dark:bg-red-900/20'
+                                      }`}
+                                    >
+                                      {testcase.output || 'No output produced'}
+                                    </pre>
+                                  </div>
+                                </div>
+                              </TabsContent>
+                            </Tabs>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : showSkeleton ? (
+              <div className="space-y-4">
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No test cases available
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Criteria Tab */}
+          <TabsContent value="criteria" className="space-y-4 pt-2">
+            {submission.total_criteria && submission.total_criteria > 0 ? (
+              <div className="space-y-4">
+                <div className="rounded-md border bg-card p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {submission.criteria_score != null &&
+                      submission.criteria_score >= 8 ? (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                      ) : submission.criteria_score != null &&
+                        submission.criteria_score >= 5 ? (
+                        <Clock className="h-5 w-5 text-amber-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                      <span className="font-medium">
+                        {submission.criteria?.length} Evaluation Criteria
+                      </span>
+                    </div>
+                    {submission.criteria_score != null && (
+                      <ScoreBadge
+                        score={submission.criteria_score}
+                        maxScore={10}
+                        className="px-2 py-0"
+                      >
+                        {submission.criteria_score.toFixed(2)}/10
+                      </ScoreBadge>
+                    )}
+                  </div>
+
+                  {submission.criteria_score != null && (
+                    <div className="pt-1">
+                      <div className="mb-1 flex justify-between text-xs">
+                        <span className="text-muted-foreground">
+                          Overall score
+                        </span>
+                        <span className="font-medium">
+                          {Math.round((submission.criteria_score / 10) * 100)}%
+                        </span>
+                      </div>
+                      <Progress
+                        value={(submission.criteria_score / 10) * 100}
+                        className="h-2 w-full"
+                        indicatorClassName={getProgressColor(
+                          submission.criteria_score
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {submission.criteria?.map((cs) => {
+                    if (!cs) return null;
+
+                    return (
+                      <HoverCard key={cs.criteria_id} openDelay={100}>
+                        <HoverCardTrigger asChild>
+                          <div
+                            className={`flex cursor-pointer items-center justify-between rounded-md border p-3 transition-all hover:shadow-sm ${
+                              cs.score >= 8
+                                ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
+                                : cs.score >= 5
+                                  ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'
+                                  : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {cs.score >= 8 ? (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                              ) : cs.score >= 5 ? (
+                                <Clock className="h-4 w-4 text-amber-500" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-500" />
+                              )}
+                              <div>
+                                <span className="block text-sm font-medium">
+                                  {cs.name}
+                                </span>
+                                <span className="block text-xs text-muted-foreground">
+                                  <EyeIcon className="mr-1 inline-block h-3 w-3" />
+                                  Hover for feedback
+                                </span>
                               </div>
                             </div>
+                            <ScoreBadge
+                              score={cs.score}
+                              maxScore={10}
+                              className="text-xs"
+                            >
+                              {cs.score}/10
+                            </ScoreBadge>
                           </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-80 p-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium">{cs.name}</h4>
+                              <ScoreBadge
+                                score={cs.score}
+                                maxScore={10}
+                                className="text-xs"
+                              >
+                                {cs.score}/10
+                              </ScoreBadge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {cs.feedback}
+                            </p>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </div>
-        ) : (
-          showSkeleton && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-5 w-14" />
+            ) : showSkeleton ? (
+              <div className="space-y-4">
+                <Skeleton className="h-6 w-full" />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                </div>
               </div>
-              <Skeleton className="h-24 w-full" />
-            </div>
-          )
-        )}
-
-        {/* Criteria Evaluation */}
-        {submission.total_criteria && submission.total_criteria > 0 ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-muted-foreground text-xs font-medium">
-                Criteria Evaluation
-                {isCurrent ? '' : ': (Hover to see Feedback)'}
-              </h3>
-              {submission.criteria_score != null ? (
-                <ScoreBadge
-                  score={submission.criteria_score}
-                  maxScore={10}
-                  className="px-2 py-0"
-                >
-                  {submission.criteria_score.toFixed(2)}/10
-                </ScoreBadge>
-              ) : (
-                showSkeleton && <Skeleton className="h-5 w-14" />
-              )}
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {submission.criteria?.map((cs) => {
-                if (!cs) return null;
-
-                return (
-                  <HoverCard key={cs.criteria_id}>
-                    <HoverCardTrigger asChild>
-                      <div
-                        className={`flex cursor-pointer items-center justify-between rounded-md border p-2 ${
-                          cs.score >= 8
-                            ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
-                            : cs.score >= 5
-                              ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'
-                              : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {cs.score >= 8 ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                          ) : cs.score >= 5 ? (
-                            <Clock className="h-4 w-4 text-amber-500" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-500" />
-                          )}
-                          <span className="text-sm">{cs.name}</span>
-                        </div>
-                        <ScoreBadge score={cs.score} maxScore={10}>
-                          {cs.score}/10
-                        </ScoreBadge>
-                      </div>
-                    </HoverCardTrigger>
-                    <HoverCardContent className="w-80 p-4">
-                      <div className="space-y-2">
-                        <h4 className="font-medium">Feedback</h4>
-                        <p className="text-muted-foreground text-sm">
-                          {cs.feedback}
-                        </p>
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          showSkeleton && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-4 w-36" />
-                <Skeleton className="h-5 w-14" />
+            ) : (
+              <div className="rounded-md border border-dashed p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No criteria evaluation available
+                </p>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            </div>
-          )
-        )}
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
