@@ -34,7 +34,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { usePathname,useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 type SubmissionWithDetails = NovaSubmission & {
   problem: NovaProblem & {
@@ -81,7 +81,7 @@ export function SubmissionTable({
 }: SubmissionTableProps) {
   const router = useRouter();
   const t = useTranslations('nova.submission-page.submission-table');
-  const pathname = usePathname(); 
+  const pathname = usePathname();
 
   // Format date function for display
   function formatDate(dateString: string) {
