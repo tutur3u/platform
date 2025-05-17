@@ -383,13 +383,20 @@ export async function POST(
     });
 
     try {
+      const testCaseInstruction = `
+        # Test-Case Evaluation Generator
+        You will receive the same context as before. Produce, **exactly** in JSON, an array where each element contains:
+        - id  : test-case ID from context.testCaseInputs
+        - input / output / (optional) reasoning
+        Do NOT include criteria scores or other fields.
+      `;
+
       const { object } = await generateObject({
         model: vertexModel,
         schema: TestCaseEvaluationSchema,
         prompt,
-        system: systemInstruction,
+        system: testCaseInstruction,
       });
-
       evaluation.testCaseEvaluation = object;
     } catch (error) {
       console.error('AI evaluation error:', error);
