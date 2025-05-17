@@ -28,7 +28,7 @@ const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
   return (
     <div
       className={cn(
-        'absolute right-1 left-1 rounded-l rounded-r-md border-l-2 transition-colors duration-300',
+        'absolute left-1 right-1 rounded-l rounded-r-md border-l-2 transition-colors duration-300',
         'group transition-all hover:ring-1 focus:outline-none',
         'transform shadow-md', // Subtle transform during interaction
         border,
@@ -59,11 +59,11 @@ const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
       </div>
       <div
         className={cn(
-          'pointer-events-none absolute rounded-md border text-xs font-semibold whitespace-nowrap',
+          'pointer-events-none absolute whitespace-nowrap rounded-md border text-xs font-semibold',
           // More compact styling for short durations
           height < 60
-            ? 'top-1/2 right-1 -translate-y-1/2 px-1 py-0.5 text-[10px]'
-            : 'top-2 right-2 px-1.5 py-0.5',
+            ? 'right-1 top-1/2 -translate-y-1/2 px-1 py-0.5 text-[10px]'
+            : 'right-2 top-2 px-1.5 py-0.5',
           text,
           bg,
           border
@@ -564,7 +564,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       ref={cellRef}
       className={cn(
         'calendar-cell relative transition-colors',
-        hour !== 0 && 'border-t border-border/30',
+        hour !== 0 && 'border-border/30 border-t',
         isHovering ? 'bg-muted/20' : 'hover:bg-muted/10'
       )}
       style={{
@@ -582,19 +582,19 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       {!isDragging &&
         (showBothLabels ? (
           <>
-            <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">
+            <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
               {formatTime(hour)}
             </span>
-            <span className="absolute bottom-2 left-2 text-xs font-medium text-muted-foreground/70">
+            <span className="text-muted-foreground/70 absolute bottom-2 left-2 text-xs font-medium">
               {formatTime(hour, 30)}
             </span>
           </>
         ) : hoveredSlot === 'hour' ? (
-          <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">
+          <span className="text-muted-foreground/70 absolute left-2 top-2 text-xs font-medium">
             {formatTime(hour)}
           </span>
         ) : hoveredSlot === 'half-hour' ? (
-          <span className="absolute bottom-2 left-2 text-xs font-medium text-muted-foreground/70">
+          <span className="text-muted-foreground/70 absolute bottom-2 left-2 text-xs font-medium">
             {formatTime(hour, 30)}
           </span>
         ) : null)}
@@ -617,7 +617,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       />
       {/* 15-minute marker */}
       <button
-        className="absolute top-1/4 right-0 left-0 h-1/4 w-full cursor-pointer focus:outline-none"
+        className="absolute left-0 right-0 top-1/4 h-1/4 w-full cursor-pointer focus:outline-none"
         style={{ background: 'transparent' }}
         onMouseEnter={() => handleSlotMouseEnter(15)}
         onMouseLeave={handleSlotMouseLeave}
@@ -628,7 +628,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         tabIndex={-1}
       />
       {/* Half-hour marker */}
-      <div className="absolute top-1/2 right-0 left-0 border-t border-dashed border-border/30" />
+      <div className="border-border/30 absolute left-0 right-0 top-1/2 border-t border-dashed" />
       <button
         className="absolute inset-x-0 top-1/2 h-1/2 cursor-pointer focus:outline-none"
         onClick={() => handleCreateEvent(true)}
@@ -643,7 +643,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       />
       {/* 45-minute marker */}
       <button
-        className="absolute top-3/4 right-0 left-0 h-1/4 w-full cursor-pointer focus:outline-none"
+        className="absolute left-0 right-0 top-3/4 h-1/4 w-full cursor-pointer focus:outline-none"
         style={{ background: 'transparent' }}
         onMouseEnter={() => handleSlotMouseEnter(45)}
         onMouseLeave={handleSlotMouseLeave}
@@ -660,7 +660,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
           id={tooltipId}
           role="tooltip"
           aria-live="polite"
-          className="pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-foreground shadow-lg"
+          className="text-foreground pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium shadow-lg"
           style={{
             position: 'fixed',
             left: cursorPosRef.current.x,
