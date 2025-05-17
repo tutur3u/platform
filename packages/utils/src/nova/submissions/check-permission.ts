@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 
 export async function checkPermission({
   problemId,
@@ -55,8 +58,10 @@ export async function checkPermission({
     };
   }
 
+  const sbAdmin = await createAdminClient();
+
   // Check if the session is in progress
-  const { data: sessionData, error: sessionError } = await supabase
+  const { data: sessionData, error: sessionError } = await sbAdmin
     .from('nova_sessions')
     .select('*, ...nova_challenges!inner(duration, close_at)')
     .eq('id', sessionId)
