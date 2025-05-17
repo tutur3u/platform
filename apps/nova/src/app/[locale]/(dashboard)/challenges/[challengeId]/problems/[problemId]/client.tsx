@@ -31,21 +31,24 @@ import { useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
-  problems: NovaProblem[];
+  problems: {
+    id: string;
+    title: string;
+  }[];
 };
 
 interface Props {
+  challenge: ExtendedNovaChallenge;
   currentProblemIndex: number;
   problem: NovaProblem & { test_cases: NovaProblemTestCase[] };
-  challenge: ExtendedNovaChallenge;
   session: NovaSession;
   submissions: NovaSubmissionWithScores[];
 }
 
 export default function ChallengeClient({
+  challenge,
   currentProblemIndex,
   problem,
-  challenge,
   session,
   submissions,
 }: Props) {
@@ -208,7 +211,6 @@ export default function ChallengeClient({
           currentProblemIndex={currentProblemIndex + 1}
           startTime={session.start_time}
           endTime={new Date(sessionEndTime).toISOString()}
-          challengeCloseAt={challenge.close_at || ''}
           onPrev={prevProblem}
           onNext={nextProblem}
           onEnd={() => setShowEndDialog(true)}
