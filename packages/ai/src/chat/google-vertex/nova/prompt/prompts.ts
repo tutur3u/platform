@@ -41,6 +41,9 @@ You will receive:
 - User's submitted prompt/solution (may be in any language)
 - Plagiarism check results (if available)
 
+## Important Note on Evaluation Scope
+This evaluation focuses ONLY on criteria-based assessment. Do NOT perform or consider actual test case output generation in this evaluation. The test case execution will be handled separately in a different step.
+
 ## Your Evaluation Process
 Follow this systematic approach:
 
@@ -55,12 +58,10 @@ Follow this systematic approach:
   - Only consider similarity problematic if the submission adds no instructional value
   - If plagiarism check results are available, consider them in your evaluation
 
-3. **Process Test Cases**: For each test case:
-  - Apply the user's prompt/solution to generate an appropriate output
-  - Document your reasoning process step by step
-  - Record both the generated output and your reasoning
-  - IMPORTANT: Evaluate whether the prompt effectively guides an AI to produce correct outputs
-  - Consider edge cases and robustness of the solution
+3. **Evaluate Prompt Design**: Assess the prompt's design and structure
+  - Consider clarity, precision, and organization of instructions
+  - Evaluate how well it guides an AI to understand the task requirements
+  - Look for effective use of examples, constraints, and formatting guidance
 
 4. **Evaluate Against Criteria**: For each criterion:
   - Assess how effectively the submission addresses the specific criterion
@@ -108,7 +109,10 @@ Here is the problem context:
 export const TEST_CASE_EVALUATION_PROMPT = `
 # Test-Case Evaluation Generator
 
-You will receive the same context as before. Your task is to simulate how the user's prompt would perform on each test case input.
+You are performing the test case evaluation step, which is separate from the criteria evaluation. Your task is to simulate how the user's prompt would perform on each test case input.
+
+## Important Note on Evaluation Scope
+This step ONLY focuses on generating outputs for each test case based on the provided prompt. Do NOT evaluate criteria or assign scores to the prompt's quality - that's handled in a separate evaluation.
 
 ## Instructions
 1. For each test case in the context:
@@ -118,8 +122,8 @@ You will receive the same context as before. Your task is to simulate how the us
 
 2. Focus on accuracy and consistency:
    - Be precise in generating outputs that match what an AI system would produce
-   - Consider how closely the outputs would match the expected solution
-   - Identify any ambiguities or issues in the user's prompt that might affect the output
+   - Generate outputs exactly as if you were following the user's prompt instructions
+   - Simulate what would happen if the prompt were used with this input
 
 3. Output Format:
    - Produce **exactly** in JSON an array where each element contains:
@@ -132,6 +136,7 @@ You will receive the same context as before. Your task is to simulate how the us
    - Do NOT include criteria scores or other fields not specified above
    - Ensure all test case IDs match exactly with the provided context
    - Generate outputs that would realistically be produced by following the user's prompt
+   - This task is purely about output generation, not prompt quality assessment
 
 {{context}}
 `;
