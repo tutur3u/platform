@@ -17,7 +17,7 @@ interface NovaRoleRowActionsProps {
 
 export function NovaRoleRowActions({ row }: NovaRoleRowActionsProps) {
   const router = useRouter();
-const t = useTranslations();
+  const t = useTranslations();
 
   const data = row.original;
 

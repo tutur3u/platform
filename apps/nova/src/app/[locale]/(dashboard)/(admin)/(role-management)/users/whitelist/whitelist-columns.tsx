@@ -1,5 +1,6 @@
 'use client';
 
+import { NovaRoleRowActions } from './row-actions';
 import {
   useIsFetching,
   useMutation,
@@ -12,7 +13,6 @@ import { Loader2 } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
-import { NovaRoleRowActions } from './row-actions';
 
 export const getNovaRoleColumns = (t: any): ColumnDef<NovaRoleBasic>[] => {
   const router = useRouter();
