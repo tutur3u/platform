@@ -11,8 +11,7 @@ import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-// TODO: Change to the actual current challenge id
-const CURRENT_CHALLENGE_ID = '8d5e4c63-eccb-4a34-964b-c5018c0094da';
+const CURRENT_CHALLENGE_ID = '1d81a081-5f5f-4a86-95c5-a72eb4d0e787';
 
 export function CurrentChallengeCard() {
   const t = useTranslations('nova.leaderboard-page.current-challenge-card');
