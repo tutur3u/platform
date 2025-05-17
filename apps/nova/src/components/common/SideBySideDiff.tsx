@@ -61,7 +61,6 @@ export default function SideBySideDiff({
           leftLines.push({
             content: leftLine || '',
             type: 'unchanged',
-            lineNumber: i + 1,
           });
         }
 
@@ -69,7 +68,6 @@ export default function SideBySideDiff({
           rightLines.push({
             content: rightLine || '',
             type: 'unchanged',
-            lineNumber: i + 1,
           });
         }
       } else {
@@ -80,16 +78,14 @@ export default function SideBySideDiff({
           const rightInlineDiff = findInlineDiff(rightLine, leftLine);
 
           leftLines.push({
-            content: leftLine,
+            content: leftLine || '',
             type: 'modified',
-            lineNumber: i + 1,
             inlineDiff: leftInlineDiff,
           });
 
           rightLines.push({
-            content: rightLine,
+            content: rightLine || '',
             type: 'modified',
-            lineNumber: i + 1,
             inlineDiff: rightInlineDiff,
           });
         } else {
@@ -98,7 +94,6 @@ export default function SideBySideDiff({
             leftLines.push({
               content: leftLine || '',
               type: 'removed',
-              lineNumber: i + 1,
             });
           }
 
@@ -107,7 +102,6 @@ export default function SideBySideDiff({
             rightLines.push({
               content: rightLine || '',
               type: 'added',
-              lineNumber: i + 1,
             });
           }
         }
@@ -118,7 +112,7 @@ export default function SideBySideDiff({
   }, [left, right]);
 
   // Function to find inline character differences between two strings
-  function findInlineDiff(str1: string, str2: string) {
+  function findInlineDiff(str1: string = '', str2: string = '') {
     const segments: { text: string; highlight: boolean }[] = [];
 
     // Use dynamic programming to find longest common subsequence
@@ -137,7 +131,7 @@ export default function SideBySideDiff({
           if (currentSegment.text) {
             segments.push({ ...currentSegment });
           }
-          currentSegment = { text: char, highlight: false };
+          currentSegment = { text: char || '', highlight: false };
         } else {
           currentSegment.text += char;
         }
@@ -148,7 +142,7 @@ export default function SideBySideDiff({
           if (currentSegment.text) {
             segments.push({ ...currentSegment });
           }
-          currentSegment = { text: char, highlight: true };
+          currentSegment = { text: char || '', highlight: true };
         } else {
           currentSegment.text += char;
         }
@@ -177,9 +171,13 @@ export default function SideBySideDiff({
     for (let i = 1; i <= m; i++) {
       for (let j = 1; j <= n; j++) {
         if (str1[i - 1] === str2[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1] + 1;
+          if (dp?.[i]?.[j] !== undefined) {
+            dp[i]![j] = (dp?.[i - 1]?.[j - 1] || 0) + 1;
+          }
         } else {
-          dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+          if (dp?.[i]?.[j] !== undefined) {
+            dp[i]![j] = Math.max(dp[i - 1]![j] || 0, dp[i]![j - 1] || 0);
+          }
         }
       }
     }
@@ -194,7 +192,7 @@ export default function SideBySideDiff({
         lcs = str1[i - 1] + lcs;
         i--;
         j--;
-      } else if (dp[i - 1][j] > dp[i][j - 1]) {
+      } else if (dp[i - 1]![j]! > dp[i]![j - 1]!) {
         i--;
       } else {
         j--;
@@ -209,7 +207,7 @@ export default function SideBySideDiff({
     if (line.inlineDiff) {
       return line.inlineDiff.segments.map((segment, idx) => (
         <span
-          key={`${side}-${line.lineNumber}-segment-${idx}`}
+          key={`${side}-${idx}-segment-${idx}`}
           className={cn(
             segment.highlight &&
               side === 'left' &&
@@ -244,22 +242,10 @@ export default function SideBySideDiff({
         {/* Left side */}
         <div className="border-r">
           <div className="relative font-mono text-xs">
-            {showLineNumbers && (
-              <div className="absolute top-0 bottom-0 left-0 w-[28px] flex-shrink-0 border-r bg-muted/20 select-none">
-                {diffData.leftLines.map((line) => (
-                  <div
-                    key={`left-line-${line.lineNumber}`}
-                    className="sticky left-0 flex h-6 items-center justify-end px-1 text-[10px] text-muted-foreground"
-                  >
-                    {line.lineNumber}
-                  </div>
-                ))}
-              </div>
-            )}
             <div className={showLineNumbers ? 'ml-[28px]' : ''}>
               {diffData.leftLines.map((line) => (
                 <div
-                  key={`left-content-${line.lineNumber}`}
+                  key={`left-content-${line.content}`}
                   className={cn(
                     'min-h-[24px] px-2 py-1 leading-snug break-all whitespace-pre-wrap',
                     line.type === 'removed' &&
@@ -278,22 +264,10 @@ export default function SideBySideDiff({
         {/* Right side */}
         <div>
           <div className="relative font-mono text-xs">
-            {showLineNumbers && (
-              <div className="absolute top-0 bottom-0 left-0 w-[28px] flex-shrink-0 border-r bg-muted/20 select-none">
-                {diffData.rightLines.map((line) => (
-                  <div
-                    key={`right-line-${line.lineNumber}`}
-                    className="sticky left-0 flex h-6 items-center justify-end px-1 text-[10px] text-muted-foreground"
-                  >
-                    {line.lineNumber}
-                  </div>
-                ))}
-              </div>
-            )}
             <div className={showLineNumbers ? 'ml-[28px]' : ''}>
               {diffData.rightLines.map((line) => (
                 <div
-                  key={`right-content-${line.lineNumber}`}
+                  key={`right-content-${line.content}`}
                   className={cn(
                     'min-h-[24px] px-2 py-1 leading-snug break-all whitespace-pre-wrap',
                     line.type === 'added' &&
