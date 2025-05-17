@@ -11,19 +11,20 @@ import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-const NEO_LEAGUE_ROUND_1_ID = '8d5e4c63-eccb-4a34-964b-c5018c0094da';
+// TODO: Change to the actual current challenge id
+const CURRENT_CHALLENGE_ID = '8d5e4c63-eccb-4a34-964b-c5018c0094da';
 
-export function NeoLeagueCard() {
-  const t = useTranslations('nova.leaderboard-page');
+export function CurrentChallengeCard() {
+  const t = useTranslations('nova.leaderboard-page.current-challenge-card');
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const selectedChallenge = searchParams.get('challenge');
-  const isRound1Selected = selectedChallenge === NEO_LEAGUE_ROUND_1_ID;
+  const isCurrentChallengeSelected = selectedChallenge === CURRENT_CHALLENGE_ID;
 
-  const handleFilterRound1 = () => {
+  const handleFilterCurrentChallenge = () => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('challenge', NEO_LEAGUE_ROUND_1_ID);
+    params.set('challenge', CURRENT_CHALLENGE_ID);
     params.set('page', '1');
     router.push(`?${params.toString()}`);
   };
@@ -41,12 +42,12 @@ export function NeoLeagueCard() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className={`relative overflow-hidden rounded-lg border ${
-        isRound1Selected
+        isCurrentChallengeSelected
           ? 'bg-linear-to-br border-purple-400/40 from-purple-50/90 via-indigo-50/50 to-blue-50/70 dark:border-purple-500/30 dark:from-purple-950/30 dark:via-indigo-950/20 dark:to-blue-950/10'
           : 'bg-card border-slate-200 dark:border-slate-800'
       } p-4 shadow-sm`}
     >
-      {isRound1Selected ? (
+      {isCurrentChallengeSelected ? (
         <>
           <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
           <div className="absolute -bottom-12 -left-12 h-36 w-36 rounded-full bg-indigo-300/15 blur-3xl" />
@@ -92,15 +93,15 @@ export function NeoLeagueCard() {
       <div className="relative flex items-start gap-4">
         <motion.div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-            isRound1Selected
+            isCurrentChallengeSelected
               ? 'bg-linear-to-br from-purple-200 to-indigo-300/70 text-purple-700 shadow-sm dark:from-purple-700/50 dark:to-indigo-800/30 dark:text-purple-300'
               : 'bg-slate-100 text-slate-600 dark:bg-slate-800/50 dark:text-slate-300'
           }`}
           initial={{ rotate: 0 }}
-          animate={isRound1Selected ? { rotate: [0, 10, 0] } : {}}
+          animate={isCurrentChallengeSelected ? { rotate: [0, 10, 0] } : {}}
           transition={{ duration: 0.3 }}
         >
-          {isRound1Selected ? (
+          {isCurrentChallengeSelected ? (
             <Check className="h-5 w-5" />
           ) : (
             <Info className="h-5 w-5" />
@@ -111,10 +112,12 @@ export function NeoLeagueCard() {
             <div className="flex flex-wrap items-center gap-2">
               <motion.h3
                 className={`font-semibold tracking-tight ${
-                  isRound1Selected ? 'text-dynamic-purple' : 'text-dynamic-blue'
+                  isCurrentChallengeSelected
+                    ? 'text-dynamic-purple'
+                    : 'text-dynamic-blue'
                 }`}
                 animate={
-                  isRound1Selected
+                  isCurrentChallengeSelected
                     ? {
                         color: ['#7e22ce', '#9333ea', '#7e22ce'],
                       }
@@ -128,15 +131,14 @@ export function NeoLeagueCard() {
                   ease: 'easeInOut',
                 }}
               >
-                {isRound1Selected
-                  ? t('neo-league-card.round-1-title') ||
-                    'Viewing NEO League Round 1'
-                  : t('neo-league-card.title') || 'NEO League Competition'}
+                {isCurrentChallengeSelected
+                  ? t('current-challenge-title')
+                  : t('title')}
               </motion.h3>
               <Badge
                 variant="outline"
                 className={`${
-                  isRound1Selected
+                  isCurrentChallengeSelected
                     ? 'border-purple-400/40 bg-purple-400/15 text-purple-700 dark:border-purple-500/40 dark:bg-purple-500/20 dark:text-purple-300'
                     : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
                 }`}
@@ -144,12 +146,10 @@ export function NeoLeagueCard() {
                 <motion.div>
                   <Sparkles className="mr-1 h-3 w-3" />
                 </motion.div>
-                {isRound1Selected
-                  ? t('neo-league-card.active') || 'Active'
-                  : t('neo-league-card.new') || 'New'}
+                {isCurrentChallengeSelected ? t('active') : t('new')}
               </Badge>
             </div>
-            {isRound1Selected ? (
+            {isCurrentChallengeSelected ? (
               <Button
                 variant="ghost"
                 size="icon"
@@ -157,34 +157,29 @@ export function NeoLeagueCard() {
                 onClick={handleResetFilter}
                 title="View all challenges"
               >
-                <span className="sr-only">View all challenges</span>
+                <span className="sr-only">{t('view-all-challenges')}</span>
                 <span className="text-xs">×</span>
               </Button>
             ) : null}
           </div>
-          <div className={`rounded-md p-2`}>
-            <p className="text-muted-foreground text-sm">
-              {isRound1Selected
-                ? t('neo-league-card.round-1-description') ||
-                  'You are currently viewing the results for Round 1 of the NEO League competition. The scores shown are specific to this challenge.'
-                : t('neo-league-card.description') ||
-                  'By default, this leaderboard shows scores from all challenges combined. To view results specifically for Round 1 of the NEO League competition, click the link below.'}
-            </p>
-          </div>
+          <p className="text-muted-foreground text-sm">
+            {isCurrentChallengeSelected
+              ? t('current-challenge-description')
+              : t('description')}
+          </p>
           <div className="pt-1">
-            {isRound1Selected ? (
+            {isCurrentChallengeSelected ? (
               <Button
                 variant="outline"
                 size="sm"
                 className={`text-xs font-medium transition-all ${
-                  isRound1Selected
+                  isCurrentChallengeSelected
                     ? 'border-purple-300/50 bg-purple-50/50 text-purple-700 hover:border-purple-400/60 hover:bg-purple-100/60 dark:border-purple-700/40 dark:bg-purple-900/20 dark:text-purple-300 dark:hover:bg-purple-800/30'
                     : ''
                 }`}
                 onClick={handleResetFilter}
               >
-                {t('neo-league-card.view-all-challenges') ||
-                  'View All Challenges'}
+                {t('view-all-challenges')}
                 <motion.div
                   animate={{ x: [0, 3, 0] }}
                   transition={{
@@ -201,9 +196,9 @@ export function NeoLeagueCard() {
                 variant="outline"
                 size="sm"
                 className="text-xs font-medium hover:bg-indigo-50/50 hover:text-indigo-700 dark:hover:bg-indigo-900/20 dark:hover:text-indigo-300"
-                onClick={handleFilterRound1}
+                onClick={handleFilterCurrentChallenge}
               >
-                {t('neo-league-card.view-round-1') || 'View Round 1 Results'}
+                {t('view-current-challenge')}
                 <motion.div
                   animate={{ x: [0, 3, 0] }}
                   transition={{
