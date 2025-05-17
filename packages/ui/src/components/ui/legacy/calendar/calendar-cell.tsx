@@ -1,11 +1,11 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { HOUR_HEIGHT } from './config';
 
 dayjs.extend(timezone);
 
@@ -157,12 +157,12 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     addEmptyEvent(eventDate);
   };
 
-  // Round to 15 minute intervals
+  // Improved rounding for Google Calendar parity
   const roundToNearest15Minutes = (date: Date): Date => {
     const minutes = date.getMinutes();
     const remainder = minutes % 15;
     const roundedMinutes =
-      remainder < 8 ? minutes - remainder : minutes + (15 - remainder);
+      remainder < 7.5 ? minutes - remainder : minutes + (15 - remainder);
     const roundedDate = new Date(date);
     roundedDate.setMinutes(roundedMinutes);
     roundedDate.setSeconds(0);
@@ -386,6 +386,22 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         eventEnd = new Date(eventStart.getTime() + 15 * 60 * 1000);
         duration = 15 * 60 * 1000;
       }
+      // --- Event time range validation ---
+      // Cap event duration to 24 hours
+      const MAX_EVENT_DURATION = 24 * 60 * 60 * 1000;
+      if (duration > MAX_EVENT_DURATION) {
+        eventEnd = new Date(eventStart.getTime() + MAX_EVENT_DURATION);
+        duration = MAX_EVENT_DURATION;
+      }
+      // If event spans midnight but is less than 12 hours, cap at midnight
+      const startDay = eventStart.getDate();
+      const endDay = eventEnd.getDate();
+      if (startDay !== endDay && duration < 12 * 60 * 60 * 1000) {
+        const midnight = new Date(eventStart);
+        midnight.setHours(23, 59, 59, 999);
+        eventEnd = midnight;
+        duration = eventEnd.getTime() - eventStart.getTime();
+      }
       // Only create if duration >= 15 minutes
       if (duration >= 15 * 60 * 1000) {
         setDragPreview(null);
@@ -527,6 +543,10 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     return () => {
       if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (autoScrollRef.current) {
+        cancelAnimationFrame(autoScrollRef.current);
+        autoScrollRef.current = null;
+      }
     };
   }, []);
 
