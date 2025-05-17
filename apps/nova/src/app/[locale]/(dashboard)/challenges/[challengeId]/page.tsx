@@ -31,21 +31,17 @@ export default async function Page({ params }: Props) {
   // Fetch session data
   const session = await getSession(challengeId);
 
+  // If no session found, redirect to challenges page
+  if (!session) redirect('/challenges');
+
   // If challenge is ended, redirect to report page
   if (session?.status === 'ENDED') {
     redirect(`/challenges/${challengeId}/results`);
   }
 
-  // If no session found, redirect to challenges page
-  if (!session) {
-    redirect('/challenges');
-  }
+  const problemId = await getFirstProblemId(challengeId);
 
-  const problemId = challenge.problems[0]?.id;
-
-  if (!problemId) {
-    redirect('/challenges');
-  }
+  if (!problemId) redirect('/challenges');
 
   redirect(`/challenges/${challengeId}/problems/${problemId}`);
 }
@@ -57,7 +53,7 @@ async function getChallenge(challengeId: string) {
     // Fetch challenge details
     const { data: challenge, error: challengeError } = await sbAdmin
       .from('nova_challenges')
-      .select('*, criteria:nova_challenge_criteria(*)')
+      .select('*')
       .eq('id', challengeId)
       .single();
 
@@ -66,29 +62,7 @@ async function getChallenge(challengeId: string) {
       return null;
     }
 
-    // Fetch problems linked to this challenge
-    const { data: problems, error: problemError } = await sbAdmin
-      .from('nova_problems')
-      .select('*')
-      .eq('challenge_id', challengeId);
-
-    if (problemError) {
-      console.error('Error fetching problems:', problemError.message);
-      return null;
-    }
-
-    // Map problems with test cases
-    const formattedProblems = problems.map((problem) => {
-      // Get test cases for this specific problem
-      return {
-        ...problem,
-      };
-    });
-
-    return {
-      ...challenge,
-      problems: formattedProblems,
-    };
+    return challenge;
   } catch (error) {
     console.error('Unexpected error:', error);
     return null;
@@ -123,6 +97,29 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
     }
 
     return session;
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    return null;
+  }
+}
+
+async function getFirstProblemId(challengeId: string) {
+  const sbAdmin = await createAdminClient();
+
+  try {
+    const { data: problem, error: problemError } = await sbAdmin
+      .from('nova_problems')
+      .select('id')
+      .eq('challenge_id', challengeId)
+      .limit(1)
+      .single();
+
+    if (problemError) {
+      console.error('Error fetching problem:', problemError?.message);
+      return null;
+    }
+
+    return problem?.id;
   } catch (error) {
     console.error('Unexpected error:', error);
     return null;

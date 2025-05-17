@@ -34,7 +34,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 type SubmissionWithDetails = NovaSubmission & {
   problem: NovaProblem & {
@@ -81,6 +81,7 @@ export function SubmissionTable({
 }: SubmissionTableProps) {
   const router = useRouter();
   const t = useTranslations('nova.submission-page.submission-table');
+  const pathname = usePathname();
 
   // Format date function for display
   function formatDate(dateString: string) {
@@ -140,11 +141,15 @@ export function SubmissionTable({
     return result;
   };
 
-  // Handle page change either via client-side or server-side navigation
   const handlePageChange = (page: number) => {
     if (serverSide) {
-      // Use server-side navigation with query params
-      router.push(`/submissions?page=${page}`);
+      // Get current URL search params
+      const params = new URLSearchParams(window.location.search);
+      // Update page parameter
+      params.set('page', page.toString());
+      // Preserve other parameters
+      const queryString = params.toString();
+      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`);
     } else if (setCurrentPage) {
       // Use client-side state update
       setCurrentPage(page);
@@ -328,7 +333,7 @@ export function SubmissionTable({
                     {searchQuery ? (
                       <div className="flex flex-col items-center justify-center space-y-2">
                         <p className="text-muted-foreground">
-                          {t('empty-state.no-results')} " {searchQuery}"
+                          {t('empty-state.no-results')} "{searchQuery}"
                         </p>
                         <Button
                           variant="outline"
@@ -339,9 +344,11 @@ export function SubmissionTable({
                         </Button>
                       </div>
                     ) : (
-                      <p className="text-muted-foreground">
-                        {t('empty-state.no-submissions')}
-                      </p>
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <p className="text-muted-foreground">
+                          {t('empty-state.no-submissions')}
+                        </p>
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>
