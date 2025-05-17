@@ -1,12 +1,58 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { HOUR_HEIGHT } from './config';
 
 dayjs.extend(timezone);
+
+interface DragPreviewProps {
+  startDate: Date;
+  endDate: Date;
+  top: number;
+  height: number;
+  isReversed: boolean;
+}
+
+const DragPreview = ({ startDate, endDate, top, height, isReversed }: DragPreviewProps) => {
+  // Calculate duration in minutes
+  const durationMs = endDate.getTime() - startDate.getTime();
+  const durationMinutes = Math.round(durationMs / (1000 * 60));
+
+  return (
+    <div
+      className="absolute left-1 right-1 bg-primary/30 border border-primary z-10 rounded-md shadow-md transition-all overflow-hidden"
+      style={{
+        top: `${top}px`,
+        height: `${Math.max(height, 20)}px`,
+      }}
+    >
+      <div className={cn(
+        'w-full h-full flex flex-col justify-between p-1',
+        height > 40 ? 'opacity-100' : 'opacity-0',
+        'transition-opacity'
+      )}>
+        <div className="text-xs font-semibold text-primary-foreground bg-primary/50 px-1 rounded self-start">
+          {format(startDate, 'h:mm a')}
+        </div>
+        <div className="text-xs font-semibold text-primary-foreground bg-primary/50 px-1 rounded self-end">
+          {format(endDate, 'h:mm a')}
+        </div>
+      </div>
+      <div className={cn(
+        'text-xs font-semibold text-white px-2 py-1 rounded bg-primary absolute right-1 whitespace-nowrap',
+        height > 60 ? 'top-1' : isReversed ? '-bottom-6' : '-top-6'
+      )}>
+        {durationMinutes < 60 
+          ? `${durationMinutes}min`
+          : `${Math.floor(durationMinutes / 60)}h${durationMinutes % 60 ? ` ${durationMinutes % 60}min` : ''}`
+        }
+      </div>
+    </div>
+  );
+};
 
 interface CalendarCellProps {
   date: string;
@@ -19,11 +65,15 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const cellRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ date: Date; y: number } | null>(null);
-  const previewRef = useRef<HTMLDivElement | null>(null);
+  const [dragPreview, setDragPreview] = useState<{
+    startDate: Date;
+    endDate: Date;
+    top: number;
+    height: number;
+    isReversed: boolean;
+  } | null>(null);
   const tz = settings?.timezone?.timezone;
-  const [hoveredSlot, setHoveredSlot] = useState<'hour' | 'half-hour' | null>(
-    null
-  );
+  const [hoveredSlot, setHoveredSlot] = useState<'hour' | 'half-hour' | null>(null);
   const [showBothLabels, setShowBothLabels] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipLocked, setTooltipLocked] = useState(false);
@@ -33,8 +83,6 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const rafRef = useRef<number | null>(null);
 
   const id = `cell-${date}-${hour}`;
-
-  // Add a stable tooltip id for aria-describedby
   const tooltipId = `calendar-tooltip-${id}`;
 
   // Format time for display - only show when hovering
@@ -111,43 +159,13 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       };
 
       setIsDragging(true);
-
-      // Create preview element
-      const preview = document.createElement('div');
-      preview.className =
-        'absolute left-1 right-1 bg-primary/30 border border-primary z-10 rounded-md shadow-md transition-all overflow-hidden';
-      preview.style.top = `${e.clientY - cellRef.current!.getBoundingClientRect().top}px`;
-      preview.style.height = '4px';
-
-      // Add a container for time information
-      const infoContainer = document.createElement('div');
-      infoContainer.className =
-        'w-full h-full flex flex-col justify-between p-1 opacity-0 transition-opacity';
-      preview.appendChild(infoContainer);
-
-      // Add start time label
-      const startTimeLabel = document.createElement('div');
-      startTimeLabel.className =
-        'text-xs font-semibold text-primary-foreground bg-primary/50 px-1 rounded self-start';
-      startTimeLabel.textContent = format(roundedDate, 'h:mm a');
-      infoContainer.appendChild(startTimeLabel);
-
-      // Add duration label
-      const durationLabel = document.createElement('div');
-      durationLabel.className =
-        'text-xs font-semibold text-white px-2 py-1 rounded bg-primary absolute right-1 top-1 whitespace-nowrap';
-      durationLabel.textContent = '0min';
-      preview.appendChild(durationLabel);
-
-      // Add end time label
-      const endTimeLabel = document.createElement('div');
-      endTimeLabel.className =
-        'text-xs font-semibold text-primary-foreground bg-primary/50 px-1 rounded self-end';
-      endTimeLabel.textContent = format(roundedDate, 'h:mm a');
-      infoContainer.appendChild(endTimeLabel);
-
-      cellRef.current!.appendChild(preview);
-      previewRef.current = preview;
+      setDragPreview({
+        startDate: roundedDate,
+        endDate: roundedDate,
+        top: e.clientY - cellRef.current!.getBoundingClientRect().top,
+        height: 4,
+        isReversed: false,
+      });
 
       document.body.style.cursor = 'ns-resize';
       document.body.classList.add('select-none');
@@ -158,31 +176,17 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   // Handle mouse move event - update drag preview
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!isDragging || !dragStartRef.current || !previewRef.current) return;
+      if (!isDragging || !dragStartRef.current || !cellRef.current) return;
 
       e.preventDefault();
 
-      const cellRect = cellRef.current!.getBoundingClientRect();
+      const cellRect = cellRef.current.getBoundingClientRect();
       const startY = dragStartRef.current.y - cellRect.top;
       const currentY = e.clientY - cellRect.top;
 
       // Calculate top and height
       const top = Math.min(startY, currentY);
       const height = Math.abs(currentY - startY);
-
-      // Update preview element
-      previewRef.current.style.top = `${top}px`;
-      previewRef.current.style.height = `${Math.max(height, 20)}px`;
-
-      // Show info container if height is sufficient
-      const infoContainer = previewRef.current.querySelector('div');
-      if (infoContainer && height > 40) {
-        infoContainer.classList.remove('opacity-0');
-        infoContainer.classList.add('opacity-100');
-      } else if (infoContainer) {
-        infoContainer.classList.remove('opacity-100');
-        infoContainer.classList.add('opacity-0');
-      }
 
       // Update time labels
       const startDate = dragStartRef.current.date;
@@ -196,42 +200,14 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       const actualStartDate = isReversed ? roundedEndDate : startDate;
       const actualEndDate = isReversed ? startDate : roundedEndDate;
 
-      // Calculate duration in minutes
-      const durationMs = actualEndDate.getTime() - actualStartDate.getTime();
-      const durationMinutes = Math.round(durationMs / (1000 * 60));
-
-      // Find the time labels
-      const startTimeLabel =
-        previewRef.current.querySelectorAll('div > div')[0];
-      const durationLabel = previewRef.current.querySelectorAll('div')[1];
-      const endTimeLabel = previewRef.current.querySelectorAll('div > div')[1];
-
-      if (startTimeLabel && endTimeLabel && durationLabel) {
-        startTimeLabel.textContent = format(actualStartDate, 'h:mm a');
-        endTimeLabel.textContent = format(actualEndDate, 'h:mm a');
-
-        // Display different formats based on duration
-        if (durationMinutes < 60) {
-          durationLabel.textContent = `${durationMinutes}min`;
-        } else {
-          const hours = Math.floor(durationMinutes / 60);
-          const minutes = durationMinutes % 60;
-          durationLabel.textContent =
-            minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
-        }
-
-        // Position the duration label based on preview height
-        if (height > 60) {
-          durationLabel.classList.remove('top-1', '-top-6', '-bottom-6');
-          durationLabel.classList.add('top-1');
-        } else if (isReversed) {
-          durationLabel.classList.remove('top-1', '-top-6', '-bottom-6');
-          durationLabel.classList.add('-bottom-6');
-        } else {
-          durationLabel.classList.remove('top-1', '-top-6', '-bottom-6');
-          durationLabel.classList.add('-top-6');
-        }
-      }
+      // Update preview state
+      setDragPreview({
+        startDate: actualStartDate,
+        endDate: actualEndDate,
+        top,
+        height,
+        isReversed,
+      });
     },
     [isDragging, date, yToTime]
   );
@@ -243,21 +219,6 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
       e.preventDefault();
       setIsDragging(false);
-
-      // Remove preview
-      if (previewRef.current && cellRef.current) {
-        try {
-          cellRef.current.removeChild(previewRef.current);
-        } catch (e) {
-          // The preview may have been moved to another cell
-          // Find it in the document and remove it
-          const preview = document.querySelector(`[id^="event-preview-"]`);
-          if (preview && preview.parentElement) {
-            preview.parentElement.removeChild(preview);
-          }
-        }
-        previewRef.current = null;
-      }
 
       // Reset cursor
       document.body.style.cursor = '';
@@ -295,7 +256,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         }
       }
 
-      // Always reset drag state
+      // Clear preview
+      setDragPreview(null);
       dragStartRef.current = null;
     },
     [isDragging, date, yToTime, addEmptyEventWithDuration]
@@ -403,16 +365,6 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       cell.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-
-      // Clean up any remaining preview
-      if (previewRef.current && cellRef.current) {
-        try {
-          cellRef.current.removeChild(previewRef.current);
-        } catch (e) {
-          // Ignore if already removed
-        }
-        previewRef.current = null;
-      }
     };
   }, [handleMouseDown, handleMouseMove, handleMouseUp]);
 
@@ -462,6 +414,12 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
           {formatTime(hour, 30)}
         </span>
       ) : null}
+
+      {/* Drag preview overlay */}
+      {dragPreview && (
+        <DragPreview {...dragPreview} />
+      )}
+
       {/* Full cell clickable area */}
       <button
         className="absolute inset-0 h-1/2 w-full cursor-pointer focus:outline-none"
