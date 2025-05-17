@@ -99,7 +99,13 @@ const findScrollContainer = (el: HTMLElement | null): HTMLElement | null => {
 const GRID_SNAP = HOUR_HEIGHT / 4; // 15 minutes per grid
 
 export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
-  const { addEmptyEvent, addEmptyEventWithDuration, settings, isDragging, setIsDragging } = useCalendar();
+  const {
+    addEmptyEvent,
+    addEmptyEventWithDuration,
+    settings,
+    isDragging,
+    setIsDragging,
+  } = useCalendar();
   const [isHovering, setIsHovering] = useState(false);
   const cellRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ date: Date; y: number } | null>(null);
