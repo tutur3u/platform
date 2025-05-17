@@ -36,7 +36,7 @@ export function MainNavigationMenu() {
               href={item.href}
               className={cn(
                 navigationMenuTriggerStyle(),
-                'hover:bg-background/30 bg-linear-to-r px-6 font-semibold transition-all duration-300'
+                'bg-transparent bg-linear-to-r px-6 font-semibold transition-all duration-300 hover:bg-background/30'
               )}
             >
               {item.label}
@@ -45,12 +45,12 @@ export function MainNavigationMenu() {
         ))}
 
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="hover:bg-background/30 bg-linear-to-r group font-semibold transition-all duration-300">
+          <NavigationMenuTrigger className="group bg-transparent bg-linear-to-r font-semibold transition-all duration-300 hover:bg-background/30">
             {t('common.resources')}
           </NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="from-background via-background/95 to-background/90 bg-linear-to-br grid w-[400px] gap-3 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
-              <Card className="bg-primary/5 col-span-full mb-2 p-4">
+            <ul className="grid w-[400px] gap-3 bg-linear-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
+              <Card className="col-span-full mb-2 bg-primary/5 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <BookText className="h-4 w-4" />
                   <span>Learning Resources</span>
@@ -76,7 +76,7 @@ export function MainNavigationMenu() {
               href={item.href}
               className={cn(
                 navigationMenuTriggerStyle(),
-                'hover:bg-background/30 bg-linear-to-r px-6 font-semibold transition-all duration-300'
+                'bg-transparent bg-linear-to-r px-6 font-semibold transition-all duration-300 hover:bg-background/30'
               )}
             >
               <span className="flex items-center gap-2">{item.label}</span>
@@ -103,7 +103,7 @@ const ListItem = React.forwardRef<
         <a
           ref={ref}
           className={cn(
-            'outline-hidden group relative block h-full select-none space-y-1 rounded-md p-4 leading-none no-underline transition-all duration-300',
+            'group relative block h-full space-y-1 rounded-md p-4 leading-none no-underline outline-hidden transition-all duration-300 select-none',
             'via-primary/10 to-primary/5 hover:bg-linear-to-br',
             'opacity-90 hover:opacity-100',
             'hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]',
@@ -114,10 +114,10 @@ const ListItem = React.forwardRef<
         >
           <div className="relative">
             <div className="flex items-center gap-2">
-              <div className="text-primary transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110">
+              <div className="text-primary transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                 {icon}
               </div>
-              <div className="text-sm font-semibold leading-none">{title}</div>
+              <div className="text-sm leading-none font-semibold">{title}</div>
               {badge && (
                 <Badge
                   variant="secondary"
@@ -127,7 +127,7 @@ const ListItem = React.forwardRef<
                 </Badge>
               )}
             </div>
-            <p className="text-muted-foreground mt-2 line-clamp-2 text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
+            <p className="mt-2 line-clamp-2 text-sm leading-snug text-muted-foreground opacity-80 transition-opacity duration-300 group-hover:opacity-100">
               {children}
             </p>
           </div>
