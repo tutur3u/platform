@@ -1,369 +1,193 @@
 'use client';
 
-import CriteriaEvaluation from './components/CriteriaEvaluation';
-import TestCaseEvaluation from './components/TestCaseEvaluation';
-import ScoreBadge from '@/components/common/ScoreBadge';
-import type { NovaSubmissionData } from '@tuturuuu/types/db';
+import { SubmissionCard } from '@/app/[locale]/(dashboard)/shared/submission-card';
+import { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   ArrowLeft,
+  BookOpen,
   Calendar,
-  CheckSquare,
-  Clipboard,
-  ClipboardCheck,
+  Clock,
   FileCode,
-  Mail,
-  PencilRuler,
-  Timer,
+  User,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import Link from 'next/link';
 
-interface Props {
+interface SubmissionClientProps {
   submission: NovaSubmissionData;
 }
 
-export default function SubmissionClient({ submission }: Props) {
-  const [copied, setCopied] = useState(false);
-  const router = useRouter();
-
-  function formatDate(dateString: string) {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  function copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  function getSessionDuration(start: string, end: string): string {
-    if (!start || !end) return 'N/A';
-
-    try {
-      const startTime = new Date(start).getTime();
-      const endTime = new Date(end).getTime();
-
-      if (isNaN(startTime) || isNaN(endTime) || endTime <= startTime)
-        return 'N/A';
-
-      const durationMinutes = Math.floor((endTime - startTime) / 60000);
-      return `${durationMinutes} min`;
-    } catch (error) {
-      console.error('Error calculating session duration:', error);
-      return 'N/A';
-    }
-  }
-
+export default function SubmissionClient({
+  submission,
+}: SubmissionClientProps) {
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-6 flex items-center gap-4">
-        <Button
-          onClick={() => router.push('/submissions')}
-          variant="outline"
-          size="icon"
-          className="rounded-full"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
+    <div className="container space-y-6 py-8">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="space-y-1">
+          <Link
+            href="/submissions"
+            className="text-muted-foreground mb-2 flex items-center gap-1 text-sm hover:underline"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to submissions
+          </Link>
           <h1 className="text-3xl font-bold">Submission Details</h1>
-          <p className="text-muted-foreground">ID: {submission.id}</p>
+          <p className="text-muted-foreground">
+            Detailed view of submission {submission.id}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/challenges/${submission.challenge.id}`}>
+            <Button variant="outline" className="gap-1">
+              <BookOpen className="h-4 w-4" />
+              <span>View Challenge</span>
+            </Button>
+          </Link>
+
+          <Link href={`/admin/challenges/${submission.challenge.id}`}>
+            <Button variant="default" className="gap-1">
+              <FileCode className="h-4 w-4" />
+              <span>Edit Challenge</span>
+            </Button>
+          </Link>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Left Column - User & Challenge Info */}
-        <div className="space-y-6 md:col-span-1">
-          {/* User Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>User</CardTitle>
-              <CardDescription>Submission author</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                {submission.user?.avatar_url ? (
-                  <img
-                    src={submission.user.avatar_url}
-                    alt={submission.user.display_name || 'User'}
-                    className="h-12 w-12 rounded-full"
-                  />
-                ) : (
-                  <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold">
-                    {submission.user?.display_name?.charAt(0) || '?'}
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-medium">
-                    {submission.user?.display_name || 'Unknown User'}
-                  </h3>
-                  {submission.user?.email && (
-                    <div className="text-muted-foreground flex items-center text-sm">
-                      <Mail className="mr-1 h-3.5 w-3.5" />
-                      <span>{submission.user.email}</span>
-                    </div>
-                  )}
+        <Card className="md:col-span-3">
+          <CardHeader>
+            <CardTitle>Submission Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4">
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-sm">User</p>
+                <div className="flex items-center gap-2">
+                  <User className="text-primary/70 h-4 w-4" />
+                  <span className="font-medium">
+                    {submission.user.display_name || 'Anonymous'}
+                  </span>
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (submission.user?.id) {
-                    router.push(`/profile/${submission.user.id}`);
-                  }
-                }}
-                className="w-full"
-                disabled={!submission.user?.id}
-              >
-                View User Profile
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Challenge & Problem Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Challenge & Problem</CardTitle>
-              <CardDescription>Submission details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-muted-foreground mb-1 text-sm font-medium">
-                  Challenge
-                </h3>
-                <p className="font-medium">{submission.challenge.title}</p>
-              </div>
-
-              <div>
-                <h3 className="text-muted-foreground mb-1 text-sm font-medium">
-                  Problem
-                </h3>
-                <p className="font-medium">{submission.problem.title}</p>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="mt-1 h-auto px-0"
-                  onClick={() =>
-                    router.push(`/problems/${submission.problem!.id}`)
-                  }
-                >
-                  View Problem
-                </Button>
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-sm">Problem</p>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="text-primary/70 h-4 w-4" />
+                  <span className="font-medium">
+                    {submission.problem.title || 'Unknown Problem'}
+                  </span>
+                </div>
               </div>
 
               {submission.created_at && (
-                <div>
-                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">
-                    Submitted
-                  </h3>
-                  <p className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>{formatDate(submission.created_at)}</span>
-                  </p>
-                </div>
-              )}
-
-              {submission.session && (
-                <div>
-                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">
-                    Session
-                  </h3>
-                  <p>
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {submission.session.id.substring(0, 8)}...
-                    </Badge>
-                  </p>
-                  <div className="mt-2 flex items-center gap-2 text-sm">
-                    <Timer className="text-muted-foreground h-4 w-4" />
-                    <span>
-                      {getSessionDuration(
-                        submission.session.start_time || '',
-                        submission.session.end_time || ''
-                      )}
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-sm">Submitted</p>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="text-primary/70 h-4 w-4" />
+                    <span className="font-medium">
+                      {new Date(submission.created_at!).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
 
-          {/* Score Summary Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>Score Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-center">
-                <ScoreBadge
-                  score={submission.total_score || 0}
-                  maxScore={10}
-                  className="flex h-32 w-32 flex-col justify-center text-center text-2xl"
-                >
-                  <div className="font-bold">
-                    {submission.total_score?.toFixed(1) || '0.0'}
+              {submission.created_at && (
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-sm">Time</p>
+                  <div className="flex items-center gap-2">
+                    <Clock className="text-primary/70 h-4 w-4" />
+                    <span className="font-medium">
+                      {new Date(submission.created_at).toLocaleTimeString()}
+                    </span>
                   </div>
-                  <div className="text-xs opacity-80">/10</div>
-                </ScoreBadge>
-              </div>
-
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <p className="text-muted-foreground flex items-center text-xs">
-                    <CheckSquare className="mr-1 h-3.5 w-3.5" />
-                    Test Cases
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {submission.test_case_score?.toFixed(1) || '0.0'}/10
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {submission.passed_tests}/{submission.total_tests || 1}{' '}
-                    passed
-                  </p>
                 </div>
+              )}
+            </div>
 
-                <div className="space-y-1">
-                  <p className="text-muted-foreground flex items-center text-xs">
-                    <PencilRuler className="mr-1 h-3.5 w-3.5" />
-                    Criteria
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {submission.criteria_score?.toFixed(1) || '0.0'}/10
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {submission.sum_criterion_score?.toFixed(1) || '0.0'}/
-                    {(submission.total_criteria || 1) * 10} points
-                  </p>
+            <Separator className="my-4" />
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-sm">Total Score</p>
+                <div>
+                  <Badge
+                    variant={
+                      submission.total_score && submission.total_score >= 8
+                        ? 'success'
+                        : submission.total_score && submission.total_score >= 5
+                          ? 'warning'
+                          : 'destructive'
+                    }
+                    className="px-2 py-1 text-sm"
+                  >
+                    {submission.total_score !== null
+                      ? `${submission.total_score.toFixed(2)}/10`
+                      : 'Not scored'}
+                  </Badge>
                 </div>
               </div>
-            </CardContent>
-            <CardFooter>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (submission?.challenge?.id) {
-                    router.push(
-                      `/challenges/${submission.challenge.id}/results`
-                    );
-                  }
-                }}
-                className="w-full"
-                disabled={!submission?.challenge?.id}
-              >
-                View Challenge Results
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
 
-        {/* Right Column - Content and Evaluation */}
-        <div className="space-y-6 md:col-span-2">
-          {/* Prompt & Output */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Submission Content</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="prompt" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger
-                    value="prompt"
-                    className="flex items-center gap-1"
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-sm">Test Case Score</p>
+                <div>
+                  <Badge
+                    variant={
+                      submission.test_case_score &&
+                      submission.test_case_score >= 8
+                        ? 'success'
+                        : submission.test_case_score &&
+                            submission.test_case_score >= 5
+                          ? 'warning'
+                          : 'destructive'
+                    }
+                    className="px-2 py-1 text-sm"
                   >
-                    <FileCode className="h-4 w-4" />
-                    Prompt
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="prompt" className="mt-0">
-                  <div className="relative">
-                    <pre className="bg-muted/50 max-h-[400px] overflow-auto rounded-md p-4 text-sm">
-                      {submission.prompt || 'No prompt available'}
-                    </pre>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-2"
-                      onClick={() => copyToClipboard(submission.prompt || '')}
-                    >
-                      {copied ? (
-                        <ClipboardCheck className="h-4 w-4" />
-                      ) : (
-                        <Clipboard className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+                    {submission.test_case_score !== null
+                      ? `${submission.test_case_score.toFixed(2)}/10`
+                      : 'Not scored'}
+                  </Badge>
+                </div>
+              </div>
 
-          {/* Evaluation Tabs */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Evaluation Results</CardTitle>
-              <CardDescription>
-                Test cases and criteria assessment
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="tests" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger
-                    value="tests"
-                    className="flex items-center gap-1"
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-sm">Criteria Score</p>
+                <div>
+                  <Badge
+                    variant={
+                      submission.criteria_score &&
+                      submission.criteria_score >= 8
+                        ? 'success'
+                        : submission.criteria_score &&
+                            submission.criteria_score >= 5
+                          ? 'warning'
+                          : 'destructive'
+                    }
+                    className="px-2 py-1 text-sm"
                   >
-                    <CheckSquare className="h-4 w-4" />
-                    Test Cases
-                    <Badge variant="secondary" className="ml-2">
-                      {submission.passed_tests}/{submission.total_tests || 1}
-                    </Badge>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="criteria"
-                    className="flex items-center gap-1"
-                  >
-                    <PencilRuler className="h-4 w-4" />
-                    Criteria
-                    <Badge variant="secondary" className="ml-2">
-                      {submission.criteria?.length || 0}
-                    </Badge>
-                  </TabsTrigger>
-                </TabsList>
+                    {submission.criteria_score !== null
+                      ? `${submission.criteria_score.toFixed(2)}/10`
+                      : 'Not scored'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                <TabsContent value="tests" className="mt-0">
-                  <TestCaseEvaluation submission={submission} />
-                </TabsContent>
-
-                <TabsContent value="criteria" className="mt-0">
-                  <CriteriaEvaluation submission={submission} />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="md:col-span-3">
+          <CardContent className="pt-6">
+            <SubmissionCard
+              submission={submission}
+              isCurrent={false}
+              onRequestFetch={() => {}} // Already have full data
+              isLoading={false}
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
