@@ -2,6 +2,7 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import { LayoutGrid, LayoutList } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
   SelectContent,
@@ -9,11 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ChallengeOption {
   id: string;
@@ -78,7 +78,7 @@ export function SubmissionFilters({
     if (searchLower === '') {
       setFilteredUsers(users);
     } else {
-      const filtered = users.filter((user) => 
+      const filtered = users.filter((user) =>
         user.email.toLowerCase().includes(searchLower)
       );
       setFilteredUsers(filtered);
@@ -197,21 +197,21 @@ export function SubmissionFilters({
                 onUserChange(''); // Clear user filter when search bar is empty
               }
             }}
-            className="h-8 mb-2"
+            className="mb-2 h-8"
             autoComplete="off"
             onFocus={() => setUserDropdownOpen(true)}
             ref={userInputRef}
           />
           {userDropdownOpen && (
             <div
-              className="absolute z-20 mt-1 w-full rounded-md border bg-background shadow-lg max-h-[200px] overflow-y-auto"
+              className="bg-background absolute z-20 mt-1 max-h-[200px] w-full overflow-y-auto rounded-md border shadow-lg"
               tabIndex={-1}
               onBlur={() => setTimeout(() => setUserDropdownOpen(false), 150)}
             >
               {filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  className={`cursor-pointer px-4 py-2 hover:bg-accent ${selectedUser === user.id ? 'font-semibold' : ''}`}
+                  className={`hover:bg-accent cursor-pointer px-4 py-2 ${selectedUser === user.id ? 'font-semibold' : ''}`}
                   onMouseDown={() => {
                     onUserChange(user.id);
                     setUserDropdownOpen(false);
@@ -223,14 +223,19 @@ export function SubmissionFilters({
                 </div>
               ))}
               {filteredUsers.length === 0 && (
-                <div className="px-4 py-2 text-muted-foreground">No users found</div>
+                <div className="text-muted-foreground px-4 py-2">
+                  No users found
+                </div>
               )}
             </div>
           )}
         </div>
 
         <div className="flex items-center space-x-2">
-          {(selectedChallenge || selectedProblem || selectedUser || searchQuery) && (
+          {(selectedChallenge ||
+            selectedProblem ||
+            selectedUser ||
+            searchQuery) && (
             <Button
               variant="outline"
               onClick={onClearFilters}
