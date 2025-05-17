@@ -15,7 +15,7 @@ import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
+const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
 
 // Add a simple round-robin selection function that favors Google
 function getModelProvider() {
@@ -209,40 +209,7 @@ export async function POST(
       plagiarismCheck: plagiarismResults,
     };
 
-    const testCaseSchema = z.object({
-      matched: z
-        .boolean()
-        .describe(
-          'True if the model output is semantically equivalent to the expected answer'
-        ),
-      confidence: z
-        .number()
-        .min(0)
-        .max(1)
-        .describe('Confidence level in the match assessment (0-1)'),
-      reasoning: z
-        .string()
-        .describe("Brief explanation of why outputs match or don't match"),
-    });
-
-    const EvaluationSchema = z.object({
-      testCaseEvaluation: z
-        .array(
-          z.object({
-            id: z
-              .string()
-              .describe(
-                'The ID of the original test case from the context (DO NOT HALLUCINATE)'
-              ),
-            input: z.string().describe('The input for the test case'),
-            output: z.string().describe('The output for the test case'),
-            reasoning: z
-              .string()
-              .optional()
-              .describe('Optional reasoning for this output'),
-          })
-        )
-        .describe('Array of test case evaluations'),
+    const CriteriaEvaluationSchema = z.object({
       criteriaEvaluation: z
         .array(
           z.object({
@@ -337,12 +304,14 @@ export async function POST(
       ${JSON.stringify(ctx)}
     `;
 
-    let evaluation;
+    let evaluation: z.infer<typeof CriteriaEvaluationSchema> & {
+      testCaseEvaluation?: z.infer<typeof TestCaseEvaluationSchema>;
+    };
 
     try {
       const { object } = await generateObject({
         model: vertexModel,
-        schema: EvaluationSchema,
+        schema: CriteriaEvaluationSchema,
         prompt,
         system: systemInstruction,
       });
@@ -378,6 +347,57 @@ export async function POST(
     }
 
     submissionId = submission.id;
+
+    const TestCaseEvaluationSchema = z
+      .array(
+        z.object({
+          id: z
+            .string()
+            .describe(
+              'The ID of the original test case from the context (DO NOT HALLUCINATE)'
+            ),
+          input: z.string().describe('The input for the test case'),
+          output: z.string().describe('The output for the test case'),
+          reasoning: z
+            .string()
+            .optional()
+            .describe('Optional reasoning for this output'),
+        })
+      )
+      .describe('Array of test case evaluations');
+
+    const TestCaseCheckSchema = z.object({
+      matched: z
+        .boolean()
+        .describe(
+          'True if the model output is semantically equivalent to the expected answer'
+        ),
+      confidence: z
+        .number()
+        .min(0)
+        .max(1)
+        .describe('Confidence level in the match assessment (0-1)'),
+      reasoning: z
+        .string()
+        .describe("Brief explanation of why outputs match or don't match"),
+    });
+
+    try {
+      const { object } = await generateObject({
+        model: vertexModel,
+        schema: TestCaseEvaluationSchema,
+        prompt,
+        system: systemInstruction,
+      });
+
+      evaluation.testCaseEvaluation = object;
+    } catch (error) {
+      console.error('AI evaluation error:', error);
+      return NextResponse.json(
+        { message: 'Failed to evaluate prompt' },
+        { status: 500 }
+      );
+    }
 
     // Step 4: Save test case results
     const testCaseEvaluation = evaluation.testCaseEvaluation || [];
@@ -455,7 +475,7 @@ export async function POST(
         try {
           const { object } = await generateObject({
             model: vertexModel,
-            schema: testCaseSchema,
+            schema: TestCaseCheckSchema,
             prompt: evaluationPrompt,
           });
 
