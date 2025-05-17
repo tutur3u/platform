@@ -237,8 +237,23 @@ export async function POST(
       plagiarismResults
     );
 
-    // Step 1: Perform main criteria evaluation
-    const evaluation: CombinedEvaluation = await performCriteriaEvaluation(ctx);
+    // Initialize with empty values
+    let evaluation: CombinedEvaluation = {
+      criteriaEvaluation: [],
+      overallAssessment: 'No evaluation performed (no criteria available)',
+      totalScore: 0,
+      testCaseEvaluation: [],
+    };
+
+    // Step 1: Perform main criteria evaluation only if criteria exist
+    if (challengeCriteria && challengeCriteria.length > 0) {
+      console.log(
+        `Running criteria evaluation with ${challengeCriteria.length} criteria`
+      );
+      evaluation = await performCriteriaEvaluation(ctx);
+    } else {
+      console.log('Skipping criteria evaluation - no criteria found');
+    }
 
     // Step 2: Create submission record
     const submission = await createSubmissionRecord(
@@ -259,29 +274,56 @@ export async function POST(
 
     submissionId = submission.id;
 
-    // Step 3: Perform test case evaluation
-    const testCaseEvaluation = await performTestCaseEvaluation(ctx);
-    evaluation.testCaseEvaluation = testCaseEvaluation;
+    let testCaseInserts: Array<
+      NovaSubmissionTestCase & {
+        confidence?: number;
+        reasoning?: string;
+      }
+    > = [];
 
-    // Step 4: Process and save test case results
-    const testCaseInserts = await processTestCaseResults(
-      testCaseEvaluation,
-      testCases,
-      problem,
-      prompt,
-      submissionId
-    );
+    // Step 3: Perform test case evaluation only if test cases exist
+    if (testCases && testCases.length > 0) {
+      console.log(
+        `Running test case evaluation with ${testCases.length} test cases`
+      );
+      const testCaseEvaluation = await performTestCaseEvaluation(ctx);
+      evaluation.testCaseEvaluation = testCaseEvaluation;
 
-    await saveTestCaseResults(sbAdmin, testCaseInserts);
+      // Step 4: Process and save test case results
+      testCaseInserts = await processTestCaseResults(
+        testCaseEvaluation,
+        testCases,
+        problem,
+        prompt,
+        submissionId
+      );
 
-    // Step 5: Save criteria evaluations
-    const criteriaInserts = processCriteriaEvaluations(
-      evaluation.criteriaEvaluation || [],
-      challengeCriteria,
-      submissionId
-    );
+      await saveTestCaseResults(sbAdmin, testCaseInserts);
+    } else {
+      console.log('Skipping test case evaluation - no test cases found');
+    }
 
-    await saveCriteriaEvaluations(sbAdmin, criteriaInserts);
+    let criteriaInserts: Array<
+      NovaSubmissionCriteria & {
+        strengths?: string[];
+        improvements?: string[];
+      }
+    > = [];
+
+    // Step 5: Save criteria evaluations only if criteria exist
+    if (
+      challengeCriteria &&
+      challengeCriteria.length > 0 &&
+      evaluation.criteriaEvaluation
+    ) {
+      criteriaInserts = processCriteriaEvaluations(
+        evaluation.criteriaEvaluation,
+        challengeCriteria,
+        submissionId
+      );
+
+      await saveCriteriaEvaluations(sbAdmin, criteriaInserts);
+    }
 
     // Step 6: Return the evaluation results and submission ID
     return NextResponse.json(
