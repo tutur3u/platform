@@ -82,6 +82,8 @@ const CalendarContext = createContext<{
 
   settings: CalendarSettings;
   updateSettings: (settings: Partial<CalendarSettings>) => void;
+  isDragging: boolean;
+  setIsDragging: (v: boolean) => void;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -111,6 +113,8 @@ const CalendarContext = createContext<{
 
   settings: defaultCalendarSettings,
   updateSettings: () => undefined,
+  isDragging: false,
+  setIsDragging: () => undefined,
 });
 
 // Add this interface before the updateEvent function
@@ -1588,6 +1592,8 @@ export const CalendarProvider = ({
     ]
   );
 
+  const [isDragging, setIsDragging] = useState(false);
+
   const values = {
     getEvent,
     getCurrentEvents,
@@ -1625,6 +1631,9 @@ export const CalendarProvider = ({
     // Settings API
     settings,
     updateSettings,
+
+    isDragging,
+    setIsDragging,
   };
 
   // Clean up any pending updates when component unmounts

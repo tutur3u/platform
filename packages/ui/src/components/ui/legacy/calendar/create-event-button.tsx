@@ -7,7 +7,7 @@ export const CreateEventButton = () => {
   const { openModal } = useCalendar();
 
   return (
-    <div className="fixed bottom-6 right-6 z-10 flex gap-2">
+    <div className="z-15 fixed bottom-6 right-6 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
