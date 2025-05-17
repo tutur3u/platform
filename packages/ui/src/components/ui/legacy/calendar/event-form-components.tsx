@@ -1,5 +1,6 @@
 'use client';
 
+import { ColorPicker, colorMap } from './settings/color-picker';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -14,7 +15,6 @@ import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
 import { ReactNode } from 'react';
-import { ColorPicker, colorMap } from './settings/color-picker';
 
 // Color options aligned with SupportedColor type
 export const COLOR_OPTIONS: {
@@ -140,7 +140,11 @@ export const EventDescriptionInput = ({
         disabled={disabled}
         maxLength={maxLength}
       />
-      <div className={`text-xs flex justify-end ${charsLeft <= 20 ? 'text-red-500' : 'text-muted-foreground'}`}>{charsLeft} characters left</div>
+      <div
+        className={`flex justify-end text-xs ${charsLeft <= 20 ? 'text-red-500' : 'text-muted-foreground'}`}
+      >
+        {charsLeft} characters left
+      </div>
     </div>
   );
 };
