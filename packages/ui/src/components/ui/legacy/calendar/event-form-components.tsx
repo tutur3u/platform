@@ -1,6 +1,5 @@
 'use client';
 
-import { ColorPicker, colorMap } from './settings/color-picker';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -15,6 +14,7 @@ import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
 import { ReactNode } from 'react';
+import { ColorPicker, colorMap } from './settings/color-picker';
 
 // Color options aligned with SupportedColor type
 export const COLOR_OPTIONS: {
@@ -114,25 +114,36 @@ export const EventDescriptionInput = ({
   value,
   onChange,
   disabled = false,
+  maxLength = 500,
 }: {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-}) => (
-  <div className="space-y-2">
-    <Label className="flex items-center gap-2 text-sm font-medium">
-      <MessageSquare className="text-muted-foreground h-3.5 w-3.5" />
-      Description
-    </Label>
-    <Textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder="Add event details..."
-      className="min-h-[100px] resize-y whitespace-pre-wrap break-words"
-      disabled={disabled}
-    />
-  </div>
-);
+  maxLength?: number;
+}) => {
+  const charsLeft = maxLength - (value?.length || 0);
+  return (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-2 text-sm font-medium">
+        <MessageSquare className="text-muted-foreground h-3.5 w-3.5" />
+        Description
+      </Label>
+      <Textarea
+        value={value}
+        onChange={(e) => {
+          if (e.target.value.length <= maxLength) {
+            onChange(e.target.value);
+          }
+        }}
+        placeholder="Add event details..."
+        className="min-h-[100px] resize-y whitespace-pre-wrap break-words break-all"
+        disabled={disabled}
+        maxLength={maxLength}
+      />
+      <div className={`text-xs flex justify-end ${charsLeft <= 20 ? 'text-red-500' : 'text-muted-foreground'}`}>{charsLeft} characters left</div>
+    </div>
+  );
+};
 
 // Event location input component
 export const EventLocationInput = ({
