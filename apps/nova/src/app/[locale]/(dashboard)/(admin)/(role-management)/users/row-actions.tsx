@@ -1,12 +1,7 @@
 'use client';
 
 import { Row } from '@tanstack/react-table';
-import {
-
-  PlatformUser,
-  User,
-  UserPrivateDetails,
-} from '@tuturuuu/types/db';
+import { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,9 +64,7 @@ export function NovaUsersRowActions({ row }: NovaUserRowActionsProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[160px]">
-            <DropdownMenuItem
-              className="flex items-center"
-            >
+            <DropdownMenuItem className="flex items-center">
               <ExternalLink className="mr-2 h-4 w-4" />
               View Profile
             </DropdownMenuItem>
