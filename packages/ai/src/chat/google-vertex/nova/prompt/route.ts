@@ -16,6 +16,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { NovaProblem } from '@tuturuuu/types/db';
 import { checkPermission } from '@tuturuuu/utils/nova/submissions/check-permission';
 import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -189,10 +190,8 @@ export async function POST(
     }
 
     // Fetch problem details
-    const { data: problem, error: problemError } = await fetchProblem(
-      sbAdmin,
-      problemId
-    );
+    const { data: problem, error: problemError } =
+      await fetchProblem(problemId);
 
     if (problemError || !problem) {
       return NextResponse.json(
@@ -223,10 +222,8 @@ export async function POST(
     const plagiarismResults = await checkPlagiarism(problem, prompt);
 
     // Fetch test cases and challenge criteria
-    const { testCases, challengeCriteria } = await fetchTestCasesAndCriteria(
-      sbAdmin,
-      problem
-    );
+    const { testCases, challengeCriteria } =
+      await fetchTestCasesAndCriteria(problem);
 
     // Build evaluation context
     const ctx = buildEvaluationContext(
@@ -257,7 +254,6 @@ export async function POST(
 
     // Step 2: Create submission record
     const submission = await createSubmissionRecord(
-      sbAdmin,
       prompt,
       problemId,
       sessionId,
@@ -298,7 +294,7 @@ export async function POST(
         submissionId
       );
 
-      await saveTestCaseResults(sbAdmin, testCaseInserts);
+      await saveTestCaseResults(testCaseInserts);
     } else {
       console.log('Skipping test case evaluation - no test cases found');
     }
@@ -322,7 +318,7 @@ export async function POST(
         submissionId
       );
 
-      await saveCriteriaEvaluations(sbAdmin, criteriaInserts);
+      await saveCriteriaEvaluations(criteriaInserts);
     }
 
     // Step 6: Return the evaluation results and submission ID
@@ -356,7 +352,9 @@ export async function POST(
 
 // Helper functions
 
-async function fetchProblem(sbAdmin: any, problemId: string) {
+async function fetchProblem(problemId: string) {
+  const sbAdmin = await createAdminClient();
+
   return await sbAdmin
     .from('nova_problems')
     .select('*')
@@ -364,7 +362,7 @@ async function fetchProblem(sbAdmin: any, problemId: string) {
     .single();
 }
 
-async function checkPlagiarism(problem: any, prompt: string) {
+async function checkPlagiarism(problem: NovaProblem, prompt: string) {
   try {
     const plagiarismPrompt = PLAGIARISM_DETECTION_PROMPT.replace(
       '{{problem_description}}',
@@ -390,7 +388,9 @@ async function checkPlagiarism(problem: any, prompt: string) {
   }
 }
 
-async function fetchTestCasesAndCriteria(sbAdmin: any, problem: any) {
+async function fetchTestCasesAndCriteria(problem: NovaProblem) {
+  const sbAdmin = await createAdminClient();
+
   const { data: testCases, error: testCaseError } = await sbAdmin
     .from('nova_problem_test_cases')
     .select('*')
@@ -479,7 +479,6 @@ async function performCriteriaEvaluation(
 }
 
 async function createSubmissionRecord(
-  sbAdmin: any,
   prompt: string,
   problemId: string,
   sessionId: string | undefined,
@@ -487,6 +486,8 @@ async function createSubmissionRecord(
   overallAssessment: string
 ) {
   try {
+    const sbAdmin = await createAdminClient();
+
     const { data: submission, error: submissionError } = await sbAdmin
       .from('nova_submissions')
       .insert({
@@ -632,9 +633,11 @@ async function evaluateOutputMatch(
   }
 }
 
-async function saveTestCaseResults(sbAdmin: any, testCaseInserts: any[]) {
+async function saveTestCaseResults(testCaseInserts: any[]) {
   if (testCaseInserts.length > 0) {
     try {
+      const sbAdmin = await createAdminClient();
+
       const { error: testCaseInsertsError } = await sbAdmin
         .from('nova_submission_test_cases')
         .insert(
@@ -705,9 +708,11 @@ function processCriteriaEvaluations(
   return criteriaInserts;
 }
 
-async function saveCriteriaEvaluations(sbAdmin: any, criteriaInserts: any[]) {
+async function saveCriteriaEvaluations(criteriaInserts: any[]) {
   if (criteriaInserts.length > 0) {
     try {
+      const sbAdmin = await createAdminClient();
+
       const { error: criteriaInsertsError } = await sbAdmin
         .from('nova_submission_criteria')
         .insert(
