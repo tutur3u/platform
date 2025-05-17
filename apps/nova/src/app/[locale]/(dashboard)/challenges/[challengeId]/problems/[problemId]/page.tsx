@@ -119,16 +119,9 @@ async function getChallenge(
       return null;
     }
 
-    const formattedProblems = problems.map((problem) => {
-      // Get test cases for this specific problem
-      return {
-        ...problem,
-      };
-    });
-
     return {
       ...challenge,
-      problems: formattedProblems,
+      problems,
     };
   } catch (error) {
     console.error('Unexpected error:', error);
@@ -141,16 +134,18 @@ async function getFullProblem(
 ): Promise<(NovaProblem & { test_cases: NovaProblemTestCase[] }) | null> {
   const sbAdmin = await createAdminClient();
 
-  const { data: problem, error } = await sbAdmin
+  const { data: problem, error: problemError } = await sbAdmin
     .from('nova_problems')
     .select('*, test_cases:nova_problem_test_cases(*)')
+    .eq('test_cases.hidden', false)
     .eq('id', problemId)
     .single();
 
-  if (error) {
-    console.error('Error fetching problem:', error);
+  if (problemError) {
+    console.error('Error fetching problem:', problemError);
     return null;
   }
+
   return problem;
 }
 
