@@ -4,21 +4,21 @@ import { Workspace } from '@tuturuuu/types/db';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
-  CalendarSettings,
-  defaultCalendarSettings,
+    CalendarSettings,
+    defaultCalendarSettings,
 } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
 import {
-  ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    ReactNode,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from 'react';
 
 // Utility function to round time to nearest 15-minute interval
@@ -82,6 +82,8 @@ const CalendarContext = createContext<{
 
   settings: CalendarSettings;
   updateSettings: (settings: Partial<CalendarSettings>) => void;
+  isDragging: boolean;
+  setIsDragging: (v: boolean) => void;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -111,6 +113,8 @@ const CalendarContext = createContext<{
 
   settings: defaultCalendarSettings,
   updateSettings: () => undefined,
+  isDragging: false,
+  setIsDragging: () => undefined,
 });
 
 // Add this interface before the updateEvent function
@@ -1588,6 +1592,8 @@ export const CalendarProvider = ({
     ]
   );
 
+  const [isDragging, setIsDragging] = useState(false);
+
   const values = {
     getEvent,
     getCurrentEvents,
@@ -1625,6 +1631,9 @@ export const CalendarProvider = ({
     // Settings API
     settings,
     updateSettings,
+
+    isDragging,
+    setIsDragging,
   };
 
   // Clean up any pending updates when component unmounts
