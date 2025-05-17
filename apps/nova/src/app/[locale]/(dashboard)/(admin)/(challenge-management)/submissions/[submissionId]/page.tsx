@@ -40,7 +40,7 @@ export default async function Page({ params }: Props) {
           display_name,
           avatar_url
         ),
-        session:nova_sessions!inner(
+        session:nova_sessions!left(
           *
         )
       `
@@ -102,6 +102,7 @@ export default async function Page({ params }: Props) {
       ...submission,
       criteria: submissionCriteria,
       test_cases: testCases,
+      session: submission.session,
       problem,
       challenge,
     };

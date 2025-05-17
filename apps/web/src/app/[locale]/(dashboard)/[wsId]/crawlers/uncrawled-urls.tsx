@@ -262,7 +262,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
             {url.url}
           </a>
         </div>
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <CrawlButton
             wsId={wsId}
             url={url.url}

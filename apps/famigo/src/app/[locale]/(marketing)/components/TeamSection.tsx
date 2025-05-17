@@ -34,8 +34,8 @@ const TeamSection = () => {
     >
       {/* Decorative background elements */}
       <div className="pointer-events-none absolute inset-0 bg-[url('/grid-pattern-light.svg')] bg-repeat opacity-5 dark:bg-[url('/grid-pattern-dark.svg')]"></div>
-      <div className="from-background absolute left-0 top-0 h-40 w-full bg-gradient-to-b to-transparent"></div>
-      <div className="from-background absolute bottom-0 left-0 h-40 w-full bg-gradient-to-t to-transparent"></div>
+      <div className="from-background bg-linear-to-b absolute left-0 top-0 h-40 w-full to-transparent"></div>
+      <div className="from-background bg-linear-to-t absolute bottom-0 left-0 h-40 w-full to-transparent"></div>
 
       <div className="mx-auto max-w-6xl px-4">
         <motion.div

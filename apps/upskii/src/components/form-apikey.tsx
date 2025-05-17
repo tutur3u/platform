@@ -170,6 +170,7 @@ export default function ApiKeyInput({
                       placeholder={t('enter-api-key')}
                       type={showApiKey ? 'text' : 'password'}
                       {...field}
+                      disabled={saving || validated}
                     />
                   </FormControl>
                   <button

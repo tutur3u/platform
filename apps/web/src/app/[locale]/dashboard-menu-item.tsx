@@ -1,7 +1,6 @@
 import { DEV_MODE } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -54,7 +53,7 @@ async function fetchWorkspaces() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return [] as Workspace[];
+  if (!user) return [];
 
   const { data: workspaces, error: error } = await supabase
     .from('workspaces')
@@ -63,6 +62,6 @@ async function fetchWorkspaces() {
     )
     .eq('workspace_members.user_id', user.id);
 
-  if (error) return [] as Workspace[];
-  return workspaces as Workspace[];
+  if (error) return [];
+  return workspaces;
 }

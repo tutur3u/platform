@@ -106,7 +106,7 @@ export default async function NotificationPopover() {
               </div>
             ))
           ) : (
-            <div className="flex min-h-[4rem] flex-col items-center justify-center">
+            <div className="flex min-h-16 flex-col items-center justify-center">
               <div className="text-foreground/80 text-xs">
                 {noNotifications}
               </div>

@@ -60,7 +60,7 @@ export function RaceAnimation({
   };
 
   return (
-    <div className="mb-4 mt-2 rounded-lg border bg-gradient-to-r from-green-50 to-blue-50 p-4 dark:from-green-950/30 dark:to-blue-950/30">
+    <div className="bg-linear-to-r mb-4 mt-2 rounded-lg border from-green-50 to-blue-50 p-4 dark:from-green-950/30 dark:to-blue-950/30">
       <div className="mb-2 text-sm font-medium">Race Animation</div>
 
       {/* Race track */}

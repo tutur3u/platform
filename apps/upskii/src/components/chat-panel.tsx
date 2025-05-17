@@ -132,7 +132,7 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="from-muted/30 to-muted/30 dark:from-background/0 dark:to-background/80 pointer-events-none fixed inset-x-0 bottom-0 bg-gradient-to-b from-0% to-50% dark:from-10%">
+      <div className="from-muted/30 to-muted/30 dark:from-background/0 dark:to-background/80 bg-linear-to-b pointer-events-none fixed inset-x-0 bottom-0 from-0% to-50% dark:from-10%">
         <div className="pointer-events-auto mx-auto sm:max-w-2xl sm:px-4">
           <div className="bg-background space-y-4 border-t px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
             {showExtraOptions && (

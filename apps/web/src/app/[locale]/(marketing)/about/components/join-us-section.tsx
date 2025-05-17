@@ -62,7 +62,7 @@ export function JoinUsSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -left-32 top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="bg-linear-to-br sm:h-160 sm:w-160 absolute -left-32 top-0 h-80 w-[20rem] rounded-full from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64"
         />
         <motion.div
           animate={{
@@ -74,7 +74,7 @@ export function JoinUsSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -right-32 top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="h-70 w-70 bg-linear-to-br sm:h-140 sm:w-140 absolute -right-32 top-[30%] rounded-full from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64"
         />
         <motion.div
           animate={{
@@ -86,10 +86,10 @@ export function JoinUsSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -bottom-32 left-1/2 h-[22.5rem] w-[22.5rem] -translate-x-1/2 rounded-full bg-gradient-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64 sm:h-[45rem] sm:w-[45rem]"
+          className="h-90 w-90 bg-linear-to-br sm:h-180 sm:w-180 absolute -bottom-32 left-1/2 -translate-x-1/2 rounded-full from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64"
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:120px] opacity-20" />
+        <div className="bg-size-[24px_24px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)]" />
+        <div className="bg-size-[120px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: [0.1, 0.15, 0.1] }}
@@ -139,7 +139,7 @@ export function JoinUsSection() {
                   repeat: Infinity,
                   ease: 'linear',
                 }}
-                className="from-primary relative text-balance bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                className="from-primary bg-linear-to-r bg-size-[200%_auto] relative text-balance via-purple-500 to-pink-500 bg-clip-text text-transparent"
               >
                 Be Part of Our Story
               </motion.span>
@@ -210,7 +210,7 @@ export function JoinUsSection() {
                   <motion.div
                     initial={{ opacity: 0 }}
                     whileHover={{ opacity: 1 }}
-                    className={`absolute inset-0 bg-gradient-to-br group-hover:opacity-100 ${benefit.gradient} transition-opacity duration-300`}
+                    className={`bg-linear-to-br absolute inset-0 group-hover:opacity-100 ${benefit.gradient} transition-opacity duration-300`}
                   />
                   <motion.div
                     animate={{
@@ -222,7 +222,7 @@ export function JoinUsSection() {
                       repeat: Infinity,
                       ease: 'linear',
                     }}
-                    className={`absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br ${benefit.gradient} blur-2xl`}
+                    className={`bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl ${benefit.gradient} blur-2xl`}
                   />
                   <div className="pointer-events-none relative">
                     <div className="bg-primary/10 mb-6 flex h-14 w-14 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110">
@@ -264,7 +264,7 @@ export function JoinUsSection() {
                     initial={{ scaleX: 0 }}
                     whileHover={{ scaleX: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                    className="from-primary/20 to-primary/5 bg-linear-to-r absolute bottom-0 left-0 right-0 h-1 origin-left"
                   />
                 </div>
               </Card>
@@ -279,7 +279,7 @@ export function JoinUsSection() {
             rel="noopener noreferrer"
             className="bg-foreground text-background group relative w-full overflow-hidden rounded-lg px-8 py-3 transition-transform hover:scale-105 sm:w-auto"
           >
-            <div className="from-primary/20 to-primary/0 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="from-primary/20 to-primary/0 bg-linear-to-r absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <span className="relative flex items-center justify-center gap-2 font-medium">
               <Github className="h-5 w-5" />
               Explore Our Work
@@ -291,7 +291,7 @@ export function JoinUsSection() {
             href="/contact"
             className="bg-primary/10 group relative w-full overflow-hidden rounded-lg px-8 py-3 transition-transform hover:scale-105 sm:w-auto"
           >
-            <div className="from-primary/10 to-primary/5 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="from-primary/10 to-primary/5 bg-linear-to-r absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <span className="relative flex items-center justify-center gap-2 font-medium">
               <Mail className="h-5 w-5" />
               Get in Touch

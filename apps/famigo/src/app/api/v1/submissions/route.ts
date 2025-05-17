@@ -1,5 +1,6 @@
 import { createSubmissionSchema } from '../schemas';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { checkPermission } from '@tuturuuu/utils/nova/submissions/check-permission';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
@@ -73,50 +74,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { data: roleData, error: roleError } = await supabase
-    .from('nova_roles')
-    .select('*')
-    .eq('email', user.email)
-    .eq('allow_challenge_management', true)
-    .single();
-
-  // Check if the current user is an admin or not
-  const isAdmin = !roleError && roleData;
-
   try {
     // Validate request body with Zod
     const validatedData = createSubmissionSchema.parse(body);
 
-    const queryBuilder = supabase
-      .from('nova_submissions')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('problem_id', validatedData.problemId);
+    const { canSubmit, remainingAttempts, message } = await checkPermission({
+      problemId: validatedData.problemId,
+      sessionId: validatedData.sessionId,
+    });
 
-    if (validatedData.sessionId) {
-      queryBuilder.eq('session_id', validatedData.sessionId);
-    }
-
-    const { error: countError, count } = await queryBuilder;
-
-    if (countError) {
-      console.error('Database Error when counting submissions: ', countError);
-      return NextResponse.json(
-        { message: 'Error checking submission count' },
-        { status: 500 }
-      );
-    }
-
-    //only apply the count for non-admin user
-    if (!isAdmin) {
-      if (count && count >= 3) {
-        return NextResponse.json(
-          {
-            message: 'You have reached the maximum of 3 submissions.',
-          },
-          { status: 403 }
-        );
-      }
+    if (!canSubmit) {
+      return NextResponse.json({ message }, { status: 401 });
     }
 
     const submissionData = {
@@ -138,12 +106,6 @@ export async function POST(request: Request) {
         { message: 'Error creating submission' },
         { status: 500 }
       );
-    }
-
-    let remainingAttempts = 3;
-    if (!isAdmin) {
-      // Calculate the remaining attempt
-      remainingAttempts = 3 - ((count || 0) + 1);
     }
 
     return NextResponse.json(

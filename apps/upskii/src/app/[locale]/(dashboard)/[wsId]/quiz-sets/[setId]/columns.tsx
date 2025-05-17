@@ -52,7 +52,7 @@ export const getWorkspaceQuizColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('question') || '-'}</div>
+      <div className="min-w-32">{row.getValue('question') || '-'}</div>
     ),
   },
   {

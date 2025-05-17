@@ -218,7 +218,7 @@ export function AlgorithmDiagnostics({
                     className="flex items-start gap-2 rounded-md border p-2"
                   >
                     <AlertTriangle
-                      className={`h-4 w-4 flex-shrink-0 ${
+                      className={`h-4 w-4 shrink-0 ${
                         bottleneck.impact === 'high'
                           ? 'text-red-500'
                           : 'text-amber-500'

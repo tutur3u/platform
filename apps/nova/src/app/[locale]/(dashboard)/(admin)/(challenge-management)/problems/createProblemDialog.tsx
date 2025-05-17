@@ -21,6 +21,7 @@ export default function CreateProblemDialog({
   trigger,
 }: CreateProblemDialogProps) {
   const router = useRouter();
+
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

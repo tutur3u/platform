@@ -77,7 +77,7 @@ export function Structure({
       title: t('common.current_plan'),
       icon: <Crown className="h-5 w-5 flex-none" />,
       trailing: (
-        <span className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 font-semibold text-transparent">
+        <span className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r bg-clip-text py-1 font-semibold text-transparent">
           {t('common.premium')}
         </span>
       ),
@@ -123,7 +123,7 @@ export function Structure({
         <LogoTitle
           text="Rewise"
           className={cn(
-            'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 text-transparent',
+            'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r bg-clip-text py-1 text-transparent',
             'text-4xl font-bold md:text-3xl lg:text-4xl'
           )}
         />
@@ -196,7 +196,7 @@ export function Structure({
         <LogoTitle
           text="Rewise"
           className={cn(
-            'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 text-transparent',
+            'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r bg-clip-text py-1 text-transparent',
             'text-4xl font-bold md:text-3xl lg:text-4xl'
           )}
         />

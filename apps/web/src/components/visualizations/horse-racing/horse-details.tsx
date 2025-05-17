@@ -86,7 +86,7 @@ export function HorseDetails({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gradient-to-r from-green-500 to-red-500">
+                        <div className="bg-linear-to-r h-2 flex-1 overflow-hidden rounded-full from-green-500 to-red-500">
                           <div
                             className="h-full bg-transparent"
                             style={{

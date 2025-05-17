@@ -4,8 +4,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { PermissionId } from '@tuturuuu/types/db';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import {
+  PermissionId,
+  type Workspace,
+  type WorkspaceUserRole,
+} from '@tuturuuu/types/db';
 import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 
@@ -39,9 +42,10 @@ export async function getWorkspace(id: string, requireUserRole = false) {
     joined: workspaceJoined,
   };
 
-  console.log('ws', ws);
-
-  return ws as Workspace;
+  return ws as Workspace & {
+    role: WorkspaceUserRole;
+    joined: boolean;
+  };
 }
 
 export async function getWorkspaces(noRedirect?: boolean) {
@@ -65,7 +69,7 @@ export async function getWorkspaces(noRedirect?: boolean) {
 
   if (error) notFound();
 
-  return data as Workspace[];
+  return data;
 }
 
 export async function getWorkspaceInvites() {
@@ -98,7 +102,7 @@ export async function getWorkspaceInvites() {
   if (invites.error || emailInvites?.error)
     throw invites.error || emailInvites?.error;
 
-  const data = [...invites.data, ...(emailInvites?.data || [])] as Workspace[];
+  const data = [...invites.data, ...(emailInvites?.data || [])];
   return data;
 }
 

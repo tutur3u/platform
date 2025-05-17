@@ -163,13 +163,13 @@ export const CertificateDocument: React.FC<{ data: CertificateData }> = ({
         {/* Footer */}
         <View style={styles.footer}>
           <View style={styles.footerBlock}>
-            <Text style={styles.footerLabel}>Completion Date:</Text>
+            <Text style={styles.footerLabel}>{data.completion_date}:</Text>
             <Text style={styles.footerValue}>
               {data.certData.completionDate}
             </Text>
           </View>
           <View style={styles.footerBlockRight}>
-            <Text style={styles.footerLabelRight}>Certificate ID:</Text>
+            <Text style={styles.footerLabelRight}>{data.certificate_id}:</Text>
             <Text style={styles.footerValue}>
               {data.certData.certificateId}
             </Text>

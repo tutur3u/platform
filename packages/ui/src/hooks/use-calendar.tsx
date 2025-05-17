@@ -1,12 +1,12 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
+import { Workspace } from '@tuturuuu/types/db';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
   CalendarSettings,
   defaultCalendarSettings,
-} from '@tuturuuu/ui/legacy/calendar/settings/CalendarSettingsContext';
+} from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -572,10 +572,9 @@ export const CalendarProvider = ({
     (date: Date) => {
       // TOD0: Fix this weird workaround in the future
       const selectedDate = dayjs(date);
-      const correctDate = selectedDate.add(1, 'day');
 
       // Round to nearest 15-minute interval
-      const start_at = roundToNearest15Minutes(correctDate.toDate());
+      const start_at = roundToNearest15Minutes(selectedDate.toDate());
       const end_at = new Date(start_at);
 
       // Use default task duration from settings if available

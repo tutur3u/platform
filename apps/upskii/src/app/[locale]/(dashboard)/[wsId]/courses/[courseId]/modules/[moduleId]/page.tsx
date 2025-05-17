@@ -9,6 +9,7 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import { Accordion } from '@tuturuuu/ui/accordion';
 import {
   BookText,
   Goal,
@@ -67,7 +68,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   }));
 
   return (
-    <div className="grid gap-4">
+    <Accordion type="multiple" className="grid gap-4">
       <CourseSection
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
@@ -188,7 +189,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
             : undefined
         }
       />
-    </div>
+    </Accordion>
   );
 }
 

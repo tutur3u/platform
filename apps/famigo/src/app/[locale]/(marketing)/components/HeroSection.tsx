@@ -25,7 +25,7 @@ const HeroSection = () => {
   return (
     <section id="hero" className="relative w-full">
       {/* Background gradient effects */}
-      {/* <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background to-background/0 dark:from-background/30 dark:to-background/10"></div>
+      {/* <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-background to-background/0 dark:from-background/30 dark:to-background/10"></div>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_800px_at_10%_20%,rgba(var(--primary-rgb),0.08),transparent)] dark:bg-[radial-gradient(circle_800px_at_10%_20%,rgba(var(--primary-rgb),0.15),transparent)]"></div>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_800px_at_90%_70%,rgba(var(--blue-rgb),0.08),transparent)] dark:bg-[radial-gradient(circle_800px_at_90%_70%,rgba(var(--blue-rgb),0.15),transparent)]"></div> */}
 
@@ -94,7 +94,7 @@ const HeroSection = () => {
           transition={{ delay: 0.8, duration: 0.8 }}
           className="relative mt-8 w-full max-w-5xl"
         >
-          <div className="border-foreground/10 from-primary/10 dark:border-foreground/5 dark:from-primary/20 flex aspect-video items-center justify-center rounded-xl border bg-gradient-to-br via-purple-500/10 to-blue-500/10 shadow-lg dark:via-purple-500/20 dark:to-blue-500/20">
+          <div className="border-foreground/10 from-primary/10 dark:border-foreground/5 dark:from-primary/20 bg-linear-to-br flex aspect-video items-center justify-center rounded-xl border via-purple-500/10 to-blue-500/10 shadow-lg dark:via-purple-500/20 dark:to-blue-500/20">
             <div className="p-8 text-center">
               <Image
                 src="/famigo-mockup.jpg"

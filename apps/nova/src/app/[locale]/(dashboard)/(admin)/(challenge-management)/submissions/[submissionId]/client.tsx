@@ -55,18 +55,15 @@ export default function SubmissionClient({ submission }: Props) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  function getSessionDuration(): string {
-    if (!submission.session?.start_time || !submission.session?.end_time) {
-      return 'N/A';
-    }
+  function getSessionDuration(start: string, end: string): string {
+    if (!start || !end) return 'N/A';
 
     try {
-      const startTime = new Date(submission.session.start_time).getTime();
-      const endTime = new Date(submission.session.end_time).getTime();
+      const startTime = new Date(start).getTime();
+      const endTime = new Date(end).getTime();
 
-      if (isNaN(startTime) || isNaN(endTime) || endTime <= startTime) {
+      if (isNaN(startTime) || isNaN(endTime) || endTime <= startTime)
         return 'N/A';
-      }
 
       const durationMinutes = Math.floor((endTime - startTime) / 60000);
       return `${durationMinutes} min`;
@@ -78,8 +75,6 @@ export default function SubmissionClient({ submission }: Props) {
 
   return (
     <div className="container mx-auto py-8">
-      {/* <pre>{JSON.stringify(submission, null, 2)}</pre> */}
-
       <div className="mb-6 flex items-center gap-4">
         <Button
           onClick={() => router.push('/submissions')}
@@ -153,47 +148,29 @@ export default function SubmissionClient({ submission }: Props) {
               <CardDescription>Submission details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {submission.challenge && (
-                <div>
-                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">
-                    Challenge
-                  </h3>
-                  <p className="font-medium">{submission.challenge.title}</p>
-                  {submission.challenge.id && (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="mt-1 h-auto px-0"
-                      onClick={() =>
-                        router.push(`/challenges/${submission.challenge!.id}`)
-                      }
-                    >
-                      View Challenge
-                    </Button>
-                  )}
-                </div>
-              )}
+              <div>
+                <h3 className="text-muted-foreground mb-1 text-sm font-medium">
+                  Challenge
+                </h3>
+                <p className="font-medium">{submission.challenge.title}</p>
+              </div>
 
-              {submission.problem && (
-                <div>
-                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">
-                    Problem
-                  </h3>
-                  <p className="font-medium">{submission.problem.title}</p>
-                  {submission.problem.id && (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="mt-1 h-auto px-0"
-                      onClick={() =>
-                        router.push(`/problems/${submission.problem!.id}`)
-                      }
-                    >
-                      View Problem
-                    </Button>
-                  )}
-                </div>
-              )}
+              <div>
+                <h3 className="text-muted-foreground mb-1 text-sm font-medium">
+                  Problem
+                </h3>
+                <p className="font-medium">{submission.problem.title}</p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="mt-1 h-auto px-0"
+                  onClick={() =>
+                    router.push(`/problems/${submission.problem!.id}`)
+                  }
+                >
+                  View Problem
+                </Button>
+              </div>
 
               {submission.created_at && (
                 <div>
@@ -219,7 +196,12 @@ export default function SubmissionClient({ submission }: Props) {
                   </p>
                   <div className="mt-2 flex items-center gap-2 text-sm">
                     <Timer className="text-muted-foreground h-4 w-4" />
-                    <span>{getSessionDuration()}</span>
+                    <span>
+                      {getSessionDuration(
+                        submission.session.start_time || '',
+                        submission.session.end_time || ''
+                      )}
+                    </span>
                   </div>
                 </div>
               )}
