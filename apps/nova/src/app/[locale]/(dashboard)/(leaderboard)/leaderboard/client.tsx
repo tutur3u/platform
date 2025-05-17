@@ -3,10 +3,10 @@
 import BasicInformationComponent, {
   BasicInformation,
 } from './components/basic-information-component';
+import { CurrentChallengeCard } from './components/current-challenge-card';
 import Guider from './components/guider';
 import { Leaderboard, LeaderboardEntry } from './components/leaderboard';
 import { LeaderboardFilters } from './components/leaderboard-filters';
-import { NeoLeagueCard } from './components/neo-league-card';
 import Rewards from './components/rewards';
 import { TopThreeCards } from './components/top-three-cards';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -180,7 +180,7 @@ export default function LeaderboardClient({
           <TopThreeCards topThree={topThree} teamMode={false} />
 
           <div className="mb-6 mt-8">
-            <NeoLeagueCard />
+            <CurrentChallengeCard />
           </div>
 
           <div className="relative my-8 h-px w-full overflow-hidden">
