@@ -319,7 +319,8 @@
     "features-5-title": "Robust finance tracker",
     "features-5-subtitle": "Track your finances, and keep your team in the loop, so you can focus on what matters.",
     "features-6-title": "Open-source",
-    "features-6-subtitle": "Tuturuuu is open-source, so you can contribute to the project, and make it better for everyone."
+    "features-6-subtitle": "Tuturuuu is open-source, so you can contribute to the project, and make it better for everyone.",
+    "join-waitlist": "Join waitlist"
   },
   "branding": {
     "branding": "Branding",
@@ -2123,8 +2124,8 @@
     "description": "Cron executions are used to view the history of cron jobs."
   },
   "landing": {
-    "headline": "Your intelligent shortcut",
-    "subheadline": "Take control of workflows, supercharged by AI",
+    "headline": "Your productivity suite",
+    "subheadline": "All in one place, supercharged by AI.",
     "features": {
       "title": "Features",
       "subtitle": "Discover powerful features designed to enhance your productivity and streamline your workflow.",

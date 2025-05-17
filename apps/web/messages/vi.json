@@ -320,7 +320,8 @@
     "features-5-title": "Theo dõi tài chính linh hoạt",
     "features-5-subtitle": "Theo dõi tài chính của bạn, và giữ cho đội của bạn luôn được cập nhật, để bạn có thể tập trung vào những điều quan trọng.",
     "features-6-title": "Mã nguồn mở",
-    "features-6-subtitle": "Tuturuuu là dự án mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và biến nó trở nên tốt hơn cho mọi người."
+    "features-6-subtitle": "Tuturuuu là dự án mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và biến nó trở nên tốt hơn cho mọi người.",
+    "join-waitlist": "Tham gia danh sách chờ"
   },
   "branding": {
     "branding": "Thương hiệu",
@@ -2138,8 +2139,8 @@
     "description": "Lịch sử chạy được sử dụng để xem lịch sử của các công việc định kỳ."
   },
   "landing": {
-    "headline": "Lối tắt thông minh của bạn",
-    "subheadline": "Kiểm soát quy trình làm việc, được tăng cường bởi AI",
+    "headline": "Công cụ năng suất của bạn",
+    "subheadline": "Tất cả ở một nơi, được tăng cường bởi AI.",
     "features": {
       "title": "Tính năng",
       "subtitle": "Khám phá các tính năng mạnh mẽ được thiết kế để nâng cao năng suất và tối ưu hóa quy trình làm việc của bạn",
