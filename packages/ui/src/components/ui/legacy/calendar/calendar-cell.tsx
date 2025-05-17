@@ -17,7 +17,7 @@ interface DragPreviewProps {
   isReversed: boolean;
 }
 
-const DragPreview = ({ startDate, endDate, top, height, isReversed }: DragPreviewProps) => {
+const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
   // Calculate duration in minutes
   const durationMs = endDate.getTime() - startDate.getTime();
   const durationMinutes = Math.round(durationMs / (1000 * 60));
@@ -253,7 +253,6 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
       const container = scrollContainerRef.current;
       if (!container) return;
       const containerRect = container.getBoundingClientRect();
-      const cellRect = cellRef.current.getBoundingClientRect();
       // Calculate current Y in container
       const currentYInContainer = e.clientY + container.scrollTop - containerRect.top;
       const startYInContainer = dragStartYInContainer.current;
@@ -275,8 +274,6 @@ export const CalendarCell = ({ date, hour, isDragging, setIsDragging }: Calendar
       const endDate = getTimeFromY(snappedCurrentY);
       const roundedStartDate = roundToNearest15Minutes(startDate);
       const roundedEndDate = roundToNearest15Minutes(endDate);
-      const durationMs = roundedEndDate.getTime() - roundedStartDate.getTime();
-      const durationMinutes = Math.abs(Math.round(durationMs / (1000 * 60)));
       
       if (!isDragging) return;
       const isReversed = roundedEndDate.getTime() < roundedStartDate.getTime();
