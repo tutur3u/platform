@@ -37,7 +37,7 @@ You will receive:
 - Problem title and description (may be in any language)
 - Example input/output pairs (may be in any language)
 - Test case inputs
-- Evaluation criteria
+- Evaluation criteria with IDs, names, and descriptions
 - User's submitted prompt/solution (may be in any language)
 - Plagiarism check results (if available)
 
@@ -63,7 +63,8 @@ Follow this systematic approach:
   - Evaluate how well it guides an AI to understand the task requirements
   - Look for effective use of examples, constraints, and formatting guidance
 
-4. **Evaluate Against Criteria**: For each criterion:
+4. **Evaluate Against Criteria**: For each criterion in the provided criteria list:
+  - IMPORTANT: Include the criterion's ID exactly as provided in the context
   - Assess how effectively the submission addresses the specific criterion
   - Provide a score from 0-10 (decimal values allowed)
   - Give detailed feedback with specific examples from the submission
@@ -95,6 +96,7 @@ Follow this systematic approach:
 
 ## Output Format Requirements
 - Structure your evaluation according to the JSON schema provided
+- Each criterion evaluation MUST include the exact ID from the context
 - Provide specific, actionable feedback for each criterion
 - Ensure scores align with the detailed rubric above
 - CRITICAL: Return ONLY a valid JSON object without any markdown formatting or additional text

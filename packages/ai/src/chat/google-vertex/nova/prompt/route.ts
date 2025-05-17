@@ -75,6 +75,9 @@ const CriteriaEvaluationSchema = z.object({
   criteriaEvaluation: z
     .array(
       z.object({
+        id: z
+          .string()
+          .describe('ID of the evaluation criterion from the context'),
         name: z.string().describe('Name of the evaluation criterion'),
         description: z.string().describe('Description of the criterion'),
         score: z.number().min(0).max(10).describe('Score out of 10'),
@@ -387,6 +390,7 @@ function buildEvaluationContext(
       input: testCase.input,
     })),
     criteria: challengeCriteria.map((criteria) => ({
+      id: criteria.id,
       name: criteria.name,
       description: criteria.description,
     })),
@@ -410,6 +414,20 @@ async function performCriteriaEvaluation(
       prompt: ctx.userPrompt,
       system: systemInstruction,
     });
+
+    // Validate that all criteria evaluations have valid IDs
+    if (object.criteriaEvaluation) {
+      const criteriaIdsInContext = new Set(ctx.criteria.map((c: any) => c.id));
+      const missingIds = object.criteriaEvaluation.filter(
+        (ce: any) => !criteriaIdsInContext.has(ce.id)
+      );
+
+      if (missingIds.length > 0) {
+        console.warn(
+          `Found ${missingIds.length} criteria evaluations with IDs not in the context`
+        );
+      }
+    }
 
     return object;
   } catch (error) {
@@ -464,6 +482,22 @@ async function performTestCaseEvaluation(ctx: any) {
       prompt: ctx.userPrompt,
       system: testCaseInstruction,
     });
+
+    // Validate that all test case evaluations have valid IDs
+    if (object && Array.isArray(object)) {
+      const testCaseIdsInContext = new Set(
+        ctx.testCaseInputs.map((tc: any) => tc.id)
+      );
+      const missingIds = object.filter(
+        (tc: any) => !testCaseIdsInContext.has(tc.id)
+      );
+
+      if (missingIds.length > 0) {
+        console.warn(
+          `Found ${missingIds.length} test case evaluations with IDs not in the context`
+        );
+      }
+    }
 
     return object;
   } catch (error) {
@@ -607,9 +641,11 @@ function processCriteriaEvaluations(
   > = [];
 
   for (const criteriaEval of criteriaEvaluation) {
+    // Match by ID instead of name
     const matchingCriteria = challengeCriteria.find(
-      (c) => c.name === criteriaEval.name
+      (c) => c.id === criteriaEval.id
     );
+
     if (matchingCriteria) {
       criteriaInserts.push({
         submission_id: submissionId,
@@ -619,6 +655,8 @@ function processCriteriaEvaluations(
         strengths: criteriaEval.strengths || [],
         improvements: criteriaEval.improvements || [],
       });
+    } else {
+      console.warn(`No matching criteria found for ID: ${criteriaEval.id}`);
     }
   }
 
