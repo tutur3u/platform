@@ -699,8 +699,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           newStartAt.setHours(newStartHourFloor);
           newStartAt.setMinutes(newStartMinute);
 
-            // Snap start time to 15-minute intervals
-            const roundedStartAt = roundToNearest15Minutes(newStartAt);
+          // Snap start time to 15-minute intervals
+          const roundedStartAt = roundToNearest15Minutes(newStartAt);
 
           // Adjust the visual position to match the snapped time
           const roundedHours =
