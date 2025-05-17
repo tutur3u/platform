@@ -1,13 +1,13 @@
-import { Button } from '../../button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { PlusIcon } from 'lucide-react';
+import { Button } from '../../button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
 
 export const CreateEventButton = () => {
   const { openModal } = useCalendar();
 
   return (
-    <div className="fixed bottom-6 right-6 z-10 flex gap-2">
+    <div className="fixed bottom-6 right-6 z-15 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button

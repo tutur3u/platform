@@ -1,13 +1,15 @@
+import { cn } from '@tuturuuu/utils/format';
 import { CalendarCell } from './calendar-cell';
 import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
-import { cn } from '@tuturuuu/utils/format';
 
 interface CalendarColumnProps {
   date: string;
   last: boolean;
+  isDragging: boolean;
+  setIsDragging: (v: boolean) => void;
 }
 
-export const CalendarColumn = ({ date, last }: CalendarColumnProps) => {
+export const CalendarColumn = ({ date, last, isDragging, setIsDragging }: CalendarColumnProps) => {
   const hours = Array.from(Array(24).keys());
 
   return (
@@ -24,7 +26,7 @@ export const CalendarColumn = ({ date, last }: CalendarColumnProps) => {
       data-column-date={date}
     >
       {hours.map((hour) => (
-        <CalendarCell key={`${date}-${hour}`} date={date} hour={hour} />
+        <CalendarCell key={`${date}-${hour}`} date={date} hour={hour} isDragging={isDragging} setIsDragging={setIsDragging} />
       ))}
     </div>
   );

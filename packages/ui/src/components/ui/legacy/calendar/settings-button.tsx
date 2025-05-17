@@ -1,11 +1,11 @@
-import { Button } from '../../button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
-import { CalendarSettingsDialog } from './calendar-settings-dialog';
-import type { CalendarSettings } from './settings/settings-context';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { Settings } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '../../button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
+import { CalendarSettingsDialog } from './calendar-settings-dialog';
+import type { CalendarSettings } from './settings/settings-context';
 
 export const SettingsButton = ({
   wsId,
@@ -42,7 +42,7 @@ export const SettingsButton = ({
   };
 
   return (
-    <div className="fixed bottom-24 right-6 z-10 flex gap-2">
+    <div className="fixed bottom-6 right-20 z-15 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
