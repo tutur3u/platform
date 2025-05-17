@@ -20,8 +20,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { ChevronDown, Loader2, Shield } from '@tuturuuu/ui/icons';
+import {
+  ChevronDown,
+  Loader2,
+  Shield,
+  User as UserIcon,
+} from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
@@ -184,6 +195,78 @@ export const getUserColumns = (
               disabled={isLoading}
             />
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'currentRole',
+      accessorFn: (row) => {
+        if (row.allow_role_management) return 3;
+        if (row.allow_manage_all_challenges) return 2;
+        if (row.allow_challenge_management) return 1;
+        return 0;
+      },
+      header: ({ column }) => (
+        <DataTableColumnHeader t={t} column={column} title="Current Role" />
+      ),
+      cell: ({ row }) => {
+        const user = row.original;
+
+        let roleInfo = {
+          label: 'Member',
+          icon: UserIcon,
+          color: 'text-gray-500',
+        };
+
+        if (user.allow_role_management) {
+          roleInfo = {
+            label: 'Admin',
+            icon: Shield,
+            color: 'text-red-500',
+          };
+        } else if (user.allow_manage_all_challenges) {
+          roleInfo = {
+            label: 'Global Manager',
+            icon: Shield,
+            color: 'text-green-500',
+          };
+        } else if (user.allow_challenge_management) {
+          roleInfo = {
+            label: 'Challenge Manager',
+            icon: Shield,
+            color: 'text-blue-500',
+          };
+        }
+
+        const IconComponent = roleInfo.icon;
+
+        return (
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2">
+                    <IconComponent className={`h-4 w-4 ${roleInfo.color}`} />
+                    <span>{roleInfo.label}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {user.allow_role_management &&
+                    'Can manage users, roles and all platform features'}
+                  {user.allow_manage_all_challenges &&
+                    !user.allow_role_management &&
+                    'Can edit and manage all challenges in the platform'}
+                  {user.allow_challenge_management &&
+                    !user.allow_manage_all_challenges &&
+                    'Can only manage challenges specifically assigned to them'}
+                  {!user.allow_challenge_management &&
+                    !user.allow_manage_all_challenges &&
+                    !user.allow_role_management &&
+                    'Regular member with standard permissions'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         );
       },
