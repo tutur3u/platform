@@ -328,7 +328,7 @@ export function SubmissionTable({
                     {searchQuery ? (
                       <div className="flex flex-col items-center justify-center space-y-2">
                         <p className="text-muted-foreground">
-                          {t('empty-state.no-results')} " {searchQuery}"
+                          {t('empty-state.no-results')} "{searchQuery}"
                         </p>
                         <Button
                           variant="outline"
@@ -339,9 +339,14 @@ export function SubmissionTable({
                         </Button>
                       </div>
                     ) : (
-                      <p className="text-muted-foreground">
-                        {t('empty-state.no-submissions')}
-                      </p>
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <p className="text-muted-foreground">
+                          {t('empty-state.no-submissions')}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {t('empty-state.try-different-filters')}
+                        </p>
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>

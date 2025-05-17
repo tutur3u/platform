@@ -28,6 +28,7 @@ export default async function SubmissionsList({
     search?: string;
     challengeId?: string;
     problemId?: string;
+    userId?: string;
   }>;
 }) {
   const sbAdmin = await createAdminClient();
@@ -43,6 +44,7 @@ export default async function SubmissionsList({
   const searchQuery = searchParams.search || '';
   const selectedChallenge = searchParams.challengeId || '';
   const selectedProblem = searchParams.problemId || '';
+  const selectedUser = searchParams.userId || '';
 
   // Calculate pagination
   const from = (currentPage - 1) * pageSize;
@@ -82,6 +84,25 @@ export default async function SubmissionsList({
       ? problems.filter((p) => p.challenge_id === selectedChallenge)
       : problems || [];
 
+  // Fetch users for filtering
+  const { data: users = [] } = await sbAdmin
+    .from('users')
+    .select(`
+      id,
+      display_name,
+      user_private_details (
+        email
+      )
+    `)
+    .order('display_name');
+
+  // Transform users data to match UserOption interface
+  const userOptions = (users || []).map(user => ({
+    id: user.id,
+    display_name: user.display_name || 'Unknown User',
+    email: user.user_private_details?.email || ''
+  }));
+
   // Begin submissions query
   let query = sbAdmin.from('nova_submissions_with_scores').select(
     `
@@ -103,7 +124,7 @@ export default async function SubmissionsList({
     { count: 'exact' }
   );
 
-  // Apply search if provided
+  
   if (searchQuery) {
     query = query.or(
       `prompt.ilike.%${searchQuery}%,feedback.ilike.%${searchQuery}%`
@@ -126,6 +147,10 @@ export default async function SubmissionsList({
   // Apply problem filter if provided
   if (selectedProblem) {
     query = query.eq('problem_id', selectedProblem);
+  }
+
+  if (selectedUser) {
+    query = query.eq('user_id', selectedUser);
   }
 
   // Apply sorting and pagination
@@ -153,22 +178,50 @@ export default async function SubmissionsList({
     .order(actualSortField, { ascending: sortDirection === 'asc' })
     .range(from, to);
 
+  // Handle error more gracefully
   if (submissionsError) {
     console.error('Error fetching submissions:', submissionsError);
-    throw new Error('Failed to fetch submissions');
+    // Instead of throwing, return empty results
+    return (
+      <div className="w-full space-y-2">
+        <SubmissionOverview stats={stats} />
+
+        <SubmissionFilters
+          searchQuery={searchQuery}
+          selectedChallenge={selectedChallenge}
+          selectedProblem={selectedProblem}
+          selectedUser={selectedUser}
+          challenges={challenges || []}
+          filteredProblems={filteredProblems || []}
+          users={userOptions}
+          serverSide={true}
+        />
+
+        <SubmissionTable
+          submissions={[]}
+          loading={false}
+          searchQuery={searchQuery}
+          viewMode="table"
+          currentPage={currentPage}
+          totalPages={0}
+          sortField={sortField}
+          sortDirection={sortDirection as 'asc' | 'desc'}
+          serverSide={true}
+          showEmail={true}
+        />
+      </div>
+    );
   }
 
   // Calculate total pages
   const totalPages = Math.ceil((totalCount || 0) / pageSize);
 
-  // Fetch user emails from user_private_details
   const userIds = submissionsData?.map((s) => s.user?.id).filter(Boolean) || [];
   const { data: userPrivateDetails = [] } = await sbAdmin
     .from('user_private_details')
     .select('user_id, email')
     .in('user_id', userIds.filter((id) => id !== null) as string[]);
 
-  // Create email lookup map
   const emailMap = new Map();
   userPrivateDetails?.forEach((detail) => {
     emailMap.set(detail.user_id, detail.email);
@@ -194,8 +247,10 @@ export default async function SubmissionsList({
         searchQuery={searchQuery}
         selectedChallenge={selectedChallenge}
         selectedProblem={selectedProblem}
+        selectedUser={selectedUser}
         challenges={challenges || []}
         filteredProblems={filteredProblems || []}
+        users={userOptions}
         serverSide={true}
       />
 
