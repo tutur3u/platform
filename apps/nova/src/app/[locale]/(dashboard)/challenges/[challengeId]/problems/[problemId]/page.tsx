@@ -62,6 +62,11 @@ export default async function Page({ params }: Props) {
     const currentProblemIndex = challenge.problems.findIndex(
       (p) => p.id === problemId
     );
+
+    if (currentProblemIndex === -1) {
+      redirect('/challenges');
+    }
+
     const currentProblem = await getFullProblem(problemId);
 
     if (!currentProblem) {
