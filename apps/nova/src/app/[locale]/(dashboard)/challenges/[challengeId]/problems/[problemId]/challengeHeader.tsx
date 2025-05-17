@@ -1,10 +1,15 @@
 import { ChallengeCriteriaDialog } from './challenge-criteria-dialog';
-import { NovaChallenge } from '@tuturuuu/types/db';
-import { NovaChallengeCriteria } from '@tuturuuu/types/db';
-import { NovaProblem } from '@tuturuuu/types/db';
+import { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -13,11 +18,15 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
-  problems: NovaProblem[];
+  problems: {
+    id: string;
+    title: string;
+  }[];
 };
 
 interface Props {
@@ -26,7 +35,6 @@ interface Props {
   currentProblemIndex: number;
   startTime: string;
   endTime: string;
-  challengeCloseAt: string;
   onPrev: () => void;
   onNext: () => void;
   onEnd: () => void;
@@ -39,7 +47,6 @@ export default function ChallengeHeader({
   currentProblemIndex,
   startTime,
   endTime,
-  challengeCloseAt,
   onPrev,
   onNext,
   onEnd,
@@ -52,7 +59,6 @@ export default function ChallengeHeader({
   const timerConfig = useRef({
     startTime: new Date(startTime),
     endTime: new Date(endTime),
-    closeAt: challengeCloseAt ? new Date(challengeCloseAt) : null,
     initialized: false,
   });
 
@@ -65,6 +71,15 @@ export default function ChallengeHeader({
     percentage: 100,
   });
 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const router = useRouter();
+
+  // Function to navigate to a specific problem
+  const navigateToProblem = (problemId: string) => {
+    setIsDropdownOpen(false);
+    router.push(`/challenges/${challenge.id}/problems/${problemId}`);
+  };
+
   // Initialize the timer once and handle cleanup
   useEffect(() => {
     // Only initialize once to prevent timer resets
@@ -72,9 +87,6 @@ export default function ChallengeHeader({
       // Validate dates
       const isEndTimeValid = !isNaN(timerConfig.current.endTime.getTime());
       const isStartTimeValid = !isNaN(timerConfig.current.startTime.getTime());
-      const isCloseAtValid =
-        timerConfig.current.closeAt &&
-        !isNaN(timerConfig.current.closeAt.getTime());
 
       // Use defaults if invalid
       if (!isEndTimeValid) {
@@ -83,15 +95,6 @@ export default function ChallengeHeader({
 
       if (!isStartTimeValid) {
         timerConfig.current.startTime = new Date();
-      }
-
-      // If closeAt is valid and earlier than endTime, use it instead
-      if (
-        isCloseAtValid &&
-        timerConfig.current.closeAt &&
-        timerConfig.current.closeAt < timerConfig.current.endTime
-      ) {
-        timerConfig.current.endTime = timerConfig.current.closeAt;
       }
 
       // Mark as initialized
@@ -185,12 +188,43 @@ export default function ChallengeHeader({
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="flex items-center gap-1.5">
-            <span className="font-medium">Problem</span>
-            <Badge variant="secondary" className="px-2.5">
-              {currentProblemIndex}/{problemLength}
-            </Badge>
-          </div>
+
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex min-w-36 items-center gap-1.5"
+              >
+                <span className="font-medium">Problem</span>
+                <Badge variant="secondary" className="px-2.5">
+                  {currentProblemIndex}/{problemLength}
+                </Badge>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="max-h-60 max-w-72 overflow-y-auto"
+            >
+              {challenge.problems.map((problem, index) => (
+                <DropdownMenuItem
+                  key={problem.id}
+                  className={cn(
+                    'gap-2',
+                    index + 1 === currentProblemIndex &&
+                      'bg-accent text-accent-foreground'
+                  )}
+                  onClick={() => navigateToProblem(problem.id)}
+                >
+                  <Badge variant="outline" className="px-2 py-0 text-xs">
+                    {index + 1}
+                  </Badge>
+                  <span className="truncate">{problem.title}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button
             variant="outline"
             size="icon"
