@@ -4,21 +4,21 @@ import { Workspace } from '@tuturuuu/types/db';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
-    CalendarSettings,
-    defaultCalendarSettings,
+  CalendarSettings,
+  defaultCalendarSettings,
 } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
 import {
-    ReactNode,
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from 'react';
 
 // Utility function to round time to nearest 15-minute interval
