@@ -59,7 +59,7 @@ export default function OutputDiff({
         <div
           key={index}
           className={cn(
-            'px-1 whitespace-pre-wrap',
+            'whitespace-pre-wrap px-1',
             line.type === 'added'
               ? 'border-l-2 border-green-500 bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300'
               : line.type === 'removed'

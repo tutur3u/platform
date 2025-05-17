@@ -115,7 +115,7 @@ export function SubmissionCard({
       key={submission.id}
       className={`overflow-hidden transition-all duration-200 ${isCurrent ? 'border-primary/50 shadow-md' : 'border-muted-foreground/20'} ${showSkeleton ? 'opacity-90' : ''}`}
     >
-      <CardHeader className="pt-4 pb-3">
+      <CardHeader className="pb-3 pt-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {submission.created_at && (
@@ -180,10 +180,10 @@ export function SubmissionCard({
       >
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <FileCode className="h-4 w-4 text-primary/70" />
-            <h3 className="text-sm font-medium text-foreground">Prompt</h3>
+            <FileCode className="text-primary/70 h-4 w-4" />
+            <h3 className="text-foreground text-sm font-medium">Prompt</h3>
           </div>
-          <div className="rounded-md border bg-muted/50 p-3 text-sm whitespace-pre-line">
+          <div className="bg-muted/50 whitespace-pre-line rounded-md border p-3 text-sm">
             {submission.prompt ||
               (showSkeleton && <Skeleton className="h-16 w-full" />)}
           </div>
@@ -235,7 +235,7 @@ export function SubmissionCard({
           <TabsContent value="test-cases" className="space-y-4 pt-2">
             {submission.total_tests && submission.total_tests > 0 ? (
               <div className="space-y-4">
-                <div className="space-y-2 rounded-md border bg-card p-4">
+                <div className="bg-card space-y-2 rounded-md border p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {submission.test_case_score != null &&
@@ -301,7 +301,7 @@ export function SubmissionCard({
 
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                           Line Numbers
                         </span>
                         <Switch
@@ -374,8 +374,8 @@ export function SubmissionCard({
                                 {testcase.confidence !== undefined &&
                                   testcase.confidence !== null && (
                                     <div className="ml-2 flex items-center gap-1">
-                                      <ThumbsUp className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-xs text-muted-foreground">
+                                      <ThumbsUp className="text-muted-foreground h-3 w-3" />
+                                      <span className="text-muted-foreground text-xs">
                                         {(testcase.confidence * 100).toFixed(0)}
                                         % confidence
                                       </span>
@@ -396,28 +396,28 @@ export function SubmissionCard({
                             </div>
                           </AccordionTrigger>
                           <AccordionContent className="p-0">
-                            <div className="px-4 pt-2 pb-2">
-                              <div className="mb-4 rounded-md border bg-muted/20 p-3">
+                            <div className="px-4 pb-2 pt-2">
+                              <div className="bg-muted/20 mb-4 rounded-md border p-3">
                                 <h5 className="mb-2 text-xs font-medium">
                                   Input
                                 </h5>
-                                <pre className="max-h-24 overflow-auto rounded-md border bg-background p-2 text-xs whitespace-pre-wrap">
+                                <pre className="bg-background max-h-24 overflow-auto whitespace-pre-wrap rounded-md border p-2 text-xs">
                                   {testcase.input || 'No input provided'}
                                 </pre>
                               </div>
 
                               {/* Test Case Reasoning */}
                               {testcase.reasoning && (
-                                <div className="mb-4 rounded-md border bg-muted/20 p-3">
+                                <div className="bg-muted/20 mb-4 rounded-md border p-3">
                                   <div className="mb-2 flex items-center justify-between">
                                     <h5 className="flex items-center text-xs font-medium">
-                                      <Info className="mr-1 h-3.5 w-3.5 text-primary/70" />
+                                      <Info className="text-primary/70 mr-1 h-3.5 w-3.5" />
                                       Reasoning
                                     </h5>
 
                                     {testcase.confidence !== undefined && (
                                       <div className="flex items-center gap-2">
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-muted-foreground text-xs">
                                           Confidence:
                                         </span>
                                         {getConfidenceBadge(
@@ -426,7 +426,7 @@ export function SubmissionCard({
                                       </div>
                                     )}
                                   </div>
-                                  <div className="rounded border bg-background p-2 text-sm text-muted-foreground">
+                                  <div className="bg-background text-muted-foreground rounded border p-2 text-sm">
                                     {testcase.reasoning}
                                   </div>
                                 </div>
@@ -513,21 +513,21 @@ export function SubmissionCard({
                               <TabsContent value="raw" className="mt-0">
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                   <div className="space-y-2">
-                                    <h5 className="text-xs font-medium text-muted-foreground">
+                                    <h5 className="text-muted-foreground text-xs font-medium">
                                       Expected Output:
                                     </h5>
-                                    <pre className="max-h-[300px] overflow-auto rounded-md border bg-background p-2 text-xs whitespace-pre-wrap">
+                                    <pre className="bg-background max-h-[300px] overflow-auto whitespace-pre-wrap rounded-md border p-2 text-xs">
                                       {testcase.expected_output ||
                                         'No expected output'}
                                     </pre>
                                   </div>
 
                                   <div className="space-y-2">
-                                    <h5 className="text-xs font-medium text-muted-foreground">
+                                    <h5 className="text-muted-foreground text-xs font-medium">
                                       Your Output:
                                     </h5>
                                     <pre
-                                      className={`max-h-[300px] overflow-auto rounded-md border p-2 text-xs whitespace-pre-wrap ${
+                                      className={`max-h-[300px] overflow-auto whitespace-pre-wrap rounded-md border p-2 text-xs ${
                                         testcase.matched
                                           ? 'bg-emerald-50 dark:bg-emerald-900/20'
                                           : 'bg-red-50 dark:bg-red-900/20'
@@ -554,7 +554,7 @@ export function SubmissionCard({
               </div>
             ) : (
               <div className="rounded-md border border-dashed p-6 text-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   No test cases available
                 </p>
               </div>
@@ -565,7 +565,7 @@ export function SubmissionCard({
           <TabsContent value="criteria" className="space-y-4 pt-2">
             {submission.total_criteria && submission.total_criteria > 0 ? (
               <div className="space-y-4">
-                <div className="rounded-md border bg-card p-4">
+                <div className="bg-card rounded-md border p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {submission.criteria_score != null &&
@@ -641,7 +641,7 @@ export function SubmissionCard({
                                 <span className="block text-sm font-medium">
                                   {cs.name}
                                 </span>
-                                <span className="block text-xs text-muted-foreground">
+                                <span className="text-muted-foreground block text-xs">
                                   <EyeIcon className="mr-1 inline-block h-3 w-3" />
                                   Hover for feedback
                                 </span>
@@ -668,7 +668,7 @@ export function SubmissionCard({
                                 {cs.score}/10
                               </ScoreBadge>
                             </div>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               {cs.feedback}
                             </p>
                           </div>
@@ -690,7 +690,7 @@ export function SubmissionCard({
               </div>
             ) : (
               <div className="rounded-md border border-dashed p-6 text-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   No criteria evaluation available
                 </p>
               </div>
