@@ -86,7 +86,6 @@ export function SubmissionFilters({
   }, [userSearch, users]);
 
   // Fallback for translation
-  const allUsersLabel = t('all-users') && t('all-users') !== 'nova.submission-page.filters.all-users' ? t('all-users') : 'All Users';
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const userInputRef = useRef<HTMLInputElement>(null);
 
