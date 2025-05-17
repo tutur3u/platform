@@ -1,10 +1,10 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
 
 dayjs.extend(timezone);
 
@@ -16,39 +16,48 @@ interface DragPreviewProps {
   isReversed: boolean;
 }
 
-const DragPreview = ({ startDate, endDate, top, height, isReversed }: DragPreviewProps) => {
+const DragPreview = ({
+  startDate,
+  endDate,
+  top,
+  height,
+  isReversed,
+}: DragPreviewProps) => {
   // Calculate duration in minutes
   const durationMs = endDate.getTime() - startDate.getTime();
   const durationMinutes = Math.round(durationMs / (1000 * 60));
 
   return (
     <div
-      className="absolute left-1 right-1 bg-primary/30 border border-primary z-10 rounded-md shadow-md transition-all overflow-hidden"
+      className="bg-primary/30 border-primary absolute left-1 right-1 z-10 overflow-hidden rounded-md border shadow-md transition-all"
       style={{
         top: `${top}px`,
         height: `${Math.max(height, 20)}px`,
       }}
     >
-      <div className={cn(
-        'w-full h-full flex flex-col justify-between p-1',
-        height > 40 ? 'opacity-100' : 'opacity-0',
-        'transition-opacity'
-      )}>
-        <div className="text-xs font-semibold text-primary-foreground bg-primary/50 px-1 rounded self-start">
+      <div
+        className={cn(
+          'flex h-full w-full flex-col justify-between p-1',
+          height > 40 ? 'opacity-100' : 'opacity-0',
+          'transition-opacity'
+        )}
+      >
+        <div className="text-primary-foreground bg-primary/50 self-start rounded px-1 text-xs font-semibold">
           {format(startDate, 'h:mm a')}
         </div>
-        <div className="text-xs font-semibold text-primary-foreground bg-primary/50 px-1 rounded self-end">
+        <div className="text-primary-foreground bg-primary/50 self-end rounded px-1 text-xs font-semibold">
           {format(endDate, 'h:mm a')}
         </div>
       </div>
-      <div className={cn(
-        'text-xs font-semibold text-white px-2 py-1 rounded bg-primary absolute right-1 whitespace-nowrap',
-        height > 60 ? 'top-1' : isReversed ? '-bottom-6' : '-top-6'
-      )}>
-        {durationMinutes < 60 
+      <div
+        className={cn(
+          'bg-primary absolute right-1 whitespace-nowrap rounded px-2 py-1 text-xs font-semibold text-white',
+          height > 60 ? 'top-1' : isReversed ? '-bottom-6' : '-top-6'
+        )}
+      >
+        {durationMinutes < 60
           ? `${durationMinutes}min`
-          : `${Math.floor(durationMinutes / 60)}h${durationMinutes % 60 ? ` ${durationMinutes % 60}min` : ''}`
-        }
+          : `${Math.floor(durationMinutes / 60)}h${durationMinutes % 60 ? ` ${durationMinutes % 60}min` : ''}`}
       </div>
     </div>
   );
@@ -73,7 +82,9 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     isReversed: boolean;
   } | null>(null);
   const tz = settings?.timezone?.timezone;
-  const [hoveredSlot, setHoveredSlot] = useState<'hour' | 'half-hour' | null>(null);
+  const [hoveredSlot, setHoveredSlot] = useState<'hour' | 'half-hour' | null>(
+    null
+  );
   const [showBothLabels, setShowBothLabels] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipLocked, setTooltipLocked] = useState(false);
@@ -416,9 +427,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       ) : null}
 
       {/* Drag preview overlay */}
-      {dragPreview && (
-        <DragPreview {...dragPreview} />
-      )}
+      {dragPreview && <DragPreview {...dragPreview} />}
 
       {/* Full cell clickable area */}
       <button
