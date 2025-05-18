@@ -6793,6 +6793,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
+      cleanup_role_inconsistencies: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       count_search_users: {
         Args: { search_query: string };
         Returns: number;

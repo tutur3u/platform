@@ -1,4 +1,5 @@
 import { getUserColumns } from './columns';
+import EnabledFilter from './enabled-filter';
 import RoleFilter from './role-filter';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -22,12 +23,20 @@ interface props {
     pageSize?: string;
     tab?: string;
     role?: string;
+    enabled?: string;
   }>;
 }
 
 export default async function UserManagement({ searchParams }: props) {
   const locale = await getLocale();
-  const { q, page, pageSize, tab = 'users', role } = await searchParams;
+  const {
+    q,
+    page,
+    pageSize,
+    tab = 'users',
+    role,
+    enabled,
+  } = await searchParams;
 
   // Fetch user data
   const { userData, userCount } = await getUserData({
@@ -35,6 +44,7 @@ export default async function UserManagement({ searchParams }: props) {
     page: tab === 'users' ? page || '1' : '1',
     pageSize: tab === 'users' ? pageSize || '10' : '10',
     role,
+    enabled,
   });
 
   return (
@@ -47,7 +57,10 @@ export default async function UserManagement({ searchParams }: props) {
           </Button>
         </Link>
 
-        <RoleFilter currentRole={role} />
+        <div className="flex flex-wrap items-center gap-4">
+          <EnabledFilter currentEnabled={enabled} />
+          <RoleFilter currentRole={role} />
+        </div>
       </div>
 
       <div className="mt-4">
@@ -77,11 +90,13 @@ async function getUserData({
   page = '1',
   pageSize = '10',
   role,
+  enabled,
 }: {
   q?: string;
   page?: string;
   pageSize?: string;
   role?: string;
+  enabled?: string;
 }): Promise<{
   userData: (User &
     PlatformUser &
@@ -100,6 +115,7 @@ async function getUserData({
         page_number: parseInt(page),
         page_size: parseInt(pageSize),
         role_filter: role && role !== 'all' ? role : null,
+        enabled_filter: enabled ? enabled === 'true' : null,
       } as any);
 
       if (error) {
@@ -113,6 +129,7 @@ async function getUserData({
         {
           search_query: q,
           role_filter: role && role !== 'all' ? role : null,
+          enabled_filter: enabled ? enabled === 'true' : null,
         } as any
       );
 
@@ -159,6 +176,11 @@ async function getUserData({
             .eq('allow_role_management', false);
           break;
       }
+    }
+
+    // Apply enabled filtering if specified
+    if (enabled) {
+      queryBuilder.eq('enabled', enabled === 'true');
     }
 
     // Handle pagination
