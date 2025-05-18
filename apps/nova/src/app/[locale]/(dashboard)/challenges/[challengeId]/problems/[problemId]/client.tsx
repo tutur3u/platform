@@ -74,7 +74,6 @@ export default function ChallengeClient({
 
     if (prevProblemId) {
       router.push(`/challenges/${challenge.id}/problems/${prevProblemId}`);
-      router.refresh();
     }
   };
 
@@ -86,8 +85,11 @@ export default function ChallengeClient({
 
     if (nextProblemId) {
       router.push(`/challenges/${challenge.id}/problems/${nextProblemId}`);
-      router.refresh();
     }
+  };
+
+  const navigateToProblem = (problemId: string) => {
+    router.push(`/challenges/${challenge.id}/problems/${problemId}`);
   };
 
   const handleEndChallenge = async () => {
@@ -207,12 +209,12 @@ export default function ChallengeClient({
       <div className="relative h-screen overflow-hidden">
         <ChallengeHeader
           challenge={challenge}
-          problemLength={challenge.problems.length}
           currentProblemIndex={currentProblemIndex + 1}
           startTime={session.start_time}
           endTime={new Date(sessionEndTime).toISOString()}
           onPrev={prevProblem}
           onNext={nextProblem}
+          onChange={navigateToProblem}
           onEnd={() => setShowEndDialog(true)}
           onAutoEnd={handleEndChallenge}
         />

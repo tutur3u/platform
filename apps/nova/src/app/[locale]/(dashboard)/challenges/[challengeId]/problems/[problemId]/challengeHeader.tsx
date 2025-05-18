@@ -18,7 +18,6 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
@@ -31,24 +30,24 @@ type ExtendedNovaChallenge = NovaChallenge & {
 
 interface Props {
   challenge: ExtendedNovaChallenge;
-  problemLength: number;
   currentProblemIndex: number;
   startTime: string;
   endTime: string;
   onPrev: () => void;
   onNext: () => void;
+  onChange: (problemId: string) => void;
   onEnd: () => void;
   onAutoEnd: () => void;
 }
 
 export default function ChallengeHeader({
   challenge,
-  problemLength,
   currentProblemIndex,
   startTime,
   endTime,
   onPrev,
   onNext,
+  onChange,
   onEnd,
   onAutoEnd,
 }: Props) {
@@ -72,13 +71,6 @@ export default function ChallengeHeader({
   });
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const router = useRouter();
-
-  // Function to navigate to a specific problem
-  const navigateToProblem = (problemId: string) => {
-    setIsDropdownOpen(false);
-    router.push(`/challenges/${challenge.id}/problems/${problemId}`);
-  };
 
   // Initialize the timer once and handle cleanup
   useEffect(() => {
@@ -197,7 +189,7 @@ export default function ChallengeHeader({
               >
                 <span className="font-medium">Problem</span>
                 <Badge variant="secondary" className="px-2.5">
-                  {currentProblemIndex}/{problemLength}
+                  {currentProblemIndex}/{challenge.problems.length}
                 </Badge>
                 <ChevronDown className="ml-1 h-4 w-4" />
               </Button>
@@ -214,7 +206,7 @@ export default function ChallengeHeader({
                     index + 1 === currentProblemIndex &&
                       'bg-accent text-accent-foreground'
                   )}
-                  onClick={() => navigateToProblem(problem.id)}
+                  onClick={() => onChange(problem.id)}
                 >
                   <Badge variant="outline" className="px-2 py-0 text-xs">
                     {index + 1}
@@ -229,7 +221,7 @@ export default function ChallengeHeader({
             variant="outline"
             size="icon"
             onClick={onNext}
-            disabled={currentProblemIndex === problemLength}
+            disabled={currentProblemIndex === challenge.problems.length}
             className="h-8 w-8"
           >
             <ChevronRight className="h-4 w-4" />
