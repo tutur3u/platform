@@ -94,8 +94,6 @@ async function getTeamMembersData(id: string) {
 
   if (!roleData?.allow_role_management) notFound();
 
-  // const sbAdmin = await createAdminClient();
-
   const { data, error } = await sbAdmin
     .from('nova_team_members')
     .select(
