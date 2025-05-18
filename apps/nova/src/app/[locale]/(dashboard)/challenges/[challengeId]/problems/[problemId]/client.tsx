@@ -34,7 +34,9 @@ type ExtendedNovaChallenge = NovaChallenge & {
   problems: {
     id: string;
     title: string;
+    highestScore: number;
   }[];
+  totalScore: number;
 };
 
 interface Props {
@@ -55,7 +57,7 @@ export default function ChallengeClient({
   const router = useRouter();
 
   const [showEndDialog, setShowEndDialog] = useState(false);
-  const [showModel, setShowModel] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [isNavigationConfirmed, setIsNavigationConfirmed] = useState(false);
   const [pendingHref, setPendingHref] = useState('');
 
@@ -74,7 +76,6 @@ export default function ChallengeClient({
 
     if (prevProblemId) {
       router.push(`/challenges/${challenge.id}/problems/${prevProblemId}`);
-      router.refresh();
     }
   };
 
@@ -86,8 +87,11 @@ export default function ChallengeClient({
 
     if (nextProblemId) {
       router.push(`/challenges/${challenge.id}/problems/${nextProblemId}`);
-      router.refresh();
     }
+  };
+
+  const navigateToProblem = (problemId: string) => {
+    router.push(`/challenges/${challenge.id}/problems/${problemId}`);
   };
 
   const handleEndChallenge = async () => {
@@ -119,12 +123,12 @@ export default function ChallengeClient({
       '',
       window.location.pathname
     );
-    setShowModel(false);
+    setShowModal(false);
   };
 
   const handleConfirm = () => {
     setIsNavigationConfirmed(true);
-    setShowModel(false);
+    setShowModal(false);
     if (pendingHref) router.push(pendingHref);
     else if (sessionStorage.getItem(pendingNavKey) === 'back') router.back();
     sessionStorage.removeItem(pendingNavKey);
@@ -187,7 +191,7 @@ export default function ChallengeClient({
       if (!isNavigationConfirmed) {
         e.preventDefault();
         setPendingHref(href);
-        setShowModel(true);
+        setShowModal(true);
       }
     };
 
@@ -207,12 +211,12 @@ export default function ChallengeClient({
       <div className="relative h-screen overflow-hidden">
         <ChallengeHeader
           challenge={challenge}
-          problemLength={challenge.problems.length}
           currentProblemIndex={currentProblemIndex + 1}
           startTime={session.start_time}
           endTime={new Date(sessionEndTime).toISOString()}
           onPrev={prevProblem}
           onNext={nextProblem}
+          onChange={navigateToProblem}
           onEnd={() => setShowEndDialog(true)}
           onAutoEnd={handleEndChallenge}
         />
@@ -270,7 +274,7 @@ export default function ChallengeClient({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={showModel} onOpenChange={setShowModel}>
+      <AlertDialog open={showModal} onOpenChange={setShowModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Leave Challenge Page</AlertDialogTitle>

@@ -19,7 +19,9 @@ type ExtendedNovaChallenge = NovaChallenge & {
   problems: {
     id: string;
     title: string;
+    highestScore: number;
   }[];
+  totalScore: number;
 };
 
 interface Props {
@@ -33,19 +35,6 @@ export default async function Page({ params }: Props) {
   const { challengeId, problemId } = await params;
 
   try {
-    const challenge = await getChallenge(challengeId);
-
-    if (!challenge) redirect('/challenges');
-
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token');
-
-    if (
-      challenge.password_hash &&
-      (!token || challenge.password_hash != token.value)
-    )
-      redirect('/challenges');
-
     // Fetch session data
     const session = await getSession(challengeId);
 
@@ -58,6 +47,19 @@ export default async function Page({ params }: Props) {
     if (!session) {
       redirect('/challenges');
     }
+
+    const challenge = await getChallenge(challengeId, session.id);
+
+    if (!challenge) redirect('/challenges');
+
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token');
+
+    if (
+      challenge.password_hash &&
+      (!token || challenge.password_hash != token.value)
+    )
+      redirect('/challenges');
 
     const currentProblemIndex = challenge.problems.findIndex(
       (p) => p.id === problemId
@@ -91,7 +93,8 @@ export default async function Page({ params }: Props) {
 }
 
 async function getChallenge(
-  challengeId: string
+  challengeId: string,
+  sessionId: string
 ): Promise<ExtendedNovaChallenge | null> {
   const sbAdmin = await createAdminClient();
 
@@ -119,9 +122,43 @@ async function getChallenge(
       return null;
     }
 
+    // Fetch highest scores for each problem in this session
+    const { data: submissions, error: submissionsError } = await sbAdmin
+      .from('nova_submissions_with_scores')
+      .select('*')
+      .eq('session_id', sessionId);
+
+    if (submissionsError) {
+      console.error('Error fetching submissions:', submissionsError.message);
+      return null;
+    }
+
+    // Calculate highest score for each problem
+    const problemsWithScores = problems.map((problem) => {
+      const problemSubmissions = submissions.filter(
+        (s) => s.problem_id === problem.id
+      );
+      const highestScore =
+        problemSubmissions.length > 0
+          ? Math.max(...problemSubmissions.map((s) => s.total_score || 0))
+          : 0;
+
+      return {
+        ...problem,
+        highestScore,
+      };
+    });
+
+    // Calculate total score as sum of highest scores
+    const totalScore = problemsWithScores.reduce(
+      (sum, problem) => sum + problem.highestScore,
+      0
+    );
+
     return {
       ...challenge,
-      problems,
+      problems: problemsWithScores,
+      totalScore,
     };
   } catch (error) {
     console.error('Unexpected error:', error);
