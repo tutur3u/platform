@@ -5,32 +5,32 @@ import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
-    CalendarEvent,
-    EventPriority,
+  CalendarEvent,
+  EventPriority,
 } from '@tuturuuu/types/primitives/calendar-event';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
@@ -43,26 +43,26 @@ import dayjs from 'dayjs';
 import ts from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import {
-    AlertCircle,
-    Brain,
-    Calendar as CalendarIcon,
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    FileText,
-    Image as ImageIcon,
-    Info,
-    Loader2,
-    Lock,
-    MapPin,
-    Mic,
-    Settings,
-    Sparkles,
-    StopCircle,
-    Trash2,
-    Unlock,
-    X,
+  AlertCircle,
+  Brain,
+  Calendar as CalendarIcon,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  FileText,
+  Image as ImageIcon,
+  Info,
+  Loader2,
+  Lock,
+  MapPin,
+  Mic,
+  Settings,
+  Sparkles,
+  StopCircle,
+  Trash2,
+  Unlock,
+  X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
@@ -70,16 +70,16 @@ import { useCalendar } from '../../../../hooks/use-calendar';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
 import {
-    COLOR_OPTIONS,
-    DateError,
-    EventColorPicker,
-    EventDateTimePicker,
-    EventDescriptionInput,
-    EventLocationInput,
-    EventPriorityPicker,
-    EventTitleInput,
-    EventToggleSwitch,
-    OverlapWarning,
+  COLOR_OPTIONS,
+  DateError,
+  EventColorPicker,
+  EventDateTimePicker,
+  EventDescriptionInput,
+  EventLocationInput,
+  EventPriorityPicker,
+  EventTitleInput,
+  EventToggleSwitch,
+  OverlapWarning,
 } from './event-form-components';
 
 dayjs.extend(ts);
@@ -140,7 +140,7 @@ export function EventModal() {
   const generatedEvent = generatedEvents[currentEventIndex];
 
   // Determine if we're editing an existing event
-  const isEditing = activeEvent?.id && activeEvent.id !== 'new';
+  const isEditing = !!(activeEvent?.id && activeEvent.id !== 'new');
 
   // Shared state
   const [activeTab, setActiveTab] = useState<'manual' | 'ai' | 'preview'>(
@@ -223,11 +223,17 @@ export function EventModal() {
         locked: eventData.locked,
       });
 
-      // Check if event is all-day by comparing start and end times
-      const startDate = dayjs(eventData.start_at);
-      const endDate = dayjs(eventData.end_at);
-      const isAllDayEvent = startDate.startOf('day').isSame(endDate.startOf('day').subtract(1, 'day'));
-      setIsAllDay(isAllDayEvent);
+      // Only check for all-day if this is an existing event (not a new one)
+      if (activeEvent.id !== 'new') {
+        // Check if event is all-day by comparing start and end times
+        const startDate = dayjs(eventData.start_at);
+        const endDate = dayjs(eventData.end_at);
+        const isAllDayEvent = startDate.startOf('day').isSame(endDate.startOf('day').subtract(1, 'day'));
+        setIsAllDay(isAllDayEvent);
+      } else {
+        // For new events, always start with isAllDay as false
+        setIsAllDay(false);
+      }
 
       // Check for overlapping events
       checkForOverlaps(eventData);
@@ -879,6 +885,9 @@ export function EventModal() {
     }
   };
 
+  // Normalize locked to a boolean to avoid linter errors
+  const locked = event.locked === true;
+
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
@@ -1057,7 +1066,6 @@ export function EventModal() {
                           setEvent({ ...event, description: value })
                         }
                         disabled={event.locked}
-                        maxLength={500}
                       />
                     </div>
 
@@ -1186,7 +1194,7 @@ export function EventModal() {
                       </Button>
                       <Button
                         onClick={handleManualSave}
-                        disabled={isSaving || isDeleting || event.locked}
+                        disabled={isSaving || isDeleting || (isEditing && locked)}
                         className="flex items-center gap-2"
                       >
                         {isSaving ? (
