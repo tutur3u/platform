@@ -1,7 +1,7 @@
 'use client';
 
 import { getFullSubmission } from './actions';
-import { SubmissionCard } from './submission-card';
+import { SubmissionCard } from '@/components/common/SubmissionCard';
 import {
   NovaProblem,
   NovaProblemTestCase,

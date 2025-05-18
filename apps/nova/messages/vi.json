@@ -1453,7 +1453,7 @@
     "error-500-description": "Something went wrong. Please try again later.",
     "dashboard": "Tổng Quan",
     "problems": "Đề Bài",
-    "roles": "Vai Trò",
+    "users": "Người Dùng",
     "create-problem": "Tạo Đề Bài Mới",
     "view-leaderboard": "Xem bảng xếp hạng",
     "challenges-page": {
@@ -1953,15 +1953,15 @@
         "first-join": "Hãy là người đầu tiên tham gia cuộc thi!",
         "pts": "điểm"
       },
-      "neo-league-card": {
+      "current-challenge-card": {
         "title": "Cuộc thi Neo League",
         "new": "Mới",
-        "description": "Mặc định, bảng xếp hạng này thể hiện tổng điểm từ tất cả các thử thách bạn đã tham gia. \nĐể xem kết quả cụ thể cho vòng 1 của cuộc thi Neo League, nhấp vào liên kết bên dưới.",
-        "view-round-1": "Xem kết quả Vòng 1",
+        "description": "Mặc định, bảng xếp hạng này thể hiện tổng điểm từ tất cả các thử thách bạn đã tham gia. \nĐể xem kết quả cụ thể cho vòng 2 của cuộc thi Neo League, nhấp vào liên kết bên dưới.",
+        "view-current-challenge": "Xem kết quả Vòng 2",
         "view-all-challenges": "Xem tất cả các thử thách",
-        "round-1-description": "Bạn hiện đang xem kết quả cho vòng 1 của cuộc thi Neo League. \nCác điểm số được hiển thị là cụ thể cho thử thách này.",
+        "current-challenge-description": "Bạn hiện đang xem kết quả cho vòng 2 của cuộc thi Neo League. \nCác điểm số được hiển thị là cụ thể cho thử thách này.",
         "active": "Đang hiển thị",
-        "round-1-title": "Xem Neo League Vòng 1"
+        "current-challenge-title": "Xem Neo League Vòng 2"
       },
       "teams": "Đội"
     },

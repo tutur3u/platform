@@ -166,7 +166,7 @@ async function fetchLeaderboard(
 
   // Fetch whitelisted users
   const { data: whitelistedData, error: whitelistError } = await sbAdmin
-    .from('nova_roles')
+    .from('platform_email_roles')
     .select('email')
     .eq('enabled', true);
 

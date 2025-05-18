@@ -79,10 +79,10 @@ async function getDomainData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  const supabase = await createAdminClient();
-  if (!supabase) notFound();
+  const sbAdmin = await createAdminClient();
+  if (!sbAdmin) notFound();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('ai_whitelisted_domains')
     .select('*', {
       count: 'exact',
