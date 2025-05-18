@@ -85,7 +85,7 @@ export default async function WorkspaceHomePage({
         description={
           <>
             {t('ws-home.description_p1')}{' '}
-            <span className="font-semibold text-foreground underline">
+            <span className="text-foreground font-semibold underline">
               {workspace.name || t('common.untitled')}
             </span>{' '}
             {t('ws-home.description_p2')}
