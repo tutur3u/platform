@@ -133,7 +133,8 @@ export const EventDescriptionInput = ({
 
   // Calculate word count
   const wordCount = value.trim().split(/\s+/).filter(Boolean).length;
-  const showToggle = wordCount > 60;
+  const charCount = value.length;
+  const showToggle = wordCount >= 60 || charCount >= 400;
 
   // Set default state for expanded/collapsed based on mode and word count
   React.useEffect(() => {
