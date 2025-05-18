@@ -1,4 +1,3 @@
-import OutputDiff from '@/components/common/OutputDiff';
 import ScoreBadge from '@/components/common/ScoreBadge';
 import SideBySideDiff from '@/components/common/SideBySideDiff';
 import { NovaSubmissionData } from '@tuturuuu/types/db';
@@ -27,7 +26,6 @@ import {
   Loader2,
   RefreshCw,
   Split,
-  TextCursor,
   ThumbsUp,
   User,
   XCircle,
@@ -459,20 +457,6 @@ export function SubmissionCard({
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <TabsTrigger
-                                        value="inline"
-                                        className="h-8 w-8 p-0"
-                                      >
-                                        <TextCursor className="h-4 w-4" />
-                                      </TabsTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top">
-                                      Inline Diff
-                                    </TooltipContent>
-                                  </Tooltip>
-
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <TabsTrigger
                                         value="raw"
                                         className="h-8 w-8 p-0"
                                       >
@@ -491,23 +475,13 @@ export function SubmissionCard({
                                 className="mt-0"
                               >
                                 <SideBySideDiff
-                                  left={testcase.expected_output || ''}
-                                  right={testcase.output || ''}
+                                  left={testcase.expected_output}
+                                  right={testcase.output}
                                   leftTitle="Expected Output"
                                   rightTitle="Your Output"
                                   showLineNumbers={false}
-                                  className="max-h-[300px] overflow-auto"
+                                  className="max-h-[300px]"
                                 />
-                              </TabsContent>
-
-                              <TabsContent value="inline" className="mt-0">
-                                <div className="space-y-2">
-                                  <OutputDiff
-                                    expected={testcase.expected_output || ''}
-                                    actual={testcase.output || ''}
-                                    className="max-h-[300px]"
-                                  />
-                                </div>
                               </TabsContent>
 
                               <TabsContent value="raw" className="mt-0">
