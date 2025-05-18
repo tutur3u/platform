@@ -48,19 +48,19 @@ export function FeaturesSection() {
         t('features.calendar.details.5'),
       ],
       image: (
-        <div className="rounded-lg border bg-white p-4 shadow-lg dark:bg-foreground/5">
+        <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-lg">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-medium text-foreground">
+            <h3 className="text-foreground font-medium">
               {new Date().toLocaleDateString(locale, {
                 month: 'long',
                 year: 'numeric',
               })}
             </h3>
             <div className="flex items-center gap-2">
-              <span className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
+              <span className="border-dynamic-light-blue/30 bg-calendar-bg-blue text-dynamic-blue rounded-md border px-3 py-1 text-xs font-medium">
                 {t('week')}
               </span>
-              <span className="rounded-md border border-dynamic-light-orange/30 bg-calendar-bg-orange px-3 py-1 text-xs font-medium text-dynamic-orange">
+              <span className="border-dynamic-light-orange/30 bg-calendar-bg-orange text-dynamic-orange rounded-md border px-3 py-1 text-xs font-medium">
                 {t('month')}
               </span>
             </div>
@@ -72,7 +72,7 @@ export function FeaturesSection() {
             ).map((day, i) => (
               <div
                 key={i}
-                className="text-center text-xs font-medium text-muted-foreground"
+                className="text-muted-foreground text-center text-xs font-medium"
               >
                 {day}
               </div>
@@ -97,7 +97,7 @@ export function FeaturesSection() {
                           ? 'border-dynamic-light-green/30 bg-calendar-bg-green text-dynamic-green'
                           : hasTask
                             ? 'border-dynamic-light-orange/30 bg-calendar-bg-orange text-dynamic-orange'
-                            : 'bg-white dark:bg-foreground/5'
+                            : 'dark:bg-foreground/5 bg-white'
                   }`}
                 >
                   {i + 1}
@@ -122,10 +122,10 @@ export function FeaturesSection() {
         t('features.tasks.details.5'),
       ],
       image: (
-        <div className="rounded-lg border bg-white p-4 shadow-lg dark:bg-foreground/5">
+        <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-lg">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-medium text-foreground">{t('my_tasks')}</h3>
-            <span className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
+            <h3 className="text-foreground font-medium">{t('my_tasks')}</h3>
+            <span className="border-dynamic-light-blue/30 bg-calendar-bg-blue text-dynamic-blue rounded-md border px-3 py-1 text-xs font-medium">
               {t('add_task')}
             </span>
           </div>
@@ -168,10 +168,10 @@ export function FeaturesSection() {
                   task.complete
                     ? 'bg-dynamic-purple/20'
                     : task.priority === t('high_priority')
-                      ? 'border-2 border-dynamic-light-red/30 bg-calendar-bg-red text-dynamic-red'
+                      ? 'border-dynamic-light-red/30 bg-calendar-bg-red text-dynamic-red border-2'
                       : task.priority === t('medium_priority')
-                        ? 'border-2 border-dynamic-light-orange/30 bg-calendar-bg-orange text-dynamic-orange'
-                        : 'border-2 border-dynamic-light-green/30 bg-calendar-bg-green text-dynamic-green'
+                        ? 'border-dynamic-light-orange/30 bg-calendar-bg-orange text-dynamic-orange border-2'
+                        : 'border-dynamic-light-green/30 bg-calendar-bg-green text-dynamic-green border-2'
                 } flex items-start gap-2 rounded-md`}
               >
                 <div
@@ -179,14 +179,14 @@ export function FeaturesSection() {
                     task.complete
                       ? 'bg-dynamic-purple/20'
                       : task.priority === t('high_priority')
-                        ? 'border-2 border-dynamic-light-red/30 bg-calendar-bg-red text-dynamic-red'
+                        ? 'border-dynamic-light-red/30 bg-calendar-bg-red text-dynamic-red border-2'
                         : task.priority === t('medium_priority')
-                          ? 'border-2 border-dynamic-light-orange/30 bg-calendar-bg-orange text-dynamic-orange'
-                          : 'border-2 border-dynamic-light-green/30 bg-calendar-bg-green text-dynamic-green'
+                          ? 'border-dynamic-light-orange/30 bg-calendar-bg-orange text-dynamic-orange border-2'
+                          : 'border-dynamic-light-green/30 bg-calendar-bg-green text-dynamic-green border-2'
                   }`}
                 >
                   {task.complete && (
-                    <Check className="h-3 w-3 text-dynamic-purple" />
+                    <Check className="text-dynamic-purple h-3 w-3" />
                   )}
                 </div>
                 <div className="flex-1">
@@ -207,7 +207,7 @@ export function FeaturesSection() {
                     >
                       {task.priority}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-muted-foreground text-[10px]">
                       {t('due')}: {task.due}
                     </span>
                   </div>
@@ -232,50 +232,50 @@ export function FeaturesSection() {
         t('features.meetings.details.5'),
       ],
       image: (
-        <div className="rounded-lg border bg-white p-4 shadow-lg dark:bg-foreground/5">
-          <div className="-mx-4 -mt-4 mb-4 flex items-center justify-between rounded-t-lg border-b bg-calendar-bg-green px-4 py-2 text-foreground">
-            <div className="flex items-center gap-2 text-dynamic-green">
+        <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-lg">
+          <div className="bg-calendar-bg-green text-foreground -mx-4 -mt-4 mb-4 flex items-center justify-between rounded-t-lg border-b px-4 py-2">
+            <div className="text-dynamic-green flex items-center gap-2">
               <Video className="h-6 w-6" />
               <span className="font-medium">{t('team_sync')}</span>
             </div>
-            <span className="rounded-md border border-dynamic-light-green/30 bg-calendar-bg-green px-3 py-1 text-xs font-medium text-dynamic-green">
+            <span className="border-dynamic-light-green/30 bg-calendar-bg-green text-dynamic-green rounded-md border px-3 py-1 text-xs font-medium">
               {t('live')}
             </span>
           </div>
           <div className="mb-3 grid grid-cols-2 gap-2 font-semibold text-white">
-            <div className="flex aspect-video items-center justify-center rounded-md border border-dynamic-light-green/30 bg-calendar-bg-green">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-light-green/70 text-sm">
+            <div className="border-dynamic-light-green/30 bg-calendar-bg-green flex aspect-video items-center justify-center rounded-md border">
+              <div className="bg-dynamic-light-green/70 flex h-10 w-10 items-center justify-center rounded-full text-sm">
                 A
               </div>
             </div>
-            <div className="flex aspect-video items-center justify-center rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-light-blue/70 text-sm">
+            <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue flex aspect-video items-center justify-center rounded-md border">
+              <div className="bg-dynamic-light-blue/70 flex h-10 w-10 items-center justify-center rounded-full text-sm">
                 B
               </div>
             </div>
-            <div className="flex aspect-video items-center justify-center rounded-md border border-dynamic-light-red/30 bg-calendar-bg-red">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-light-red/70 text-sm">
+            <div className="border-dynamic-light-red/30 bg-calendar-bg-red flex aspect-video items-center justify-center rounded-md border">
+              <div className="bg-dynamic-light-red/70 flex h-10 w-10 items-center justify-center rounded-full text-sm">
                 C
               </div>
             </div>
-            <div className="flex aspect-video items-center justify-center rounded-md border border-dynamic-light-orange/30 bg-calendar-bg-orange">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-light-orange/70 text-sm">
+            <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange flex aspect-video items-center justify-center rounded-md border">
+              <div className="bg-dynamic-light-orange/70 flex h-10 w-10 items-center justify-center rounded-full text-sm">
                 D
               </div>
             </div>
           </div>
           <div className="flex items-center justify-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-red/30 bg-calendar-bg-red">
-              <Phone className="h-4 w-4 text-dynamic-red" />
+            <div className="border-dynamic-light-red/30 bg-calendar-bg-red flex h-8 w-8 items-center justify-center rounded-full border">
+              <Phone className="text-dynamic-red h-4 w-4" />
             </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-blue/30 bg-calendar-bg-blue">
-              <Video className="h-4 w-4 text-dynamic-blue" />
+            <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue flex h-8 w-8 items-center justify-center rounded-full border">
+              <Video className="text-dynamic-blue h-4 w-4" />
             </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
-              <Mic className="h-4 w-4 text-dynamic-green" />
+            <div className="border-dynamic-light-green/30 bg-calendar-bg-green flex h-8 w-8 items-center justify-center rounded-full border">
+              <Mic className="text-dynamic-green h-4 w-4" />
             </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-orange/30 bg-calendar-bg-orange">
-              <Share className="h-4 w-4 text-dynamic-orange" />
+            <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange flex h-8 w-8 items-center justify-center rounded-full border">
+              <Share className="text-dynamic-orange h-4 w-4" />
             </div>
           </div>
         </div>
@@ -295,48 +295,48 @@ export function FeaturesSection() {
         t('features.chat.details.5'),
       ],
       image: (
-        <div className="rounded-lg border bg-white p-4 shadow-lg dark:bg-foreground/5">
+        <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-lg">
           <div className="mb-3 flex items-center gap-2 border-b pb-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-dynamic-light-orange/30">
-              <span className="text-xs font-medium text-dynamic-orange">
+            <div className="bg-dynamic-light-orange/30 flex h-8 w-8 items-center justify-center rounded-full">
+              <span className="text-dynamic-orange text-xs font-medium">
                 {t('mp')}
               </span>
             </div>
             <div>
               <h4 className="text-sm font-medium">{t('marketing_project')}</h4>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('5-members')} • {t('3-online')}
               </p>
             </div>
           </div>
           <div className="mb-3 space-y-2">
             <div className="flex items-start gap-2">
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-dynamic-light-green/30">
+              <div className="bg-dynamic-light-green/30 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full">
                 <span className="text-[10px] font-medium">
                   {t('alex-initials')}
                 </span>
               </div>
-              <div className="max-w-[80%] rounded-lg bg-dynamic-light-green/30 p-1.5 text-xs">
-                <p className="text-[10px] font-medium text-muted-foreground">
+              <div className="bg-dynamic-light-green/30 max-w-[80%] rounded-lg p-1.5 text-xs">
+                <p className="text-muted-foreground text-[10px] font-medium">
                   {t('alex')}
                 </p>
                 <p>{t('has_everyone_reviewed_the_latest_campaign_mockups')}</p>
-                <p className="mt-0.5 text-[10px] text-muted-foreground">
+                <p className="text-muted-foreground mt-0.5 text-[10px]">
                   {t('10_15_am')}
                 </p>
               </div>
             </div>
             <div className="flex items-start justify-end gap-2">
-              <div className="max-w-[80%] rounded-lg bg-dynamic-light-orange/30 p-1.5 text-xs">
-                <p className="text-[10px] font-medium text-dynamic-orange">
+              <div className="bg-dynamic-light-orange/30 max-w-[80%] rounded-lg p-1.5 text-xs">
+                <p className="text-dynamic-orange text-[10px] font-medium">
                   {t('you')}
                 </p>
                 <p>{t('yes_ive_added_my_comments_in_the_shared_document')}</p>
-                <p className="mt-0.5 text-[10px] text-dynamic-orange">
+                <p className="text-dynamic-orange mt-0.5 text-[10px]">
                   {t('10_17_am')}
                 </p>
               </div>
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-dynamic-light-orange/30">
+              <div className="bg-dynamic-light-orange/30 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full">
                 <span className="text-[10px] font-medium">
                   {t('you-initials')}
                 </span>
@@ -347,10 +347,10 @@ export function FeaturesSection() {
             <input
               type="text"
               placeholder={t('type_a_message')}
-              className="flex-1 rounded-md border border-dynamic-light-orange/30 px-2 py-1 text-xs focus:outline-none"
+              className="border-dynamic-light-orange/30 flex-1 rounded-md border px-2 py-1 text-xs focus:outline-none"
             />
-            <button className="flex h-6 w-6 items-center justify-center rounded-full bg-dynamic-light-orange/30">
-              <ArrowRight className="h-3 w-3 text-dynamic-orange" />
+            <button className="bg-dynamic-light-orange/30 flex h-6 w-6 items-center justify-center rounded-full">
+              <ArrowRight className="text-dynamic-orange h-3 w-3" />
             </button>
           </div>
         </div>
@@ -370,10 +370,10 @@ export function FeaturesSection() {
         t('features.mail.details.5'),
       ],
       image: (
-        <div className="rounded-lg border bg-white p-4 shadow-lg dark:bg-foreground/5">
+        <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-lg">
           <div className="mb-3 flex items-center justify-between border-b pb-2">
             <h3 className="text-sm font-medium">{t('inbox')}</h3>
-            <span className="rounded bg-dynamic-light-red/30 px-1.5 py-0.5 text-xs text-dynamic-red">
+            <span className="bg-dynamic-light-red/30 text-dynamic-red rounded px-1.5 py-0.5 text-xs">
               {t('3-new')}
             </span>
           </div>
@@ -411,7 +411,7 @@ export function FeaturesSection() {
               <div key={i} className={cn('rounded-md p-2', email.color)}>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium">{email.sender}</span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-muted-foreground text-[10px]">
                     {email.time}
                   </span>
                 </div>
@@ -496,15 +496,15 @@ export function FeaturesSection() {
     <section
       id="features"
       ref={sectionRef}
-      className="container w-full px-0 pt-40 pb-20"
+      className="container w-full px-0 pb-20 pt-40"
     >
       <div className="mb-16 text-center">
         <h2 className="features-title mb-4 text-3xl font-bold md:text-4xl">
-          <span className="bg-gradient-to-r from-dynamic-light-blue to-dynamic-light-purple bg-clip-text text-transparent">
+          <span className="from-dynamic-light-blue to-dynamic-light-purple bg-gradient-to-r bg-clip-text text-transparent">
             {t('one_platform_complete_productivity')}
           </span>
         </h2>
-        <p className="features-title mx-auto max-w-3xl text-xl text-balance text-muted-foreground">
+        <p className="features-title text-muted-foreground mx-auto max-w-3xl text-balance text-xl">
           {t(
             'tuturuuu_unifies_all_your_productivity_tools_in_one_intelligent_workspace'
           )}
@@ -520,7 +520,7 @@ export function FeaturesSection() {
             className={`feature-tab-button flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
               activeFeature.id === feature.id
                 ? `bg-gradient-to-br ${feature.color} text-white shadow-md`
-                : 'bg-transparent text-muted-foreground hover:bg-white dark:bg-foreground/5'
+                : 'text-muted-foreground dark:bg-foreground/5 bg-transparent hover:bg-white'
             }`}
             onClick={() => setActiveFeature(feature)}
           >
@@ -545,7 +545,7 @@ export function FeaturesSection() {
               {currentFeature.icon}
             </div>
             <h3 className="mb-3 text-2xl font-bold">{currentFeature.name}</h3>
-            <p className="mb-6 text-lg text-foreground/80">
+            <p className="text-foreground/80 mb-6 text-lg">
               {currentFeature.description}
             </p>
 
