@@ -40,7 +40,7 @@ export default function CriteriaEvaluation({
               <ScoreBadge
                 score={submission.criteria_score}
                 maxScore={10}
-                className="px-2 py-0"
+                className="h-6 px-3 py-1 text-xs"
               >
                 {submission.criteria_score.toFixed(2)}/10
               </ScoreBadge>

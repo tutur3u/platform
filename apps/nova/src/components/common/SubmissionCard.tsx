@@ -99,7 +99,7 @@ export function SubmissionCard({
             <ScoreBadge
               score={submission.total_score}
               maxScore={10}
-              className="h-8 px-3 py-1 text-sm font-semibold"
+              className="h-8 px-3 py-1 text-sm font-bold"
             >
               {submission.total_score.toFixed(2)}/10
             </ScoreBadge>
