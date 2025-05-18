@@ -1,10 +1,5 @@
 'use client';
 
-import ProblemComponent from '../../../../shared/problem-component';
-import PromptComponent from '../../../../shared/prompt-component';
-import PromptForm from '../../../../shared/prompt-form';
-import TestCaseComponent from '../../../../shared/test-case-component';
-import ChallengeHeader from './challengeHeader';
 import {
   NovaChallenge,
   NovaChallengeCriteria,
@@ -28,6 +23,11 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import ProblemComponent from '../../../../shared/problem-component';
+import PromptComponent from '../../../../shared/prompt-component';
+import PromptForm from '../../../../shared/prompt-form';
+import TestCaseComponent from '../../../../shared/test-case-component';
+import ChallengeHeader from './challengeHeader';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
@@ -55,7 +55,7 @@ export default function ChallengeClient({
   const router = useRouter();
 
   const [showEndDialog, setShowEndDialog] = useState(false);
-  const [showModel, setShowModel] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [isNavigationConfirmed, setIsNavigationConfirmed] = useState(false);
   const [pendingHref, setPendingHref] = useState('');
 
@@ -121,12 +121,12 @@ export default function ChallengeClient({
       '',
       window.location.pathname
     );
-    setShowModel(false);
+    setShowModal(false);
   };
 
   const handleConfirm = () => {
     setIsNavigationConfirmed(true);
-    setShowModel(false);
+    setShowModal(false);
     if (pendingHref) router.push(pendingHref);
     else if (sessionStorage.getItem(pendingNavKey) === 'back') router.back();
     sessionStorage.removeItem(pendingNavKey);
@@ -189,7 +189,7 @@ export default function ChallengeClient({
       if (!isNavigationConfirmed) {
         e.preventDefault();
         setPendingHref(href);
-        setShowModel(true);
+        setShowModal(true);
       }
     };
 
@@ -272,7 +272,7 @@ export default function ChallengeClient({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={showModel} onOpenChange={setShowModel}>
+      <AlertDialog open={showModal} onOpenChange={setShowModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Leave Challenge Page</AlertDialogTitle>
