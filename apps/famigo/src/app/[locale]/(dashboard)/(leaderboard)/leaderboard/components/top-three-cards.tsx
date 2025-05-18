@@ -90,8 +90,8 @@ export function TopThreeCards({
         prize: '111M VND',
         prizeColor: '#9CA3AF',
         rank: '2',
-        badgeClass: 'text-gray-600 dark:text-gray-300',
-        scoreClass: 'text-gray-600 dark:text-gray-300',
+        badgeClass: 'text-muted-foreground dark:text-gray-300',
+        scoreClass: 'text-muted-foreground dark:text-gray-300',
         hexBorderClass: 'border-gray-400/50',
         particleColors: ['#E5E7EB', '#9CA3AF', '#6B7280'],
         gradientClass: 'from-gray-500/20 via-gray-400/10 to-gray-300/5',
@@ -472,7 +472,7 @@ export function TopThreeCards({
               {/* View profile button */}
               <Link
                 href={`/${teamMode ? 'profile/teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
-                className="mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 transition-opacity hover:bg-gray-200 group-hover:opacity-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="text-muted-foreground mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium opacity-0 transition-opacity hover:bg-gray-200 group-hover:opacity-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 {t('view-profile')} <ExternalLink className="ml-1 h-3 w-3" />
               </Link>

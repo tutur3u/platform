@@ -28,7 +28,7 @@ export default function Rewards() {
           </li>
           <li className="flex items-center gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-              <Medal className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <Medal className="text-muted-foreground h-4 w-4 dark:text-gray-400" />
             </div>
             <div>
               <p className="font-medium text-gray-900 dark:text-slate-200">

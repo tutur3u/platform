@@ -1,11 +1,9 @@
 import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
-import { CardContent } from '@tuturuuu/ui/card';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Rocket, Sparkles, Star, Trophy, Users, Zap } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import React from 'react';
 
 export interface BasicInformation {
   currentRank: number;
@@ -79,7 +77,7 @@ export default function BasicInformationComponent({
             <h1 className="bg-linear-to-r mb-2 from-blue-600 via-blue-700 to-indigo-800 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent dark:from-blue-400 dark:via-blue-500 dark:to-indigo-600">
               {t('title')}
             </h1>
-            <p className="max-w-2xl text-gray-600 dark:text-slate-400">
+            <p className="text-muted-foreground max-w-2xl dark:text-slate-400">
               {t('description')}
             </p>
           </div>
