@@ -22,9 +22,8 @@ const plans = [
     features: [
       { feature: 'Basic AI scheduling', included: true },
       { feature: 'Calendar integration', included: true },
-      { feature: '5 meetings per day', included: true },
+      { feature: '3 meetings per day', included: true },
       { feature: 'Email notifications', included: true },
-      { feature: 'Mobile app access', included: true },
       { feature: 'Focus time protection', included: false },
       { feature: 'Team availability view', included: false },
       { feature: 'Advanced AI features', included: false },
@@ -48,14 +47,13 @@ const plans = [
       { feature: 'Calendar integration', included: true },
       { feature: 'Unlimited meetings', included: true },
       { feature: 'Email notifications', included: true },
-      { feature: 'Mobile app access', included: true },
       { feature: 'Focus time protection', included: true },
       { feature: 'Team availability view', included: true },
       { feature: 'Advanced AI features', included: true },
       { feature: 'Tuturuuu meetings', included: true },
       { feature: 'Priority support', included: true },
     ],
-    cta: 'Get Pro',
+    cta: 'Coming soon',
     popular: true,
     color: 'purple',
     borderColor: 'border-foreground',
@@ -80,7 +78,7 @@ const plans = [
       { feature: 'Custom AI training', included: true },
       { feature: 'SLA guarantees', included: true },
     ],
-    cta: 'Contact Sales',
+    cta: 'Coming soon',
     popular: false,
     color: 'blue',
     borderColor: 'border-blue-200',
@@ -92,7 +90,10 @@ const plans = [
 export function PricingSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isAnnual, setIsAnnual] = useState(true);
-  const [hoveredFeature, setHoveredFeature] = useState<string | null>(null);
+  const [hoveredFeature, setHoveredFeature] = useState<{
+    planName: string;
+    featureName: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!sectionRef.current) return;
@@ -144,8 +145,7 @@ export function PricingSection() {
 
   const featureDescriptions: Record<string, string> = {
     'Basic AI scheduling': 'Schedule tasks and meetings with AI assistance',
-    'Calendar integration':
-      'Connect with Google Calendar, Outlook, and Apple Calendar',
+    'Calendar integration': 'Connect with Google Calendar',
     'Focus time protection':
       'AI blocks out time for deep work based on your productivity patterns',
     'Team availability view':
@@ -277,6 +277,7 @@ export function PricingSection() {
                   }`}
                   variant={plan.buttonVariant as any}
                   size="lg"
+                  disabled={plan.cta === 'Coming soon'}
                 >
                   {plan.cta}
                 </Button>
@@ -288,7 +289,12 @@ export function PricingSection() {
                     <div
                       key={i}
                       className="group/feature relative flex items-start gap-3"
-                      onMouseEnter={() => setHoveredFeature(feature.feature)}
+                      onMouseEnter={() =>
+                        setHoveredFeature({
+                          planName: plan.name,
+                          featureName: feature.feature,
+                        })
+                      }
                       onMouseLeave={() => setHoveredFeature(null)}
                     >
                       {feature.included ? (
@@ -316,12 +322,14 @@ export function PricingSection() {
                       {featureDescriptions[feature.feature] && (
                         <div className="relative ml-1">
                           <HelpCircle className="h-3.5 w-3.5 cursor-help text-gray-400 transition-colors duration-200 group-hover/feature:text-gray-600" />
-                          {hoveredFeature === feature.feature && (
-                            <div className="absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 transform rounded-lg bg-gray-800 p-3 text-xs leading-relaxed text-white shadow-lg">
-                              {featureDescriptions[feature.feature]}
-                              <div className="absolute top-full left-1/2 -translate-x-1/2 transform border-4 border-transparent border-t-gray-800"></div>
-                            </div>
-                          )}
+                          {hoveredFeature &&
+                            hoveredFeature.planName === plan.name &&
+                            hoveredFeature.featureName === feature.feature && (
+                              <div className="absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 transform rounded-lg bg-gray-800 p-3 text-xs leading-relaxed text-white shadow-lg">
+                                {featureDescriptions[feature.feature]}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 transform border-4 border-transparent border-t-gray-800"></div>
+                              </div>
+                            )}
                         </div>
                       )}
                     </div>

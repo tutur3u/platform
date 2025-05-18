@@ -14,18 +14,21 @@ import { StatsSection } from './components/stats-section';
 import { StrategicSection } from './components/strategic-section';
 import { UseCasesSection } from './components/use-cases-section';
 import { WorkflowSection } from './components/workflow-section';
-import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
-
-const gsap = dynamic(() => import('@tuturuuu/ui/gsap').then((mod) => mod.gsap));
-
-const ScrollTrigger = dynamic(() =>
-  import('@tuturuuu/ui/gsap').then((mod) => mod.ScrollTrigger)
-);
 
 export default function MarketingPage() {
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
+    const loadGsap = async () => {
+      try {
+        const gsapModule = await import('@tuturuuu/ui/gsap');
+        const { gsap, ScrollTrigger } = gsapModule;
+        gsap.registerPlugin(ScrollTrigger);
+      } catch (error) {
+        console.error('Failed to load GSAP:', error);
+      }
+    };
+
+    loadGsap();
   }, []); // Empty dependency array ensures this runs only once on mount
 
   return (

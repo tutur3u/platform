@@ -13,11 +13,11 @@ import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import { Inter } from 'next/font/google';
+import { Noto_Sans } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
-const font = Inter({
+const font = Noto_Sans({
   subsets: ['latin', 'vietnamese'],
   display: 'block',
 });
@@ -119,7 +119,7 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'bg-background overflow-y-scroll antialiased',
+          'overflow-y-scroll bg-background antialiased',
           font.className
         )}
       >
