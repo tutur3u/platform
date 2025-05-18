@@ -13,7 +13,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { ColorPicker, colorMap } from './settings/color-picker';
 
 // Color options aligned with SupportedColor type
@@ -114,24 +114,160 @@ export const EventDescriptionInput = ({
   value,
   onChange,
   disabled = false,
+  mode = 'create', // 'create' | 'edit'
 }: {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  mode?: 'create' | 'edit';
 }) => {
+  const [isExpanded, setIsExpanded] = React.useState(true);
+  const [height, setHeight] = React.useState(100);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const resizeHandleRef = React.useRef<HTMLDivElement>(null);
+  const isDraggingRef = React.useRef(false);
+  const startYRef = React.useRef(0);
+  const startHeightRef = React.useRef(0);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const offsetYRef = React.useRef(0);
+
+  // Calculate word count
+  const wordCount = value.trim().split(/\s+/).filter(Boolean).length;
+  const showToggle = wordCount > 60;
+
+  // Set default state for expanded/collapsed based on mode and word count
+  React.useEffect(() => {
+    if (showToggle) {
+      setIsExpanded(false); // Always start clamped if > 60 words
+    } else {
+      setIsExpanded(true); // Always expanded if <= 60 words
+    }
+  }, [mode, value]);
+
+  // Handle show more/less toggle
+  const handleToggleExpand = () => {
+    setIsExpanded((prev) => !prev);
+    setTimeout(() => {
+      if (textareaRef.current) {
+        // Scroll the button into view when toggling
+        const button = textareaRef.current.parentElement?.parentElement?.querySelector('button[data-show-toggle]');
+        if (button) {
+          button.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    }, 0);
+  };
+
+  // Handle resize
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    startYRef.current = e.clientY;
+    startHeightRef.current = height;
+    // Calculate offset between mouse and bottom of textarea
+    if (textareaRef.current) {
+      const rect = textareaRef.current.getBoundingClientRect();
+      offsetYRef.current = rect.bottom - e.clientY;
+    } else {
+      offsetYRef.current = 0;
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      // Calculate new height so the handle stays under the cursor
+      if (textareaRef.current) {
+        const rect = textareaRef.current.getBoundingClientRect();
+        let newHeight = e.clientY + offsetYRef.current - rect.top;
+        newHeight = Math.max(100, newHeight);
+        setHeight(newHeight);
+      }
+      // --- Auto-scroll logic to keep handle in view ---
+      let scrollParent: HTMLElement | null = containerRef.current as unknown as HTMLElement | null;
+      while (scrollParent && scrollParent !== document.body && scrollParent.scrollHeight <= scrollParent.clientHeight) {
+        scrollParent = scrollParent.parentElement;
+      }
+      if (scrollParent) {
+        const handleY = textareaRef.current?.getBoundingClientRect().bottom ?? 0;
+        const parentRect = scrollParent.getBoundingClientRect();
+        const scrollMargin = 40; // px from edge to trigger scroll
+        // Scroll down if handle is near bottom
+        if (handleY > parentRect.bottom - scrollMargin) {
+          scrollParent.scrollTop += 10;
+        }
+        // Scroll up if handle is near top
+        if (handleY < parentRect.top + scrollMargin) {
+          scrollParent.scrollTop -= 10;
+        }
+      }
+      // --- End auto-scroll logic ---
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Reset height when value changes and not expanded
+  React.useEffect(() => {
+    if (!isExpanded) {
+      setHeight(100);
+    }
+  }, [value, isExpanded]);
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" ref={containerRef}>
       <Label className="flex items-center gap-2 text-sm font-medium">
         <MessageSquare className="text-muted-foreground h-3.5 w-3.5" />
         Description
       </Label>
-      <Textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Add event details..."
-        className="min-h-[100px] resize-y whitespace-pre-wrap break-words break-all"
-        disabled={disabled}
-      />
+      <div className="relative">
+        <Textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Add event details..."
+          className={cn(
+            "resize-none whitespace-pre-wrap break-words break-all transition-all duration-200",
+            isExpanded ? "h-auto" : "overflow-y-auto",
+            "scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+          )}
+          style={{
+            height: isExpanded ? 'auto' : `${height}px`,
+            maxHeight: isExpanded ? 'none' : `${height}px`,
+          }}
+          disabled={disabled}
+        />
+        {!isExpanded && showToggle && (
+          <div
+            ref={resizeHandleRef}
+            onMouseDown={handleMouseDown}
+            className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-border/50 transition-colors"
+          />
+        )}
+      </div>
+      <div className="flex items-center justify-between mt-1 min-h-[20px]">
+        {wordCount > 0 && (
+          <span className="text-muted-foreground text-xs">
+            {wordCount} {wordCount === 1 ? 'word' : 'words'}
+          </span>
+        )}
+        {showToggle && (
+          <button
+            type="button"
+            data-show-toggle
+            onClick={handleToggleExpand}
+            className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
+            disabled={disabled}
+          >
+            {isExpanded ? 'Show less' : 'Show more'}
+          </button>
+        )}
+      </div>
     </div>
   );
 };
