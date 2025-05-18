@@ -131,7 +131,7 @@ export function Leaderboard({
       className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_0_25px_rgba(0,0,0,0.3)]"
     >
       {/* Enhanced gradient border effect */}
-      <div className="bg-linear-to-r absolute -inset-px -z-10 rounded-xl from-transparent via-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px">
+      <div className="absolute -inset-px -z-10 rounded-xl bg-linear-to-r from-transparent via-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px">
         <motion.div
           className="absolute inset-0 rounded-xl opacity-0 dark:opacity-30"
           style={{
@@ -163,7 +163,7 @@ export function Leaderboard({
                 variant="ghost"
                 size="sm"
                 onClick={toggleSortOrder}
-                className="h-8 gap-1 text-xs text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
+                className="h-8 gap-1 text-xs text-muted-foreground transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
               >
                 <ArrowDownUp className="h-3.5 w-3.5" />
                 {sortOrder === 'desc' ? t('highest-first') : t('lowest-first')}
@@ -176,7 +176,7 @@ export function Leaderboard({
         </TooltipProvider>
       </div>
 
-      <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700 overflow-auto">
+      <div className="scrollbar-thin overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/30">
             <TableRow className="border-b border-gray-200 hover:bg-transparent dark:border-slate-700/50 dark:hover:bg-transparent">
@@ -228,7 +228,7 @@ export function Leaderboard({
                         {/* Hexagon background with animated glow for top ranks */}
                         <div
                           className={cn(
-                            'absolute left-0 top-0 h-full w-full',
+                            'absolute top-0 left-0 h-full w-full',
                             entry.rank <= 3 && 'hex-shape'
                           )}
                           style={{
@@ -343,7 +343,7 @@ export function Leaderboard({
                             entry.rank === 1 &&
                               'text-yellow-600 dark:text-yellow-400',
                             entry.rank === 2 &&
-                              'text-gray-600 dark:text-gray-300',
+                              'text-muted-foreground dark:text-gray-300',
                             entry.rank === 3 &&
                               'text-amber-700 dark:text-amber-400'
                           )}
@@ -413,7 +413,7 @@ export function Leaderboard({
                       entry.rank === 1
                         ? 'text-yellow-600 dark:text-yellow-400'
                         : entry.rank === 2
-                          ? 'text-gray-600 dark:text-gray-300'
+                          ? 'text-muted-foreground dark:text-gray-300'
                           : entry.rank === 3
                             ? 'text-amber-700 dark:text-amber-400'
                             : currentEntryId === entry.id
@@ -505,7 +505,7 @@ export function Leaderboard({
                                     return (
                                       <motion.div
                                         key={challenge.id}
-                                        className={`bg-linear-to-r relative h-full ${colorClass}`}
+                                        className={`relative h-full bg-linear-to-r ${colorClass}`}
                                         initial={{ width: 0 }}
                                         animate={{ width: `${percentage}%` }}
                                         transition={{
@@ -624,7 +624,7 @@ export function Leaderboard({
                                           return (
                                             <motion.div
                                               key={`${problem.id}-${i}`}
-                                              className={`bg-linear-to-r relative h-full ${colorClass}`}
+                                              className={`relative h-full bg-linear-to-r ${colorClass}`}
                                               initial={{ width: 0 }}
                                               animate={{
                                                 width: `${percentage}%`,

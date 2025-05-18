@@ -75,10 +75,10 @@ export default function BasicInformationComponent({
 
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="relative">
-            <h1 className="bg-linear-to-r mb-2 from-blue-600 via-blue-700 to-indigo-800 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent dark:from-blue-400 dark:via-blue-500 dark:to-indigo-600">
+            <h1 className="mb-2 bg-linear-to-r from-blue-600 via-blue-700 to-indigo-800 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent dark:from-blue-400 dark:via-blue-500 dark:to-indigo-600">
               {t('title')}
             </h1>
-            <p className="max-w-2xl text-gray-600 dark:text-slate-400">
+            <p className="max-w-2xl text-muted-foreground dark:text-slate-400">
               {t('description')}
             </p>
           </div>
@@ -87,7 +87,7 @@ export default function BasicInformationComponent({
 
       <div className="mb-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
         <Card className="relative overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-          <div className="bg-linear-to-r absolute inset-x-0 top-0 h-1 from-blue-400 to-blue-600" />
+          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-400 to-blue-600" />
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
@@ -118,7 +118,7 @@ export default function BasicInformationComponent({
         </Card>
 
         <Card className="relative overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-          <div className="bg-linear-to-r absolute inset-x-0 top-0 h-1 from-yellow-400 to-yellow-600" />
+          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-yellow-400 to-yellow-600" />
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
@@ -143,7 +143,7 @@ export default function BasicInformationComponent({
         </Card>
 
         <Card className="relative overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-          <div className="bg-linear-to-r absolute inset-x-0 top-0 h-1 from-indigo-400 to-indigo-600" />
+          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-indigo-400 to-indigo-600" />
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
@@ -170,7 +170,7 @@ export default function BasicInformationComponent({
         </Card>
       </div>
 
-      <Separator className="mb-8 mt-2 border-slate-800" />
+      <Separator className="mt-2 mb-8 border-slate-800" />
     </div>
   );
 }

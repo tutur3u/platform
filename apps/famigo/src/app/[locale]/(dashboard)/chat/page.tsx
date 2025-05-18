@@ -87,7 +87,7 @@ export default function ChatPage() {
       case 'pink':
         return 'bg-pink-500/20 text-pink-600 dark:bg-pink-500/30 dark:text-pink-400';
       default:
-        return 'bg-gray-500/20 text-gray-600 dark:bg-gray-500/30 dark:text-gray-400';
+        return 'bg-gray-500/20 text-muted-foreground dark:bg-gray-500/30 dark:text-gray-400';
     }
   };
 
@@ -137,12 +137,12 @@ export default function ChatPage() {
     <div className="container mx-auto flex h-[calc(100vh-6rem)] max-w-5xl flex-col gap-4 px-4 py-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-blue-500/80 to-purple-500/80">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-blue-500/80 to-purple-500/80">
             <MessageCircle className="h-5 w-5 text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">Family Chat</h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Nguyen Family • 4 Members
             </p>
           </div>
@@ -161,10 +161,10 @@ export default function ChatPage() {
       </div>
 
       <div className="grid flex-1 gap-4 md:grid-cols-[1fr_250px]">
-        <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 relative flex flex-col overflow-hidden backdrop-blur-sm">
+        <Card className="relative flex flex-col overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
           {/* Decorative elements */}
-          <div className="absolute -left-20 -top-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
-          <div className="absolute -bottom-20 -right-20 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-500/20"></div>
+          <div className="absolute -top-20 -left-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
+          <div className="absolute -right-20 -bottom-20 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-500/20"></div>
 
           <ScrollArea className="relative flex-1 p-4">
             <div className="flex flex-col gap-4">
@@ -187,7 +187,7 @@ export default function ChatPage() {
                       <span className="text-sm font-medium">
                         {member?.name}
                       </span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-xs text-muted-foreground">
                         {new Date(message.timestamp).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -198,14 +198,14 @@ export default function ChatPage() {
                       </span>
                     </div>
                     <div className="ml-10">
-                      <div className="bg-linear-to-r rounded-xl from-blue-500/5 to-purple-500/5 p-3 dark:from-blue-500/10 dark:to-purple-500/10">
+                      <div className="rounded-xl bg-linear-to-r from-blue-500/5 to-purple-500/5 p-3 dark:from-blue-500/10 dark:to-purple-500/10">
                         <p className="text-sm">{message.content}</p>
                         {message.attachment &&
                           message.attachment.type === 'image' && (
                             <div className="mt-2">
                               {message.attachment.placeholder ? (
-                                <div className="bg-linear-to-r flex h-40 w-full items-center justify-center rounded-lg from-blue-500/20 to-purple-500/20 dark:from-blue-500/30 dark:to-purple-500/30">
-                                  <Image className="text-muted-foreground h-8 w-8" />
+                                <div className="flex h-40 w-full items-center justify-center rounded-lg bg-linear-to-r from-blue-500/20 to-purple-500/20 dark:from-blue-500/30 dark:to-purple-500/30">
+                                  <Image className="h-8 w-8 text-muted-foreground" />
                                 </div>
                               ) : (
                                 <img
@@ -252,7 +252,7 @@ export default function ChatPage() {
                 </Button>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">Mood:</span>
+                <span className="text-sm text-muted-foreground">Mood:</span>
                 <div className="flex gap-1">
                   {['happy', 'excited', 'neutral', 'tired', 'questioning'].map(
                     (mood) => (
@@ -279,12 +279,12 @@ export default function ChatPage() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message here..."
-                className="border-foreground/10 bg-background/60 dark:border-foreground/5 min-h-[60px] resize-none"
+                className="min-h-[60px] resize-none border-foreground/10 bg-background/60 dark:border-foreground/5"
               />
               <Button
                 onClick={handleSendMessage}
                 size="icon"
-                className="bg-linear-to-r h-10 w-10 rounded-full from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500"
+                className="h-10 w-10 rounded-full bg-linear-to-r from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500"
               >
                 <Send className="h-4 w-4 text-white" />
               </Button>
@@ -299,7 +299,7 @@ export default function ChatPage() {
               <TabsTrigger value="media">Media</TabsTrigger>
             </TabsList>
             <TabsContent value="members">
-              <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
+              <Card className="border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
                 <div className="p-4">
                   <div className="flex flex-col gap-3">
                     {familyMembers.map((member) => (
@@ -315,7 +315,7 @@ export default function ChatPage() {
                           </Avatar>
                           <div>
                             <p className="text-sm font-medium">{member.name}</p>
-                            <p className="text-muted-foreground text-xs">
+                            <p className="text-xs text-muted-foreground">
                               {member.id === 3 ? 'You' : 'Online'}
                             </p>
                           </div>
@@ -334,7 +334,7 @@ export default function ChatPage() {
               </Card>
             </TabsContent>
             <TabsContent value="media">
-              <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
+              <Card className="border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
                 <div className="p-4">
                   <div className="mb-2 flex justify-between">
                     <h3 className="text-sm font-medium">Recent Media</h3>
@@ -346,9 +346,9 @@ export default function ChatPage() {
                     {[1, 2, 3, 4, 5, 6].map((item) => (
                       <div
                         key={item}
-                        className="bg-linear-to-r flex aspect-square items-center justify-center rounded-md from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20"
+                        className="flex aspect-square items-center justify-center rounded-md bg-linear-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20"
                       >
-                        <Image className="text-muted-foreground h-6 w-6" />
+                        <Image className="h-6 w-6 text-muted-foreground" />
                       </div>
                     ))}
                   </div>
@@ -357,12 +357,12 @@ export default function ChatPage() {
             </TabsContent>
           </Tabs>
 
-          <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
+          <Card className="border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
             <div className="bg-linear-to-r from-blue-500/10 to-purple-500/10 p-4 dark:from-blue-500/20 dark:to-purple-500/20">
               <h3 className="text-sm font-medium">Upcoming Events</h3>
             </div>
             <div className="p-4">
-              <div className="border-foreground/10 dark:border-foreground/5 mb-3 rounded-lg border p-3">
+              <div className="mb-3 rounded-lg border border-foreground/10 p-3 dark:border-foreground/5">
                 <div className="mb-1 flex justify-between">
                   <Badge className="bg-blue-500/20 text-blue-600 dark:bg-blue-500/30 dark:text-blue-400">
                     Saturday
@@ -370,11 +370,11 @@ export default function ChatPage() {
                   <span className="text-xs font-medium">7:00 PM</span>
                 </div>
                 <h4 className="text-sm font-medium">Family Dinner</h4>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-xs text-muted-foreground">
                   Golden Dragon Restaurant
                 </p>
               </div>
-              <div className="border-foreground/10 dark:border-foreground/5 rounded-lg border p-3">
+              <div className="rounded-lg border border-foreground/10 p-3 dark:border-foreground/5">
                 <div className="mb-1 flex justify-between">
                   <Badge className="bg-green-500/20 text-green-600 dark:bg-green-500/30 dark:text-green-400">
                     Next Week
@@ -382,7 +382,7 @@ export default function ChatPage() {
                   <span className="text-xs font-medium">All Day</span>
                 </div>
                 <h4 className="text-sm font-medium">Grandparents Visit</h4>
-                <p className="text-muted-foreground text-xs">Home</p>
+                <p className="text-xs text-muted-foreground">Home</p>
               </div>
             </div>
           </Card>

@@ -143,7 +143,7 @@ export default function NotificationsPage() {
       case 'orange':
         return 'bg-orange-500/20 text-orange-600 dark:bg-orange-500/30 dark:text-orange-400';
       default:
-        return 'bg-gray-500/20 text-gray-600 dark:bg-gray-500/30 dark:text-gray-400';
+        return 'bg-gray-500/20 text-muted-foreground dark:bg-gray-500/30 dark:text-gray-400';
     }
   };
 
@@ -177,7 +177,7 @@ export default function NotificationsPage() {
       case 'system':
         return 'bg-orange-500/20 text-orange-600 dark:bg-orange-500/30 dark:text-orange-400';
       default:
-        return 'bg-gray-500/20 text-gray-600 dark:bg-gray-500/30 dark:text-gray-400';
+        return 'bg-gray-500/20 text-muted-foreground dark:bg-gray-500/30 dark:text-gray-400';
     }
   };
 
@@ -192,12 +192,12 @@ export default function NotificationsPage() {
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-blue-500/80 to-purple-500/80">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-blue-500/80 to-purple-500/80">
             <Bell className="h-5 w-5 text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">Notifications</h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Stay updated on your family's activities
             </p>
           </div>
@@ -214,10 +214,10 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 relative overflow-hidden backdrop-blur-sm">
+      <Card className="relative overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
         {/* Decorative elements */}
-        <div className="absolute -left-20 -top-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
-        <div className="absolute -bottom-20 -right-20 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-500/20"></div>
+        <div className="absolute -top-20 -left-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
+        <div className="absolute -right-20 -bottom-20 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-500/20"></div>
 
         <CardHeader className="pb-2">
           <Tabs
@@ -240,7 +240,7 @@ export default function NotificationsPage() {
 
         <CardContent className="p-0">
           <ScrollArea className="h-[calc(100vh-16rem)]">
-            <div className="divide-foreground/5 divide-y">
+            <div className="divide-y divide-foreground/5">
               {filteredNotifications.length > 0 ? (
                 filteredNotifications.map((notification) => (
                   <motion.div
@@ -248,7 +248,7 @@ export default function NotificationsPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className={`hover:bg-foreground/5 flex gap-4 p-4 ${
+                    className={`flex gap-4 p-4 hover:bg-foreground/5 ${
                       !notification.read
                         ? 'bg-blue-500/5 dark:bg-blue-500/10'
                         : ''
@@ -276,11 +276,11 @@ export default function NotificationsPage() {
                             </span>
                           </Badge>
                         </div>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-xs text-muted-foreground">
                           {notification.time}
                         </span>
                       </div>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {notification.description}
                       </p>
                     </div>
@@ -299,8 +299,8 @@ export default function NotificationsPage() {
                 ))
               ) : (
                 <div className="flex flex-col items-center justify-center py-16">
-                  <Bell className="text-muted-foreground mb-2 h-12 w-12 opacity-20" />
-                  <p className="text-muted-foreground text-center">
+                  <Bell className="mb-2 h-12 w-12 text-muted-foreground opacity-20" />
+                  <p className="text-center text-muted-foreground">
                     No {activeTab !== 'all' ? activeTab : ''} notifications
                     found
                   </p>
@@ -312,7 +312,7 @@ export default function NotificationsPage() {
       </Card>
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
-        <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
+        <Card className="overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
           <CardHeader className="bg-linear-to-r from-blue-500/10 to-purple-500/10 pb-2 dark:from-blue-500/20 dark:to-purple-500/20">
             <CardTitle className="text-base">Notification Settings</CardTitle>
           </CardHeader>
@@ -328,12 +328,12 @@ export default function NotificationsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
+        <Card className="overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
           <CardHeader className="bg-linear-to-r from-green-500/10 to-teal-500/10 pb-2 dark:from-green-500/20 dark:to-teal-500/20">
             <CardTitle className="text-base">Weekly Summary</CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            <CardDescription className="text-foreground/80 mb-4">
+            <CardDescription className="mb-4 text-foreground/80">
               Get a weekly recap of all important family activities
             </CardDescription>
             <div className="text-center">
@@ -342,12 +342,12 @@ export default function NotificationsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
+        <Card className="overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
           <CardHeader className="bg-linear-to-r from-pink-500/10 to-rose-500/10 pb-2 dark:from-pink-500/20 dark:to-rose-500/20">
             <CardTitle className="text-base">Do Not Disturb</CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            <CardDescription className="text-foreground/80 mb-4">
+            <CardDescription className="mb-4 text-foreground/80">
               Set quiet hours for notifications
             </CardDescription>
             <Button size="sm" variant="outline" className="w-full">
