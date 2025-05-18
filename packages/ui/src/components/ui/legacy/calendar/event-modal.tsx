@@ -1,5 +1,20 @@
 'use client';
 
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { Alert, AlertDescription, AlertTitle } from '../../alert';
+import { AutosizeTextarea } from '../../custom/autosize-textarea';
+import {
+  COLOR_OPTIONS,
+  DateError,
+  EventColorPicker,
+  EventDateTimePicker,
+  EventDescriptionInput,
+  EventLocationInput,
+  EventPriorityPicker,
+  EventTitleInput,
+  EventToggleSwitch,
+  OverlapWarning,
+} from './event-form-components';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
@@ -66,21 +81,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { Alert, AlertDescription, AlertTitle } from '../../alert';
-import { AutosizeTextarea } from '../../custom/autosize-textarea';
-import {
-  COLOR_OPTIONS,
-  DateError,
-  EventColorPicker,
-  EventDateTimePicker,
-  EventDescriptionInput,
-  EventLocationInput,
-  EventPriorityPicker,
-  EventTitleInput,
-  EventToggleSwitch,
-  OverlapWarning,
-} from './event-form-components';
 
 dayjs.extend(ts);
 dayjs.extend(utc);
@@ -150,7 +150,9 @@ export function EventModal() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [dateError, setDateError] = useState<string | null>(null);
-  const [overlappingEvents, setOverlappingEvents] = useState<CalendarEvent[]>([]);
+  const [overlappingEvents, setOverlappingEvents] = useState<CalendarEvent[]>(
+    []
+  );
   const [showOverlapWarning, setShowOverlapWarning] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
@@ -228,7 +230,9 @@ export function EventModal() {
         // Check if event is all-day by comparing start and end times
         const startDate = dayjs(eventData.start_at);
         const endDate = dayjs(eventData.end_at);
-        const isAllDayEvent = startDate.startOf('day').isSame(endDate.startOf('day').subtract(1, 'day'));
+        const isAllDayEvent = startDate
+          .startOf('day')
+          .isSame(endDate.startOf('day').subtract(1, 'day'));
         setIsAllDay(isAllDayEvent);
       } else {
         // For new events, always start with isAllDay as false
@@ -1109,7 +1113,10 @@ export function EventModal() {
                                     if (isEditing) {
                                       handleLockToggle(checked);
                                     } else {
-                                      setEvent((prev) => ({ ...prev, locked: checked }));
+                                      setEvent((prev) => ({
+                                        ...prev,
+                                        locked: checked,
+                                      }));
                                     }
                                   }}
                                 />
@@ -1194,7 +1201,9 @@ export function EventModal() {
                       </Button>
                       <Button
                         onClick={handleManualSave}
-                        disabled={isSaving || isDeleting || (isEditing && locked)}
+                        disabled={
+                          isSaving || isDeleting || (isEditing && locked)
+                        }
                         className="flex items-center gap-2"
                       >
                         {isSaving ? (
