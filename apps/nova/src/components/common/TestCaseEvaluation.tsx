@@ -18,7 +18,6 @@ import {
   ThumbsUp,
   XCircle,
 } from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -35,13 +34,6 @@ export default function TestCaseEvaluation({
   showSkeleton,
 }: TestCaseEvaluationProps) {
   const [expandedTestCase, setExpandedTestCase] = useState<string | null>(null);
-
-  // Calculate progress color based on score
-  const getProgressColor = (score: number) => {
-    if (score >= 8) return 'bg-emerald-500';
-    if (score >= 5) return 'bg-amber-500';
-    return 'bg-red-500';
-  };
 
   // Get confidence badge color
   const getConfidenceBadge = (confidence: number | null | undefined) => {
@@ -83,60 +75,32 @@ export default function TestCaseEvaluation({
   return (
     <>
       {submission.total_tests && submission.total_tests > 0 ? (
-        <div className="space-y-4">
-          <div className="bg-card space-y-2 rounded-md border p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {submission.test_case_score != null &&
-                submission.test_case_score >= 8 ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                ) : submission.test_case_score != null &&
-                  submission.test_case_score >= 5 ? (
-                  <Clock className="h-5 w-5 text-amber-500" />
-                ) : (
-                  <XCircle className="h-5 w-5 text-red-500" />
-                )}
-                <span className="font-medium">
-                  Passed {submission.passed_tests} of {submission.total_tests}{' '}
-                  test cases
-                </span>
-              </div>
-              {submission.test_case_score != null && (
-                <ScoreBadge
-                  score={submission.test_case_score}
-                  maxScore={10}
-                  className="px-2 py-0"
-                >
-                  {submission.test_case_score.toFixed(2)}/10
-                </ScoreBadge>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {submission.test_case_score != null &&
+              submission.test_case_score >= 8 ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              ) : submission.test_case_score != null &&
+                submission.test_case_score >= 5 ? (
+                <Clock className="h-5 w-5 text-amber-500" />
+              ) : (
+                <XCircle className="h-5 w-5 text-red-500" />
               )}
+              <span className="font-medium">
+                Passed {submission.passed_tests} of {submission.total_tests}{' '}
+                test cases
+              </span>
             </div>
-
-            {submission.passed_tests != null &&
-              submission.total_tests != null && (
-                <div className="pt-1">
-                  <div className="mb-1 flex justify-between text-xs">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">
-                      {Math.round(
-                        (submission.passed_tests / submission.total_tests) * 100
-                      )}
-                      %
-                    </span>
-                  </div>
-                  <Progress
-                    value={
-                      (submission.passed_tests / submission.total_tests) * 100
-                    }
-                    className="h-2 w-full"
-                    indicatorClassName={
-                      submission.test_case_score != null
-                        ? getProgressColor(submission.test_case_score)
-                        : 'bg-primary'
-                    }
-                  />
-                </div>
-              )}
+            {submission.test_case_score != null && (
+              <ScoreBadge
+                score={submission.test_case_score}
+                maxScore={10}
+                className="px-2 py-0"
+              >
+                {submission.test_case_score.toFixed(2)}/10
+              </ScoreBadge>
+            )}
           </div>
 
           <div className="space-y-4">

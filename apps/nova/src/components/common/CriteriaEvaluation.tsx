@@ -6,7 +6,6 @@ import {
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
 import { CheckCircle2, Clock, EyeIcon, XCircle } from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 
 interface CriteriaEvaluationProps {
@@ -18,60 +17,33 @@ export default function CriteriaEvaluation({
   submission,
   showSkeleton,
 }: CriteriaEvaluationProps) {
-  // Calculate progress color based on score
-  const getProgressColor = (score: number) => {
-    if (score >= 8) return 'bg-emerald-500';
-    if (score >= 5) return 'bg-amber-500';
-    return 'bg-red-500';
-  };
-
   return (
     <>
       {submission.total_criteria && submission.total_criteria > 0 ? (
-        <div className="space-y-4">
-          <div className="bg-card rounded-md border p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {submission.criteria_score != null &&
-                submission.criteria_score >= 8 ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                ) : submission.criteria_score != null &&
-                  submission.criteria_score >= 5 ? (
-                  <Clock className="h-5 w-5 text-amber-500" />
-                ) : (
-                  <XCircle className="h-5 w-5 text-red-500" />
-                )}
-                <span className="font-medium">
-                  {submission.criteria?.length} Evaluation Criteria
-                </span>
-              </div>
-              {submission.criteria_score != null && (
-                <ScoreBadge
-                  score={submission.criteria_score}
-                  maxScore={10}
-                  className="px-2 py-0"
-                >
-                  {submission.criteria_score.toFixed(2)}/10
-                </ScoreBadge>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {submission.criteria_score != null &&
+              submission.criteria_score >= 8 ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              ) : submission.criteria_score != null &&
+                submission.criteria_score >= 5 ? (
+                <Clock className="h-5 w-5 text-amber-500" />
+              ) : (
+                <XCircle className="h-5 w-5 text-red-500" />
               )}
+              <span className="font-medium">
+                {submission.criteria?.length} Evaluation Criteria
+              </span>
             </div>
-
             {submission.criteria_score != null && (
-              <div className="pt-1">
-                <div className="mb-1 flex justify-between text-xs">
-                  <span className="text-muted-foreground">Overall score</span>
-                  <span className="font-medium">
-                    {Math.round((submission.criteria_score / 10) * 100)}%
-                  </span>
-                </div>
-                <Progress
-                  value={(submission.criteria_score / 10) * 100}
-                  className="h-2 w-full"
-                  indicatorClassName={getProgressColor(
-                    submission.criteria_score
-                  )}
-                />
-              </div>
+              <ScoreBadge
+                score={submission.criteria_score}
+                maxScore={10}
+                className="px-2 py-0"
+              >
+                {submission.criteria_score.toFixed(2)}/10
+              </ScoreBadge>
             )}
           </div>
 
