@@ -1,7 +1,5 @@
-'use client';
-
 import { Row } from '@tanstack/react-table';
-import { NovaRole } from '@tuturuuu/types/db';
+import { NovaRoleBasic } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -14,7 +12,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 interface NovaRoleRowActionsProps {
-  row: Row<NovaRole>;
+  row: Row<NovaRoleBasic>;
 }
 
 export function NovaRoleRowActions({ row }: NovaRoleRowActionsProps) {

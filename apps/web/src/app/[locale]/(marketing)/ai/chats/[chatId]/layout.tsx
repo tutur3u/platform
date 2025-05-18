@@ -13,9 +13,9 @@ interface Props {
 }
 
 const getChat = async (chatId: string) => {
-  const supabase = await createAdminClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('ai_chats')
     .select('*')
     .eq('id', chatId)
