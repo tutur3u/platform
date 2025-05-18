@@ -1,4 +1,5 @@
 import { ChallengeCriteriaDialog } from './challenge-criteria-dialog';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -25,7 +26,9 @@ type ExtendedNovaChallenge = NovaChallenge & {
   problems: {
     id: string;
     title: string;
+    highestScore: number;
   }[];
+  totalScore: number;
 };
 
 interface Props {
@@ -155,6 +158,14 @@ export default function ChallengeHeader({
     };
   }, []);
 
+  // Helper function to determine badge variant
+  const getBadgeVariant = (score: number | null) => {
+    if (score === null) return 'outline';
+    if (score >= 8) return 'success';
+    if (score >= 5) return 'warning';
+    return 'destructive';
+  };
+
   const getTimeColor = () => {
     if (timeLeft.totalSeconds < 300) return 'text-red-500'; // Less than 5 minutes
     if (timeLeft.totalSeconds < 900) return 'text-amber-500'; // Less than 15 minutes
@@ -168,7 +179,7 @@ export default function ChallengeHeader({
   };
 
   return (
-    <div className="relative flex h-16 items-center justify-between border-b px-6">
+    <div className="relative flex h-16 items-center justify-between border-b">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <Button
@@ -202,7 +213,7 @@ export default function ChallengeHeader({
                 <DropdownMenuItem
                   key={problem.id}
                   className={cn(
-                    'gap-2',
+                    'justify-between gap-2',
                     index + 1 === currentProblemIndex &&
                       'bg-accent text-accent-foreground'
                   )}
@@ -211,7 +222,14 @@ export default function ChallengeHeader({
                   <Badge variant="outline" className="px-2 py-0 text-xs">
                     {index + 1}
                   </Badge>
-                  <span className="truncate">{problem.title}</span>
+                  <span className="w-full truncate">{problem.title}</span>
+                  <ScoreBadge
+                    score={problem.highestScore || 0}
+                    maxScore={10}
+                    className="px-1.5 py-0 text-xs"
+                  >
+                    {(problem.highestScore || 0).toFixed(1)}
+                  </ScoreBadge>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -232,22 +250,32 @@ export default function ChallengeHeader({
           trigger={
             <Button variant="outline" size="sm">
               <ListChecks className="h-4 w-4" />
-              <span className="hidden xl:block">View challenge criteria</span>
             </Button>
           }
           criteria={challenge.criteria}
         />
+
+        <Badge
+          variant={getBadgeVariant(challenge.totalScore || 0)}
+          className="px-2 py-1 text-xs"
+        >
+          Total Score: {challenge.totalScore?.toFixed(1)}
+        </Badge>
       </div>
 
       <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <Clock className={cn('h-4 w-4', getTimeColor())} />
-          <span className={cn('font-mono text-sm font-medium', getTimeColor())}>
-            {String(timeLeft.hours).padStart(2, '0')}:
-            {String(timeLeft.minutes).padStart(2, '0')}:
-            {String(timeLeft.seconds).padStart(2, '0')}
-          </span>
-        </div>{' '}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <Clock className={cn('h-4 w-4', getTimeColor())} />
+            <span
+              className={cn('font-mono text-sm font-medium', getTimeColor())}
+            >
+              {String(timeLeft.hours).padStart(2, '0')}:
+              {String(timeLeft.minutes).padStart(2, '0')}:
+              {String(timeLeft.seconds).padStart(2, '0')}
+            </span>
+          </div>
+        </div>
         <Progress
           value={timeLeft.percentage}
           className="h-2 w-24"

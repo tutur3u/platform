@@ -1,5 +1,10 @@
 'use client';
 
+import ProblemComponent from '../../../../shared/problem-component';
+import PromptComponent from '../../../../shared/prompt-component';
+import PromptForm from '../../../../shared/prompt-form';
+import TestCaseComponent from '../../../../shared/test-case-component';
+import ChallengeHeader from './challengeHeader';
 import {
   NovaChallenge,
   NovaChallengeCriteria,
@@ -23,18 +28,15 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import ProblemComponent from '../../../../shared/problem-component';
-import PromptComponent from '../../../../shared/prompt-component';
-import PromptForm from '../../../../shared/prompt-form';
-import TestCaseComponent from '../../../../shared/test-case-component';
-import ChallengeHeader from './challengeHeader';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
   problems: {
     id: string;
     title: string;
+    highestScore: number;
   }[];
+  totalScore: number;
 };
 
 interface Props {
