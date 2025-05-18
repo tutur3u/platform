@@ -151,7 +151,7 @@ export const getUserColumns = (
                   generateFunName({ id: user.id, locale: extraData.locale })}
               </div>
               {user?.email && (
-                <div className="text-muted-foreground text-sm">
+                <div className="text-sm text-muted-foreground">
                   {user.email}
                 </div>
               )}
@@ -312,7 +312,12 @@ export const getUserColumns = (
                 ) : (
                   <Shield className="h-3.5 w-3.5" />
                 )}
-                Roles
+                Roles (
+                {
+                  roleOptions.filter((option) => isRoleEnabled(option.key))
+                    .length
+                }
+                )
                 <ChevronDown className="ml-2 h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>

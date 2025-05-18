@@ -59,9 +59,10 @@ BEGIN
     enabled = EXCLUDED.enabled,
     allow_challenge_management = EXCLUDED.allow_challenge_management,
     allow_manage_all_challenges = EXCLUDED.allow_manage_all_challenges,
-    allow_role_management = EXCLUDED.allow_role_management
-  RETURNING 1
-  INTO migrated_count;
+    allow_role_management = EXCLUDED.allow_role_management;
+    
+  -- Get the number of affected rows
+  GET DIAGNOSTICS migrated_count = ROW_COUNT;
   
   RAISE NOTICE 'Migrated % roles from platform_email_roles to platform_user_roles', migrated_count;
   
