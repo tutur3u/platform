@@ -143,7 +143,7 @@ export function RaceDetails({
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="h-2 flex-1 rounded-full bg-gradient-to-r from-green-400 to-red-400 shadow-inner"></div>
+                <div className="bg-linear-to-r h-2 flex-1 rounded-full from-green-400 to-red-400 shadow-inner"></div>
                 <div className="text-muted-foreground ml-2 flex items-center gap-1 text-xs font-medium">
                   <span className="text-green-600 dark:text-green-500">
                     Faster

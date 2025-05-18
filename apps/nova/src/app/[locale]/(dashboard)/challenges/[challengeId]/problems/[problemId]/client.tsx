@@ -2,16 +2,16 @@
 
 import ProblemComponent from '../../../../shared/problem-component';
 import PromptComponent from '../../../../shared/prompt-component';
+import PromptForm from '../../../../shared/prompt-form';
 import TestCaseComponent from '../../../../shared/test-case-component';
 import ChallengeHeader from './challengeHeader';
-import PromptForm from './prompt-form';
 import {
   NovaChallenge,
   NovaChallengeCriteria,
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
-  type NovaSubmissionWithScores,
+  NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -31,21 +31,24 @@ import { useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
-  problems: NovaProblem[];
+  problems: {
+    id: string;
+    title: string;
+  }[];
 };
 
 interface Props {
+  challenge: ExtendedNovaChallenge;
   currentProblemIndex: number;
   problem: NovaProblem & { test_cases: NovaProblemTestCase[] };
-  challenge: ExtendedNovaChallenge;
   session: NovaSession;
   submissions: NovaSubmissionWithScores[];
 }
 
 export default function ChallengeClient({
+  challenge,
   currentProblemIndex,
   problem,
-  challenge,
   session,
   submissions,
 }: Props) {
@@ -55,18 +58,14 @@ export default function ChallengeClient({
   const [showModel, setShowModel] = useState(false);
   const [isNavigationConfirmed, setIsNavigationConfirmed] = useState(false);
   const [pendingHref, setPendingHref] = useState('');
-  const nextProblem = () => {
-    const nextProblemId =
-      challenge.problems.length > currentProblemIndex + 1
-        ? challenge.problems[currentProblemIndex + 1]?.id
-        : null;
 
-    if (nextProblemId) {
-      router.push(`/challenges/${challenge.id}/problems/${nextProblemId}`);
-      router.refresh();
-    }
-  };
   const pendingNavKey = 'pending nav key';
+
+  const sessionEndTime = Math.min(
+    challenge.close_at ? new Date(challenge.close_at).getTime() : Infinity,
+    new Date(session.start_time).getTime() + challenge.duration * 1000
+  );
+
   const prevProblem = () => {
     const prevProblemId =
       currentProblemIndex > 0
@@ -79,17 +78,25 @@ export default function ChallengeClient({
     }
   };
 
+  const nextProblem = () => {
+    const nextProblemId =
+      challenge.problems.length > currentProblemIndex + 1
+        ? challenge.problems[currentProblemIndex + 1]?.id
+        : null;
+
+    if (nextProblemId) {
+      router.push(`/challenges/${challenge.id}/problems/${nextProblemId}`);
+      router.refresh();
+    }
+  };
+
   const handleEndChallenge = async () => {
     const response = await fetch(`/api/v1/sessions/${session?.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         endTime: new Date(
-          Math.min(
-            new Date().getTime(),
-            new Date(session?.start_time || '').getTime() +
-              challenge.duration * 1000
-          )
+          Math.min(new Date().getTime(), sessionEndTime)
         ).toISOString(),
         status: 'ENDED',
       }),
@@ -104,6 +111,23 @@ export default function ChallengeClient({
         variant: 'destructive',
       });
     }
+  };
+
+  const handleCancel = () => {
+    window.history.pushState(
+      { challengePage: true },
+      '',
+      window.location.pathname
+    );
+    setShowModel(false);
+  };
+
+  const handleConfirm = () => {
+    setIsNavigationConfirmed(true);
+    setShowModel(false);
+    if (pendingHref) router.push(pendingHref);
+    else if (sessionStorage.getItem(pendingNavKey) === 'back') router.back();
+    sessionStorage.removeItem(pendingNavKey);
   };
 
   useEffect(() => {
@@ -178,23 +202,6 @@ export default function ChallengeClient({
     };
   }, [challenge.id, isNavigationConfirmed]);
 
-  const handleCancel = () => {
-    window.history.pushState(
-      { challengePage: true },
-      '',
-      window.location.pathname
-    );
-    setShowModel(false);
-  };
-
-  const handleConfirm = () => {
-    setIsNavigationConfirmed(true);
-    setShowModel(false);
-    if (pendingHref) router.push(pendingHref);
-    else if (sessionStorage.getItem(pendingNavKey) === 'back') router.back();
-    sessionStorage.removeItem(pendingNavKey);
-  };
-
   return (
     <>
       <div className="relative h-screen overflow-hidden">
@@ -203,10 +210,7 @@ export default function ChallengeClient({
           problemLength={challenge.problems.length}
           currentProblemIndex={currentProblemIndex + 1}
           startTime={session.start_time}
-          endTime={new Date(
-            new Date(session.start_time).getTime() + challenge.duration * 1000
-          ).toISOString()}
-          challengeCloseAt={challenge.close_at || ''}
+          endTime={new Date(sessionEndTime).toISOString()}
           onPrev={prevProblem}
           onNext={nextProblem}
           onEnd={() => setShowEndDialog(true)}
@@ -230,7 +234,7 @@ export default function ChallengeClient({
                     <ProblemComponent problem={problem} />
                   </TabsContent>
                   <TabsContent value="test-cases" className="m-0 p-4">
-                    <TestCaseComponent testCases={problem.test_cases || []} />
+                    <TestCaseComponent testCases={problem.test_cases} />
                   </TabsContent>
                 </Tabs>
               </CardContent>

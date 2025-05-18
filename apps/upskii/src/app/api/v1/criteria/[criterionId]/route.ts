@@ -86,9 +86,11 @@ export async function PUT(request: Request, { params }: Params) {
 
   try {
     const updateData: any = {};
-    if (body.name) updateData.name = body.name;
-    if (body.description) updateData.description = body.description;
-    if (body.challengeId) updateData.challenge_id = body.challengeId;
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.description !== undefined)
+      updateData.description = body.description;
+    if (body.challengeId !== undefined)
+      updateData.challenge_id = body.challengeId;
 
     const { data: updatedCriterion, error: updateError } = await supabase
       .from('nova_challenge_criteria')

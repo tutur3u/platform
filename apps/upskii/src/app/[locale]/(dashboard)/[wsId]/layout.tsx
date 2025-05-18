@@ -15,12 +15,14 @@ import {
 } from '@/lib/workspace-helper';
 import {
   Award,
+  BookOpenText,
   BookText,
   Bot,
   Cog,
   Home,
   ListTodo,
   ShieldCheck,
+  SquareTerminal,
 } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
@@ -134,9 +136,25 @@ export default async function Layout({ children, params }: LayoutProps) {
     {
       title: t('sidebar.challenges'),
       href: `/${wsId}/challenges`,
-      icon: <ListTodo className="h-4 w-4" />,
+      icon: <SquareTerminal className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'L',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+    },
+    {
+      title: t('sidebar.ai_teach_studio'),
+      href: `/${wsId}/ai-teach-studio`,
+      icon: <BookOpenText className="h-4 w-4" />,
+      experimental: 'alpha',
+      shortcut: 'T',
       disabled:
         ENABLE_AI_ONLY ||
         !(await verifySecret({

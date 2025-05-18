@@ -52,7 +52,7 @@ export const getWorkspaceFlashcardColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('front') || '-'}</div>
+      <div className="min-w-32">{row.getValue('front') || '-'}</div>
     ),
   },
   {

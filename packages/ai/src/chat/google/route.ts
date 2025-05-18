@@ -5,6 +5,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { CoreMessage, smoothStream, streamText } from 'ai';
+import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -22,13 +23,11 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
       id,
       model = DEFAULT_MODEL_NAME,
       messages,
-      previewToken,
       mode,
     } = (await req.json()) as {
       id?: string;
       model?: string;
       messages?: CoreMessage[];
-      previewToken?: string;
       mode?: ResponseMode;
     };
 
@@ -46,7 +45,7 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
 
       // eslint-disable-next-line no-undef
       const apiKey =
-        previewToken ||
+        (await cookies()).get('google_api_key')?.value ||
         (options.serverAPIKeyFallback
           ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
           : undefined);

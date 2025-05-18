@@ -68,9 +68,9 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
                   <AccordionItem
                     key={priority}
                     value={priority}
-                    className="[&[data-state=open]]:bg-muted/50 border-none"
+                    className="data-[state=open]:bg-muted/50 border-none"
                   >
-                    <AccordionTrigger className="hover:bg-muted/50 rounded-lg border px-4 py-2 hover:no-underline [&[data-state=open]]:rounded-b-none [&[data-state=open]]:border-b-0">
+                    <AccordionTrigger className="hover:bg-muted/50 rounded-lg border px-4 py-2 hover:no-underline data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
                       <div className="flex items-center gap-2">
                         <div
                           className={cn(

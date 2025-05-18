@@ -258,11 +258,11 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
                         >
                           <div className="flex items-center gap-2 overflow-hidden">
                             <span className="truncate text-sm">{url.url}</span>
-                            <span className="flex-shrink-0 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs text-blue-500">
+                            <span className="shrink-0 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs text-blue-500">
                               {new URL(url.url).hostname}
                             </span>
                           </div>
-                          <div className="flex-shrink-0">
+                          <div className="shrink-0">
                             <CrawlButton wsId={wsId} url={url.url} />
                           </div>
                         </div>

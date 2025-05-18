@@ -11,7 +11,7 @@ interface Props {
 
 export default function ProblemComponent({ problem }: Props) {
   return (
-    <div className={`space-y-6`}>
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BookOpen className="text-primary h-5 w-5" />
@@ -37,35 +37,37 @@ export default function ProblemComponent({ problem }: Props) {
           </CardContent>
         </Card>
 
-        {(problem.example_input || problem.example_output) && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileText className="text-primary h-4 w-4" />
-                Example
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {problem.example_input && (
-                <div>
-                  <h3 className="mb-2 text-sm font-medium">Input:</h3>
-                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
-                    {problem.example_input}
-                  </div>
-                </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileText className="text-primary h-4 w-4" />
+              Example
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <h3 className="mb-2 text-sm font-medium">Input:</h3>
+            <div className="bg-muted rounded-md p-3 font-mono text-sm">
+              {problem.example_input ? (
+                <p className="whitespace-pre-wrap">{problem.example_input}</p>
+              ) : (
+                <p className="text-muted-foreground italic">
+                  No input available
+                </p>
               )}
+            </div>
 
-              {problem.example_output && (
-                <div>
-                  <h3 className="mb-2 text-sm font-medium">Output:</h3>
-                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
-                    {problem.example_output}
-                  </div>
-                </div>
+            <h3 className="mb-2 text-sm font-medium">Output:</h3>
+            <div className="bg-muted rounded-md p-3 font-mono text-sm">
+              {problem.example_output ? (
+                <p className="whitespace-pre-wrap">{problem.example_output}</p>
+              ) : (
+                <p className="text-muted-foreground italic">
+                  No output available
+                </p>
               )}
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader className="pb-3">

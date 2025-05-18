@@ -34,7 +34,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 type SubmissionWithDetails = NovaSubmission & {
   problem: NovaProblem & {
@@ -80,6 +80,7 @@ export function SubmissionTable({
   showEmail = false,
 }: SubmissionTableProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const t = useTranslations('nova.submission-page.submission-table');
 
   // Format date function for display
@@ -143,8 +144,13 @@ export function SubmissionTable({
   // Handle page change either via client-side or server-side navigation
   const handlePageChange = (page: number) => {
     if (serverSide) {
-      // Use server-side navigation with query params
-      router.push(`/submissions?page=${page}`);
+      // Get current URL search params
+      const params = new URLSearchParams(window.location.search);
+      // Update page parameter
+      params.set('page', page.toString());
+      // Preserve other parameters
+      const queryString = params.toString();
+      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`);
     } else if (setCurrentPage) {
       // Use client-side state update
       setCurrentPage(page);

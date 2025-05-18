@@ -1,6 +1,6 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 interface Props {
-  ws: Workspace;
+  ws: Pick<Workspace, 'id' | 'name' | 'created_at'>;
   transparent?: boolean;
 }
 
@@ -37,7 +37,7 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   const declineInviteErrorTitle = 'decline-invite-error-title';
   const declineInviteErrorMessage = 'decline-invite-error-msg';
 
-  const acceptInvite = async (ws: Workspace) => {
+  const acceptInvite = async (ws: Pick<Workspace, 'id'>) => {
     const response = await fetch(`/api/workspaces/${ws.id}/accept-invite`, {
       method: 'POST',
     });
@@ -58,7 +58,7 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
     }
   };
 
-  const declineInvite = async (ws: Workspace) => {
+  const declineInvite = async (ws: Pick<Workspace, 'id'>) => {
     const response = await fetch(`/api/workspaces/${ws.id}/decline-invite`, {
       method: 'POST',
     });

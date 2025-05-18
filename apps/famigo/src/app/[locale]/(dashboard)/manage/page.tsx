@@ -140,7 +140,7 @@ export default function ManagePage() {
     <div className="container mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500/80 to-purple-500/80">
+          <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-blue-500/80 to-purple-500/80">
             <UserCog className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -152,7 +152,7 @@ export default function ManagePage() {
         </div>
         <Button
           size="sm"
-          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+          className="bg-linear-to-r from-blue-600 to-purple-600 text-white"
         >
           <UserPlus className="mr-1 h-4 w-4" /> Invite Member
         </Button>
@@ -251,7 +251,7 @@ export default function ManagePage() {
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 pb-2 dark:from-blue-500/20 dark:to-purple-500/20">
+              <CardHeader className="bg-linear-to-r from-blue-500/10 to-purple-500/10 pb-2 dark:from-blue-500/20 dark:to-purple-500/20">
                 <CardTitle className="text-base">Family Settings</CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
@@ -267,7 +267,7 @@ export default function ManagePage() {
             </Card>
 
             <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-green-500/10 to-teal-500/10 pb-2 dark:from-green-500/20 dark:to-teal-500/20">
+              <CardHeader className="bg-linear-to-r from-green-500/10 to-teal-500/10 pb-2 dark:from-green-500/20 dark:to-teal-500/20">
                 <CardTitle className="text-base">Family Sharing</CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
@@ -350,7 +350,7 @@ export default function ManagePage() {
                   placeholder="Email address"
                   className="border-foreground/10 bg-background/50"
                 />
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                <Button className="bg-linear-to-r from-blue-600 to-purple-600 text-white">
                   Send Invite
                 </Button>
               </div>
@@ -359,7 +359,7 @@ export default function ManagePage() {
 
           <div className="mt-6">
             <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 pb-2 dark:from-purple-500/20 dark:to-pink-500/20">
+              <CardHeader className="bg-linear-to-r from-purple-500/10 to-pink-500/10 pb-2 dark:from-purple-500/20 dark:to-pink-500/20">
                 <CardTitle className="text-base">Invite Methods</CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
@@ -393,7 +393,7 @@ export default function ManagePage() {
                       Manage your family subscription plan
                     </CardDescription>
                   </div>
-                  <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-600 dark:from-green-500/30 dark:to-emerald-500/30 dark:text-green-400">
+                  <Badge className="bg-linear-to-r from-green-500/20 to-emerald-500/20 text-green-600 dark:from-green-500/30 dark:to-emerald-500/30 dark:text-green-400">
                     <Sparkles className="mr-1 h-3.5 w-3.5" />
                     {subscriptionDetails.plan}
                   </Badge>
@@ -445,7 +445,7 @@ export default function ManagePage() {
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                  <Button className="bg-linear-to-r from-blue-600 to-purple-600 text-white">
                     <CreditCard className="mr-2 h-4 w-4" /> Update Payment
                     Method
                   </Button>
@@ -456,7 +456,7 @@ export default function ManagePage() {
 
             <div className="space-y-6">
               <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-                <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 pb-2 dark:from-blue-500/20 dark:to-purple-500/20">
+                <CardHeader className="bg-linear-to-r from-blue-500/10 to-purple-500/10 pb-2 dark:from-blue-500/20 dark:to-purple-500/20">
                   <CardTitle className="text-base">Billing History</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -491,7 +491,7 @@ export default function ManagePage() {
               </Card>
 
               <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-                <CardHeader className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 pb-2 dark:from-pink-500/20 dark:to-rose-500/20">
+                <CardHeader className="bg-linear-to-r from-pink-500/10 to-rose-500/10 pb-2 dark:from-pink-500/20 dark:to-rose-500/20">
                   <CardTitle className="text-base">Need Help?</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">

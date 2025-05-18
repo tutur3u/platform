@@ -9,6 +9,9 @@ export type EmailHistoryEntry = Tables<'sent_emails'>;
 export type Invoice = Tables<'finance_invoices'>;
 export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
+export type Workspace = Tables<'workspaces'>;
+export type WorkspaceUser = Tables<'workspace_users'>;
+export type WorkspaceUserRole = 'MEMBER' | 'ADMIN' | 'OWNER';
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
 export type User = Tables<'users'>;
@@ -23,40 +26,30 @@ export type WorkspaceQuizSet = Tables<'workspace_quiz_sets'> & {
     course_name: string;
   }[];
 };
-
 export type WorkspaceCourse = Tables<'workspace_courses'> & {
   href?: string;
 };
-
 export type WorkspaceCourseModule = Tables<'workspace_course_modules'> & {
   href?: string;
 };
-
 export type WorkspaceAIModel = Tables<'workspace_ai_models'> & {
   href?: string;
 };
-
 export type WorkspaceDataset = Tables<'workspace_datasets'> & {
   href?: string;
 };
-
 export type CrawledUrl = Tables<'crawled_urls'> & {
   href?: string;
 };
-
 export type WorkspaceCronJob = Tables<'workspace_cron_jobs'> & {
   href?: string;
 };
-
 export type WorkspaceCronExecution = Tables<'workspace_cron_executions'> & {
   href?: string;
 };
-
 export type AIWhitelistDomain = Tables<'ai_whitelisted_domains'>;
-
 export type PermissionId =
   Database['public']['Enums']['workspace_role_permission'];
-
 export type WorkspaceRole = Tables<'workspace_roles'> & {
   permissions: {
     id: PermissionId;
@@ -64,7 +57,6 @@ export type WorkspaceRole = Tables<'workspace_roles'> & {
   }[];
   user_count?: number;
 };
-
 export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {
   href?: string;
 };
@@ -72,10 +64,8 @@ export type WorkspaceCalendarGoogleToken = Tables<'calendar_auth_tokens'>;
 
 export type AuroraStatisticalForecast = Tables<'aurora_statistical_forecast'>;
 export type AuroraStatisticalMetrics = Tables<'aurora_statistical_metrics'>;
-
 export type AuroraMLForecast = Tables<'aurora_ml_forecast'>;
 export type AuroraMLMetrics = Tables<'aurora_ml_metrics'>;
-
 export type AuroraForecast = {
   statistical_forecast: AuroraStatisticalForecast[];
   ml_forecast: AuroraMLForecast[];

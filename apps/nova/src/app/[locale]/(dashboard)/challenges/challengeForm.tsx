@@ -279,7 +279,7 @@ export default function ChallengeForm({
                         <FormControl>
                           <Textarea
                             placeholder={t('details.description-placeholder')}
-                            className="min-h-32 resize-none"
+                            className="min-h-32"
                             {...field}
                           />
                         </FormControl>
@@ -448,7 +448,7 @@ export default function ChallengeForm({
                                     </FormLabel>
                                     <FormControl>
                                       <Textarea
-                                        className="min-h-24 resize-none"
+                                        className="min-h-24"
                                         placeholder={t(
                                           'judging-criteria.criteria-description-placeholder'
                                         )}

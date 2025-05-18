@@ -1,7 +1,7 @@
 'use client';
 
+import { Workspace } from '@tuturuuu/types/db';
 import { User } from '@tuturuuu/types/primitives/User';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
