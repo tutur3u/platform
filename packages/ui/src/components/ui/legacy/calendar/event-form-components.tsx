@@ -114,14 +114,11 @@ export const EventDescriptionInput = ({
   value,
   onChange,
   disabled = false,
-  maxLength = 500,
 }: {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-  maxLength?: number;
 }) => {
-  const charsLeft = maxLength - (value?.length || 0);
   return (
     <div className="space-y-2">
       <Label className="flex items-center gap-2 text-sm font-medium">
@@ -130,17 +127,11 @@ export const EventDescriptionInput = ({
       </Label>
       <Textarea
         value={value}
-        onChange={(e) => {
-          if (e.target.value.length <= maxLength) {
-            onChange(e.target.value);
-          }
-        }}
+        onChange={(e) => onChange(e.target.value)}
         placeholder="Add event details..."
         className="min-h-[100px] resize-y whitespace-pre-wrap break-words break-all"
         disabled={disabled}
-        maxLength={maxLength}
       />
-      <div className={`text-xs flex justify-end ${charsLeft <= 20 ? 'text-red-500' : 'text-muted-foreground'}`}>{charsLeft} characters left</div>
     </div>
   );
 };
