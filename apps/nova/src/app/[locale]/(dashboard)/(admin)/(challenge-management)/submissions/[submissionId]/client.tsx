@@ -1,6 +1,6 @@
 'use client';
 
-import { SubmissionCard } from '@/app/[locale]/(dashboard)/shared/submission-card';
+import { SubmissionCard } from '@/components/common/SubmissionCard';
 import { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
