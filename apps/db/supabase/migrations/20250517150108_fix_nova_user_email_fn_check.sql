@@ -1,5 +1,3 @@
-drop policy "allow_user_to_update_team_info" on "public"."nova_teams";
-
 set check_function_bodies = off;
 
 CREATE OR REPLACE FUNCTION public.is_nova_user_email_in_team(_user_email text, _team_id uuid)
