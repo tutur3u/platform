@@ -74,16 +74,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { data: roleData, error: roleError } = await supabase
-    .from('platform_user_roles')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('allow_challenge_management', true)
-    .single();
-
-  // Check if the current user is an admin or not
-  const isAdmin = !roleError && roleData;
-
   try {
     // Validate request body with Zod
     const validatedData = createSubmissionSchema.parse(body);
