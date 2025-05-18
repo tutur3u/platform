@@ -82,7 +82,7 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef} // Add ref here
-      className="container relative min-h-[calc(100vh-3.5rem+53px)] w-full px-0 pb-20 pt-32 md:pb-32 md:pt-40"
+      className="relative container min-h-[calc(100vh-3.5rem+53px)] w-full px-0 pt-32 pb-20 md:pt-16 md:pb-32"
     >
       <div className="flex flex-col items-center justify-center gap-12 md:items-start lg:flex-row">
         <MainTitle />
