@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
-import { gsap } from '@tuturuuu/ui/gsap';
 import {
   Building,
   Check,
@@ -10,138 +9,97 @@ import {
   X,
   Zap,
 } from '@tuturuuu/ui/icons';
-import { useEffect, useRef, useState } from 'react';
-
-const plans = [
-  {
-    name: 'Free',
-    icon: <Zap className="h-5 w-5" />,
-    price: 0,
-    description:
-      'Perfect for individuals just getting started with AI scheduling.',
-    features: [
-      { feature: 'Basic AI scheduling', included: true },
-      { feature: 'Calendar integration', included: true },
-      { feature: '3 meetings per day', included: true },
-      { feature: 'Email notifications', included: true },
-      { feature: 'Focus time protection', included: false },
-      { feature: 'Team availability view', included: false },
-      { feature: 'Advanced AI features', included: false },
-      { feature: 'Unlimited meetings', included: false },
-      { feature: 'Priority support', included: false },
-    ],
-    cta: 'Get Started Free',
-    popular: false,
-    color: 'gray',
-    borderColor: 'border-gray-200',
-    buttonVariant: 'outline',
-  },
-  {
-    name: 'Pro',
-    icon: <Sparkles className="h-5 w-5" />,
-    price: 6,
-    monthlyPrice: 8,
-    description: 'Advanced features for professionals who value their time.',
-    features: [
-      { feature: 'Basic AI scheduling', included: true },
-      { feature: 'Calendar integration', included: true },
-      { feature: 'Unlimited meetings', included: true },
-      { feature: 'Email notifications', included: true },
-      { feature: 'Focus time protection', included: true },
-      { feature: 'Team availability view', included: true },
-      { feature: 'Advanced AI features', included: true },
-      { feature: 'Tuturuuu meetings', included: true },
-      { feature: 'Priority support', included: true },
-    ],
-    cta: 'Coming soon',
-    popular: true,
-    color: 'purple',
-    borderColor: 'border-foreground',
-    buttonVariant: 'default',
-    bgGradient: 'from-dynamic-light-purple to-dynamic-light-blue',
-  },
-  {
-    name: 'Enterprise',
-    icon: <Building className="h-5 w-5" />,
-    price: null,
-    description:
-      'Powerful tools for teams to coordinate and optimize schedules.',
-    features: [
-      { feature: 'Everything in Pro', included: true },
-      { feature: 'Team calendar management', included: true },
-      { feature: 'Admin controls', included: true },
-      { feature: 'Analytics dashboard', included: true },
-      { feature: 'API access', included: true },
-      { feature: 'Custom integrations', included: true },
-      { feature: 'Dedicated support', included: true },
-      { feature: 'SSO & advanced security', included: true },
-      { feature: 'Custom AI training', included: true },
-      { feature: 'SLA guarantees', included: true },
-    ],
-    cta: 'Coming soon',
-    popular: false,
-    color: 'blue',
-    borderColor: 'border-blue-200',
-    buttonVariant: 'default',
-    bgGradient: 'from-blue-600 to-blue-700',
-  },
-];
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useRef, useState } from 'react';
 
 export function PricingSection() {
+  const t = useTranslations('landing');
+
+  const plans = [
+    {
+      name: t('free'),
+      icon: <Zap className="h-5 w-5" />,
+      price: 0,
+      description: t(
+        'perfect_for_individuals_just_getting_started_with_ai_scheduling'
+      ),
+      features: [
+        { feature: t('basic_ai_scheduling'), included: true },
+        { feature: t('calendar_integration'), included: true },
+        { feature: t('3_meetings_per_day'), included: true },
+        { feature: t('email_notifications'), included: true },
+        { feature: t('focus_time_protection'), included: false },
+        { feature: t('team_availability_view'), included: false },
+        { feature: t('advanced_ai_features'), included: false },
+        { feature: t('unlimited_meetings'), included: false },
+        { feature: t('priority_support'), included: false },
+      ],
+      cta: t('get_started_free'),
+      popular: false,
+      color: 'gray',
+      borderColor: 'border-gray-200',
+      buttonVariant: 'outline',
+    },
+    {
+      name: t('pro'),
+      icon: <Sparkles className="h-5 w-5" />,
+      price: 6,
+      monthlyPrice: 8,
+      description: t(
+        'advanced_features_for_professionals_who_value_their_time'
+      ),
+      features: [
+        { feature: t('basic_ai_scheduling'), included: true },
+        { feature: t('calendar_integration'), included: true },
+        { feature: t('unlimited_meetings'), included: true },
+        { feature: t('email_notifications'), included: true },
+        { feature: t('focus_time_protection'), included: true },
+        { feature: t('team_availability_view'), included: true },
+        { feature: t('advanced_ai_features'), included: true },
+        { feature: t('unlimited_meetings'), included: true },
+        { feature: t('priority_support'), included: true },
+      ],
+      cta: t('coming_soon'),
+      popular: true,
+      color: 'purple',
+      borderColor: 'border-foreground',
+      buttonVariant: 'default',
+      bgGradient: 'from-dynamic-light-purple to-dynamic-light-blue',
+    },
+    {
+      name: t('enterprise'),
+      icon: <Building className="h-5 w-5" />,
+      price: null,
+      description: t(
+        'powerful_tools_for_teams_to_coordinate_and_optimize_schedules'
+      ),
+      features: [
+        { feature: t('everything_in_pro'), included: true },
+        { feature: t('team_calendar_management'), included: true },
+        { feature: t('admin_controls'), included: true },
+        { feature: t('analytics_dashboard'), included: true },
+        { feature: t('api_access'), included: true },
+        { feature: t('custom_integrations'), included: true },
+        { feature: t('dedicated_support'), included: true },
+        { feature: t('sso_advanced_security'), included: true },
+        { feature: t('sla_guarantees'), included: true },
+      ],
+      cta: t('coming_soon'),
+      popular: false,
+      color: 'blue',
+      borderColor: 'border-blue-200',
+      buttonVariant: 'default',
+      bgGradient: 'from-blue-600 to-blue-700',
+    },
+  ];
+
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isAnnual, setIsAnnual] = useState(true);
   const [hoveredFeature, setHoveredFeature] = useState<{
     planName: string;
     featureName: string;
   } | null>(null);
-
-  useEffect(() => {
-    if (!sectionRef.current) return;
-
-    const ctx = gsap.context(() => {
-      gsap.from('.pricing-title-wrapper', {
-        y: 50,
-        opacity: 0,
-        duration: 0.8,
-        scrollTrigger: {
-          trigger: '.pricing-title-wrapper',
-          start: 'top bottom-=100',
-          toggleActions: 'play none none none',
-        },
-      });
-
-      // Animate toggle
-      gsap.from('.pricing-toggle', {
-        scale: 0.9,
-        opacity: 0,
-        duration: 0.5,
-        delay: 0.3,
-        scrollTrigger: {
-          trigger: '.pricing-title-wrapper',
-          start: 'top bottom-=100',
-          toggleActions: 'play none none none',
-        },
-      });
-
-      // Cards staggered animation
-      const pricingCards = gsap.utils.toArray('.pricing-card') as Element[];
-      gsap.from(pricingCards, {
-        y: 40,
-        opacity: 0,
-        scale: 0.95,
-        duration: 0.8,
-        stagger: 0.15,
-        ease: 'back.out(1.2)',
-        scrollTrigger: {
-          trigger: '.pricing-cards-container',
-          start: 'top bottom-=50',
-          toggleActions: 'play none none none',
-        },
-      });
-    }, sectionRef);
-
-    return () => ctx.revert(); // Clean up all animations when component unmounts
-  }, []);
 
   const featureDescriptions: Record<string, string> = {
     'Basic AI scheduling': 'Schedule tasks and meetings with AI assistance',
@@ -171,11 +129,11 @@ export function PricingSection() {
       <div className="pricing-title-wrapper mb-16 text-center">
         <h2 className="pricing-title mb-6 text-4xl font-bold md:text-5xl">
           <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue bg-clip-text text-transparent">
-            Simple, Transparent Pricing
+            {t('simple_transparent_pricing')}
           </span>
         </h2>
         <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
-          Choose the plan that works best for you and your team.
+          {t('choose_the_plan_that_works_best_for_you_and_your_team')}
         </p>
 
         <div className="pricing-toggle mt-10 flex items-center justify-center">
@@ -188,7 +146,7 @@ export function PricingSection() {
               }`}
               onClick={() => setIsAnnual(false)}
             >
-              Monthly
+              {t('monthly')}
               {!isAnnual && (
                 <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 blur-sm"></div>
               )}
@@ -201,7 +159,7 @@ export function PricingSection() {
               }`}
               onClick={() => setIsAnnual(true)}
             >
-              Annual
+              {t('annual')}
               {isAnnual && (
                 <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 blur-sm"></div>
               )}
@@ -230,7 +188,7 @@ export function PricingSection() {
             >
               {plan.popular && (
                 <div className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue py-2 text-center text-sm font-medium text-white">
-                  Most Popular
+                  {t('most_popular')}
                 </div>
               )}
               <div className="p-8">
@@ -252,38 +210,43 @@ export function PricingSection() {
                 <p className="mb-8 text-muted-foreground">{plan.description}</p>
                 <div className="mb-8">
                   {price === null ? (
-                    <span className="text-4xl font-bold">Custom</span>
+                    <span className="text-4xl font-bold">{t('custom')}</span>
                   ) : (
                     <div className="flex items-baseline">
                       <span className="text-5xl font-bold">${price}</span>
-                      <span className="ml-2 text-gray-500">
-                        {isAnnual ? '/year' : '/month'}
+                      <span className="ml-2 text-gray-500 lowercase">
+                        {isAnnual ? `/${t('year')}` : `/${t('month')}`}
                       </span>
                     </div>
                   )}
                   {plan.name === 'Pro' && isAnnual && (
                     <div className="mt-2 inline-block rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                      ${plan.monthlyPrice! * 12 - price!} savings annually
+                      ${plan.monthlyPrice! * 12 - price!}{' '}
+                      {t('savings_annually')}
                     </div>
                   )}
                 </div>
-                <Button
-                  className={`mb-8 w-full transition-all duration-300 ${
-                    plan.popular
-                      ? `bg-gradient-to-r ${plan.bgGradient} text-white hover:shadow-lg hover:shadow-purple-500/20`
-                      : plan.name === 'Enterprise'
-                        ? `bg-gradient-to-r ${plan.bgGradient} text-white hover:shadow-lg hover:shadow-blue-500/20`
-                        : 'hover:shadow-lg hover:shadow-gray-200/50'
-                  }`}
-                  variant={plan.buttonVariant as any}
-                  size="lg"
-                  disabled={plan.cta === 'Coming soon'}
+                <Link
+                  href={plan.cta === t('coming_soon') ? '#' : '/onboarding'}
                 >
-                  {plan.cta}
-                </Button>
+                  <Button
+                    className={`mb-8 w-full transition-all duration-300 ${
+                      plan.popular
+                        ? `bg-gradient-to-r ${plan.bgGradient} text-white hover:shadow-lg hover:shadow-purple-500/20`
+                        : plan.name === 'Enterprise'
+                          ? `bg-gradient-to-r ${plan.bgGradient} text-white hover:shadow-lg hover:shadow-blue-500/20`
+                          : 'hover:shadow-lg hover:shadow-gray-200/50'
+                    }`}
+                    variant={plan.buttonVariant as any}
+                    size="lg"
+                    disabled={plan.cta === t('coming_soon')}
+                  >
+                    {plan.cta}
+                  </Button>
+                </Link>
                 <div className="space-y-4">
                   <div className="mb-4 font-medium text-muted-foreground">
-                    Features include:
+                    {t('features_include')}:
                   </div>
                   {plan.features.map((feature, i) => (
                     <div

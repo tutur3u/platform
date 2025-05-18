@@ -1,19 +1,22 @@
 'use client';
 
 import { Activity, CheckCircle, Clock, Target } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 
-const benefits = [
-  'Reduce time spent on scheduling by 85%',
-  'Never miss a deadline again',
-  'Balance workload to prevent burnout',
-  'Gain 10+ hours of meaningful work time weekly',
-  'Eliminate the stress of manual prioritization',
-  'Ensure team alignment without endless emails',
-  'Make time for what truly matters to you',
-];
-
 export function BenefitsSection() {
+  const t = useTranslations('landing');
+
+  const benefits = [
+    t('reduce_time_spent_on_scheduling_by_85'),
+    t('never_miss_a_deadline_again'),
+    t('balance_workload_to_prevent_burnout'),
+    t('gain_10_hours_of_meaningful_work_time_weekly'),
+    t('eliminate_the_stress_of_manual_prioritization'),
+    t('ensure_team_alignment_without_endless_emails'),
+    t('make_time_for_what_truly_matters_to_you'),
+  ];
+
   const sectionRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
@@ -29,13 +32,12 @@ export function BenefitsSection() {
 
       <div className="benefits-title-wrapper mb-16 text-center">
         <h2 className="benefits-title mb-6 text-4xl font-bold md:text-5xl">
-          <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-cyan bg-clip-text text-transparent">
-            Reclaim Your Time for What Matters
+          <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-cyan bg-clip-text text-balance text-transparent">
+            {t('reclaim_your_time_for_what_matters')}
           </span>
         </h2>
-        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
-          Tuturuuu doesn't just manage your calendar—it gives you back time for
-          meaningful work and life.
+        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-balance text-muted-foreground">
+          {t('reclaim_your_time_for_what_matters_description')}
         </p>
       </div>
 
@@ -68,54 +70,56 @@ export function BenefitsSection() {
             <div className="relative overflow-hidden rounded-xl border bg-white/90 shadow-xl backdrop-blur-sm dark:bg-foreground/10 dark:backdrop-blur-sm">
               <div className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-cyan p-5 text-white">
                 <h3 className="text-lg font-semibold">
-                  Time Reclaimed Dashboard
+                  {t('time_reclaimed_dashboard')}
                 </h3>
               </div>
 
               <div className="p-6">
                 <div className="mb-6">
                   <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                    Meaningful Work Time
+                    {t('meaningful_work_time')}
                   </h4>
                   <div className="h-5 w-full overflow-hidden rounded-full bg-foreground/10">
                     <div className="progress-bar-1 h-full w-3/4 rounded-full bg-gradient-to-r from-dynamic-green to-dynamic-green/70"></div>
                   </div>
                   <div className="mt-2 flex justify-between text-sm">
-                    <span className="font-medium">Current: 28h/week</span>
+                    <span className="font-medium">
+                      {t('current')}: 28h/{t('week')}
+                    </span>
                     <span className="font-medium text-dynamic-green">
-                      +75% from last month
+                      +75% {t('from_last_month')}
                     </span>
                   </div>
                 </div>
 
                 <div className="mb-6">
                   <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                    Task Completion Rate
+                    {t('task_completion_rate')}
                   </h4>
                   <div className="h-5 w-full overflow-hidden rounded-full bg-foreground/10">
                     <div className="progress-bar-2 h-full w-9/10 rounded-full bg-gradient-to-r from-dynamic-blue to-dynamic-light-blue"></div>
                   </div>
                   <div className="mt-2 flex justify-between text-sm">
-                    <span className="font-medium">Score: 9.2/10</span>
+                    <span className="font-medium">{t('score')}: 9.2/10</span>
                     <span className="font-medium text-dynamic-blue">
-                      Outstanding
+                      {t('outstanding')}
                     </span>
                   </div>
                 </div>
 
                 <div className="mb-6 rounded-lg bg-gray-50 p-4 dark:bg-foreground/5">
                   <h4 className="mb-3 text-sm font-medium text-muted-foreground">
-                    Time Reclaimed
+                    {t('time_reclaimed')}
                   </h4>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Clock className="h-8 w-8 text-dynamic-purple" />
                       <div className="text-3xl font-bold text-dynamic-purple">
-                        10.5 hours
+                        10.5 {t('hours')}
                       </div>
                     </div>
                     <div className="rounded-full bg-dynamic-light-purple/20 px-3 py-1 text-sm font-medium text-dynamic-purple">
-                      this week
+                      {t('this_week')}
                     </div>
                   </div>
                 </div>
@@ -125,11 +129,11 @@ export function BenefitsSection() {
                     <div className="mb-2 flex items-center gap-2">
                       <Activity className="h-4 w-4 text-dynamic-purple" />
                       <div className="text-sm font-medium text-dynamic-purple">
-                        Workload Balance
+                        {t('workload_balance')}
                       </div>
                     </div>
                     <div className="text-lg font-bold text-dynamic-purple">
-                      Optimal
+                      {t('optimal')}
                     </div>
                   </div>
 
@@ -137,7 +141,7 @@ export function BenefitsSection() {
                     <div className="mb-2 flex items-center gap-2">
                       <Target className="h-4 w-4 text-dynamic-blue" />
                       <div className="text-sm font-medium text-dynamic-blue">
-                        Deadline Success
+                        {t('deadline_success')}
                       </div>
                     </div>
                     <div className="text-lg font-bold text-dynamic-blue">

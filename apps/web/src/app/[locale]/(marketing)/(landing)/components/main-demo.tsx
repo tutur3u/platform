@@ -8,6 +8,10 @@ import {
   Sparkles,
   Video,
 } from '@tuturuuu/ui/icons';
+import dayjs from 'dayjs';
+import 'dayjs/locale/en';
+import 'dayjs/locale/vi';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export const MainDemo = ({
@@ -15,6 +19,8 @@ export const MainDemo = ({
 }: {
   calendarRef: React.RefObject<HTMLDivElement | null>;
 }) => {
+  const locale = useLocale();
+  const t = useTranslations('landing');
   const [activeTab, setActiveTab] = useState('calendar');
 
   return (
@@ -26,7 +32,7 @@ export const MainDemo = ({
         <div className="relative overflow-hidden rounded-xl border shadow-2xl">
           <div className="bg-gradient-to-br from-dynamic-light-indigo from-10% via-dynamic-light-blue via-30% to-dynamic-light-red to-90% p-3 text-white dark:from-dynamic-light-indigo/30 dark:via-dynamic-light-orange/30 dark:to-dynamic-light-green/30">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="font-medium">Tuturuuu Workspace</h3>
+              <h3 className="font-medium">{t('tuturuuu_workspace')}</h3>
               <div className="flex items-center gap-1">
                 <div className="h-3 w-3 rounded-full bg-red-400"></div>
                 <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
@@ -36,7 +42,7 @@ export const MainDemo = ({
 
             <div className="grid grid-cols-6 gap-2 rounded-lg bg-white/10 p-1 text-center font-semibold md:grid-cols-5">
               <button
-                className={`col-span-3 flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors md:col-span-1 ${
+                className={`col-span-3 flex w-full flex-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors md:col-span-1 ${
                   activeTab === 'calendar'
                     ? 'bg-white text-black'
                     : 'text-white hover:bg-white/10'
@@ -44,10 +50,10 @@ export const MainDemo = ({
                 onClick={() => setActiveTab('calendar')}
               >
                 <Calendar className="h-4 w-4" />
-                <div>Calendar</div>
+                <div>{t('calendar')}</div>
               </button>
               <button
-                className={`col-span-3 flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors md:col-span-1 ${
+                className={`col-span-3 flex w-full flex-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors md:col-span-1 ${
                   activeTab === 'tasks'
                     ? 'bg-white text-black'
                     : 'text-white hover:bg-white/10'
@@ -55,10 +61,10 @@ export const MainDemo = ({
                 onClick={() => setActiveTab('tasks')}
               >
                 <Check className="h-4 w-4" />
-                <div>Tasks</div>
+                <div>{t('tasks')}</div>
               </button>
               <button
-                className={`col-span-2 flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors md:col-span-1 ${
+                className={`col-span-2 flex w-full flex-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors md:col-span-1 ${
                   activeTab === 'meetings'
                     ? 'bg-white text-black'
                     : 'text-white hover:bg-white/10'
@@ -66,10 +72,10 @@ export const MainDemo = ({
                 onClick={() => setActiveTab('meetings')}
               >
                 <Video className="h-4 w-4" />
-                <div>Meetings</div>
+                <div>{t('meetings')}</div>
               </button>
               <button
-                className={`col-span-2 flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors md:col-span-1 ${
+                className={`col-span-2 flex w-full flex-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors md:col-span-1 ${
                   activeTab === 'chat'
                     ? 'bg-white text-black'
                     : 'text-white hover:bg-white/10'
@@ -77,10 +83,10 @@ export const MainDemo = ({
                 onClick={() => setActiveTab('chat')}
               >
                 <MessageSquare className="h-4 w-4" />
-                <div>Chat</div>
+                <div>{t('chat')}</div>
               </button>
               <button
-                className={`col-span-2 flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors md:col-span-1 ${
+                className={`col-span-2 flex w-full flex-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors md:col-span-1 ${
                   activeTab === 'mail'
                     ? 'bg-white text-black'
                     : 'text-white hover:bg-white/10'
@@ -88,7 +94,7 @@ export const MainDemo = ({
                 onClick={() => setActiveTab('mail')}
               >
                 <Mail className="h-4 w-4" />
-                <div>Mail</div>
+                <div>{t('email')}</div>
               </button>
             </div>
           </div>
@@ -101,23 +107,31 @@ export const MainDemo = ({
                     <button className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-purple/30 bg-calendar-bg-purple text-dynamic-purple">
                       <ArrowRight className="h-4 w-4 rotate-180" />
                     </button>
-                    <h3 className="font-medium">May 2025</h3>
+                    <h3 className="font-medium">
+                      {new Date().toLocaleDateString(locale, {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </h3>
                     <button className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-purple/30 bg-calendar-bg-purple text-dynamic-purple">
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
                     <button className="rounded-md border border-dynamic-light-yellow/30 bg-calendar-bg-yellow px-3 py-1 text-xs font-medium text-dynamic-yellow">
-                      Today
+                      {t('today')}
                     </button>
                     <button className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                      Month
+                      {t('month')}
                     </button>
                   </div>
                 </div>
 
                 <div className="mb-2 grid grid-cols-7 gap-1">
-                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                  {(locale === 'vi'
+                    ? ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+                    : ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                  ).map((day, i) => (
                     <div
                       key={i}
                       className="text-center text-sm font-medium text-muted-foreground"
@@ -168,7 +182,7 @@ export const MainDemo = ({
                   <div className="rounded-md border border-dynamic-blue/30 bg-calendar-bg-blue p-2 text-sm">
                     <div className="flex justify-between">
                       <div className="font-medium text-dynamic-blue">
-                        Team Sync
+                        {t('team_sync')}
                       </div>
                       <div className="flex items-center gap-1 rounded bg-calendar-bg-blue px-1.5 text-xs text-dynamic-blue">
                         <Video className="h-3 w-3" />
@@ -176,37 +190,37 @@ export const MainDemo = ({
                       </div>
                     </div>
                     <div className="text-xs text-dynamic-blue">
-                      10:00 - 11:00 AM • All team members available
+                      {t('team_sync_time')}
                     </div>
                   </div>
 
                   <div className="rounded-md border border-dynamic-yellow/30 bg-calendar-bg-yellow p-2 text-sm">
                     <div className="flex justify-between">
                       <div className="font-medium text-dynamic-yellow">
-                        Quarterly Report
+                        {t('quarterly_report')}
                       </div>
                       <div className="flex items-center gap-1 rounded bg-calendar-bg-yellow px-1.5 text-xs text-dynamic-yellow">
                         <Check className="h-3 w-3" />
-                        <span>Task</span>
+                        <span>{t('task')}</span>
                       </div>
                     </div>
                     <div className="text-xs text-dynamic-yellow">
-                      Due in 3 days • 4 hours estimated • Medium priority
+                      {t('quarterly_report_time')}
                     </div>
                   </div>
 
                   <div className="rounded-md border border-dynamic-red/30 bg-calendar-bg-red p-2 text-sm">
                     <div className="flex justify-between">
                       <div className="font-medium text-dynamic-red">
-                        Client Proposal
+                        {t('client_proposal')}
                       </div>
                       <div className="flex items-center gap-1 rounded bg-calendar-bg-red px-1.5 text-xs text-dynamic-red">
                         <Check className="h-3 w-3" />
-                        <span>High Priority</span>
+                        <span>{t('task')}</span>
                       </div>
                     </div>
                     <div className="text-xs text-dynamic-red">
-                      Due tomorrow • 2 hours estimated • Auto-scheduled
+                      {t('client_proposal_time')}
                     </div>
                   </div>
                 </div>
@@ -216,13 +230,13 @@ export const MainDemo = ({
             {activeTab === 'tasks' && (
               <div>
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-medium">My Tasks</h3>
+                  <h3 className="font-medium">{t('my_tasks')}</h3>
                   <div className="flex items-center gap-2">
                     <button className="rounded-md border border-dynamic-light-yellow/30 bg-calendar-bg-yellow px-3 py-1 text-xs font-medium text-dynamic-yellow">
-                      Add Task
+                      {t('add_task')}
                     </button>
                     <button className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                      Filter
+                      {t('filter')}
                     </button>
                   </div>
                 </div>
@@ -233,19 +247,24 @@ export const MainDemo = ({
                       <div className="mt-0.5 h-5 w-5 rounded-full border-2 border-dynamic-blue"></div>
                       <div className="flex-1">
                         <h4 className="font-medium text-dynamic-blue">
-                          Finalize Q2 marketing strategy
+                          {t('finalize_q2_marketing_strategy')}
                         </h4>
                         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            <span>Due May 20</span>
+                            <span>
+                              {dayjs()
+                                .add(1, 'day')
+                                .locale(locale)
+                                .format('DD MMM')}
+                            </span>
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span>3 hours</span>
+                            <span>{t('3-hours')}</span>
                           </span>
                           <span className="rounded border border-dynamic-light-red/30 bg-calendar-bg-red px-1.5 py-0.5 text-xs text-dynamic-red">
-                            High
+                            {t('high_priority')}
                           </span>
                         </div>
                       </div>
@@ -257,19 +276,24 @@ export const MainDemo = ({
                       <div className="mt-0.5 h-5 w-5 rounded-full border-2 border-dynamic-yellow"></div>
                       <div className="flex-1">
                         <h4 className="font-medium text-dynamic-yellow">
-                          Review product design mockups
+                          {t('review_product_design_mockups')}
                         </h4>
                         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            <span>Due May 18</span>
+                            <span>
+                              {dayjs()
+                                .add(2, 'day')
+                                .locale(locale)
+                                .format('DD MMM')}
+                            </span>
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span>2 hours</span>
+                            <span>{t('2-hours')}</span>
                           </span>
                           <span className="rounded border border-dynamic-light-yellow/30 bg-calendar-bg-yellow px-1.5 py-0.5 text-xs text-dynamic-yellow">
-                            Medium
+                            {t('medium_priority')}
                           </span>
                         </div>
                       </div>
@@ -281,19 +305,24 @@ export const MainDemo = ({
                       <div className="mt-0.5 h-5 w-5 rounded-full border-2 border-dynamic-red"></div>
                       <div className="flex-1">
                         <h4 className="font-medium text-dynamic-red">
-                          Prepare for team meeting
+                          {t('prepare_for_team_meeting')}
                         </h4>
                         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            <span>Due May 16</span>
+                            <span>
+                              {dayjs()
+                                .add(4, 'day')
+                                .locale(locale)
+                                .format('DD MMM')}
+                            </span>
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span>1 hour</span>
+                            <span>{t('1-hour')}</span>
                           </span>
                           <span className="rounded border border-dynamic-light-green/30 bg-calendar-bg-green px-1.5 py-0.5 text-xs text-dynamic-green">
-                            Low
+                            {t('low_priority')}
                           </span>
                         </div>
                       </div>
@@ -308,11 +337,10 @@ export const MainDemo = ({
                     </div>
                     <div>
                       <h4 className="font-medium text-dynamic-green">
-                        AI Suggestion
+                        {t('ai_suggestion')}
                       </h4>
                       <p className="text-xs text-dynamic-green">
-                        Schedule "Review product design mockups" for tomorrow
-                        morning when your focus is highest.
+                        {t('ai_suggestion_description')}
                       </p>
                     </div>
                   </div>
@@ -323,10 +351,10 @@ export const MainDemo = ({
             {activeTab === 'meetings' && (
               <div>
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-medium">Upcoming Meetings</h3>
+                  <h3 className="font-medium">{t('upcoming_meetings')}</h3>
                   <button className="flex items-center gap-1 rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
                     <Video className="h-3 w-3" />
-                    <span>New Meeting</span>
+                    <span>{t('new_meeting')}</span>
                   </button>
                 </div>
 
@@ -334,10 +362,10 @@ export const MainDemo = ({
                   <div className="rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <h4 className="font-medium text-dynamic-green">
-                        Team Sync
+                        {t('team_sync')}
                       </h4>
                       <span className="rounded bg-calendar-bg-green px-2 py-0.5 text-xs text-dynamic-green">
-                        Today, 10:00 AM
+                        {t('today_at_10_am')}
                       </span>
                     </div>
                     <div className="mb-2 flex items-center gap-2">
@@ -356,16 +384,16 @@ export const MainDemo = ({
                         </div>
                       </div>
                       <span className="text-xs text-dynamic-blue">
-                        4 participants
+                        {t('4-participants')}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button className="flex items-center gap-1 rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
                         <Video className="h-3 w-3" />
-                        <span>Join Tuturuuu</span>
+                        <span>{t('join_tuturuuu')}</span>
                       </button>
                       <button className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                        View Details
+                        {t('view_details')}
                       </button>
                     </div>
                   </div>
@@ -373,10 +401,10 @@ export const MainDemo = ({
                   <div className="rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <h4 className="font-medium text-dynamic-red">
-                        Client Presentation
+                        {t('client_presentation')}
                       </h4>
                       <span className="rounded bg-calendar-bg-red px-2 py-0.5 text-xs text-dynamic-red">
-                        Tomorrow, 2:00 PM
+                        {t('tomorrow_at_2_pm')}
                       </span>
                     </div>
                     <div className="mb-2 flex items-center gap-2">
@@ -389,15 +417,15 @@ export const MainDemo = ({
                         </div>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        2 participants
+                        {t('2-participants')}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                        Prepare
+                        {t('prepare')}
                       </button>
                       <button className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                        View Details
+                        {t('view_details')}
                       </button>
                     </div>
                   </div>
@@ -410,11 +438,10 @@ export const MainDemo = ({
                     </div>
                     <div>
                       <h4 className="font-medium text-dynamic-yellow">
-                        Tuturuuu Features
+                        {t('tuturuuu_features')}
                       </h4>
                       <p className="text-xs text-dynamic-yellow">
-                        AI-generated meeting notes, real-time transcription, and
-                        smart follow-ups.
+                        {t('tuturuuu_features_description')}
                       </p>
                     </div>
                   </div>
@@ -425,10 +452,10 @@ export const MainDemo = ({
             {activeTab === 'chat' && (
               <div>
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-medium">Team Chat</h3>
+                  <h3 className="font-medium">{t('team_chat')}</h3>
                   <button className="flex items-center gap-1 rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
                     <MessageSquare className="h-3 w-3" />
-                    <span>New Chat</span>
+                    <span>{t('new_chat')}</span>
                   </button>
                 </div>
 
@@ -437,15 +464,15 @@ export const MainDemo = ({
                     <div className="flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-calendar-bg-orange">
                         <span className="text-sm font-medium text-dynamic-orange">
-                          MP
+                          {t('mp')}
                         </span>
                       </div>
                       <div>
                         <h4 className="font-medium text-dynamic-orange">
-                          Marketing Project
+                          {t('marketing_project')}
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                          5 members • 3 online
+                          {t('5-members')} • {t('3-online')}
                         </p>
                       </div>
                     </div>
@@ -454,17 +481,21 @@ export const MainDemo = ({
                   <div className="flex-1 space-y-3 overflow-y-auto p-3">
                     <div className="flex items-start gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
-                        <span className="text-xs font-medium">A</span>
+                        <span className="text-xs font-medium">
+                          {t('alex-initials')}
+                        </span>
                       </div>
                       <div className="max-w-[80%] rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-2 text-sm">
                         <p className="text-xs font-medium text-dynamic-green">
-                          Alex
+                          {t('alex')}
                         </p>
                         <p>
-                          Has everyone reviewed the latest campaign mockups?
+                          {t(
+                            'has_everyone_reviewed_the_latest_campaign_mockups'
+                          )}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          10:15 AM
+                          {t('10_15_am')}
                         </p>
                       </div>
                     </div>
@@ -472,34 +503,41 @@ export const MainDemo = ({
                     <div className="flex items-start justify-end gap-2">
                       <div className="max-w-[80%] rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-2 text-sm">
                         <p className="text-xs font-medium text-dynamic-red">
-                          You
+                          {t('you')}
                         </p>
                         <p>
-                          Yes, I've added my comments in the shared document.
+                          {t(
+                            'yes_ive_added_my_comments_in_the_shared_document'
+                          )}
                         </p>
                         <p className="mt-1 text-xs text-dynamic-red">
-                          10:17 AM
+                          {t('10_17_am')}
                         </p>
                       </div>
                       <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-red/30 bg-calendar-bg-red">
-                        <span className="text-xs font-medium">Y</span>
+                        <span className="text-xs font-medium">
+                          {t('you-initials')}
+                        </span>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-blue/30 bg-calendar-bg-blue">
-                        <span className="text-xs font-medium">B</span>
+                        <span className="text-xs font-medium">
+                          {t('ben-initials')}
+                        </span>
                       </div>
                       <div className="max-w-[80%] rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2 text-sm">
                         <p className="text-xs font-medium text-dynamic-blue">
-                          Ben
+                          {t('ben')}
                         </p>
                         <p>
-                          I'll finish my review by EOD. Need to coordinate with
-                          the design team first.
+                          {t(
+                            'ill_finish_my_review_by_eod_need_to_coordinate_with_the_design_team_first'
+                          )}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          10:20 AM
+                          {t('10_20_am')}
                         </p>
                       </div>
                     </div>
@@ -509,7 +547,7 @@ export const MainDemo = ({
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
-                        placeholder="Type a message..."
+                        placeholder={t('type_a_message')}
                         className="flex-1 rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-dynamic-orange focus:outline-none"
                       />
                       <button className="flex h-8 w-8 items-center justify-center rounded-full bg-calendar-bg-orange text-dynamic-orange">
@@ -524,10 +562,10 @@ export const MainDemo = ({
             {activeTab === 'mail' && (
               <div>
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-medium">Smart Mail</h3>
+                  <h3 className="font-medium">{t('smart_mail')}</h3>
                   <button className="flex items-center gap-1 rounded-md border border-dynamic-light-red/30 bg-calendar-bg-red px-3 py-1 text-xs font-medium text-dynamic-red">
                     <Mail className="h-3 w-3" />
-                    <span>Compose</span>
+                    <span>{t('compose')}</span>
                   </button>
                 </div>
 
@@ -535,11 +573,11 @@ export const MainDemo = ({
                   <div className="flex items-center gap-2 border-b border-dynamic-light-red/30 p-3">
                     <input
                       type="text"
-                      placeholder="Search emails..."
+                      placeholder={t('search_emails')}
                       className="flex-1 rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red px-3 py-1.5 text-sm focus:border-transparent focus:ring-2 focus:ring-dynamic-red focus:outline-none"
                     />
                     <button className="rounded-md border border-dynamic-light-red/30 bg-calendar-bg-red px-3 py-1.5 text-xs font-medium text-dynamic-red">
-                      Filter
+                      {t('filter')}
                     </button>
                   </div>
 
@@ -548,25 +586,25 @@ export const MainDemo = ({
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-blue/30 bg-calendar-bg-blue">
                           <span className="text-xs font-medium text-dynamic-blue">
-                            AC
+                            {t('ac-initials')}
                           </span>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between">
                             <h4 className="line-clamp-1 font-medium text-dynamic-blue">
-                              Alex Chen
+                              {t('alex_chen')}
                             </h4>
                             <span className="text-xs text-muted-foreground">
-                              10:30 AM
+                              {t('10_30_am')}
                             </span>
                           </div>
                           <p className="line-clamp-1 text-sm font-medium">
-                            Project Update: Q2 Marketing Campaign
+                            {t('project_update_q2_marketing_campaign')}
                           </p>
                           <p className="line-clamp-1 text-xs text-muted-foreground">
-                            Hi team, I wanted to share the latest updates on our
-                            Q2 marketing campaign. We've made significant
-                            progress...
+                            {t(
+                              'hi_team_i_wanted_to_share_the_latest_updates_on_our_q2_marketing_campaign_weve_made_significant_progress'
+                            )}
                           </p>
                         </div>
                       </div>
@@ -576,25 +614,25 @@ export const MainDemo = ({
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-yellow/30 bg-calendar-bg-yellow">
                           <span className="text-xs font-medium text-dynamic-yellow">
-                            ST
+                            {t('st-initials')}
                           </span>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between">
                             <h4 className="line-clamp-1 font-medium text-dynamic-yellow">
-                              Sarah Thompson
+                              {t('sarah_thompson')}
                             </h4>
                             <span className="text-xs text-muted-foreground">
-                              Yesterday
+                              {t('yesterday')}
                             </span>
                           </div>
                           <p className="line-clamp-1 text-sm">
-                            Client feedback on proposal
+                            {t('client_feedback_on_proposal')}
                           </p>
                           <p className="line-clamp-1 text-xs text-muted-foreground">
-                            The client has reviewed our proposal and has some
-                            feedback. Overall, they're impressed with our
-                            approach...
+                            {t(
+                              'the_client_has_reviewed_our_proposal_and_has_some_feedback_overall_theyre_impressed_with_our_approach'
+                            )}
                           </p>
                         </div>
                       </div>
@@ -604,24 +642,25 @@ export const MainDemo = ({
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
                           <span className="text-xs font-medium text-dynamic-green">
-                            JD
+                            {t('jd-initials')}
                           </span>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between">
                             <h4 className="line-clamp-1 font-medium text-dynamic-green">
-                              John Doe
+                              {t('john_doe')}
                             </h4>
                             <span className="text-xs text-muted-foreground">
-                              May 12
+                              {t('may_12')}
                             </span>
                           </div>
                           <p className="line-clamp-1 text-sm">
-                            Meeting follow-up: Action items
+                            {t('meeting_follow_up_action_items')}
                           </p>
                           <p className="line-clamp-1 text-xs text-muted-foreground">
-                            Following our meeting yesterday, I've compiled a
-                            list of action items for each team member...
+                            {t(
+                              'following_our_meeting_yesterday_ive_compiled_a_list_of_action_items_for_each_team_member'
+                            )}
                           </p>
                         </div>
                       </div>
@@ -636,11 +675,10 @@ export const MainDemo = ({
                     </div>
                     <div>
                       <h4 className="font-medium text-dynamic-blue">
-                        Smart Mail Features
+                        {t('smart_mail_features')}
                       </h4>
                       <p className="text-xs text-dynamic-blue">
-                        AI-powered email categorization, smart replies, and
-                        follow-up reminders.
+                        {t('smart_mail_features_description')}
                       </p>
                     </div>
                   </div>

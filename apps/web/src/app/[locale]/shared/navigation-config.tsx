@@ -179,7 +179,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
 
   const company: NavItem[] = [
     {
-      href: '/pricing',
+      href: '/#pricing',
       label: t('common.pricing'),
       description: '',
     },

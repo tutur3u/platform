@@ -3,15 +3,18 @@
 import { gsap } from '@tuturuuu/ui/gsap';
 import {
   AlarmCheck,
-  ArrowRight,
   Calendar,
   CalendarX,
   UserCheck,
   Workflow,
 } from '@tuturuuu/ui/icons';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 export function BeforeAfterSection() {
+  const locale = useLocale();
+  const t = useTranslations('landing');
+
   const sectionRef = useRef<HTMLDivElement>(null);
   const beforeRef = useRef<HTMLDivElement>(null);
   const afterRef = useRef<HTMLDivElement>(null);
@@ -171,17 +174,18 @@ export function BeforeAfterSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative container hidden w-full overflow-hidden px-0 py-24 md:block md:py-40"
+      className="relative container hidden w-full px-0 py-24 md:block md:py-40"
     >
       <div className="before-after-title-wrapper mb-10 text-center">
         <h2 className="before-after-title mb-6 text-4xl font-bold md:text-5xl">
           <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-cyan bg-clip-text text-transparent">
-            Before & After Tuturuuu
+            {t('before_and_after_tuturuuu')}
           </span>
         </h2>
-        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
-          See the transformation in your calendar and life when you switch to
-          AI-powered scheduling
+        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-balance text-muted-foreground">
+          {t(
+            'see_the_transformation_in_your_calendar_and_life_when_you_switch_to_ai_powered_scheduling'
+          )}
         </p>
       </div>
 
@@ -196,7 +200,7 @@ export function BeforeAfterSection() {
             }`}
             onClick={() => setActiveView('split')}
           >
-            Split View
+            {t('split_view')}
             {activeView === 'split' && (
               <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-red/80 to-dynamic-light-green/80 blur-sm"></div>
             )}
@@ -209,7 +213,7 @@ export function BeforeAfterSection() {
             }`}
             onClick={() => setActiveView('before')}
           >
-            Before
+            {t('before')}
             {activeView === 'before' && (
               <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-red/80 to-dynamic-red/80 blur-sm"></div>
             )}
@@ -222,7 +226,7 @@ export function BeforeAfterSection() {
             }`}
             onClick={() => setActiveView('after')}
           >
-            After
+            {t('after')}
             {activeView === 'after' && (
               <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-green/80 to-dynamic-green/80 blur-sm"></div>
             )}
@@ -232,9 +236,9 @@ export function BeforeAfterSection() {
 
       <div
         className={`comparison-container relative flex flex-col gap-8 lg:flex-row ${
-          activeView === 'before'
+          activeView === t('before')
             ? 'before-only'
-            : activeView === 'after'
+            : activeView === t('after')
               ? 'after-only'
               : 'split-view'
         }`}
@@ -242,10 +246,10 @@ export function BeforeAfterSection() {
         {/* Before Card - Hidden when "after" view is active */}
         <div
           ref={beforeRef}
-          className={`w-full transition-all duration-500 lg:w-1/2 ${
-            activeView === 'after'
+          className={`w-full transition-all duration-500 ${
+            activeView === t('after')
               ? 'lg:w-0 lg:opacity-0'
-              : activeView === 'before'
+              : activeView === t('before')
                 ? 'lg:w-full'
                 : ''
           }`}
@@ -257,56 +261,62 @@ export function BeforeAfterSection() {
                   <CalendarX className="h-5 w-5 text-white" />
                 </div>
                 <h3 className="font-medium text-white">
-                  Before: Traditional Calendar
+                  {t('before')}: {t('traditional_calendar')}
                 </h3>
               </div>
               <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
-                Chaotic
+                {t('chaotic')}
               </span>
             </div>
             <div className="p-6">
               <div className="mb-6 rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-5">
                 <h4 className="mb-3 flex items-center gap-2 font-medium text-dynamic-light-red">
                   <CalendarX className="h-5 w-5" />
-                  Pain Points:
+                  {t('pain_points')}:
                 </h4>
                 <ul className="space-y-3 text-sm">
                   <li className="pain-point flex items-start gap-3">
                     <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-dynamic-red"></span>
                     <span className="font-medium">
-                      Manually scheduling everything takes hours each week
+                      {t(
+                        'manually_scheduling_everything_takes_hours_each_week'
+                      )}
                     </span>
                   </li>
                   <li className="pain-point flex items-start gap-3">
                     <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-dynamic-red"></span>
                     <span className="font-medium">
-                      Constant context switching between tasks
+                      {t('constant_context_switching_between_tasks')}
                     </span>
                   </li>
                   <li className="pain-point flex items-start gap-3">
                     <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-dynamic-red"></span>
                     <span className="font-medium">
-                      Important tasks get buried under urgent but less important
-                      ones
+                      {t(
+                        'important_tasks_get_buried_under_urgent_but_less_important_ones'
+                      )}
                     </span>
                   </li>
                   <li className="pain-point flex items-start gap-3">
                     <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-dynamic-red"></span>
                     <span className="font-medium">
-                      No protection for focus time or deep work
+                      {t('no_protection_for_focus_time_or_deep_work')}
                     </span>
                   </li>
                   <li className="pain-point flex items-start gap-3">
                     <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-dynamic-red"></span>
                     <span className="font-medium">
-                      Constantly feeling overwhelmed and behind
+                      {t('constantly_feeling_overwhelmed_and_behind')}
                     </span>
                   </li>
                 </ul>
               </div>
               <div className="relative rounded-lg border bg-white p-3 shadow-sm dark:bg-foreground/5">
                 <div className="mb-3 grid grid-cols-7 gap-1">
-                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                  {(locale === 'vi'
+                    ? ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+                    : ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                  ).map((day, i) => (
                     <div
                       key={i}
                       className="text-center text-xs font-medium text-muted-foreground"
@@ -342,17 +352,17 @@ export function BeforeAfterSection() {
                 <div className="mt-3 space-y-1.5">
                   <div className="rounded border border-dynamic-light-red/30 bg-calendar-bg-red p-1.5 text-xs">
                     <div className="font-medium text-dynamic-light-red">
-                      8 meetings (overbooked!)
+                      {t('8_meetings_overbooked')}
                     </div>
                   </div>
                   <div className="rounded border border-dynamic-light-orange/30 bg-calendar-bg-orange p-1.5 text-xs">
                     <div className="font-medium text-dynamic-light-orange">
-                      3 scheduling conflicts
+                      {t('3_scheduling_conflicts')}
                     </div>
                   </div>
                   <div className="rounded border border-foreground/10 bg-foreground/10 p-1.5 text-xs">
                     <div className="font-medium text-muted-foreground">
-                      0 protected focus time
+                      {t('0_protected_focus_time')}
                     </div>
                   </div>
                 </div>
@@ -362,21 +372,21 @@ export function BeforeAfterSection() {
         </div>
 
         {/* Arrow Between Views */}
-        {activeView === 'split' && (
+        {/* {activeView === 'split' && (
           <div className="hidden items-center justify-center lg:flex">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md">
               <ArrowRight className="h-6 w-6 text-dynamic-light-purple" />
             </div>
           </div>
-        )}
+        )} */}
 
         {/* After Card - Hidden when "before" view is active */}
         <div
           ref={afterRef}
-          className={`w-full transition-all duration-500 lg:w-1/2 ${
-            activeView === 'before'
+          className={`w-full transition-all duration-500 ${
+            activeView === t('before')
               ? 'lg:w-0 lg:opacity-0'
-              : activeView === 'after'
+              : activeView === t('after')
                 ? 'lg:w-full'
                 : ''
           }`}
@@ -388,58 +398,68 @@ export function BeforeAfterSection() {
                   <Calendar className="h-5 w-5 text-white" />
                 </div>
                 <h3 className="font-medium text-white">
-                  After: Tuturuuu AI Calendar
+                  {t('after')}: {t('tuturuuu_ai_calendar')}
                 </h3>
               </div>
               <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
-                Optimized
+                {t('optimized')}
               </span>
             </div>
             <div className="p-6">
               <div className="mb-6 rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-5">
                 <h4 className="mb-3 flex items-center gap-2 font-medium text-dynamic-light-green">
                   <AlarmCheck className="h-5 w-5" />
-                  Benefits:
+                  {t('benefits.title')}:
                 </h4>
                 <ul className="space-y-3 text-sm">
                   <li className="benefit-point flex items-start gap-3">
                     <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-dynamic-green"></span>
                     <span className="font-medium">
-                      AI automatically schedules tasks based on priority and
-                      deadline
+                      {t(
+                        'ai_automatically_schedules_tasks_based_on_priority_and_deadline'
+                      )}
                     </span>
                   </li>
                   <li className="benefit-point flex items-start gap-3">
                     <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-dynamic-green"></span>
                     <span className="font-medium">
-                      Similar tasks are grouped to minimize context switching
+                      {t(
+                        'similar_tasks_are_grouped_to_minimize_context_switching'
+                      )}
                     </span>
                   </li>
                   <li className="benefit-point flex items-start gap-3">
                     <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-dynamic-green"></span>
                     <span className="font-medium">
-                      Important tasks are prioritized over urgent but less
-                      important ones
+                      {t(
+                        'important_tasks_are_prioritized_over_urgent_but_less_important_ones'
+                      )}
                     </span>
                   </li>
                   <li className="benefit-point flex items-start gap-3">
                     <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-dynamic-green"></span>
                     <span className="font-medium">
-                      Focus time is protected and scheduled during your peak
-                      productivity hours
+                      {t(
+                        'focus_time_is_protected_and_scheduled_during_your_peak_productivity_hours'
+                      )}
                     </span>
                   </li>
                   <li className="benefit-point flex items-start gap-3">
                     <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-dynamic-green"></span>
                     <span className="font-medium">
-                      Feeling in control and accomplishing more meaningful work
+                      {t(
+                        'feeling_in_control_and_accomplishing_more_meaningful_work'
+                      )}
                     </span>
                   </li>
                 </ul>
               </div>
               <div className="relative rounded-lg border bg-white p-3 shadow-sm dark:bg-foreground/5">
                 <div className="mb-3 grid grid-cols-7 gap-1">
-                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                  {(locale === 'vi'
+                    ? ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+                    : ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                  ).map((day, i) => (
                     <div
                       key={i}
                       className="text-center text-xs font-medium text-muted-foreground"
@@ -475,17 +495,17 @@ export function BeforeAfterSection() {
                 <div className="mt-3 space-y-1.5">
                   <div className="rounded border border-dynamic-light-cyan/30 bg-calendar-bg-cyan p-1.5 text-xs">
                     <div className="font-medium text-dynamic-light-cyan">
-                      4 optimized meetings
+                      {t('4_optimized_meetings')}
                     </div>
                   </div>
                   <div className="rounded border border-dynamic-light-green/30 bg-calendar-bg-green p-1.5 text-xs">
                     <div className="font-medium text-dynamic-light-green">
-                      4 protected focus blocks
+                      {t('4_protected_focus_blocks')}
                     </div>
                   </div>
                   <div className="rounded border border-dynamic-light-purple/30 bg-calendar-bg-purple p-1.5 text-xs">
                     <div className="font-medium text-dynamic-light-purple">
-                      4 prioritized tasks
+                      {t('4_prioritized_tasks')}
                     </div>
                   </div>
                 </div>
@@ -497,17 +517,17 @@ export function BeforeAfterSection() {
 
       {/* Bottom Summary/Statistics */}
       <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="flex flex-col items-center rounded-xl border border-dynamic-light-red/30 bg-white/90 p-6 text-center shadow-md backdrop-blur-sm dark:bg-foreground/5">
+        <div className="flex flex-col items-center rounded-xl border border-dynamic-light-red/30 bg-calendar-bg-red p-6 text-center shadow-md backdrop-blur-sm">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-calendar-bg-red">
             <CalendarX className="h-8 w-8 text-dynamic-red" />
           </div>
           <h3 className="mt-4 mb-2 text-2xl font-bold text-dynamic-red">85%</h3>
           <p className="text-muted-foreground">
-            Time spent on manual scheduling
+            {t('time_spent_on_manual_scheduling')}
           </p>
         </div>
 
-        <div className="flex flex-col items-center rounded-xl border bg-white/90 p-6 text-center shadow-md backdrop-blur-sm dark:bg-foreground/5">
+        <div className="flex flex-col items-center rounded-xl border border-dynamic-light-purple/30 bg-calendar-bg-purple p-6 text-center shadow-md backdrop-blur-sm">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-calendar-bg-purple">
             <Workflow className="h-8 w-8 text-dynamic-purple" />
           </div>
@@ -515,18 +535,20 @@ export function BeforeAfterSection() {
             10+
           </h3>
           <p className="text-muted-foreground">
-            Hours of deep work gained weekly
+            {t('hours_of_deep_work_gained_weekly')}
           </p>
         </div>
 
-        <div className="flex flex-col items-center rounded-xl border border-dynamic-light-green/30 bg-white/90 p-6 text-center shadow-md backdrop-blur-sm dark:bg-foreground/5">
+        <div className="flex flex-col items-center rounded-xl border border-dynamic-light-green/30 bg-calendar-bg-green p-6 text-center shadow-md backdrop-blur-sm">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-calendar-bg-green">
             <UserCheck className="h-8 w-8 text-dynamic-green" />
           </div>
           <h3 className="mt-4 mb-2 text-2xl font-bold text-dynamic-green">
             96%
           </h3>
-          <p className="text-muted-foreground">Users report reduced stress</p>
+          <p className="text-muted-foreground">
+            {t('users_report_reduced_stress')}
+          </p>
         </div>
       </div>
     </section>

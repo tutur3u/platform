@@ -8,27 +8,31 @@ import {
   Package,
   Video,
 } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 
 export function MainTitle() {
+  const t = useTranslations('landing');
+
   return (
     <div className="w-full text-center lg:w-1/2 lg:text-left">
       <h1 className="hero-text mb-6 flex flex-col items-center justify-center text-4xl font-bold md:text-5xl lg:text-6xl">
         <Floating3DLogo />
-        <span className="block">Your Complete</span>
-        <span className="block bg-gradient-to-br from-dynamic-light-orange via-dynamic-light-blue to-dynamic-light-pink bg-clip-text py-1 text-transparent">
-          Productivity Suite
+        <span className="leading-18">
+          {t('title_p1')}{' '}
+          <span className="bg-gradient-to-br from-dynamic-light-orange via-dynamic-light-blue to-dynamic-light-pink bg-clip-text text-transparent">
+            {t('title_p2')}
+          </span>
         </span>
       </h1>
       <p className="hero-text mb-8 text-lg text-muted-foreground md:text-xl">
-        Tuturuuu unifies your calendar, tasks, meetings, chat, and email in one
-        intelligent workspace powered by AI.
+        {t('description')}
       </p>
       <div className="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
         <Button
           size="lg"
           className="hero-button bg-gradient-to-r from-dynamic-light-blue/80 to-dynamic-light-pink/80 text-white transition-colors hover:from-dynamic-light-blue/90 hover:to-dynamic-light-pink/90"
         >
-          Get Early Access
+          {t('cta')}
         </Button>
         {/* <Button
           variant="outline"

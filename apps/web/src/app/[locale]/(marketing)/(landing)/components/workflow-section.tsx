@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Video,
 } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 interface WorkflowStep {
@@ -23,184 +24,195 @@ interface WorkflowStep {
   image: React.ReactNode;
 }
 
-const workflowSteps: WorkflowStep[] = [
-  {
-    id: 1,
-    title: 'Create Tasks Naturally',
-    description:
-      "Type or speak in natural language to create tasks. Tuturuuu's AI understands context, deadlines, and priorities.",
-    icon: <MessageSquare className="h-6 w-6 text-white" />,
-    color: 'bg-purple-500',
-    image: (
-      <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-purple/30 bg-calendar-bg-purple">
-            <MessageSquare className="h-4 w-4 text-dynamic-purple" />
-          </div>
-          <div>
-            <h4 className="text-sm font-medium">Natural Language Input</h4>
-          </div>
-        </div>
-        <div className="rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-3 text-sm">
-          "Schedule a meeting with the marketing team next Tuesday at 10am, high
-          priority"
-        </div>
-        <div className="mt-3 flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
-            <Check className="h-3 w-3 text-dynamic-green" />
-          </div>
-          <span className="text-xs text-dynamic-green">
-            Task created and scheduled
-          </span>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: 2,
-    title: 'AI Analyzes & Optimizes',
-    description:
-      'Our AI analyzes your tasks, priorities, deadlines, and team availability to create the optimal schedule.',
-    icon: <Brain className="h-6 w-6 text-white" />,
-    color: 'bg-blue-500',
-    image: (
-      <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-blue/30 bg-calendar-bg-blue">
-            <Brain className="h-4 w-4 text-dynamic-blue" />
-          </div>
-          <div>
-            <h4 className="text-sm font-medium">AI Analysis</h4>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-blue">
-                Priority Analysis
-              </span>
-              <span className="rounded bg-calendar-bg-red px-1.5 text-xs text-dynamic-red">
-                High
-              </span>
-            </div>
-          </div>
-          <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-blue">
-                Team Availability
-              </span>
-              <span className="rounded bg-calendar-bg-green px-1.5 text-xs text-dynamic-green">
-                All Available
-              </span>
-            </div>
-          </div>
-          <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-blue">
-                Optimal Time Slot
-              </span>
-              <span className="text-xs text-dynamic-blue">
-                Tuesday, 10:00 AM
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: 3,
-    title: 'Everything in One Place',
-    description:
-      'Calendar events, tasks, meetings, chat, and email all work together in a unified workspace.',
-    icon: <Calendar className="h-6 w-6 text-white" />,
-    color: 'bg-green-500',
-    image: (
-      <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
-            <Calendar className="h-4 w-4 text-dynamic-green" />
-          </div>
-          <div>
-            <h4 className="text-sm font-medium">Unified Workspace</h4>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-2">
-            <Calendar className="h-3 w-3 text-dynamic-purple" />
-            <span className="text-xs text-dynamic-purple">Calendar</span>
-          </div>
-          <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
-            <Check className="h-3 w-3 text-dynamic-blue" />
-            <span className="text-xs text-dynamic-blue">Tasks</span>
-          </div>
-          <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-2">
-            <Video className="h-3 w-3 text-dynamic-green" />
-            <span className="text-xs text-dynamic-green">Meetings</span>
-          </div>
-          <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
-            <MessageSquare className="h-3 w-3 text-dynamic-orange" />
-            <span className="text-xs text-dynamic-orange">Chat</span>
-          </div>
-        </div>
-        <div className="mt-2 flex items-center gap-1 rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-2">
-          <Mail className="h-3 w-3 text-dynamic-red" />
-          <span className="text-xs text-dynamic-red">Email</span>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: 4,
-    title: 'Continuous Improvement',
-    description:
-      'Tuturuuu learns from your habits and preferences to get better over time, making you more productive every day.',
-    icon: <Clock className="h-6 w-6 text-white" />,
-    color: 'bg-amber-500',
-    image: (
-      <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-orange/30 bg-calendar-bg-orange">
-            <Clock className="h-4 w-4 text-dynamic-orange" />
-          </div>
-          <div>
-            <h4 className="text-sm font-medium">Learning & Adaptation</h4>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-orange">
-                Productivity Pattern
-              </span>
-              <span className="text-xs text-dynamic-orange">Morning Focus</span>
-            </div>
-          </div>
-          <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-orange">
-                Meeting Preference
-              </span>
-              <span className="text-xs text-dynamic-orange">Afternoons</span>
-            </div>
-          </div>
-          <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-orange">
-                Task Completion Rate
-              </span>
-              <span className="rounded bg-calendar-bg-green px-1.5 text-xs text-dynamic-green">
-                92%
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    ),
-  },
-];
-
 export function WorkflowSection() {
+  const t = useTranslations('workflow');
+
+  const workflowSteps: WorkflowStep[] = [
+    {
+      id: 1,
+      title: t('create_tasks_naturally'),
+      description: t('create_tasks_naturally_description'),
+      icon: <MessageSquare className="h-6 w-6 text-white" />,
+      color: 'bg-purple-500',
+      image: (
+        <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-purple/30 bg-calendar-bg-purple">
+              <MessageSquare className="h-4 w-4 text-dynamic-purple" />
+            </div>
+            <div>
+              <h4 className="text-sm font-medium">
+                {t('natural_language_input')}
+              </h4>
+            </div>
+          </div>
+          <div className="rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-3 text-sm">
+            {t(
+              'schedule_a_meeting_with_the_marketing_team_next_tuesday_at_10am_high_priority'
+            )}
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
+              <Check className="h-3 w-3 text-dynamic-green" />
+            </div>
+            <span className="text-xs text-dynamic-green">
+              {t('task_created_and_scheduled')}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 2,
+      title: t('ai_analyzes_optimizes'),
+      description: t('ai_analyzes_optimizes_description'),
+      icon: <Brain className="h-6 w-6 text-white" />,
+      color: 'bg-blue-500',
+      image: (
+        <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-blue/30 bg-calendar-bg-blue">
+              <Brain className="h-4 w-4 text-dynamic-blue" />
+            </div>
+            <div>
+              <h4 className="text-sm font-medium">{t('ai_analysis')}</h4>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-dynamic-blue">
+                  {t('priority_analysis')}
+                </span>
+                <span className="rounded bg-calendar-bg-red px-1.5 text-xs text-dynamic-red">
+                  {t('high_priority')}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-dynamic-blue">
+                  {t('team_availability')}
+                </span>
+                <span className="rounded bg-calendar-bg-green px-1.5 text-xs text-dynamic-green">
+                  {t('all_available')}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-dynamic-blue">
+                  {t('optimal_time_slot')}
+                </span>
+                <span className="text-xs text-dynamic-blue">
+                  {t('tuesday_10_00_am')}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 3,
+      title: t('everything_in_one_place'),
+      description: t('everything_in_one_place_description'),
+      icon: <Calendar className="h-6 w-6 text-white" />,
+      color: 'bg-green-500',
+      image: (
+        <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
+              <Calendar className="h-4 w-4 text-dynamic-green" />
+            </div>
+            <div>
+              <h4 className="text-sm font-medium">{t('unified_workspace')}</h4>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-2">
+              <Calendar className="h-3 w-3 text-dynamic-purple" />
+              <span className="text-xs text-dynamic-purple">
+                {t('calendar')}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
+              <Check className="h-3 w-3 text-dynamic-blue" />
+              <span className="text-xs text-dynamic-blue">{t('tasks')}</span>
+            </div>
+            <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-2">
+              <Video className="h-3 w-3 text-dynamic-green" />
+              <span className="text-xs text-dynamic-green">
+                {t('meetings')}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
+              <MessageSquare className="h-3 w-3 text-dynamic-orange" />
+              <span className="text-xs text-dynamic-orange">{t('chat')}</span>
+            </div>
+          </div>
+          <div className="mt-2 flex items-center gap-1 rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-2">
+            <Mail className="h-3 w-3 text-dynamic-red" />
+            <span className="text-xs text-dynamic-red">{t('email')}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 4,
+      title: t('continuous_improvement'),
+      description: t('continuous_improvement_description'),
+      icon: <Clock className="h-6 w-6 text-white" />,
+      color: 'bg-amber-500',
+      image: (
+        <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-orange/30 bg-calendar-bg-orange">
+              <Clock className="h-4 w-4 text-dynamic-orange" />
+            </div>
+            <div>
+              <h4 className="text-sm font-medium">
+                {t('learning_adaptation')}
+              </h4>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-dynamic-orange">
+                  {t('productivity_pattern')}
+                </span>
+                <span className="text-xs text-dynamic-orange">
+                  {t('morning_focus')}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-dynamic-orange">
+                  {t('meeting_preference')}
+                </span>
+                <span className="text-xs text-dynamic-orange">
+                  {t('afternoons')}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-dynamic-orange">
+                  {t('task_completion_rate')}
+                </span>
+                <span className="rounded bg-calendar-bg-green px-1.5 text-xs text-dynamic-green">
+                  92%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+  ];
+
   const sectionRef = useRef<HTMLElement>(null);
   const [activeStep, setActiveStep] = useState(1);
 
@@ -276,11 +288,11 @@ export function WorkflowSection() {
       <div className="mb-16 text-center">
         <h2 className="workflow-title mb-4 text-3xl font-bold md:text-4xl">
           <span className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
-            How Tuturuuu Works
+            {t('how_tuturuuu_works')}
           </span>
         </h2>
         <p className="workflow-title mx-auto max-w-3xl text-xl text-muted-foreground">
-          Our intelligent workflow makes productivity effortless
+          {t('our_intelligent_workflow_makes_productivity_effortless')}
         </p>
       </div>
 
@@ -345,7 +357,7 @@ export function WorkflowSection() {
             className={`${currentStep.color} flex items-center gap-2 rounded-md px-4 py-2 text-white hover:opacity-90`}
             onClick={() => setActiveStep(activeStep < 4 ? activeStep + 1 : 1)}
           >
-            {activeStep < 4 ? 'Next Step' : 'Start Over'}{' '}
+            {activeStep < 4 ? t('next_step') : t('start_over')}{' '}
             {activeStep < 4 ? (
               <ArrowRight className="h-4 w-4" />
             ) : (

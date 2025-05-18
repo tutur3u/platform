@@ -10,9 +10,12 @@ import {
   Video,
   Zap,
 } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 
 export function StrategicSection() {
+  const t = useTranslations('landing');
+
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,11 +56,11 @@ export function StrategicSection() {
       <div className="mb-16 text-center">
         <h2 className="strategic-title mb-4 text-3xl font-bold md:text-4xl">
           <span className="bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 bg-clip-text text-transparent">
-            Strategic Advantages
+            {t('strategic_advantages')}
           </span>
         </h2>
         <p className="strategic-title mx-auto max-w-3xl text-xl text-muted-foreground">
-          Why Tuturuuu is a game-changer for your productivity
+          {t('why_tuturuuu_is_a_game_changer_for_your_productivity')}
         </p>
       </div>
 
@@ -66,28 +69,28 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-purple/80 to-dynamic-light-blue/80">
             <Zap className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">Unified Workspace</h3>
+          <h3 className="mb-3 text-xl font-bold">{t('unified_workspace')}</h3>
           <p className="mb-4 text-muted-foreground">
-            Stop switching between apps and losing context. Tuturuuu brings your
-            calendar, tasks, meetings, chat, and email into one intelligent
-            workspace.
+            {t(
+              'stop_switching_between_apps_and_losing_context_tuturuuu_brings_your_calendar_tasks_meetings_chat_and_email_into_one_intelligent_workspace'
+            )}
           </p>
           <div className="rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-4">
             <h4 className="mb-2 font-medium text-dynamic-purple">
-              Strategic Impact:
+              {t('strategic_impact')}
             </h4>
             <ul className="space-y-1 text-sm">
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Reduce context switching by 70%</span>
+                <span>{t('reduce_context_switching_by_70')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Save 5+ hours weekly on app switching</span>
+                <span>{t('save_5_hours_weekly_on_app_switching')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Maintain complete workflow visibility</span>
+                <span>{t('maintain_complete_workflow_visibility')}</span>
               </li>
             </ul>
           </div>
@@ -97,27 +100,30 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-blue/80 to-dynamic-light-blue/80">
             <Brain className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">AI-Powered Intelligence</h3>
+          <h3 className="mb-3 text-xl font-bold">
+            {t('ai_powered_intelligence')}
+          </h3>
           <p className="mb-4 text-muted-foreground">
-            Tuturuuu's advanced AI understands your priorities, deadlines, and
-            preferences to optimize your schedule automatically.
+            {t(
+              'tuturuuu_s_advanced_ai_understands_your_priorities_deadlines_and_preferences_to_optimize_your_schedule_automatically'
+            )}
           </p>
           <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-4">
             <h4 className="mb-2 font-medium text-dynamic-blue">
-              Strategic Impact:
+              {t('strategic_impact')}
             </h4>
             <ul className="space-y-1 text-sm">
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Reduce scheduling time by 85%</span>
+                <span>{t('reduce_scheduling_time_by_85')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Ensure high-priority work gets done</span>
+                <span>{t('ensure_high_priority_work_gets_done')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Prevent burnout through workload balancing</span>
+                <span>{t('prevent_burnout_through_workload_balancing')}</span>
               </li>
             </ul>
           </div>
@@ -127,28 +133,30 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-green/80 to-dynamic-light-green/80">
             <Clock className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">Focus Time Protection</h3>
+          <h3 className="mb-3 text-xl font-bold">
+            {t('focus_time_protection')}
+          </h3>
           <p className="mb-4 text-muted-foreground">
-            Tuturuuu automatically blocks out time for deep work based on your
-            productivity patterns, ensuring you have uninterrupted time for
-            meaningful work.
+            {t(
+              'tuturuuu_automatically_blocks_out_time_for_deep_work_based_on_your_productivity_patterns_ensuring_you_have_uninterrupted_time_for_meaningful_work'
+            )}
           </p>
           <div className="rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-4">
             <h4 className="mb-2 font-medium text-dynamic-green">
-              Strategic Impact:
+              {t('strategic_impact')}
             </h4>
             <ul className="space-y-1 text-sm">
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Gain 10+ hours of deep work weekly</span>
+                <span>{t('gain_10_hours_of_deep_work_weekly')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Increase quality of work output</span>
+                <span>{t('increase_quality_of_work_output')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Reduce stress from constant interruptions</span>
+                <span>{t('reduce_stress_from_constant_interruptions')}</span>
               </li>
             </ul>
           </div>
@@ -158,27 +166,28 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-orange/80 to-dynamic-light-orange/80">
             <Video className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">Enhanced Meetings</h3>
+          <h3 className="mb-3 text-xl font-bold">{t('enhanced_meetings')}</h3>
           <p className="mb-4 text-muted-foreground">
-            Tuturuuu meetings go beyond video conferencing with AI-generated
-            notes, automatic task creation, and smart follow-ups.
+            {t(
+              'tuturuuu_meetings_go_beyond_video_conferencing_with_ai_generated_notes_automatic_task_creation_and_smart_follow_ups'
+            )}
           </p>
           <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-4">
             <h4 className="mb-2 font-medium text-dynamic-orange">
-              Strategic Impact:
+              {t('strategic_impact')}
             </h4>
             <ul className="space-y-1 text-sm">
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Eliminate manual note-taking</span>
+                <span>{t('eliminate_manual_note_taking')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Ensure 100% follow-through on action items</span>
+                <span>{t('ensure_100_follow_through_on_action_items')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Reduce meeting time by 30%</span>
+                <span>{t('reduce_meeting_time_by_30')}</span>
               </li>
             </ul>
           </div>
@@ -188,27 +197,34 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-red/80 to-dynamic-light-red/80">
             <MessageSquare className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">Productive Communication</h3>
+          <h3 className="mb-3 text-xl font-bold">
+            {t('productive_communication')}
+          </h3>
           <p className="mb-4 text-muted-foreground">
-            Tuturuuu's chat and email systems are designed for productivity,
-            with task creation, meeting scheduling, and AI-powered summaries.
+            {t(
+              'tuturuuu_s_chat_and_email_systems_are_designed_for_productivity_with_task_creation_meeting_scheduling_and_ai_powered_summaries'
+            )}
           </p>
           <div className="rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-4">
             <h4 className="mb-2 font-medium text-dynamic-red">
-              Strategic Impact:
+              {t('strategic_impact')}
             </h4>
             <ul className="space-y-1 text-sm">
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Reduce email processing time by 60%</span>
+                <span>{t('reduce_email_processing_time_by_60')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Never miss important messages or action items</span>
+                <span>
+                  {t('never_miss_important_messages_or_action_items')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Streamline team communication and collaboration</span>
+                <span>
+                  {t('streamline_team_communication_and_collaboration')}
+                </span>
               </li>
             </ul>
           </div>
@@ -218,27 +234,32 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-purple/80 to-dynamic-light-blue/80">
             <Calendar className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">Continuous Improvement</h3>
+          <h3 className="mb-3 text-xl font-bold">
+            {t('continuous_improvement')}
+          </h3>
           <p className="mb-4 text-muted-foreground">
-            Tuturuuu learns from your habits and preferences over time, getting
-            smarter and more personalized to make you increasingly productive.
+            {t(
+              'tuturuuu_learns_from_your_habits_and_preferences_over_time_getting_smarter_and_more_personalized_to_make_you_increasingly_productive'
+            )}
           </p>
           <div className="rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-4">
             <h4 className="mb-2 font-medium text-dynamic-purple">
-              Strategic Impact:
+              {t('strategic_impact')}
             </h4>
             <ul className="space-y-1 text-sm">
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Productivity increases month over month</span>
+                <span>{t('productivity_increases_month_over_month')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Personalized experience based on your work style</span>
+                <span>
+                  {t('personalized_experience_based_on_your_work_style')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
-                <span>Ongoing ROI as the system gets smarter</span>
+                <span>{t('ongoing_roi_as_the_system_gets_smarter')}</span>
               </li>
             </ul>
           </div>

@@ -3,49 +3,55 @@
 import { gsap } from '@tuturuuu/ui/gsap';
 import { Calendar, Clock, Users, Zap } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 
-const stats = [
-  {
-    icon: <Clock className="h-8 w-8 text-dynamic-purple" />,
-    value: '10+',
-    label: 'Hours Saved Weekly',
-    text: 'text-dynamic-purple',
-    bg: 'bg-calendar-bg-purple border-dynamic-light-purple',
-    description:
-      'Our users report saving over 10 hours every week on scheduling and task management',
-  },
-  {
-    icon: <Calendar className="h-8 w-8 text-dynamic-blue" />,
-    value: '85%',
-    label: 'Reduction in Scheduling Time',
-    text: 'text-dynamic-blue',
-    bg: 'bg-calendar-bg-blue border-dynamic-light-blue',
-    description:
-      'Tuturuuu reduces the time spent on scheduling by 85% compared to manual methods',
-  },
-  {
-    icon: <Users className="h-8 w-8 text-dynamic-green" />,
-    value: '94%',
-    label: 'User Satisfaction',
-    text: 'text-dynamic-green',
-    bg: 'bg-calendar-bg-green border-dynamic-light-green',
-    description:
-      '94% of our users report feeling less stressed and more in control of their time',
-  },
-  {
-    icon: <Zap className="h-8 w-8 text-dynamic-orange" />,
-    value: '3x',
-    label: 'Productivity Increase',
-    text: 'text-dynamic-orange',
-    bg: 'bg-calendar-bg-orange border-dynamic-light-orange',
-    description:
-      'Users report completing 3x more meaningful work after switching to Tuturuuu',
-  },
-];
-
 export function StatsSection() {
+  const t = useTranslations('landing');
   const sectionRef = useRef<HTMLDivElement>(null);
+
+  const stats = [
+    {
+      icon: <Clock className="h-8 w-8 text-dynamic-purple" />,
+      value: '10+',
+      label: t('stats.hours_saved_weekly'),
+      text: 'text-dynamic-purple',
+      bg: 'bg-calendar-bg-purple border-dynamic-light-purple',
+      description: t(
+        'stats.our_users_report_saving_over_10_hours_every_week_on_scheduling_and_task_management'
+      ),
+    },
+    {
+      icon: <Calendar className="h-8 w-8 text-dynamic-blue" />,
+      value: '85%',
+      label: t('stats.reduction_in_scheduling_time'),
+      text: 'text-dynamic-blue',
+      bg: 'bg-calendar-bg-blue border-dynamic-light-blue',
+      description: t(
+        'stats.tuturuuu_reduces_the_time_spent_on_scheduling_by_85_compared_to_manual_methods'
+      ),
+    },
+    {
+      icon: <Users className="h-8 w-8 text-dynamic-green" />,
+      value: '94%',
+      label: t('stats.user_satisfaction'),
+      text: 'text-dynamic-green',
+      bg: 'bg-calendar-bg-green border-dynamic-light-green',
+      description: t(
+        'stats.94_of_our_users_report_feeling_less_stressed_and_more_in_control_of_their_time'
+      ),
+    },
+    {
+      icon: <Zap className="h-8 w-8 text-dynamic-orange" />,
+      value: '3x',
+      label: t('stats.productivity_increase'),
+      text: 'text-dynamic-orange',
+      bg: 'bg-calendar-bg-orange border-dynamic-light-orange',
+      description: t(
+        'stats.users_report_completing_3x_more_meaningful_work_after_switching_to_tuturuuu'
+      ),
+    },
+  ];
 
   useEffect(() => {
     if (!sectionRef.current) return;
@@ -81,15 +87,17 @@ export function StatsSection() {
       <div className="mb-16 text-center">
         <h2 className="stats-title mb-4 text-3xl font-bold md:text-4xl">
           <span>
-            The{' '}
+            {t('stats.the')}{' '}
             <span className="bg-gradient-to-r from-dynamic-light-indigo from-10% via-dynamic-light-orange via-30% to-dynamic-light-green to-90% bg-clip-text text-transparent">
               Tuturuuu
             </span>{' '}
-            Impact
+            {t('stats.impact')}
           </span>
         </h2>
         <p className="stats-title mx-auto max-w-3xl text-xl text-muted-foreground">
-          Real results from real users who have transformed their productivity.
+          {t(
+            'stats.real_results_from_real_users_who_have_transformed_their_productivity'
+          )}
         </p>
       </div>
 

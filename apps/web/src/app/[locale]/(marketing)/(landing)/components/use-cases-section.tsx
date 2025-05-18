@@ -8,102 +8,115 @@ import {
   Users,
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 
-const useCases = [
-  {
-    icon: <Briefcase className="h-6 w-6 text-dynamic-purple" />,
-    title: 'Busy Professionals',
-    className: 'col-span-1 md:col-span-2 lg:col-span-3',
-    description:
-      'Balance client meetings, project deadlines, and personal commitments without the stress of manual scheduling.',
-    painPoints: [
-      'Constantly overbooked',
-      'Missing deadlines',
-      'No time for deep work',
-    ],
-    solution:
-      'Tuturuuu automatically balances your workload, protects focus time, and ensures you never miss a deadline again.',
-    bg: 'bg-dynamic-light-purple',
-    lightBg: 'bg-calendar-bg-purple',
-    border: 'border-dynamic-light-purple/30',
-    textColor: 'text-dynamic-purple',
-  },
-  {
-    icon: <Users className="h-6 w-6 text-dynamic-blue" />,
-    title: 'Team Leaders',
-    className: 'col-span-1 md:col-span-1 lg:col-span-3',
-    description:
-      'Coordinate team schedules, optimize meeting times, and ensure everyone has balanced workloads.',
-    painPoints: [
-      'Difficult to find meeting times',
-      'Team burnout',
-      'Uneven workload distribution',
-    ],
-    solution:
-      'Tuturuuu analyzes team availability, suggests optimal meeting slots, and helps distribute work evenly across your team.',
-    bg: 'bg-dynamic-light-blue',
-    lightBg: 'bg-calendar-bg-blue',
-    border: 'border-dynamic-light-blue/30',
-    textColor: 'text-dynamic-blue',
-  },
-  {
-    icon: <GraduationCap className="h-6 w-6 text-dynamic-green" />,
-    title: 'Students',
-    className: 'col-span-1 md:col-span-1 lg:col-span-2',
-    description:
-      'Manage classes, study sessions, assignments, and social activities with intelligent scheduling.',
-    painPoints: [
-      'Last-minute cramming',
-      'Missed assignments',
-      'Poor work-life balance',
-    ],
-    solution:
-      'Tuturuuu helps you plan ahead for assignments, allocates proper study time, and ensures you maintain a healthy balance.',
-    bg: 'bg-dynamic-light-green',
-    lightBg: 'bg-calendar-bg-green',
-    border: 'border-dynamic-light-green/30',
-    textColor: 'text-dynamic-green',
-  },
-  {
-    icon: <Home className="h-6 w-6 text-dynamic-orange" />,
-    title: 'Freelancers',
-    className: 'col-span-1 md:col-span-1 lg:col-span-2',
-    description:
-      'Juggle multiple clients and projects while maintaining control of your schedule and work-life balance.',
-    painPoints: [
-      'Inconsistent workload',
-      'Difficulty tracking multiple projects',
-      'Client deadline conflicts',
-    ],
-    solution:
-      'Tuturuuu helps you manage multiple clients, balance your workload, and ensure you meet all deadlines without overcommitting.',
-    bg: 'bg-dynamic-light-orange',
-    lightBg: 'bg-calendar-bg-orange',
-    border: 'border-dynamic-light-orange/30',
-    textColor: 'text-dynamic-orange',
-  },
-  {
-    icon: <Heart className="h-6 w-6 text-dynamic-red" />,
-    title: 'Parents',
-    className: 'col-span-1 md:col-span-1 lg:col-span-2',
-    description:
-      'Balance family responsibilities, work commitments, and personal time with intelligent scheduling.',
-    painPoints: [
-      'Missed family events',
-      'Constant overwhelm',
-      'No personal time',
-    ],
-    solution:
-      'Tuturuuu helps you prioritize family time while ensuring work commitments are met, giving you back control of your life.',
-    bg: 'bg-dynamic-light-red',
-    lightBg: 'bg-calendar-bg-red',
-    border: 'border-dynamic-light-red/30',
-    textColor: 'text-dynamic-red',
-  },
-];
-
 export function UseCasesSection() {
+  const t = useTranslations('landing');
+
+  const useCases = [
+    {
+      icon: <Briefcase className="h-6 w-6 text-dynamic-purple" />,
+      title: t('busy_professionals'),
+      className: 'col-span-1 md:col-span-2 lg:col-span-3',
+      description: t(
+        'balance_client_meetings_project_deadlines_and_personal_commitments_without_the_stress_of_manual_scheduling'
+      ),
+      painPoints: [
+        t('constantly_overbooked'),
+        t('missing_deadlines'),
+        t('no_time_for_deep_work'),
+      ],
+      solution: t(
+        'tuturuuu_automatically_balances_your_workload_protects_focus_time_and_ensures_you_never_miss_a_deadline_again'
+      ),
+      bg: 'bg-dynamic-light-purple',
+      lightBg: 'bg-calendar-bg-purple',
+      border: 'border-dynamic-light-purple/30',
+      textColor: 'text-dynamic-purple',
+    },
+    {
+      icon: <Users className="h-6 w-6 text-dynamic-blue" />,
+      title: t('team_leaders'),
+      className: 'col-span-1 md:col-span-1 lg:col-span-3',
+      description: t(
+        'coordinate_team_schedules_optimize_meeting_times_and_ensure_everyone_has_balanced_workloads'
+      ),
+      painPoints: [
+        t('difficult_to_find_meeting_times'),
+        t('team_burnout'),
+        t('uneven_workload_distribution'),
+      ],
+      solution: t(
+        'tuturuuu_analyzes_team_availability_suggests_optimal_meeting_slots_and_helps_distribute_work_evenly_across_your_team'
+      ),
+      bg: 'bg-dynamic-light-blue',
+      lightBg: 'bg-calendar-bg-blue',
+      border: 'border-dynamic-light-blue/30',
+      textColor: 'text-dynamic-blue',
+    },
+    {
+      icon: <GraduationCap className="h-6 w-6 text-dynamic-green" />,
+      title: t('students'),
+      className: 'col-span-1 md:col-span-1 lg:col-span-2',
+      description: t(
+        'manage_classes_study_sessions_assignments_and_social_activities_with_intelligent_scheduling'
+      ),
+      painPoints: [
+        t('last_minute_cramming'),
+        t('missed_assignments'),
+        t('poor_work_life_balance'),
+      ],
+      solution: t(
+        'tuturuuu_helps_you_plan_ahead_for_assignments_allocates_proper_study_time_and_ensures_you_maintain_a_healthy_balance'
+      ),
+      bg: 'bg-dynamic-light-green',
+      lightBg: 'bg-calendar-bg-green',
+      border: 'border-dynamic-light-green/30',
+      textColor: 'text-dynamic-green',
+    },
+    {
+      icon: <Home className="h-6 w-6 text-dynamic-orange" />,
+      title: t('freelancers'),
+      className: 'col-span-1 md:col-span-1 lg:col-span-2',
+      description: t(
+        'juggle_multiple_clients_and_projects_while_maintaining_control_of_your_schedule_and_work_life_balance'
+      ),
+      painPoints: [
+        t('inconsistent_workload'),
+        t('difficulty_tracking_multiple_projects'),
+        t('client_deadline_conflicts'),
+      ],
+      solution: t(
+        'tuturuuu_helps_you_manage_multiple_clients_balance_your_workload_and_ensure_you_meet_all_deadlines_without_overcommitting'
+      ),
+      bg: 'bg-dynamic-light-orange',
+      lightBg: 'bg-calendar-bg-orange',
+      border: 'border-dynamic-light-orange/30',
+      textColor: 'text-dynamic-orange',
+    },
+    {
+      icon: <Heart className="h-6 w-6 text-dynamic-red" />,
+      title: t('parents'),
+      className: 'col-span-1 md:col-span-1 lg:col-span-2',
+      description: t(
+        'balance_family_responsibilities_work_commitments_and_personal_time_with_intelligent_scheduling'
+      ),
+      painPoints: [
+        t('missed_family_events'),
+        t('constant_overwhelm'),
+        t('no_personal_time'),
+      ],
+      solution: t(
+        'tuturuuu_helps_you_prioritize_family_time_while_ensuring_work_commitments_are_met_giving_you_back_control_of_your_life'
+      ),
+      bg: 'bg-dynamic-light-red',
+      lightBg: 'bg-calendar-bg-red',
+      border: 'border-dynamic-light-red/30',
+      textColor: 'text-dynamic-red',
+    },
+  ];
+
   const sectionRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -114,12 +127,13 @@ export function UseCasesSection() {
       <div className="use-cases-title-wrapper mb-16 text-center">
         <h2 className="use-cases-title mb-6 text-4xl font-bold md:text-5xl">
           <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue bg-clip-text text-transparent">
-            Who Benefits from Tuturuuu?
+            {t('who_benefits_from_tuturuuu')}
           </span>
         </h2>
-        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
-          Tuturuuu helps people from all walks of life reclaim their time and
-          reduce scheduling stress
+        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-balance text-muted-foreground">
+          {t(
+            'tuturuuu_helps_people_from_all_walks_of_life_reclaim_their_time_and_reduce_scheduling_stress'
+          )}
         </p>
       </div>
 
@@ -151,7 +165,7 @@ export function UseCasesSection() {
 
               <div className="mb-5 rounded-lg bg-gray-50 p-4 dark:bg-foreground/5">
                 <h4 className="mb-3 text-sm font-semibold text-muted-foreground">
-                  Pain points
+                  {t('pain_points')}
                 </h4>
                 <ul className="space-y-2">
                   {useCase.painPoints.map((point, i) => (
@@ -181,7 +195,7 @@ export function UseCasesSection() {
                     useCase.textColor
                   )}
                 >
-                  Our solution
+                  {t('our_solution')}
                 </h4>
                 <p className={cn('text-sm', useCase.textColor)}>
                   {useCase.solution}

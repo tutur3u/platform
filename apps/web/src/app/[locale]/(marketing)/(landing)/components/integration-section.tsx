@@ -8,9 +8,12 @@ import {
   MessageSquare,
   Video,
 } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 
 export function IntegrationSection() {
+  const t = useTranslations('landing');
+
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,22 +61,23 @@ export function IntegrationSection() {
       <div className="mb-16 text-center">
         <h2 className="integration-title mb-4 text-3xl font-bold md:text-4xl">
           <span className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
-            Seamless Integration
+            {t('seamless_integration')}
           </span>
         </h2>
-        <p className="integration-title mx-auto max-w-3xl text-xl text-muted-foreground">
-          Tuturuuu brings all your productivity tools together in one unified
-          workspace
+        <p className="integration-title mx-auto max-w-3xl text-xl text-balance text-muted-foreground">
+          {t(
+            'tuturuuu_brings_all_your_productivity_tools_together_in_one_unified_workspace'
+          )}
         </p>
       </div>
 
       <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
         <div>
-          <h3 className="mb-6 text-2xl font-bold">Everything Works Together</h3>
+          <h3 className="mb-6 text-2xl font-bold">
+            {t('everything_works_together')}
+          </h3>
           <p className="mb-8 text-lg text-muted-foreground">
-            No more switching between apps or losing context. Tuturuuu
-            integrates your calendar, tasks, meetings, chat, and email in one
-            intelligent workspace.
+            {t('no_more_switching_between_apps_or_losing_context')}
           </p>
 
           <div className="mb-8 space-y-6">
@@ -82,10 +86,13 @@ export function IntegrationSection() {
                 <Calendar className="h-6 w-6 text-dynamic-purple" />
               </div>
               <div>
-                <h4 className="mb-1 text-lg font-semibold">Calendar + Tasks</h4>
+                <h4 className="mb-1 text-lg font-semibold">
+                  {t('calendar_tasks')}
+                </h4>
                 <p className="text-muted-foreground">
-                  Tasks automatically appear in your calendar, scheduled at the
-                  optimal time based on priority and deadline.
+                  {t(
+                    'tasks_automatically_appear_in_your_calendar_scheduled_at_the_optimal_time_based_on_priority_and_deadline'
+                  )}
                 </p>
               </div>
             </div>
@@ -95,10 +102,13 @@ export function IntegrationSection() {
                 <Video className="h-6 w-6 text-dynamic-blue" />
               </div>
               <div>
-                <h4 className="mb-1 text-lg font-semibold">Meetings + Chat</h4>
+                <h4 className="mb-1 text-lg font-semibold">
+                  {t('meetings_chat')}
+                </h4>
                 <p className="text-muted-foreground">
-                  Tuturuuu meetings integrate with chat for pre-meeting
-                  discussions and post-meeting follow-ups.
+                  {t(
+                    'tuturuuu_meetings_integrate_with_chat_for_pre_meeting_discussions_and_post_meeting_follow_ups'
+                  )}
                 </p>
               </div>
             </div>
@@ -108,10 +118,13 @@ export function IntegrationSection() {
                 <Mail className="h-6 w-6 text-dynamic-green" />
               </div>
               <div>
-                <h4 className="mb-1 text-lg font-semibold">Email + Calendar</h4>
+                <h4 className="mb-1 text-lg font-semibold">
+                  {t('email_calendar')}
+                </h4>
                 <p className="text-muted-foreground">
-                  Emails can be converted to calendar events or tasks with a
-                  single click.
+                  {t(
+                    'emails_can_be_converted_to_calendar_events_or_tasks_with_a_single_click'
+                  )}
                 </p>
               </div>
             </div>
@@ -121,10 +134,13 @@ export function IntegrationSection() {
                 <MessageSquare className="h-6 w-6 text-dynamic-orange" />
               </div>
               <div>
-                <h4 className="mb-1 text-lg font-semibold">Chat + Tasks</h4>
+                <h4 className="mb-1 text-lg font-semibold">
+                  {t('chat_tasks')}
+                </h4>
                 <p className="text-muted-foreground">
-                  Create and assign tasks directly from chat conversations,
-                  keeping everything in context.
+                  {t(
+                    'create_and_assign_tasks_directly_from_chat_conversations_keeping_everything_in_context'
+                  )}
                 </p>
               </div>
             </div>
@@ -138,7 +154,7 @@ export function IntegrationSection() {
 
             <div className="relative overflow-hidden rounded-xl border bg-white shadow-xl dark:bg-foreground/5">
               <div className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue p-3 text-white">
-                <h3 className="font-medium">Unified Workspace</h3>
+                <h3 className="font-medium">{t('unified_workspace')}</h3>
               </div>
 
               <div className="p-4">
@@ -147,7 +163,7 @@ export function IntegrationSection() {
                     <div className="mb-2 flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-dynamic-purple" />
                       <h4 className="text-sm font-medium text-dynamic-purple">
-                        Calendar
+                        {t('calendar')}
                       </h4>
                     </div>
                     <div className="grid grid-cols-7 gap-1">
@@ -166,20 +182,20 @@ export function IntegrationSection() {
                     <div className="mb-2 flex items-center gap-2">
                       <Check className="h-4 w-4 text-dynamic-blue" />
                       <h4 className="text-sm font-medium text-dynamic-blue">
-                        Tasks
+                        {t('tasks')}
                       </h4>
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-1">
                         <div className="h-3 w-3 rounded-full border border-dynamic-blue"></div>
                         <span className="truncate text-xs text-dynamic-blue">
-                          Finalize report
+                          {t('finalize_report')}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="h-3 w-3 rounded-full border border-dynamic-blue"></div>
                         <span className="truncate text-xs text-dynamic-blue">
-                          Review design
+                          {t('review_design')}
                         </span>
                       </div>
                     </div>
@@ -189,7 +205,7 @@ export function IntegrationSection() {
                     <div className="mb-2 flex items-center gap-2">
                       <Video className="h-4 w-4 text-dynamic-green" />
                       <h4 className="text-sm font-medium text-dynamic-green">
-                        Meetings
+                        {t('meetings')}
                       </h4>
                     </div>
                     <div className="flex items-center gap-1">
@@ -200,7 +216,7 @@ export function IntegrationSection() {
                         B
                       </div>
                       <span className="text-xs text-dynamic-green">
-                        Team Sync
+                        {t('team_sync')}
                       </span>
                     </div>
                   </div>
@@ -209,11 +225,11 @@ export function IntegrationSection() {
                     <div className="mb-2 flex items-center gap-2">
                       <MessageSquare className="h-4 w-4 text-dynamic-orange" />
                       <h4 className="text-sm font-medium text-dynamic-orange">
-                        Chat
+                        {t('chat')}
                       </h4>
                     </div>
                     <div className="rounded bg-white p-1 text-[10px] text-dynamic-orange dark:bg-foreground/5">
-                      Latest updates on project...
+                      {t('latest_updates_on_project')}
                     </div>
                   </div>
                 </div>
@@ -222,11 +238,11 @@ export function IntegrationSection() {
                   <div className="mb-2 flex items-center gap-2">
                     <Mail className="h-4 w-4 text-dynamic-red" />
                     <h4 className="text-sm font-medium text-dynamic-red">
-                      Email
+                      {t('email')}
                     </h4>
                   </div>
                   <div className="rounded bg-white p-1 text-[10px] text-dynamic-red dark:bg-foreground/5">
-                    2 new messages from clients...
+                    {t('2_new_messages_from_clients')}
                   </div>
                 </div>
               </div>
