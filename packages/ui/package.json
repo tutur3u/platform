@@ -50,6 +50,7 @@
     "dayjs": "^1.11.13",
     "embla-carousel-react": "^8.6.0",
     "eslint": "^9.27.0",
+    "gsap": "^3.13.0",
     "input-otp": "^1.4.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.511.0",
@@ -109,6 +110,7 @@
     "./hooks/*": "./src/hooks/*.ts",
     "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
     "./resolvers": "./src/resolvers.ts",
+    "./gsap": "./src/gsap.ts",
     "./*": "./src/components/ui/*.tsx"
   }
 }

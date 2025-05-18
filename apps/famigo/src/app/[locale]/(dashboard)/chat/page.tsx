@@ -87,7 +87,7 @@ export default function ChatPage() {
       case 'pink':
         return 'bg-pink-500/20 text-pink-600 dark:bg-pink-500/30 dark:text-pink-400';
       default:
-        return 'bg-gray-500/20 text-gray-600 dark:bg-gray-500/30 dark:text-gray-400';
+        return 'bg-gray-500/20 text-muted-foreground dark:bg-gray-500/30 dark:text-gray-400';
     }
   };
 

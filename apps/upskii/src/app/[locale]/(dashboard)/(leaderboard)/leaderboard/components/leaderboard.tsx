@@ -167,7 +167,7 @@ export function Leaderboard({
                 variant="ghost"
                 size="sm"
                 onClick={toggleSortOrder}
-                className="h-8 gap-1 text-xs text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
+                className="text-muted-foreground h-8 gap-1 text-xs transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
               >
                 <ArrowDownUp className="h-3.5 w-3.5" />
                 {sortOrder === 'desc' ? t('highest-first') : t('lowest-first')}
@@ -341,7 +341,7 @@ export function Leaderboard({
                             entry.rank === 1 &&
                               'text-yellow-600 dark:text-yellow-400',
                             entry.rank === 2 &&
-                              'text-gray-600 dark:text-gray-300',
+                              'text-muted-foreground dark:text-gray-300',
                             entry.rank === 3 &&
                               'text-amber-700 dark:text-amber-400'
                           )}
@@ -393,7 +393,7 @@ export function Leaderboard({
                       entry.rank === 1
                         ? 'text-yellow-600 dark:text-yellow-400'
                         : entry.rank === 2
-                          ? 'text-gray-600 dark:text-gray-300'
+                          ? 'text-muted-foreground dark:text-gray-300'
                           : entry.rank === 3
                             ? 'text-amber-700 dark:text-amber-400'
                             : currentEntryId === entry.id

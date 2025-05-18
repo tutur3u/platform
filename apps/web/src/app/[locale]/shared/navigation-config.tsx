@@ -14,7 +14,6 @@ import {
   Info,
   Paintbrush,
   Pill,
-  Presentation,
   Shield,
   Sparkles,
   Store,
@@ -139,12 +138,6 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <Info className="h-4 w-4" />,
     },
     {
-      href: '/changelog',
-      label: t('common.changelog'),
-      description: t('common.changelog-description'),
-      icon: <FileText className="h-4 w-4" />,
-    },
-    {
       href: '/careers',
       label: t('common.careers'),
       description: t('common.careers-description'),
@@ -161,12 +154,6 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       label: t('common.security'),
       description: t('common.security-description'),
       icon: <Shield className="h-4 w-4" />,
-    },
-    {
-      href: '/pitch',
-      label: t('common.pitch'),
-      description: t('common.pitch-description'),
-      icon: <Presentation className="h-4 w-4" />,
     },
     {
       href: '/branding',
@@ -192,7 +179,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
 
   const company: NavItem[] = [
     {
-      href: '/pricing',
+      href: '/#pricing',
       label: t('common.pricing'),
       description: '',
     },
