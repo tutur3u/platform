@@ -6,9 +6,14 @@ import { redirect } from 'next/navigation';
 
 export default async function RootLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{
+    wsId: string;
+  }>;
 }) {
+  const { wsId } = await params;
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
@@ -16,16 +21,16 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.id) redirect('/login');
+  if (!user?.email) redirect('/login');
 
   const { data: whitelisted } = await sbAdmin
-    .from('platform_user_roles')
-    .select('enabled,  allow_challenge_management')
-    .eq('user_id', user.id)
+    .from('platform_email_roles')
+    .select('enabled,  allow_role_management')
+    .eq('email', user.email)
     .maybeSingle();
 
-  if (!whitelisted?.enabled || !whitelisted?.allow_challenge_management)
-    redirect('/home');
+  if (!whitelisted?.enabled || !whitelisted?.allow_role_management)
+    redirect(`/${wsId}/home`);
 
   return children;
 }

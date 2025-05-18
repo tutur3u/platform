@@ -25,12 +25,13 @@ export default async function Page() {
     throw new Error('Auth error or missing user');
   }
 
-  // Check user's role and permissions
   const { data: userRole, error: roleError } = await sbAdmin
-    .from('nova_roles')
-    .select('*')
-    .eq('email', user.email)
-    .single();
+    .from('platform_user_roles')
+    .select(
+      'enabled, allow_challenge_management, allow_manage_all_challenges, allow_role_management'
+    )
+    .eq('user_id', user?.id)
+    .maybeSingle();
 
   if (roleError || !userRole) {
     throw new Error(`Error fetching user role: ${roleError}`);
@@ -79,9 +80,9 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
 
     // Check user's role and permissions
     const { data: userRole, error: roleError } = await sbAdmin
-      .from('nova_roles')
+      .from('platform_user_roles')
       .select('*')
-      .eq('email', user.email)
+      .eq('user_id', user.id)
       .single();
 
     if (roleError || !userRole) {
@@ -110,7 +111,7 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
       .select('*')
       .in(
         'challenge_id',
-        challenges.map((challenge) => challenge.id)
+        challenges.map((challenge: NovaExtendedChallenge) => challenge.id)
       );
 
     if (whitelistsError) {
