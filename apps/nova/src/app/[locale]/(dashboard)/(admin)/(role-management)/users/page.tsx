@@ -1,4 +1,5 @@
 import { getUserColumns } from './columns';
+import RoleFilter from './role-filter';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
@@ -20,28 +21,34 @@ interface props {
     page?: string;
     pageSize?: string;
     tab?: string;
+    role?: string;
   }>;
 }
 
 export default async function UserManagement({ searchParams }: props) {
   const locale = await getLocale();
-  const { q, page, pageSize, tab = 'users' } = await searchParams;
+  const { q, page, pageSize, tab = 'users', role } = await searchParams;
 
   // Fetch user data
   const { userData, userCount } = await getUserData({
     q: tab === 'users' ? q : undefined,
     page: tab === 'users' ? page || '1' : '1',
     pageSize: tab === 'users' ? pageSize || '10' : '10',
+    role,
   });
 
   return (
     <div className="p-4 md:p-8">
-      <Link href={`/users/whitelist`}>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Mail className="h-4 w-4" />
-          <span>Manage Email Whitelist</span>
-        </Button>
-      </Link>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <Link href={`/users/whitelist`}>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            <span>Manage Email Whitelist</span>
+          </Button>
+        </Link>
+
+        <RoleFilter currentRole={role} />
+      </div>
 
       <div className="mt-4">
         <FeatureSummary
@@ -69,10 +76,12 @@ async function getUserData({
   q,
   page = '1',
   pageSize = '10',
+  role,
 }: {
   q?: string;
   page?: string;
   pageSize?: string;
+  role?: string;
 }): Promise<{
   userData: (User &
     PlatformUser &
@@ -85,11 +94,13 @@ async function getUserData({
 
     // If there's a search query, use the RPC function
     if (q) {
+      // Use type assertion to overcome TypeScript issues
       const { data, error } = await sbAdmin.rpc('search_users', {
         search_query: q,
         page_number: parseInt(page),
         page_size: parseInt(pageSize),
-      });
+        role_filter: role && role !== 'all' ? role : null,
+      } as any);
 
       if (error) {
         console.error('Error searching users:', error);
@@ -101,7 +112,8 @@ async function getUserData({
         'count_search_users',
         {
           search_query: q,
-        }
+          role_filter: role && role !== 'all' ? role : null,
+        } as any
       );
 
       if (countError) {
@@ -126,6 +138,28 @@ async function getUserData({
       )
       .order('created_at', { ascending: false })
       .order('user_id');
+
+    // Apply role filtering if specified
+    if (role && role !== 'all') {
+      switch (role) {
+        case 'admin':
+          queryBuilder.eq('allow_role_management', true);
+          break;
+        case 'global_manager':
+          queryBuilder.eq('allow_manage_all_challenges', true);
+          break;
+        case 'challenge_manager':
+          queryBuilder.eq('allow_challenge_management', true);
+          break;
+        case 'member':
+        default:
+          queryBuilder
+            .eq('allow_challenge_management', false)
+            .eq('allow_manage_all_challenges', false)
+            .eq('allow_role_management', false);
+          break;
+      }
+    }
 
     // Handle pagination
     const parsedPage = parseInt(page);
