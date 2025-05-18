@@ -85,7 +85,7 @@ export default async function WorkspaceHomePage({
         description={
           <>
             {t('ws-home.description_p1')}{' '}
-            <span className="text-foreground font-semibold underline">
+            <span className="font-semibold text-foreground underline">
               {workspace.name || t('common.untitled')}
             </span>{' '}
             {t('ws-home.description_p2')}
@@ -246,7 +246,7 @@ async function getStatsMetrics() {
 
 // async function getHourlyData(wsId: string) {
 //   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-//   const supabase = await createAdminClient();
+//   const sbAdmin = await createAdminClient();
 
 //   const queryBuilder = supabase.rpc('get_hourly_prompt_completion_tokens', {
 //     past_hours: 24,
@@ -260,7 +260,7 @@ async function getStatsMetrics() {
 
 // async function getDailyData(wsId: string) {
 //   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-//   const supabase = await createAdminClient();
+//   const sbAdmin = await createAdminClient();
 
 //   const queryBuilder = supabase.rpc('get_daily_prompt_completion_tokens');
 
@@ -272,7 +272,7 @@ async function getStatsMetrics() {
 
 // async function getMonthlyData(wsId: string) {
 //   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-//   const supabase = await createAdminClient();
+//   const sbAdmin = await createAdminClient();
 
 //   const queryBuilder = supabase.rpc('get_monthly_prompt_completion_tokens');
 

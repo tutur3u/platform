@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  const supabase = await createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const updateData = {
     enabled: enabled ?? false,
@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest) {
     allow_role_management: allow_role_management ?? false,
   };
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('platform_user_roles')
     .update(updateData)
     .eq('user_id', userId);
@@ -61,9 +61,9 @@ export async function DELETE(
     );
   }
 
-  const supabase = await createAdminClient();
+  const sbAdmin = await createAdminClient();
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('platform_user_roles')
     .delete()
     .eq('user_id', userId);

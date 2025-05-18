@@ -14,14 +14,14 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ message: 'Email is required' }, { status: 400 });
   }
 
-  const supabase = await createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const updateData = {
     email,
     enabled: enabled ?? false,
   };
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('platform_email_roles')
     .update(updateData)
     .eq('email', email);
