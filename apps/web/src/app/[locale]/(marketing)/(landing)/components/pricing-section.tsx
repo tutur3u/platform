@@ -1,19 +1,16 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
-import { ScrollTrigger, gsap } from '@tuturuuu/ui/gsap';
+import { gsap } from '@tuturuuu/ui/gsap';
 import {
   Building,
   Check,
   HelpCircle,
-  Shield,
   Sparkles,
   X,
   Zap,
 } from '@tuturuuu/ui/icons';
 import { useEffect, useRef, useState } from 'react';
-
-gsap.registerPlugin(ScrollTrigger);
 
 const plans = [
   {
@@ -61,9 +58,9 @@ const plans = [
     cta: 'Get Pro',
     popular: true,
     color: 'purple',
-    borderColor: 'border-purple-200',
+    borderColor: 'border-foreground',
     buttonVariant: 'default',
-    bgGradient: 'from-purple-600 to-blue-500',
+    bgGradient: 'from-dynamic-light-purple to-dynamic-light-blue',
   },
   {
     name: 'Enterprise',
@@ -100,47 +97,49 @@ export function PricingSection() {
   useEffect(() => {
     if (!sectionRef.current) return;
 
-    gsap.from('.pricing-title-wrapper', {
-      y: 50,
-      opacity: 0,
-      duration: 0.8,
-      scrollTrigger: {
-        trigger: '.pricing-title-wrapper',
-        start: 'top bottom-=100',
-        toggleActions: 'play none none none',
-      },
-    });
+    const ctx = gsap.context(() => {
+      gsap.from('.pricing-title-wrapper', {
+        y: 50,
+        opacity: 0,
+        duration: 0.8,
+        scrollTrigger: {
+          trigger: '.pricing-title-wrapper',
+          start: 'top bottom-=100',
+          toggleActions: 'play none none none',
+        },
+      });
 
-    // Animate toggle
-    gsap.from('.pricing-toggle', {
-      scale: 0.9,
-      opacity: 0,
-      duration: 0.5,
-      delay: 0.3,
-      scrollTrigger: {
-        trigger: '.pricing-title-wrapper',
-        start: 'top bottom-=100',
-      },
-    });
+      // Animate toggle
+      gsap.from('.pricing-toggle', {
+        scale: 0.9,
+        opacity: 0,
+        duration: 0.5,
+        delay: 0.3,
+        scrollTrigger: {
+          trigger: '.pricing-title-wrapper',
+          start: 'top bottom-=100',
+          toggleActions: 'play none none none',
+        },
+      });
 
-    // Cards staggered animation
-    const pricingCards = gsap.utils.toArray('.pricing-card') as Element[];
-    gsap.from(pricingCards, {
-      y: 40,
-      opacity: 0,
-      scale: 0.95,
-      duration: 0.8,
-      stagger: 0.15,
-      ease: 'back.out(1.2)',
-      scrollTrigger: {
-        trigger: '.pricing-cards-container',
-        start: 'top bottom-=50',
-      },
-    });
+      // Cards staggered animation
+      const pricingCards = gsap.utils.toArray('.pricing-card') as Element[];
+      gsap.from(pricingCards, {
+        y: 40,
+        opacity: 0,
+        scale: 0.95,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: 'back.out(1.2)',
+        scrollTrigger: {
+          trigger: '.pricing-cards-container',
+          start: 'top bottom-=50',
+          toggleActions: 'play none none none',
+        },
+      });
+    }, sectionRef);
 
-    return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-    };
+    return () => ctx.revert(); // Clean up all animations when component unmounts
   }, []);
 
   const featureDescriptions: Record<string, string> = {
@@ -169,50 +168,44 @@ export function PricingSection() {
       ref={sectionRef}
       className="relative w-full overflow-hidden py-24 md:py-40"
     >
-      {/* Background decorations */}
-      <div className="bg-dynamic-light-blue/10 absolute -top-40 right-0 h-96 w-96 rounded-full blur-3xl filter"></div>
-      <div className="bg-dynamic-light-purple/10 absolute -bottom-40 -left-20 h-96 w-96 rounded-full blur-3xl filter"></div>
       <div className="container mx-auto px-4">
         <div className="pricing-title-wrapper mb-16 text-center">
           <h2 className="pricing-title mb-6 text-4xl font-bold md:text-5xl">
-            <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue bg-clip-text text-transparent">
               Simple, Transparent Pricing
             </span>
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-3xl text-xl leading-relaxed">
+          <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
             Choose the plan that works best for you and your team.
           </p>
 
           <div className="pricing-toggle mt-10 flex items-center justify-center">
-            <div className="dark:bg-foreground/5 inline-flex rounded-full bg-white/90 p-1.5 shadow-md backdrop-blur-sm">
+            <div className="inline-flex rounded-full bg-white/90 p-1.5 shadow-md backdrop-blur-sm dark:bg-foreground/5">
               <button
                 className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
                   !isAnnual
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white'
+                    ? 'bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
                 onClick={() => setIsAnnual(false)}
               >
                 Monthly
                 {!isAnnual && (
-                  <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-purple-600/80 to-blue-500/80 blur-sm"></div>
+                  <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 blur-sm"></div>
                 )}
               </button>
               <button
                 className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
                   isAnnual
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white'
+                    ? 'bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
                 onClick={() => setIsAnnual(true)}
               >
                 Annual
                 {isAnnual && (
-                  <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-purple-600/80 to-blue-500/80 blur-sm"></div>
+                  <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 blur-sm"></div>
                 )}
-                <span className="ml-1 rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-semibold text-green-600">
-                  Save 25%
-                </span>
               </button>
             </div>
           </div>
@@ -230,14 +223,14 @@ export function PricingSection() {
             return (
               <div
                 key={index}
-                className={`pricing-card dark:bg-foreground/5 group relative overflow-hidden rounded-2xl bg-white/90 shadow-lg transition-all duration-500 hover:shadow-xl ${
+                className={`pricing-card group relative overflow-hidden rounded-2xl bg-white/90 shadow-lg transition-all duration-500 hover:shadow-xl dark:bg-foreground/5 ${
                   plan.popular
                     ? 'transform ring-2 ring-purple-500 md:-translate-y-4'
                     : ''
                 }`}
               >
                 {plan.popular && (
-                  <div className="bg-gradient-to-r from-purple-600 to-blue-500 py-2 text-center text-sm font-medium text-white">
+                  <div className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue py-2 text-center text-sm font-medium text-white">
                     Most Popular
                   </div>
                 )}
@@ -246,7 +239,7 @@ export function PricingSection() {
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                         plan.name === 'Pro'
-                          ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white'
+                          ? 'bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white'
                           : plan.name === 'Enterprise'
                             ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
                             : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
@@ -257,7 +250,7 @@ export function PricingSection() {
                     <h3 className="text-2xl font-bold">{plan.name}</h3>
                   </div>
 
-                  <p className="text-muted-foreground mb-8">
+                  <p className="mb-8 text-muted-foreground">
                     {plan.description}
                   </p>
                   <div className="mb-8">
@@ -291,7 +284,7 @@ export function PricingSection() {
                     {plan.cta}
                   </Button>
                   <div className="space-y-4">
-                    <div className="text-muted-foreground mb-4 font-medium">
+                    <div className="mb-4 font-medium text-muted-foreground">
                       Features include:
                     </div>
                     {plan.features.map((feature, i) => (
@@ -305,7 +298,7 @@ export function PricingSection() {
                           <div
                             className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${
                               plan.name === 'Pro'
-                                ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
+                                ? 'bg-purple-100 text-dynamic-light-purple dark:bg-purple-900/30 dark:text-purple-400'
                                 : plan.name === 'Enterprise'
                                   ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
                                   : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
@@ -329,7 +322,7 @@ export function PricingSection() {
                             {hoveredFeature === feature.feature && (
                               <div className="absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 transform rounded-lg bg-gray-800 p-3 text-xs leading-relaxed text-white shadow-lg">
                                 {featureDescriptions[feature.feature]}
-                                <div className="absolute left-1/2 top-full -translate-x-1/2 transform border-4 border-transparent border-t-gray-800"></div>
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 transform border-4 border-transparent border-t-gray-800"></div>
                               </div>
                             )}
                           </div>
@@ -341,18 +334,6 @@ export function PricingSection() {
               </div>
             );
           })}
-        </div>
-
-        <div className="dark:bg-foreground/5 mt-16 flex flex-col items-center justify-center rounded-xl bg-white/80 p-8 shadow-lg backdrop-blur-sm">
-          <Shield className="mb-4 h-12 w-12 text-blue-500" />
-          <h3 className="mb-2 text-2xl font-bold">
-            Enterprise Security & Compliance
-          </h3>
-          <p className="text-muted-foreground max-w-2xl text-center">
-            All plans include industry-standard security measures. Enterprise
-            customers receive additional compliance features, dedicated support,
-            and custom security configurations.
-          </p>
         </div>
       </div>
     </section>

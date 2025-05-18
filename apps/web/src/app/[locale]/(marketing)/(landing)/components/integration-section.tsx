@@ -1,9 +1,7 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { ScrollTrigger, gsap } from '@tuturuuu/ui/gsap';
+import { gsap } from '@tuturuuu/ui/gsap';
 import {
-  ArrowRight,
   Calendar,
   Check,
   Mail,
@@ -12,52 +10,60 @@ import {
 } from '@tuturuuu/ui/icons';
 import { useEffect, useRef } from 'react';
 
-gsap.registerPlugin(ScrollTrigger);
-
 export function IntegrationSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!sectionRef.current) return;
 
-    gsap.from('.integration-title', {
-      y: 50,
-      opacity: 0,
-      duration: 0.8,
-      scrollTrigger: {
-        trigger: '.integration-title',
-        start: 'top bottom-=100',
-        toggleActions: 'play none none none',
-      },
-    });
+    const ctx = gsap.context(() => {
+      const integrationTitleElements =
+        sectionRef.current?.querySelectorAll('.integration-title');
+      if (integrationTitleElements && integrationTitleElements.length > 0) {
+        gsap.from(integrationTitleElements, {
+          y: 50,
+          opacity: 0,
+          duration: 0.8,
+          scrollTrigger: {
+            trigger: integrationTitleElements[0],
+            start: 'top bottom-=100',
+            toggleActions: 'play none none none',
+          },
+        });
+      }
 
-    gsap.from('.integration-image', {
-      y: 50,
-      opacity: 0,
-      duration: 0.8,
-      scrollTrigger: {
-        trigger: '.integration-image',
-        start: 'top bottom-=100',
-        toggleActions: 'play none none none',
-      },
-    });
+      const integrationImageElement =
+        sectionRef.current?.querySelector('.integration-image');
+      if (integrationImageElement) {
+        gsap.from(integrationImageElement, {
+          y: 50,
+          opacity: 0,
+          duration: 0.8,
+          scrollTrigger: {
+            trigger: integrationImageElement,
+            start: 'top bottom-=100',
+            toggleActions: 'play none none none',
+          },
+        });
+      }
+    }, sectionRef); // Scope GSAP context to the sectionRef
 
     return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      ctx.revert(); // Cleanup GSAP animations and ScrollTriggers
     };
-  }, []);
+  }, []); // Empty dependency array to run once on mount
 
   return (
     <section ref={sectionRef} className="pt-20">
       <div className="container mx-auto px-4">
         <div className="mb-16 text-center">
           <h2 className="integration-title mb-4 text-3xl font-bold md:text-4xl">
-            <span className="from-dynamic-purple to-dynamic-blue bg-gradient-to-r bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
               Seamless Integration
             </span>
           </h2>
-          <p className="integration-title text-muted-foreground mx-auto max-w-3xl text-xl">
-            TuPlan brings all your productivity tools together in one unified
+          <p className="integration-title mx-auto max-w-3xl text-xl text-muted-foreground">
+            Tuturuuu brings all your productivity tools together in one unified
             workspace
           </p>
         </div>
@@ -67,16 +73,16 @@ export function IntegrationSection() {
             <h3 className="mb-6 text-2xl font-bold">
               Everything Works Together
             </h3>
-            <p className="text-muted-foreground mb-8 text-lg">
-              No more switching between apps or losing context. TuPlan
+            <p className="mb-8 text-lg text-muted-foreground">
+              No more switching between apps or losing context. Tuturuuu
               integrates your calendar, tasks, meetings, chat, and email in one
               intelligent workspace.
             </p>
 
             <div className="mb-8 space-y-6">
               <div className="flex items-start gap-4">
-                <div className="bg-calendar-bg-purple flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg">
-                  <Calendar className="text-dynamic-purple h-6 w-6" />
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-calendar-bg-purple">
+                  <Calendar className="h-6 w-6 text-dynamic-purple" />
                 </div>
                 <div>
                   <h4 className="mb-1 text-lg font-semibold">
@@ -90,8 +96,8 @@ export function IntegrationSection() {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="bg-calendar-bg-blue flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg">
-                  <Video className="text-dynamic-blue h-6 w-6" />
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-calendar-bg-blue">
+                  <Video className="h-6 w-6 text-dynamic-blue" />
                 </div>
                 <div>
                   <h4 className="mb-1 text-lg font-semibold">
@@ -105,8 +111,8 @@ export function IntegrationSection() {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="bg-calendar-bg-green flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg">
-                  <Mail className="text-dynamic-green h-6 w-6" />
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-calendar-bg-green">
+                  <Mail className="h-6 w-6 text-dynamic-green" />
                 </div>
                 <div>
                   <h4 className="mb-1 text-lg font-semibold">
@@ -120,8 +126,8 @@ export function IntegrationSection() {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="bg-calendar-bg-orange flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg">
-                  <MessageSquare className="text-dynamic-orange h-6 w-6" />
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-calendar-bg-orange">
+                  <MessageSquare className="h-6 w-6 text-dynamic-orange" />
                 </div>
                 <div>
                   <h4 className="mb-1 text-lg font-semibold">Chat + Tasks</h4>
@@ -132,28 +138,24 @@ export function IntegrationSection() {
                 </div>
               </div>
             </div>
-
-            <Button className="from-dynamic-light-purple to-dynamic-light-blue flex items-center gap-2 bg-gradient-to-r text-white hover:opacity-90">
-              See how it works <ArrowRight className="h-4 w-4" />
-            </Button>
           </div>
 
           <div className="integration-image">
             <div className="relative">
-              <div className="bg-calendar-bg-purple absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-20 blur-3xl filter"></div>
-              <div className="bg-calendar-bg-blue absolute -bottom-10 -left-10 h-40 w-40 rounded-full opacity-20 blur-3xl filter"></div>
+              <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-calendar-bg-purple opacity-20 blur-3xl filter"></div>
+              <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-calendar-bg-blue opacity-20 blur-3xl filter"></div>
 
-              <div className="dark:bg-foreground/5 relative overflow-hidden rounded-xl border bg-white shadow-xl">
-                <div className="from-dynamic-purple to-dynamic-blue bg-gradient-to-r p-3 text-white">
+              <div className="relative overflow-hidden rounded-xl border bg-white shadow-xl dark:bg-foreground/5">
+                <div className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue p-3 text-white">
                   <h3 className="font-medium">Unified Workspace</h3>
                 </div>
 
                 <div className="p-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="border-dynamic-light-purple/30 bg-calendar-bg-purple rounded-lg border p-3">
+                    <div className="rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-3">
                       <div className="mb-2 flex items-center gap-2">
-                        <Calendar className="text-dynamic-purple h-4 w-4" />
-                        <h4 className="text-dynamic-purple text-sm font-medium">
+                        <Calendar className="h-4 w-4 text-dynamic-purple" />
+                        <h4 className="text-sm font-medium text-dynamic-purple">
                           Calendar
                         </h4>
                       </div>
@@ -161,7 +163,7 @@ export function IntegrationSection() {
                         {Array.from({ length: 7 }).map((_, i) => (
                           <div
                             key={i}
-                            className="bg-calendar-bg-purple text-dynamic-purple flex aspect-square items-center justify-center rounded-sm text-xs"
+                            className="flex aspect-square items-center justify-center rounded-sm bg-calendar-bg-purple text-xs text-dynamic-purple"
                           >
                             {i + 1}
                           </div>
@@ -169,70 +171,70 @@ export function IntegrationSection() {
                       </div>
                     </div>
 
-                    <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue rounded-lg border p-3">
+                    <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-3">
                       <div className="mb-2 flex items-center gap-2">
-                        <Check className="text-dynamic-blue h-4 w-4" />
-                        <h4 className="text-dynamic-blue text-sm font-medium">
+                        <Check className="h-4 w-4 text-dynamic-blue" />
+                        <h4 className="text-sm font-medium text-dynamic-blue">
                           Tasks
                         </h4>
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-1">
-                          <div className="border-dynamic-blue h-3 w-3 rounded-full border"></div>
-                          <span className="text-dynamic-blue truncate text-xs">
+                          <div className="h-3 w-3 rounded-full border border-dynamic-blue"></div>
+                          <span className="truncate text-xs text-dynamic-blue">
                             Finalize report
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <div className="border-dynamic-blue h-3 w-3 rounded-full border"></div>
-                          <span className="text-dynamic-blue truncate text-xs">
+                          <div className="h-3 w-3 rounded-full border border-dynamic-blue"></div>
+                          <span className="truncate text-xs text-dynamic-blue">
                             Review design
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="border-dynamic-light-green/30 bg-calendar-bg-green rounded-lg border p-3">
+                    <div className="rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-3">
                       <div className="mb-2 flex items-center gap-2">
-                        <Video className="text-dynamic-green h-4 w-4" />
-                        <h4 className="text-dynamic-green text-sm font-medium">
+                        <Video className="h-4 w-4 text-dynamic-green" />
+                        <h4 className="text-sm font-medium text-dynamic-green">
                           Meetings
                         </h4>
                       </div>
                       <div className="flex items-center gap-1">
-                        <div className="bg-calendar-bg-green flex h-5 w-5 items-center justify-center rounded-full text-[10px]">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-calendar-bg-green text-[10px]">
                           A
                         </div>
-                        <div className="bg-calendar-bg-green flex h-5 w-5 items-center justify-center rounded-full text-[10px]">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-calendar-bg-green text-[10px]">
                           B
                         </div>
-                        <span className="text-dynamic-green text-xs">
+                        <span className="text-xs text-dynamic-green">
                           Team Sync
                         </span>
                       </div>
                     </div>
 
-                    <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange rounded-lg border p-3">
+                    <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-3">
                       <div className="mb-2 flex items-center gap-2">
-                        <MessageSquare className="text-dynamic-orange h-4 w-4" />
-                        <h4 className="text-dynamic-orange text-sm font-medium">
+                        <MessageSquare className="h-4 w-4 text-dynamic-orange" />
+                        <h4 className="text-sm font-medium text-dynamic-orange">
                           Chat
                         </h4>
                       </div>
-                      <div className="text-dynamic-orange dark:bg-foreground/5 rounded bg-white p-1 text-[10px]">
+                      <div className="rounded bg-white p-1 text-[10px] text-dynamic-orange dark:bg-foreground/5">
                         Latest updates on project...
                       </div>
                     </div>
                   </div>
 
-                  <div className="border-dynamic-light-red/30 bg-calendar-bg-red mt-3 rounded-lg border p-3">
+                  <div className="mt-3 rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-3">
                     <div className="mb-2 flex items-center gap-2">
-                      <Mail className="text-dynamic-red h-4 w-4" />
-                      <h4 className="text-dynamic-red text-sm font-medium">
+                      <Mail className="h-4 w-4 text-dynamic-red" />
+                      <h4 className="text-sm font-medium text-dynamic-red">
                         Email
                       </h4>
                     </div>
-                    <div className="text-dynamic-red dark:bg-foreground/5 rounded bg-white p-1 text-[10px]">
+                    <div className="rounded bg-white p-1 text-[10px] text-dynamic-red dark:bg-foreground/5">
                       2 new messages from clients...
                     </div>
                   </div>

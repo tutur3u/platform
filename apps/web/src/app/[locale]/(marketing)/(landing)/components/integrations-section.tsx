@@ -1,10 +1,8 @@
 'use client';
 
-import { ScrollTrigger, gsap } from '@tuturuuu/ui/gsap';
+import { gsap } from '@tuturuuu/ui/gsap';
 import { Calendar, CheckSquare, Mail, MessageSquare } from '@tuturuuu/ui/icons';
 import { useEffect, useRef } from 'react';
-
-gsap.registerPlugin(ScrollTrigger);
 
 const integrations = [
   {
@@ -43,38 +41,38 @@ export function IntegrationsSection() {
   useEffect(() => {
     if (!sectionRef.current) return;
 
-    gsap.from('.integrations-title', {
-      y: 50,
-      opacity: 0,
-      duration: 0.8,
-      scrollTrigger: {
-        trigger: '.integrations-title',
-        start: 'top bottom-=100',
-        toggleActions: 'play none none none',
-      },
-    });
-
-    const integrationCards = gsap.utils.toArray(
-      '.integration-card'
-    ) as Element[];
-
-    integrationCards.forEach((card, index) => {
-      gsap.from(card, {
+    const ctx = gsap.context(() => {
+      gsap.from('.integrations-title', {
         y: 50,
         opacity: 0,
         duration: 0.8,
         scrollTrigger: {
-          trigger: card as Element,
+          trigger: '.integrations-title',
           start: 'top bottom-=100',
           toggleActions: 'play none none none',
         },
-        delay: index * 0.1,
       });
-    });
 
-    return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-    };
+      const integrationCards = gsap.utils.toArray(
+        '.integration-card'
+      ) as Element[];
+
+      integrationCards.forEach((card, index) => {
+        gsap.from(card, {
+          y: 50,
+          opacity: 0,
+          duration: 0.8,
+          scrollTrigger: {
+            trigger: card as Element,
+            start: 'top bottom-=100',
+            toggleActions: 'play none none none',
+          },
+          delay: index * 0.1,
+        });
+      });
+    }, sectionRef);
+
+    return () => ctx.revert(); // Clean up all animations when component unmounts
   }, []);
 
   return (
@@ -86,7 +84,7 @@ export function IntegrationsSection() {
               Future Integrations
             </span>
           </h2>
-          <p className="integrations-title text-muted-foreground mx-auto max-w-3xl text-xl">
+          <p className="integrations-title mx-auto max-w-3xl text-xl text-muted-foreground">
             TuPlan is just the beginning. Our ecosystem is growing to cover all
             your productivity needs.
           </p>

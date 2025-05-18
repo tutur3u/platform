@@ -3,7 +3,6 @@
 import { MainDemo } from './main-demo';
 import { MainTitle } from './main-title';
 import { gsap } from '@tuturuuu/ui/gsap';
-import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 
 export function HeroSection() {
@@ -13,54 +12,86 @@ export function HeroSection() {
   useEffect(() => {
     if (!sectionRef.current) return;
 
-    const tl = gsap.timeline();
+    const ctx = gsap.context(() => {
+      gsap.from('.hero-title-word', {
+        y: 80,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: 'back.out(1.4)',
+      });
 
-    tl.from('.hero-text', {
-      y: 50,
-      opacity: 0,
-      duration: 0.8,
-      stagger: 0.2,
-      ease: 'power3.out',
-    })
-      .from(
-        '.hero-button',
-        {
-          y: 20,
-          opacity: 0,
-          duration: 0.5,
-          stagger: 0.1,
-          ease: 'power3.out',
-        },
-        '-=0.4'
-      )
-      .from(
-        '.hero-badge',
-        {
-          scale: 0.8,
-          opacity: 0,
-          duration: 0.5,
-          stagger: 0.1,
-          ease: 'back.out(1.7)',
-        },
-        '-=0.4'
-      );
-  }, []);
+      gsap.from('.hero-subtitle', {
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        delay: 0.5,
+        ease: 'power2.out',
+      });
+
+      gsap.from('.hero-cta-button', {
+        scale: 0.8,
+        opacity: 0,
+        duration: 0.6,
+        delay: 0.8,
+        ease: 'back.out(1.5)',
+      });
+
+      gsap.from('.hero-secondary-button', {
+        scale: 0.8,
+        opacity: 0,
+        duration: 0.6,
+        delay: 1.0,
+        ease: 'back.out(1.5)',
+      });
+
+      gsap.from('.hero-features li', {
+        x: -20,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.1,
+        delay: 1.2,
+        ease: 'power2.out',
+      });
+
+      gsap.from('.hero-image-wrapper', {
+        y: 50,
+        opacity: 0,
+        duration: 1,
+        delay: 0.3,
+        ease: 'power3.out',
+      });
+
+      // Floating icons animation
+      gsap.to('.floating-icon', {
+        y: (i) => (i % 2 === 0 ? -15 : 15),
+        x: (i) => (i % 3 === 0 ? 10 : -10),
+        duration: 3,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+        stagger: 0.3,
+      });
+    }, sectionRef); // Scope GSAP context to the sectionRef
+
+    return () => {
+      ctx.revert(); // Cleanup GSAP animations and ScrollTriggers
+    };
+  }, []); // Empty dependency array to run once on mount
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1 }}
+    <section
+      ref={sectionRef} // Add ref here
       className="relative min-h-[calc(100vh-3.5rem+53px)] w-full"
     >
-      <section ref={sectionRef} className="pb-20 pt-32 md:pb-32 md:pt-40">
+      <div className="pt-32 pb-20 md:pt-40 md:pb-32">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-start gap-12 lg:flex-row">
             <MainTitle />
             <MainDemo calendarRef={calendarRef} />
           </div>
         </div>
-      </section>
-    </motion.div>
+      </div>
+    </section>
   );
 }

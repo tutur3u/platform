@@ -1,11 +1,9 @@
 'use client';
 
-import { ScrollTrigger, gsap } from '@tuturuuu/ui/gsap';
+import { gsap } from '@tuturuuu/ui/gsap';
 import { ChevronLeft, ChevronRight, Star } from '@tuturuuu/ui/icons';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-
-gsap.registerPlugin(ScrollTrigger);
 
 interface Testimonial {
   name: string;
@@ -23,7 +21,7 @@ const testimonials: Testimonial[] = [
     company: 'TechCorp',
     image: '/placeholder.svg?height=80&width=80',
     quote:
-      "TuPlan has completely transformed how I manage my tasks. The LLM understands my priorities better than I do sometimes! I've reclaimed 12 hours weekly that used to be lost to scheduling and reprioritizing.",
+      "Tuturuuu has completely transformed how I manage my tasks. The LLM understands my priorities better than I do sometimes! I've reclaimed 12 hours weekly that used to be lost to scheduling and reprioritizing.",
     stars: 5,
   },
   {
@@ -32,7 +30,7 @@ const testimonials: Testimonial[] = [
     company: 'InnovateLabs',
     image: '/placeholder.svg?height=80&width=80',
     quote:
-      "As someone who manages complex projects with tight deadlines, TuPlan has been revolutionary. It balances my team's workload perfectly and ensures we never miss deadlines. Google Calendar could never do this.",
+      "As someone who manages complex projects with tight deadlines, Tuturuuu has been revolutionary. It balances my team's workload perfectly and ensures we never miss deadlines. Google Calendar could never do this.",
     stars: 5,
   },
   {
@@ -41,7 +39,7 @@ const testimonials: Testimonial[] = [
     company: 'BrandForward',
     image: '/placeholder.svg?height=80&width=80',
     quote:
-      "The way TuPlan understands task context and adjusts my schedule accordingly is mind-blowing. I can focus on creative work while it handles the logistics of my day. I've gained back so much mental space.",
+      "The way Tuturuuu understands task context and adjusts my schedule accordingly is mind-blowing. I can focus on creative work while it handles the logistics of my day. I've gained back so much mental space.",
     stars: 5,
   },
   {
@@ -50,7 +48,7 @@ const testimonials: Testimonial[] = [
     company: 'Self-employed',
     image: '/placeholder.svg?height=80&width=80',
     quote:
-      "TuPlan helps me balance multiple client projects with varying priorities and deadlines. It's like having a personal assistant who knows exactly how long each task will take and when I work best. Game-changer!",
+      "Tuturuuu helps me balance multiple client projects with varying priorities and deadlines. It's like having a personal assistant who knows exactly how long each task will take and when I work best. Game-changer!",
     stars: 5,
   },
 ];
@@ -72,31 +70,37 @@ export function TestimonialsSection() {
   useEffect(() => {
     if (!sectionRef.current) return;
 
-    gsap.from('.testimonials-title', {
-      y: 50,
-      opacity: 0,
-      duration: 0.8,
-      scrollTrigger: {
-        trigger: '.testimonials-title',
-        start: 'top bottom-=100',
-        toggleActions: 'play none none none',
-      },
-    });
+    const ctx = gsap.context(() => {
+      gsap.from('.testimonials-title', {
+        y: 50,
+        opacity: 0,
+        duration: 0.8,
+        scrollTrigger: {
+          trigger: '.testimonials-title',
+          start: 'top bottom-=100',
+          toggleActions: 'play none none none',
+        },
+      });
+    }, sectionRef);
 
-    return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-    };
+    return () => ctx.revert(); // Clean up all animations when component unmounts
   }, []);
 
   useEffect(() => {
-    const testimonialElement = document.querySelector('.testimonial-content');
-    if (testimonialElement) {
-      gsap.from(testimonialElement, {
-        opacity: 0,
-        y: 20,
-        duration: 0.5,
-      });
-    }
+    if (!sectionRef.current) return;
+
+    const ctx = gsap.context(() => {
+      const testimonialElement = document.querySelector('.testimonial-content');
+      if (testimonialElement) {
+        gsap.fromTo(
+          testimonialElement,
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.5 }
+        );
+      }
+    }, sectionRef);
+
+    return () => ctx.revert();
   }, [activeIndex]);
 
   return (
@@ -108,16 +112,16 @@ export function TestimonialsSection() {
               What Our Users Say
             </span>
           </h2>
-          <p className="testimonials-title text-muted-foreground mx-auto max-w-3xl text-balance text-xl">
+          <p className="testimonials-title mx-auto max-w-3xl text-xl text-balance text-muted-foreground">
             Join thousands of professionals who have transformed their
-            productivity with TuPlan.
+            productivity with Tuturuuu.
           </p>
         </div>
 
         <div className="mx-auto max-w-4xl">
           <div className="relative rounded-2xl bg-white p-8 shadow-xl md:p-12">
-            <div className="absolute left-0 top-0 h-24 w-24 -translate-x-4 -translate-y-4 transform rounded-full bg-purple-200 opacity-50"></div>
-            <div className="absolute bottom-0 right-0 h-24 w-24 translate-x-4 translate-y-4 transform rounded-full bg-blue-200 opacity-50"></div>
+            <div className="absolute top-0 left-0 h-24 w-24 -translate-x-4 -translate-y-4 transform rounded-full bg-purple-200 opacity-50"></div>
+            <div className="absolute right-0 bottom-0 h-24 w-24 translate-x-4 translate-y-4 transform rounded-full bg-blue-200 opacity-50"></div>
 
             <div className="testimonial-content relative">
               <div className="mb-6 flex flex-col items-center gap-6 md:flex-row md:items-start">
