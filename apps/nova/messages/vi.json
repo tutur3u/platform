@@ -1453,7 +1453,7 @@
     "error-500-description": "Something went wrong. Please try again later.",
     "dashboard": "Tổng Quan",
     "problems": "Đề Bài",
-    "roles": "Vai Trò",
+    "users": "Người Dùng",
     "create-problem": "Tạo Đề Bài Mới",
     "view-leaderboard": "Xem bảng xếp hạng",
     "challenges-page": {

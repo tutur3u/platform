@@ -14,9 +14,9 @@ interface Props {
 
 const getDocument = async (documentId: string) => {
   try {
-    const supabase = await createAdminClient();
+    const sbAdmin = await createAdminClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('workspace_documents')
       .select('id')
       .eq('id', documentId)

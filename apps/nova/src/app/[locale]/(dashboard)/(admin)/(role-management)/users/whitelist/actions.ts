@@ -3,14 +3,15 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 export async function addWhitelistEmail(email: string, enabled: boolean) {
-  const supabase = await createAdminClient();
-  if (!supabase) throw new Error('Unauthorized');
+  const sbAdmin = await createAdminClient();
+  if (!sbAdmin) throw new Error('Unauthorized');
 
-  const { error } = await supabase.from('nova_roles').insert([
+  const { error } = await sbAdmin.from('platform_email_roles').insert([
     {
       email,
       enabled,
       allow_challenge_management: false,
+      allow_manage_all_challenges: false,
       allow_role_management: false,
     },
   ]);

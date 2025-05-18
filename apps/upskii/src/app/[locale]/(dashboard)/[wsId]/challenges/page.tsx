@@ -29,7 +29,7 @@ export default async function Page({
   if (!user?.id) redirect('/login');
 
   const { data: whitelisted } = await sbAdmin
-    .from('nova_roles')
+    .from('platform_email_roles')
     .select(
       'enabled, allow_challenge_management, allow_manage_all_challenges,allow_role_management'
     )

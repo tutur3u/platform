@@ -59,12 +59,14 @@ const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
       </div>
       <div
         className={cn(
-          'pointer-events-none absolute whitespace-nowrap rounded text-xs font-semibold',
+          'pointer-events-none absolute whitespace-nowrap rounded-md border text-xs font-semibold',
           // More compact styling for short durations
           height < 60
-            ? 'right-1 top-1/2 -translate-y-1/2 rounded-md bg-white/90 px-1 py-0.5 text-[10px] shadow-sm'
-            : 'right-2 top-1 rounded-md bg-white/90 px-1.5 py-0.5 shadow-sm',
-          text
+            ? 'right-1 top-1/2 -translate-y-1/2 px-1 py-0.5 text-[10px]'
+            : 'right-2 top-2 px-1.5 py-0.5',
+          text,
+          bg,
+          border
         )}
         style={{
           maxWidth: 'calc(100% - 8px)', // Tighter max width
@@ -74,7 +76,7 @@ const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
         }}
       >
         {durationMinutes < 60
-          ? `${durationMinutes}m` // Shorter format for minutes
+          ? `${durationMinutes <= 0 ? 15 : durationMinutes}m`
           : `${Math.floor(durationMinutes / 60)}h${durationMinutes % 60 ? ` ${durationMinutes % 60}m` : ''}`}
       </div>
     </div>
@@ -658,7 +660,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
           id={tooltipId}
           role="tooltip"
           aria-live="polite"
-          className="pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg"
+          className="text-foreground pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium shadow-lg"
           style={{
             position: 'fixed',
             left: cursorPosRef.current.x,
