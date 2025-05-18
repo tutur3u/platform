@@ -1,20 +1,13 @@
 'use client';
 
-import { SubmissionCard } from '@/app/[locale]/(dashboard)/shared/submission-card';
+import { SubmissionCard } from '@/components/common/SubmissionCard';
 import { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import {
-  ArrowLeft,
-  BookOpen,
-  Calendar,
-  Clock,
-  FileCode,
-  User,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { ArrowLeft, BookOpen, Calendar, User } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface SubmissionClientProps {
   submission: NovaSubmissionData;
@@ -23,49 +16,61 @@ interface SubmissionClientProps {
 export default function SubmissionClient({
   submission,
 }: SubmissionClientProps) {
+  const router = useRouter();
+
+  // Helper function to determine score color
+  const getScoreColor = (score: number | null) => {
+    if (score === null) return 'bg-gray-200';
+    if (score >= 8) return 'bg-emerald-500';
+    if (score >= 5) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+
+  // Helper function to determine badge variant
+  const getBadgeVariant = (score: number | null) => {
+    if (score === null) return 'outline';
+    if (score >= 8) return 'success';
+    if (score >= 5) return 'warning';
+    return 'destructive';
+  };
+
+  // Helper function to format score
+  const formatScore = (score: number | null) => {
+    return score !== null ? `${score.toFixed(2)}/10` : 'Not scored';
+  };
+
+  // Calculate progress percentage for progress bars
+  const getProgressPercentage = (score: number | null) => {
+    return score !== null ? (score / 10) * 100 : 0;
+  };
+
   return (
     <div className="container space-y-6 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="space-y-1">
-          <Link
-            href="/submissions"
-            className="text-muted-foreground mb-2 flex items-center gap-1 text-sm hover:underline"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to submissions
-          </Link>
+      <div className="mb-6 flex items-center gap-4">
+        <Button
+          onClick={() => router.push('/submissions')}
+          variant="outline"
+          size="icon"
+          className="rounded-full"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold">Submission Details</h1>
-          <p className="text-muted-foreground">
-            Detailed view of submission {submission.id}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Link href={`/challenges/${submission.challenge.id}`}>
-            <Button variant="outline" className="gap-1">
-              <BookOpen className="h-4 w-4" />
-              <span>View Challenge</span>
-            </Button>
-          </Link>
-
-          <Link href={`/admin/challenges/${submission.challenge.id}`}>
-            <Button variant="default" className="gap-1">
-              <FileCode className="h-4 w-4" />
-              <span>Edit Challenge</span>
-            </Button>
-          </Link>
+          <p className="text-muted-foreground">ID: {submission.id}</p>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-3">
+      <div className="flex flex-col gap-6">
+        <Card>
           <CardHeader>
             <CardTitle>Submission Summary</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4">
+          <CardContent className="flex flex-col gap-4 md:flex-row">
+            <div className="w-full space-y-4">
               <div className="space-y-1">
                 <p className="text-muted-foreground text-sm">User</p>
-                <div className="flex items-center gap-2">
+                <div className="flex gap-2">
                   <User className="text-primary/70 h-4 w-4" />
                   <span className="font-medium">
                     {submission.user.display_name || 'Anonymous'}
@@ -77,9 +82,12 @@ export default function SubmissionClient({
                 <p className="text-muted-foreground text-sm">Problem</p>
                 <div className="flex items-center gap-2">
                   <BookOpen className="text-primary/70 h-4 w-4" />
-                  <span className="font-medium">
-                    {submission.problem.title || 'Unknown Problem'}
-                  </span>
+                  <Link
+                    href={`/problems/${submission.problem.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {submission.problem.title}
+                  </Link>
                 </div>
               </div>
 
@@ -89,105 +97,69 @@ export default function SubmissionClient({
                   <div className="flex items-center gap-2">
                     <Calendar className="text-primary/70 h-4 w-4" />
                     <span className="font-medium">
-                      {new Date(submission.created_at!).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {submission.created_at && (
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Time</p>
-                  <div className="flex items-center gap-2">
-                    <Clock className="text-primary/70 h-4 w-4" />
-                    <span className="font-medium">
-                      {new Date(submission.created_at).toLocaleTimeString()}
+                      {new Date(submission.created_at).toLocaleString()}
                     </span>
                   </div>
                 </div>
               )}
             </div>
 
-            <Separator className="my-4" />
-
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Total Score</p>
-                <div>
-                  <Badge
-                    variant={
-                      submission.total_score && submission.total_score >= 8
-                        ? 'success'
-                        : submission.total_score && submission.total_score >= 5
-                          ? 'warning'
-                          : 'destructive'
-                    }
-                    className="px-2 py-1 text-sm"
-                  >
+            <div className="w-full">
+              {/* Total Score - Highlighted */}
+              <div className="mb-8 flex flex-col items-center justify-center">
+                <p className="text-muted-foreground mb-2 text-sm font-medium">
+                  Total Score
+                </p>
+                <div className="border-muted relative flex h-32 w-32 items-center justify-center rounded-full border-8">
+                  <div
+                    className={`absolute inset-0 rounded-full ${getScoreColor(submission.total_score)}`}
+                    style={{
+                      clipPath: `circle(${getProgressPercentage(submission.total_score)}% at center)`,
+                    }}
+                  />
+                  <span className="relative z-10 text-4xl font-bold">
                     {submission.total_score !== null
-                      ? `${submission.total_score.toFixed(2)}/10`
-                      : 'Not scored'}
-                  </Badge>
+                      ? submission.total_score.toFixed(1)
+                      : '-'}
+                  </span>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Test Case Score</p>
-                <div>
-                  <Badge
-                    variant={
-                      submission.test_case_score &&
-                      submission.test_case_score >= 8
-                        ? 'success'
-                        : submission.test_case_score &&
-                            submission.test_case_score >= 5
-                          ? 'warning'
-                          : 'destructive'
-                    }
-                    className="px-2 py-1 text-sm"
-                  >
-                    {submission.test_case_score !== null
-                      ? `${submission.test_case_score.toFixed(2)}/10`
-                      : 'Not scored'}
-                  </Badge>
+              {/* Test Case and Criteria Scores */}
+              <div className="space-y-4">
+                <div className="bg-muted/50 space-y-3 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">Test Case Score</p>
+                    <Badge
+                      variant={getBadgeVariant(submission.test_case_score)}
+                      className="px-2 py-1"
+                    >
+                      {formatScore(submission.test_case_score)}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Criteria Score</p>
-                <div>
-                  <Badge
-                    variant={
-                      submission.criteria_score &&
-                      submission.criteria_score >= 8
-                        ? 'success'
-                        : submission.criteria_score &&
-                            submission.criteria_score >= 5
-                          ? 'warning'
-                          : 'destructive'
-                    }
-                    className="px-2 py-1 text-sm"
-                  >
-                    {submission.criteria_score !== null
-                      ? `${submission.criteria_score.toFixed(2)}/10`
-                      : 'Not scored'}
-                  </Badge>
+                <div className="bg-muted/50 space-y-3 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">Criteria Score</p>
+                    <Badge
+                      variant={getBadgeVariant(submission.criteria_score)}
+                      className="px-2 py-1"
+                    >
+                      {formatScore(submission.criteria_score)}
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="md:col-span-3">
-          <CardContent className="pt-6">
-            <SubmissionCard
-              submission={submission}
-              isCurrent={false}
-              onRequestFetch={() => {}} // Already have full data
-              isLoading={false}
-            />
-          </CardContent>
-        </Card>
+        <SubmissionCard
+          submission={submission}
+          isCurrent={false}
+          onRequestFetch={() => {}} // Already have full data
+          isLoading={false}
+        />
       </div>
     </div>
   );

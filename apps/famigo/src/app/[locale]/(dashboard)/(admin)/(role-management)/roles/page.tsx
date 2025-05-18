@@ -62,11 +62,11 @@ async function getEmailData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  const supabase = await createAdminClient();
-  if (!supabase) notFound();
+  const sbAdmin = await createAdminClient();
+  if (!sbAdmin) notFound();
 
-  const queryBuilder = supabase
-    .from('nova_roles')
+  const queryBuilder = sbAdmin
+    .from('platform_email_roles')
     .select('*', {
       count: 'exact',
     })

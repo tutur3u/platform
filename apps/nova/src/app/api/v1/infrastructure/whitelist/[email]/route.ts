@@ -1,19 +1,13 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(req: NextRequest) {
-  const {
-    email,
-    enabled,
-    allow_challenge_management,
-    allow_manage_all_challenges,
-    allow_role_management,
-  } = (await req.json()) as {
+  const { email, enabled } = (await req.json()) as {
     email: string;
     enabled: boolean;
-    allow_challenge_management: boolean;
-    allow_manage_all_challenges: boolean;
-    allow_role_management: boolean;
   };
 
   if (!email) {
@@ -25,20 +19,17 @@ export async function PUT(req: NextRequest) {
   const updateData = {
     email,
     enabled: enabled ?? false,
-    allow_challenge_management: allow_challenge_management ?? false,
-    allow_manage_all_challenges: allow_manage_all_challenges ?? false,
-    allow_role_management: allow_role_management ?? false,
   };
 
   const { error } = await supabase
-    .from('nova_roles')
+    .from('platform_email_roles')
     .update(updateData)
     .eq('email', email);
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching AI Models' },
+      { message: 'Error updating email in whitelist' },
       { status: 500 }
     );
   }
@@ -58,15 +49,56 @@ export async function DELETE(
 
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from('nova_roles')
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sbAdmin = await createAdminClient();
+
+  const { data: roleData, error: roleError } = await sbAdmin
+    .from('platform_user_roles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  if (roleError) {
+    console.log(roleError);
+    return NextResponse.json(
+      { message: 'Error fetching user role' },
+      { status: 500 }
+    );
+  }
+
+  if (!roleData) {
+    return NextResponse.json(
+      { message: 'User role not found' },
+      { status: 404 }
+    );
+  }
+
+  if (!roleData.allow_role_management) {
+    return NextResponse.json(
+      { message: 'User does not have permission to manage roles' },
+      { status: 403 }
+    );
+  }
+
+  const { error } = await sbAdmin
+    .from('platform_email_roles')
     .delete()
-    .eq('email', email);
+    .eq('email', email)
+    .select('*')
+    .single();
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching AI Models' },
+      { message: 'Error deleting email from whitelist' },
       { status: 500 }
     );
   }
