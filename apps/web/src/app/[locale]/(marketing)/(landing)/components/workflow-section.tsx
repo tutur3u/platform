@@ -268,91 +268,93 @@ export function WorkflowSection() {
     workflowSteps[0]) as WorkflowStep;
 
   return (
-    <section id="workflow" ref={sectionRef} className="pt-40 pb-20">
-      <div className="container mx-auto px-4">
-        <div className="mb-16 text-center">
-          <h2 className="workflow-title mb-4 text-3xl font-bold md:text-4xl">
-            <span className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
-              How Tuturuuu Works
-            </span>
-          </h2>
-          <p className="workflow-title mx-auto max-w-3xl text-xl text-muted-foreground">
-            Our intelligent workflow makes productivity effortless
-          </p>
-        </div>
+    <section
+      id="workflow"
+      ref={sectionRef}
+      className="container px-0 pt-40 pb-20"
+    >
+      <div className="mb-16 text-center">
+        <h2 className="workflow-title mb-4 text-3xl font-bold md:text-4xl">
+          <span className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
+            How Tuturuuu Works
+          </span>
+        </h2>
+        <p className="workflow-title mx-auto max-w-3xl text-xl text-muted-foreground">
+          Our intelligent workflow makes productivity effortless
+        </p>
+      </div>
 
-        <div className="mb-12 flex flex-wrap justify-center gap-4">
-          {workflowSteps.map((step) => (
-            <button
-              key={step.id}
-              className={`workflow-step-button flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                activeStep === step.id
-                  ? `${step.color} text-white shadow-md`
-                  : 'border bg-transparent'
-              }`}
-              onClick={() => setActiveStep(step.id)}
-            >
-              <div
-                className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                  activeStep === step.id ? 'bg-white/20' : 'bg-gray-100'
-                }`}
-              >
-                <span
-                  className={
-                    activeStep === step.id ? 'text-white' : 'text-gray-700'
-                  }
-                >
-                  {step.id}
-                </span>
-              </div>
-              {step.title}
-            </button>
-          ))}
-        </div>
-
-        <div className="workflow-item grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-          {/* This div will be animated on activeStep change */}
-          <div className="workflow-item-content">
+      <div className="mb-12 flex flex-wrap justify-center gap-4">
+        {workflowSteps.map((step) => (
+          <button
+            key={step.id}
+            className={`workflow-step-button flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              activeStep === step.id
+                ? `${step.color} text-white shadow-md`
+                : 'border bg-transparent'
+            }`}
+            onClick={() => setActiveStep(step.id)}
+          >
             <div
-              className={`inline-block rounded-lg p-2 ${currentStep.color} mb-4`}
+              className={`flex h-6 w-6 items-center justify-center rounded-full ${
+                activeStep === step.id ? 'bg-white/20' : 'bg-gray-100'
+              }`}
             >
-              {currentStep.icon}
+              <span
+                className={
+                  activeStep === step.id ? 'text-white' : 'text-gray-700'
+                }
+              >
+                {step.id}
+              </span>
             </div>
-            <h3 className="mb-3 text-2xl font-bold">{currentStep.title}</h3>
-            <p className="mb-6 text-lg text-muted-foreground">
-              {currentStep.description}
-            </p>
+            {step.title}
+          </button>
+        ))}
+      </div>
 
-            <div className="mb-8 flex items-center gap-2">
-              {workflowSteps.map((step) => (
-                <button
-                  key={step.id}
-                  className={`h-3 w-3 rounded-full transition-colors ${
-                    activeStep === step.id
-                      ? currentStep.color
-                      : 'bg-foreground/20'
-                  }`}
-                  onClick={() => setActiveStep(step.id)}
-                  aria-label={`Step ${step.id}`}
-                ></button>
-              ))}
-            </div>
-
-            <button
-              className={`${currentStep.color} flex items-center gap-2 rounded-md px-4 py-2 text-white hover:opacity-90`}
-              onClick={() => setActiveStep(activeStep < 4 ? activeStep + 1 : 1)}
-            >
-              {activeStep < 4 ? 'Next Step' : 'Start Over'}{' '}
-              {activeStep < 4 ? (
-                <ArrowRight className="h-4 w-4" />
-              ) : (
-                <ArrowLeftToLine className="h-4 w-4" />
-              )}
-            </button>
+      <div className="workflow-item grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+        {/* This div will be animated on activeStep change */}
+        <div className="workflow-item-content">
+          <div
+            className={`inline-block rounded-lg p-2 ${currentStep.color} mb-4`}
+          >
+            {currentStep.icon}
           </div>
-          {/* This div will be animated on activeStep change */}
-          <div className="workflow-item-content">{currentStep.image}</div>
+          <h3 className="mb-3 text-2xl font-bold">{currentStep.title}</h3>
+          <p className="mb-6 text-lg text-muted-foreground">
+            {currentStep.description}
+          </p>
+
+          <div className="mb-8 flex items-center gap-2">
+            {workflowSteps.map((step) => (
+              <button
+                key={step.id}
+                className={`h-3 w-3 rounded-full transition-colors ${
+                  activeStep === step.id
+                    ? currentStep.color
+                    : 'bg-foreground/20'
+                }`}
+                onClick={() => setActiveStep(step.id)}
+                aria-label={`Step ${step.id}`}
+              ></button>
+            ))}
+          </div>
+
+          <button
+            className={`${currentStep.color} flex items-center gap-2 rounded-md px-4 py-2 text-white hover:opacity-90`}
+            onClick={() => setActiveStep(activeStep < 4 ? activeStep + 1 : 1)}
+          >
+            {activeStep < 4 ? 'Next Step' : 'Start Over'}{' '}
+            {activeStep < 4 ? (
+              <ArrowRight className="h-4 w-4" />
+            ) : (
+              <ArrowLeftToLine className="h-4 w-4" />
+            )}
+          </button>
         </div>
+        {/* This div will be animated on activeStep change */}
+        <div className="workflow-item-content">{currentStep.image}</div>
       </div>
     </section>
   );

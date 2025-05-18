@@ -21,7 +21,7 @@ export function BenefitsSection() {
     <section
       id="benefits"
       ref={sectionRef}
-      className="relative container w-full overflow-hidden px-4 py-24 md:px-6 md:py-40"
+      className="relative container w-full px-0 py-24 md:py-40"
     >
       {/* Background accents */}
       <div className="absolute top-40 -left-20 h-64 w-64 rounded-full bg-dynamic-light-purple/20 blur-3xl filter"></div>

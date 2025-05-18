@@ -14,8 +14,14 @@ import { StatsSection } from './components/stats-section';
 import { StrategicSection } from './components/strategic-section';
 import { UseCasesSection } from './components/use-cases-section';
 import { WorkflowSection } from './components/workflow-section';
-import { ScrollTrigger, gsap } from '@tuturuuu/ui/gsap';
+import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
+
+const gsap = dynamic(() => import('@tuturuuu/ui/gsap').then((mod) => mod.gsap));
+
+const ScrollTrigger = dynamic(() =>
+  import('@tuturuuu/ui/gsap').then((mod) => mod.ScrollTrigger)
+);
 
 export default function MarketingPage() {
   useEffect(() => {
@@ -23,10 +29,7 @@ export default function MarketingPage() {
   }, []); // Empty dependency array ensures this runs only once on mount
 
   return (
-    <div
-      className="relative -mt-[53px] flex w-full flex-col items-center"
-      suppressHydrationWarning
-    >
+    <div className="relative -mt-[53px] flex w-screen flex-col items-center overflow-x-hidden p-4 md:p-8 lg:p-16">
       <FloatingElements />
       <HeroSection />
       <StatsSection />
@@ -38,7 +41,6 @@ export default function MarketingPage() {
       <BeforeAfterSection />
       <UseCasesSection />
       <BenefitsSection />
-      {/* <TestimonialsSection /> */}
       <PricingSection />
       <CtaSection />
       <ScrollToTop />

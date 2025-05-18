@@ -76,53 +76,50 @@ export function StatsSection() {
   return (
     <section
       ref={sectionRef} // Add ref here
-      className="pt-20"
+      className="container px-0 pt-20"
     >
-      <div className="container mx-auto px-4">
-        <div className="mb-16 text-center">
-          <h2 className="stats-title mb-4 text-3xl font-bold md:text-4xl">
-            <span>
-              The{' '}
-              <span className="bg-gradient-to-r from-dynamic-light-indigo from-10% via-dynamic-light-orange via-30% to-dynamic-light-green to-90% bg-clip-text text-transparent">
-                Tuturuuu
-              </span>{' '}
-              Impact
-            </span>
-          </h2>
-          <p className="stats-title mx-auto max-w-3xl text-xl text-muted-foreground">
-            Real results from real users who have transformed their
-            productivity.
-          </p>
-        </div>
+      <div className="mb-16 text-center">
+        <h2 className="stats-title mb-4 text-3xl font-bold md:text-4xl">
+          <span>
+            The{' '}
+            <span className="bg-gradient-to-r from-dynamic-light-indigo from-10% via-dynamic-light-orange via-30% to-dynamic-light-green to-90% bg-clip-text text-transparent">
+              Tuturuuu
+            </span>{' '}
+            Impact
+          </span>
+        </h2>
+        <p className="stats-title mx-auto max-w-3xl text-xl text-muted-foreground">
+          Real results from real users who have transformed their productivity.
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat, index) => (
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, index) => (
+          <div
+            key={index}
+            className={cn(
+              'stat-item rounded-xl border bg-foreground/10 p-6 transition-shadow duration-300',
+              stat.bg
+            )}
+          >
             <div
-              key={index}
               className={cn(
-                'stat-item rounded-xl border bg-foreground/10 p-6 transition-shadow duration-300',
-                stat.bg
+                'mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full'
               )}
             >
-              <div
-                className={cn(
-                  'mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full'
-                )}
-              >
-                {stat.icon}
-              </div>
-              <div className="text-center text-balance">
-                <div className={cn('mb-2 text-4xl font-bold', stat.text)}>
-                  {stat.value}
-                </div>
-                <h3 className="mb-2 text-lg font-semibold">{stat.label}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {stat.description}
-                </p>
-              </div>
+              {stat.icon}
             </div>
-          ))}
-        </div>
+            <div className="text-center text-balance">
+              <div className={cn('mb-2 text-4xl font-bold', stat.text)}>
+                {stat.value}
+              </div>
+              <h3 className="mb-2 text-lg font-semibold">{stat.label}</h3>
+              <p className="text-sm text-muted-foreground">
+                {stat.description}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

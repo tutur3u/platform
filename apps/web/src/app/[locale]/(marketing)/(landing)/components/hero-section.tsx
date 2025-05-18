@@ -82,15 +82,11 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef} // Add ref here
-      className="relative min-h-[calc(100vh-3.5rem+53px)] w-full"
+      className="relative container min-h-[calc(100vh-3.5rem+53px)] w-full px-0 pt-32 pb-20 md:pt-40 md:pb-32"
     >
-      <div className="pt-32 pb-20 md:pt-40 md:pb-32">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col items-start gap-12 lg:flex-row">
-            <MainTitle />
-            <MainDemo calendarRef={calendarRef} />
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center gap-12 md:items-start lg:flex-row">
+        <MainTitle />
+        <MainDemo calendarRef={calendarRef} />
       </div>
     </section>
   );
