@@ -1,5 +1,6 @@
 'use client';
 
+import { ColorPicker, colorMap } from './settings/color-picker';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -14,7 +15,6 @@ import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
 import React, { ReactNode } from 'react';
-import { ColorPicker, colorMap } from './settings/color-picker';
 
 // Color options aligned with SupportedColor type
 export const COLOR_OPTIONS: {
@@ -150,7 +150,10 @@ export const EventDescriptionInput = ({
     setTimeout(() => {
       if (textareaRef.current) {
         // Scroll the button into view when toggling
-        const button = textareaRef.current.parentElement?.parentElement?.querySelector('button[data-show-toggle]');
+        const button =
+          textareaRef.current.parentElement?.parentElement?.querySelector(
+            'button[data-show-toggle]'
+          );
         if (button) {
           button.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
@@ -182,12 +185,18 @@ export const EventDescriptionInput = ({
         setHeight(newHeight);
       }
       // --- Auto-scroll logic to keep handle in view ---
-      let scrollParent: HTMLElement | null = containerRef.current as unknown as HTMLElement | null;
-      while (scrollParent && scrollParent !== document.body && scrollParent.scrollHeight <= scrollParent.clientHeight) {
+      let scrollParent: HTMLElement | null =
+        containerRef.current as unknown as HTMLElement | null;
+      while (
+        scrollParent &&
+        scrollParent !== document.body &&
+        scrollParent.scrollHeight <= scrollParent.clientHeight
+      ) {
         scrollParent = scrollParent.parentElement;
       }
       if (scrollParent) {
-        const handleY = textareaRef.current?.getBoundingClientRect().bottom ?? 0;
+        const handleY =
+          textareaRef.current?.getBoundingClientRect().bottom ?? 0;
         const parentRect = scrollParent.getBoundingClientRect();
         const scrollMargin = 40; // px from edge to trigger scroll
         // Scroll down if handle is near bottom
@@ -232,9 +241,9 @@ export const EventDescriptionInput = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder="Add event details..."
           className={cn(
-            "resize-none whitespace-pre-wrap break-words break-all transition-all duration-200",
-            isExpanded ? "h-auto" : "overflow-y-auto",
-            "scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+            'resize-none whitespace-pre-wrap break-words break-all transition-all duration-200',
+            isExpanded ? 'h-auto' : 'overflow-y-auto',
+            'scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent'
           )}
           style={{
             height: isExpanded ? 'auto' : `${height}px`,
@@ -246,11 +255,11 @@ export const EventDescriptionInput = ({
           <div
             ref={resizeHandleRef}
             onMouseDown={handleMouseDown}
-            className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-border/50 transition-colors"
+            className="hover:bg-border/50 absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize transition-colors"
           />
         )}
       </div>
-      <div className="flex items-center justify-between mt-1 min-h-[20px]">
+      <div className="mt-1 flex min-h-[20px] items-center justify-between">
         {wordCount > 0 && (
           <span className="text-muted-foreground text-xs">
             {wordCount} {wordCount === 1 ? 'word' : 'words'}
