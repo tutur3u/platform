@@ -203,9 +203,9 @@ export default function LeaderboardClient({
           />
 
           <div className="relative my-8 h-px w-full overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
+            <div className="bg-linear-to-r absolute inset-0 from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
             <motion.div
-              className="absolute inset-0 h-px w-1/3 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500"
+              className="bg-linear-to-r absolute inset-0 h-px w-1/3 from-blue-500 via-purple-500 to-pink-500"
               animate={{ x: ['-100%', '400%'] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />
@@ -244,20 +244,20 @@ export default function LeaderboardClient({
               />
 
               <div className="mt-6">
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-foreground/[0.025] px-4 py-2 text-center backdrop-blur-xl dark:bg-foreground/5">
-                  <div className="flex-none text-sm text-muted-foreground">
-                    <span className="font-semibold text-primary">
+                <div className="bg-foreground/[0.025] dark:bg-foreground/5 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-2 text-center backdrop-blur-xl">
+                  <div className="text-muted-foreground flex-none text-sm">
+                    <span className="text-primary font-semibold">
                       {filteredInfo.totalParticipants}
                     </span>{' '}
                     participant(s)
                   </div>
 
                   <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
-                    <div className="w-fit text-sm text-muted-foreground">
+                    <div className="text-muted-foreground w-fit text-sm">
                       Page{' '}
-                      <span className="font-semibold text-primary">{page}</span>{' '}
+                      <span className="text-primary font-semibold">{page}</span>{' '}
                       of{' '}
-                      <span className="font-semibold text-primary">
+                      <span className="text-primary font-semibold">
                         {totalPages ||
                           Math.ceil(filteredInfo.totalParticipants / 20)}
                       </span>
@@ -324,7 +324,7 @@ export default function LeaderboardClient({
                     <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
                       {t('tutorials.title')}
                     </h3>
-                    <ul className="space-y-3 text-sm text-muted-foreground dark:text-slate-400">
+                    <ul className="text-muted-foreground space-y-3 text-sm dark:text-slate-400">
                       <li className="flex items-start gap-2">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
                           1
@@ -348,7 +348,7 @@ export default function LeaderboardClient({
                 </Card>
 
                 <Card className="overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-                  <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-yellow-400 to-yellow-600" />
+                  <div className="bg-linear-to-r absolute inset-x-0 top-0 h-1 from-yellow-400 to-yellow-600" />
                   <CardContent className="p-6">
                     <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
                       {t('rewards.current-rewards')}
@@ -369,7 +369,7 @@ export default function LeaderboardClient({
                       </li>
                       <li className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                          <Medal className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
+                          <Medal className="text-muted-foreground h-4 w-4 dark:text-gray-400" />
                         </div>
                         <div>
                           <p className="font-medium text-gray-900 dark:text-slate-200">

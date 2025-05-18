@@ -170,8 +170,8 @@ export function PricingSection() {
       className="relative w-full overflow-hidden py-24 md:py-40"
     >
       {/* Background decorations */}
-      <div className="absolute -top-40 right-0 h-96 w-96 rounded-full bg-dynamic-light-blue/10 blur-3xl filter"></div>
-      <div className="absolute -bottom-40 -left-20 h-96 w-96 rounded-full bg-dynamic-light-purple/10 blur-3xl filter"></div>
+      <div className="bg-dynamic-light-blue/10 absolute -top-40 right-0 h-96 w-96 rounded-full blur-3xl filter"></div>
+      <div className="bg-dynamic-light-purple/10 absolute -bottom-40 -left-20 h-96 w-96 rounded-full blur-3xl filter"></div>
       <div className="container mx-auto px-4">
         <div className="pricing-title-wrapper mb-16 text-center">
           <h2 className="pricing-title mb-6 text-4xl font-bold md:text-5xl">
@@ -179,12 +179,12 @@ export function PricingSection() {
               Simple, Transparent Pricing
             </span>
           </h2>
-          <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
+          <p className="text-muted-foreground mx-auto max-w-3xl text-xl leading-relaxed">
             Choose the plan that works best for you and your team.
           </p>
 
           <div className="pricing-toggle mt-10 flex items-center justify-center">
-            <div className="inline-flex rounded-full bg-white/90 p-1.5 shadow-md backdrop-blur-sm dark:bg-foreground/5">
+            <div className="dark:bg-foreground/5 inline-flex rounded-full bg-white/90 p-1.5 shadow-md backdrop-blur-sm">
               <button
                 className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
                   !isAnnual
@@ -230,7 +230,7 @@ export function PricingSection() {
             return (
               <div
                 key={index}
-                className={`pricing-card group relative overflow-hidden rounded-2xl bg-white/90 shadow-lg transition-all duration-500 hover:shadow-xl dark:bg-foreground/5 ${
+                className={`pricing-card dark:bg-foreground/5 group relative overflow-hidden rounded-2xl bg-white/90 shadow-lg transition-all duration-500 hover:shadow-xl ${
                   plan.popular
                     ? 'transform ring-2 ring-purple-500 md:-translate-y-4'
                     : ''
@@ -257,7 +257,7 @@ export function PricingSection() {
                     <h3 className="text-2xl font-bold">{plan.name}</h3>
                   </div>
 
-                  <p className="mb-8 text-muted-foreground">
+                  <p className="text-muted-foreground mb-8">
                     {plan.description}
                   </p>
                   <div className="mb-8">
@@ -291,7 +291,7 @@ export function PricingSection() {
                     {plan.cta}
                   </Button>
                   <div className="space-y-4">
-                    <div className="mb-4 font-medium text-muted-foreground">
+                    <div className="text-muted-foreground mb-4 font-medium">
                       Features include:
                     </div>
                     {plan.features.map((feature, i) => (
@@ -329,7 +329,7 @@ export function PricingSection() {
                             {hoveredFeature === feature.feature && (
                               <div className="absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 transform rounded-lg bg-gray-800 p-3 text-xs leading-relaxed text-white shadow-lg">
                                 {featureDescriptions[feature.feature]}
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 transform border-4 border-transparent border-t-gray-800"></div>
+                                <div className="absolute left-1/2 top-full -translate-x-1/2 transform border-4 border-transparent border-t-gray-800"></div>
                               </div>
                             )}
                           </div>
@@ -343,12 +343,12 @@ export function PricingSection() {
           })}
         </div>
 
-        <div className="mt-16 flex flex-col items-center justify-center rounded-xl bg-white/80 p-8 shadow-lg backdrop-blur-sm dark:bg-foreground/5">
+        <div className="dark:bg-foreground/5 mt-16 flex flex-col items-center justify-center rounded-xl bg-white/80 p-8 shadow-lg backdrop-blur-sm">
           <Shield className="mb-4 h-12 w-12 text-blue-500" />
           <h3 className="mb-2 text-2xl font-bold">
             Enterprise Security & Compliance
           </h3>
-          <p className="max-w-2xl text-center text-muted-foreground">
+          <p className="text-muted-foreground max-w-2xl text-center">
             All plans include industry-standard security measures. Enterprise
             customers receive additional compliance features, dedicated support,
             and custom security configurations.

@@ -108,7 +108,7 @@ export function TestimonialsSection() {
               What Our Users Say
             </span>
           </h2>
-          <p className="testimonials-title mx-auto max-w-3xl text-xl text-balance text-muted-foreground">
+          <p className="testimonials-title text-muted-foreground mx-auto max-w-3xl text-balance text-xl">
             Join thousands of professionals who have transformed their
             productivity with TuPlan.
           </p>
@@ -116,8 +116,8 @@ export function TestimonialsSection() {
 
         <div className="mx-auto max-w-4xl">
           <div className="relative rounded-2xl bg-white p-8 shadow-xl md:p-12">
-            <div className="absolute top-0 left-0 h-24 w-24 -translate-x-4 -translate-y-4 transform rounded-full bg-purple-200 opacity-50"></div>
-            <div className="absolute right-0 bottom-0 h-24 w-24 translate-x-4 translate-y-4 transform rounded-full bg-blue-200 opacity-50"></div>
+            <div className="absolute left-0 top-0 h-24 w-24 -translate-x-4 -translate-y-4 transform rounded-full bg-purple-200 opacity-50"></div>
+            <div className="absolute bottom-0 right-0 h-24 w-24 translate-x-4 translate-y-4 transform rounded-full bg-blue-200 opacity-50"></div>
 
             <div className="testimonial-content relative">
               <div className="mb-6 flex flex-col items-center gap-6 md:flex-row md:items-start">

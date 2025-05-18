@@ -201,8 +201,8 @@ export function ComparisonSection() {
       className="relative w-full overflow-hidden py-24 md:py-40"
     >
       {/* Background decorations */}
-      <div className="absolute top-20 -left-40 h-96 w-96 rounded-full bg-dynamic-light-purple/10 blur-3xl filter"></div>
-      <div className="absolute -right-40 -bottom-40 h-96 w-96 rounded-full bg-dynamic-light-blue/10 blur-3xl filter"></div>
+      <div className="bg-dynamic-light-purple/10 absolute -left-40 top-20 h-96 w-96 rounded-full blur-3xl filter"></div>
+      <div className="bg-dynamic-light-blue/10 absolute -bottom-40 -right-40 h-96 w-96 rounded-full blur-3xl filter"></div>
 
       <div className="container mx-auto px-4">
         <div className="comparison-title-wrapper mb-16 text-center">
@@ -213,11 +213,11 @@ export function ComparisonSection() {
             </span>
           </div>
           <h2 className="comparison-title mb-6 text-4xl font-bold md:text-5xl">
-            <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue bg-clip-text text-transparent">
+            <span className="from-dynamic-light-purple to-dynamic-light-blue bg-gradient-to-r bg-clip-text text-transparent">
               Why Choose Tuturuuu?
             </span>
           </h2>
-          <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
+          <p className="text-muted-foreground mx-auto max-w-3xl text-xl leading-relaxed">
             See how Tuturuuu compares to traditional productivity tools and why
             it's the smarter choice
           </p>
@@ -230,7 +230,7 @@ export function ComparisonSection() {
               className={`competitor-button flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-300 ${
                 activeCompetitor === competitor.id
                   ? `${competitor.bgColor} text-white shadow-md`
-                  : 'border bg-white/90 text-muted-foreground hover:border-gray-300 hover:bg-white hover:text-foreground hover:shadow-sm dark:bg-foreground/5 dark:hover:bg-foreground/10'
+                  : 'text-muted-foreground hover:text-foreground dark:bg-foreground/5 dark:hover:bg-foreground/10 border bg-white/90 hover:border-gray-300 hover:bg-white hover:shadow-sm'
               }`}
               onClick={() => setActiveCompetitor(competitor.id)}
               aria-pressed={activeCompetitor === competitor.id}
@@ -257,18 +257,18 @@ export function ComparisonSection() {
                 <h3 className="mb-1 text-2xl font-bold">
                   Tuturuuu vs {currentCompetitor.name}
                 </h3>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   Discover the key differences
                 </div>
               </div>
             </div>
 
-            <p className="mb-10 text-lg leading-relaxed text-muted-foreground">
+            <p className="text-muted-foreground mb-10 text-lg leading-relaxed">
               {currentCompetitor.description}
             </p>
 
-            <div className="feature-table mb-10 overflow-hidden rounded-xl border bg-white/90 shadow-lg backdrop-blur-sm dark:bg-foreground/5">
-              <div className="grid grid-cols-3 bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue p-5 text-white">
+            <div className="feature-table dark:bg-foreground/5 mb-10 overflow-hidden rounded-xl border bg-white/90 shadow-lg backdrop-blur-sm">
+              <div className="from-dynamic-light-purple to-dynamic-light-blue grid grid-cols-3 bg-gradient-to-r p-5 text-white">
                 <div className="col-span-1 font-medium">Feature</div>
                 <div className="col-span-1 text-center font-medium">
                   Tuturuuu
@@ -281,28 +281,28 @@ export function ComparisonSection() {
               {displayedFeatures.map((feature, index) => (
                 <div
                   key={index}
-                  className={`feature-row grid grid-cols-3 items-center p-5 ${index % 2 === 0 ? 'bg-gray-50 dark:bg-foreground/10' : 'bg-white dark:bg-foreground/5'}`}
+                  className={`feature-row grid grid-cols-3 items-center p-5 ${index % 2 === 0 ? 'dark:bg-foreground/10 bg-gray-50' : 'dark:bg-foreground/5 bg-white'}`}
                 >
                   <div className="col-span-1 font-medium">{feature.name}</div>
                   <div className="col-span-1 flex justify-center">
                     {feature.tuturuuu ? (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green transition-transform duration-300 hover:scale-110">
-                        <Check className="h-5 w-5 text-dynamic-green" />
+                      <div className="border-dynamic-light-green/30 bg-calendar-bg-green flex h-10 w-10 items-center justify-center rounded-full border transition-transform duration-300 hover:scale-110">
+                        <Check className="text-dynamic-green h-5 w-5" />
                       </div>
                     ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-dynamic-light-red/30 bg-calendar-bg-red">
-                        <X className="h-5 w-5 text-dynamic-red" />
+                      <div className="border-dynamic-light-red/30 bg-calendar-bg-red flex h-10 w-10 items-center justify-center rounded-full border">
+                        <X className="text-dynamic-red h-5 w-5" />
                       </div>
                     )}
                   </div>
                   <div className="col-span-1 flex justify-center">
                     {feature.competitor ? (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
-                        <Check className="h-5 w-5 text-dynamic-green" />
+                      <div className="border-dynamic-light-green/30 bg-calendar-bg-green flex h-10 w-10 items-center justify-center rounded-full border">
+                        <Check className="text-dynamic-green h-5 w-5" />
                       </div>
                     ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-dynamic-light-red/30 bg-calendar-bg-red transition-transform duration-300 hover:scale-110">
-                        <X className="h-5 w-5 text-dynamic-red" />
+                      <div className="border-dynamic-light-red/30 bg-calendar-bg-red flex h-10 w-10 items-center justify-center rounded-full border transition-transform duration-300 hover:scale-110">
+                        <X className="text-dynamic-red h-5 w-5" />
                       </div>
                     )}
                   </div>
@@ -315,7 +315,7 @@ export function ComparisonSection() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowAllFeatures(!showAllFeatures)}
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground text-sm font-medium"
                   >
                     {showAllFeatures ? 'Show Less' : 'Show All Features'}
                   </Button>
@@ -323,11 +323,11 @@ export function ComparisonSection() {
               )}
             </div>
 
-            <div className="rounded-xl border border-dynamic-light-purple/30 bg-calendar-bg-purple p-6">
-              <h4 className="mb-4 text-lg font-medium text-dynamic-purple">
+            <div className="border-dynamic-light-purple/30 bg-calendar-bg-purple rounded-xl border p-6">
+              <h4 className="text-dynamic-purple mb-4 text-lg font-medium">
                 The Tuturuuu Difference
               </h4>
-              <p className="mb-6 text-dynamic-purple/90">
+              <p className="text-dynamic-purple/90 mb-6">
                 Tuturuuu combines the best of traditional tools with powerful AI
                 to create a seamless, intuitive experience that actually saves
                 you time.
@@ -339,74 +339,74 @@ export function ComparisonSection() {
           </div>
 
           <div>
-            <div className="relative overflow-hidden rounded-xl border bg-white/90 p-6 shadow-xl backdrop-blur-sm dark:bg-foreground/5">
-              <div className="absolute top-0 right-0 -mt-20 -mr-20 h-40 w-40 rounded-full bg-gradient-to-br from-dynamic-light-purple to-dynamic-light-blue opacity-20 blur-3xl filter"></div>
+            <div className="dark:bg-foreground/5 relative overflow-hidden rounded-xl border bg-white/90 p-6 shadow-xl backdrop-blur-sm">
+              <div className="from-dynamic-light-purple to-dynamic-light-blue absolute right-0 top-0 -mr-20 -mt-20 h-40 w-40 rounded-full bg-gradient-to-br opacity-20 blur-3xl filter"></div>
 
               {activeCompetitor === 'calendar' && (
                 <div className="relative space-y-4">
                   <div className="mb-6 flex items-center justify-between">
                     <h3 className="flex items-center gap-2 font-medium">
-                      <Calendar className="h-5 w-5 text-dynamic-blue" />
+                      <Calendar className="text-dynamic-blue h-5 w-5" />
                       <span>Calendar Comparison</span>
                     </h3>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
-                    <div className="rounded-xl border bg-white p-5 shadow-md transition-all duration-300 hover:shadow-lg dark:bg-foreground/5">
+                    <div className="dark:bg-foreground/5 rounded-xl border bg-white p-5 shadow-md transition-all duration-300 hover:shadow-lg">
                       <div className="mb-4 flex items-center gap-2 border-b pb-3">
                         <Calendar className="h-5 w-5 text-blue-500" />
                         <h4 className="font-medium">Google Calendar</h4>
                       </div>
                       <div className="space-y-3">
-                        <div className="rounded-md bg-calendar-bg-blue p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
+                        <div className="bg-calendar-bg-blue rounded-md p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
                           <div className="font-medium">Team Meeting</div>
                           <div className="text-dynamic-blue">
                             10:00 AM - 11:00 AM
                           </div>
                         </div>
-                        <div className="rounded-md bg-calendar-bg-blue p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
+                        <div className="bg-calendar-bg-blue rounded-md p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
                           <div className="font-medium">Client Call</div>
                           <div className="text-dynamic-blue">
                             1:00 PM - 2:00 PM
                           </div>
                         </div>
-                        <div className="rounded-md bg-calendar-bg-blue p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
+                        <div className="bg-calendar-bg-blue rounded-md p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
                           <div className="font-medium">Project Review</div>
                           <div className="text-dynamic-blue">
                             3:00 PM - 4:00 PM
                           </div>
                         </div>
                       </div>
-                      <div className="mt-4 flex items-center gap-1 text-sm text-dynamic-red">
+                      <div className="text-dynamic-red mt-4 flex items-center gap-1 text-sm">
                         <X className="h-4 w-4" />
                         <span>No focus time protection</span>
                       </div>
                     </div>
 
                     <div className="rounded-xl border p-5 shadow-md transition-all duration-300 hover:shadow-lg">
-                      <div className="mb-4 flex items-center gap-2 border-b border-dynamic-light-purple/30 pb-3">
-                        <Calendar className="h-5 w-5 text-dynamic-purple" />
+                      <div className="border-dynamic-light-purple/30 mb-4 flex items-center gap-2 border-b pb-3">
+                        <Calendar className="text-dynamic-purple h-5 w-5" />
                         <h4 className="font-medium">TuPlan</h4>
                       </div>
                       <div className="space-y-3">
-                        <div className="rounded-md border border-dynamic-light-green/30 bg-calendar-bg-green p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
-                          <div className="font-medium text-dynamic-green">
+                        <div className="border-dynamic-light-green/30 bg-calendar-bg-green rounded-md border p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
+                          <div className="text-dynamic-green font-medium">
                             Focus Time
                           </div>
                           <div className="text-dynamic-green">
                             9:00 AM - 11:00 AM
                           </div>
                         </div>
-                        <div className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
-                          <div className="font-medium text-dynamic-blue">
+                        <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue rounded-md border p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
+                          <div className="text-dynamic-blue font-medium">
                             Team Meeting
                           </div>
                           <div className="text-dynamic-blue">
                             11:30 AM - 12:30 PM
                           </div>
                         </div>
-                        <div className="rounded-md border border-dynamic-light-orange/30 bg-calendar-bg-orange p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
-                          <div className="font-medium text-dynamic-orange">
+                        <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange rounded-md border p-3 text-sm transition-all duration-300 hover:translate-y-[-2px]">
+                          <div className="text-dynamic-orange font-medium">
                             Client Call
                           </div>
                           <div className="text-dynamic-orange">
@@ -414,41 +414,41 @@ export function ComparisonSection() {
                           </div>
                         </div>
                       </div>
-                      <div className="mt-4 flex items-center gap-1 text-sm text-dynamic-green">
+                      <div className="text-dynamic-green mt-4 flex items-center gap-1 text-sm">
                         <Check className="h-4 w-4" />
                         <span>AI optimized for focus time</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-6 rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-5">
-                    <h4 className="mb-3 font-medium text-dynamic-blue">
+                  <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue mt-6 rounded-lg border p-5">
+                    <h4 className="text-dynamic-blue mb-3 font-medium">
                       Tuturuuu Advantages:
                     </h4>
                     <ul className="space-y-2.5 text-sm">
                       <li className="flex items-start gap-3">
-                        <Check className="mt-0.5 h-5 w-5 text-dynamic-green" />
+                        <Check className="text-dynamic-green mt-0.5 h-5 w-5" />
                         <span>
                           Automatically protects focus time for deep work based
                           on your preferences
                         </span>
                       </li>
                       <li className="flex items-start gap-3">
-                        <Check className="mt-0.5 h-5 w-5 text-dynamic-green" />
+                        <Check className="text-dynamic-green mt-0.5 h-5 w-5" />
                         <span>
                           Balances workload to prevent burnout and
                           overcommitment
                         </span>
                       </li>
                       <li className="flex items-start gap-3">
-                        <Check className="mt-0.5 h-5 w-5 text-dynamic-green" />
+                        <Check className="text-dynamic-green mt-0.5 h-5 w-5" />
                         <span>
                           Intelligently schedules meetings when team energy is
                           highest for more productive collaboration
                         </span>
                       </li>
                       <li className="flex items-start gap-3">
-                        <Check className="mt-0.5 h-5 w-5 text-dynamic-green" />
+                        <Check className="text-dynamic-green mt-0.5 h-5 w-5" />
                         <span>
                           Integrates tasks directly into your calendar with
                           smart prioritization
@@ -462,7 +462,7 @@ export function ComparisonSection() {
                       Ready to upgrade your calendar?
                     </div>
                     <Button
-                      className="w-full bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white"
+                      className="from-dynamic-light-purple to-dynamic-light-blue w-full bg-gradient-to-r text-white"
                       size="lg"
                     >
                       Get Started <ArrowRight className="ml-2 h-4 w-4" />

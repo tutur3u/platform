@@ -34,24 +34,24 @@ const workflowSteps: WorkflowStep[] = [
     icon: <MessageSquare className="h-6 w-6 text-white" />,
     color: 'bg-purple-500',
     image: (
-      <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
+      <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-md">
         <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-purple/30 bg-calendar-bg-purple">
-            <MessageSquare className="h-4 w-4 text-dynamic-purple" />
+          <div className="border-dynamic-light-purple/30 bg-calendar-bg-purple flex h-8 w-8 items-center justify-center rounded-full border">
+            <MessageSquare className="text-dynamic-purple h-4 w-4" />
           </div>
           <div>
             <h4 className="text-sm font-medium">Natural Language Input</h4>
           </div>
         </div>
-        <div className="rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-3 text-sm">
+        <div className="border-dynamic-light-purple/30 bg-calendar-bg-purple rounded-lg border p-3 text-sm">
           "Schedule a meeting with the marketing team next Tuesday at 10am, high
           priority"
         </div>
         <div className="mt-3 flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
-            <Check className="h-3 w-3 text-dynamic-green" />
+          <div className="border-dynamic-light-green/30 bg-calendar-bg-green flex h-6 w-6 items-center justify-center rounded-full border">
+            <Check className="text-dynamic-green h-3 w-3" />
           </div>
-          <span className="text-xs text-dynamic-green">
+          <span className="text-dynamic-green text-xs">
             Task created and scheduled
           </span>
         </div>
@@ -66,42 +66,42 @@ const workflowSteps: WorkflowStep[] = [
     icon: <Brain className="h-6 w-6 text-white" />,
     color: 'bg-blue-500',
     image: (
-      <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
+      <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-md">
         <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-blue/30 bg-calendar-bg-blue">
-            <Brain className="h-4 w-4 text-dynamic-blue" />
+          <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue flex h-8 w-8 items-center justify-center rounded-full border">
+            <Brain className="text-dynamic-blue h-4 w-4" />
           </div>
           <div>
             <h4 className="text-sm font-medium">AI Analysis</h4>
           </div>
         </div>
         <div className="space-y-2">
-          <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
+          <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue rounded-lg border p-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-blue">
+              <span className="text-dynamic-blue text-xs font-medium">
                 Priority Analysis
               </span>
-              <span className="rounded bg-calendar-bg-red px-1.5 text-xs text-dynamic-red">
+              <span className="bg-calendar-bg-red text-dynamic-red rounded px-1.5 text-xs">
                 High
               </span>
             </div>
           </div>
-          <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
+          <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue rounded-lg border p-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-blue">
+              <span className="text-dynamic-blue text-xs font-medium">
                 Team Availability
               </span>
-              <span className="rounded bg-calendar-bg-green px-1.5 text-xs text-dynamic-green">
+              <span className="bg-calendar-bg-green text-dynamic-green rounded px-1.5 text-xs">
                 All Available
               </span>
             </div>
           </div>
-          <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
+          <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue rounded-lg border p-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-blue">
+              <span className="text-dynamic-blue text-xs font-medium">
                 Optimal Time Slot
               </span>
-              <span className="text-xs text-dynamic-blue">
+              <span className="text-dynamic-blue text-xs">
                 Tuesday, 10:00 AM
               </span>
             </div>
@@ -118,36 +118,36 @@ const workflowSteps: WorkflowStep[] = [
     icon: <Calendar className="h-6 w-6 text-white" />,
     color: 'bg-green-500',
     image: (
-      <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
+      <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-md">
         <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
-            <Calendar className="h-4 w-4 text-dynamic-green" />
+          <div className="border-dynamic-light-green/30 bg-calendar-bg-green flex h-8 w-8 items-center justify-center rounded-full border">
+            <Calendar className="text-dynamic-green h-4 w-4" />
           </div>
           <div>
             <h4 className="text-sm font-medium">Unified Workspace</h4>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-2">
-            <Calendar className="h-3 w-3 text-dynamic-purple" />
-            <span className="text-xs text-dynamic-purple">Calendar</span>
+          <div className="border-dynamic-light-purple/30 bg-calendar-bg-purple flex items-center gap-1 rounded-lg border p-2">
+            <Calendar className="text-dynamic-purple h-3 w-3" />
+            <span className="text-dynamic-purple text-xs">Calendar</span>
           </div>
-          <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
-            <Check className="h-3 w-3 text-dynamic-blue" />
-            <span className="text-xs text-dynamic-blue">Tasks</span>
+          <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue flex items-center gap-1 rounded-lg border p-2">
+            <Check className="text-dynamic-blue h-3 w-3" />
+            <span className="text-dynamic-blue text-xs">Tasks</span>
           </div>
-          <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-2">
-            <Video className="h-3 w-3 text-dynamic-green" />
-            <span className="text-xs text-dynamic-green">Meetings</span>
+          <div className="border-dynamic-light-green/30 bg-calendar-bg-green flex items-center gap-1 rounded-lg border p-2">
+            <Video className="text-dynamic-green h-3 w-3" />
+            <span className="text-dynamic-green text-xs">Meetings</span>
           </div>
-          <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
-            <MessageSquare className="h-3 w-3 text-dynamic-orange" />
-            <span className="text-xs text-dynamic-orange">Chat</span>
+          <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange flex items-center gap-1 rounded-lg border p-2">
+            <MessageSquare className="text-dynamic-orange h-3 w-3" />
+            <span className="text-dynamic-orange text-xs">Chat</span>
           </div>
         </div>
-        <div className="mt-2 flex items-center gap-1 rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-2">
-          <Mail className="h-3 w-3 text-dynamic-red" />
-          <span className="text-xs text-dynamic-red">Email</span>
+        <div className="border-dynamic-light-red/30 bg-calendar-bg-red mt-2 flex items-center gap-1 rounded-lg border p-2">
+          <Mail className="text-dynamic-red h-3 w-3" />
+          <span className="text-dynamic-red text-xs">Email</span>
         </div>
       </div>
     ),
@@ -160,38 +160,38 @@ const workflowSteps: WorkflowStep[] = [
     icon: <Clock className="h-6 w-6 text-white" />,
     color: 'bg-amber-500',
     image: (
-      <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
+      <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-md">
         <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-orange/30 bg-calendar-bg-orange">
-            <Clock className="h-4 w-4 text-dynamic-orange" />
+          <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange flex h-8 w-8 items-center justify-center rounded-full border">
+            <Clock className="text-dynamic-orange h-4 w-4" />
           </div>
           <div>
             <h4 className="text-sm font-medium">Learning & Adaptation</h4>
           </div>
         </div>
         <div className="space-y-2">
-          <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
+          <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange rounded-lg border p-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-orange">
+              <span className="text-dynamic-orange text-xs font-medium">
                 Productivity Pattern
               </span>
-              <span className="text-xs text-dynamic-orange">Morning Focus</span>
+              <span className="text-dynamic-orange text-xs">Morning Focus</span>
             </div>
           </div>
-          <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
+          <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange rounded-lg border p-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-orange">
+              <span className="text-dynamic-orange text-xs font-medium">
                 Meeting Preference
               </span>
-              <span className="text-xs text-dynamic-orange">Afternoons</span>
+              <span className="text-dynamic-orange text-xs">Afternoons</span>
             </div>
           </div>
-          <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
+          <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange rounded-lg border p-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-dynamic-orange">
+              <span className="text-dynamic-orange text-xs font-medium">
                 Task Completion Rate
               </span>
-              <span className="rounded bg-calendar-bg-green px-1.5 text-xs text-dynamic-green">
+              <span className="bg-calendar-bg-green text-dynamic-green rounded px-1.5 text-xs">
                 92%
               </span>
             </div>
@@ -245,15 +245,15 @@ export function WorkflowSection() {
     workflowSteps[0]) as WorkflowStep;
 
   return (
-    <section id="workflow" ref={sectionRef} className="pt-40 pb-20">
+    <section id="workflow" ref={sectionRef} className="pb-20 pt-40">
       <div className="container mx-auto px-4">
         <div className="mb-16 text-center">
           <h2 className="workflow-title mb-4 text-3xl font-bold md:text-4xl">
-            <span className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
+            <span className="from-dynamic-purple to-dynamic-blue bg-gradient-to-r bg-clip-text text-transparent">
               How Tuturuuu Works
             </span>
           </h2>
-          <p className="workflow-title mx-auto max-w-3xl text-xl text-muted-foreground">
+          <p className="workflow-title text-muted-foreground mx-auto max-w-3xl text-xl">
             Our intelligent workflow makes productivity effortless
           </p>
         </div>
@@ -295,7 +295,7 @@ export function WorkflowSection() {
               {currentStep.icon}
             </div>
             <h3 className="mb-3 text-2xl font-bold">{currentStep.title}</h3>
-            <p className="mb-6 text-lg text-muted-foreground">
+            <p className="text-muted-foreground mb-6 text-lg">
               {currentStep.description}
             </p>
 
@@ -329,7 +329,7 @@ export function WorkflowSection() {
 
           <div className="workflow-item">
             <div className="relative">
-              <div className="absolute top-0 right-0 -mt-20 -mr-20 h-40 w-40 rounded-full bg-gradient-to-br from-purple-200 to-blue-200 opacity-20 blur-3xl filter"></div>
+              <div className="absolute right-0 top-0 -mr-20 -mt-20 h-40 w-40 rounded-full bg-gradient-to-br from-purple-200 to-blue-200 opacity-20 blur-3xl filter"></div>
               <div className="relative">{currentStep.image}</div>
             </div>
           </div>
