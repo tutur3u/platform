@@ -19,7 +19,7 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ${
+      className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
         isScrolled
           ? 'bg-white/90 py-2 shadow-md backdrop-blur-md'
           : 'bg-transparent py-4'
@@ -92,7 +92,7 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="absolute top-full right-0 left-0 flex flex-col gap-4 bg-white p-4 shadow-lg md:hidden">
+        <div className="absolute left-0 right-0 top-full flex flex-col gap-4 bg-white p-4 shadow-lg md:hidden">
           <Link
             href="#features"
             className="py-2 text-gray-700 transition-colors hover:text-purple-600"

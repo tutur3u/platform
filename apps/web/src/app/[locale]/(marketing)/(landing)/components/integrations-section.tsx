@@ -86,7 +86,7 @@ export function IntegrationsSection() {
               Future Integrations
             </span>
           </h2>
-          <p className="integrations-title mx-auto max-w-3xl text-xl text-muted-foreground">
+          <p className="integrations-title text-muted-foreground mx-auto max-w-3xl text-xl">
             TuPlan is just the beginning. Our ecosystem is growing to cover all
             your productivity needs.
           </p>

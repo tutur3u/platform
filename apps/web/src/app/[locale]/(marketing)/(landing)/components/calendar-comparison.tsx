@@ -105,7 +105,7 @@ export function CalendarComparison() {
               TuPlan vs. Google Calendar
             </span>
           </h2>
-          <p className="comparison-title mx-auto max-w-3xl text-xl text-muted-foreground">
+          <p className="comparison-title text-muted-foreground mx-auto max-w-3xl text-xl">
             See how TuPlan's AI-powered features transform your calendar
             experience compared to traditional calendars.
           </p>

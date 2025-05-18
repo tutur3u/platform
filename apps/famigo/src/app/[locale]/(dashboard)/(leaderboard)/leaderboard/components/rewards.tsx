@@ -7,7 +7,7 @@ export default function Rewards() {
 
   return (
     <Card className="border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-      <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-yellow-400 to-yellow-600" />
+      <div className="bg-linear-to-r absolute inset-x-0 top-0 h-1 from-yellow-400 to-yellow-600" />
       <CardContent className="p-6">
         <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
           {t('rewards.current-rewards')}
@@ -28,7 +28,7 @@ export default function Rewards() {
           </li>
           <li className="flex items-center gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-              <Medal className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
+              <Medal className="text-muted-foreground h-4 w-4 dark:text-gray-400" />
             </div>
             <div>
               <p className="font-medium text-gray-900 dark:text-slate-200">

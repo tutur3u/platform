@@ -9,7 +9,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 const stats = [
   {
-    icon: <Clock className="h-8 w-8 text-dynamic-purple" />,
+    icon: <Clock className="text-dynamic-purple h-8 w-8" />,
     value: '10+',
     label: 'Hours Saved Weekly',
     text: 'text-dynamic-purple',
@@ -18,7 +18,7 @@ const stats = [
       'Our users report saving over 10 hours every week on scheduling and task management',
   },
   {
-    icon: <Calendar className="h-8 w-8 text-dynamic-blue" />,
+    icon: <Calendar className="text-dynamic-blue h-8 w-8" />,
     value: '85%',
     label: 'Reduction in Scheduling Time',
     text: 'text-dynamic-blue',
@@ -27,7 +27,7 @@ const stats = [
       'TuPlan reduces the time spent on scheduling by 85% compared to manual methods',
   },
   {
-    icon: <Users className="h-8 w-8 text-dynamic-green" />,
+    icon: <Users className="text-dynamic-green h-8 w-8" />,
     value: '94%',
     label: 'User Satisfaction',
     text: 'text-dynamic-green',
@@ -36,7 +36,7 @@ const stats = [
       '94% of our users report feeling less stressed and more in control of their time',
   },
   {
-    icon: <Zap className="h-8 w-8 text-dynamic-orange" />,
+    icon: <Zap className="text-dynamic-orange h-8 w-8" />,
     value: '3x',
     label: 'Productivity Increase',
     text: 'text-dynamic-orange',
@@ -91,13 +91,13 @@ export function StatsSection() {
           <h2 className="stats-title mb-4 text-3xl font-bold md:text-4xl">
             <span>
               The{' '}
-              <span className="bg-gradient-to-r from-dynamic-light-indigo from-10% via-dynamic-light-orange via-30% to-dynamic-light-green to-90% bg-clip-text text-transparent">
+              <span className="from-dynamic-light-indigo via-dynamic-light-orange to-dynamic-light-green bg-gradient-to-r from-10% via-30% to-90% bg-clip-text text-transparent">
                 Tuturuuu
               </span>{' '}
               Impact
             </span>
           </h2>
-          <p className="stats-title mx-auto max-w-3xl text-xl text-muted-foreground">
+          <p className="stats-title text-muted-foreground mx-auto max-w-3xl text-xl">
             Real results from real users who have transformed their
             productivity.
           </p>
@@ -108,7 +108,7 @@ export function StatsSection() {
             <div
               key={index}
               className={cn(
-                'stat-item rounded-xl border bg-foreground/10 p-6 transition-shadow duration-300',
+                'stat-item bg-foreground/10 rounded-xl border p-6 transition-shadow duration-300',
                 stat.bg
               )}
             >
@@ -119,12 +119,12 @@ export function StatsSection() {
               >
                 {stat.icon}
               </div>
-              <div className="text-center text-balance">
+              <div className="text-balance text-center">
                 <div className={cn('mb-2 text-4xl font-bold', stat.text)}>
                   {stat.value}
                 </div>
                 <h3 className="mb-2 text-lg font-semibold">{stat.label}</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {stat.description}
                 </p>
               </div>
