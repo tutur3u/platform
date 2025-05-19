@@ -569,16 +569,57 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     };
   }, []);
 
+  // --- Tooltip rendering guard ---
+  // Helper to check if tooltip position is valid (not at 0,0 unless intentionally)
+  const isTooltipPosValid = (pos: TooltipPos) => {
+    // Consider (0,0) as invalid unless showTooltip is true and mouse is inside cell
+    // You can adjust this logic if you want to allow (0,0) in some cases
+    return pos.x !== 0 || pos.y !== 0;
+  };
+
+  // Prepare tooltip node to avoid rendering at (0,0)
+  let tooltipNode: React.ReactNode = null;
+  if (showTooltip && hoveredSlot !== null && isTooltipPosValid(tooltipPos)) {
+    tooltipNode = (
+      <div
+        ref={tooltipRef}
+        id={tooltipId}
+        role="tooltip"
+        aria-live="polite"
+        className="text-white pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium shadow-lg transition-opacity duration-150 opacity-100 animate-fade-in"
+        style={{
+          position: 'fixed',
+          left: tooltipPos.x,
+          top: tooltipPos.y,
+          minWidth: 120,
+          maxWidth: 200,
+          zIndex: 10000,
+          whiteSpace: 'nowrap',
+          opacity: showTooltip ? 1 : 0,
+          transition: 'opacity 0.15s',
+        }}
+      >
+        {`Create an event at ${
+          typeof hoveredSlot === 'number'
+            ? formatTime(hour, hoveredSlot)
+            : hoveredSlot === 'hour'
+              ? formatTime(hour)
+              : formatTime(hour, 30)
+        }`}
+      </div>
+    );
+  }
+
   // Hide tooltip on scroll or mouse leave
   useEffect(() => {
     const handleScroll = () => {
       setShowTooltip(false);
-      setTooltipPos({ x: 0, y: 0, arrowDirection: 'right' });
+      setTooltipPos({ x: -9999, y: -9999, arrowDirection: 'right' }); // Move off-screen
     };
     const cell = cellRef.current;
     const handleMouseLeave = () => {
       setShowTooltip(false);
-      setTooltipPos({ x: 0, y: 0, arrowDirection: 'right' });
+      setTooltipPos({ x: -9999, y: -9999, arrowDirection: 'right' }); // Move off-screen
     };
     if (cell) {
       cell.addEventListener('mouseleave', handleMouseLeave);
@@ -698,34 +739,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         tabIndex={-1}
       />
       {/* Show tooltip for hovered slot (hour, half-hour, or 15-min) */}
-      {showTooltip && hoveredSlot !== null && (
-        <div
-          ref={tooltipRef}
-          id={tooltipId}
-          role="tooltip"
-          aria-live="polite"
-          className="text-white pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium shadow-lg transition-opacity duration-150 opacity-100 animate-fade-in"
-          style={{
-            position: 'fixed',
-            left: tooltipPos.x,
-            top: tooltipPos.y,
-            minWidth: 120,
-            maxWidth: 200,
-            zIndex: 10000,
-            whiteSpace: 'nowrap',
-            opacity: showTooltip ? 1 : 0,
-            transition: 'opacity 0.15s',
-          }}
-        >
-          {`Create an event at ${
-            typeof hoveredSlot === 'number'
-              ? formatTime(hour, hoveredSlot)
-              : hoveredSlot === 'hour'
-                ? formatTime(hour)
-                : formatTime(hour, 30)
-          }`}
-        </div>
-      )}
+      {tooltipNode}
     </div>
   );
 };
