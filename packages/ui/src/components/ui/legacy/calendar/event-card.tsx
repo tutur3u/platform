@@ -1,15 +1,3 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from '../../context-menu';
-import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
@@ -17,19 +5,31 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Edit,
-  Lock,
-  Palette,
-  Pencil,
-  RefreshCw,
-  Trash2,
-  Unlock,
+    AlertTriangle,
+    ArrowLeft,
+    ArrowRight,
+    Check,
+    Edit,
+    Lock,
+    Palette,
+    Pencil,
+    RefreshCw,
+    Trash2,
+    Unlock,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuSeparator,
+    ContextMenuSub,
+    ContextMenuSubContent,
+    ContextMenuSubTrigger,
+    ContextMenuTrigger,
+} from '../../context-menu';
+import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 
 dayjs.extend(timezone);
 
@@ -923,12 +923,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             getBackgroundStyle() // Use dynamic background based on status
           )}
           style={{
-            transition:
-              isDragging || isResizing
-                ? 'none' // No transition during interaction
-                : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            transition: isDragging || isResizing
+              ? 'none' // No transition during interaction
+              : 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', // Smoother transition
             zIndex: isHovering || isDragging || isResizing ? 50 : 10 - level, // Use level for z-index
-            willChange: isDragging || isResizing ? 'transform' : 'auto', // GPU acceleration
+            willChange: isDragging || isResizing ? 'transform, top, left' : 'auto', // GPU acceleration
+            transform: isDragging || isResizing ? 'translateZ(0)' : 'none', // Force GPU acceleration during interaction
           }}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
