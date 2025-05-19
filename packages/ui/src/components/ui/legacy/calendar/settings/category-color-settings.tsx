@@ -89,8 +89,11 @@ export function CategoryColorsSettings({
       'CYAN',
       'GRAY',
     ];
+
+    // Find first unused color or use the first available color
     const newColor =
-      availableColors.find((color) => !usedColors.has(color)) || 'BLUE';
+      availableColors.find((color) => !usedColors.has(color)) ||
+      (availableColors[0] as SupportedColor);
 
     onChange({
       categories: [

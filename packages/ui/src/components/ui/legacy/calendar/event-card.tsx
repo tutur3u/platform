@@ -926,9 +926,11 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             transition:
               isDragging || isResizing
                 ? 'none' // No transition during interaction
-                : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                : 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', // Smoother transition
             zIndex: isHovering || isDragging || isResizing ? 50 : 10 - level, // Use level for z-index
-            willChange: isDragging || isResizing ? 'transform' : 'auto', // GPU acceleration
+            willChange:
+              isDragging || isResizing ? 'transform, top, left' : 'auto', // GPU acceleration
+            transform: isDragging || isResizing ? 'translateZ(0)' : 'none', // Force GPU acceleration during interaction
           }}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}

@@ -32,6 +32,9 @@
   button {
     @apply cursor-pointer;
   }
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
+  }
 }
 
 :root {

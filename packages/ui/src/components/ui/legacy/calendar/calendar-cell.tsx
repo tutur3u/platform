@@ -15,15 +15,22 @@ interface DragPreviewProps {
   top: number;
   height: number;
   isReversed: boolean;
+  color: string;
 }
 
-const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
+const DragPreview = ({
+  startDate,
+  endDate,
+  top,
+  height,
+  color,
+}: DragPreviewProps) => {
   // Calculate duration in minutes
   const durationMs = endDate.getTime() - startDate.getTime();
   const durationMinutes = Math.round(durationMs / (1000 * 60));
 
   // Get color styles for the preview
-  const { bg, border, text } = getEventStyles('BLUE');
+  const { bg, border, text } = getEventStyles(color);
 
   return (
     <div
@@ -40,7 +47,8 @@ const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
         height: `${Math.max(height, 20)}px`,
         transition: 'none', // No transition during interaction
         willChange: 'transform', // GPU acceleration
-        zIndex: 11, // Lower z-index to stay below UI controls but above events
+        zIndex: 11, // Higher z-index to stay above all other elements
+        pointerEvents: 'none', // Prevent interaction with preview
       }}
     >
       <div
@@ -59,14 +67,13 @@ const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
       </div>
       <div
         className={cn(
-          'pointer-events-none absolute whitespace-nowrap rounded-md border text-xs font-semibold',
+          'pointer-events-none absolute whitespace-nowrap rounded-md text-xs font-semibold',
           // More compact styling for short durations
           height < 60
             ? 'right-1 top-1/2 -translate-y-1/2 px-1 py-0.5 text-[10px]'
             : 'right-2 top-2 px-1.5 py-0.5',
           text,
-          bg,
-          border
+          bg
         )}
         style={{
           maxWidth: 'calc(100% - 8px)', // Tighter max width
@@ -100,6 +107,12 @@ const findScrollContainer = (el: HTMLElement | null): HTMLElement | null => {
 
 const GRID_SNAP = HOUR_HEIGHT / 4; // 15 minutes per grid
 
+type TooltipPos = {
+  x: number;
+  y: number;
+  arrowDirection: 'right' | 'left' | 'down' | 'up';
+};
+
 export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const {
     addEmptyEvent,
@@ -127,7 +140,6 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const [tooltipLocked, setTooltipLocked] = useState(false);
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
-  const cursorPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const rafRef = useRef<number | null>(null);
   // --- Google Calendar-like Drag & Auto-Scroll ---
   const autoScrollRef = useRef<number | null>(null);
@@ -135,6 +147,18 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   // Store drag start Y relative to container and cell top in container
   const dragStartYInContainer = useRef<number>(0);
   const cellTopInContainer = useRef<number>(0);
+  // Add refs for tooltip position and animation frame
+  const tooltipPosRef = useRef<TooltipPos>({
+    x: 0,
+    y: 0,
+    arrowDirection: 'right',
+  });
+  const rafId = useRef<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<TooltipPos>({
+    x: 0,
+    y: 0,
+    arrowDirection: 'right',
+  });
 
   const id = `cell-${date}-${hour}`;
   const tooltipId = `calendar-tooltip-${id}`;
@@ -454,13 +478,6 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   };
 
   // Throttled tooltip position update
-  const updateTooltipPosition = () => {
-    if (tooltipRef.current) {
-      tooltipRef.current.style.left = `${cursorPosRef.current.x}px`;
-      tooltipRef.current.style.top = `${cursorPosRef.current.y}px`;
-    }
-    rafRef.current = null;
-  };
 
   // Helper to determine if a given minute is a 15-minute interval
   const isQuarterHour = (minute: number) => minute % 15 === 0;
@@ -479,25 +496,50 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       setHoveredSlot(slot);
     }
     const offset = 8;
-    const flipOffset = 16;
-    let x = e.clientX + offset;
-    let y = e.clientY + offset;
     const tooltipWidth = 200;
     const tooltipHeight = 40;
     const padding = 8;
+    let x = e.clientX + offset;
+    let y = e.clientY + offset;
+    let arrowDirection: 'right' | 'left' | 'down' | 'up' = 'right';
+
+    // Flip horizontally if overflowing right
     if (x + tooltipWidth > window.innerWidth - padding) {
-      x = e.clientX - tooltipWidth - flipOffset;
+      x = e.clientX - tooltipWidth - offset + 30;
+      arrowDirection = 'left';
+      if (x < padding) x = window.innerWidth - tooltipWidth - padding;
     }
+    // Flip vertically if overflowing bottom
     if (y + tooltipHeight > window.innerHeight - padding) {
-      y = e.clientY - tooltipHeight - flipOffset;
+      y = e.clientY - tooltipHeight - offset + 30;
+      arrowDirection = 'up';
+      if (y < padding) y = window.innerHeight - tooltipHeight - padding;
     }
-    cursorPosRef.current = { x, y };
-    if (!rafRef.current) {
-      rafRef.current = requestAnimationFrame(updateTooltipPosition);
+    // Clamp to viewport just in case
+    x = Math.max(
+      padding,
+      Math.min(x, window.innerWidth - tooltipWidth - padding)
+    );
+    y = Math.max(
+      padding,
+      Math.min(y, window.innerHeight - tooltipHeight - padding)
+    );
+
+    tooltipPosRef.current = { x, y, arrowDirection };
+    if (!rafId.current) {
+      rafId.current = requestAnimationFrame(() => {
+        // Only update if position has changed significantly
+        const { x: prevX, y: prevY, arrowDirection: prevArrow } = tooltipPos;
+        const { x: newX, y: newY, arrowDirection } = tooltipPosRef.current;
+        const hasSignificantChange =
+          Math.abs(prevX - newX) > 5 || Math.abs(prevY - newY) > 5;
+        if (hasSignificantChange || prevArrow !== arrowDirection) {
+          setTooltipPos(tooltipPosRef.current);
+        }
+        rafId.current = null;
+      });
     }
-    if (tooltipLocked) {
-      setShowTooltip(true);
-    }
+    if (tooltipLocked) setShowTooltip(true);
   };
 
   // Handle leaving the cell: reset everything
@@ -544,6 +586,10 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       cell.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mousemove', enhancedHandleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      if (autoScrollRef.current) {
+        cancelAnimationFrame(autoScrollRef.current);
+        autoScrollRef.current = null;
+      }
     };
   }, [handleMouseDown, enhancedHandleMouseMove, handleMouseUp]);
 
@@ -555,6 +601,91 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         cancelAnimationFrame(autoScrollRef.current);
         autoScrollRef.current = null;
       }
+    };
+  }, []);
+
+  // --- Tooltip rendering guard ---
+  // Helper to check if tooltip position is valid (not at 0,0 unless intentionally)
+  const isTooltipPosValid = (pos: TooltipPos) => {
+    // Consider (0,0) as invalid unless showTooltip is true and mouse is inside cell
+    // You can adjust this logic if you want to allow (0,0) in some cases
+    return pos.x !== 0 || pos.y !== 0;
+  };
+
+  // Prepare tooltip node to avoid rendering at (0,0)
+  let tooltipNode: React.ReactNode = null;
+  if (showTooltip && hoveredSlot !== null && isTooltipPosValid(tooltipPos)) {
+    tooltipNode = (
+      <div
+        ref={tooltipRef}
+        id={tooltipId}
+        role="tooltip"
+        aria-live="polite"
+        className="animate-fade-in pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white opacity-100 shadow-lg transition-opacity duration-150"
+        style={{
+          position: 'fixed',
+          left: tooltipPos.x,
+          top: tooltipPos.y,
+          minWidth: 120,
+          maxWidth: 200,
+          zIndex: 10000,
+          whiteSpace: 'nowrap',
+          opacity: showTooltip ? 1 : 0,
+          transition: 'opacity 0.15s',
+        }}
+      >
+        {`Create an event at ${
+          typeof hoveredSlot === 'number'
+            ? formatTime(hour, hoveredSlot)
+            : hoveredSlot === 'hour'
+              ? formatTime(hour)
+              : formatTime(hour, 30)
+        }`}
+      </div>
+    );
+  }
+
+  // Hide tooltip on scroll or mouse leave
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowTooltip(false);
+      setTooltipPos({ x: -9999, y: -9999, arrowDirection: 'right' }); // Move off-screen
+    };
+    const cell = cellRef.current;
+    const handleMouseLeave = () => {
+      setShowTooltip(false);
+      setTooltipPos({ x: -9999, y: -9999, arrowDirection: 'right' }); // Move off-screen
+    };
+    if (cell) {
+      cell.addEventListener('mouseleave', handleMouseLeave);
+    }
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      if (cell) {
+        cell.removeEventListener('mouseleave', handleMouseLeave);
+      }
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+    };
+  }, []);
+
+  // Cancel drag on window blur or visibility change
+  useEffect(() => {
+    const cancelDrag = () => {
+      setIsDragging(false);
+      setDragPreview(null);
+      dragStartRef.current = null;
+      document.body.style.cursor = '';
+      document.body.classList.remove('select-none');
+    };
+    const handleVisibilityChange = () => {
+      if (document.hidden) cancelDrag();
+    };
+    window.addEventListener('blur', cancelDrag);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('blur', cancelDrag);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
@@ -600,7 +731,16 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         ) : null)}
 
       {/* Drag preview overlay */}
-      {dragPreview && <DragPreview {...dragPreview} />}
+      {dragPreview && (
+        <DragPreview
+          startDate={dragPreview.startDate}
+          endDate={dragPreview.endDate}
+          top={dragPreview.top}
+          height={dragPreview.height}
+          isReversed={dragPreview.isReversed}
+          color={settings?.categoryColors?.categories?.[0]?.color || 'BLUE'}
+        />
+      )}
 
       {/* Full cell clickable area (hour) */}
       <button
@@ -654,32 +794,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         tabIndex={-1}
       />
       {/* Show tooltip for hovered slot (hour, half-hour, or 15-min) */}
-      {showTooltip && hoveredSlot !== null && (
-        <div
-          ref={tooltipRef}
-          id={tooltipId}
-          role="tooltip"
-          aria-live="polite"
-          className="text-foreground pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium shadow-lg"
-          style={{
-            position: 'fixed',
-            left: cursorPosRef.current.x,
-            top: cursorPosRef.current.y,
-            minWidth: 120,
-            maxWidth: 200,
-            zIndex: 10000,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {`Create an event at ${
-            typeof hoveredSlot === 'number'
-              ? formatTime(hour, hoveredSlot)
-              : hoveredSlot === 'hour'
-                ? formatTime(hour)
-                : formatTime(hour, 30)
-          }`}
-        </div>
-      )}
+      {tooltipNode}
     </div>
   );
 };
