@@ -561,6 +561,10 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       cell.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mousemove', enhancedHandleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      if (autoScrollRef.current) {
+        cancelAnimationFrame(autoScrollRef.current);
+        autoScrollRef.current = null;
+      }
     };
   }, [handleMouseDown, enhancedHandleMouseMove, handleMouseUp]);
 

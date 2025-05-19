@@ -121,7 +121,6 @@ export const EventDescriptionInput = ({
   disabled?: boolean;
   mode?: 'create' | 'edit';
 }) => {
-  const [isExpanded, setIsExpanded] = React.useState(true);
   const [height, setHeight] = React.useState(100);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const resizeHandleRef = React.useRef<HTMLDivElement>(null);
@@ -136,6 +135,9 @@ export const EventDescriptionInput = ({
   const charCount = value.length;
   const showToggle = wordCount >= 60 || charCount >= 400;
 
+  // Set initial expanded state based on showToggle
+  const [isExpanded, setIsExpanded] = React.useState(() => !showToggle);
+
   // Set default state for expanded/collapsed based on mode and word count
   React.useEffect(() => {
     if (showToggle) {
@@ -143,7 +145,7 @@ export const EventDescriptionInput = ({
     } else {
       setIsExpanded(true); // Always expanded if <= 60 words
     }
-  }, [mode, value]);
+  }, [mode, value, showToggle]);
 
   // Handle show more/less toggle
   const handleToggleExpand = () => {
@@ -159,25 +161,48 @@ export const EventDescriptionInput = ({
     }, 0);
   };
 
-  // Extracted auto-scroll logic
-  const handleAutoScroll = (handleY: number) => {
-    let scrollParent: HTMLElement | null = containerRef.current as unknown as HTMLElement | null;
-    while (scrollParent && scrollParent !== document.body && scrollParent.scrollHeight <= scrollParent.clientHeight) {
-      scrollParent = scrollParent.parentElement;
-    }
-    if (scrollParent) {
-      const parentRect = scrollParent.getBoundingClientRect();
-      const scrollMargin = 40; // px from edge to trigger scroll
-      // Scroll down if handle is near bottom
-      if (handleY > parentRect.bottom - scrollMargin) {
-        scrollParent.scrollTop += 10;
+  // Throttle function
+  const throttle = (func: Function, limit: number) => {
+    let inThrottle: boolean;
+    return function(this: any, ...args: any[]) {
+      if (!inThrottle) {
+        func.apply(this, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
       }
-      // Scroll up if handle is near top
-      if (handleY < parentRect.top + scrollMargin) {
-        scrollParent.scrollTop -= 10;
-      }
-    }
+    };
   };
+
+  // Extracted auto-scroll logic with throttling
+  const handleAutoScroll = React.useCallback(
+    throttle((handleY: number) => {
+      let scrollParent: HTMLElement | null = containerRef.current as unknown as HTMLElement | null;
+      while (scrollParent && scrollParent !== document.body && scrollParent.scrollHeight <= scrollParent.clientHeight) {
+        scrollParent = scrollParent.parentElement;
+      }
+      if (scrollParent) {
+        const parentRect = scrollParent.getBoundingClientRect();
+        const scrollMargin = 60; // Increased margin to start scrolling earlier
+        const scrollSpeed = 20; // Increased scroll speed
+        // Scroll down if handle is near bottom
+        if (handleY > parentRect.bottom - scrollMargin) {
+          scrollParent.scrollTop += scrollSpeed;
+        }
+        // Scroll up if handle is near top
+        if (handleY < parentRect.top + scrollMargin) {
+          scrollParent.scrollTop -= scrollSpeed;
+        }
+      }
+    }, 16), // Reduced throttling interval to ~60fps for smoother scrolling
+    []
+  );
+
+  // Reset height when value changes and not expanded
+  React.useEffect(() => {
+    if (!isExpanded) {
+      setHeight(100);
+    }
+  }, [value, isExpanded]);
 
   // Handle resize
   const handleMouseDown = (e: MouseEvent | React.MouseEvent | TouchEvent) => {
@@ -235,13 +260,6 @@ export const EventDescriptionInput = ({
     document.addEventListener('touchmove', handleMove as any);
     document.addEventListener('touchend', handleUp);
   };
-
-  // Reset height when value changes and not expanded
-  React.useEffect(() => {
-    if (!isExpanded) {
-      setHeight(100);
-    }
-  }, [value, isExpanded]);
 
   return (
     <div className="space-y-2" ref={containerRef}>
