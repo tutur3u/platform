@@ -1,20 +1,5 @@
 'use client';
 
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { Alert, AlertDescription, AlertTitle } from '../../alert';
-import { AutosizeTextarea } from '../../custom/autosize-textarea';
-import {
-  COLOR_OPTIONS,
-  DateError,
-  EventColorPicker,
-  EventDateTimePicker,
-  EventDescriptionInput,
-  EventLocationInput,
-  EventPriorityPicker,
-  EventTitleInput,
-  EventToggleSwitch,
-  OverlapWarning,
-} from './event-form-components';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
@@ -81,6 +66,21 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { Alert, AlertDescription, AlertTitle } from '../../alert';
+import { AutosizeTextarea } from '../../custom/autosize-textarea';
+import {
+  COLOR_OPTIONS,
+  DateError,
+  EventColorPicker,
+  EventDateTimePicker,
+  EventDescriptionInput,
+  EventLocationInput,
+  EventPriorityPicker,
+  EventTitleInput,
+  EventToggleSwitch,
+  OverlapWarning,
+} from './event-form-components';
 
 dayjs.extend(ts);
 dayjs.extend(utc);
@@ -230,9 +230,9 @@ export function EventModal() {
         // Check if event is all-day by comparing start and end times
         const startDate = dayjs(eventData.start_at);
         const endDate = dayjs(eventData.end_at);
-        const isAllDayEvent = startDate
-          .startOf('day')
-          .isSame(endDate.startOf('day').subtract(1, 'day'));
+        const isAllDayEvent =
+          startDate.startOf('day').isSame(endDate.startOf('day').subtract(1, 'day')) ||
+          endDate.startOf('day').isAfter(startDate.startOf('day').add(1, 'day'));
         setIsAllDay(isAllDayEvent);
       } else {
         // For new events, always start with isAllDay as false
@@ -306,6 +306,9 @@ export function EventModal() {
 
   // Handle manual event save
   const handleManualSave = async () => {
+    if (isEditing && event.locked) {
+      return; // Locked ‑- do nothing.
+    }
     if (!event.start_at || !event.end_at) return;
 
     const startDate = new Date(event.start_at);
@@ -861,10 +864,7 @@ export function EventModal() {
     try {
       const originalId = activeEvent.id;
 
-      const updatedEvent = await updateEvent(originalId, {
-        ...event,
-        locked: checked,
-      });
+      const updatedEvent = await updateEvent(originalId, { locked: checked });
 
       if (!updatedEvent) {
         throw new Error('Failed to update event lock status');
@@ -888,9 +888,6 @@ export function EventModal() {
       setIsSaving(false);
     }
   };
-
-  // Normalize locked to a boolean to avoid linter errors
-  const locked = event.locked === true;
 
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
@@ -1202,7 +1199,7 @@ export function EventModal() {
                       <Button
                         onClick={handleManualSave}
                         disabled={
-                          isSaving || isDeleting || (isEditing && locked)
+                          isSaving || isDeleting || (isEditing && event.locked)
                         }
                         className="flex items-center gap-2"
                       >

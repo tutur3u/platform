@@ -1,6 +1,5 @@
 'use client';
 
-import { ColorPicker, colorMap } from './settings/color-picker';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -15,6 +14,7 @@ import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
 import React, { ReactNode } from 'react';
+import { ColorPicker, colorMap } from './settings/color-picker';
 
 // Color options aligned with SupportedColor type
 export const COLOR_OPTIONS: {
@@ -138,12 +138,8 @@ export const EventDescriptionInput = ({
 
   // Set default state for expanded/collapsed based on mode and word count
   React.useEffect(() => {
-    if (showToggle) {
-      setIsExpanded(false); // Always start clamped if > 60 words
-    } else {
-      setIsExpanded(true); // Always expanded if <= 60 words
-    }
-  }, [mode, value]);
+    setIsExpanded(!showToggle); // collapsed if toggle is relevant
+  }, [mode]);
 
   // Handle show more/less toggle
   const handleToggleExpand = () => {
@@ -242,7 +238,7 @@ export const EventDescriptionInput = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder="Add event details..."
           className={cn(
-            'resize-none whitespace-pre-wrap break-words break-all transition-all duration-200',
+            'resize-none whitespace-pre-wrap break-words break-anywhere transition-all duration-200 w-full',
             isExpanded ? 'h-auto' : 'overflow-y-auto',
             'scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent'
           )}
@@ -256,7 +252,7 @@ export const EventDescriptionInput = ({
           <div
             ref={resizeHandleRef}
             onMouseDown={handleMouseDown}
-            className="hover:bg-border/50 absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize transition-colors"
+            className="hover:bg-border/50 absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize transition-colors rounded-b-md"
           />
         )}
       </div>
