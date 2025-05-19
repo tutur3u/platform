@@ -324,7 +324,7 @@ export default function LeaderboardClient({
                     <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
                       {t('tutorials.title')}
                     </h3>
-                    <ul className="space-y-3 text-sm text-gray-600 dark:text-slate-400">
+                    <ul className="text-muted-foreground space-y-3 text-sm dark:text-slate-400">
                       <li className="flex items-start gap-2">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
                           1
@@ -369,7 +369,7 @@ export default function LeaderboardClient({
                       </li>
                       <li className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                          <Medal className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                          <Medal className="text-muted-foreground h-4 w-4 dark:text-gray-400" />
                         </div>
                         <div>
                           <p className="font-medium text-gray-900 dark:text-slate-200">

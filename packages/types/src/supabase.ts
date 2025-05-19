@@ -6798,7 +6798,13 @@ export type Database = {
         Returns: undefined;
       };
       count_search_users: {
-        Args: { search_query: string };
+        Args:
+          | { search_query: string }
+          | {
+              search_query: string;
+              role_filter?: string;
+              enabled_filter?: boolean;
+            };
         Returns: number;
       };
       create_ai_chat: {
@@ -7178,7 +7184,15 @@ export type Database = {
         Returns: undefined;
       };
       search_users: {
-        Args: { search_query: string; page_number: number; page_size: number };
+        Args:
+          | { search_query: string; page_number: number; page_size: number }
+          | {
+              search_query: string;
+              page_number: number;
+              page_size: number;
+              role_filter?: string;
+              enabled_filter?: boolean;
+            };
         Returns: {
           id: string;
           display_name: string;

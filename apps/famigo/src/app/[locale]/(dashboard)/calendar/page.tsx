@@ -150,7 +150,7 @@ export default function CalendarPage() {
       case 'orange':
         return 'bg-orange-500/20 text-orange-600 dark:bg-orange-500/30 dark:text-orange-400';
       default:
-        return 'bg-gray-500/20 text-gray-600 dark:bg-gray-500/30 dark:text-gray-400';
+        return 'bg-gray-500/20 text-muted-foreground dark:bg-gray-500/30 dark:text-gray-400';
     }
   };
 

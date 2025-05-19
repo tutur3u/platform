@@ -75,7 +75,7 @@ const PostEmailTemplate = ({
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-muted-foreground text-sm">
                 Trung tâm Easy thân gửi phụ huynh báo cáo tiến độ học tập của em{' '}
                 <span className="font-semibold text-purple-600">
                   {username || '<Chưa có tên>'}
@@ -92,18 +92,18 @@ const PostEmailTemplate = ({
                 </span>
                 , với nội dung như sau:
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-muted-foreground text-sm">
                 <span className="font-semibold">Bài học:</span>{' '}
                 <span className="">{post.title || 'Không rõ'}</span>
               </p>
               {post.content && (
-                <p className="text-sm text-gray-600">
+                <p className="text-muted-foreground text-sm">
                   <span className="font-semibold">Nội dung:</span>{' '}
                   <span className="whitespace-pre-line">{post.content}</span>
                 </p>
               )}
               {notes && (
-                <p className="text-sm text-gray-600">
+                <p className="text-muted-foreground text-sm">
                   <span className="font-semibold">Ghi chú:</span>{' '}
                   <span className="whitespace-pre-line">{notes}</span>
                 </p>
@@ -132,7 +132,7 @@ const PostEmailTemplate = ({
                   ).toUpperCase()}
                 </div>
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-muted-foreground text-sm">
                 Easy Center kindly sends parents a report on the learning
                 progress of{' '}
                 <span className="font-semibold text-purple-600">
@@ -150,18 +150,18 @@ const PostEmailTemplate = ({
                 </span>
                 , with the following content:
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-muted-foreground text-sm">
                 <span className="font-semibold">Lesson:</span>{' '}
                 <span className="">{post.title || 'Unknown'}</span>
               </p>
               {post.content && (
-                <p className="text-sm text-gray-600">
+                <p className="text-muted-foreground text-sm">
                   <span className="font-semibold">Content:</span>{' '}
                   <span className="whitespace-pre-line">{post.content}</span>
                 </p>
               )}
               {notes && (
-                <p className="text-sm text-gray-600">
+                <p className="text-muted-foreground text-sm">
                   <span className="font-semibold">Note:</span>{' '}
                   <span className="whitespace-pre-line">{notes}</span>
                 </p>
