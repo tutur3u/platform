@@ -1,5 +1,6 @@
 'use client';
 
+import { CategoryColor, colorMap } from './color-picker';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
@@ -8,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { InfoIcon, PlusIcon, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { CategoryColor, colorMap } from './color-picker';
 
 export type CategoryColorsData = {
   categories: CategoryColor[];
@@ -89,9 +89,11 @@ export function CategoryColorsSettings({
       'CYAN',
       'GRAY',
     ];
-    
+
     // Find first unused color or use the first available color
-    const newColor = availableColors.find(color => !usedColors.has(color)) || availableColors[0] as SupportedColor;
+    const newColor =
+      availableColors.find((color) => !usedColors.has(color)) ||
+      (availableColors[0] as SupportedColor);
 
     onChange({
       categories: [

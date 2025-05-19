@@ -1,11 +1,11 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { HOUR_HEIGHT } from './config';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
 
 dayjs.extend(timezone);
 
@@ -18,7 +18,13 @@ interface DragPreviewProps {
   color: string;
 }
 
-const DragPreview = ({ startDate, endDate, top, height, color }: DragPreviewProps) => {
+const DragPreview = ({
+  startDate,
+  endDate,
+  top,
+  height,
+  color,
+}: DragPreviewProps) => {
   // Calculate duration in minutes
   const durationMs = endDate.getTime() - startDate.getTime();
   const durationMinutes = Math.round(durationMs / (1000 * 60));
@@ -101,7 +107,11 @@ const findScrollContainer = (el: HTMLElement | null): HTMLElement | null => {
 
 const GRID_SNAP = HOUR_HEIGHT / 4; // 15 minutes per grid
 
-type TooltipPos = { x: number; y: number; arrowDirection: 'right' | 'left' | 'down' | 'up' };
+type TooltipPos = {
+  x: number;
+  y: number;
+  arrowDirection: 'right' | 'left' | 'down' | 'up';
+};
 
 export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const {
@@ -138,9 +148,17 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const dragStartYInContainer = useRef<number>(0);
   const cellTopInContainer = useRef<number>(0);
   // Add refs for tooltip position and animation frame
-  const tooltipPosRef = useRef<TooltipPos>({ x: 0, y: 0, arrowDirection: 'right' });
+  const tooltipPosRef = useRef<TooltipPos>({
+    x: 0,
+    y: 0,
+    arrowDirection: 'right',
+  });
   const rafId = useRef<number | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<TooltipPos>({ x: 0, y: 0, arrowDirection: 'right' });
+  const [tooltipPos, setTooltipPos] = useState<TooltipPos>({
+    x: 0,
+    y: 0,
+    arrowDirection: 'right',
+  });
 
   const id = `cell-${date}-${hour}`;
   const tooltipId = `calendar-tooltip-${id}`;
@@ -498,8 +516,14 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       if (y < padding) y = window.innerHeight - tooltipHeight - padding;
     }
     // Clamp to viewport just in case
-    x = Math.max(padding, Math.min(x, window.innerWidth - tooltipWidth - padding));
-    y = Math.max(padding, Math.min(y, window.innerHeight - tooltipHeight - padding));
+    x = Math.max(
+      padding,
+      Math.min(x, window.innerWidth - tooltipWidth - padding)
+    );
+    y = Math.max(
+      padding,
+      Math.min(y, window.innerHeight - tooltipHeight - padding)
+    );
 
     tooltipPosRef.current = { x, y, arrowDirection };
     if (!rafId.current) {
@@ -507,7 +531,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         // Only update if position has changed significantly
         const { x: prevX, y: prevY, arrowDirection: prevArrow } = tooltipPos;
         const { x: newX, y: newY, arrowDirection } = tooltipPosRef.current;
-        const hasSignificantChange = Math.abs(prevX - newX) > 5 || Math.abs(prevY - newY) > 5;
+        const hasSignificantChange =
+          Math.abs(prevX - newX) > 5 || Math.abs(prevY - newY) > 5;
         if (hasSignificantChange || prevArrow !== arrowDirection) {
           setTooltipPos(tooltipPosRef.current);
         }
@@ -596,7 +621,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         id={tooltipId}
         role="tooltip"
         aria-live="polite"
-        className="text-white pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium shadow-lg transition-opacity duration-150 opacity-100 animate-fade-in"
+        className="animate-fade-in pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white opacity-100 shadow-lg transition-opacity duration-150"
         style={{
           position: 'fixed',
           left: tooltipPos.x,
