@@ -15,15 +15,16 @@ interface DragPreviewProps {
   top: number;
   height: number;
   isReversed: boolean;
+  color: string;
 }
 
-const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
+const DragPreview = ({ startDate, endDate, top, height, color }: DragPreviewProps) => {
   // Calculate duration in minutes
   const durationMs = endDate.getTime() - startDate.getTime();
   const durationMinutes = Math.round(durationMs / (1000 * 60));
 
   // Get color styles for the preview
-  const { bg, border, text } = getEventStyles('BLUE');
+  const { bg, border, text } = getEventStyles(color);
 
   return (
     <div
@@ -65,7 +66,8 @@ const DragPreview = ({ startDate, endDate, top, height }: DragPreviewProps) => {
           height < 60
             ? 'right-1 top-1/2 -translate-y-1/2 px-1 py-0.5 text-[10px]'
             : 'right-2 top-2 px-1.5 py-0.5',
-          'bg-blue-500 text-white'
+          text,
+          bg
         )}
         style={{
           maxWidth: 'calc(100% - 8px)', // Tighter max width
@@ -633,7 +635,16 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         ) : null)}
 
       {/* Drag preview overlay */}
-      {dragPreview && <DragPreview {...dragPreview} />}
+      {dragPreview && (
+        <DragPreview
+          startDate={dragPreview.startDate}
+          endDate={dragPreview.endDate}
+          top={dragPreview.top}
+          height={dragPreview.height}
+          isReversed={dragPreview.isReversed}
+          color={settings?.categoryColors?.categories?.[0]?.color || 'BLUE'}
+        />
+      )}
 
       {/* Full cell clickable area (hour) */}
       <button
