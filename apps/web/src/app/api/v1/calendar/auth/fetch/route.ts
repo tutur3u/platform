@@ -17,7 +17,11 @@ const getGoogleAuthClient = (tokens: {
   return oauth2Client;
 };
 
-export async function GET() {
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const forceRefresh = url.searchParams.get('force') === 'true';
+  const maxBatches = parseInt(url.searchParams.get('maxBatches') || '10');
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -54,19 +58,48 @@ export async function GET() {
     const timeMax = new Date();
     timeMax.setFullYear(timeMax.getFullYear() + 1);
 
-    const response = await calendar.events.list({
-      calendarId: 'primary',
-      timeMin: timeMin.toISOString(),
-      timeMax: timeMax.toISOString(),
-      singleEvents: true, // separate recurring events
-      orderBy: 'startTime',
-      maxResults: 1000,
-    });
+    // Fetch events with pagination - maximum of 2500 events across batches (to avoid overloading)
+    const allEvents = [];
+    let nextPageToken = null;
+    let batchCounter = 0;
 
-    const events = response.data.items || [];
+    do {
+      // Build the request parameters
+      const requestParams: any = {
+        calendarId: 'primary',
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+        singleEvents: true, // separate recurring events
+        orderBy: 'startTime',
+        maxResults: 1000, // Maximum allowed by Google Calendar API
+      };
+
+      // Add page token if we have one from previous response
+      if (nextPageToken) {
+        requestParams.pageToken = nextPageToken;
+      }
+
+      // Execute the API request
+      const response = await calendar.events.list(requestParams);
+
+      // Process the events from this batch
+      const events = response.data.items || [];
+      allEvents.push(...events);
+
+      // Get the next page token for pagination
+      nextPageToken = response.data.nextPageToken || null;
+
+      // Increment the batch counter
+      batchCounter++;
+
+      // Stop if we've reached the maximum number of batches or no more pages
+      if (batchCounter >= maxBatches || !nextPageToken) {
+        break;
+      }
+    } while (nextPageToken);
 
     // format the events to match the expected structure
-    const formattedEvents = events.map((event) => ({
+    const formattedEvents = allEvents.map((event) => ({
       google_event_id: event.id,
       title: event.summary || 'Untitled Event',
       description: event.description || '',
@@ -78,7 +111,15 @@ export async function GET() {
       locked: false,
     }));
 
-    return NextResponse.json({ events: formattedEvents }, { status: 200 });
+    return NextResponse.json(
+      {
+        events: formattedEvents,
+        total: formattedEvents.length,
+        hasMoreEvents: !!nextPageToken, // Indicate if there are more events available
+        batchesFetched: batchCounter,
+      },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error('Failed to fetch Google Calendar events:', error);
     if (error.response?.data?.error === 'invalid_grant') {
