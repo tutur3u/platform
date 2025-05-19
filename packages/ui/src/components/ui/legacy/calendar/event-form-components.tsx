@@ -1,5 +1,6 @@
 'use client';
 
+import { ColorPicker, colorMap } from './settings/color-picker';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -14,7 +15,6 @@ import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
 import React, { ReactNode } from 'react';
-import { ColorPicker, colorMap } from './settings/color-picker';
 
 // Color options aligned with SupportedColor type
 export const COLOR_OPTIONS: {
@@ -238,7 +238,7 @@ export const EventDescriptionInput = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder="Add event details..."
           className={cn(
-            'resize-none whitespace-pre-wrap break-words break-anywhere transition-all duration-200 w-full',
+            'break-anywhere w-full resize-none whitespace-pre-wrap break-words transition-all duration-200',
             isExpanded ? 'h-auto' : 'overflow-y-auto',
             'scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent'
           )}
@@ -252,7 +252,7 @@ export const EventDescriptionInput = ({
           <div
             ref={resizeHandleRef}
             onMouseDown={handleMouseDown}
-            className="hover:bg-border/50 absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize transition-colors rounded-b-md"
+            className="hover:bg-border/50 absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize rounded-b-md transition-colors"
           />
         )}
       </div>
