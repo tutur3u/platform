@@ -159,58 +159,81 @@ export const EventDescriptionInput = ({
     }, 0);
   };
 
+  // Extracted auto-scroll logic
+  const handleAutoScroll = (handleY: number) => {
+    let scrollParent: HTMLElement | null = containerRef.current as unknown as HTMLElement | null;
+    while (scrollParent && scrollParent !== document.body && scrollParent.scrollHeight <= scrollParent.clientHeight) {
+      scrollParent = scrollParent.parentElement;
+    }
+    if (scrollParent) {
+      const parentRect = scrollParent.getBoundingClientRect();
+      const scrollMargin = 40; // px from edge to trigger scroll
+      // Scroll down if handle is near bottom
+      if (handleY > parentRect.bottom - scrollMargin) {
+        scrollParent.scrollTop += 10;
+      }
+      // Scroll up if handle is near top
+      if (handleY < parentRect.top + scrollMargin) {
+        scrollParent.scrollTop -= 10;
+      }
+    }
+  };
+
   // Handle resize
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: MouseEvent | React.MouseEvent | TouchEvent) => {
     e.preventDefault();
+    let clientY: number;
+    if ('touches' in e && e.touches && e.touches.length > 0 && e.touches[0]) {
+      clientY = e.touches[0].clientY;
+    } else if ('clientY' in e) {
+      clientY = (e as MouseEvent | React.MouseEvent).clientY;
+    } else {
+      return;
+    }
     isDraggingRef.current = true;
-    startYRef.current = e.clientY;
+    startYRef.current = clientY;
     startHeightRef.current = height;
     // Calculate offset between mouse and bottom of textarea
     if (textareaRef.current) {
       const rect = textareaRef.current.getBoundingClientRect();
-      offsetYRef.current = rect.bottom - e.clientY;
+      offsetYRef.current = rect.bottom - clientY;
     } else {
       offsetYRef.current = 0;
     }
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+      let moveClientY: number;
+      if ('touches' in moveEvent && moveEvent.touches && moveEvent.touches.length > 0 && moveEvent.touches[0]) {
+        moveClientY = moveEvent.touches[0].clientY;
+      } else if ('clientY' in moveEvent) {
+        moveClientY = (moveEvent as MouseEvent).clientY;
+      } else {
+        return;
+      }
       if (!isDraggingRef.current) return;
       // Calculate new height so the handle stays under the cursor
       if (textareaRef.current) {
         const rect = textareaRef.current.getBoundingClientRect();
-        let newHeight = e.clientY + offsetYRef.current - rect.top;
+        let newHeight = moveClientY + offsetYRef.current - rect.top;
         newHeight = Math.max(100, newHeight);
         setHeight(newHeight);
+        // Call auto-scroll with handle Y position
+        handleAutoScroll(rect.bottom);
       }
-      // --- Auto-scroll logic to keep handle in view ---
-      let scrollParent: HTMLElement | null = containerRef.current as unknown as HTMLElement | null;
-      while (scrollParent && scrollParent !== document.body && scrollParent.scrollHeight <= scrollParent.clientHeight) {
-        scrollParent = scrollParent.parentElement;
-      }
-      if (scrollParent) {
-        const handleY = textareaRef.current?.getBoundingClientRect().bottom ?? 0;
-        const parentRect = scrollParent.getBoundingClientRect();
-        const scrollMargin = 40; // px from edge to trigger scroll
-        // Scroll down if handle is near bottom
-        if (handleY > parentRect.bottom - scrollMargin) {
-          scrollParent.scrollTop += 10;
-        }
-        // Scroll up if handle is near top
-        if (handleY < parentRect.top + scrollMargin) {
-          scrollParent.scrollTop -= 10;
-        }
-      }
-      // --- End auto-scroll logic ---
     };
 
-    const handleMouseUp = () => {
+    const handleUp = () => {
       isDraggingRef.current = false;
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleMove as any);
+      document.removeEventListener('mouseup', handleUp);
+      document.removeEventListener('touchmove', handleMove as any);
+      document.removeEventListener('touchend', handleUp);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousemove', handleMove as any);
+    document.addEventListener('mouseup', handleUp);
+    document.addEventListener('touchmove', handleMove as any);
+    document.addEventListener('touchend', handleUp);
   };
 
   // Reset height when value changes and not expanded
@@ -247,6 +270,20 @@ export const EventDescriptionInput = ({
           <div
             ref={resizeHandleRef}
             onMouseDown={handleMouseDown}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              if ('touches' in e && e.touches && e.touches.length > 0 && e.touches[0]) {
+                handleMouseDown(e as unknown as TouchEvent);
+              }
+            }}
+            role="button"
+            aria-label="Resize description field"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                handleToggleExpand();
+              }
+            }}
             className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-border/50 transition-colors"
           />
         )}
