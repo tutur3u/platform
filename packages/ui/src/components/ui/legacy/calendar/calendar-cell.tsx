@@ -504,7 +504,13 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     tooltipPosRef.current = { x, y, arrowDirection };
     if (!rafId.current) {
       rafId.current = requestAnimationFrame(() => {
-        setTooltipPos(tooltipPosRef.current);
+        // Only update if position has changed significantly
+        const { x: prevX, y: prevY, arrowDirection: prevArrow } = tooltipPos;
+        const { x: newX, y: newY, arrowDirection } = tooltipPosRef.current;
+        const hasSignificantChange = Math.abs(prevX - newX) > 5 || Math.abs(prevY - newY) > 5;
+        if (hasSignificantChange || prevArrow !== arrowDirection) {
+          setTooltipPos(tooltipPosRef.current);
+        }
         rafId.current = null;
       });
     }
