@@ -634,6 +634,26 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     };
   }, []);
 
+  // Cancel drag on window blur or visibility change
+  useEffect(() => {
+    const cancelDrag = () => {
+      setIsDragging(false);
+      setDragPreview(null);
+      dragStartRef.current = null;
+      document.body.style.cursor = '';
+      document.body.classList.remove('select-none');
+    };
+    const handleVisibilityChange = () => {
+      if (document.hidden) cancelDrag();
+    };
+    window.addEventListener('blur', cancelDrag);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('blur', cancelDrag);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   return (
     <div
       id={id}
