@@ -1,5 +1,6 @@
 'use client';
 
+import { ColorPicker, colorMap } from './settings/color-picker';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -14,7 +15,6 @@ import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
 import React, { ReactNode } from 'react';
-import { ColorPicker, colorMap } from './settings/color-picker';
 
 // Color options aligned with SupportedColor type
 export const COLOR_OPTIONS: {
@@ -153,7 +153,10 @@ export const EventDescriptionInput = ({
     setTimeout(() => {
       if (textareaRef.current) {
         // Scroll the button into view when toggling
-        const button = textareaRef.current.parentElement?.parentElement?.querySelector('button[data-show-toggle]');
+        const button =
+          textareaRef.current.parentElement?.parentElement?.querySelector(
+            'button[data-show-toggle]'
+          );
         if (button) {
           button.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
@@ -164,11 +167,11 @@ export const EventDescriptionInput = ({
   // Throttle function
   const throttle = (func: Function, limit: number) => {
     let inThrottle: boolean;
-    return function(this: any, ...args: any[]) {
+    return function (this: any, ...args: any[]) {
       if (!inThrottle) {
         func.apply(this, args);
         inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
+        setTimeout(() => (inThrottle = false), limit);
       }
     };
   };
@@ -176,8 +179,13 @@ export const EventDescriptionInput = ({
   // Extracted auto-scroll logic with throttling
   const handleAutoScroll = React.useCallback(
     throttle((handleY: number) => {
-      let scrollParent: HTMLElement | null = containerRef.current as unknown as HTMLElement | null;
-      while (scrollParent && scrollParent !== document.body && scrollParent.scrollHeight <= scrollParent.clientHeight) {
+      let scrollParent: HTMLElement | null =
+        containerRef.current as unknown as HTMLElement | null;
+      while (
+        scrollParent &&
+        scrollParent !== document.body &&
+        scrollParent.scrollHeight <= scrollParent.clientHeight
+      ) {
         scrollParent = scrollParent.parentElement;
       }
       if (scrollParent) {
@@ -228,7 +236,12 @@ export const EventDescriptionInput = ({
 
     const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
       let moveClientY: number;
-      if ('touches' in moveEvent && moveEvent.touches && moveEvent.touches.length > 0 && moveEvent.touches[0]) {
+      if (
+        'touches' in moveEvent &&
+        moveEvent.touches &&
+        moveEvent.touches.length > 0 &&
+        moveEvent.touches[0]
+      ) {
         moveClientY = moveEvent.touches[0].clientY;
       } else if ('clientY' in moveEvent) {
         moveClientY = (moveEvent as MouseEvent).clientY;
@@ -274,9 +287,9 @@ export const EventDescriptionInput = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder="Add event details..."
           className={cn(
-            "resize-none whitespace-pre-wrap break-words overflow-wrap-anywhere transition-all duration-200",
-            isExpanded ? "h-auto" : "overflow-y-auto",
-            "scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+            'overflow-wrap-anywhere resize-none whitespace-pre-wrap break-words transition-all duration-200',
+            isExpanded ? 'h-auto' : 'overflow-y-auto',
+            'scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent'
           )}
           style={{
             height: isExpanded ? 'auto' : `${height}px`,
@@ -290,7 +303,12 @@ export const EventDescriptionInput = ({
             onMouseDown={handleMouseDown}
             onTouchStart={(e) => {
               e.preventDefault();
-              if ('touches' in e && e.touches && e.touches.length > 0 && e.touches[0]) {
+              if (
+                'touches' in e &&
+                e.touches &&
+                e.touches.length > 0 &&
+                e.touches[0]
+              ) {
                 handleMouseDown(e as unknown as TouchEvent);
               }
             }}
@@ -302,11 +320,11 @@ export const EventDescriptionInput = ({
                 handleToggleExpand();
               }
             }}
-            className="absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize hover:bg-border/50 transition-colors rounded-b-md"
+            className="hover:bg-border/50 absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize rounded-b-md transition-colors"
           />
         )}
       </div>
-      <div className="flex items-center justify-between mt-1 min-h-[20px]">
+      <div className="mt-1 flex min-h-[20px] items-center justify-between">
         {wordCount > 0 && (
           <span className="text-muted-foreground text-xs">
             {wordCount} {wordCount === 1 ? 'word' : 'words'}
