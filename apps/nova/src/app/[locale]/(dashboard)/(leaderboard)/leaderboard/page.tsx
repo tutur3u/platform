@@ -104,9 +104,9 @@ async function fetchLeaderboard(
 
   // Check user's role and permissions
   const { data: userRole, error: roleError } = await sbAdmin
-    .from('nova_roles')
+    .from('platform_user_roles')
     .select('*')
-    .eq('email', user.email)
+    .eq('user_id', user.id)
     .single();
 
   if (roleError) {
@@ -263,9 +263,9 @@ async function fetchLeaderboard(
   }
 
   // Fetch whitelisted users
-  const { data: whitelistedData, error: whitelistError } = await sbAdmin
-    .from('nova_roles')
-    .select('email')
+  const { data: whitelistedUsers, error: whitelistError } = await sbAdmin
+    .from('platform_user_roles')
+    .select('user_id, ...users!inner(id,display_name,avatar_url)')
     .eq('enabled', true);
 
   if (whitelistError) {
@@ -273,61 +273,25 @@ async function fetchLeaderboard(
     return defaultData;
   }
 
-  // Add whitelisted users to leaderboard if they don't exist
-  if (whitelistedData?.length > 0) {
+  if (whitelistedUsers?.length > 0) {
     const existingUserIds = rankedData.map((entry) => entry.id);
-    const whitelistedEmails = whitelistedData
-      .filter((user) => user.email)
-      .map((user) => user.email);
 
-    if (whitelistedEmails.length > 0) {
-      // Get all user IDs in one query
-      const { data: userDataBatch } = await sbAdmin
-        .from('user_private_details')
-        .select('user_id, email')
-        .in('email', whitelistedEmails);
-
-      // Get all user profiles in one query
-      const userIds =
-        userDataBatch
-          ?.filter(
-            (data) => data.user_id && !existingUserIds.includes(data.user_id)
-          )
-          .map((data) => data.user_id) || [];
-
-      if (userIds.length > 0) {
-        const { data: userProfiles } = await sbAdmin
-          .from('users')
-          .select('id, display_name, avatar_url')
-          .in('id', userIds);
-
-        // Map user profiles by their user ID
-        const userProfileMap = new Map();
-        userProfiles?.forEach((profile) => {
-          userProfileMap.set(profile.id, profile);
+    // Filter out users who are already in the leaderboard
+    whitelistedUsers
+      .filter((user) => user.user_id && !existingUserIds.includes(user.user_id))
+      .forEach((userData) => {
+        rankedData.push({
+          id: userData.user_id,
+          name:
+            userData?.display_name ||
+            generateFunName({ id: userData.user_id, locale }),
+          avatar: userData?.avatar_url || '',
+          score: 0,
+          rank: rankedData.length + 1,
+          challenge_scores: {},
+          problem_scores: {},
         });
-
-        // Add whitelisted users to rankedData
-        userDataBatch?.forEach((userData) => {
-          if (userData.user_id && !existingUserIds.includes(userData.user_id)) {
-            const userProfile = userProfileMap.get(userData.user_id);
-            if (userProfile) {
-              rankedData.push({
-                id: userData.user_id,
-                name:
-                  userProfile.display_name ||
-                  generateFunName({ id: userData.user_id, locale }),
-                avatar: userProfile.avatar_url || null,
-                score: 0,
-                rank: rankedData.length + 1,
-                challenge_scores: {},
-                problem_scores: {},
-              });
-            }
-          }
-        });
-      }
-    }
+      });
   }
 
   // Sort by score if we modified the data (e.g. added whitelisted users)

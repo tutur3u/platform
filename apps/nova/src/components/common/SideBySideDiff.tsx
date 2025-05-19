@@ -226,7 +226,7 @@ export default function SideBySideDiff({
   };
 
   return (
-    <div className={cn('overflow-hidden rounded-md border', className)}>
+    <div className={cn('max-h-80 overflow-auto rounded-md border', className)}>
       {/* Headers */}
       <div className="bg-muted/30 grid grid-cols-2 border-b">
         <div className="text-muted-foreground border-r px-4 py-2 text-xs font-medium">
@@ -243,9 +243,9 @@ export default function SideBySideDiff({
         <div className="border-r">
           <div className="relative font-mono text-xs">
             <div className={showLineNumbers ? 'ml-[28px]' : ''}>
-              {diffData.leftLines.map((line) => (
+              {diffData.leftLines.map((line, index) => (
                 <div
-                  key={`left-content-${line.content}`}
+                  key={`left-content-${index}`}
                   className={cn(
                     'min-h-[24px] whitespace-pre-wrap break-all px-2 py-1 leading-snug',
                     line.type === 'removed' &&
@@ -265,9 +265,9 @@ export default function SideBySideDiff({
         <div>
           <div className="relative font-mono text-xs">
             <div className={showLineNumbers ? 'ml-[28px]' : ''}>
-              {diffData.rightLines.map((line) => (
+              {diffData.rightLines.map((line, index) => (
                 <div
-                  key={`right-content-${line.content}`}
+                  key={`right-content-${index}`}
                   className={cn(
                     'min-h-[24px] whitespace-pre-wrap break-all px-2 py-1 leading-snug',
                     line.type === 'added' &&
