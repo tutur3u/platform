@@ -256,7 +256,7 @@ export const EventDescriptionInput = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder="Add event details..."
           className={cn(
-            "resize-none whitespace-pre-wrap break-words break-all transition-all duration-200",
+            "resize-none whitespace-pre-wrap break-words overflow-wrap-anywhere transition-all duration-200",
             isExpanded ? "h-auto" : "overflow-y-auto",
             "scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
           )}
@@ -284,7 +284,7 @@ export const EventDescriptionInput = ({
                 handleToggleExpand();
               }
             }}
-            className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-border/50 transition-colors"
+            className="absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize hover:bg-border/50 transition-colors rounded-b-md"
           />
         )}
       </div>
