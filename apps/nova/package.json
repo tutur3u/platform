@@ -63,7 +63,7 @@
     "sharp": "^0.34.1",
     "use-debounce": "^10.0.4",
     "uuid": "^11.1.0",
-    "zod": "^3.25.3"
+    "zod": "^3.25.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
