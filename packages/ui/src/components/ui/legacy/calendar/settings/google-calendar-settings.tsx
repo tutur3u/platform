@@ -1,6 +1,5 @@
 'use client';
 
-import { useCalendar } from '../../../../../hooks/use-calendar';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
@@ -17,6 +16,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Check, ExternalLink, Link, Loader2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useCalendar } from '../../../../../hooks/use-calendar';
 
 export type SmartSchedulingData = {
   enableSmartScheduling: boolean;
@@ -238,14 +238,16 @@ export function GoogleCalendarSettings({
     } catch (error) {
       console.error('Error syncing with Google Calendar:', error);
 
+      const errorMessage = error instanceof Error ? error.message : 'Sync failed. Please try again.';
+      
       setSyncStatus({
         status: 'error',
-        message: 'Sync failed. Please try again.',
+        message: errorMessage,
       });
 
       toast({
         title: 'Sync Failed',
-        description: 'Could not sync with Google Calendar. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
