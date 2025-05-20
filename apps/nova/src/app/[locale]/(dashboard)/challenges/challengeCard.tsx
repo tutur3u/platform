@@ -50,7 +50,7 @@ import { formatDuration } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Props {
   isAdmin: boolean;
@@ -234,22 +234,16 @@ export default function ChallengeCard({
     }
   };
 
-  // Memoize session time calculations
-  const sessionTimes = useMemo(() => {
+  const renderSessionStatus = () => {
     if (!challenge.lastSession) return null;
 
     const startTime = new Date(challenge.lastSession.start_time);
-    const endTime = challenge.lastSession.end_time
-      ? new Date(challenge.lastSession.end_time)
-      : new Date(startTime.getTime() + challenge.duration * 1000);
-
-    return { startTime, endTime };
-  }, [challenge.lastSession, challenge.duration]);
-
-  const renderSessionStatus = () => {
-    if (!challenge.lastSession || !sessionTimes) return null;
-
-    const { startTime, endTime } = sessionTimes;
+    const endTime = new Date(
+      Math.min(
+        challenge.close_at ? new Date(challenge.close_at).getTime() : Infinity,
+        new Date(startTime.getTime() + challenge.duration * 1000).getTime()
+      )
+    );
 
     if (challenge.lastSession.status === 'IN_PROGRESS') {
       return (
@@ -318,14 +312,6 @@ export default function ChallengeCard({
                   {t('comeback-tomorrow')}
                 </Button>
               ))}
-
-            <Button
-              onClick={handleViewResults}
-              className="w-full gap-2"
-              variant="secondary"
-            >
-              {t('view-results')} <ArrowRight className="h-4 w-4" />
-            </Button>
           </>
         );
       }
@@ -425,18 +411,18 @@ export default function ChallengeCard({
             </DropdownMenu>
           )}
         </CardHeader>
-        <CardContent className="flex-grow">
+        <CardContent className="grow">
           <p className="text-muted-foreground mb-4">{challenge.description}</p>
 
           <div className="grid gap-2">
             <div className="flex items-center">
-              <Clock className="text-primary h-4 w-4 flex-shrink-0" />
+              <Clock className="text-primary h-4 w-4 shrink-0" />
               <span className="text-muted-foreground ml-2 text-sm">
                 {t('duration')}: {formatDuration(challenge.duration)}
               </span>
             </div>
 
-            {['preview', 'active', 'upcoming'].includes(status) && (
+            {['upcoming', 'preview', 'active'].includes(status) ? (
               <>
                 <div className="flex h-6 items-center">
                   <div className="flex items-center">
@@ -458,9 +444,7 @@ export default function ChallengeCard({
                   </div>
                 </div>
               </>
-            )}
-
-            {!['preview', 'active', 'upcoming'].includes(status) && (
+            ) : (
               <>
                 <div className="h-6" />
                 <div className="h-6" />
@@ -554,6 +538,15 @@ export default function ChallengeCard({
         </CardContent>
         <CardFooter className="mt-auto flex flex-col gap-2">
           {renderActionButton()}
+          {challenge.total_sessions && challenge.total_sessions > 0 ? (
+            <Button
+              onClick={handleViewResults}
+              className="w-full gap-2"
+              variant="secondary"
+            >
+              {t('view-results')} <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : null}
         </CardFooter>
       </Card>
 

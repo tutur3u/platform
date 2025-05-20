@@ -1338,7 +1338,7 @@ values
     ('local@tuturuuu.com', true);
 
 insert into
-    public.nova_roles (email, enabled, allow_challenge_management, allow_role_management, allow_manage_all_challenges)
+    public.platform_email_roles (email, enabled, allow_challenge_management, allow_role_management, allow_manage_all_challenges)
 values
     ('local@tuturuuu.com', true, true, true, true),
     ('user1@tuturuuu.com', true, false, false, false),
@@ -2409,3 +2409,302 @@ VALUES
     ('20000000-0000-0000-0000-000000000048', '00000000-0000-0000-0000-000000000302', 9.2, 'Excellent mathematical precision.'),
     ('20000000-0000-0000-0000-000000000048', '00000000-0000-0000-0000-000000000303', 8.9, 'Input format well defined with clear examples.'),
     ('20000000-0000-0000-0000-000000000048', '00000000-0000-0000-0000-000000000304', 8.6, 'Edge cases well considered and addressed.');
+
+
+-- Populate workspace_calendar_events for a full week
+insert into
+    public.workspace_calendar_events (
+        id,
+        ws_id,
+        title,
+        description,
+        start_at,
+        end_at,
+        location
+    )
+values
+    -- Day 1 events
+    (
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000000',
+        'Team Meeting',
+        'Weekly sync with the whole team',
+        now()::date + '9 hours'::interval,
+        now()::date + '10 hours'::interval,
+        'Conference Room A'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        '00000000-0000-0000-0000-000000000000',
+        'Product Demo',
+        'Showing new features to stakeholders',
+        now()::date + '14 hours'::interval,
+        now()::date + '15 hours'::interval,
+        'Main Office'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        '00000000-0000-0000-0000-000000000001',
+        'Sprint Planning',
+        'Planning tasks for the next sprint',
+        now()::date + '1 day'::interval + '10 hours'::interval,
+        now()::date + '1 day'::interval + '12 hours'::interval,
+        'Virtual'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000004',
+        '00000000-0000-0000-0000-000000000002',
+        'Code Review',
+        'Reviewing pull requests',
+        now()::date + '2 days'::interval + '13 hours'::interval,
+        now()::date + '2 days'::interval + '14 hours'::interval,
+        'Dev Room'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000005',
+        '00000000-0000-0000-0000-000000000003',
+        'Pharmacy Staff Meeting',
+        'Monthly staff meeting',
+        now()::date + '3 days'::interval + '9 hours'::interval,
+        now()::date + '3 days'::interval + '10 hours'::interval,
+        'Pharmacy Office'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000006',
+        '00000000-0000-0000-0000-000000000004',
+        'Parent-Teacher Conference',
+        'Discussing student progress',
+        now()::date + '3 days'::interval + '15 hours'::interval,
+        now()::date + '3 days'::interval + '17 hours'::interval,
+        'School Auditorium'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000007',
+        '00000000-0000-0000-0000-000000000000',
+        'Design Workshop',
+        'Brainstorming UI/UX improvements',
+        now()::date + '4 days'::interval + '10 hours'::interval,
+        now()::date + '4 days'::interval + '12 hours'::interval,
+        'Creative Room'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000008',
+        '00000000-0000-0000-0000-000000000001',
+        'Client Meeting',
+        'Discussing project requirements',
+        now()::date + '5 days'::interval + '11 hours'::interval,
+        now()::date + '5 days'::interval + '12 hours'::interval,
+        'Meeting Room B'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000009',
+        '00000000-0000-0000-0000-000000000000',
+        'Team Building',
+        'Fun activities to improve team bonding',
+        now()::date + '6 days'::interval + '14 hours'::interval,
+        now()::date + '6 days'::interval + '17 hours'::interval,
+        'Central Park'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000010',
+        '00000000-0000-0000-0000-000000000002',
+        'Weekly Retrospective',
+        'Discussing what went well and improvements',
+        now()::date + '6 days'::interval + '10 hours'::interval,
+        now()::date + '6 days'::interval + '11 hours'::interval,
+        'Conference Room C'
+    ),
+    
+    -- Additional events for Day 1
+    (
+        '00000000-0000-0000-0000-000000000011',
+        '00000000-0000-0000-0000-000000000000',
+        'Morning Stand-up',
+        'Daily team stand-up meeting',
+        now()::date + '8 hours'::interval,
+        now()::date + '8 hours 15 minutes'::interval,
+        'Main Office'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000012',
+        '00000000-0000-0000-0000-000000000001',
+        'Backend Review',
+        'Review backend API changes',
+        now()::date + '11 hours'::interval,
+        now()::date + '12 hours'::interval,
+        'Virtual'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000013',
+        '00000000-0000-0000-0000-000000000002',
+        'Frontend Planning',
+        'Planning frontend tasks',
+        now()::date + '16 hours'::interval,
+        now()::date + '17 hours'::interval,
+        'Meeting Room A'
+    ),
+    
+    -- Additional events for Day 2
+    (
+        '00000000-0000-0000-0000-000000000014',
+        '00000000-0000-0000-0000-000000000000',
+        'Morning Stand-up',
+        'Daily team stand-up meeting',
+        now()::date + '1 day'::interval + '8 hours'::interval,
+        now()::date + '1 day'::interval + '8 hours 15 minutes'::interval,
+        'Main Office'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000015',
+        '00000000-0000-0000-0000-000000000003',
+        'Inventory Check',
+        'Monthly inventory audit',
+        now()::date + '1 day'::interval + '14 hours'::interval,
+        now()::date + '1 day'::interval + '16 hours'::interval,
+        'Warehouse'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000016',
+        '00000000-0000-0000-0000-000000000004',
+        'Teacher Meeting',
+        'Curriculum planning',
+        now()::date + '1 day'::interval + '16 hours 30 minutes'::interval,
+        now()::date + '1 day'::interval + '17 hours 30 minutes'::interval,
+        'Staff Room'
+    ),
+    
+    -- Additional events for Day 3
+    (
+        '00000000-0000-0000-0000-000000000017',
+        '00000000-0000-0000-0000-000000000000',
+        'Morning Stand-up',
+        'Daily team stand-up meeting',
+        now()::date + '2 days'::interval + '8 hours'::interval,
+        now()::date + '2 days'::interval + '8 hours 15 minutes'::interval,
+        'Main Office'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000018',
+        '00000000-0000-0000-0000-000000000001',
+        'Product Planning',
+        'Planning product roadmap',
+        now()::date + '2 days'::interval + '10 hours'::interval,
+        now()::date + '2 days'::interval + '11 hours 30 minutes'::interval,
+        'Meeting Room C'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000019',
+        '00000000-0000-0000-0000-000000000003',
+        'Staff Training',
+        'New procedures training',
+        now()::date + '2 days'::interval + '15 hours'::interval,
+        now()::date + '2 days'::interval + '16 hours'::interval,
+        'Training Room'
+    ),
+    
+    -- Additional events for Day 4
+    (
+        '00000000-0000-0000-0000-000000000020',
+        '00000000-0000-0000-0000-000000000000',
+        'Morning Stand-up',
+        'Daily team stand-up meeting',
+        now()::date + '3 days'::interval + '8 hours'::interval,
+        now()::date + '3 days'::interval + '8 hours 15 minutes'::interval,
+        'Main Office'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000021',
+        '00000000-0000-0000-0000-000000000002',
+        'DevOps Meeting',
+        'Deployment planning',
+        now()::date + '3 days'::interval + '11 hours'::interval,
+        now()::date + '3 days'::interval + '12 hours'::interval,
+        'Tech Hub'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000022',
+        '00000000-0000-0000-0000-000000000001',
+        'Client Call',
+        'Weekly progress update',
+        now()::date + '3 days'::interval + '13 hours'::interval,
+        now()::date + '3 days'::interval + '13 hours 30 minutes'::interval,
+        'Virtual'
+    ),
+    
+    -- Additional events for Day 5
+    (
+        '00000000-0000-0000-0000-000000000023',
+        '00000000-0000-0000-0000-000000000000',
+        'Morning Stand-up',
+        'Daily team stand-up meeting',
+        now()::date + '4 days'::interval + '8 hours'::interval,
+        now()::date + '4 days'::interval + '8 hours 15 minutes'::interval,
+        'Main Office'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000024',
+        '00000000-0000-0000-0000-000000000004',
+        'School Staff Meeting',
+        'End of week review',
+        now()::date + '4 days'::interval + '14 hours'::interval,
+        now()::date + '4 days'::interval + '15 hours'::interval,
+        'Staff Room'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000025',
+        '00000000-0000-0000-0000-000000000003',
+        'Supplier Meeting',
+        'Meeting with new suppliers',
+        now()::date + '4 days'::interval + '15 hours 30 minutes'::interval,
+        now()::date + '4 days'::interval + '16 hours 30 minutes'::interval,
+        'Meeting Room A'
+    ),
+    
+    -- Additional events for Day 6
+    (
+        '00000000-0000-0000-0000-000000000026',
+        '00000000-0000-0000-0000-000000000000',
+        'Marketing Meeting',
+        'Campaign planning',
+        now()::date + '5 days'::interval + '9 hours'::interval,
+        now()::date + '5 days'::interval + '10 hours'::interval,
+        'Creative Studio'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000027',
+        '00000000-0000-0000-0000-000000000002',
+        'Tech Meetup',
+        'Networking with tech community',
+        now()::date + '5 days'::interval + '17 hours'::interval,
+        now()::date + '5 days'::interval + '19 hours'::interval,
+        'Downtown Hub'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000028',
+        '00000000-0000-0000-0000-000000000004',
+        'Saturday Class',
+        'Extra tutoring session',
+        now()::date + '5 days'::interval + '9 hours'::interval,
+        now()::date + '5 days'::interval + '12 hours'::interval,
+        'Classroom 3'
+    ),
+    
+    -- Additional events for Day 7
+    (
+        '00000000-0000-0000-0000-000000000029',
+        '00000000-0000-0000-0000-000000000001',
+        'Remote Work Day',
+        'Team working remotely',
+        now()::date + '6 days'::interval + '9 hours'::interval,
+        now()::date + '6 days'::interval + '17 hours'::interval,
+        'Virtual'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000030',
+        '00000000-0000-0000-0000-000000000003',
+        'Weekend Review',
+        'Weekly performance review',
+        now()::date + '6 days'::interval + '11 hours'::interval,
+        now()::date + '6 days'::interval + '12 hours'::interval,
+        'Pharmacy Office'
+    );

@@ -880,7 +880,7 @@ export function DatasetCrawler({
         <div className="relative w-full">
           <div className="overflow-x-auto">
             <table className="divide-border w-full divide-y">
-              <thead className="bg-muted/50 supports-[backdrop-filter]:bg-background/60 sticky top-0 backdrop-blur">
+              <thead className="bg-muted/50 supports-backdrop-filter:bg-background/60 sticky top-0 backdrop-blur">
                 <tr>
                   {processedData[0]?.map((header: string, index: number) => (
                     <th

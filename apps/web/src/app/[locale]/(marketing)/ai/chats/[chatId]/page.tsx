@@ -48,9 +48,9 @@ const hasKey = (key: string) => {
 };
 
 const getMessages = async (chatId: string) => {
-  const supabase = await createAdminClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('ai_chat_messages')
     .select('*, ai_chats!chat_id!inner(is_public)')
     .eq('chat_id', chatId)
@@ -69,9 +69,9 @@ const getMessages = async (chatId: string) => {
 };
 
 const getChat = async (chatId: string) => {
-  const supabase = await createAdminClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('ai_chats')
     .select('*')
     .eq('id', chatId)

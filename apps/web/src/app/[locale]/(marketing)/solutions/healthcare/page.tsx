@@ -168,7 +168,7 @@ export default function HealthcarePage() {
       {/* <motion.div
         variants={itemVariants}
         whileHover={{ scale: 1.02 }}
-        className="from-primary/10 to-primary/5 relative mx-auto mb-24 aspect-[1.67] w-full max-w-5xl overflow-hidden rounded-xl border bg-gradient-to-br"
+        className="from-primary/10 to-primary/5 relative mx-auto mb-24 aspect-[1.67] w-full max-w-5xl overflow-hidden rounded-xl border bg-linear-to-br"
       >
         <div className="absolute inset-0 flex items-center justify-center">
           <Image
@@ -238,7 +238,7 @@ export default function HealthcarePage() {
                 Improve patient outcomes with advanced healthcare management
                 tools and streamlined workflows.
               </p>
-              <div className="bg-background/50 mt-4 flex-grow rounded-lg p-4">
+              <div className="bg-background/50 mt-4 grow rounded-lg p-4">
                 <div className="space-y-2">
                   <div className="bg-primary/20 h-2 w-3/4 rounded" />
                   <div className="bg-primary/20 h-2 w-1/2 rounded" />

@@ -41,7 +41,7 @@ export const apiKeyColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('id') || '-'}
       </div>
     ),
@@ -56,7 +56,7 @@ export const apiKeyColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('name') || '-'}
       </div>
     ),
@@ -71,7 +71,7 @@ export const apiKeyColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('value') || '-'}
       </div>
     ),
@@ -86,7 +86,7 @@ export const apiKeyColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 max-w-[8rem] break-all">
+      <div className="line-clamp-2 max-w-32 break-all">
         {row.getValue('created_at')
           ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}

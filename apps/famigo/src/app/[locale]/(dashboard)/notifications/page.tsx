@@ -143,7 +143,7 @@ export default function NotificationsPage() {
       case 'orange':
         return 'bg-orange-500/20 text-orange-600 dark:bg-orange-500/30 dark:text-orange-400';
       default:
-        return 'bg-gray-500/20 text-gray-600 dark:bg-gray-500/30 dark:text-gray-400';
+        return 'bg-gray-500/20 text-muted-foreground dark:bg-gray-500/30 dark:text-gray-400';
     }
   };
 
@@ -177,7 +177,7 @@ export default function NotificationsPage() {
       case 'system':
         return 'bg-orange-500/20 text-orange-600 dark:bg-orange-500/30 dark:text-orange-400';
       default:
-        return 'bg-gray-500/20 text-gray-600 dark:bg-gray-500/30 dark:text-gray-400';
+        return 'bg-gray-500/20 text-muted-foreground dark:bg-gray-500/30 dark:text-gray-400';
     }
   };
 
@@ -192,7 +192,7 @@ export default function NotificationsPage() {
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500/80 to-purple-500/80">
+          <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-blue-500/80 to-purple-500/80">
             <Bell className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -313,7 +313,7 @@ export default function NotificationsPage() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-          <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 pb-2 dark:from-blue-500/20 dark:to-purple-500/20">
+          <CardHeader className="bg-linear-to-r from-blue-500/10 to-purple-500/10 pb-2 dark:from-blue-500/20 dark:to-purple-500/20">
             <CardTitle className="text-base">Notification Settings</CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
@@ -329,7 +329,7 @@ export default function NotificationsPage() {
         </Card>
 
         <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-          <CardHeader className="bg-gradient-to-r from-green-500/10 to-teal-500/10 pb-2 dark:from-green-500/20 dark:to-teal-500/20">
+          <CardHeader className="bg-linear-to-r from-green-500/10 to-teal-500/10 pb-2 dark:from-green-500/20 dark:to-teal-500/20">
             <CardTitle className="text-base">Weekly Summary</CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
@@ -343,7 +343,7 @@ export default function NotificationsPage() {
         </Card>
 
         <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
-          <CardHeader className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 pb-2 dark:from-pink-500/20 dark:to-rose-500/20">
+          <CardHeader className="bg-linear-to-r from-pink-500/10 to-rose-500/10 pb-2 dark:from-pink-500/20 dark:to-rose-500/20">
             <CardTitle className="text-base">Do Not Disturb</CardTitle>
           </CardHeader>
           <CardContent className="pt-4">

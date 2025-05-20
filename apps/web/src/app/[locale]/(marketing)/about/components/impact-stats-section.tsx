@@ -73,7 +73,7 @@ export function ImpactStatsSection() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px]"
+          className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)]"
         />
       </div>
 
@@ -114,7 +114,7 @@ export function ImpactStatsSection() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              className="from-primary bg-linear-to-r bg-size-[200%_auto] relative via-purple-500 to-pink-500 bg-clip-text text-transparent"
             >
               Our Growing Impact
             </motion.span>
@@ -152,7 +152,7 @@ export function ImpactStatsSection() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
-                  className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
+                  className="bg-linear-to-br absolute inset-0 from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
                 />
                 <motion.div
                   animate={{
@@ -164,7 +164,7 @@ export function ImpactStatsSection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                  className="bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                 />
                 <motion.div
                   className="text-primary pointer-events-none relative mb-2 text-4xl font-bold"
@@ -204,7 +204,7 @@ export function ImpactStatsSection() {
                   initial={{ scaleX: 0 }}
                   whileHover={{ scaleX: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                  className="from-primary/20 to-primary/5 bg-linear-to-r absolute bottom-0 left-0 right-0 h-1 origin-left"
                 />
               </div>
             </motion.div>

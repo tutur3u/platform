@@ -9,6 +9,7 @@ interface Params {
 
 export async function GET(request: Request, { params }: Params) {
   const supabase = await createClient();
+
   const { challengeId } = await params;
   const { searchParams } = new URL(request.url);
   const email = searchParams.get('email');

@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: userRole } = await sbAdmin
-    .from('nova_roles')
+    .from('platform_email_roles')
     .select(
       'allow_challenge_management, allow_manage_all_challenges, allow_role_management'
     )
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     // Verify admin exists and can manage challenges
     const { data: adminData, error: adminError } = await sbAdmin
-      .from('nova_roles')
+      .from('platform_email_roles')
       .select('email, enabled, allow_challenge_management')
       .eq('email', adminEmail)
       .eq('enabled', true)
@@ -159,7 +159,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   const { data: userRole } = await sbAdmin
-    .from('nova_roles')
+    .from('platform_email_roles')
     .select(
       'allow_challenge_management, allow_manage_all_challenges, allow_role_management'
     )

@@ -16,9 +16,12 @@ import { redirect } from 'next/navigation';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
-  problems: (NovaProblem & {
-    test_cases: NovaProblemTestCase[];
-  })[];
+  problems: {
+    id: string;
+    title: string;
+    highestScore: number;
+  }[];
+  totalScore: number;
 };
 
 interface Props {
@@ -32,19 +35,6 @@ export default async function Page({ params }: Props) {
   const { challengeId, problemId } = await params;
 
   try {
-    const challenge = await getChallenge(challengeId);
-
-    if (!challenge) redirect('/challenges');
-
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token');
-
-    if (
-      challenge.password_hash &&
-      (!token || challenge.password_hash != token.value)
-    )
-      redirect('/challenges');
-
     // Fetch session data
     const session = await getSession(challengeId);
 
@@ -58,13 +48,28 @@ export default async function Page({ params }: Props) {
       redirect('/challenges');
     }
 
-    const problems = challenge.problems.map((problem) => ({
-      ...problem,
-      test_cases: problem.test_cases.filter((t) => t.problem_id === problemId),
-    }));
+    const challenge = await getChallenge(challengeId, session.id);
 
-    const currentProblemIndex = problems.findIndex((p) => p.id === problemId);
-    const currentProblem = problems[currentProblemIndex];
+    if (!challenge) redirect('/challenges');
+
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token');
+
+    if (
+      challenge.password_hash &&
+      (!token || challenge.password_hash != token.value)
+    )
+      redirect('/challenges');
+
+    const currentProblemIndex = challenge.problems.findIndex(
+      (p) => p.id === problemId
+    );
+
+    if (currentProblemIndex === -1) {
+      redirect('/challenges');
+    }
+
+    const currentProblem = await getFullProblem(problemId);
 
     if (!currentProblem) {
       redirect('/challenges');
@@ -75,10 +80,10 @@ export default async function Page({ params }: Props) {
     return (
       <ChallengeClient
         challenge={challenge}
-        session={session}
-        submissions={submissions}
         currentProblemIndex={currentProblemIndex}
         problem={currentProblem}
+        session={session}
+        submissions={submissions}
       />
     );
   } catch (error) {
@@ -88,7 +93,8 @@ export default async function Page({ params }: Props) {
 }
 
 async function getChallenge(
-  challengeId: string
+  challengeId: string,
+  sessionId: string
 ): Promise<ExtendedNovaChallenge | null> {
   const sbAdmin = await createAdminClient();
 
@@ -108,7 +114,7 @@ async function getChallenge(
     // Fetch problems linked to this challenge
     const { data: problems, error: problemError } = await sbAdmin
       .from('nova_problems')
-      .select('*')
+      .select('id, title')
       .eq('challenge_id', challengeId);
 
     if (problemError) {
@@ -116,36 +122,68 @@ async function getChallenge(
       return null;
     }
 
-    const problemIds = problems.map((problem) => problem.id);
-
-    const { data: testCases, error: testCaseError } = await sbAdmin
-      .from('nova_problem_test_cases')
+    // Fetch highest scores for each problem in this session
+    const { data: submissions, error: submissionsError } = await sbAdmin
+      .from('nova_submissions_with_scores')
       .select('*')
-      .eq('hidden', false)
-      .in('problem_id', problemIds);
+      .eq('session_id', sessionId);
 
-    if (testCaseError) {
-      console.error('Error fetching test cases:', testCaseError.message);
+    if (submissionsError) {
+      console.error('Error fetching submissions:', submissionsError.message);
       return null;
     }
 
-    // Map problems with test cases
-    const formattedProblems = problems.map((problem) => {
-      // Get test cases for this specific problem
+    // Calculate highest score for each problem
+    const problemsWithScores = problems.map((problem) => {
+      const problemSubmissions = submissions.filter(
+        (s) => s.problem_id === problem.id
+      );
+      const highestScore =
+        problemSubmissions.length > 0
+          ? Math.max(...problemSubmissions.map((s) => s.total_score || 0))
+          : 0;
+
       return {
         ...problem,
-        test_cases: testCases?.filter((t) => t.problem_id === problem.id) || [],
+        highestScore,
       };
     });
 
+    // Calculate total score as sum of highest scores
+    const totalScore = problemsWithScores.reduce(
+      (sum, problem) => sum + problem.highestScore,
+      0
+    );
+
     return {
       ...challenge,
-      problems: formattedProblems,
+      problems: problemsWithScores,
+      totalScore,
     };
   } catch (error) {
     console.error('Unexpected error:', error);
     return null;
   }
+}
+
+async function getFullProblem(
+  problemId: string
+): Promise<(NovaProblem & { test_cases: NovaProblemTestCase[] }) | null> {
+  const sbAdmin = await createAdminClient();
+
+  const { data: problem, error: problemError } = await sbAdmin
+    .from('nova_problems')
+    .select('*, test_cases:nova_problem_test_cases(*)')
+    .eq('test_cases.hidden', false)
+    .eq('id', problemId)
+    .single();
+
+  if (problemError) {
+    console.error('Error fetching problem:', problemError);
+    return null;
+  }
+
+  return problem;
 }
 
 async function getSession(challengeId: string): Promise<NovaSession | null> {

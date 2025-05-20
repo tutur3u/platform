@@ -1,10 +1,16 @@
 import { ChallengeCriteriaDialog } from './challenge-criteria-dialog';
-import { NovaChallenge } from '@tuturuuu/types/db';
-import { NovaChallengeCriteria } from '@tuturuuu/types/db';
-import { NovaProblem } from '@tuturuuu/types/db';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -17,31 +23,34 @@ import { useEffect, useRef, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
-  problems: NovaProblem[];
+  problems: {
+    id: string;
+    title: string;
+    highestScore: number;
+  }[];
+  totalScore: number;
 };
 
 interface Props {
   challenge: ExtendedNovaChallenge;
-  problemLength: number;
   currentProblemIndex: number;
   startTime: string;
   endTime: string;
-  challengeCloseAt: string;
   onPrev: () => void;
   onNext: () => void;
+  onChange: (problemId: string) => void;
   onEnd: () => void;
   onAutoEnd: () => void;
 }
 
 export default function ChallengeHeader({
   challenge,
-  problemLength,
   currentProblemIndex,
   startTime,
   endTime,
-  challengeCloseAt,
   onPrev,
   onNext,
+  onChange,
   onEnd,
   onAutoEnd,
 }: Props) {
@@ -52,7 +61,6 @@ export default function ChallengeHeader({
   const timerConfig = useRef({
     startTime: new Date(startTime),
     endTime: new Date(endTime),
-    closeAt: challengeCloseAt ? new Date(challengeCloseAt) : null,
     initialized: false,
   });
 
@@ -65,6 +73,8 @@ export default function ChallengeHeader({
     percentage: 100,
   });
 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   // Initialize the timer once and handle cleanup
   useEffect(() => {
     // Only initialize once to prevent timer resets
@@ -72,9 +82,6 @@ export default function ChallengeHeader({
       // Validate dates
       const isEndTimeValid = !isNaN(timerConfig.current.endTime.getTime());
       const isStartTimeValid = !isNaN(timerConfig.current.startTime.getTime());
-      const isCloseAtValid =
-        timerConfig.current.closeAt &&
-        !isNaN(timerConfig.current.closeAt.getTime());
 
       // Use defaults if invalid
       if (!isEndTimeValid) {
@@ -83,15 +90,6 @@ export default function ChallengeHeader({
 
       if (!isStartTimeValid) {
         timerConfig.current.startTime = new Date();
-      }
-
-      // If closeAt is valid and earlier than endTime, use it instead
-      if (
-        isCloseAtValid &&
-        timerConfig.current.closeAt &&
-        timerConfig.current.closeAt < timerConfig.current.endTime
-      ) {
-        timerConfig.current.endTime = timerConfig.current.closeAt;
       }
 
       // Mark as initialized
@@ -160,6 +158,14 @@ export default function ChallengeHeader({
     };
   }, []);
 
+  // Helper function to determine badge variant
+  const getBadgeVariant = (score: number | null) => {
+    if (score === null) return 'outline';
+    if (score >= 8) return 'success';
+    if (score >= 5) return 'warning';
+    return 'destructive';
+  };
+
   const getTimeColor = () => {
     if (timeLeft.totalSeconds < 300) return 'text-red-500'; // Less than 5 minutes
     if (timeLeft.totalSeconds < 900) return 'text-amber-500'; // Less than 15 minutes
@@ -173,7 +179,7 @@ export default function ChallengeHeader({
   };
 
   return (
-    <div className="relative flex h-16 items-center justify-between border-b px-6">
+    <div className="relative flex h-16 items-center justify-between border-b">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <Button
@@ -185,17 +191,55 @@ export default function ChallengeHeader({
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="flex items-center gap-1.5">
-            <span className="font-medium">Problem</span>
-            <Badge variant="secondary" className="px-2.5">
-              {currentProblemIndex}/{problemLength}
-            </Badge>
-          </div>
+
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex min-w-36 items-center gap-1.5"
+              >
+                <span className="font-medium">Problem</span>
+                <Badge variant="secondary" className="px-2.5">
+                  {currentProblemIndex}/{challenge.problems.length}
+                </Badge>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="max-h-60 max-w-72 overflow-y-auto"
+            >
+              {challenge.problems.map((problem, index) => (
+                <DropdownMenuItem
+                  key={problem.id}
+                  className={cn(
+                    'justify-between gap-2',
+                    index + 1 === currentProblemIndex &&
+                      'bg-accent text-accent-foreground'
+                  )}
+                  onClick={() => onChange(problem.id)}
+                >
+                  <Badge variant="outline" className="px-2 py-0 text-xs">
+                    {index + 1}
+                  </Badge>
+                  <span className="w-full truncate">{problem.title}</span>
+                  <ScoreBadge
+                    score={problem.highestScore || 0}
+                    maxScore={10}
+                    className="px-1.5 py-0 text-xs"
+                  >
+                    {(problem.highestScore || 0).toFixed(1)}
+                  </ScoreBadge>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button
             variant="outline"
             size="icon"
             onClick={onNext}
-            disabled={currentProblemIndex === problemLength}
+            disabled={currentProblemIndex === challenge.problems.length}
             className="h-8 w-8"
           >
             <ChevronRight className="h-4 w-4" />
@@ -206,22 +250,32 @@ export default function ChallengeHeader({
           trigger={
             <Button variant="outline" size="sm">
               <ListChecks className="h-4 w-4" />
-              <span className="hidden xl:block">View challenge criteria</span>
             </Button>
           }
           criteria={challenge.criteria}
         />
+
+        <Badge
+          variant={getBadgeVariant(challenge.totalScore || 0)}
+          className="px-2 py-1 text-xs"
+        >
+          Total Score: {challenge.totalScore?.toFixed(1)}
+        </Badge>
       </div>
 
       <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <Clock className={cn('h-4 w-4', getTimeColor())} />
-          <span className={cn('font-mono text-sm font-medium', getTimeColor())}>
-            {String(timeLeft.hours).padStart(2, '0')}:
-            {String(timeLeft.minutes).padStart(2, '0')}:
-            {String(timeLeft.seconds).padStart(2, '0')}
-          </span>
-        </div>{' '}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <Clock className={cn('h-4 w-4', getTimeColor())} />
+            <span
+              className={cn('font-mono text-sm font-medium', getTimeColor())}
+            >
+              {String(timeLeft.hours).padStart(2, '0')}:
+              {String(timeLeft.minutes).padStart(2, '0')}:
+              {String(timeLeft.seconds).padStart(2, '0')}
+            </span>
+          </div>
+        </div>
         <Progress
           value={timeLeft.percentage}
           className="h-2 w-24"

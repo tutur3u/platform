@@ -90,8 +90,8 @@ export function TopThreeCards({
         prize: '111M VND',
         prizeColor: '#9CA3AF',
         rank: '2',
-        badgeClass: 'text-gray-600 dark:text-gray-300',
-        scoreClass: 'text-gray-600 dark:text-gray-300',
+        badgeClass: 'text-muted-foreground dark:text-gray-300',
+        scoreClass: 'text-muted-foreground dark:text-gray-300',
         hexBorderClass: 'border-gray-400/50',
         particleColors: ['#E5E7EB', '#9CA3AF', '#6B7280'],
         gradientClass: 'from-gray-500/20 via-gray-400/10 to-gray-300/5',
@@ -168,14 +168,14 @@ export function TopThreeCards({
               }}
             >
               {/* Light/dark mode backgrounds */}
-              <div className="absolute inset-0 -z-10 bg-gradient-to-b from-gray-50 to-white opacity-100 dark:opacity-0"></div>
-              <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-900 to-slate-950 opacity-0 dark:opacity-100"></div>
+              <div className="bg-linear-to-b absolute inset-0 -z-10 from-gray-50 to-white opacity-100 dark:opacity-0"></div>
+              <div className="bg-linear-to-b absolute inset-0 -z-10 from-slate-900 to-slate-950 opacity-0 dark:opacity-100"></div>
 
               {/* Animated background gradient */}
               <div className="absolute inset-0 -z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
                 <motion.div
                   className={cn(
-                    'absolute inset-0 bg-gradient-to-br opacity-20 dark:opacity-30',
+                    'bg-linear-to-br absolute inset-0 opacity-20 dark:opacity-30',
                     styles.gradientClass
                   )}
                   animate={{
@@ -249,7 +249,7 @@ export function TopThreeCards({
               <div className="absolute left-1/2 top-8 -translate-x-1/2 scale-75 sm:scale-100 dark:top-8">
                 <div className="relative">
                   <div
-                    className="hex-shape flex h-14 w-14 items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 shadow dark:shadow-none"
+                    className="hex-shape bg-linear-to-br flex h-14 w-14 items-center justify-center from-gray-100 to-gray-200 shadow dark:shadow-none"
                     style={{
                       background:
                         index === 0
@@ -472,7 +472,7 @@ export function TopThreeCards({
               {/* View profile button */}
               <Link
                 href={`/${teamMode ? 'profile/teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
-                className="mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 transition-opacity hover:bg-gray-200 group-hover:opacity-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="text-muted-foreground mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium opacity-0 transition-opacity hover:bg-gray-200 group-hover:opacity-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 {t('view-profile')} <ExternalLink className="ml-1 h-3 w-3" />
               </Link>

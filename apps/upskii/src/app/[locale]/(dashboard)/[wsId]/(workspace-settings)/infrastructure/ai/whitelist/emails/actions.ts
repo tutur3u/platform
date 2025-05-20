@@ -8,10 +8,10 @@ export async function addWhitelistEmail(
   email: string,
   enabled: boolean
 ) {
-  const supabase = await createAdminClient();
-  if (!supabase) throw new Error('Unauthorized');
+  const sbAdmin = await createAdminClient();
+  if (!sbAdmin) throw new Error('Unauthorized');
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('ai_whitelisted_emails')
     .insert([{ email, enabled }]);
 
@@ -27,10 +27,10 @@ export async function addWhitelistDomain(
   description: string | null,
   enabled: boolean
 ) {
-  const supabase = await createAdminClient();
-  if (!supabase) throw new Error('Unauthorized');
+  const sbAdmin = await createAdminClient();
+  if (!sbAdmin) throw new Error('Unauthorized');
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('ai_whitelisted_domains')
     .insert([{ domain, description, enabled }]);
 

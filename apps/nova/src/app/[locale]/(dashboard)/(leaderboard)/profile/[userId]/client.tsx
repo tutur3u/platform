@@ -289,7 +289,7 @@ export default function UserProfileClient({
                   </AvatarFallback>
                 </Avatar>
                 <div className="border-background bg-background dark:bg-card absolute -right-1 -top-1 rounded-full border p-1 shadow-md">
-                  <div className="text-primary flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold">
+                  <div className="text-primary bg-linear-to-br flex h-7 w-7 items-center justify-center rounded-full from-violet-500 to-purple-600 text-xs font-bold">
                     {level}
                   </div>
                 </div>

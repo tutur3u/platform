@@ -87,10 +87,11 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const updateData: any = {};
-    if (body.startTime) updateData.start_time = body.startTime;
-    if (body.endTime) updateData.end_time = body.endTime;
-    if (body.status) updateData.status = body.status;
-    if (body.challengeId) updateData.challenge_id = body.challengeId;
+    if (body.startTime !== undefined) updateData.start_time = body.startTime;
+    if (body.endTime !== undefined) updateData.end_time = body.endTime;
+    if (body.status !== undefined) updateData.status = body.status;
+    if (body.challengeId !== undefined)
+      updateData.challenge_id = body.challengeId;
     updateData.user_id = user.id;
 
     const { data: updatedSession, error: updateError } = await supabase

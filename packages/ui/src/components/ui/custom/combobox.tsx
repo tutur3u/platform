@@ -84,7 +84,7 @@ export function Combobox({
           >
             {label ??
               (selected && selected.length > 0 ? (
-                <div className="relative mr-auto flex flex-grow flex-wrap items-center overflow-hidden">
+                <div className="relative mr-auto flex grow flex-wrap items-center overflow-hidden">
                   <span>
                     {mode === 'multiple' && Array.isArray(selected)
                       ? selected

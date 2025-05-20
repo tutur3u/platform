@@ -54,10 +54,6 @@ export default function AiFeatures() {
 
   return (
     <section id="ai" className="relative w-full py-24">
-      {/* Background decorations */}
-      <div className="from-foreground/5 absolute inset-0 bg-gradient-to-b via-transparent to-transparent" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(var(--primary-rgb),0.1),transparent)]" />
-
       <div className="relative mx-auto max-w-6xl px-4">
         <div className="mb-16 text-center">
           <Badge
@@ -102,7 +98,7 @@ export default function AiFeatures() {
                     </div>
 
                     {/* Decorative gradient */}
-                    <div className="from-foreground/5 absolute inset-0 bg-gradient-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                    <div className="bg-linear-to-br from-foreground/5 absolute inset-0 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                   </Card>
                 </motion.div>
               ))}

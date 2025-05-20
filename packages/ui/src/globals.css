@@ -32,14 +32,17 @@
   button {
     @apply cursor-pointer;
   }
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
+  }
 }
 
 :root {
-  --background: hsl(0 0% 100%);
+  --background: hsl(20, 60%, 98%);
   --foreground: hsl(0 0% 3.9%);
-  --card: hsl(0 0% 100%);
+  --card: hsl(20, 60%, 98%);
   --card-foreground: hsl(0 0% 3.9%);
-  --popover: hsl(0 0% 100%);
+  --popover: hsl(20, 60%, 98%);
   --popover-foreground: hsl(0 0% 3.9%);
   --primary: hsl(0 0% 9%);
   --primary-foreground: hsl(0 0% 98%);

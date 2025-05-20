@@ -21,7 +21,7 @@ export async function fetchAdmins(): Promise<AdminsResponse> {
 
     // Check if the requester has permission to see admins
     const { data: userRole, error: roleError } = await sbAdmin
-      .from('nova_roles')
+      .from('platform_email_roles')
       .select(
         'allow_challenge_management, allow_manage_all_challenges, allow_role_management'
       )
@@ -44,7 +44,7 @@ export async function fetchAdmins(): Promise<AdminsResponse> {
 
     // Fetch only regular challenge admins (not super admins)
     const { data: admins, error: adminsError } = await sbAdmin
-      .from('nova_roles')
+      .from('platform_email_roles')
       .select('email, enabled, allow_challenge_management')
       .eq('enabled', true)
       .eq('allow_challenge_management', true)

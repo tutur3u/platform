@@ -13,7 +13,7 @@ export default async function NotWhitelistedPage() {
   const sbAdmin = await createAdminClient();
 
   const { data } = await sbAdmin
-    .from('nova_roles')
+    .from('platform_email_roles')
     .select('enabled')
     .eq('email', user?.email)
     .maybeSingle();

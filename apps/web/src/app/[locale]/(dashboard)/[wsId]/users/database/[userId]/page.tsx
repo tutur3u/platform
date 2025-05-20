@@ -71,7 +71,7 @@ export default async function WorkspaceUserDetailsPage({
             height={128}
             src={data.avatar_url}
             alt="Avatar"
-            className="aspect-square min-w-[8rem] rounded-lg object-cover"
+            className="aspect-square min-w-32 rounded-lg object-cover"
           />
           {data.full_name && <div>{data.full_name}</div>}
         </div>

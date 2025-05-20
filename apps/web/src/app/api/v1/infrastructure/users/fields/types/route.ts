@@ -2,9 +2,9 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(_: Request) {
-  const supabase = await createAdminClient();
+  const sbAdmin = await createAdminClient();
 
-  if (!supabase) {
+  if (!sbAdmin) {
     return NextResponse.json(
       { message: 'Error fetching user field types' },
       { status: 500 }

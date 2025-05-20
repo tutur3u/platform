@@ -36,7 +36,7 @@ export function MainNavigationMenu() {
               href={item.href}
               className={cn(
                 navigationMenuTriggerStyle(),
-                'hover:bg-background/30 bg-gradient-to-r px-6 font-semibold transition-all duration-300'
+                'bg-linear-to-r hover:bg-background/30 bg-transparent px-6 font-semibold transition-all duration-300'
               )}
             >
               {item.label}
@@ -45,11 +45,11 @@ export function MainNavigationMenu() {
         ))}
 
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="hover:bg-background/30 group bg-gradient-to-r font-semibold transition-all duration-300">
+          <NavigationMenuTrigger className="bg-linear-to-r hover:bg-background/30 group bg-transparent font-semibold transition-all duration-300">
             {t('common.resources')}
           </NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="from-background via-background/95 to-background/90 grid w-[400px] gap-3 bg-gradient-to-br p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
+            <ul className="bg-linear-to-br from-background via-background/95 to-background/90 grid w-[400px] gap-3 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
               <Card className="bg-primary/5 col-span-full mb-2 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <BookText className="h-4 w-4" />
@@ -76,7 +76,7 @@ export function MainNavigationMenu() {
               href={item.href}
               className={cn(
                 navigationMenuTriggerStyle(),
-                'hover:bg-background/30 bg-gradient-to-r px-6 font-semibold transition-all duration-300'
+                'bg-linear-to-r hover:bg-background/30 bg-transparent px-6 font-semibold transition-all duration-300'
               )}
             >
               <span className="flex items-center gap-2">{item.label}</span>
@@ -104,7 +104,7 @@ const ListItem = React.forwardRef<
           ref={ref}
           className={cn(
             'outline-hidden group relative block h-full select-none space-y-1 rounded-md p-4 leading-none no-underline transition-all duration-300',
-            'via-primary/10 to-primary/5 hover:bg-gradient-to-br',
+            'via-primary/10 to-primary/5 hover:bg-linear-to-br',
             'opacity-90 hover:opacity-100',
             'hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]',
             disabled && 'cursor-not-allowed opacity-50',

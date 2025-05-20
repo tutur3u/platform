@@ -219,7 +219,7 @@ export default function HospitalityPage() {
                 Deliver exceptional service and personalized experiences with
                 our comprehensive hospitality solution.
               </p>
-              <div className="bg-background/50 mt-4 flex-grow rounded-lg p-4">
+              <div className="bg-background/50 mt-4 grow rounded-lg p-4">
                 <div className="space-y-2">
                   <div className="bg-primary/20 h-2 w-3/4 rounded" />
                   <div className="bg-primary/20 h-2 w-1/2 rounded" />

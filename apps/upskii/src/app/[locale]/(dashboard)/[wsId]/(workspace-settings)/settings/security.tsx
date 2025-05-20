@@ -1,6 +1,6 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';

@@ -87,7 +87,7 @@ export default function ChatPage() {
       case 'pink':
         return 'bg-pink-500/20 text-pink-600 dark:bg-pink-500/30 dark:text-pink-400';
       default:
-        return 'bg-gray-500/20 text-gray-600 dark:bg-gray-500/30 dark:text-gray-400';
+        return 'bg-gray-500/20 text-muted-foreground dark:bg-gray-500/30 dark:text-gray-400';
     }
   };
 
@@ -137,7 +137,7 @@ export default function ChatPage() {
     <div className="container mx-auto flex h-[calc(100vh-6rem)] max-w-5xl flex-col gap-4 px-4 py-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500/80 to-purple-500/80">
+          <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-blue-500/80 to-purple-500/80">
             <MessageCircle className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -198,13 +198,13 @@ export default function ChatPage() {
                       </span>
                     </div>
                     <div className="ml-10">
-                      <div className="rounded-xl bg-gradient-to-r from-blue-500/5 to-purple-500/5 p-3 dark:from-blue-500/10 dark:to-purple-500/10">
+                      <div className="bg-linear-to-r rounded-xl from-blue-500/5 to-purple-500/5 p-3 dark:from-blue-500/10 dark:to-purple-500/10">
                         <p className="text-sm">{message.content}</p>
                         {message.attachment &&
                           message.attachment.type === 'image' && (
                             <div className="mt-2">
                               {message.attachment.placeholder ? (
-                                <div className="flex h-40 w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-500/20 to-purple-500/20 dark:from-blue-500/30 dark:to-purple-500/30">
+                                <div className="bg-linear-to-r flex h-40 w-full items-center justify-center rounded-lg from-blue-500/20 to-purple-500/20 dark:from-blue-500/30 dark:to-purple-500/30">
                                   <Image className="text-muted-foreground h-8 w-8" />
                                 </div>
                               ) : (
@@ -284,7 +284,7 @@ export default function ChatPage() {
               <Button
                 onClick={handleSendMessage}
                 size="icon"
-                className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500"
+                className="bg-linear-to-r h-10 w-10 rounded-full from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500"
               >
                 <Send className="h-4 w-4 text-white" />
               </Button>
@@ -346,7 +346,7 @@ export default function ChatPage() {
                     {[1, 2, 3, 4, 5, 6].map((item) => (
                       <div
                         key={item}
-                        className="flex aspect-square items-center justify-center rounded-md bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20"
+                        className="bg-linear-to-r flex aspect-square items-center justify-center rounded-md from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20"
                       >
                         <Image className="text-muted-foreground h-6 w-6" />
                       </div>
@@ -358,7 +358,7 @@ export default function ChatPage() {
           </Tabs>
 
           <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 backdrop-blur-sm">
-            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-4 dark:from-blue-500/20 dark:to-purple-500/20">
+            <div className="bg-linear-to-r from-blue-500/10 to-purple-500/10 p-4 dark:from-blue-500/20 dark:to-purple-500/20">
               <h3 className="text-sm font-medium">Upcoming Events</h3>
             </div>
             <div className="p-4">

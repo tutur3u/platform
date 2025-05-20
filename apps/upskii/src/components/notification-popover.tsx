@@ -62,7 +62,7 @@ export default async function NotificationPopover() {
         <Button
           variant="ghost"
           size="icon"
-          className="group relative hidden flex-none transition-all md:flex"
+          className="group relative flex flex-none transition-all"
         >
           <Bell className="h-6 w-6" />
           {notifications.length > 0 && (
@@ -74,14 +74,17 @@ export default async function NotificationPopover() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="start">
-        <div className="px-4 py-2 font-semibold">
+      <PopoverContent
+        className="lg:px-4.5 w-11/12 px-2 py-3.5 shadow-xl md:w-80 md:px-3 md:py-4 lg:w-96"
+        align="start"
+      >
+        <div className="px-4 py-2 text-xl font-semibold md:text-lg md:font-bold lg:text-xl">
           {t('notifications')}
           {notifications.length > 0 && ` (${notifications.length})`}
         </div>
-        <Separator />
+        <Separator className="mb-3 lg:mb-4" />
         <ScrollArea
-          className={`p-2 ${
+          className={`p-4 md:p-2 ${
             notifications.length === 0
               ? 'h-20'
               : notifications.length > 3
@@ -93,12 +96,12 @@ export default async function NotificationPopover() {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className="bg-foreground/5 mb-2 rounded-lg border p-2 pb-2 last:mb-0"
+                className="bg-foreground/5 md:py-4.5 mb-5 rounded-lg border px-3 py-4 last:mb-0 md:mb-4 md:px-3.5"
               >
-                <div className="text-sm font-medium leading-none">
+                <div className="text-base font-medium leading-none">
                   {notification.title}
                 </div>
-                <div className="text-foreground/80 mb-2 mt-1 text-sm">
+                <div className="text-foreground/80 mb-2.5 mt-1 text-sm md:mb-3">
                   {notification.description}
                 </div>
 
@@ -106,7 +109,7 @@ export default async function NotificationPopover() {
               </div>
             ))
           ) : (
-            <div className="flex min-h-[4rem] flex-col items-center justify-center">
+            <div className="flex min-h-16 flex-col items-center justify-center">
               <div className="text-foreground/80 text-xs">
                 {noNotifications}
               </div>

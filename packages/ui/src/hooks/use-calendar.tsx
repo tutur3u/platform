@@ -1,12 +1,12 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
+import { Workspace } from '@tuturuuu/types/db';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
   CalendarSettings,
   defaultCalendarSettings,
-} from '@tuturuuu/ui/legacy/calendar/settings/CalendarSettingsContext';
+} from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -82,6 +82,8 @@ const CalendarContext = createContext<{
 
   settings: CalendarSettings;
   updateSettings: (settings: Partial<CalendarSettings>) => void;
+  isDragging: boolean;
+  setIsDragging: (v: boolean) => void;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -111,6 +113,8 @@ const CalendarContext = createContext<{
 
   settings: defaultCalendarSettings,
   updateSettings: () => undefined,
+  isDragging: false,
+  setIsDragging: () => undefined,
 });
 
 // Add this interface before the updateEvent function
@@ -572,10 +576,9 @@ export const CalendarProvider = ({
     (date: Date) => {
       // TOD0: Fix this weird workaround in the future
       const selectedDate = dayjs(date);
-      const correctDate = selectedDate.add(1, 'day');
 
       // Round to nearest 15-minute interval
-      const start_at = roundToNearest15Minutes(correctDate.toDate());
+      const start_at = roundToNearest15Minutes(selectedDate.toDate());
       const end_at = new Date(start_at);
 
       // Use default task duration from settings if available
@@ -1589,6 +1592,8 @@ export const CalendarProvider = ({
     ]
   );
 
+  const [isDragging, setIsDragging] = useState(false);
+
   const values = {
     getEvent,
     getCurrentEvents,
@@ -1626,6 +1631,9 @@ export const CalendarProvider = ({
     // Settings API
     settings,
     updateSettings,
+
+    isDragging,
+    setIsDragging,
   };
 
   // Clean up any pending updates when component unmounts
