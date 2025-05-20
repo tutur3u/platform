@@ -1083,6 +1083,7 @@
       }
     },
     "faq": {
+      "badge": "Câu Hỏi Thường Gặp",
       "title": "Câu Hỏi Thường Gặp",
       "subtitle": "Tìm câu trả lời cho những câu hỏi phổ biến nhất về nền tảng giáo dục của chúng tôi.",
       "still-have-questions": "Vẫn còn thắc mắc?",
