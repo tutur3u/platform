@@ -30,6 +30,7 @@ import {
   Logs,
   Mail,
   MessageCircleIcon,
+  PencilLine,
   Play,
   Presentation,
   ScanSearch,
@@ -119,6 +120,32 @@ export default async function Layout({ children, params }: LayoutProps) {
       shortcut: 'T',
       experimental: 'alpha',
     },
+    {
+      title: 'TLDraw',
+      href: `/${wsId}/tldraw`,
+      icon: <PencilLine className="h-4 w-4" />,
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) ||
+        withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'alpha',
+    },
+    ...(ENABLE_AI_ONLY ||
+    !(await verifySecret({
+      forceAdmin: true,
+      wsId,
+      name: 'ENABLE_TASKS',
+      value: 'true',
+    })) ||
+    withoutPermission('manage_projects')
+      ? []
+      : [null]),
     {
       title: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
@@ -224,7 +251,6 @@ export default async function Layout({ children, params }: LayoutProps) {
     //   experimental: 'alpha',
     // },
     null,
-
     {
       title: t('sidebar_tabs.models'),
       href: `/${wsId}/models`,
