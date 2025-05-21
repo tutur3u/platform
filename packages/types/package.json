@@ -13,7 +13,7 @@
     "eslint": "^9.27.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.9"
+    "zod": "^3.25.13"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

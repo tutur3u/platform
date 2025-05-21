@@ -118,8 +118,8 @@ importers:
         specifier: ^4.1.7
         version: 4.1.7
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -159,7 +159,7 @@ importers:
     dependencies:
       '@tuturuuu/ai':
         specifier: npm:@jsr/tuturuuu__ai@^0.0.1
-        version: '@jsr/tuturuuu__ai@0.0.1(react@19.1.0)(zod@3.25.9)'
+        version: '@jsr/tuturuuu__ai@0.0.1(react@19.1.0)(zod@3.25.13)'
       '@tuturuuu/eslint-config':
         specifier: npm:@jsr/tuturuuu__eslint-config@^0.1.5
         version: '@jsr/tuturuuu__eslint-config@0.1.5'
@@ -324,8 +324,8 @@ importers:
         specifier: ^11.1.0
         version: 11.1.0
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -514,8 +514,8 @@ importers:
         specifier: ^11.1.0
         version: 11.1.0
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -704,8 +704,8 @@ importers:
         specifier: ^11.1.0
         version: 11.1.0
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -927,8 +927,8 @@ importers:
         specifier: ^11.1.0
         version: 11.1.0
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -1108,8 +1108,8 @@ importers:
         specifier: ^9.15.1
         version: 9.15.1
       googleapis:
-        specifier: ^148.0.0
-        version: 148.0.0
+        specifier: ^149.0.0
+        version: 149.0.0
       html2canvas:
         specifier: ^1.4.1
         version: 1.4.1
@@ -1207,8 +1207,8 @@ importers:
         specifier: file:vendor/xlsx-0.20.3.tgz
         version: file:apps/web/vendor/xlsx-0.20.3.tgz
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -1299,85 +1299,85 @@ importers:
     dependencies:
       '@ai-sdk/amazon-bedrock':
         specifier: ^2.2.9
-        version: 2.2.9(zod@3.25.9)
+        version: 2.2.9(zod@3.25.13)
       '@ai-sdk/anthropic':
         specifier: ^1.2.11
-        version: 1.2.11(zod@3.25.9)
+        version: 1.2.11(zod@3.25.13)
       '@ai-sdk/azure':
         specifier: ^1.3.23
-        version: 1.3.23(zod@3.25.9)
+        version: 1.3.23(zod@3.25.13)
       '@ai-sdk/cerebras':
         specifier: ^0.2.14
-        version: 0.2.14(zod@3.25.9)
+        version: 0.2.14(zod@3.25.13)
       '@ai-sdk/cohere':
         specifier: ^1.2.10
-        version: 1.2.10(zod@3.25.9)
+        version: 1.2.10(zod@3.25.13)
       '@ai-sdk/deepgram':
         specifier: ^0.0.1
-        version: 0.0.1(zod@3.25.9)
+        version: 0.0.1(zod@3.25.13)
       '@ai-sdk/deepinfra':
         specifier: ^0.2.15
-        version: 0.2.15(zod@3.25.9)
+        version: 0.2.15(zod@3.25.13)
       '@ai-sdk/deepseek':
         specifier: ^0.2.14
-        version: 0.2.14(zod@3.25.9)
+        version: 0.2.14(zod@3.25.13)
       '@ai-sdk/elevenlabs':
         specifier: ^0.0.3
-        version: 0.0.3(zod@3.25.9)
+        version: 0.0.3(zod@3.25.13)
       '@ai-sdk/fal':
         specifier: ^0.1.11
-        version: 0.1.11(zod@3.25.9)
+        version: 0.1.11(zod@3.25.13)
       '@ai-sdk/fireworks':
         specifier: ^0.2.14
-        version: 0.2.14(zod@3.25.9)
+        version: 0.2.14(zod@3.25.13)
       '@ai-sdk/gladia':
         specifier: ^0.0.1
-        version: 0.0.1(zod@3.25.9)
+        version: 0.0.1(zod@3.25.13)
       '@ai-sdk/google':
         specifier: ^1.2.18
-        version: 1.2.18(zod@3.25.9)
+        version: 1.2.18(zod@3.25.13)
       '@ai-sdk/google-vertex':
         specifier: ^2.2.22
-        version: 2.2.22(zod@3.25.9)
+        version: 2.2.22(zod@3.25.13)
       '@ai-sdk/groq':
         specifier: ^1.2.9
-        version: 1.2.9(zod@3.25.9)
+        version: 1.2.9(zod@3.25.13)
       '@ai-sdk/hume':
         specifier: ^0.0.2
-        version: 0.0.2(zod@3.25.9)
+        version: 0.0.2(zod@3.25.13)
       '@ai-sdk/lmnt':
         specifier: ^0.0.2
-        version: 0.0.2(zod@3.25.9)
+        version: 0.0.2(zod@3.25.13)
       '@ai-sdk/luma':
         specifier: ^0.1.8
-        version: 0.1.8(zod@3.25.9)
+        version: 0.1.8(zod@3.25.13)
       '@ai-sdk/mistral':
         specifier: ^1.2.8
-        version: 1.2.8(zod@3.25.9)
+        version: 1.2.8(zod@3.25.13)
       '@ai-sdk/openai':
         specifier: ^1.3.22
-        version: 1.3.22(zod@3.25.9)
+        version: 1.3.22(zod@3.25.13)
       '@ai-sdk/openai-compatible':
         specifier: ^0.2.14
-        version: 0.2.14(zod@3.25.9)
+        version: 0.2.14(zod@3.25.13)
       '@ai-sdk/perplexity':
         specifier: ^1.1.9
-        version: 1.1.9(zod@3.25.9)
+        version: 1.1.9(zod@3.25.13)
       '@ai-sdk/react':
         specifier: ^1.2.12
-        version: 1.2.12(react@19.1.0)(zod@3.25.9)
+        version: 1.2.12(react@19.1.0)(zod@3.25.13)
       '@ai-sdk/replicate':
         specifier: ^0.2.8
-        version: 0.2.8(zod@3.25.9)
+        version: 0.2.8(zod@3.25.13)
       '@ai-sdk/revai':
         specifier: ^0.0.2
-        version: 0.0.2(zod@3.25.9)
+        version: 0.0.2(zod@3.25.13)
       '@ai-sdk/togetherai':
         specifier: ^0.2.14
-        version: 0.2.14(zod@3.25.9)
+        version: 0.2.14(zod@3.25.13)
       '@ai-sdk/xai':
         specifier: ^1.2.16
-        version: 1.2.16(zod@3.25.9)
+        version: 1.2.16(zod@3.25.13)
       '@google/generative-ai':
         specifier: ^0.24.1
         version: 0.24.1
@@ -1389,7 +1389,7 @@ importers:
         version: link:../utils
       ai:
         specifier: ^4.3.16
-        version: 4.3.16(react@19.1.0)(zod@3.25.9)
+        version: 4.3.16(react@19.1.0)(zod@3.25.13)
       eslint:
         specifier: ^9.27.0
         version: 9.27.0(jiti@2.4.2)
@@ -1403,8 +1403,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -1519,8 +1519,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -1587,8 +1587,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -1806,8 +1806,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.1.5(@types/react@19.1.4))(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -1894,8 +1894,8 @@ importers:
         specifier: ^11.1.0
         version: 11.1.0
       zod:
-        specifier: ^3.25.9
-        version: 3.25.9
+        specifier: ^3.25.13
+        version: 3.25.13
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -5414,8 +5414,8 @@ packages:
     resolution: {integrity: sha512-sdleLVfCjBtgO5cNjA2HVRvWBJAHs4zwenaCPMNJAJU0yNxpzj80IpjOIimkpkr+mhlA+how5poQtt53PygbHA==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
-  bippy@0.3.11:
-    resolution: {integrity: sha512-q81FjIKd9Yw/RTZeWrh2w7LdvnTG6qWMo3wibcABN/hntZ8HFnpIV1VNWxPox6rDBRHN4L5ECdETDkdTwKitoA==}
+  bippy@0.3.12:
+    resolution: {integrity: sha512-vyBb3jb4N0s2kp3XzWTEN0W0qAHXajMtOkOyrRCFj1p6YpypI4/hKYZCD0q2TFrj2nwLcu434wtsD5nipIrhRQ==}
     peerDependencies:
       react: '>=17.0.1'
 
@@ -6650,8 +6650,8 @@ packages:
     resolution: {integrity: sha512-/fhDZEJZvOV3X5jmD+fKxMqma5q2Q9nZNSF3kn1F18tpxmA86BcTxAGBQdM0N89Z3bEaIs+HVznSmFJEAmMTjA==}
     engines: {node: '>=14.0.0'}
 
-  googleapis@148.0.0:
-    resolution: {integrity: sha512-8PDG5VItm6E1TdZWDqtRrUJSlBcNwz0/MwCa6AL81y/RxPGXJRUwKqGZfCoVX1ZBbfr3I4NkDxBmeTyOAZSWqw==}
+  googleapis@149.0.0:
+    resolution: {integrity: sha512-LTMc/njwYy7KTeaUHDcQt7KxftHyghdzm2XzbL46PRLd1AXB09utT9Po2ZJn2X0EApz0pE2T5x5A9zM8iue6zw==}
     engines: {node: '>=14.0.0'}
 
   gopd@1.2.0:
@@ -9601,173 +9601,173 @@ packages:
     peerDependencies:
       zod: ^3.24.1
 
-  zod@3.25.9:
-    resolution: {integrity: sha512-ho97WAF12mhTHd6/1lBbAPJP0cWKvWra6Stl2Tw93EBsIMoHME3bhGUGBXT0AaVmIWtOB1cFh98T+wb9RClo7g==}
+  zod@3.25.13:
+    resolution: {integrity: sha512-Q8mvk2iWi7rTDfpQBsu4ziE7A6AxgzJ5hzRyRYQkoV3A3niYsXVwDaP1Kbz3nWav6S+VZ6k2OznFn8ZyDHvIrg==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
 
-  '@ai-sdk/amazon-bedrock@2.2.9(zod@3.25.9)':
+  '@ai-sdk/amazon-bedrock@2.2.9(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
       '@smithy/eventstream-codec': 4.0.3
       '@smithy/util-utf8': 4.0.0
       aws4fetch: 1.0.20
-      zod: 3.25.9
+      zod: 3.25.13
 
-  '@ai-sdk/anthropic@1.2.11(zod@3.25.9)':
+  '@ai-sdk/anthropic@1.2.11(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/azure@1.3.23(zod@3.25.9)':
+  '@ai-sdk/azure@1.3.23(zod@3.25.13)':
     dependencies:
-      '@ai-sdk/openai': 1.3.22(zod@3.25.9)
+      '@ai-sdk/openai': 1.3.22(zod@3.25.13)
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/cerebras@0.2.14(zod@3.25.9)':
+  '@ai-sdk/cerebras@0.2.14(zod@3.25.13)':
     dependencies:
-      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.9)
+      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.13)
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/cohere@1.2.10(zod@3.25.9)':
+  '@ai-sdk/cohere@1.2.10(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/deepgram@0.0.1(zod@3.25.9)':
+  '@ai-sdk/deepgram@0.0.1(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.2
-      '@ai-sdk/provider-utils': 2.2.6(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.6(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/deepinfra@0.2.15(zod@3.25.9)':
+  '@ai-sdk/deepinfra@0.2.15(zod@3.25.13)':
     dependencies:
-      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.9)
+      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.13)
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/deepseek@0.2.14(zod@3.25.9)':
+  '@ai-sdk/deepseek@0.2.14(zod@3.25.13)':
     dependencies:
-      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.9)
+      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.13)
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/elevenlabs@0.0.3(zod@3.25.9)':
-    dependencies:
-      '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
-
-  '@ai-sdk/fal@0.1.11(zod@3.25.9)':
+  '@ai-sdk/elevenlabs@0.0.3(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/fireworks@0.2.14(zod@3.25.9)':
+  '@ai-sdk/fal@0.1.11(zod@3.25.13)':
     dependencies:
-      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.9)
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/gladia@0.0.1(zod@3.25.9)':
+  '@ai-sdk/fireworks@0.2.14(zod@3.25.13)':
+    dependencies:
+      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.13)
+      '@ai-sdk/provider': 1.1.3
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
+
+  '@ai-sdk/gladia@0.0.1(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.2
-      '@ai-sdk/provider-utils': 2.2.6(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.6(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/google-vertex@2.2.22(zod@3.25.9)':
+  '@ai-sdk/google-vertex@2.2.22(zod@3.25.13)':
     dependencies:
-      '@ai-sdk/anthropic': 1.2.11(zod@3.25.9)
-      '@ai-sdk/google': 1.2.18(zod@3.25.9)
+      '@ai-sdk/anthropic': 1.2.11(zod@3.25.13)
+      '@ai-sdk/google': 1.2.18(zod@3.25.13)
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
       google-auth-library: 9.15.1
-      zod: 3.25.9
+      zod: 3.25.13
     transitivePeerDependencies:
       - encoding
       - supports-color
 
-  '@ai-sdk/google@1.2.18(zod@3.25.9)':
+  '@ai-sdk/google@1.2.18(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/groq@1.2.9(zod@3.25.9)':
+  '@ai-sdk/groq@1.2.9(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/hume@0.0.2(zod@3.25.9)':
+  '@ai-sdk/hume@0.0.2(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/lmnt@0.0.2(zod@3.25.9)':
+  '@ai-sdk/lmnt@0.0.2(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/luma@0.1.8(zod@3.25.9)':
+  '@ai-sdk/luma@0.1.8(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/mistral@1.2.8(zod@3.25.9)':
+  '@ai-sdk/mistral@1.2.8(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/openai-compatible@0.2.14(zod@3.25.9)':
+  '@ai-sdk/openai-compatible@0.2.14(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/openai@1.3.22(zod@3.25.9)':
+  '@ai-sdk/openai@1.3.22(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/perplexity@1.1.9(zod@3.25.9)':
+  '@ai-sdk/perplexity@1.1.9(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/provider-utils@2.2.6(zod@3.25.9)':
+  '@ai-sdk/provider-utils@2.2.6(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.2
       nanoid: 3.3.11
       secure-json-parse: 2.7.0
-      zod: 3.25.9
+      zod: 3.25.13
 
-  '@ai-sdk/provider-utils@2.2.8(zod@3.25.9)':
+  '@ai-sdk/provider-utils@2.2.8(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
       nanoid: 3.3.11
       secure-json-parse: 2.7.0
-      zod: 3.25.9
+      zod: 3.25.13
 
   '@ai-sdk/provider@1.1.2':
     dependencies:
@@ -9777,48 +9777,48 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@1.2.12(react@19.1.0)(zod@3.25.9)':
+  '@ai-sdk/react@1.2.12(react@19.1.0)(zod@3.25.13)':
     dependencies:
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      '@ai-sdk/ui-utils': 1.2.11(zod@3.25.9)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      '@ai-sdk/ui-utils': 1.2.11(zod@3.25.13)
       react: 19.1.0
       swr: 2.3.3(react@19.1.0)
       throttleit: 2.1.0
     optionalDependencies:
-      zod: 3.25.9
+      zod: 3.25.13
 
-  '@ai-sdk/replicate@0.2.8(zod@3.25.9)':
+  '@ai-sdk/replicate@0.2.8(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/revai@0.0.2(zod@3.25.9)':
+  '@ai-sdk/revai@0.0.2(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/togetherai@0.2.14(zod@3.25.9)':
+  '@ai-sdk/togetherai@0.2.14(zod@3.25.13)':
     dependencies:
-      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.9)
+      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.13)
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
-  '@ai-sdk/ui-utils@1.2.11(zod@3.25.9)':
+  '@ai-sdk/ui-utils@1.2.11(zod@3.25.13)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
-      zod-to-json-schema: 3.24.5(zod@3.25.9)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
+      zod-to-json-schema: 3.24.5(zod@3.25.13)
 
-  '@ai-sdk/xai@1.2.16(zod@3.25.9)':
+  '@ai-sdk/xai@1.2.16(zod@3.25.13)':
     dependencies:
-      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.9)
+      '@ai-sdk/openai-compatible': 0.2.14(zod@3.25.13)
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      zod: 3.25.9
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      zod: 3.25.13
 
   '@alloc/quick-lru@5.2.0': {}
 
@@ -10841,10 +10841,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@jsr/tuturuuu__ai@0.0.1(react@19.1.0)(zod@3.25.9)':
+  '@jsr/tuturuuu__ai@0.0.1(react@19.1.0)(zod@3.25.13)':
     dependencies:
-      '@ai-sdk/react': 1.2.12(react@19.1.0)(zod@3.25.9)
-      ai: 4.3.16(react@19.1.0)(zod@3.25.9)
+      '@ai-sdk/react': 1.2.12(react@19.1.0)(zod@3.25.13)
+      ai: 4.3.16(react@19.1.0)(zod@3.25.13)
     transitivePeerDependencies:
       - react
       - zod
@@ -13446,15 +13446,15 @@ snapshots:
 
   agent-base@7.1.3: {}
 
-  ai@4.3.16(react@19.1.0)(zod@3.25.9):
+  ai@4.3.16(react@19.1.0)(zod@3.25.13):
     dependencies:
       '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.9)
-      '@ai-sdk/react': 1.2.12(react@19.1.0)(zod@3.25.9)
-      '@ai-sdk/ui-utils': 1.2.11(zod@3.25.9)
+      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.13)
+      '@ai-sdk/react': 1.2.12(react@19.1.0)(zod@3.25.13)
+      '@ai-sdk/ui-utils': 1.2.11(zod@3.25.13)
       '@opentelemetry/api': 1.9.0
       jsondiffpatch: 0.6.0
-      zod: 3.25.9
+      zod: 3.25.13
     optionalDependencies:
       react: 19.1.0
 
@@ -13626,7 +13626,7 @@ snapshots:
       read-cmd-shim: 5.0.0
       write-file-atomic: 6.0.0
 
-  bippy@0.3.11(@types/react@19.1.4)(react@19.1.0):
+  bippy@0.3.12(@types/react@19.1.4)(react@19.1.0):
     dependencies:
       '@types/react-reconciler': 0.28.9(@types/react@19.1.4)
       react: 19.1.0
@@ -14558,7 +14558,7 @@ snapshots:
       '@typescript-eslint/parser': 8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3)
       eslint: 9.27.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0)(eslint@9.27.0(jiti@2.4.2))
       eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.27.0(jiti@2.4.2))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.27.0(jiti@2.4.2))
       eslint-plugin-react: 7.37.5(eslint@9.27.0(jiti@2.4.2))
@@ -14584,7 +14584,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0)(eslint@9.27.0(jiti@2.4.2)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.1
@@ -14599,14 +14599,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.27.0(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3)
       eslint: 9.27.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0)(eslint@9.27.0(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
@@ -14621,7 +14621,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.27.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@9.27.0(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -15133,7 +15133,7 @@ snapshots:
       - encoding
       - supports-color
 
-  googleapis@148.0.0:
+  googleapis@149.0.0:
     dependencies:
       google-auth-library: 9.15.1
       googleapis-common: 7.2.0
@@ -17195,7 +17195,7 @@ snapshots:
       '@preact/signals': 1.3.2(preact@10.26.6)
       '@rollup/pluginutils': 5.1.4(rollup@4.41.0)
       '@types/node': 20.17.50
-      bippy: 0.3.11(@types/react@19.1.4)(react@19.1.0)
+      bippy: 0.3.12(@types/react@19.1.4)(react@19.1.0)
       esbuild: 0.25.4
       estree-walker: 3.0.3
       kleur: 4.1.5
@@ -18646,10 +18646,10 @@ snapshots:
 
   yoga-layout@3.2.1: {}
 
-  zod-to-json-schema@3.24.5(zod@3.25.9):
+  zod-to-json-schema@3.24.5(zod@3.25.13):
     dependencies:
-      zod: 3.25.9
+      zod: 3.25.13
 
-  zod@3.25.9: {}
+  zod@3.25.13: {}
 
   zwitch@2.0.4: {}
