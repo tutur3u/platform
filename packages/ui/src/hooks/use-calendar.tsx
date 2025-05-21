@@ -1464,7 +1464,7 @@ export const CalendarProvider = ({
             `/api/v1/calendar/auth/fetch?wsId=${ws.id}&force=true&t=${Date.now()}`
           );
           const data = await response.json();
-          
+
           if (!response.ok) {
             // Include the full error details from Google API
             const errorDetails = data.error || response.statusText;
@@ -1501,7 +1501,10 @@ export const CalendarProvider = ({
               current: 0,
               total: 1,
               changesMade: false,
-              statusMessage: fetchError instanceof Error ? fetchError.message : 'Failed to fetch events from Google Calendar',
+              statusMessage:
+                fetchError instanceof Error
+                  ? fetchError.message
+                  : 'Failed to fetch events from Google Calendar',
             });
           }
 

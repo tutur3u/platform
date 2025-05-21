@@ -34,7 +34,7 @@ export async function GET(request: Request) {
   // Get the user's tokens with more defensive query
   let googleTokens;
   let googleTokensError;
-  
+
   try {
     // Get wsId from query parameters
     const url = new URL(request.url);
@@ -50,8 +50,8 @@ export async function GET(request: Request) {
             hasAccessToken: false,
             hasRefreshToken: false,
             userId: user.id,
-            reason: 'No workspace ID provided'
-          }
+            reason: 'No workspace ID provided',
+          },
         },
         { status: 400 }
       );
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
       .from('calendar_auth_tokens')
       .select('access_token, refresh_token')
       .eq('user_id', user.id)
-      .eq('ws_id', wsId)  // Add ws_id to the query
+      .eq('ws_id', wsId) // Add ws_id to the query
       .maybeSingle();
 
     googleTokens = result.data;
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
         hint: googleTokensError.hint,
         code: googleTokensError.code,
         userId: user.id,
-        wsId
+        wsId,
       });
 
       // If it's a not found error, handle it gracefully
@@ -89,8 +89,8 @@ export async function GET(request: Request) {
               hasAccessToken: false,
               hasRefreshToken: false,
               userId: user.id,
-              reason: 'No tokens found in database'
-            }
+              reason: 'No tokens found in database',
+            },
           },
           { status: 401 }
         );
@@ -107,21 +107,24 @@ export async function GET(request: Request) {
             hasAccessToken: false,
             hasRefreshToken: false,
             userId: user.id,
-            errorCode: googleTokensError.code
-          }
+            errorCode: googleTokensError.code,
+          },
         },
         { status: 500 }
       );
     }
 
     // Type assertion for the tokens
-    const tokens = googleTokens as { access_token: string; refresh_token: string } | null;
+    const tokens = googleTokens as {
+      access_token: string;
+      refresh_token: string;
+    } | null;
 
     if (!tokens?.access_token) {
       console.error('No Google access token found for user:', {
         userId: user.id,
         hasAccessToken: !!tokens?.access_token,
-        hasRefreshToken: !!tokens?.refresh_token
+        hasRefreshToken: !!tokens?.refresh_token,
       });
       return NextResponse.json(
         {
@@ -132,8 +135,8 @@ export async function GET(request: Request) {
             hasAccessToken: false,
             hasRefreshToken: !!tokens?.refresh_token,
             userId: user.id,
-            reason: 'Access token is empty'
-          }
+            reason: 'Access token is empty',
+          },
         },
         { status: 401 }
       );
@@ -176,7 +179,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ events: formattedEvents }, { status: 200 });
     } catch (error: any) {
       console.error('Error fetching Google Calendar events:', error);
-      
+
       // Extract detailed error information
       const errorDetails = {
         error: 'Failed to fetch Google Calendar events',
@@ -187,8 +190,8 @@ export async function GET(request: Request) {
           hasAccessToken: !!tokens?.access_token,
           hasRefreshToken: !!tokens?.refresh_token,
           tokenLength: tokens?.access_token?.length,
-          userId: user.id
-        }
+          userId: user.id,
+        },
       };
 
       // Special handling for invalid_grant error
@@ -199,18 +202,20 @@ export async function GET(request: Request) {
             error: 'Google token invalid, please re-authenticate',
             details: {
               ...errorDetails.details,
-              requiresReauth: true
-            }
+              requiresReauth: true,
+            },
           },
           { status: 401 }
         );
       }
 
-      return NextResponse.json(errorDetails, { status: errorDetails.statusCode });
+      return NextResponse.json(errorDetails, {
+        status: errorDetails.statusCode,
+      });
     }
   } catch (error: any) {
     console.error('Error fetching Google Calendar events:', error);
-    
+
     // Extract detailed error information
     const errorDetails = {
       error: 'Failed to fetch Google Calendar events',
@@ -220,8 +225,8 @@ export async function GET(request: Request) {
         ...error.response?.data?.error,
         hasAccessToken: false,
         hasRefreshToken: false,
-        userId: user.id
-      }
+        userId: user.id,
+      },
     };
 
     // Special handling for invalid_grant error
@@ -232,8 +237,8 @@ export async function GET(request: Request) {
           error: 'Google token invalid, please re-authenticate',
           details: {
             ...errorDetails.details,
-            requiresReauth: true
-          }
+            requiresReauth: true,
+          },
         },
         { status: 401 }
       );
