@@ -238,14 +238,19 @@ export function GoogleCalendarSettings({
     } catch (error) {
       console.error('Error syncing with Google Calendar:', error);
 
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Sync failed. Please try again.';
+
       setSyncStatus({
         status: 'error',
-        message: 'Sync failed. Please try again.',
+        message: errorMessage,
       });
 
       toast({
         title: 'Sync Failed',
-        description: 'Could not sync with Google Calendar. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
