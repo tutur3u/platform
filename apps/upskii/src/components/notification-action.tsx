@@ -48,6 +48,9 @@ export default function NotificationAction({
       router.refresh();
       onSuccess?.();
       onEnd?.();
+      if (accept) {
+        router.push(`/${wsId}/home`);
+      }
       return;
     }
 

@@ -70,11 +70,11 @@
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "sharp": "^0.34.1",
+    "sharp": "^0.34.2",
     "swr": "^2.3.3",
     "use-debounce": "^10.0.4",
     "uuid": "^11.1.0",
-    "zod": "^3.25.3"
+    "zod": "^3.25.13"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -89,9 +89,9 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/eslint": "^9.6.1",
     "@types/js-cookie": "^3.0.6",
-    "@types/lodash": "^4.17.16",
+    "@types/lodash": "^4.17.17",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.15.19",
+    "@types/node": "^22.15.21",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
     "@types/uuid": "^10.0.0",

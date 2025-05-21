@@ -117,7 +117,7 @@ export default function FAQPage() {
             {t('title')}
           </h1>
           <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-            {t('description')}
+            {t('subtitle')}
           </p>
         </motion.div>
       </div>

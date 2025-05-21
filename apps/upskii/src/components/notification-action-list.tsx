@@ -1,6 +1,7 @@
 'use client';
 
 import Action from './notification-action';
+import { toast } from '@tuturuuu/ui/sonner';
 import { ReactNode, useState } from 'react';
 
 type buttonVariant =
@@ -26,7 +27,6 @@ interface Props {
 
 export default function NotificationActionList({ actions }: Props) {
   const [processingAction, setProcessingAction] = useState<string>();
-
   return (
     <div className="flex items-center gap-2">
       {actions?.map((action) => (
@@ -34,8 +34,21 @@ export default function NotificationActionList({ actions }: Props) {
           key={action.id}
           action={action}
           disabled={processingAction !== undefined}
-          onStart={() => setProcessingAction(action.type)}
-          onError={() => setProcessingAction(undefined)}
+          onStart={() => {
+            setProcessingAction(action.type);
+          }}
+          onSuccess={() => {
+            setProcessingAction(undefined);
+            if (action.type == 'WORKSPACE_INVITE_DECLINE') {
+              toast.success('You declined workspace invite...');
+            } else if (action.type == 'WORKSPACE_INVITE_ACCEPT') {
+              toast.success('You accepted workspace invite...');
+            }
+          }}
+          onError={() => {
+            toast.error('Something went wrong');
+            setProcessingAction(undefined);
+          }}
         />
       ))}
     </div>
