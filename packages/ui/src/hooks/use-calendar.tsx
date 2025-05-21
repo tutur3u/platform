@@ -916,7 +916,10 @@ export const CalendarProvider = ({
 
   // Automatically fetch Google Calendar events
   const fetchGoogleCalendarEvents = async () => {
-    const response = await fetch('/api/v1/calendar/auth/fetch');
+    if (!ws?.id) {
+      throw new Error('No workspace selected');
+    }
+    const response = await fetch(`/api/v1/calendar/auth/fetch?wsId=${ws.id}`);
     if (!response.ok) {
       throw new Error('Failed to fetch Google Calendar events');
     }
@@ -1458,12 +1461,19 @@ export const CalendarProvider = ({
         // Force fetch the latest events from Google with a cache-busting parameter
         try {
           const response = await fetch(
-            '/api/v1/calendar/auth/fetch?force=true&t=' + Date.now()
+            `/api/v1/calendar/auth/fetch?wsId=${ws.id}&force=true&t=${Date.now()}`
           );
-          if (!response.ok) {
-            throw new Error('Failed to fetch Google Calendar events');
-          }
           const data = await response.json();
+
+          if (!response.ok) {
+            // Include the full error details from Google API
+            const errorDetails = data.error || response.statusText;
+            const statusCode = response.status;
+            const googleError = data.googleError || data.details || '';
+            throw new Error(
+              `Failed to fetch Google Calendar events: ${errorDetails} (${statusCode})${googleError ? ` - Google API: ${googleError}` : ''}`
+            );
+          }
 
           // Update googleEvents directly through queryClient for faster UI response
           queryClient.setQueryData(['googleCalendarEvents', ws?.id], data);
@@ -1491,11 +1501,15 @@ export const CalendarProvider = ({
               current: 0,
               total: 1,
               changesMade: false,
-              statusMessage: 'Failed to fetch events from Google Calendar',
+              statusMessage:
+                fetchError instanceof Error
+                  ? fetchError.message
+                  : 'Failed to fetch events from Google Calendar',
             });
           }
 
-          return false;
+          // Propagate the error instead of returning false
+          throw fetchError;
         }
 
         // Manually run the sync process with progress tracking
