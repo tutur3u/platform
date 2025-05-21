@@ -181,7 +181,8 @@ export async function GET(request: Request) {
       console.error('Error fetching Google Calendar events:', error);
 
       // Extract detailed error information
-      const errorDetails = {
+      const errorDetails = process.env.NODE_ENV === 'development' 
+      ? {
         error: 'Failed to fetch Google Calendar events',
         statusCode: error.response?.status || 500,
         googleError: error.response?.data?.error?.message || error.message,
@@ -192,7 +193,8 @@ export async function GET(request: Request) {
           tokenLength: tokens?.access_token?.length,
           userId: user.id,
         },
-      };
+          }
+        : { error: 'Failed to fetch Google Calendar events' };
 
       // Special handling for invalid_grant error
       if (error.response?.data?.error?.message?.includes('invalid_grant')) {
