@@ -1,8 +1,8 @@
+import ModuleContentEditor from './content-editor';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Goal, Sparkles } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
-import ModuleContentEditor from './content-editor';
 
 // interface Props {
 //   params: Promise<{

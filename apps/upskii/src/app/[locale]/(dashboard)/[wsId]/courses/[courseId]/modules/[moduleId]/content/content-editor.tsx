@@ -1,9 +1,10 @@
-"use client";
-import RichTextEditor from "@/components/text-editor/editor";
-import { useState } from "react";
+'use client';
+
+import RichTextEditor from '@/components/text-editor/editor';
+import { useState } from 'react';
 
 export default function ModuleContentEditor() {
-  const [post, setPost] = useState("");
+  const [post, setPost] = useState('');
 
   const onChange = (content: string) => {
     setPost(content);
@@ -11,7 +12,7 @@ export default function ModuleContentEditor() {
   };
 
   return (
-    <div className="w-full mx-auto py-8 text-slate-900 dark:text-slate-100">
+    <div className="mx-auto w-full py-8 text-slate-900 dark:text-slate-100">
       <RichTextEditor content={post} onChange={onChange} />
     </div>
   );
