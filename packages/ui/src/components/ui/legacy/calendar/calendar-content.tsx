@@ -1,3 +1,12 @@
+import type {
+    Workspace,
+    WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types/db';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
+import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
+import { cn } from '@tuturuuu/utils/format';
+import { useCallback, useEffect, useState } from 'react';
 import { CalendarHeader } from './calendar-header';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { CreateEventButton } from './create-event-button';
@@ -6,15 +15,6 @@ import { MonthCalendar } from './month-calendar';
 import { SettingsButton } from './settings-button';
 import type { CalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
-import type {
-  Workspace,
-  WorkspaceCalendarGoogleToken,
-} from '@tuturuuu/types/db';
-import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
-import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
-import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
-import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useState } from 'react';
 
 export const CalendarContent = ({
   t,
@@ -46,7 +46,7 @@ export const CalendarContent = ({
   };
 }) => {
   const { transition } = useViewTransition();
-  const { settings } = useCalendar();
+  const { settings, updateSettings } = useCalendar();
 
   const [initialized, setInitialized] = useState(false);
   const [date, setDate] = useState(externalState?.date || new Date());
@@ -341,6 +341,14 @@ export const CalendarContent = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [enableDayView, enableWeekView, view]);
+
+  // Update settings with current view dates when they change
+  useEffect(() => {
+    if (dates.length > 0) {
+      const dateStrings = dates.map(date => date.toISOString());
+      updateSettings({ currentViewDates: dateStrings });
+    }
+  }, [dates, updateSettings]);
 
   if (!initialized || !view || !dates.length) return null;
 

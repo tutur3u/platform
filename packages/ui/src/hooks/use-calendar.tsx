@@ -133,6 +133,7 @@ export const CalendarProvider = ({
   children,
   initialSettings,
   experimentalGoogleToken,
+  dates = [],
 }: {
   ws?: Workspace;
   useQuery: any;
@@ -140,6 +141,7 @@ export const CalendarProvider = ({
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  dates?: string[];
 }) => {
   const queryClient = useQueryClient();
 
@@ -499,6 +501,14 @@ export const CalendarProvider = ({
     [events]
   );
 
+  // Function to validate and normalize color
+  const validateColor = (color: string | undefined): SupportedColor => {
+    const validColors: SupportedColor[] = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'ORANGE', 'PURPLE', 'PINK', 'INDIGO', 'CYAN', 'GRAY'];
+    if (!color) return 'BLUE';
+    const normalizedColor = color.toUpperCase();
+    return validColors.includes(normalizedColor as SupportedColor) ? (normalizedColor as SupportedColor) : 'BLUE';
+  };
+
   // CRUD operations with Supabase
   const addEvent = useCallback(
     async (event: Omit<CalendarEvent, 'id'>) => {
@@ -678,6 +688,11 @@ export const CalendarProvider = ({
       } = update;
 
       try {
+        // Validate color before update
+        if (updateData.color) {
+          updateData.color = validateColor(updateData.color as string);
+        }
+
         // Perform the actual update
         const supabase = createClient();
         const { data, error } = await supabase
@@ -687,7 +702,7 @@ export const CalendarProvider = ({
             description: updateData.description,
             start_at: updateData.start_at,
             end_at: updateData.end_at,
-            color: updateData.color,
+            color: updateData.color as SupportedColor,
             location: updateData.location,
             priority: updateData.priority,
             locked: updateData.locked,
@@ -914,28 +929,68 @@ export const CalendarProvider = ({
     [ws, refresh, pendingNewEvent]
   );
 
-  // Automatically fetch Google Calendar events
-  const fetchGoogleCalendarEvents = async () => {
+  // Automatically fetch Google Calendar events with certain range
+  const fetchGoogleCalendarEventsInRange = async () => {
+    console.log('[Google Calendar Fetch] Starting fetch at:', new Date().toISOString());
     if (!ws?.id) {
+      console.log('[Google Calendar Fetch] No workspace ID, skipping fetch');
       throw new Error('No workspace selected');
     }
-    const response = await fetch(`/api/v1/calendar/auth/fetch?wsId=${ws.id}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch Google Calendar events');
-    }
-    return await response.json();
+
+    // Get current view dates from settings
+    const currentViewDates = settings.currentViewDates || [];
+    console.log('[Google Calendar Fetch] Current view dates:', currentViewDates);
+    
+    const response = await fetch(`/api/v1/calendar/auth/fetch-view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        dates: currentViewDates,
+        wsId: ws.id }),
+    });
+    const data = await response.json();
+    console.log('[Google Calendar Fetch] Received events count:', data.events?.length || 0);
+    return data;
   };
 
   // Query to fetch Google Calendar events every 30 seconds
-  const { data: googleData } = useQuery({
-    queryKey: ['googleCalendarEvents', ws?.id],
-    queryFn: fetchGoogleCalendarEvents,
-    enabled: !!ws?.id && !!experimentalGoogleToken?.id,
-    refetchInterval: 1000 * 60 * 60, // Fetch every 1 hour
-    staleTime: 1000 * 60 * 60, // Data is considered fresh for 1 hour
+  const { data: googleData, refetchInterval, isFetching } = useQuery({
+    queryKey: ['googleCalendarEvents', ws?.id, settings.currentViewDates],
+    queryFn: fetchGoogleCalendarEventsInRange,
+    enabled: !!ws?.id && !!experimentalGoogleToken?.id && !!settings.currentViewDates?.length,
+    refetchInterval: 1000 * 30,
+    staleTime: 1000 * 30,
+    onSuccess: (data: { events?: CalendarEvent[] }) => {
+      console.log('[Google Calendar Query] Successfully fetched at:', new Date().toISOString());
+      console.log('[Google Calendar Query] Events count:', data.events?.length || 0);
+    },
+    onError: (error: Error) => {
+      console.error('[Google Calendar Query] Error fetching:', error);
+    },
   });
 
-  const googleEvents = useMemo(() => googleData?.events || [], [googleData]);
+  // Add effect to log when refetch interval changes
+  useEffect(() => {
+    console.log('[Google Calendar Query] Refetch interval set to:', refetchInterval);
+    console.log('[Google Calendar Query] Query enabled:', !!ws?.id && !!experimentalGoogleToken?.id && !!settings.currentViewDates?.length);
+    console.log('[Google Calendar Query] Current settings:', {
+      wsId: ws?.id,
+      hasToken: !!experimentalGoogleToken?.id,
+      viewDatesLength: settings.currentViewDates?.length
+    });
+  }, [refetchInterval, ws?.id, experimentalGoogleToken?.id, settings.currentViewDates]);
+
+  // Add effect to log when fetching state changes
+  useEffect(() => {
+    if (isFetching) {
+      console.log('[Google Calendar Query] Started fetching at:', new Date().toISOString());
+    }
+  }, [isFetching]);
+
+  const googleEvents = useMemo(() => {
+    console.log('[Google Calendar Events] Memo update at:', new Date().toISOString());
+    return googleData?.events || [];
+  }, [googleData]);
 
   // Function to synchronize local events with Google Calendar
   const syncEvents = useCallback(
@@ -972,7 +1027,7 @@ export const CalendarProvider = ({
         (e) => e.google_event_id && !googleEventIds.has(e.google_event_id)
       );
 
-      // Initialize batch operations - we'll perform these in a more optimized way
+      // Initialize batch operations
       const eventsToUpdate: Array<{ id: string; data: any }> = [];
       const eventsToInsert: Array<any> = [];
       let changesMade = false;
@@ -1035,13 +1090,16 @@ export const CalendarProvider = ({
         const localEvent = localEventMap.get(gEvent.google_event_id);
 
         if (localEvent) {
+          // Validate color before comparing
+          const validatedColor = validateColor(gEvent.color);
+
           // Check if there are any significant changes in the event details that require an update
           const hasChanges =
             localEvent.title !== gEvent.title ||
             localEvent.description !== (gEvent.description || '') ||
             localEvent.start_at !== gEvent.start_at ||
             localEvent.end_at !== gEvent.end_at ||
-            localEvent.color !== gEvent.color ||
+            localEvent.color !== validatedColor ||
             localEvent.location !== (gEvent.location || '') ||
             localEvent.priority !== (gEvent.priority || 'medium');
 
@@ -1055,13 +1113,16 @@ export const CalendarProvider = ({
                 description: gEvent.description || '',
                 start_at: gEvent.start_at,
                 end_at: gEvent.end_at,
-                color: gEvent.color || 'BLUE',
+                color: validatedColor,
                 location: gEvent.location || '',
                 priority: gEvent.priority || 'medium',
               },
             });
           }
         } else {
+          // Validate color for new events
+          const validatedColor = validateColor(gEvent.color);
+
           // Check for content-based duplicates before adding
           const potentialDuplicates = events.filter(
             (localEvent: CalendarEvent) => {
@@ -1099,7 +1160,7 @@ export const CalendarProvider = ({
             description: gEvent.description || '',
             start_at: gEvent.start_at,
             end_at: gEvent.end_at,
-            color: gEvent.color || 'BLUE',
+            color: validatedColor,
             location: gEvent.location || '',
             ws_id: ws?.id ?? '',
             google_event_id: gEvent.google_event_id,
