@@ -1,6 +1,6 @@
-import Certificate from '../certificate-page';
 import { DEV_MODE } from '@/constants/common';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import Certificate from '../certificate-page';
 
 export type CertificateProps = {
   certDetails: {
@@ -43,7 +43,7 @@ export default async function CertificatePage({ params }: PageProps) {
   // Replace the student name in the response with the user's name
 
   if (userDetails) {
-    certDetails.studentName = userDetails.display_name;
+    certDetails.studentName = userDetails.full_name;
   }
 
   return (

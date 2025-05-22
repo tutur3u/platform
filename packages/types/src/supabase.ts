@@ -4129,21 +4129,18 @@ export type Database = {
         Row: {
           birthday: string | null;
           email: string | null;
-          full_name: string | null;
           new_email: string | null;
           user_id: string;
         };
         Insert: {
           birthday?: string | null;
           email?: string | null;
-          full_name?: string | null;
           new_email?: string | null;
           user_id: string;
         };
         Update: {
           birthday?: string | null;
           email?: string | null;
-          full_name?: string | null;
           new_email?: string | null;
           user_id?: string;
         };
@@ -4178,6 +4175,7 @@ export type Database = {
           created_at: string | null;
           deleted: boolean | null;
           display_name: string | null;
+          full_name: string | null;
           handle: string | null;
           id: string;
         };
@@ -4187,6 +4185,7 @@ export type Database = {
           created_at?: string | null;
           deleted?: boolean | null;
           display_name?: string | null;
+          full_name?: string | null;
           handle?: string | null;
           id?: string;
         };
@@ -4196,6 +4195,7 @@ export type Database = {
           created_at?: string | null;
           deleted?: boolean | null;
           display_name?: string | null;
+          full_name?: string | null;
           handle?: string | null;
           id?: string;
         };
