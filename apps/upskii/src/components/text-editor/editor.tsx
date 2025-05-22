@@ -1,11 +1,11 @@
 'use client';
 
+import ToolBar from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import ToolBar from './tool-bar';
 
 interface RichTextEditorProps {
   content: JSONContent | null;
@@ -44,7 +44,7 @@ export default function RichTextEditor({
       Highlight,
     ],
     content: content || '',
-    immediatelyRender : false,
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class:
@@ -63,5 +63,3 @@ export default function RichTextEditor({
     </div>
   );
 }
-
-
