@@ -1,14 +1,27 @@
 'use client';
 
 import RichTextEditor from '@/components/text-editor/editor';
+import { JSONContent } from '@tiptap/react';
 import { useState } from 'react';
 
-export default function ModuleContentEditor() {
-  const [post, setPost] = useState('');
+interface Props {
+  wsId: string;
+  courseId: string;
+  moduleId: string;
+  content?: JSONContent;
+}
 
-  const onChange = (content: string) => {
+export default function ModuleContentEditor({
+  wsId,
+  courseId,
+  moduleId,
+  content,
+}: Props) {
+  const [post, setPost] = useState<JSONContent | null>(content || null);
+
+  const onChange = (content: JSONContent) => {
     setPost(content);
-    console.log(content);
+    console.log(content, wsId, courseId, moduleId);
   };
 
   return (
