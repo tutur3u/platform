@@ -2,7 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { notFound, redirect } from 'next/navigation';
 
-
 export async function getCurrentSupabaseUser() {
   const supabase = await createClient();
 
