@@ -1,5 +1,6 @@
 'use client';
 
+import { FormRequiredIndicator } from './form-required-indicator';
 import { Label } from './label';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
@@ -22,6 +23,7 @@ type FormFieldContextValue<
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > = {
   name: TName;
+  required?: boolean;
 };
 
 const FormFieldContext = React.createContext<FormFieldContextValue>(
@@ -34,8 +36,14 @@ const FormField = <
 >({
   ...props
 }: ControllerProps<TFieldValues, TName>) => {
+  // We'll rely on explicit rules for now, as accessing internal properties
+  // of the resolver is not type-safe and could break in future updates
+  const isRequired = props.rules?.required !== undefined;
+
   return (
-    <FormFieldContext.Provider value={{ name: props.name }}>
+    <FormFieldContext.Provider
+      value={{ name: props.name, required: isRequired }}
+    >
       <Controller {...props} />
     </FormFieldContext.Provider>
   );
@@ -57,6 +65,7 @@ const useFormField = () => {
   return {
     id,
     name: fieldContext.name,
+    required: fieldContext.required,
     formItemId: `${id}-form-item`,
     formDescriptionId: `${id}-form-item-description`,
     formMessageId: `${id}-form-item-message`,
@@ -88,28 +97,39 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
 
 function FormLabel({
   className,
+  required: requiredProp,
+  children,
   ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
-  const { error, formItemId } = useFormField();
+}: React.ComponentProps<typeof LabelPrimitive.Root> & { required?: boolean }) {
+  const { error, formItemId, required: fieldRequired } = useFormField();
+  const isRequired = requiredProp !== undefined ? requiredProp : fieldRequired;
 
   return (
     <Label
       data-slot="form-label"
       data-error={!!error}
+      data-required={isRequired}
       className={cn('data-[error=true]:text-destructive', className)}
       htmlFor={formItemId}
       {...props}
-    />
+    >
+      {children}
+      {isRequired && <FormRequiredIndicator />}
+    </Label>
   );
 }
 
-function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
-  const { error, formItemId, formDescriptionId, formMessageId } =
+function FormControl({
+  className,
+  ...props
+}: React.ComponentProps<typeof Slot>) {
+  const { error, formItemId, formDescriptionId, formMessageId, required } =
     useFormField();
 
   return (
     <Slot
       data-slot="form-control"
+      data-required={required}
       id={formItemId}
       aria-describedby={
         !error
@@ -117,6 +137,8 @@ function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
           : `${formDescriptionId} ${formMessageId}`
       }
       aria-invalid={!!error}
+      aria-required={required}
+      className={cn(className)}
       {...props}
     />
   );
@@ -163,5 +185,6 @@ export {
   FormItem,
   FormLabel,
   FormMessage,
+  FormRequiredIndicator,
   useFormField,
 };
