@@ -30,16 +30,16 @@ export async function CourseSection({
     !hideContent &&
     (rawContent
       ? isEqual(rawContent, {
-        "type": "doc",
-        "content": [
-          {
-            "type": "paragraph",
-            "attrs": {
-              "textAlign": null
-            }
-          },
-        ],
-      })
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              attrs: {
+                textAlign: null,
+              },
+            },
+          ],
+        })
       : !content);
 
   return (
