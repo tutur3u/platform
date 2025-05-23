@@ -349,7 +349,7 @@ export const CalendarContent = ({
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement
       ) {
-        return; 
+        return;
         // Ignore if typing in a form field
       }
 
