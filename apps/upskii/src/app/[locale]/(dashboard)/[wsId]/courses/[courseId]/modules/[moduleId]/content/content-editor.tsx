@@ -3,6 +3,8 @@
 import RichTextEditor from '@/components/text-editor/editor';
 import { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Props {
@@ -17,13 +19,15 @@ export default function ModuleContentEditor({
   content,
 }: Props) {
   const [post, setPost] = useState<JSONContent | null>(content || null);
+  const t = useTranslations();
 
   const onChange = (content: JSONContent) => {
     setPost(content);
-    saveContenttoDB(content);
+    saveContentToDB(content);
   };
 
-  const saveContenttoDB = async (content: JSONContent) => {
+  const saveContentToDB = async (content: JSONContent) => {
+
     const supabase = createClient();
 
     const { error } = await supabase
@@ -33,7 +37,8 @@ export default function ModuleContentEditor({
       .eq('course_id', courseId);
 
     if (error) {
-      console.error(error);
+      console.log(error);
+      toast.error(t('common.error_saving_content'));
     }
   };
 

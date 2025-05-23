@@ -1,6 +1,5 @@
 'use client';
 
-import ToolBar from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
@@ -8,13 +7,29 @@ import { EditorContent, JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { debounce } from 'lodash';
 import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import ToolBar from './tool-bar';
 
 interface RichTextEditorProps {
   content: JSONContent | null;
   onChange?: (content: JSONContent) => void;
   readOnly?: boolean;
 }
+
+const getEditorClasses = (readOnly: boolean) => {
+  const baseClasses = [
+    readOnly ? 'h-full' : 'h-[calc(100vh-8rem)]',
+    'border rounded-md bg-white dark:bg-foreground/5 py-2 px-3',
+    'prose dark:prose-invert max-w-none overflow-y-auto',
+    '[&_*:is(p,h1,h2,h3).is-empty::before]:content-[attr(data-placeholder)]',
+    '[&_*:is(p,h1,h2,h3).is-empty::before]:text-gray-400',
+    '[&_*:is(p,h1,h2,h3).is-empty::before]:float-left',
+    '[&_*:is(p,h1,h2,h3).is-empty::before]:h-0',
+    '[&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none',
+    '[&_li]:my-1 [&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl'
+  ];
+  return baseClasses.join(' ');
+};
 
 export default function RichTextEditor({
   content,
@@ -23,7 +38,7 @@ export default function RichTextEditor({
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const t = useTranslations();
-
+  
   const titlePlaceholder = t('common.whats_the_title');
   const writePlaceholder = t('common.write_something');
 
@@ -34,6 +49,12 @@ export default function RichTextEditor({
     }, 500),
     [onChange]
   );
+
+  useEffect(() => {
+    return () => {
+      debouncedOnChange.cancel();
+    };
+  }, [debouncedOnChange]);
 
   const editor = useEditor({
     extensions: [
@@ -67,7 +88,7 @@ export default function RichTextEditor({
     editable: !readOnly,
     editorProps: {
       attributes: {
-        class: `${readOnly ? 'h-full' : 'h-[calc(100vh-8rem)]'} border rounded-md bg-white dark:bg-foreground/5 py-2 px-3 prose dark:prose-invert max-w-none overflow-y-auto [&_*:is(p,h1,h2,h3).is-empty::before]:content-[attr(data-placeholder)] [&_*:is(p,h1,h2,h3).is-empty::before]:text-gray-400 [&_*:is(p,h1,h2,h3).is-empty::before]:float-left [&_*:is(p,h1,h2,h3).is-empty::before]:h-0 [&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none [&_li]:my-1 [&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl`,
+        class: getEditorClasses(readOnly),
       },
     },
     onUpdate: ({ editor }) => {

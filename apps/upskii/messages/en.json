@@ -569,7 +569,8 @@
     "guide": "Guide",
     "example_content": "Example content",
     "whats_the_title": "What's the title?",
-    "write_something": "Write something"
+    "write_something": "Write something",
+    "error_saving_content": "There was an error saving your content"
   },
   "contact": {
     "title": "Contact us",
