@@ -86,6 +86,7 @@ export default function CourseForm({ wsId, data, onFinish }: Props) {
         <FormField
           control={form.control}
           name="name"
+          rules={{ required: true }}
           render={({ field }) => (
             <>
               <FormItem>
@@ -94,6 +95,7 @@ export default function CourseForm({ wsId, data, onFinish }: Props) {
                   <Input
                     placeholder={t('name')}
                     autoComplete="off"
+                    required
                     {...field}
                   />
                 </FormControl>
