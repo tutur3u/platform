@@ -1,5 +1,6 @@
 'use client';
 
+import ToolBar from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
@@ -7,7 +8,6 @@ import { EditorContent, JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { debounce } from 'lodash';
 import { useCallback, useState } from 'react';
-import ToolBar from './tool-bar';
 
 interface RichTextEditorProps {
   content: JSONContent | null;
@@ -78,7 +78,7 @@ export default function RichTextEditor({
   }, [editor, onChange]);
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <div className="flex h-[calc(100vh-4rem)] flex-col">
       <ToolBar editor={editor} hasChanges={hasChanges} onSave={handleSave} />
       <EditorContent editor={editor} />
     </div>

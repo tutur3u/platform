@@ -93,7 +93,7 @@ export default function ToolBar({ editor, hasChanges, onSave }: ToolBarProps) {
   ];
 
   return (
-    <div className="bg-foreground/5 z-50 mb-1 space-x-2 rounded-md border border-slate-200 p-1 dark:border-gray-950 flex items-center justify-between">
+    <div className="bg-foreground/5 z-50 mb-1 flex items-center justify-between space-x-2 rounded-md border border-slate-200 p-1 dark:border-gray-950">
       <div className="flex items-center space-x-2">
         {Options.map((option, index) => (
           <Toggle
@@ -106,18 +106,14 @@ export default function ToolBar({ editor, hasChanges, onSave }: ToolBarProps) {
           </Toggle>
         ))}
       </div>
-      {hasChanges ? (<Button
-          variant="ghost"
-          size="sm"
-          onClick={onSave}
-          className="ml-2"
-        >
-          <Save className="size-4 mr-2" />
+      {hasChanges ? (
+        <Button variant="ghost" size="sm" onClick={onSave} className="ml-2">
+          <Save className="mr-2 size-4" />
           Save
         </Button>
       ) : (
         <Button variant="ghost" size="sm" disabled className="ml-2">
-          <Check className="size-4 mr-2" />
+          <Check className="mr-2 size-4" />
           Saved
         </Button>
       )}
