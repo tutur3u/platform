@@ -33,7 +33,7 @@ export async function generateMetadata({
   // Construct OG image URL using userId
   const ogImageUrl = new URL(
     `/api/og/${userId}`,
-    process.env.NEXT_PUBLIC_APP_URL || 'https://nova.tuturuuu.com'
+    process.env.NEXT_PUBLIC_APP_URL || 'https://nova.ai.vn'
   ).toString();
 
   return {
