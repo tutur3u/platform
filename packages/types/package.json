@@ -13,7 +13,7 @@
     "eslint": "^9.27.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.13"
+    "zod": "^3.25.23"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -21,7 +21,7 @@
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.15.21",
-    "@types/react": "^19.1.4",
+    "@types/react": "^19.1.5",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
     "typescript": "^5.8.3"

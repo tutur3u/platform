@@ -64,7 +64,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       external: true,
     },
     {
-      href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.tuturuuu.com',
+      href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
       label: 'Nova',
       description: t('common.nova-description'),
       icon: <WandSparkles className="h-4 w-4" />,

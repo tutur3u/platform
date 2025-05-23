@@ -2,10 +2,10 @@ import { DEV_MODE } from './common';
 
 export const siteConfig = {
   name: 'Famigo',
-  url: DEV_MODE ? 'http://localhost:7805' : 'https://nova.tuturuuu.com',
+  url: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
   ogImage: DEV_MODE
     ? 'http://localhost:7805/api/og'
-    : 'https://nova.tuturuuu.com/api/og',
+    : 'https://nova.ai.vn/api/og',
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/platform',
