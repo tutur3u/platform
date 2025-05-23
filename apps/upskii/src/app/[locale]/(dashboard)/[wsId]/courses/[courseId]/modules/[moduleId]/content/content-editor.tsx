@@ -27,7 +27,6 @@ export default function ModuleContentEditor({
   };
 
   const saveContentToDB = async (content: JSONContent) => {
-
     const supabase = createClient();
 
     const { error } = await supabase

@@ -28,9 +28,10 @@ export async function CourseSection({
   const isContentEmpty =
     !hideContent &&
     (rawContent
-      ? !rawContent.content?.some((node: any) => 
-          node.type !== 'paragraph' || 
-          (node.content && node.content.length > 0)
+      ? !rawContent.content?.some(
+          (node: any) =>
+            node.type !== 'paragraph' ||
+            (node.content && node.content.length > 0)
         )
       : !content);
 
