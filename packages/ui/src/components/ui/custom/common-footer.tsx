@@ -115,12 +115,6 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
               {t('common.blog')}
             </Link>
             <Link
-              href={`${TUTURUUU_URL}/changelog`}
-              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
-            >
-              {t('common.changelog')}
-            </Link>
-            <Link
               href={`${TUTURUUU_URL}/meet-together`}
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
