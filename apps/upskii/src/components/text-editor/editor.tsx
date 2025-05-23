@@ -1,20 +1,33 @@
 'use client';
 
-import ToolBar from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { debounce } from 'lodash';
+import { useCallback, useState } from 'react';
+import ToolBar from './tool-bar';
 
 interface RichTextEditorProps {
   content: JSONContent | null;
   onChange: (content: JSONContent) => void;
 }
+
 export default function RichTextEditor({
   content,
   onChange,
 }: RichTextEditorProps) {
+  const [hasChanges, setHasChanges] = useState(false);
+
+  const debouncedOnChange = useCallback(
+    debounce((newContent: JSONContent) => {
+      onChange(newContent);
+      setHasChanges(false);
+    }, 2500),
+    [onChange]
+  );
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -48,17 +61,25 @@ export default function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          'min-h-[156px] border rounded-md bg-white py-2 px-3 prose prose-slate max-w-none [&_*:is(p,h1,h2,h3).is-empty::before]:content-[attr(data-placeholder)] [&_*:is(p,h1,h2,h3).is-empty::before]:text-gray-400 [&_*:is(p,h1,h2,h3).is-empty::before]:float-left [&_*:is(p,h1,h2,h3).is-empty::before]:h-0 [&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none',
+          'h-[calc(100vh-8rem)] border rounded-md bg-white dark:bg-foreground/5 py-2 px-3 prose dark:prose-invert max-w-none overflow-y-auto [&_*:is(p,h1,h2,h3).is-empty::before]:content-[attr(data-placeholder)] [&_*:is(p,h1,h2,h3).is-empty::before]:text-gray-400 [&_*:is(p,h1,h2,h3).is-empty::before]:float-left [&_*:is(p,h1,h2,h3).is-empty::before]:h-0 [&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none [&_li]:my-1 [&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl',
       },
     },
     onUpdate: ({ editor }) => {
-      onChange(editor.getJSON());
+      setHasChanges(true);
+      debouncedOnChange(editor.getJSON());
     },
   });
 
+  const handleSave = useCallback(() => {
+    if (editor) {
+      onChange(editor.getJSON());
+      setHasChanges(false);
+    }
+  }, [editor, onChange]);
+
   return (
-    <div>
-      <ToolBar editor={editor} />
+    <div className="h-[calc(100vh-4rem)] flex flex-col">
+      <ToolBar editor={editor} hasChanges={hasChanges} onSave={handleSave} />
       <EditorContent editor={editor} />
     </div>
   );

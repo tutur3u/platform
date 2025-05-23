@@ -1,112 +1,38 @@
-import ModuleContentEditor from './content-editor';
+import { JSONContent } from '@tiptap/react';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Goal, Sparkles } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
+import ModuleContentEditor from './content-editor';
 
 interface Props {
   params: Promise<{
-    wsId: string;
     courseId: string;
     moduleId: string;
   }>;
 }
 
 export default async function ModuleContentPage({ params }: Props) {
-  const { wsId, courseId, moduleId } = await params;
+  const { courseId, moduleId } = await params;
   const t = await getTranslations();
 
-  const content = {
-    type: 'doc',
-    content: [
-      {
-        type: 'heading',
-        attrs: {
-          textAlign: null,
-          level: 1,
-        },
-        content: [
-          {
-            type: 'text',
-            text: 'Course 1',
-          },
-        ],
-      },
-      {
-        type: 'heading',
-        attrs: {
-          textAlign: null,
-          level: 2,
-        },
-        content: [
-          {
-            type: 'text',
-            text: 'Module 1',
-          },
-        ],
-      },
-      {
-        type: 'heading',
-        attrs: {
-          textAlign: null,
-          level: 3,
-        },
-        content: [
-          {
-            type: 'text',
-            text: 'Section 1',
-          },
-        ],
-      },
-      {
-        type: 'paragraph',
-        attrs: {
-          textAlign: null,
-        },
-        content: [
-          {
-            type: 'text',
-            text: 'This is ',
-          },
-          {
-            type: 'text',
-            marks: [
-              {
-                type: 'strike',
-              },
-            ],
-            text: 'some',
-          },
-          {
-            type: 'text',
-            text: ' ',
-          },
-          {
-            type: 'text',
-            marks: [
-              {
-                type: 'italic',
-              },
-            ],
-            text: 'course',
-          },
-          {
-            type: 'text',
-            text: ' ',
-          },
-          {
-            type: 'text',
-            marks: [
-              {
-                type: 'bold',
-              },
-            ],
-            text: 'content',
-          },
-        ],
-      },
-    ],
+  const getContent = async (courseId: string, moduleId: string) => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('workspace_course_modules')
+      .select('content')
+      .eq('id', moduleId)
+      .eq('course_id', courseId);
+
+    if (error) {
+      console.error(error);
+    }
+
+    return data?.[0]?.content as JSONContent;
   };
+
+  const content = await getContent(courseId, moduleId);
 
   return (
     <div className="grid gap-4">
@@ -127,9 +53,7 @@ export default async function ModuleContentPage({ params }: Props) {
         }
         showSecondaryTrigger
       />
-      {/* <ModuleContentEditor courseId={courseId} moduleId={moduleId} /> */}
       <ModuleContentEditor
-        wsId={wsId}
         courseId={courseId}
         moduleId={moduleId}
         content={content}

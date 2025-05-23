@@ -1,9 +1,11 @@
 import { Editor } from '@tiptap/react';
+import { Button } from '@tuturuuu/ui/button';
 import {
   AlignCenter,
   AlignLeft,
   AlignRight,
   Bold,
+  Check,
   Heading1,
   Heading2,
   Heading3,
@@ -11,11 +13,18 @@ import {
   Italic,
   List,
   ListOrdered,
+  Save,
   Strikethrough,
 } from '@tuturuuu/ui/icons';
 import { Toggle } from '@tuturuuu/ui/toggle';
 
-export default function ToolBar({ editor }: { editor: Editor | null }) {
+interface ToolBarProps {
+  editor: Editor | null;
+  hasChanges: boolean;
+  onSave: () => void;
+}
+
+export default function ToolBar({ editor, hasChanges, onSave }: ToolBarProps) {
   if (!editor) {
     return null;
   }
@@ -84,17 +93,34 @@ export default function ToolBar({ editor }: { editor: Editor | null }) {
   ];
 
   return (
-    <div className="bg-foreground/5 z-50 mb-1 space-x-2 rounded-md border border-slate-200 p-1 dark:border-gray-950">
-      {Options.map((option, index) => (
-        <Toggle
-          key={index}
-          pressed={option.preesed}
-          onPressedChange={option.onClick}
-          className="data-[state=on]:bg-slate-200 dark:data-[state=on]:bg-black"
+    <div className="bg-foreground/5 z-50 mb-1 space-x-2 rounded-md border border-slate-200 p-1 dark:border-gray-950 flex items-center justify-between">
+      <div className="flex items-center space-x-2">
+        {Options.map((option, index) => (
+          <Toggle
+            key={index}
+            pressed={option.preesed}
+            onPressedChange={option.onClick}
+            className="data-[state=on]:bg-slate-200 dark:data-[state=on]:bg-black"
+          >
+            {option.icon}
+          </Toggle>
+        ))}
+      </div>
+      {hasChanges ? (<Button
+          variant="ghost"
+          size="sm"
+          onClick={onSave}
+          className="ml-2"
         >
-          {option.icon}
-        </Toggle>
-      ))}
+          <Save className="size-4 mr-2" />
+          Save
+        </Button>
+      ) : (
+        <Button variant="ghost" size="sm" disabled className="ml-2">
+          <Check className="size-4 mr-2" />
+          Saved
+        </Button>
+      )}
     </div>
   );
 }
