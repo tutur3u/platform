@@ -26,11 +26,11 @@ export default function ModuleContentEditor({
   const saveContenttoDB = async (content: JSONContent) => {
     const supabase = createClient();
 
-    const {error} = await supabase
-    .from('workspace_course_modules')
-    .update({ content: content })
-    .eq('id', moduleId)
-    .eq('course_id', courseId)
+    const { error } = await supabase
+      .from('workspace_course_modules')
+      .update({ content: content })
+      .eq('id', moduleId)
+      .eq('course_id', courseId);
 
     if (error) {
       console.error(error);
