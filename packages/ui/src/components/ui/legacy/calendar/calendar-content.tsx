@@ -342,6 +342,37 @@ export const CalendarContent = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [enableDayView, enableWeekView, view]);
 
+  // Keyboard shortcut to change view
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return; 
+        // Ignore if typing in a form field
+      }
+
+      switch (e.key.toLowerCase()) {
+        case 'd':
+          enableDayView();
+          break;
+        case '4':
+          enable4DayView();
+          break;
+        case 'w':
+          enableWeekView();
+          break;
+        case 'm':
+          enableMonthView();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [enableDayView, enable4DayView, enableWeekView, enableMonthView]);
+
   if (!initialized || !view || !dates.length) return null;
 
   return (
