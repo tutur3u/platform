@@ -50,7 +50,8 @@ export default async function Login({ searchParams }: LoginProps) {
 
   const renderLogo = (domain: (typeof DOMAINS)[keyof typeof DOMAINS]) => (
     <Link
-      href={domain.domain}
+-      href={domain.domain}
++      href={`https://${domain.domain}`}
       className="group mb-2 flex items-center justify-center"
     >
       <Image
