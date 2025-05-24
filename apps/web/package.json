@@ -29,7 +29,7 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.816.0",
+    "@aws-sdk/client-ses": "^3.817.0",
     "@deepgram/sdk": "^4.2.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -40,9 +40,9 @@
     "@mantine/hooks": "^8.0.1",
     "@octokit/auth-app": "^8.0.1",
     "@octokit/rest": "^21.1.1",
-    "@tanstack/react-query": "^5.76.2",
+    "@tanstack/react-query": "^5.77.0",
     "@tanstack/react-table": "^8.21.3",
-    "@tldraw/sync": "^3.13.0",
+    "@tldraw/sync": "^3.13.1",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
@@ -58,7 +58,7 @@
     "cronstrue": "^2.61.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
-    "framer-motion": "^12.12.1",
+    "framer-motion": "^12.12.2",
     "google-auth-library": "^9.15.1",
     "googleapis": "^149.0.0",
     "html2canvas": "^1.4.1",
@@ -89,11 +89,11 @@
     "remark-math": "^6.0.0",
     "sharp": "^0.34.2",
     "swr": "^2.3.3",
-    "tldraw": "^3.13.0",
+    "tldraw": "^3.13.1",
     "use-debounce": "^10.0.4",
     "uuid": "^11.1.0",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
-    "zod": "^3.25.23"
+    "zod": "^3.25.28"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -101,7 +101,7 @@
     "@next/bundle-analyzer": "^15.3.2",
     "@next/eslint-plugin-next": "^15.3.2",
     "@tanstack/eslint-plugin-query": "^5.74.7",
-    "@tanstack/react-query-devtools": "^5.76.2",
+    "@tanstack/react-query-devtools": "^5.77.0",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",

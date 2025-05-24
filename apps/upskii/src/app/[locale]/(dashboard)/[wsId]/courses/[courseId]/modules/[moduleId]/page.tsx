@@ -3,7 +3,9 @@ import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
 import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';
+import RichTextEditor from '@/components/text-editor/editor';
 import { extractYoutubeId } from '@/utils/url-helper';
+import { JSONContent } from '@tiptap/react';
 import {
   createClient,
   createDynamicClient,
@@ -75,10 +77,11 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         icon={<Goal className="h-5 w-5" />}
         rawContent={data.content as any | undefined}
         content={
-          data.content
-            ? // <BlockEditor document={data.content as any} />
-              undefined
-            : undefined
+          data.content ? (
+            <div className="h-full max-h-[500px] overflow-y-auto">
+              <RichTextEditor content={data.content as JSONContent} readOnly />
+            </div>
+          ) : undefined
         }
       />
       <CourseSection
