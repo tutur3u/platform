@@ -6,6 +6,24 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import LoginForm from './form';
 
+const externalDomains = {
+  TUTURUUU: {
+    name: 'Tuturuuu',
+    domain: DEV_MODE ? 'localhost:7806' : 'tuturuuu.com',
+    logo: '/media/logos/transparent.png',
+  },
+  UPSKII: {
+    name: 'Upskii',
+    domain: DEV_MODE ? 'localhost:7806' : 'upskii.com',
+    logo: '/media/logos/transparent.png',
+  },
+  NOVA: {
+    name: 'Nova',
+    domain: DEV_MODE ? 'localhost:7805' : 'nova.ai.vn',
+    logo: '/media/logos/transparent.png',
+  },
+} as const;
+
 export default async function Login({
   searchParams,
 }: {
@@ -24,51 +42,44 @@ export default async function Login({
     }
   };
 
-  const upskiiDomain = DEV_MODE ? 'localhost:7806' : 'upskii.com';
-
   const returnUrlDomain = getReturnUrlDomain(returnUrl);
-  const isUpskiiDomain = returnUrlDomain === upskiiDomain;
+  const currentDomain = Object.values(externalDomains).find(
+    (domain) => domain.domain === returnUrlDomain
+  );
+
+  const renderLogo = (domain: typeof externalDomains[keyof typeof externalDomains]) => (
+    <Link href={domain.domain} className="group mb-2 flex items-center justify-center">
+      <Image
+        src={domain.logo}
+        width={80}
+        height={80}
+        alt={`${domain.name} Logo`}
+        className="transition-all duration-300 group-hover:scale-105"
+      />
+    </Link>
+  );
 
   return (
     <div className="from-background to-background/90 bg-linear-to-b relative flex h-full w-full flex-col items-center justify-center p-6 py-16 sm:p-8 lg:py-32">
       <div className="bg-size-[24px_24px] fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] opacity-70"></div>
       <div className="z-10 flex w-full max-w-[400px] flex-col items-center space-y-6">
-
-
-        {isUpskiiDomain ? (
+        {currentDomain ? (
           <div className='grid grid-cols-3'>
-            <Link href="/" className="group mb-2 flex items-center justify-center">
-              <Image
-                src="/media/logos/transparent.png"
-                width={80}
-                height={80}
-                alt="Tuturuuu Logo"
-                className="transition-all duration-300 group-hover:scale-105"
-              />
-            </Link>
-            <div className='flex items-center justify-center'>
-              <XIcon className='size-10' />
-            </div>
-            <Link href={upskiiDomain} className="group mb-2 flex items-center justify-center">
-              <Image
-                src="/media/logos/transparent.png"
-                width={80}
-                height={80}
-                alt="Upskii Logo"
-                className="transition-all duration-300 group-hover:scale-105"
-              />
-            </Link>
+            {currentDomain.name === externalDomains.TUTURUUU.name ? (
+              renderLogo(externalDomains.TUTURUUU)
+            ) : (
+              <>
+                {renderLogo(externalDomains.TUTURUUU)}
+                <div className='flex items-center justify-center'>
+                  <XIcon className='size-10' />
+                </div>
+                {renderLogo(currentDomain)}
+              </>
+            )}
           </div>
         ) : (
-          <Link href="/" className="group mb-2 flex items-center justify-center">
-            <Image
-              src="/media/logos/transparent.png"
-              width={80}
-              height={80}
-              alt="Tuturuuu Logo"
-              className="transition-all duration-300 group-hover:scale-105"
-            />
-          </Link>)}
+          renderLogo(externalDomains.TUTURUUU)
+        )}
 
         <Suspense
           fallback={
