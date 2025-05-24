@@ -89,7 +89,7 @@
     "remark-math": "^6.0.0",
     "sharp": "^0.34.2",
     "swr": "^2.3.3",
-    "tldraw": "^3.13.0",
+    "tldraw": "^3.13.1",
     "use-debounce": "^10.0.4",
     "uuid": "^11.1.0",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
