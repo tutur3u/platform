@@ -43,7 +43,7 @@ export default async function CertificatePage({ params }: PageProps) {
   // Replace the student name in the response with the user's name
 
   if (userDetails) {
-    certDetails.studentName = userDetails.display_name;
+    certDetails.studentName = userDetails.full_name;
   }
 
   return (
