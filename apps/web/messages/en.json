@@ -432,8 +432,7 @@
     "notice-p1": "By continuing, you agree to Tuturuuu's",
     "notice-p2": " to receive periodic emails with updates",
     "tos": "Terms of Service",
-    "privacy": "Privacy Policy",
-    "continueWithUpskii": "Continue with Upskii"
+    "privacy": "Privacy Policy"
   },
   "auth-email-sent": {
     "email-sent-p1": "A confirmation email has been sent to your email",
@@ -476,7 +475,7 @@
     "invalid_credentials": "Invalid email or password",
     "forgot_password": "Forgot your password?",
     "password_min_length": "Password must be at least 8 characters",
-    "powered-by": "Tuturuuu powers the authentication system behind {domain}"
+    "powered-by": "Tuturuuu powers the authentication system behind {domain}."
   },
   "signup": {
     "get-started": "Get started",

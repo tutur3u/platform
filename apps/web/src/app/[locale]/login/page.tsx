@@ -10,17 +10,17 @@ import { Suspense } from 'react';
 const DOMAINS = {
   TUTURUUU: {
     name: 'Tuturuuu',
-    domain: DEV_MODE ? 'localhost:7803' : 'tuturuuu.com',
+    href: DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com',
     logo: '/media/logos/transparent.png',
   },
   UPSKII: {
     name: 'Upskii',
-    domain: DEV_MODE ? 'localhost:7806' : 'upskii.com',
+    href: DEV_MODE ? 'http://localhost:7806' : 'https://upskii.com',
     logo: '/media/logos/upskii/upskii-transparent.png',
   },
   NOVA: {
     name: 'Nova',
-    domain: DEV_MODE ? 'localhost:7805' : 'nova.ai.vn',
+    href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
     logo: '/media/logos/nova/nova-transparent.png',
   },
 } as const;
@@ -48,14 +48,16 @@ export default async function Login({ searchParams }: LoginProps) {
   const returnUrl = (await searchParams).returnUrl as string | undefined;
 
   const returnUrlDomain = getReturnUrlDomain(returnUrl);
-  const currentDomain = Object.values(DOMAINS).find(
-    (domain) => domain.domain === returnUrlDomain
-  );
+
+  const currentDomain = returnUrlDomain
+    ? Object.values(DOMAINS).find((domain) =>
+        (domain.href as string).includes(returnUrlDomain)
+      )
+    : DOMAINS.TUTURUUU;
 
   const renderLogo = (domain: (typeof DOMAINS)[keyof typeof DOMAINS]) => (
     <Link
--      href={domain.domain}
-+      href={`https://${domain.domain}`}
+      href={domain.href}
       className="group mb-2 flex items-center justify-center"
     >
       <Image
