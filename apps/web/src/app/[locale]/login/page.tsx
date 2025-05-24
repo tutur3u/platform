@@ -1,3 +1,4 @@
+import LoginForm from './form';
 import { DEV_MODE } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { XIcon } from '@tuturuuu/ui/icons';
@@ -5,7 +6,6 @@ import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import LoginForm from './form';
 
 const DOMAINS = {
   TUTURUUU: {
@@ -29,7 +29,6 @@ interface LoginProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-
 const getReturnUrlDomain = (url: string | undefined) => {
   if (!url) return null;
   try {
@@ -40,10 +39,7 @@ const getReturnUrlDomain = (url: string | undefined) => {
   }
 };
 
-
-export default async function Login({
-  searchParams,
-}: LoginProps) {
+export default async function Login({ searchParams }: LoginProps) {
   const t = await getTranslations();
   const returnUrl = (await searchParams).returnUrl as string | undefined;
 
@@ -52,8 +48,11 @@ export default async function Login({
     (domain) => domain.domain === returnUrlDomain
   );
 
-  const renderLogo = (domain: typeof DOMAINS[keyof typeof DOMAINS]) => (
-    <Link href={domain.domain} className="group mb-2 flex items-center justify-center">
+  const renderLogo = (domain: (typeof DOMAINS)[keyof typeof DOMAINS]) => (
+    <Link
+      href={domain.domain}
+      className="group mb-2 flex items-center justify-center"
+    >
       <Image
         src={domain.logo}
         width={80}
@@ -68,12 +67,12 @@ export default async function Login({
     <div className="from-background to-background/90 bg-linear-to-b relative flex h-full w-full flex-col items-center justify-center p-6 py-16 sm:p-8 lg:py-32">
       <div className="bg-size-[24px_24px] fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] opacity-70"></div>
       <div className="z-10 flex w-full max-w-[400px] flex-col items-center space-y-6">
-        {(currentDomain && currentDomain !== DOMAINS.TUTURUUU) ? (
+        {currentDomain && currentDomain !== DOMAINS.TUTURUUU ? (
           <>
-            <div className='grid grid-cols-3'>
+            <div className="grid grid-cols-3">
               {renderLogo(DOMAINS.TUTURUUU)}
-              <div className='flex items-center justify-center'>
-                <XIcon className='size-10' />
+              <div className="flex items-center justify-center">
+                <XIcon className="size-10" />
               </div>
               {renderLogo(currentDomain)}
             </div>
