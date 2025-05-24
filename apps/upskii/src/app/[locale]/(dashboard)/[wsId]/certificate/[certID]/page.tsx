@@ -1,6 +1,6 @@
+import Certificate from '../certificate-page';
 import { DEV_MODE } from '@/constants/common';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import Certificate from '../certificate-page';
 
 export type CertificateProps = {
   certDetails: {
