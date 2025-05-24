@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/ui/navigation-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import * as React from 'react';
 
 export function MainNavigationMenu() {
@@ -149,43 +150,52 @@ const ListItem = React.forwardRef<
     badge?: string;
     disabled?: boolean;
   }
->(({ className, title, icon, badge, disabled, children, ...props }, ref) => {
-  return (
-    <li>
-      <NavigationMenuLink asChild>
-        <a
-          ref={ref}
-          className={cn(
-            'outline-hidden group relative block h-full select-none space-y-1 rounded-md border border-transparent p-4 leading-none no-underline transition-all duration-300',
-            'opacity-90 hover:opacity-100',
-            'hover:border-border hover:scale-[1.02] active:scale-[0.98]',
-            disabled && 'cursor-not-allowed opacity-50',
-            className
-          )}
-          {...props}
-        >
-          <div className="relative">
-            <div className="flex items-center gap-2">
-              <div className="text-primary transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110">
-                {icon}
+>(
+  (
+    { className, href, title, icon, badge, disabled, children, ...props },
+    ref
+  ) => {
+    if (!href) return null;
+    return (
+      <li>
+        <NavigationMenuLink asChild>
+          <Link
+            href={href}
+            ref={ref}
+            className={cn(
+              'outline-hidden group relative block h-full select-none space-y-1 rounded-md border border-transparent p-4 leading-none no-underline transition-all duration-300',
+              'opacity-90 hover:opacity-100',
+              'hover:border-border hover:scale-[1.02] active:scale-[0.98]',
+              disabled && 'cursor-not-allowed opacity-50',
+              className
+            )}
+            {...props}
+          >
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <div className="text-primary transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110">
+                  {icon}
+                </div>
+                <div className="text-sm font-semibold leading-none">
+                  {title}
+                </div>
+                {badge && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-auto flex-none animate-pulse text-xs"
+                  >
+                    {badge}
+                  </Badge>
+                )}
               </div>
-              <div className="text-sm font-semibold leading-none">{title}</div>
-              {badge && (
-                <Badge
-                  variant="secondary"
-                  className="ml-auto flex-none animate-pulse text-xs"
-                >
-                  {badge}
-                </Badge>
-              )}
+              <p className="text-muted-foreground mt-2 line-clamp-2 text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
+                {children}
+              </p>
             </div>
-            <p className="text-muted-foreground mt-2 line-clamp-2 text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
-              {children}
-            </p>
-          </div>
-        </a>
-      </NavigationMenuLink>
-    </li>
-  );
-});
+          </Link>
+        </NavigationMenuLink>
+      </li>
+    );
+  }
+);
 ListItem.displayName = 'ListItem';
