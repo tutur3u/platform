@@ -37,7 +37,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
   const PasswordFormSchema = z.object({
     email: z.string().email(),
-    password: z.string(),
+    password: z.string().min(8, t('login.password_min_length')),
   });
 
   const OTPFormSchema = z.object({
