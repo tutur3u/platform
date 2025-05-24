@@ -4,7 +4,6 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Separator } from '@tuturuuu/ui/separator';
-import { isEqual } from 'lodash';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { ReactNode } from 'react';
@@ -29,14 +28,11 @@ export async function CourseSection({
   const isContentEmpty =
     !hideContent &&
     (rawContent
-      ? isEqual(rawContent, {
-          type: 'doc',
-          content: [
-            {
-              type: 'paragraph',
-            },
-          ],
-        })
+      ? !rawContent.content?.some(
+          (node: any) =>
+            node.type !== 'paragraph' ||
+            (node.content && node.content.length > 0)
+        )
       : !content);
 
   return (
