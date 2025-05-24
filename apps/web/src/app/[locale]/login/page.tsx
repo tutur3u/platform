@@ -1,3 +1,4 @@
+import LoginForm from './form';
 import { DEV_MODE } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { XIcon } from '@tuturuuu/ui/icons';
@@ -5,7 +6,6 @@ import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import LoginForm from './form';
 
 const DOMAINS = {
   TUTURUUU: {
@@ -54,7 +54,7 @@ export default async function Login({ searchParams }: LoginProps) {
 
   const renderLogo = (domain: (typeof DOMAINS)[keyof typeof DOMAINS]) => (
     <Link
-     href={`https://${domain.domain}`}
+      href={`https://${domain.domain}`}
       className="group mb-2 flex items-center justify-center"
     >
       <Image
