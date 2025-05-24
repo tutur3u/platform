@@ -33,6 +33,10 @@ const getReturnUrlDomain = (url: string | undefined) => {
   if (!url) return null;
   try {
     const urlObj = new URL(url);
+    // Ensure the URL uses http or https protocol
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      return null;
+    }
     return urlObj.host;
   } catch {
     return null;
