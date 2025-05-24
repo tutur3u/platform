@@ -475,7 +475,9 @@
     "invalid_credentials": "Invalid email or password",
     "forgot_password": "Forgot your password?",
     "password_min_length": "Password must be at least 8 characters",
-    "powered-by": "Tuturuuu powers the authentication system behind {domain}."
+    "powered-by": "Tuturuuu powers the authentication system behind {domain}.",
+    "choose_sign_in_method": "Choose your preferred sign-in method",
+    "sign_in_to_your_account": "Sign in to your account to continue"
   },
   "signup": {
     "get-started": "Get started",

@@ -30,23 +30,19 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
 
-// Schema for OTP-based login
-const OTPFormSchema = z.object({
-  email: z.string().email(),
-  otp: z.string(),
-});
-
-export default function LoginForm() {
+export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const supabase = createClient();
   const t = useTranslations();
   const locale = useLocale();
 
-  // Schema for password-based login
   const PasswordFormSchema = z.object({
     email: z.string().email(),
-    password: z.string().min(8, {
-      message: t('login.password_min_length'),
-    }),
+    password: z.string(),
+  });
+
+  const OTPFormSchema = z.object({
+    email: z.string().email(),
+    otp: z.string(),
   });
 
   const router = useRouter();
@@ -415,9 +411,18 @@ export default function LoginForm() {
   }
 
   return (
-    <Card className="w-full border-none shadow-lg">
-      <CardContent className="flex flex-col gap-4 p-6">
-        <h2 className="text-center text-2xl font-bold">{t('login.welcome')}</h2>
+    <Card className="overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl">
+      <CardContent className="space-y-6 p-8">
+        <div className="space-y-2 text-center">
+          {isExternal && (
+            <h2 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:to-gray-300">
+              {t('login.welcome')}
+            </h2>
+          )}
+          <p className="text-muted-foreground text-sm">
+            {t('login.choose_sign_in_method')}
+          </p>
+        </div>
 
         <Tabs
           className="w-full"
@@ -427,17 +432,23 @@ export default function LoginForm() {
             setLoginMethod(value as 'passwordless' | 'password')
           }
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="passwordless">
+          <TabsList className="grid w-full grid-cols-2 rounded-xl bg-gray-100/50 p-1 backdrop-blur-sm dark:bg-gray-800/50">
+            <TabsTrigger
+              value="passwordless"
+              className="rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-md dark:data-[state=active]:bg-gray-700"
+            >
               {t('login.passwordless')}
             </TabsTrigger>
-            <TabsTrigger value="password">
+            <TabsTrigger
+              value="password"
+              className="rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-md dark:data-[state=active]:bg-gray-700"
+            >
               {t('login.with_password')}
             </TabsTrigger>
           </TabsList>
 
           {/* Passwordless (OTP) Login */}
-          <TabsContent value="passwordless" className="mt-6">
+          <TabsContent value="passwordless" className="mt-6 space-y-4">
             <Form {...otpForm}>
               <form
                 onSubmit={otpForm.handleSubmit(onOtpSubmit)}
@@ -448,12 +459,14 @@ export default function LoginForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('login.email')}</FormLabel>
+                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('login.email')}
+                      </FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <Mail className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                        <div className="group relative">
+                          <Mail className="text-muted-foreground group-focus-within:text-primary absolute left-3 top-1/2 size-4 -translate-y-1/2 transition-colors" />
                           <Input
-                            className="pl-10"
+                            className="focus:border-primary/50 focus:ring-primary/20 h-12 bg-white/50 pl-10 transition-all duration-200 focus:ring-2 dark:border-gray-700/50 dark:bg-gray-800/50"
                             placeholder={t('login.email_placeholder')}
                             {...field}
                             disabled={otpSent || loading}
@@ -471,27 +484,30 @@ export default function LoginForm() {
                     name="otp"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('login.verification_code')}</FormLabel>
+                        <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('login.verification_code')}
+                        </FormLabel>
                         <FormControl>
                           <InputOTP
                             maxLength={maxOTPLength}
                             {...field}
                             disabled={loading}
+                            className="justify-center"
                           >
-                            <InputOTPGroup className="m-0 w-full">
+                            <InputOTPGroup className="w-full gap-2">
                               {Array.from({ length: maxOTPLength }).map(
                                 (_, i) => (
                                   <InputOTPSlot
                                     key={i}
                                     index={i}
-                                    className="flex-1"
+                                    className="focus:border-primary focus:ring-primary/20 h-12 w-full rounded-lg border bg-white/50 text-lg font-semibold transition-all duration-200 focus:ring-2 dark:border-gray-700/50 dark:bg-gray-800/50"
                                   />
                                 )
                               )}
                             </InputOTPGroup>
                           </InputOTP>
                         </FormControl>
-                        <FormDescription>
+                        <FormDescription className="text-muted-foreground text-center text-sm">
                           {t('login.check_email')}
                         </FormDescription>
                         <FormMessage />
@@ -503,11 +519,17 @@ export default function LoginForm() {
                 <Button
                   type="submit"
                   variant={loading ? 'outline' : undefined}
-                  className="h-10 w-full"
-                  disabled={loading}
+                  className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
+                  disabled={
+                    loading ||
+                    (otpSent && otpForm.watch('otp').length !== maxOTPLength)
+                  }
                 >
                   {loading ? (
-                    <LoadingIndicator className="h-4 w-4" />
+                    <div className="flex items-center gap-2">
+                      <LoadingIndicator className="h-4 w-4" />
+                      <span>{t('common.loading')}...</span>
+                    </div>
                   ) : otpSent ? (
                     t('login.verify')
                   ) : (
@@ -516,28 +538,26 @@ export default function LoginForm() {
                 </Button>
 
                 {otpSent && (
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-10 w-full"
-                      disabled={loading || resendCooldown > 0}
-                      onClick={() => {
-                        otpForm.handleSubmit(onOtpSubmit)();
-                      }}
-                    >
-                      {resendCooldown > 0
-                        ? `${t('login.resend')} (${resendCooldown}s)`
-                        : t('login.resend')}
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 w-full bg-white/50 transition-all duration-200 hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
+                    disabled={loading || resendCooldown > 0}
+                    onClick={() => {
+                      otpForm.handleSubmit(onOtpSubmit)();
+                    }}
+                  >
+                    {resendCooldown > 0
+                      ? `${t('login.resend')} (${resendCooldown}s)`
+                      : t('login.resend')}
+                  </Button>
                 )}
               </form>
             </Form>
           </TabsContent>
 
           {/* Password Login */}
-          <TabsContent value="password" className="mt-6">
+          <TabsContent value="password" className="mt-6 space-y-4">
             <Form {...passwordForm}>
               <form
                 onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
@@ -548,12 +568,14 @@ export default function LoginForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('login.email')}</FormLabel>
+                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('login.email')}
+                      </FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <Mail className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                        <div className="group relative">
+                          <Mail className="text-muted-foreground group-focus-within:text-primary absolute left-3 top-1/2 size-4 -translate-y-1/2 transition-colors" />
                           <Input
-                            className="pl-10"
+                            className="focus:border-primary/50 focus:ring-primary/20 h-12 bg-white/50 pl-10 transition-all duration-200 focus:ring-2 dark:border-gray-700/50 dark:bg-gray-800/50"
                             placeholder={t('login.email_placeholder')}
                             {...field}
                             disabled={loading}
@@ -570,12 +592,14 @@ export default function LoginForm() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('login.password')}</FormLabel>
+                      <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('login.password')}
+                      </FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <Lock className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                        <div className="group relative">
+                          <Lock className="text-muted-foreground group-focus-within:text-primary absolute left-3 top-1/2 size-4 -translate-y-1/2 transition-colors" />
                           <Input
-                            className="pl-10 pr-10"
+                            className="focus:border-primary/50 focus:ring-primary/20 h-12 bg-white/50 pl-10 pr-12 transition-all duration-200 focus:ring-2 dark:border-gray-700/50 dark:bg-gray-800/50"
                             type={showPassword ? 'text' : 'password'}
                             placeholder={t('login.password_placeholder')}
                             {...field}
@@ -583,7 +607,7 @@ export default function LoginForm() {
                           />
                           <button
                             type="button"
-                            className="text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2"
+                            className="text-muted-foreground hover:text-primary absolute right-3 top-1/2 -translate-y-1/2 transition-colors duration-200"
                             onClick={() => setShowPassword(!showPassword)}
                           >
                             {showPassword ? (
@@ -602,21 +626,24 @@ export default function LoginForm() {
                 <Button
                   type="submit"
                   variant={loading ? 'outline' : undefined}
-                  className="h-10 w-full"
-                  disabled={loading}
+                  className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
+                  disabled={loading || !passwordForm.formState.isValid}
                 >
                   {loading ? (
-                    <LoadingIndicator className="h-4 w-4" />
+                    <div className="flex items-center gap-2">
+                      <LoadingIndicator className="h-4 w-4" />
+                      <span>{t('common.loading')}...</span>
+                    </div>
                   ) : (
                     t('login.sign_in')
                   )}
                 </Button>
 
-                <div className="text-center text-sm">
+                <div className="text-center">
                   <Button
                     type="button"
                     variant="link"
-                    className="text-primary hover:underline"
+                    className="text-primary hover:text-primary/80 text-sm transition-colors duration-200"
                     onClick={() => {
                       setLoginMethod('passwordless');
                       passwordForm.reset();
@@ -630,46 +657,54 @@ export default function LoginForm() {
           </TabsContent>
         </Tabs>
 
-        <div className="relative my-2">
-          <Separator />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="bg-card text-muted-foreground px-2 text-xs">
-              {t('login.or')}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid gap-2">
-          <Button
-            variant="outline"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="relative h-10 w-full"
-          >
-            <div className="absolute left-3">
-              <Image
-                src="/media/google-logo.png"
-                alt="Google"
-                width={18}
-                height={18}
-                className="object-contain"
-              />
+        {loginMethod === 'passwordless' && (
+          <>
+            <div className="relative my-6">
+              <Separator className="bg-gray-200/50 dark:bg-gray-700/50" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-muted-foreground rounded-full border bg-white/80 px-3 py-1 text-xs font-medium backdrop-blur-sm dark:border-gray-700/50 dark:bg-gray-900/80">
+                  {t('login.or')}
+                </span>
+              </div>
             </div>
-            <span>{t('login.continue_with_google')}</span>
-          </Button>
 
-          <Button
-            variant="outline"
-            onClick={handleGitHubLogin}
-            disabled={loading}
-            className="relative h-10 w-full"
-          >
-            <div className="absolute left-3">
-              <Github className="size-4" />
+            <div className="space-y-3">
+              <Button
+                variant="outline"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
+              >
+                <div className="absolute left-4">
+                  <Image
+                    src="/media/google-logo.png"
+                    alt="Google"
+                    width={20}
+                    height={20}
+                    className="object-contain transition-transform duration-200 group-hover:scale-110"
+                  />
+                </div>
+                <span className="font-medium">
+                  {t('login.continue_with_google')}
+                </span>
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={handleGitHubLogin}
+                disabled={loading}
+                className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
+              >
+                <div className="absolute left-4">
+                  <Github className="size-5 transition-transform duration-200 group-hover:scale-110" />
+                </div>
+                <span className="font-medium">
+                  {t('login.continue_with_github')}
+                </span>
+              </Button>
             </div>
-            <span>{t('login.continue_with_github')}</span>
-          </Button>
-        </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
