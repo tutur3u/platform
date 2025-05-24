@@ -42,7 +42,7 @@
     "@octokit/rest": "^21.1.1",
     "@tanstack/react-query": "^5.76.2",
     "@tanstack/react-table": "^8.21.3",
-    "@tldraw/sync": "^3.13.0",
+    "@tldraw/sync": "^3.13.1",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
