@@ -489,7 +489,8 @@
     "or": "hoặc",
     "check_email": "Kiểm tra email của bạn",
     "verification_code": "Mã xác thực",
-    "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự"
+    "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự",
+    "powered-by": "Tuturuuu cung cấp hệ thống xác thực phía sau {domain}"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",

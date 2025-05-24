@@ -1,4 +1,5 @@
 import { DEV_MODE } from '@/constants/common';
+import { Badge } from '@tuturuuu/ui/badge';
 import { XIcon } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
@@ -68,13 +69,18 @@ export default async function Login({
       <div className="bg-size-[24px_24px] fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] opacity-70"></div>
       <div className="z-10 flex w-full max-w-[400px] flex-col items-center space-y-6">
         {(currentDomain && currentDomain !== DOMAINS.TUTURUUU) ? (
-          <div className='grid grid-cols-3'>
-            {renderLogo(DOMAINS.TUTURUUU)}
-            <div className='flex items-center justify-center'>
-              <XIcon className='size-10' />
+          <>
+            <div className='grid grid-cols-3'>
+              {renderLogo(DOMAINS.TUTURUUU)}
+              <div className='flex items-center justify-center'>
+                <XIcon className='size-10' />
+              </div>
+              {renderLogo(currentDomain)}
             </div>
-            {renderLogo(currentDomain)}
-          </div>
+            <Badge variant="secondary" className="px-4 py-1.5">
+              {t('login.powered-by', { domain: currentDomain.name })}
+            </Badge>
+          </>
         ) : (
           renderLogo(DOMAINS.TUTURUUU)
         )}
