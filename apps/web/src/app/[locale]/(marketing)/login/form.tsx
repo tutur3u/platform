@@ -419,7 +419,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
               {t('login.welcome')}
             </h2>
           )}
-          <p className="text-muted-foreground text-sm text-balance">
+          <p className="text-muted-foreground text-balance text-sm">
             {t('login.choose_sign_in_method')}
           </p>
         </div>
