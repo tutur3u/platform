@@ -1,5 +1,5 @@
 import ModuleContentEditor from './content-editor';
-import { JSONContent } from '@tiptap/react';
+import { JSONContent } from '@tuturuuu/ui/tiptap';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';

@@ -46,8 +46,6 @@ export default function RichTextEditor({
   const [hasChanges, setHasChanges] = useState(false);
 
 
-
-
   const debouncedOnChange = useCallback(
     debounce((newContent: JSONContent) => {
       onChange?.(newContent);
@@ -92,6 +90,7 @@ export default function RichTextEditor({
     ],
     content: content || '',
     editable: !readOnly,
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class: getEditorClasses(readOnly),
