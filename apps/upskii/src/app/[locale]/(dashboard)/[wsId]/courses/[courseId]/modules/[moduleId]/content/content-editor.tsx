@@ -2,7 +2,7 @@
 
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { toast } from '@tuturuuu/ui/sonner';
-import RichTextEditor from '@tuturuuu/ui/text-editor/editor';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { JSONContent } from '@tuturuuu/ui/tiptap';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

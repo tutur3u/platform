@@ -1,6 +1,6 @@
 'use client';
 
-import ToolBar from './tool-bar';
+import { ToolBar } from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
@@ -34,7 +34,7 @@ const getEditorClasses = (readOnly: boolean) => {
   return baseClasses.join(' ');
 };
 
-export default function RichTextEditor({
+export function RichTextEditor({
   content,
   onChange,
   readOnly = false,

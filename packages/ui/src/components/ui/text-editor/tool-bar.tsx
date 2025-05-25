@@ -26,7 +26,7 @@ interface ToolBarProps {
   savedButtonLabel?: string;
 }
 
-export default function ToolBar({
+export function ToolBar({
   editor,
   hasChanges,
   onSave,
