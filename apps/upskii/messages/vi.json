@@ -4074,7 +4074,9 @@
     "ai_chat": "Trò chuyện với AI",
     "certificates": "Chứng chỉ",
     "challenges": "Các thử thách",
-    "ai_teach_studio": "Công cụ giảng dạy AI"
+    "ai_teach_studio": "Công cụ giảng dạy AI",
+    "users": "Người dùng",
+    "teams": "Nhóm"
   },
   "certificates": {
     "offered_by": "được dạy bởi",
