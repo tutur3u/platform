@@ -26,7 +26,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface NovaUserRowActionsProps {
-  row: Row<User & PlatformUser & UserPrivateDetails & { team_name: string[] }>;
+  row: Row<
+    User & PlatformUser & Partial<UserPrivateDetails> & { team_name: string[] }
+  >;
 }
 
 export function NovaUsersRowActions({ row }: NovaUserRowActionsProps) {

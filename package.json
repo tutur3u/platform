@@ -70,11 +70,16 @@
     "packages/*"
   ],
   "trustedDependencies": [
+    "@tailwindcss/oxide",
     "@vercel/speed-insights",
     "canvas",
+    "core-js",
+    "cytoscape",
     "esbuild",
+    "puppeteer",
     "sharp",
-    "supabase"
+    "supabase",
+    "unrs-resolver"
   ],
   "pnpm": {
     "onlyBuiltDependencies": [

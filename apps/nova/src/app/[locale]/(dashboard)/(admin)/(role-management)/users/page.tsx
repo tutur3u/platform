@@ -100,7 +100,7 @@ async function getUserData({
 }): Promise<{
   userData: (User &
     PlatformUser &
-    UserPrivateDetails & { team_name: string[] })[];
+    Partial<UserPrivateDetails> & { team_name: string[] })[];
   userCount: number;
 }> {
   try {
@@ -123,20 +123,6 @@ async function getUserData({
         return { userData: [], userCount: 0 };
       }
 
-      // Fix: Ensure all expected fields are present
-      const formattedData =
-        data?.map((u: any) => ({
-          ...u,
-          full_name: u.user_private_details?.full_name ?? null,
-          display_name: u.display_name ?? null,
-          avatar_url: u.avatar_url ?? null,
-          bio: u.bio ?? null,
-          created_at: u.created_at ?? null,
-          deleted: u.deleted ?? null,
-          handle: u.handle ?? null,
-          team_name: u.team_name ?? [],
-        })) || [];
-
       // Get count for pagination
       const { data: countData, error: countError } = await sbAdmin.rpc(
         'count_search_users',
@@ -150,19 +136,13 @@ async function getUserData({
       if (countError) {
         console.error('Error getting count:', countError);
         return {
-          userData:
-            (formattedData as (User &
-              PlatformUser &
-              UserPrivateDetails & { team_name: string[] })[]) || [],
+          userData: data || [],
           userCount: data?.length || 0,
         };
       }
 
       return {
-        userData:
-          (formattedData as (User &
-            PlatformUser &
-            UserPrivateDetails & { team_name: string[] })[]) || [],
+        userData: data || [],
         userCount: countData || 0,
       };
     }

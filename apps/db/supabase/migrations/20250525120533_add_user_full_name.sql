@@ -1,3 +1,5 @@
+alter table "public"."user_private_details" add column "full_name" text;
+
 DROP FUNCTION IF EXISTS search_users(TEXT, INTEGER, INTEGER, TEXT, BOOLEAN);
 
 CREATE FUNCTION search_users(
@@ -16,7 +18,6 @@ RETURNS TABLE (
   handle TEXT,
   bio TEXT,
   created_at TIMESTAMPTZ,
-  full_name TEXT,
   
   -- PlatformUser columns
   user_id UUID,
@@ -29,6 +30,7 @@ RETURNS TABLE (
   email TEXT,
   new_email TEXT,
   birthday DATE,
+  full_name TEXT,
   
   -- Team names as array
   team_name TEXT[]
@@ -71,7 +73,6 @@ BEGIN
       u.handle,
       u.bio,
       u.created_at,
-      u.full_name,
       
       -- PlatformUser columns
       ur.user_id,
@@ -84,6 +85,7 @@ BEGIN
       ud.email,
       ud.new_email,
       ud.birthday,
+      ud.full_name,
       
       -- Team names
       ARRAY_REMOVE(ARRAY_AGG(DISTINCT t.name), NULL) as team_name
@@ -104,7 +106,6 @@ BEGIN
       u.handle,
       u.bio,
       u.created_at,
-      u.full_name,
       ur.user_id,
       ur.enabled,
       ur.allow_challenge_management,
@@ -112,8 +113,8 @@ BEGIN
       ur.allow_role_management,
       ud.email,
       ud.new_email,
-      ud.birthday
-    
+      ud.birthday,
+      ud.full_name
     ORDER BY u.created_at DESC
     LIMIT $2
     OFFSET ($3 - 1) * $2
