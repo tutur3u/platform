@@ -1,19 +1,22 @@
 'use client';
 
-import ToolBar from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { debounce } from 'lodash';
-import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
+import ToolBar from './tool-bar';
 
 interface RichTextEditorProps {
   content: JSONContent | null;
   onChange?: (content: JSONContent) => void;
   readOnly?: boolean;
+  titlePlaceholder?: string;
+  writePlaceholder?: string;
+  saveButtonLabel?: string;
+  savedButtonLabel?: string;
 }
 
 const getEditorClasses = (readOnly: boolean) => {
@@ -35,12 +38,15 @@ export default function RichTextEditor({
   content,
   onChange,
   readOnly = false,
+  titlePlaceholder = 'What is the title?',
+  writePlaceholder = 'Write something...',
+  saveButtonLabel = 'Save',
+  savedButtonLabel = 'Saved',
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
-  const t = useTranslations();
 
-  const titlePlaceholder = t('common.whats_the_title');
-  const writePlaceholder = t('common.write_something');
+
+
 
   const debouncedOnChange = useCallback(
     debounce((newContent: JSONContent) => {
@@ -111,7 +117,13 @@ export default function RichTextEditor({
       className={`flex ${readOnly ? 'h-full' : 'h-[calc(100vh-4rem)]'} flex-col`}
     >
       {!readOnly && (
-        <ToolBar editor={editor} hasChanges={hasChanges} onSave={handleSave} />
+        <ToolBar
+          editor={editor}
+          hasChanges={hasChanges}
+          onSave={handleSave}
+          saveButtonLabel={saveButtonLabel}
+          savedButtonLabel={savedButtonLabel}
+        />
       )}
       <EditorContent editor={editor} />
     </div>

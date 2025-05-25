@@ -1,9 +1,9 @@
 'use client';
 
-import RichTextEditor from '@/components/text-editor/editor';
-import { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { toast } from '@tuturuuu/ui/sonner';
+import RichTextEditor from '@tuturuuu/ui/text-editor/editor';
+import { JSONContent } from '@tuturuuu/ui/tiptap';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -41,9 +41,22 @@ export default function ModuleContentEditor({
     }
   };
 
+
+  const titlePlaceholder = t('common.whats_the_title');
+  const writePlaceholder = t('common.write_something');
+  const saveButtonLabel = t('common.save');
+  const savedButtonLabel = t('common.saved');
+
   return (
     <div className="mx-auto w-full pt-2 text-slate-900 dark:text-slate-100">
-      <RichTextEditor content={post} onChange={onChange} />
+      <RichTextEditor
+        content={post}
+        onChange={onChange}
+        titlePlaceholder={titlePlaceholder}
+        writePlaceholder={writePlaceholder}
+        saveButtonLabel={saveButtonLabel}
+        savedButtonLabel={savedButtonLabel}
+      />
     </div>
   );
 }
