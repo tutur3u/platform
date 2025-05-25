@@ -5514,8 +5514,8 @@ packages:
     resolution: {integrity: sha512-sdleLVfCjBtgO5cNjA2HVRvWBJAHs4zwenaCPMNJAJU0yNxpzj80IpjOIimkpkr+mhlA+how5poQtt53PygbHA==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
-  bippy@0.3.13:
-    resolution: {integrity: sha512-LFGMZN1fTa4X7lS2X87yuHACPdMv+oT6bqSUjFHH1MYXQjVRYWjmEE0b/cEaKfGR3ZBwqbhBKpaA3wP5R53JTg==}
+  bippy@0.3.14:
+    resolution: {integrity: sha512-lg8i4YjVBcAsF8mKVaWjbgG/yo1fY9SUbGgilsnkOnLyU37Jj0XDLWTBeuZjFrrd6LNf1od8/tO/soIi2KUTrw==}
     peerDependencies:
       react: '>=17.0.1'
 
@@ -13826,7 +13826,7 @@ snapshots:
       read-cmd-shim: 5.0.0
       write-file-atomic: 6.0.0
 
-  bippy@0.3.13(@types/react@19.1.5)(react@19.1.0):
+  bippy@0.3.14(@types/react@19.1.5)(react@19.1.0):
     dependencies:
       '@types/react-reconciler': 0.28.9(@types/react@19.1.5)
       react: 19.1.0
@@ -17458,7 +17458,7 @@ snapshots:
       '@preact/signals': 1.3.2(preact@10.26.7)
       '@rollup/pluginutils': 5.1.4(rollup@4.41.1)
       '@types/node': 20.17.50
-      bippy: 0.3.13(@types/react@19.1.5)(react@19.1.0)
+      bippy: 0.3.14(@types/react@19.1.5)(react@19.1.0)
       esbuild: 0.25.4
       estree-walker: 3.0.3
       kleur: 4.1.5

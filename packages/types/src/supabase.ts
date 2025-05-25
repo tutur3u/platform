@@ -4129,18 +4129,21 @@ export type Database = {
         Row: {
           birthday: string | null;
           email: string | null;
+          full_name: string | null;
           new_email: string | null;
           user_id: string;
         };
         Insert: {
           birthday?: string | null;
           email?: string | null;
+          full_name?: string | null;
           new_email?: string | null;
           user_id: string;
         };
         Update: {
           birthday?: string | null;
           email?: string | null;
+          full_name?: string | null;
           new_email?: string | null;
           user_id?: string;
         };
