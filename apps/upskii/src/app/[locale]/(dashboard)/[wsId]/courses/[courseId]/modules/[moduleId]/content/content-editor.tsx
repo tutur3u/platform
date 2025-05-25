@@ -41,7 +41,6 @@ export default function ModuleContentEditor({
     }
   };
 
-
   const titlePlaceholder = t('common.whats_the_title');
   const writePlaceholder = t('common.write_something');
   const saveButtonLabel = t('common.save');

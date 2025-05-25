@@ -1,5 +1,6 @@
 'use client';
 
+import ToolBar from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
@@ -7,7 +8,6 @@ import { EditorContent, JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useState } from 'react';
-import ToolBar from './tool-bar';
 
 interface RichTextEditorProps {
   content: JSONContent | null;
@@ -44,7 +44,6 @@ export default function RichTextEditor({
   savedButtonLabel = 'Saved',
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
-
 
   const debouncedOnChange = useCallback(
     debounce((newContent: JSONContent) => {
