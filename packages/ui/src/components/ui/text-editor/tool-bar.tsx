@@ -26,6 +26,16 @@ interface ToolBarProps {
   savedButtonLabel?: string;
 }
 
+/**
+ * Renders a rich text editor toolbar with formatting controls and a save button.
+ *
+ * Displays formatting options such as headings, bold, italic, strikethrough, alignment, lists, and highlight for the provided {@link editor} instance. Shows a save button when there are unsaved changes, or a disabled saved indicator otherwise.
+ *
+ * @param saveButtonLabel - Optional label for the save button. Defaults to "Save".
+ * @param savedButtonLabel - Optional label for the saved state button. Defaults to "Saved".
+ *
+ * @returns The toolbar UI, or `null` if no {@link editor} is provided.
+ */
 export default function ToolBar({
   editor,
   hasChanges,

@@ -34,6 +34,21 @@ const getEditorClasses = (readOnly: boolean) => {
   return baseClasses.join(' ');
 };
 
+/**
+ * Renders a rich text editor with customizable placeholders, save button labels, and read-only mode.
+ *
+ * Provides a TipTap-based editing interface supporting headings, lists, text alignment, highlighting, and dynamic placeholders for title and body. Tracks unsaved changes and debounces content updates before invoking the optional {@link onChange} callback. Displays a toolbar with save controls when not in read-only mode.
+ *
+ * @param content - The initial editor content as a TipTap JSON object or null.
+ * @param onChange - Optional callback invoked with updated content after edits.
+ * @param readOnly - If true, disables editing and hides the toolbar.
+ * @param titlePlaceholder - Placeholder text for heading nodes.
+ * @param writePlaceholder - Placeholder text for paragraph nodes.
+ * @param saveButtonLabel - Label for the save button in the toolbar.
+ * @param savedButtonLabel - Label for the saved state in the toolbar.
+ *
+ * @returns The rendered rich text editor component.
+ */
 export default function RichTextEditor({
   content,
   onChange,

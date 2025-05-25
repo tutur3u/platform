@@ -13,6 +13,15 @@ interface Props {
   content?: JSONContent;
 }
 
+/**
+ * Provides a rich text editor interface for editing and saving the content of a specific course module.
+ *
+ * Displays a localized editor UI, handles content changes, and updates the module's content in the database.
+ *
+ * @param courseId - The identifier of the course containing the module.
+ * @param moduleId - The identifier of the module whose content is being edited.
+ * @param content - The initial content to display in the editor.
+ */
 export default function ModuleContentEditor({
   courseId,
   moduleId,
