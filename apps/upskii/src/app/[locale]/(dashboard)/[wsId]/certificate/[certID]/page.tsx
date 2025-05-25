@@ -44,6 +44,7 @@ export default async function CertificatePage({ params }: PageProps) {
 
   if (userDetails) {
     certDetails.studentName = userDetails.full_name;
+    console.log("Cert name: ", userDetails.full_name)
   }
 
   return (

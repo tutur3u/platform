@@ -127,7 +127,7 @@ async function getUserData({
       const formattedData =
         data?.map((u: any) => ({
           ...u,
-          full_name: u.full_name ?? null,
+          full_name: u.user_private_details?.full_name ?? null,
           display_name: u.display_name ?? null,
           avatar_url: u.avatar_url ?? null,
           bio: u.bio ?? null,
@@ -136,7 +136,6 @@ async function getUserData({
           handle: u.handle ?? null,
           team_name: u.team_name ?? [],
         })) || [];
-
 
       // Get count for pagination
       const { data: countData, error: countError } = await sbAdmin.rpc(
