@@ -23,6 +23,8 @@ import {
   ListTodo,
   ShieldCheck,
   SquareTerminal,
+  UserCog,
+  Users,
 } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
@@ -197,6 +199,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         })) ||
         withoutPermission('ai_lab'),
     },
+    null,
     {
       title: t('sidebar.roles'),
       href: `/${wsId}/roles`,
@@ -204,6 +207,40 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <ShieldCheck className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'R',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+    },
+    {
+      title: t('sidebar.teams'),
+      href: `/${wsId}/teams`,
+      // subItems: [] as { name: string; href: string }[],
+      icon: <Users className="h-4 w-4" />,
+      experimental: 'alpha',
+      shortcut: 'T',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+    },
+    {
+      title: t('sidebar.users'),
+      href: `/${wsId}/users`,
+      // subItems: [] as { name: string; href: string }[],
+      icon: <UserCog className="h-4 w-4" />,
+      experimental: 'alpha',
+      shortcut: 'U',
       disabled:
         ENABLE_AI_ONLY ||
         !(await verifySecret({
