@@ -4083,6 +4083,8 @@
     "ai_chat": "AI Chat",
     "certificates": "Certificates",
     "challenges": "Challenges",
-    "ai_teach_studio": "AI Teaching Studio"
+    "ai_teach_studio": "AI Teaching Studio",
+    "users": "Users",
+    "teams": "Teams"
   }
 }
