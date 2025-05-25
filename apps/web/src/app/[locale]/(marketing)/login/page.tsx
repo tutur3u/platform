@@ -1,5 +1,3 @@
-import LoginForm from './form';
-import './login.css';
 import { DEV_MODE } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { XIcon } from '@tuturuuu/ui/icons';
@@ -7,6 +5,8 @@ import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import LoginForm from './form';
+import './login.css';
 
 const DOMAINS = {
   TUTURUUU: {
@@ -101,9 +101,11 @@ export default async function Login({ searchParams }: LoginProps) {
                 </div>
                 <Badge
                   variant="secondary"
-                  className="from-foreground/5 via-calendar-bg-blue to-calendar-bg-pink border-foreground/20 border bg-gradient-to-br px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-sm"
+                  className="from-foreground/5 via-calendar-bg-blue to-calendar-bg-pink border-foreground/20 border bg-gradient-to-br px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-sm text-balance leading-relaxed"
                 >
-                  {t('login.powered-by', { domain: currentDomain.name })}
+                  <span className="whitespace-normal">
+                    {t('login.powered-by', { domain: currentDomain.name })}
+                  </span>
                 </Badge>
               </div>
             ) : (
