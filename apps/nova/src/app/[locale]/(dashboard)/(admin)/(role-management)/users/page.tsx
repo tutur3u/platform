@@ -137,7 +137,6 @@ async function getUserData({
           team_name: u.team_name ?? [],
         })) || [];
 
-
       // Get count for pagination
       const { data: countData, error: countError } = await sbAdmin.rpc(
         'count_search_users',
@@ -150,18 +149,20 @@ async function getUserData({
 
       if (countError) {
         console.error('Error getting count:', countError);
-        return { 
-        userData: formattedData as (User &
-        PlatformUser &
-        UserPrivateDetails & { team_name: string[] })[] || [],
-          userCount: data?.length || 0 
+        return {
+          userData:
+            (formattedData as (User &
+              PlatformUser &
+              UserPrivateDetails & { team_name: string[] })[]) || [],
+          userCount: data?.length || 0,
         };
       }
 
       return {
-        userData: formattedData as (User &
-      PlatformUser &
-      UserPrivateDetails & { team_name: string[] })[] || [],
+        userData:
+          (formattedData as (User &
+            PlatformUser &
+            UserPrivateDetails & { team_name: string[] })[]) || [],
         userCount: countData || 0,
       };
     }
