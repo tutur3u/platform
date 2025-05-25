@@ -18,12 +18,6 @@ export interface WorkspaceUser {
   warehouse_id?: string;
   note?: string;
   ws_id?: string;
-  user_private_details?: {
-    email: string;
-    new_email: string;
-    birthday: string;
-    full_name: string;
-  };
   linked_users?: {
     id: string;
     display_name: string;
