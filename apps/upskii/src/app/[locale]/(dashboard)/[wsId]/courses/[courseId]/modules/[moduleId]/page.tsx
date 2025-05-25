@@ -1,8 +1,3 @@
-import { CourseSection } from '../../section';
-import ClientFlashcards from './flashcards/client-flashcards';
-import ClientQuizzes from './quizzes/client-quizzes';
-import FileDisplay from './resources/file-display';
-import { YoutubeEmbed } from './youtube-links/embed';
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
@@ -19,9 +14,14 @@ import {
   Youtube,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import RichTextEditor from '@tuturuuu/ui/text-editor/editor';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { JSONContent } from '@tuturuuu/ui/tiptap';
 import { getTranslations } from 'next-intl/server';
+import { CourseSection } from '../../section';
+import ClientFlashcards from './flashcards/client-flashcards';
+import ClientQuizzes from './quizzes/client-quizzes';
+import FileDisplay from './resources/file-display';
+import { YoutubeEmbed } from './youtube-links/embed';
 
 interface Props {
   params: Promise<{
