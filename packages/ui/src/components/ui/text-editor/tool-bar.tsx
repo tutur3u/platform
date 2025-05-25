@@ -17,16 +17,22 @@ import {
   Strikethrough,
 } from '@tuturuuu/ui/icons';
 import { Toggle } from '@tuturuuu/ui/toggle';
-import { useTranslations } from 'next-intl';
 
 interface ToolBarProps {
   editor: Editor | null;
   hasChanges: boolean;
   onSave: () => void;
+  saveButtonLabel?: string;
+  savedButtonLabel?: string;
 }
 
-export default function ToolBar({ editor, hasChanges, onSave }: ToolBarProps) {
-  const t = useTranslations();
+export function ToolBar({
+  editor,
+  hasChanges,
+  onSave,
+  saveButtonLabel = 'Save',
+  savedButtonLabel = 'Saved',
+}: ToolBarProps) {
   if (!editor) {
     return null;
   }
@@ -111,12 +117,12 @@ export default function ToolBar({ editor, hasChanges, onSave }: ToolBarProps) {
       {hasChanges ? (
         <Button variant="ghost" size="sm" onClick={onSave} className="ml-2">
           <Save className="mr-2 size-4" />
-          {t('common.save')}
+          {saveButtonLabel}
         </Button>
       ) : (
         <Button variant="ghost" size="sm" disabled className="ml-2">
           <Check className="mr-2 size-4" />
-          {t('common.saved')}
+          {savedButtonLabel}
         </Button>
       )}
     </div>

@@ -101,9 +101,11 @@ export default async function Login({ searchParams }: LoginProps) {
                 </div>
                 <Badge
                   variant="secondary"
-                  className="from-foreground/5 via-calendar-bg-blue to-calendar-bg-pink border-foreground/20 border bg-gradient-to-br px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-sm"
+                  className="from-foreground/5 via-calendar-bg-blue to-calendar-bg-pink border-foreground/20 text-balance border bg-gradient-to-br px-4 py-2 text-sm font-medium leading-relaxed shadow-lg backdrop-blur-sm"
                 >
-                  {t('login.powered-by', { domain: currentDomain.name })}
+                  <span className="whitespace-normal">
+                    {t('login.powered-by', { domain: currentDomain.name })}
+                  </span>
                 </Badge>
               </div>
             ) : (
