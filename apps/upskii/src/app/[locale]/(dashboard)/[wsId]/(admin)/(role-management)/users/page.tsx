@@ -104,7 +104,7 @@ async function getUserData({
 }): Promise<{
   userData: (User &
     PlatformUser &
-    UserPrivateDetails & { team_name: string[] })[];
+    Partial<UserPrivateDetails> & { team_name: string[] })[];
   userCount: number;
 }> {
   try {

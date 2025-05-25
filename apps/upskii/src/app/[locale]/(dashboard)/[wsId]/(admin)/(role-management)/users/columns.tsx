@@ -43,7 +43,7 @@ export const getUserColumns = (
   __: any[] | undefined,
   extraData: { locale: string }
 ): ColumnDef<
-  User & PlatformUser & UserPrivateDetails & { team_name: string[] }
+  User & PlatformUser & Partial<UserPrivateDetails> & { team_name: string[] }
 >[] => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -151,7 +151,7 @@ export const getUserColumns = (
                   generateFunName({ id: user.id, locale: extraData.locale })}
               </div>
               {user?.email && (
-                <div className="text-muted-foreground text-sm">
+                <div className="text-sm text-muted-foreground">
                   {user.email}
                 </div>
               )}
