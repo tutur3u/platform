@@ -1,12 +1,3 @@
-import type {
-    Workspace,
-    WorkspaceCalendarGoogleToken,
-} from '@tuturuuu/types/db';
-import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
-import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
-import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
-import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useState } from 'react';
 import { CalendarHeader } from './calendar-header';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { CreateEventButton } from './create-event-button';
@@ -15,6 +6,15 @@ import { MonthCalendar } from './month-calendar';
 import { SettingsButton } from './settings-button';
 import type { CalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types/db';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
+import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
+import { cn } from '@tuturuuu/utils/format';
+import { useCallback, useEffect, useState } from 'react';
 
 export const CalendarContent = ({
   t,
@@ -345,7 +345,7 @@ export const CalendarContent = ({
   // Update settings with current view dates when they change
   useEffect(() => {
     if (dates.length > 0) {
-      const dateStrings = dates.map(date => date.toISOString());
+      const dateStrings = dates.map((date) => date.toISOString());
       updateSettings({ currentViewDates: dateStrings });
     }
   }, [dates, updateSettings]);

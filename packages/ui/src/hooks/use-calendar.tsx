@@ -29,7 +29,6 @@ const SYNC_CONFIGS = {
   GOOGLE_FETCH_TIMEOUT_MS: 30000, // 30 seconds
 } as const;
 
-
 // Utility function to round time to nearest 15-minute interval
 const roundToNearest15Minutes = (date: Date): Date => {
   const minutes = date.getMinutes();
@@ -514,8 +513,19 @@ export const CalendarProvider = ({
   );
 
   // Function to validate and normalize color
-  const VALID_COLORS = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'ORANGE', 'PURPLE', 'PINK', 'INDIGO', 'CYAN', 'GRAY'] as const;
-  type ValidColor = typeof VALID_COLORS[number];
+  const VALID_COLORS = [
+    'RED',
+    'BLUE',
+    'GREEN',
+    'YELLOW',
+    'ORANGE',
+    'PURPLE',
+    'PINK',
+    'INDIGO',
+    'CYAN',
+    'GRAY',
+  ] as const;
+  type ValidColor = (typeof VALID_COLORS)[number];
 
   const isValidColor = (color: string): color is ValidColor => {
     return VALID_COLORS.includes(color as ValidColor);
@@ -948,7 +958,10 @@ export const CalendarProvider = ({
 
   // Automatically fetch Google Calendar events with certain range
   const fetchGoogleCalendarEventsInRange = async () => {
-    console.log('[Google Calendar Fetch] Starting fetch at:', new Date().toISOString());
+    console.log(
+      '[Google Calendar Fetch] Starting fetch at:',
+      new Date().toISOString()
+    );
     if (!ws?.id) {
       console.log('[Google Calendar Fetch] No workspace ID, skipping fetch');
       throw new Error('No workspace selected');
@@ -956,27 +969,39 @@ export const CalendarProvider = ({
 
     // Get current view dates from settings
     const currentViewDates = settings.currentViewDates || [];
-    console.log('[Google Calendar Fetch] Current view dates:', currentViewDates);
+    console.log(
+      '[Google Calendar Fetch] Current view dates:',
+      currentViewDates
+    );
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), SYNC_CONFIGS.GOOGLE_FETCH_TIMEOUT_MS); // 30 seconds timeout
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      SYNC_CONFIGS.GOOGLE_FETCH_TIMEOUT_MS
+    ); // 30 seconds timeout
 
     try {
       const response = await fetch(`/api/v1/calendar/auth/fetch-view`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          dates: currentViewDates, 
-          wsId: ws.id }),
+        body: JSON.stringify({
+          dates: currentViewDates,
+          wsId: ws.id,
+        }),
         signal: controller.signal,
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
       const data = await response.json();
-      console.log('[Google Calendar Fetch] Received events count:', data.events?.length || 0);
+      console.log(
+        '[Google Calendar Fetch] Received events count:',
+        data.events?.length || 0
+      );
       return data;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -992,13 +1017,19 @@ export const CalendarProvider = ({
   const { data: googleData } = useQuery({
     queryKey: ['googleCalendarEvents', ws?.id, settings.currentViewDates],
     queryFn: fetchGoogleCalendarEventsInRange,
-    enabled: !!ws?.id && !!experimentalGoogleToken?.id && !!settings.currentViewDates?.length,
+    enabled:
+      !!ws?.id &&
+      !!experimentalGoogleToken?.id &&
+      !!settings.currentViewDates?.length,
     refetchInterval: 1000 * 30,
     staleTime: 1000 * 30,
   });
 
   const googleEvents = useMemo(() => {
-    console.log('[Google Calendar Events] Memo update at:', new Date().toISOString());
+    console.log(
+      '[Google Calendar Events] Memo update at:',
+      new Date().toISOString()
+    );
     return googleData?.events || [];
   }, [googleData]);
 
@@ -1368,8 +1399,11 @@ export const CalendarProvider = ({
       try {
         // Set lock to background sync
         syncLockRef.current = 'background';
-        console.log('Background sync: Starting sync at', new Date().toISOString());
-        
+        console.log(
+          'Background sync: Starting sync at',
+          new Date().toISOString()
+        );
+
         await syncEvents();
         // Update last sync time after background sync completes
         lastBackgroundSyncRef.current = Date.now();
@@ -1388,7 +1422,11 @@ export const CalendarProvider = ({
     // Set up interval
     const interval = setInterval(() => {
       syncBackground();
-      console.log('Background sync: Syncing events every', SYNC_CONFIGS.BACKGROUND_INTERVAL_MS / 1000, 'seconds');
+      console.log(
+        'Background sync: Syncing events every',
+        SYNC_CONFIGS.BACKGROUND_INTERVAL_MS / 1000,
+        'seconds'
+      );
     }, SYNC_CONFIGS.BACKGROUND_INTERVAL_MS); // Sync every 2 minutes
 
     return () => clearInterval(interval);
@@ -1396,53 +1434,69 @@ export const CalendarProvider = ({
 
   // Set up an interval to sync events in the current view every 30 seconds
   useEffect(() => {
-    if (!ws?.id || !experimentalGoogleToken || !settings.currentViewDates?.length) return;
+    if (
+      !ws?.id ||
+      !experimentalGoogleToken ||
+      !settings.currentViewDates?.length
+    )
+      return;
 
     const syncCurrentView = async () => {
       // Skip if background sync is running or if last sync was less than 30s ago
       const now = Date.now();
-      if (syncLockRef.current === 'background' || (now - lastBackgroundSyncRef.current < SYNC_CONFIGS.MIN_TIME_BETWEEN_SYNC_MS)) {
-        console.log('Current view sync: Skipping - background sync running or recent sync');
+      if (
+        syncLockRef.current === 'background' ||
+        now - lastBackgroundSyncRef.current <
+          SYNC_CONFIGS.MIN_TIME_BETWEEN_SYNC_MS
+      ) {
+        console.log(
+          'Current view sync: Skipping - background sync running or recent sync'
+        );
         return;
       }
 
       try {
         // Set lock to current view sync
         syncLockRef.current = 'current-view';
-        console.log('Current view sync: Starting sync at', new Date().toISOString());
-        
+        console.log(
+          'Current view sync: Starting sync at',
+          new Date().toISOString()
+        );
+
         // Fetch current view events
         const response = await fetch(`/api/v1/calendar/auth/fetch-view`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             dates: settings.currentViewDates,
             wsId: ws.id,
-            force: true
+            force: true,
           }),
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch view events: ${response.statusText}`);
+          throw new Error(
+            `Failed to fetch view events: ${response.statusText}`
+          );
         }
 
         const data = await response.json();
-        
+
         if (!data.events) return;
 
         // Filter events to only those in current view
         const currentViewEvents = data.events.filter((event: CalendarEvent) => {
           const eventDate = new Date(event.start_at);
-          return settings.currentViewDates?.some(date => 
-            eventDate.toISOString().split('T')[0] === date
+          return settings.currentViewDates?.some(
+            (date) => eventDate.toISOString().split('T')[0] === date
           );
         });
 
         // Get local events that are in current view
         const localEvents = events.filter((event: CalendarEvent) => {
           const eventDate = new Date(event.start_at);
-          return settings.currentViewDates?.some(date => 
-            eventDate.toISOString().split('T')[0] === date
+          return settings.currentViewDates?.some(
+            (date) => eventDate.toISOString().split('T')[0] === date
           );
         });
 
@@ -1450,7 +1504,7 @@ export const CalendarProvider = ({
         const localEventMap = new Map<string, CalendarEvent>();
         const googleEventMap = new Map<string, CalendarEvent>();
         const localContentMap = new Map<string, CalendarEvent>();
-        
+
         // Map by Google event ID and content signature
         localEvents.forEach((event: CalendarEvent) => {
           if (event.google_event_id) {
@@ -1459,7 +1513,7 @@ export const CalendarProvider = ({
           const signature = createEventSignature(event);
           localContentMap.set(signature, event);
         });
-        
+
         currentViewEvents.forEach((event: CalendarEvent) => {
           if (event.google_event_id) {
             googleEventMap.set(event.google_event_id, event);
@@ -1547,7 +1601,7 @@ export const CalendarProvider = ({
 
           for (let i = 0; i < eventsToUpdate.length; i += batchSize) {
             const batch = eventsToUpdate.slice(i, i + batchSize);
-            
+
             for (const item of batch) {
               try {
                 const { error } = await supabase
@@ -1574,7 +1628,7 @@ export const CalendarProvider = ({
 
           for (let i = 0; i < eventsToInsert.length; i += batchSize) {
             const batch = eventsToInsert.slice(i, i + batchSize);
-            
+
             try {
               const { error } = await supabase
                 .from('workspace_calendar_events')
@@ -1583,7 +1637,9 @@ export const CalendarProvider = ({
               if (error) {
                 console.error('Failed to insert events batch:', error);
               } else {
-                console.log(`Current view sync: Inserted ${batch.length} new events`);
+                console.log(
+                  `Current view sync: Inserted ${batch.length} new events`
+                );
               }
             } catch (err) {
               console.error('Failed to insert events batch:', err);
@@ -1599,7 +1655,6 @@ export const CalendarProvider = ({
         } else {
           console.log('Current view sync: No changes needed');
         }
-        
       } catch (error) {
         console.error('Current view sync failed:', error);
       } finally {
@@ -1616,10 +1671,20 @@ export const CalendarProvider = ({
       syncCurrentView();
     }, SYNC_CONFIGS.CURRENT_VIEW_INTERVAL_MS); // Sync every 30 seconds
 
-    console.log('Current view sync: Set up to sync events every', SYNC_CONFIGS.CURRENT_VIEW_INTERVAL_MS / 1000, 'seconds');
+    console.log(
+      'Current view sync: Set up to sync events every',
+      SYNC_CONFIGS.CURRENT_VIEW_INTERVAL_MS / 1000,
+      'seconds'
+    );
 
     return () => clearInterval(interval);
-  }, [ws?.id, experimentalGoogleToken, settings.currentViewDates, events, queryClient]);
+  }, [
+    ws?.id,
+    experimentalGoogleToken,
+    settings.currentViewDates,
+    events,
+    queryClient,
+  ]);
 
   // Google Calendar sync moved to API Route
   const syncWithGoogleCalendar = useCallback(

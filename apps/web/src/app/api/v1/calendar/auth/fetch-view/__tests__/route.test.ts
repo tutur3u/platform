@@ -1,8 +1,8 @@
+import { POST } from '../route';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { POST } from '../route';
 
 type BaseErrorResponse = {
   error: string;
@@ -42,7 +42,11 @@ type SuccessResponse = {
   }>;
 };
 
-type ApiResponse = SimpleErrorResponse | ValidationErrorResponse | GoogleAuthErrorResponse | SuccessResponse;
+type ApiResponse =
+  | SimpleErrorResponse
+  | ValidationErrorResponse
+  | GoogleAuthErrorResponse
+  | SuccessResponse;
 
 // Mock dependencies
 vi.mock('@tuturuuu/supabase/next/server');
@@ -90,7 +94,7 @@ describe('Calendar Fetch View API', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock Supabase client
     (createClient as any).mockReturnValue({
       auth: {
@@ -132,13 +136,16 @@ describe('Calendar Fetch View API', () => {
         },
       });
 
-      const request = new Request('http://localhost:7803/api/v1/calendar/auth/fetch-view', {
-        method: 'POST',
-        body: JSON.stringify({
-          dates: ['2024-03-20'],
-          wsId: 'test-ws-id',
-        }),
-      });
+      const request = new Request(
+        'http://localhost:7803/api/v1/calendar/auth/fetch-view',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            dates: ['2024-03-20'],
+            wsId: 'test-ws-id',
+          }),
+        }
+      );
 
       const response = await POST(request);
       const responseData = (response as any).data as SimpleErrorResponse;
@@ -149,28 +156,36 @@ describe('Calendar Fetch View API', () => {
 
   describe('Request Validation', () => {
     it('should return 400 when dates are not provided', async () => {
-      const request = new Request('http://localhost:7803/api/v1/calendar/auth/fetch-view', {
-        method: 'POST',
-        body: JSON.stringify({
-          wsId: 'test-ws-id',
-        }),
-      });
+      const request = new Request(
+        'http://localhost:7803/api/v1/calendar/auth/fetch-view',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            wsId: 'test-ws-id',
+          }),
+        }
+      );
 
       const response = await POST(request);
       const responseData = (response as any).data as ValidationErrorResponse;
       expect(responseData.error).toBe('Failed to fetch Google Calendar events');
       expect(responseData.statusCode).toBe(400);
-      expect(responseData.details).toBe('No dates provided or invalid dates format');
+      expect(responseData.details).toBe(
+        'No dates provided or invalid dates format'
+      );
       expect((response as any).options.status).toBe(400);
     });
 
     it('should return 400 when wsId is not provided', async () => {
-      const request = new Request('http://localhost:7803/api/v1/calendar/auth/fetch-view', {
-        method: 'POST',
-        body: JSON.stringify({
-          dates: ['2024-03-20'],
-        }),
-      });
+      const request = new Request(
+        'http://localhost:7803/api/v1/calendar/auth/fetch-view',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            dates: ['2024-03-20'],
+          }),
+        }
+      );
 
       const response = await POST(request);
       const responseData = (response as any).data as ValidationErrorResponse;
@@ -181,19 +196,24 @@ describe('Calendar Fetch View API', () => {
     });
 
     it('should return 400 when dates array is empty', async () => {
-      const request = new Request('http://localhost:7803/api/v1/calendar/auth/fetch-view', {
-        method: 'POST',
-        body: JSON.stringify({
-          dates: [],
-          wsId: 'test-ws-id',
-        }),
-      });
+      const request = new Request(
+        'http://localhost:7803/api/v1/calendar/auth/fetch-view',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            dates: [],
+            wsId: 'test-ws-id',
+          }),
+        }
+      );
 
       const response = await POST(request);
       const responseData = (response as any).data as ValidationErrorResponse;
       expect(responseData.error).toBe('Failed to fetch Google Calendar events');
       expect(responseData.statusCode).toBe(400);
-      expect(responseData.details).toBe('No dates provided or invalid dates format');
+      expect(responseData.details).toBe(
+        'No dates provided or invalid dates format'
+      );
       expect((response as any).options.status).toBe(400);
     });
   });
@@ -217,19 +237,24 @@ describe('Calendar Fetch View API', () => {
         }),
       });
 
-      const request = new Request('http://localhost:7803/api/v1/calendar/auth/fetch-view', {
-        method: 'POST',
-        body: JSON.stringify({
-          dates: ['2024-03-20'],
-          wsId: 'test-ws-id',
-        }),
-      });
+      const request = new Request(
+        'http://localhost:7803/api/v1/calendar/auth/fetch-view',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            dates: ['2024-03-20'],
+            wsId: 'test-ws-id',
+          }),
+        }
+      );
 
       const response = await POST(request);
       const responseData = (response as any).data as GoogleAuthErrorResponse;
       expect(responseData.error).toBe('Failed to fetch Google Calendar events');
       expect(responseData.statusCode).toBe(401);
-      expect(responseData.googleError).toBe('Google Calendar not authenticated');
+      expect(responseData.googleError).toBe(
+        'Google Calendar not authenticated'
+      );
       expect(responseData.details.hasAccessToken).toBe(false);
       expect((response as any).options.status).toBe(401);
     });
@@ -252,19 +277,24 @@ describe('Calendar Fetch View API', () => {
         }),
       });
 
-      const request = new Request('http://localhost:7803/api/v1/calendar/auth/fetch-view', {
-        method: 'POST',
-        body: JSON.stringify({
-          dates: ['2024-03-20'],
-          wsId: 'test-ws-id',
-        }),
-      });
+      const request = new Request(
+        'http://localhost:7803/api/v1/calendar/auth/fetch-view',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            dates: ['2024-03-20'],
+            wsId: 'test-ws-id',
+          }),
+        }
+      );
 
       const response = await POST(request);
       const responseData = (response as any).data as GoogleAuthErrorResponse;
       expect(responseData.error).toBe('Failed to fetch Google Calendar events');
       expect(responseData.statusCode).toBe(401);
-      expect(responseData.googleError).toBe('Google Calendar not authenticated');
+      expect(responseData.googleError).toBe(
+        'Google Calendar not authenticated'
+      );
       expect(responseData.details.hasAccessToken).toBe(false);
       expect((response as any).options.status).toBe(401);
     });
@@ -272,13 +302,16 @@ describe('Calendar Fetch View API', () => {
 
   describe('Google Calendar API Integration', () => {
     it('should successfully fetch and format calendar events', async () => {
-      const request = new Request('http://localhost:7803/api/v1/calendar/auth/fetch-view', {
-        method: 'POST',
-        body: JSON.stringify({
-          dates: ['2024-03-20', '2024-03-21'],
-          wsId: 'test-ws-id',
-        }),
-      });
+      const request = new Request(
+        'http://localhost:7803/api/v1/calendar/auth/fetch-view',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            dates: ['2024-03-20', '2024-03-21'],
+            wsId: 'test-ws-id',
+          }),
+        }
+      );
 
       const response = await POST(request);
       const responseData = (response as any).data as SuccessResponse;
@@ -313,17 +346,22 @@ describe('Calendar Fetch View API', () => {
         },
       });
 
-      const request = new Request('http://localhost:7803/api/v1/calendar/auth/fetch-view', {
-        method: 'POST',
-        body: JSON.stringify({
-          dates: ['2024-03-20'],
-          wsId: 'test-ws-id',
-        }),
-      });
+      const request = new Request(
+        'http://localhost:7803/api/v1/calendar/auth/fetch-view',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            dates: ['2024-03-20'],
+            wsId: 'test-ws-id',
+          }),
+        }
+      );
 
       const response = await POST(request);
       const responseData = (response as any).data as GoogleAuthErrorResponse;
-      expect(responseData.error).toBe('Google token invalid, please re-authenticate');
+      expect(responseData.error).toBe(
+        'Google token invalid, please re-authenticate'
+      );
       expect(responseData.details.requiresReauth).toBe(true);
       expect((response as any).options.status).toBe(401);
     });
@@ -356,13 +394,16 @@ describe('Calendar Fetch View API', () => {
         },
       });
 
-      const request = new Request('http://localhost:7803/api/v1/calendar/auth/fetch-view', {
-        method: 'POST',
-        body: JSON.stringify({
-          dates: ['2024-03-20'],
-          wsId: 'test-ws-id',
-        }),
-      });
+      const request = new Request(
+        'http://localhost:7803/api/v1/calendar/auth/fetch-view',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            dates: ['2024-03-20'],
+            wsId: 'test-ws-id',
+          }),
+        }
+      );
 
       const response = await POST(request);
       const responseData = (response as any).data as SuccessResponse;
@@ -372,17 +413,20 @@ describe('Calendar Fetch View API', () => {
     });
 
     it('should handle invalid date formats', async () => {
-      const request = new Request('http://localhost:7803/api/v1/calendar/auth/fetch-view', {
-        method: 'POST',
-        body: JSON.stringify({
-          dates: ['invalid-date'],
-          wsId: 'test-ws-id',
-        }),
-      });
+      const request = new Request(
+        'http://localhost:7803/api/v1/calendar/auth/fetch-view',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            dates: ['invalid-date'],
+            wsId: 'test-ws-id',
+          }),
+        }
+      );
 
       const response = await POST(request);
       const responseData = (response as any).data as SimpleErrorResponse;
       expect(responseData.error).toBe('Failed to fetch Google Calendar events');
     });
   });
-}); 
+});
