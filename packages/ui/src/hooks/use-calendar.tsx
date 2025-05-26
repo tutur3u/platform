@@ -1614,8 +1614,9 @@ export const CalendarProvider = ({
     // Set up interval
     const interval = setInterval(() => {
       syncCurrentView();
-      console.log('Current view sync: Syncing events every', SYNC_CONFIGS.CURRENT_VIEW_INTERVAL_MS / 1000, 'seconds');
     }, SYNC_CONFIGS.CURRENT_VIEW_INTERVAL_MS); // Sync every 30 seconds
+
+    console.log('Current view sync: Set up to sync events every', SYNC_CONFIGS.CURRENT_VIEW_INTERVAL_MS / 1000, 'seconds');
 
     return () => clearInterval(interval);
   }, [ws?.id, experimentalGoogleToken, settings.currentViewDates, events, queryClient]);
