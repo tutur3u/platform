@@ -1340,7 +1340,7 @@ export const CalendarProvider = ({
     [googleEvents, events, ws?.id, queryClient]
   );
 
-  // Set up an interval to sync events every 1 minutes (background sync)
+  // Set up an interval to sync events every 2 minutes (background sync)
   useEffect(() => {
     if (!ws?.id || !experimentalGoogleToken) return;
 
@@ -1375,7 +1375,7 @@ export const CalendarProvider = ({
     const interval = setInterval(() => {
       syncBackground();
       console.log('Background sync: Syncing events every 1 minute');
-    }, 60000); // Sync every 1 minute
+    }, 120000); // Sync every 2 minutes
 
     return () => clearInterval(interval);
   }, [ws?.id, syncEvents]);
