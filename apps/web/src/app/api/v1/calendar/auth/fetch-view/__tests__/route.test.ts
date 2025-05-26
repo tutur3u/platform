@@ -2,7 +2,18 @@ import { POST } from '../route';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+
+// Store original process.env to restore after tests
+const originalEnv = { ...process.env };
 
 type BaseErrorResponse = {
   error: string;
@@ -55,7 +66,7 @@ vi.mock('next/server', () => ({
   NextResponse: {
     json: vi.fn((data: ApiResponse, options?: { status?: number }) => {
       const response = { data, options };
-      return response as unknown as NextResponse<ApiResponse>;
+      return response as any as NextResponse<ApiResponse>;
     }),
   },
 }));
@@ -91,6 +102,22 @@ describe('Calendar Fetch View API', () => {
       colorId: '2',
     },
   ];
+
+  beforeAll(() => {
+    // Set required environment variables for the tests
+    process.env = {
+      ...originalEnv,
+      GOOGLE_CLIENT_ID: 'test-google-client-id',
+      GOOGLE_CLIENT_SECRET: 'test-google-client-secret',
+      GOOGLE_REDIRECT_URI: 'test-google-redirect-uri',
+      NODE_ENV: 'development',
+    };
+  });
+
+  afterAll(() => {
+    // Restore original process.env
+    process.env = originalEnv;
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
