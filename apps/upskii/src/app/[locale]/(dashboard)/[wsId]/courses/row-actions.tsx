@@ -98,8 +98,8 @@ export function WorkspaceCourseRowActions({
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('ws-flashcards.edit')}
-        editDescription={t('ws-flashcards.edit_description')}
+        title={t('ws-courses.edit')}
+        editDescription={t('ws-courses.edit_description')}
         setOpen={setShowEditDialog}
         form={
           <WorkspaceCourseForm
