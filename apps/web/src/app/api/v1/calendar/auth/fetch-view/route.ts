@@ -4,23 +4,23 @@ import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 
-// Validate required Google OAuth env vars
-const requiredEnvVars = {
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
-} as const;
-
-for (const [key, value] of Object.entries(requiredEnvVars)) {
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-}
-
 const getGoogleAuthClient = (tokens: {
   access_token: string;
   refresh_token?: string;
 }) => {
+  // Validate required Google OAuth env vars
+  const requiredEnvVars = {
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+  } as const;
+
+  for (const [key, value] of Object.entries(requiredEnvVars)) {
+    if (!value) {
+      throw new Error(`Missing required environment variable: ${key}`);
+    }
+  }
+
   const oauth2Client = new OAuth2Client({
     clientId: requiredEnvVars.GOOGLE_CLIENT_ID,
     clientSecret: requiredEnvVars.GOOGLE_CLIENT_SECRET,
