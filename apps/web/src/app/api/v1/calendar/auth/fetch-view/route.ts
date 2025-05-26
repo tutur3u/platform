@@ -212,7 +212,7 @@ export async function POST(request: Request) {
         .filter((event) => {
           const eventStart = new Date(event.start_at);
           const eventEnd = new Date(event.end_at);
-          
+
           // Check if the event overlaps with any of the requested dates
           return sortedDates.some((date) => {
             const dayStart = startOfDay(date);
@@ -290,4 +290,4 @@ const getColorFromGoogleColorId = (colorId?: string): string => {
   };
 
   return colorId ? colorMap[colorId] || '#039be5' : '#039be5'; // Default to Peacock
-}; 
+};
