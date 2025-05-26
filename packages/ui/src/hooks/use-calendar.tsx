@@ -141,7 +141,6 @@ export const CalendarProvider = ({
   children,
   initialSettings,
   experimentalGoogleToken,
-  dates = [],
 }: {
   ws?: Workspace;
   useQuery: any;
@@ -149,7 +148,6 @@ export const CalendarProvider = ({
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
-  dates?: string[];
 }) => {
   const queryClient = useQueryClient();
   const lastBackgroundSyncRef = useRef<number>(Date.now());
