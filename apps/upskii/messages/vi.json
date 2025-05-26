@@ -570,7 +570,8 @@
     "example_content": "Nội dung mẫu",
     "whats_the_title": "Tiêu đề là gì?",
     "write_something": "Hãy viết gì đó...",
-    "error_saving_content": "Lỗi khi lưu nội dung của bạn"
+    "error_saving_content": "Lỗi khi lưu nội dung của bạn",
+    "not_completed": "Chưa hoàn thành"
   },
   "contact": {
     "title": "Liên hệ với chúng tôi",
@@ -596,6 +597,7 @@
     "name": "Tên",
     "is_public": "Công khai",
     "is_published": "Đã xuất bản",
+    "is_completed": "Đã hoàn thành",
     "modules": "Mô-đun",
     "created_at": "Ngày tạo"
   },

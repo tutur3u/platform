@@ -1,5 +1,3 @@
-import LinkButton from '../../link-button';
-import ModuleToggles from './toggles';
 import {
   createClient,
   createDynamicClient,
@@ -15,12 +13,15 @@ import {
   Paperclip,
   SquareCheck,
   SwatchBook,
-  Youtube,
+  XIcon,
+  Youtube
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
+import LinkButton from '../../link-button';
+import ModuleToggles from './toggles';
 
 interface Props {
   children: ReactNode;
@@ -41,6 +42,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   const resources = await getResources({
     path: `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`,
   });
+  const completionStatus = await getCompletionStatus(moduleId);
 
   const flashcards = await getFlashcards(moduleId);
   const quizSets = await getQuizSets(moduleId);
@@ -51,14 +53,28 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
       <FeatureSummary
         title={
           <>
-            <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-              <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
-                <Box className="h-6 w-6" />
-                {t('ws-course-modules.singular')}
-              </div>
+            <h1 className="flex  justify-between w-full items-center gap-2 text-2xl font-bold">
+              <div className="flex items-center gap-2">
+                <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
+                  <Box className="h-6 w-6" />
+                  {t('ws-course-modules.singular')}
+                </div>
               <div className="line-clamp-1 text-lg font-bold md:text-2xl">
                 {data.name || t('common.unknown')}
               </div>
+              </div>
+              {/* Currently the not completed text is only displayed for testing purposes, I plan to only display the completed icon when the module is completed */}
+                {completionStatus ? 
+                <div className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green flex items-center gap-2 rounded-lg border px-2 py-1 text-base"> 
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <span className="text-green-500">{t('common.completed')}</span>
+                </div>
+                :
+                <div className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red flex items-center gap-2 rounded-lg border px-2 py-1 text-sm sm:text-base"> 
+                  <XIcon className="h-5 w-5 text-red-500" />
+                  <span className="text-red-500">{t('common.not_completed')}</span>
+                </div>
+                }
             </h1>
             <ModuleToggles
               courseId={courseId}
@@ -190,3 +206,71 @@ async function getResources({ path }: { path: string }) {
 
   return data;
 }
+
+
+const getCompletionStatus = async (moduleId: string) => {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  // 1. Check if the row exists
+  let { data, error } = await supabase
+    .from('course_module_completion_status')
+    .select('completion_status')
+    .eq('module_id', moduleId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.log('error', error);
+    return null;
+  }
+
+  // 2. If not found, insert a new row
+  if (!data || data.length === 0) {
+    const { data: insertData, error: insertError } = await supabase
+      .from('course_module_completion_status')
+      .insert([
+        {
+          module_id: moduleId,
+          user_id: user.id,
+          completion_status: false,
+        },
+      ])
+      .select('completion_status'); 
+
+    if (insertError) {
+      console.log('insert error', insertError);
+      return null;
+    }
+
+    return insertData[0].completion_status;
+  }
+
+  // 3. Return the found row(s)
+  return data[0].completion_status;
+};
+
+const updateCompletionStatus = async (moduleId: string) => {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data, error } = await supabase
+    .from('course_module_completion_status')
+    .update({ completion_status: true })
+    .eq('module_id', moduleId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('error', error);
+    return null;
+  }
+
+  return data;
+};

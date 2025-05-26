@@ -1,8 +1,3 @@
-import { CourseSection } from '../../section';
-import ClientFlashcards from './flashcards/client-flashcards';
-import ClientQuizzes from './quizzes/client-quizzes';
-import FileDisplay from './resources/file-display';
-import { YoutubeEmbed } from './youtube-links/embed';
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
@@ -22,6 +17,11 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { JSONContent } from '@tuturuuu/ui/tiptap';
 import { getTranslations } from 'next-intl/server';
+import { CourseSection } from '../../section';
+import ClientFlashcards from './flashcards/client-flashcards';
+import ClientQuizzes from './quizzes/client-quizzes';
+import FileDisplay from './resources/file-display';
+import { YoutubeEmbed } from './youtube-links/embed';
 
 interface Props {
   params: Promise<{
@@ -36,6 +36,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   const t = await getTranslations();
   const { wsId, courseId, moduleId } = await params;
   const data = await getModuleData(courseId, moduleId);
+
 
   const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });

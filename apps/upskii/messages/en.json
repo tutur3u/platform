@@ -570,7 +570,8 @@
     "example_content": "Example content",
     "whats_the_title": "What's the title?",
     "write_something": "Write something",
-    "error_saving_content": "There was an error saving your content"
+    "error_saving_content": "There was an error saving your content",
+    "not_completed": "Not completed"
   },
   "contact": {
     "title": "Contact us",
@@ -596,6 +597,7 @@
     "name": "Name",
     "is_public": "Public",
     "is_published": "Published",
+    "is_completed": "Completed",
     "modules": "Modules",
     "created_at": "Created At"
   },
