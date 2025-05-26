@@ -46,7 +46,7 @@ export const CalendarContent = ({
   };
 }) => {
   const { transition } = useViewTransition();
-  const { settings } = useCalendar();
+  const { settings, updateSettings } = useCalendar();
 
   const [initialized, setInitialized] = useState(false);
   const [date, setDate] = useState(externalState?.date || new Date());
@@ -372,6 +372,14 @@ export const CalendarContent = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [enableDayView, enable4DayView, enableWeekView, enableMonthView]);
+
+  // Update settings with current view dates when they change
+  useEffect(() => {
+    if (dates.length > 0) {
+      const dateStrings = dates.map((date) => date.toISOString());
+      updateSettings({ currentViewDates: dateStrings });
+    }
+  }, [dates, updateSettings]);
 
   if (!initialized || !view || !dates.length) return null;
 

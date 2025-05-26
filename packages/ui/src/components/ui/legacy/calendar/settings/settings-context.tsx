@@ -39,6 +39,7 @@ export type CalendarSettings = {
   notifications: NotificationData;
   smartScheduling: SmartSchedulingData;
   taskSettings: TaskSettingsData;
+  currentViewDates?: string[];
 };
 
 export const defaultCalendarSettings: CalendarSettings = {
@@ -56,6 +57,7 @@ export const defaultCalendarSettings: CalendarSettings = {
   categoryColors: defaultCategoryColors,
   smartScheduling: defaultSmartSchedulingData,
   taskSettings: defaultTaskSettings,
+  currentViewDates: [],
 };
 
 // Helper function to load settings from localStorage

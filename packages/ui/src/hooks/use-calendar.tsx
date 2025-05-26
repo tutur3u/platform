@@ -21,6 +21,14 @@ import {
   useState,
 } from 'react';
 
+// Sync configuration constants
+const SYNC_CONFIGS = {
+  BACKGROUND_INTERVAL_MS: 120000, // 2 minutes
+  CURRENT_VIEW_INTERVAL_MS: 30000, // 30 seconds
+  MIN_TIME_BETWEEN_SYNC_MS: 30000, // 30 seconds
+  GOOGLE_FETCH_TIMEOUT_MS: 30000, // 30 seconds
+} as const;
+
 // Utility function to round time to nearest 15-minute interval
 const roundToNearest15Minutes = (date: Date): Date => {
   const minutes = date.getMinutes();
@@ -142,6 +150,9 @@ export const CalendarProvider = ({
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
 }) => {
   const queryClient = useQueryClient();
+  const lastBackgroundSyncRef = useRef<number>(Date.now());
+  // Add ref to track which sync is running
+  const syncLockRef = useRef<'background' | 'current-view' | null>(null);
 
   // Add debounce timer reference for update events
   const updateDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -499,6 +510,30 @@ export const CalendarProvider = ({
     [events]
   );
 
+  // Function to validate and normalize color
+  const VALID_COLORS = [
+    'RED',
+    'BLUE',
+    'GREEN',
+    'YELLOW',
+    'ORANGE',
+    'PURPLE',
+    'PINK',
+    'INDIGO',
+    'CYAN',
+    'GRAY',
+  ] as const;
+  type ValidColor = (typeof VALID_COLORS)[number];
+
+  const isValidColor = (color: string): color is ValidColor => {
+    return VALID_COLORS.includes(color as ValidColor);
+  };
+  const validateColor = (color: string | undefined): SupportedColor => {
+    if (!color) return 'BLUE';
+    const normalizedColor = color.toUpperCase();
+    return isValidColor(normalizedColor) ? normalizedColor : 'BLUE';
+  };
+
   // CRUD operations with Supabase
   const addEvent = useCallback(
     async (event: Omit<CalendarEvent, 'id'>) => {
@@ -678,6 +713,11 @@ export const CalendarProvider = ({
       } = update;
 
       try {
+        // Validate color before update
+        if (updateData.color) {
+          updateData.color = validateColor(updateData.color as string);
+        }
+
         // Perform the actual update
         const supabase = createClient();
         const { data, error } = await supabase
@@ -687,7 +727,7 @@ export const CalendarProvider = ({
             description: updateData.description,
             start_at: updateData.start_at,
             end_at: updateData.end_at,
-            color: updateData.color,
+            color: updateData.color as SupportedColor,
             location: updateData.location,
             priority: updateData.priority,
             locked: updateData.locked,
@@ -914,28 +954,82 @@ export const CalendarProvider = ({
     [ws, refresh, pendingNewEvent]
   );
 
-  // Automatically fetch Google Calendar events
-  const fetchGoogleCalendarEvents = async () => {
+  // Automatically fetch Google Calendar events with certain range
+  const fetchGoogleCalendarEventsInRange = async () => {
+    console.log(
+      '[Google Calendar Fetch] Starting fetch at:',
+      new Date().toISOString()
+    );
     if (!ws?.id) {
+      console.log('[Google Calendar Fetch] No workspace ID, skipping fetch');
       throw new Error('No workspace selected');
     }
-    const response = await fetch(`/api/v1/calendar/auth/fetch?wsId=${ws.id}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch Google Calendar events');
+
+    // Get current view dates from settings
+    const currentViewDates = settings.currentViewDates || [];
+    console.log(
+      '[Google Calendar Fetch] Current view dates:',
+      currentViewDates
+    );
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      SYNC_CONFIGS.GOOGLE_FETCH_TIMEOUT_MS
+    ); // 30 seconds timeout
+
+    try {
+      const response = await fetch(`/api/v1/calendar/auth/fetch-view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dates: currentViewDates,
+          wsId: ws.id,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log(
+        '[Google Calendar Fetch] Received events count:',
+        data.events?.length || 0
+      );
+      return data;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout: Failed to fetch calendar events');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    return await response.json();
   };
 
   // Query to fetch Google Calendar events every 30 seconds
   const { data: googleData } = useQuery({
-    queryKey: ['googleCalendarEvents', ws?.id],
-    queryFn: fetchGoogleCalendarEvents,
-    enabled: !!ws?.id && !!experimentalGoogleToken?.id,
-    refetchInterval: 1000 * 60 * 60, // Fetch every 1 hour
-    staleTime: 1000 * 60 * 60, // Data is considered fresh for 1 hour
+    queryKey: ['googleCalendarEvents', ws?.id, settings.currentViewDates],
+    queryFn: fetchGoogleCalendarEventsInRange,
+    enabled:
+      !!ws?.id &&
+      !!experimentalGoogleToken?.id &&
+      !!settings.currentViewDates?.length,
+    refetchInterval: 1000 * 30,
+    staleTime: 1000 * 30,
   });
 
-  const googleEvents = useMemo(() => googleData?.events || [], [googleData]);
+  const googleEvents = useMemo(() => {
+    console.log(
+      '[Google Calendar Events] Memo update at:',
+      new Date().toISOString()
+    );
+    return googleData?.events || [];
+  }, [googleData]);
 
   // Function to synchronize local events with Google Calendar
   const syncEvents = useCallback(
@@ -972,7 +1066,7 @@ export const CalendarProvider = ({
         (e) => e.google_event_id && !googleEventIds.has(e.google_event_id)
       );
 
-      // Initialize batch operations - we'll perform these in a more optimized way
+      // Initialize batch operations
       const eventsToUpdate: Array<{ id: string; data: any }> = [];
       const eventsToInsert: Array<any> = [];
       let changesMade = false;
@@ -1035,13 +1129,16 @@ export const CalendarProvider = ({
         const localEvent = localEventMap.get(gEvent.google_event_id);
 
         if (localEvent) {
+          // Validate color before comparing
+          const validatedColor = validateColor(gEvent.color);
+
           // Check if there are any significant changes in the event details that require an update
           const hasChanges =
             localEvent.title !== gEvent.title ||
             localEvent.description !== (gEvent.description || '') ||
             localEvent.start_at !== gEvent.start_at ||
             localEvent.end_at !== gEvent.end_at ||
-            localEvent.color !== gEvent.color ||
+            localEvent.color !== validatedColor ||
             localEvent.location !== (gEvent.location || '') ||
             localEvent.priority !== (gEvent.priority || 'medium');
 
@@ -1055,13 +1152,16 @@ export const CalendarProvider = ({
                 description: gEvent.description || '',
                 start_at: gEvent.start_at,
                 end_at: gEvent.end_at,
-                color: gEvent.color || 'BLUE',
+                color: validatedColor,
                 location: gEvent.location || '',
                 priority: gEvent.priority || 'medium',
               },
             });
           }
         } else {
+          // Validate color for new events
+          const validatedColor = validateColor(gEvent.color);
+
           // Check for content-based duplicates before adding
           const potentialDuplicates = events.filter(
             (localEvent: CalendarEvent) => {
@@ -1099,7 +1199,7 @@ export const CalendarProvider = ({
             description: gEvent.description || '',
             start_at: gEvent.start_at,
             end_at: gEvent.end_at,
-            color: gEvent.color || 'BLUE',
+            color: validatedColor,
             location: gEvent.location || '',
             ws_id: ws?.id ?? '',
             google_event_id: gEvent.google_event_id,
@@ -1283,16 +1383,307 @@ export const CalendarProvider = ({
     [googleEvents, events, ws?.id, queryClient]
   );
 
-  // Set up an interval to sync events every 30 seconds
+  // Set up an interval to sync events every 2 minutes (background sync)
   useEffect(() => {
     if (!ws?.id || !experimentalGoogleToken) return;
 
-    const interval = setInterval(() => {
-      syncEvents();
-    }, 30000); // Sync every 30 seconds
+    const syncBackground = async () => {
+      // Skip if current view sync is running
+      if (syncLockRef.current === 'current-view') {
+        console.log('Background sync: Skipping - current view sync is running');
+        return;
+      }
 
-    return () => clearInterval(interval); // Clean up interval on unmount
+      try {
+        // Set lock to background sync
+        syncLockRef.current = 'background';
+        console.log(
+          'Background sync: Starting sync at',
+          new Date().toISOString()
+        );
+
+        await syncEvents();
+        // Update last sync time after background sync completes
+        lastBackgroundSyncRef.current = Date.now();
+        console.log('Background sync: Completed at', new Date().toISOString());
+      } catch (error) {
+        console.error('Background sync failed:', error);
+      } finally {
+        // Clear lock
+        syncLockRef.current = null;
+      }
+    };
+
+    // Initial sync
+    syncBackground();
+
+    // Set up interval
+    const interval = setInterval(() => {
+      syncBackground();
+      console.log(
+        'Background sync: Syncing events every',
+        SYNC_CONFIGS.BACKGROUND_INTERVAL_MS / 1000,
+        'seconds'
+      );
+    }, SYNC_CONFIGS.BACKGROUND_INTERVAL_MS); // Sync every 2 minutes
+
+    return () => clearInterval(interval);
   }, [ws?.id, syncEvents]);
+
+  // Set up an interval to sync events in the current view every 30 seconds
+  useEffect(() => {
+    if (
+      !ws?.id ||
+      !experimentalGoogleToken ||
+      !settings.currentViewDates?.length
+    )
+      return;
+
+    const syncCurrentView = async () => {
+      // Skip if background sync is running or if last sync was less than 30s ago
+      const now = Date.now();
+      if (
+        syncLockRef.current === 'background' ||
+        now - lastBackgroundSyncRef.current <
+          SYNC_CONFIGS.MIN_TIME_BETWEEN_SYNC_MS
+      ) {
+        console.log(
+          'Current view sync: Skipping - background sync running or recent sync'
+        );
+        return;
+      }
+
+      try {
+        // Set lock to current view sync
+        syncLockRef.current = 'current-view';
+        console.log(
+          'Current view sync: Starting sync at',
+          new Date().toISOString()
+        );
+
+        // Fetch current view events
+        const response = await fetch(`/api/v1/calendar/auth/fetch-view`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dates: settings.currentViewDates,
+            wsId: ws.id,
+            force: true,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch view events: ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+
+        if (!data.events) return;
+
+        // Filter events to only those in current view
+        const currentViewEvents = data.events.filter((event: CalendarEvent) => {
+          const eventDate = new Date(event.start_at);
+          return settings.currentViewDates?.some(
+            (date) => eventDate.toISOString().split('T')[0] === date
+          );
+        });
+
+        // Get local events that are in current view
+        const localEvents = events.filter((event: CalendarEvent) => {
+          const eventDate = new Date(event.start_at);
+          return settings.currentViewDates?.some(
+            (date) => eventDate.toISOString().split('T')[0] === date
+          );
+        });
+
+        // Create maps for faster lookups
+        const localEventMap = new Map<string, CalendarEvent>();
+        const googleEventMap = new Map<string, CalendarEvent>();
+        const localContentMap = new Map<string, CalendarEvent>();
+
+        // Map by Google event ID and content signature
+        localEvents.forEach((event: CalendarEvent) => {
+          if (event.google_event_id) {
+            localEventMap.set(event.google_event_id, event);
+          }
+          const signature = createEventSignature(event);
+          localContentMap.set(signature, event);
+        });
+
+        currentViewEvents.forEach((event: CalendarEvent) => {
+          if (event.google_event_id) {
+            googleEventMap.set(event.google_event_id, event);
+          }
+        });
+
+        // Initialize batch operations
+        const eventsToUpdate: Array<{ id: string; data: any }> = [];
+        const eventsToInsert: Array<any> = [];
+        let changesMade = false;
+
+        // Process updates and inserts
+        for (const gEvent of currentViewEvents) {
+          if (!gEvent.google_event_id) continue;
+
+          const localEvent = localEventMap.get(gEvent.google_event_id);
+          const validatedColor = validateColor(gEvent.color);
+
+          if (localEvent) {
+            // Check for changes
+            const hasChanges =
+              localEvent.title !== gEvent.title ||
+              localEvent.description !== (gEvent.description || '') ||
+              localEvent.start_at !== gEvent.start_at ||
+              localEvent.end_at !== gEvent.end_at ||
+              localEvent.color !== validatedColor ||
+              localEvent.location !== (gEvent.location || '') ||
+              localEvent.priority !== (gEvent.priority || 'medium');
+
+            if (hasChanges) {
+              changesMade = true;
+              eventsToUpdate.push({
+                id: localEvent.id,
+                data: {
+                  title: gEvent.title,
+                  description: gEvent.description || '',
+                  start_at: gEvent.start_at,
+                  end_at: gEvent.end_at,
+                  color: validatedColor,
+                  location: gEvent.location || '',
+                  priority: gEvent.priority || 'medium',
+                },
+              });
+            }
+          } else {
+            // Check for duplicates by content
+            const eventSignature = createEventSignature(gEvent);
+            const duplicateEvent = localContentMap.get(eventSignature);
+
+            if (duplicateEvent) {
+              // Update existing event with Google ID if it doesn't have one
+              if (!duplicateEvent.google_event_id) {
+                changesMade = true;
+                eventsToUpdate.push({
+                  id: duplicateEvent.id,
+                  data: {
+                    google_event_id: gEvent.google_event_id,
+                  },
+                });
+              }
+            } else {
+              // No duplicate found, insert new event
+              changesMade = true;
+              eventsToInsert.push({
+                title: gEvent.title,
+                description: gEvent.description || '',
+                start_at: gEvent.start_at,
+                end_at: gEvent.end_at,
+                color: validatedColor,
+                location: gEvent.location || '',
+                ws_id: ws?.id ?? '',
+                google_event_id: gEvent.google_event_id,
+                locked: gEvent.locked || false,
+                priority: gEvent.priority || 'medium',
+                created_at: new Date().toISOString(),
+              });
+            }
+          }
+        }
+
+        // Process updates
+        if (eventsToUpdate.length > 0) {
+          const supabase = createClient();
+          const batchSize = 5;
+
+          for (let i = 0; i < eventsToUpdate.length; i += batchSize) {
+            const batch = eventsToUpdate.slice(i, i + batchSize);
+
+            for (const item of batch) {
+              try {
+                const { error } = await supabase
+                  .from('workspace_calendar_events')
+                  .update(item.data)
+                  .eq('id', item.id);
+
+                if (error) {
+                  console.error(`Failed to update event ${item.id}:`, error);
+                } else {
+                  console.log(`Current view sync: Updated event ${item.id}`);
+                }
+              } catch (err) {
+                console.error(`Failed to update event ${item.id}:`, err);
+              }
+            }
+          }
+        }
+
+        // Process inserts
+        if (eventsToInsert.length > 0) {
+          const supabase = createClient();
+          const batchSize = 10;
+
+          for (let i = 0; i < eventsToInsert.length; i += batchSize) {
+            const batch = eventsToInsert.slice(i, i + batchSize);
+
+            try {
+              const { error } = await supabase
+                .from('workspace_calendar_events')
+                .insert(batch);
+
+              if (error) {
+                console.error('Failed to insert events batch:', error);
+              } else {
+                console.log(
+                  `Current view sync: Inserted ${batch.length} new events`
+                );
+              }
+            } catch (err) {
+              console.error('Failed to insert events batch:', err);
+            }
+          }
+        }
+
+        // Update last sync time and refresh if changes were made
+        if (changesMade) {
+          lastBackgroundSyncRef.current = Date.now();
+          console.log('Current view sync: Changes detected, refreshing events');
+          await queryClient.invalidateQueries(['calendarEvents', ws?.id]);
+        } else {
+          console.log('Current view sync: No changes needed');
+        }
+      } catch (error) {
+        console.error('Current view sync failed:', error);
+      } finally {
+        // Clear lock
+        syncLockRef.current = null;
+      }
+    };
+
+    // Initial sync
+    syncCurrentView();
+
+    // Set up interval
+    const interval = setInterval(() => {
+      syncCurrentView();
+    }, SYNC_CONFIGS.CURRENT_VIEW_INTERVAL_MS); // Sync every 30 seconds
+
+    console.log(
+      'Current view sync: Set up to sync events every',
+      SYNC_CONFIGS.CURRENT_VIEW_INTERVAL_MS / 1000,
+      'seconds'
+    );
+
+    return () => clearInterval(interval);
+  }, [
+    ws?.id,
+    experimentalGoogleToken,
+    settings.currentViewDates,
+    events,
+    queryClient,
+  ]);
+
   // Google Calendar sync moved to API Route
   const syncWithGoogleCalendar = useCallback(
     async (event: CalendarEvent) => {
