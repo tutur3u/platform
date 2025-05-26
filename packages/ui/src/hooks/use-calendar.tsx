@@ -943,17 +943,35 @@ export const CalendarProvider = ({
     // Get current view dates from settings
     const currentViewDates = settings.currentViewDates || [];
     console.log('[Google Calendar Fetch] Current view dates:', currentViewDates);
-    
-    const response = await fetch(`/api/v1/calendar/auth/fetch-view`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        dates: currentViewDates,
-        wsId: ws.id }),
-    });
-    const data = await response.json();
-    console.log('[Google Calendar Fetch] Received events count:', data.events?.length || 0);
-    return data;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
+
+    try {
+      const response = await fetch(`/api/v1/calendar/auth/fetch-view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          dates: currentViewDates,
+          wsId: ws.id }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('[Google Calendar Fetch] Received events count:', data.events?.length || 0);
+      return data;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout: Failed to fetch calendar events');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   };
 
   // Query to fetch Google Calendar events every 30 seconds
