@@ -1867,6 +1867,7 @@
     "invited-to": "You have been invited to"
   },
   "nova": {
+    "welcome": "Welcome, {username}!",
     "badge": "Welcome to the Future of Prompt Engineering",
     "title": "Master the Art of",
     "description": "Your playground for crafting, testing, and perfecting AI prompts. Join a community of innovators solving real-world problems through advanced prompt engineering.",

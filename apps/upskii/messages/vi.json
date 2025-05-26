@@ -1868,6 +1868,7 @@
     "invited-to": "Bạn đã được mời tham gia"
   },
   "nova": {
+    "welcome": "Xin chào, {username}!",
     "badge": "Chào mừng đến với tương lai của kỹ thuật tạo lệnh",
     "title": "Làm chủ cuộc chơi với",
     "description": "Sân chơi của bạn để chế tạo, thử nghiệm và hoàn thiện lời nhắc AI. Tham gia cộng đồng những người sáng tạo giải quyết các vấn đề thực tế thông qua kỹ thuật lời nhắc tiên tiến.",
