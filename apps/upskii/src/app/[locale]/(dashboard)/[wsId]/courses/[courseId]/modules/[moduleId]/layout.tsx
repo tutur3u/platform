@@ -7,6 +7,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   BookText,
   Box,
+  CheckCircle,
   Eye,
   Goal,
   ListTodo,
@@ -246,31 +247,31 @@ const getCompletionStatus = async (moduleId: string) => {
       return null;
     }
 
-    return insertData[0].completion_status;
+    return insertData?.[0]?.completion_status;
   }
 
   // 3. Return the found row(s)
-  return data[0].completion_status;
+  return data?.[0]?.completion_status;
 };
 
-const updateCompletionStatus = async (moduleId: string) => {
-  const supabase = await createClient();
+// const updateCompletionStatus = async (moduleId: string) => {
+//   const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
+//   const { data: { user } } = await supabase.auth.getUser();
+//   if (!user) {
+//     throw new Error('User not authenticated');
+//   }
 
-  const { data, error } = await supabase
-    .from('course_module_completion_status')
-    .update({ completion_status: true })
-    .eq('module_id', moduleId)
-    .eq('user_id', user.id);
+//   const { data, error } = await supabase
+//     .from('course_module_completion_status')
+//     .update({ completion_status: true })
+//     .eq('module_id', moduleId)
+//     .eq('user_id', user.id);
 
-  if (error) {
-    console.error('error', error);
-    return null;
-  }
+//   if (error) {
+//     console.error('error', error);
+//     return null;
+//   }
 
-  return data;
-};
+//   return data;
+// };
