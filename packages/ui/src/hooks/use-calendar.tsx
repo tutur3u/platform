@@ -965,24 +965,6 @@ export const CalendarProvider = ({
     staleTime: 1000 * 30,
   });
 
-  // Add effect to log when refetch interval changes
-  // useEffect(() => {
-  //   console.log('[Google Calendar Query] Refetch interval set to:', refetchInterval);
-  //   console.log('[Google Calendar Query] Query enabled:', !!ws?.id && !!experimentalGoogleToken?.id && !!settings.currentViewDates?.length);
-  //   console.log('[Google Calendar Query] Current settings:', {
-  //     wsId: ws?.id,
-  //     hasToken: !!experimentalGoogleToken?.id,
-  //     viewDatesLength: settings.currentViewDates?.length
-  //   });
-  // }, [refetchInterval, ws?.id, experimentalGoogleToken?.id, settings.currentViewDates]);
-
-  // Add effect to log when fetching state changes
-  // useEffect(() => {
-  //   if (isFetching) {
-  //     console.log('[Google Calendar Query] Started fetching at:', new Date().toISOString());
-  //   }
-  // }, [isFetching]);
-
   const googleEvents = useMemo(() => {
     console.log('[Google Calendar Events] Memo update at:', new Date().toISOString());
     return googleData?.events || [];
