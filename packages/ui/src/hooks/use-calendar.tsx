@@ -505,11 +505,16 @@ export const CalendarProvider = ({
   );
 
   // Function to validate and normalize color
+  const VALID_COLORS = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'ORANGE', 'PURPLE', 'PINK', 'INDIGO', 'CYAN', 'GRAY'] as const;
+  type ValidColor = typeof VALID_COLORS[number];
+
+  const isValidColor = (color: string): color is ValidColor => {
+    return VALID_COLORS.includes(color as ValidColor);
+  };
   const validateColor = (color: string | undefined): SupportedColor => {
-    const validColors: SupportedColor[] = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'ORANGE', 'PURPLE', 'PINK', 'INDIGO', 'CYAN', 'GRAY'];
     if (!color) return 'BLUE';
     const normalizedColor = color.toUpperCase();
-    return validColors.includes(normalizedColor as SupportedColor) ? (normalizedColor as SupportedColor) : 'BLUE';
+    return isValidColor(normalizedColor) ? normalizedColor : 'BLUE';
   };
 
   // CRUD operations with Supabase
