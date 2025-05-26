@@ -6,9 +6,8 @@ import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 
 export default function Footer() {
-  const pathname = usePathname();
   const t = useTranslations();
-
-  if (pathname.endsWith('/pitch')) return null;
+  const pathname = usePathname();
+  if (pathname.startsWith('/login')) return null;
   return <CommonFooter t={t} devMode={DEV_MODE} />;
 }

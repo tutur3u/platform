@@ -14,18 +14,18 @@ export type CertificateProps = {
 
 interface PageProps {
   params: Promise<{
-    certID: string;
+    certificateId: string;
   }>;
 }
 
 export default async function CertificatePage({ params }: PageProps) {
   const URL = DEV_MODE ? 'http://localhost:7806' : 'https://upskii.com';
 
-  const { certID } = await params;
+  const { certificateId } = await params;
 
   // Available in the mock data: "CERT-2023-10-01-d3c4f4be-7b44-432b-8fe3-b8bcd3a3c2d5", "CERT-2024-03-15-a1b2c3d4-e5f6-4321-9876-123456789abc", "CERT-2024-04-20-98765432-abcd-efgh-ijkl-mnopqrstuvwx"
 
-  const response = await fetch(`${URL}/api/v1/certificates/${certID}`, {
+  const response = await fetch(`${URL}/api/v1/certificates/${certificateId}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -43,7 +43,7 @@ export default async function CertificatePage({ params }: PageProps) {
   // Replace the student name in the response with the user's name
 
   if (userDetails) {
-    certDetails.studentName = userDetails.display_name;
+    certDetails.studentName = userDetails.full_name;
   }
 
   return (

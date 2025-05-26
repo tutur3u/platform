@@ -27,7 +27,7 @@ export async function getCurrentUser(noRedirect?: boolean) {
   const { data, error } = await supabase
     .from('users')
     .select(
-      'id, display_name, avatar_url, bio, handle, created_at, user_private_details(email, new_email, birthday)'
+      'id, display_name, avatar_url, bio, handle, created_at, user_private_details(email, new_email, birthday, full_name)'
     )
     .eq('id', user.id)
     .single();

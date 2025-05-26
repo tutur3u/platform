@@ -40,6 +40,13 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tanstack/react-table": "^8.21.3",
+    "@tiptap/core": "^2.12.0",
+    "@tiptap/extension-highlight": "^2.12.0",
+    "@tiptap/extension-placeholder": "^2.12.0",
+    "@tiptap/extension-text-align": "^2.12.0",
+    "@tiptap/pm": "^2.12.0",
+    "@tiptap/react": "^2.12.0",
+    "@tiptap/starter-kit": "^2.12.0",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
@@ -72,7 +79,7 @@
     "tailwind-scrollbar": "^4.0.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
-    "zod": "^3.25.13"
+    "zod": "^3.25.28"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -84,7 +91,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/lodash": "^4.17.17",
     "@types/node": "^22.15.21",
-    "@types/react": "^19.1.4",
+    "@types/react": "^19.1.5",
     "@types/react-resizable": "^3.0.8",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
@@ -111,6 +118,10 @@
     "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
     "./resolvers": "./src/resolvers.ts",
     "./gsap": "./src/gsap.ts",
+    "./tiptap": {
+      "types": "./src/components/ui/text-editor/types.ts",
+      "import": "./src/components/ui/text-editor/types.ts"
+    },
     "./*": "./src/components/ui/*.tsx"
   }
 }

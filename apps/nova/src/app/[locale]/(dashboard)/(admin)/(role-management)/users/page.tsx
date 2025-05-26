@@ -100,7 +100,7 @@ async function getUserData({
 }): Promise<{
   userData: (User &
     PlatformUser &
-    UserPrivateDetails & { team_name: string[] })[];
+    Partial<UserPrivateDetails> & { team_name: string[] })[];
   userCount: number;
 }> {
   try {
@@ -135,7 +135,10 @@ async function getUserData({
 
       if (countError) {
         console.error('Error getting count:', countError);
-        return { userData: data || [], userCount: data?.length || 0 };
+        return {
+          userData: data || [],
+          userCount: data?.length || 0,
+        };
       }
 
       return {

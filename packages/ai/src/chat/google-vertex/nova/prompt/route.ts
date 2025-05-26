@@ -116,8 +116,11 @@ const TestCaseEvaluationSchema = z
       output: z.string().describe('The output for the test case'),
       reasoning: z
         .string()
+        .max(2000)
         .optional()
-        .describe('Optional reasoning for this output'),
+        .describe(
+          'Optional reasoning for this output, the reasoning is at most 2000 characters.'
+        ),
     })
   )
   .describe('Array of test case evaluations');

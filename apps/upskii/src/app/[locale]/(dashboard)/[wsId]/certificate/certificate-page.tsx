@@ -1,6 +1,6 @@
 'use client';
 
-import { CertificateProps } from './[certID]/page';
+import { CertificateProps } from './[certificateId]/page';
 import { Button } from '@tuturuuu/ui/button';
 import { FileText, ImageIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';

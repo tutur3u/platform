@@ -104,11 +104,6 @@
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://tuturuuu.com/changelog</loc>
-    <lastmod>2025-01-23T14:25:17+00:00</lastmod>
-    <priority>0.80</priority>
-  </url>
-  <url>
     <loc>https://tuturuuu.com/qr-generator</loc>
     <lastmod>2025-01-23T14:25:17+00:00</lastmod>
     <priority>0.80</priority>
@@ -235,11 +230,6 @@
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://tuturuuu.com/vi/changelog</loc>
-    <lastmod>2025-01-23T14:25:17+00:00</lastmod>
-    <priority>0.80</priority>
-  </url>
-  <url>
     <loc>https://tuturuuu.com/vi/qr-generator</loc>
     <lastmod>2025-01-23T14:25:17+00:00</lastmod>
     <priority>0.80</priority>
@@ -362,11 +352,6 @@
   </url>
   <url>
     <loc>https://tuturuuu.com/en/blog</loc>
-    <lastmod>2025-01-23T14:25:17+00:00</lastmod>
-    <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://tuturuuu.com/en/changelog</loc>
     <lastmod>2025-01-23T14:25:17+00:00</lastmod>
     <priority>0.80</priority>
   </url>

@@ -1,18 +1,38 @@
+import ModuleContentEditor from './content-editor';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Goal, Sparkles } from '@tuturuuu/ui/icons';
+import { JSONContent } from '@tuturuuu/ui/tiptap';
 import { getTranslations } from 'next-intl/server';
 
-// interface Props {
-//   params: Promise<{
-//     wsId: string;
-//     courseId: string;
-//     moduleId: string;
-//   }>;
-// }
+interface Props {
+  params: Promise<{
+    courseId: string;
+    moduleId: string;
+  }>;
+}
 
-export default async function ModuleContentPage() {
+export default async function ModuleContentPage({ params }: Props) {
+  const { courseId, moduleId } = await params;
   const t = await getTranslations();
+
+  const getContent = async (courseId: string, moduleId: string) => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('workspace_course_modules')
+      .select('content')
+      .eq('id', moduleId)
+      .eq('course_id', courseId);
+
+    if (error) {
+      console.error(error);
+    }
+
+    return data?.[0]?.content as JSONContent;
+  };
+
+  const content = await getContent(courseId, moduleId);
 
   return (
     <div className="grid gap-4">
@@ -33,7 +53,11 @@ export default async function ModuleContentPage() {
         }
         showSecondaryTrigger
       />
-      {/* <ModuleContentEditor courseId={courseId} moduleId={moduleId} /> */}
+      <ModuleContentEditor
+        courseId={courseId}
+        moduleId={moduleId}
+        content={content}
+      />
     </div>
   );
 }

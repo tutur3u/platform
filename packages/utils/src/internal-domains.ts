@@ -9,7 +9,7 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   },
   {
     name: 'nova',
-    url: 'https://nova.tuturuuu.com',
+    url: 'https://nova.ai.vn',
   },
   {
     name: 'nova',

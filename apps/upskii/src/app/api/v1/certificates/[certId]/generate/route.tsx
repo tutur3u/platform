@@ -21,7 +21,7 @@ const getCertificateData = async (certID: string) => {
   const certDetails = await response.json();
 
   if (userDetails) {
-    certDetails.studentName = userDetails.display_name;
+    certDetails.studentName = userDetails.full_name;
   }
 
   return certDetails;

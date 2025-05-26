@@ -4,7 +4,7 @@ import { Database } from '@tuturuuu/types/supabase';
 /**
  * Navigate to another app using cross-app authentication
  * @param supabase The Supabase client
- * @param targetAppUrl The URL of the target app (e.g., 'https://nova.tuturuuu.com')
+ * @param targetAppUrl The URL of the target app (e.g., 'https://nova.ai.vn')
  * @param targetPath The path to navigate to in the target app (e.g., '/dashboard')
  * @param originApp The identifier of the current app (e.g., 'web')
  * @param targetApp The identifier of the target app (e.g., 'nova')
@@ -62,7 +62,7 @@ export async function navigateToCrossApp(
 /**
  * Create a link to another app using cross-app authentication
  * @param supabase The Supabase client
- * @param targetAppUrl The URL of the target app (e.g., 'https://nova.tuturuuu.com')
+ * @param targetAppUrl The URL of the target app (e.g., 'https://nova.ai.vn')
  * @param targetPath The path to navigate to in the target app (e.g., '/dashboard')
  * @param originApp The identifier of the current app (e.g., 'web')
  * @param targetApp The identifier of the target app (e.g., 'nova')

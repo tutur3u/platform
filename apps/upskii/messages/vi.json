@@ -567,7 +567,10 @@
     "or": "Hoặc",
     "joined": "Tham gia",
     "guide": "Hướng dẫn",
-    "example_content": "Nội dung mẫu"
+    "example_content": "Nội dung mẫu",
+    "whats_the_title": "Tiêu đề là gì?",
+    "write_something": "Hãy viết gì đó...",
+    "error_saving_content": "Lỗi khi lưu nội dung của bạn"
   },
   "contact": {
     "title": "Liên hệ với chúng tôi",
@@ -4071,7 +4074,9 @@
     "ai_chat": "Trò chuyện với AI",
     "certificates": "Chứng chỉ",
     "challenges": "Các thử thách",
-    "ai_teach_studio": "Công cụ giảng dạy AI"
+    "ai_teach_studio": "Công cụ giảng dạy AI",
+    "users": "Người dùng",
+    "teams": "Nhóm"
   },
   "certificates": {
     "offered_by": "được dạy bởi",

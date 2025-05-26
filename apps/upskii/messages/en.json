@@ -567,7 +567,10 @@
     "or": "Or",
     "joined": "Joined",
     "guide": "Guide",
-    "example_content": "Example content"
+    "example_content": "Example content",
+    "whats_the_title": "What's the title?",
+    "write_something": "Write something",
+    "error_saving_content": "There was an error saving your content"
   },
   "contact": {
     "title": "Contact us",
@@ -4080,6 +4083,8 @@
     "ai_chat": "AI Chat",
     "certificates": "Certificates",
     "challenges": "Challenges",
-    "ai_teach_studio": "AI Teaching Studio"
+    "ai_teach_studio": "AI Teaching Studio",
+    "users": "Users",
+    "teams": "Teams"
   }
 }
