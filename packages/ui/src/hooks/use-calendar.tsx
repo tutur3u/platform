@@ -21,6 +21,15 @@ import {
   useState,
 } from 'react';
 
+// Sync configuration constants
+const SYNC_CONFIGS = {
+  BACKGROUND_INTERVAL_MS: 120000, // 2 minutes
+  CURRENT_VIEW_INTERVAL_MS: 30000, // 30 seconds
+  MIN_TIME_BETWEEN_SYNC_MS: 30000, // 30 seconds
+  GOOGLE_FETCH_TIMEOUT_MS: 30000, // 30 seconds
+} as const;
+
+
 // Utility function to round time to nearest 15-minute interval
 const roundToNearest15Minutes = (date: Date): Date => {
   const minutes = date.getMinutes();
@@ -949,14 +958,14 @@ export const CalendarProvider = ({
     const currentViewDates = settings.currentViewDates || [];
     console.log('[Google Calendar Fetch] Current view dates:', currentViewDates);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
+    const timeoutId = setTimeout(() => controller.abort(), SYNC_CONFIGS.GOOGLE_FETCH_TIMEOUT_MS); // 30 seconds timeout
 
     try {
       const response = await fetch(`/api/v1/calendar/auth/fetch-view`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          dates: currentViewDates,
+          dates: currentViewDates, 
           wsId: ws.id }),
         signal: controller.signal,
       });
@@ -1379,8 +1388,8 @@ export const CalendarProvider = ({
     // Set up interval
     const interval = setInterval(() => {
       syncBackground();
-      console.log('Background sync: Syncing events every 1 minute');
-    }, 120000); // Sync every 2 minutes
+      console.log('Background sync: Syncing events every', SYNC_CONFIGS.BACKGROUND_INTERVAL_MS / 1000, 'seconds');
+    }, SYNC_CONFIGS.BACKGROUND_INTERVAL_MS); // Sync every 2 minutes
 
     return () => clearInterval(interval);
   }, [ws?.id, syncEvents]);
@@ -1392,7 +1401,7 @@ export const CalendarProvider = ({
     const syncCurrentView = async () => {
       // Skip if background sync is running or if last sync was less than 30s ago
       const now = Date.now();
-      if (syncLockRef.current === 'background' || (now - lastBackgroundSyncRef.current < 30000)) {
+      if (syncLockRef.current === 'background' || (now - lastBackgroundSyncRef.current < SYNC_CONFIGS.MIN_TIME_BETWEEN_SYNC_MS)) {
         console.log('Current view sync: Skipping - background sync running or recent sync');
         return;
       }
@@ -1605,8 +1614,8 @@ export const CalendarProvider = ({
     // Set up interval
     const interval = setInterval(() => {
       syncCurrentView();
-      console.log('Current view sync: Syncing events every 30 seconds');
-    }, 30000); // Sync every 30 seconds
+      console.log('Current view sync: Syncing events every', SYNC_CONFIGS.CURRENT_VIEW_INTERVAL_MS / 1000, 'seconds');
+    }, SYNC_CONFIGS.CURRENT_VIEW_INTERVAL_MS); // Sync every 30 seconds
 
     return () => clearInterval(interval);
   }, [ws?.id, experimentalGoogleToken, settings.currentViewDates, events, queryClient]);
