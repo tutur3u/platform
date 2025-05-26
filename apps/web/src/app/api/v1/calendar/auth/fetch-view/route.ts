@@ -266,36 +266,10 @@ export async function POST(request: Request) {
     }
   } catch (error: any) {
     console.error('Error fetching Google Calendar events:', error);
-
-    const errorDetails = {
-      error: 'Failed to fetch Google Calendar events',
-      statusCode: error.response?.status || 500,
-      googleError: error.response?.data?.error?.message || error.message,
-      details: {
-        ...error.response?.data?.error,
-        hasAccessToken: false,
-        hasRefreshToken: false,
-        userId: user.id,
-      },
-    };
-
-    if (error.response?.data?.error?.message?.includes('invalid_grant')) {
-      return NextResponse.json(
-        {
-          ...errorDetails,
-          error: 'Google token invalid, please re-authenticate',
-          details: {
-            ...errorDetails.details,
-            requiresReauth: true,
-          },
-        },
-        { status: 401 }
-      );
-    }
-
-    return NextResponse.json(errorDetails, {
-      status: errorDetails.statusCode,
-    });
+    return NextResponse.json(
+      { error: 'Failed to fetch Google Calendar events' },
+      { status: 500 }
+    );
   }
 }
 
