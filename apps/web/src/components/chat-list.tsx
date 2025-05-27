@@ -46,7 +46,7 @@ export function ChatList({
   return (
     <div
       className={`relative h-full ${
-        embeddedUrl ? 'w-full' : 'mx-auto @lg:max-w-4xl @xl:max-w-6xl'
+        embeddedUrl ? 'w-full' : '@lg:max-w-4xl @xl:max-w-6xl mx-auto'
       }`}
     >
       {(!!chatTitle || !!chatId) && (
@@ -54,7 +54,7 @@ export function ChatList({
           key={`chat-${chatId}-${chatTitle}-${chatIsPublic}-${chatModel}-${chatSummary}`}
         >
           <div
-            className={`rounded-lg border bg-foreground/5 p-4 text-center text-2xl font-semibold ${
+            className={`bg-foreground/5 rounded-lg border p-4 text-center text-2xl font-semibold ${
               chatTitle == undefined && !!chatId
                 ? 'animate-pulse text-transparent'
                 : ''
@@ -84,13 +84,13 @@ export function ChatList({
                 )}
               </span>
               {chatModel && (
-                <span className="inline-flex items-center gap-1 rounded border border-dynamic-yellow/20 bg-dynamic-yellow/10 px-1 py-0.5 font-mono font-semibold text-dynamic-yellow lowercase">
+                <span className="border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
                   <Sparkle className="h-3 w-3" />
                   {chatModel}
                 </span>
               )}
               {chatSummary && (
-                <span className="inline-flex items-center gap-1 rounded border border-dynamic-purple/20 bg-dynamic-purple/10 px-1 py-0.5 font-mono font-semibold text-dynamic-purple lowercase">
+                <span className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
                   <Box className="h-3 w-3" />
                   {t('summarized')}
                 </span>
@@ -100,13 +100,13 @@ export function ChatList({
             {(chatSummary || summarizing) && (
               <Fragment key={`chat-${chatId}-${chatSummary}`}>
                 <Separator className="my-2" />
-                <div className="mb-2 text-base font-bold tracking-widest uppercase">
+                <div className="mb-2 text-base font-bold uppercase tracking-widest">
                   {t('summary')}
                 </div>
                 {!chatSummary && summarizing ? (
-                  <div className="h-32 w-full animate-pulse rounded border bg-foreground/5" />
+                  <div className="bg-foreground/5 h-32 w-full animate-pulse rounded border" />
                 ) : (
-                  <div className="w-full rounded border bg-foreground/5 p-2 text-start text-lg font-normal break-words whitespace-pre-wrap">
+                  <div className="bg-foreground/5 w-full whitespace-pre-wrap break-words rounded border p-2 text-start text-lg font-normal">
                     {chatSummary}
                   </div>
                 )}
