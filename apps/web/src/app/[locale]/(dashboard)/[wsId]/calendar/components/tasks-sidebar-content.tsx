@@ -28,10 +28,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
 import {
   Bot,
   Calendar,
@@ -45,7 +41,11 @@ import {
   PanelRightClose,
   Plus,
   PlusCircle,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';

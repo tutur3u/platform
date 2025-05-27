@@ -19,7 +19,7 @@ export default function MeetTogetherMenuItem() {
           href={`${
             DEV_MODE
               ? `http://localhost:7803/meet-together`
-              : `https://calendar.tuturuuu.com/meet-together`
+              : `https://tuturuuu.com/meet-together`
           }`}
         >
           <DropdownMenuItem className="cursor-pointer">
