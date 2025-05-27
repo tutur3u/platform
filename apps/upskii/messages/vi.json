@@ -1,4 +1,28 @@
 {
+  "home-hero": {
+    "welcome": "Xin chào, {username}!",
+    "badge": "Trải nghiệm học tập nâng cao với AI",
+    "title": "Khám phá các công cụ hiện đại, bài học sinh động và cộng tác dễ dàng",
+    "cards": {
+      "courses": {
+        "title": "Khóa học",
+        "description": "Nắm vững các kỹ thuật thiết kế prompt từ cơ bản đến nâng cao thông qua bài học từng bước và ví dụ thực tiễn."
+      },
+      "quizzes": {
+        "title": "Câu hỏi ôn tập",
+        "description": "Kiểm tra mức độ hiểu biết của bạn với các câu hỏi tương tác giúp củng cố kiến thức và nâng cao kỹ năng thiết kế prompt."
+      },
+      "challenges": {
+        "title": "Thử thách",
+        "description": "Tham gia các thử thách sáng tạo để vượt qua giới hạn và khám phá các giải pháp prompt đột phá cùng AI."
+      },
+      "ai-chat": {
+        "title": "Trò chuyện với AI",
+        "description": "Luyện tập kỹ năng thiết kế prompt qua các cuộc đối thoại thời gian thực với AI, nhận phản hồi ngay lập tức và cải thiện hiệu quả."
+      }
+    },
+    "get-certificate": "Nhận chứng chỉ của bạn"
+  },
   "score-calculator": {
     "test_formula": "(Số Bài Đạt / Tổng Số Bài Kiểm Tra) × 10 × Trọng Số",
     "criteria_formula": "(Tổng Điểm Tiêu Chí / (Tổng Số Tiêu Chí × 10)) × 10 × Trọng Số",
@@ -1868,7 +1892,6 @@
     "invited-to": "Bạn đã được mời tham gia"
   },
   "nova": {
-    "welcome": "Xin chào, {username}!",
     "badge": "Chào mừng đến với tương lai của kỹ thuật tạo lệnh",
     "title": "Làm chủ cuộc chơi với",
     "description": "Sân chơi của bạn để chế tạo, thử nghiệm và hoàn thiện lời nhắc AI. Tham gia cộng đồng những người sáng tạo giải quyết các vấn đề thực tế thông qua kỹ thuật lời nhắc tiên tiến.",
