@@ -4,7 +4,6 @@ import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
-import { ResponseMode } from '@/components/prompt-form';
 import { Model, defaultModel, models } from '@tuturuuu/ai/models';
 import { useChat } from '@tuturuuu/ai/react';
 import { type Message } from '@tuturuuu/ai/types';
@@ -46,7 +45,6 @@ const Chat = ({
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(inputModel);
-  const [mode, setMode] = useState<ResponseMode>('medium');
   const [currentUserId, setCurrentUserId] = useState<string>();
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
@@ -66,7 +64,6 @@ const Chat = ({
       body: {
         id: chat?.id,
         model: chat?.model || model?.value,
-        mode,
       },
       onResponse(response) {
         if (!response.ok)
@@ -364,8 +361,6 @@ const Chat = ({
         updateChat={updateChat}
         clearChat={clearChat}
         setCollapsed={setCollapsed}
-        mode={mode}
-        setMode={setMode}
         disabled={disabled}
         currentUserId={currentUserId}
       />

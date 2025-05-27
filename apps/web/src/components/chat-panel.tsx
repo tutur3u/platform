@@ -63,6 +63,8 @@ export interface ChatPanelProps
   clearChat: () => void;
   initialMessages?: Message[];
   collapsed: boolean;
+  disableScrollToTop?: boolean;
+  disableScrollToBottom?: boolean;
   // eslint-disable-next-line no-unused-vars
   setCollapsed: (collapsed: boolean) => void;
 }
@@ -85,6 +87,8 @@ export function ChatPanel({
   updateChat,
   clearChat,
   collapsed,
+  disableScrollToTop,
+  disableScrollToBottom,
   setCollapsed,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
@@ -152,25 +156,29 @@ export function ChatPanel({
             bottom: chatInputHeight ? chatInputHeight + 4 : '1rem',
           }}
         >
-          <ScrollToTopButton />
-          <ScrollToBottomButton />
+          {!disableScrollToTop && <ScrollToTopButton />}
+          {!disableScrollToBottom && <ScrollToBottomButton />}
 
-          {!!chats && count !== undefined && id && (
-            <div className="flex w-full gap-2">
-              <Button
-                size="icon"
-                variant="outline"
-                className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
-                onClick={() => setCollapsed(!collapsed)}
-              >
-                {collapsed ? (
-                  <FolderOpen className="h-5 w-5" />
-                ) : (
-                  <ArrowDownToLine className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
-          )}
+          {!disableScrollToTop &&
+            !disableScrollToBottom &&
+            !!chats &&
+            count !== undefined &&
+            id && (
+              <div className="flex w-full gap-2">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="pointer-events-auto flex-none bg-background/20 backdrop-blur-lg"
+                  onClick={() => setCollapsed(!collapsed)}
+                >
+                  {collapsed ? (
+                    <FolderOpen className="h-5 w-5" />
+                  ) : (
+                    <ArrowDownToLine className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            )}
         </div>
 
         {!!chats && count !== undefined && (
@@ -193,7 +201,7 @@ export function ChatPanel({
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-foreground font-semibold">
+                    <div className="font-semibold text-foreground">
                       {t('chats')}
                       {count ? (
                         <span className="opacity-50"> ({count})</span>
@@ -236,7 +244,7 @@ export function ChatPanel({
                             )
                           )
                         ) : (
-                          <div className="text-foreground/60 mt-8 p-8">
+                          <div className="mt-8 p-8 text-foreground/60">
                             {t('no_chats')}
                           </div>
                         )}
@@ -287,7 +295,7 @@ export function ChatPanel({
             </div>
 
             <div
-              className={`bg-background/70 flex flex-col items-start justify-start rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
+              className={`flex flex-col items-start justify-start rounded-xl border bg-background/70 p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
             >
               <ChatModelSelector
                 open={showExtraOptions}

@@ -386,7 +386,7 @@ export const CalendarContent = ({
   return (
     <div
       className={cn(
-        'grid h-[calc(100%-2rem-4px)] w-full',
+        'grid h-full w-full',
         view === 'month' ? 'grid-rows-[auto_1fr]' : 'grid-rows-[auto_auto_1fr]'
       )}
     >
@@ -414,7 +414,7 @@ export const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="scrollbar-none relative flex-1 overflow-hidden">
+      <div className="relative scrollbar-none flex-1 overflow-hidden">
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar date={dates[0]} workspace={workspace} />
         ) : (

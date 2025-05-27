@@ -1,4 +1,5 @@
 import CalendarClientPage from './client';
+import TasksSidebar from './components/tasks-sidebar';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
@@ -29,9 +30,12 @@ export default async function CalendarPage({ params }: PageProps) {
   if (!workspace) return null;
 
   return (
-    <CalendarClientPage
-      experimentalGoogleToken={googleToken || undefined}
-      workspace={workspace}
-    />
+    <div className="flex h-[calc(100%-2rem-4px)]">
+      <CalendarClientPage
+        experimentalGoogleToken={googleToken || undefined}
+        workspace={workspace}
+      />
+      <TasksSidebar wsId={wsId} />
+    </div>
   );
 }
