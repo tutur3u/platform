@@ -39,7 +39,7 @@
     "@formatjs/intl-localematcher": "^0.6.1",
     "@mantine/hooks": "^8.0.1",
     "@octokit/auth-app": "^8.0.1",
-    "@octokit/rest": "^21.1.1",
+    "@octokit/rest": "^22.0.0",
     "@tanstack/react-query": "^5.77.0",
     "@tanstack/react-table": "^8.21.3",
     "@tldraw/sync": "^3.13.1",
