@@ -7,11 +7,12 @@ import { redirect } from 'next/navigation';
 interface PageProps {
   params: Promise<{
     wsId: string;
+    locale: string;
   }>;
 }
 
 export default async function CalendarPage({ params }: PageProps) {
-  const { wsId } = await params;
+  const { wsId, locale } = await params;
   const workspace = await getWorkspace(wsId);
 
   const { withoutPermission } = await getPermissions({
@@ -35,7 +36,7 @@ export default async function CalendarPage({ params }: PageProps) {
         experimentalGoogleToken={googleToken || undefined}
         workspace={workspace}
       />
-      <TasksSidebar wsId={wsId} />
+      <TasksSidebar wsId={wsId} locale={locale} />
     </div>
   );
 }

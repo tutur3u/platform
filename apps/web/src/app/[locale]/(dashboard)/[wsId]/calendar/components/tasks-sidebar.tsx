@@ -10,7 +10,7 @@ import type {
 
 interface TasksSidebarProps {
   wsId: string;
-  params: Promise<{ locale: string }>;
+  locale: string;
 }
 
 async function getTaskBoardsWithDetails(
@@ -88,9 +88,8 @@ const hasKey = (key: string) => {
 
 export default async function TasksSidebar({
   wsId,
-  params,
+  locale,
 }: TasksSidebarProps) {
-  const { locale } = await params;
   const taskBoardsWithDetails = await getTaskBoardsWithDetails(wsId);
 
   // Check permissions and secrets for AI chat
