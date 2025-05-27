@@ -80,7 +80,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.17",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.15.21",
+    "@types/node": "^22.15.22",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
     "@types/uuid": "^10.0.0",
