@@ -14,6 +14,13 @@ export type WorkspaceUser = Tables<'workspace_users'>;
 export type WorkspaceUserRole = 'MEMBER' | 'ADMIN' | 'OWNER';
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
+export type WorkspaceTaskBoard = Tables<'workspace_boards'> & {
+  lists?: Partial<WorkspaceTaskList>[];
+};
+export type WorkspaceTaskList = Tables<'task_lists'> & {
+  tasks?: Partial<WorkspaceTask>[];
+};
+export type WorkspaceTask = Tables<'tasks'>;
 export type User = Tables<'users'>;
 export type UserPrivateDetails = Tables<'user_private_details'>;
 export type PlatformUser = Tables<'platform_user_roles'>;

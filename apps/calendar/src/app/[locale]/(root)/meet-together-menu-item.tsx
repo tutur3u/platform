@@ -1,5 +1,6 @@
 'use client';
 
+import { DEV_MODE } from '@/constants/common';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -7,28 +8,25 @@ import {
 import { CalendarClock } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 export default function MeetTogetherMenuItem() {
   const t = useTranslations('common');
-  const pathname = usePathname();
 
   return (
     <>
       <DropdownMenuGroup>
-        {pathname === `/meet-together` ? (
-          <DropdownMenuItem disabled>
+        <Link
+          href={`${
+            DEV_MODE
+              ? `http://localhost:7803/meet-together`
+              : `https://tuturuuu.com/meet-together`
+          }`}
+        >
+          <DropdownMenuItem className="cursor-pointer">
             <CalendarClock className="mr-2 h-4 w-4" />
             <span>{t('meet-together')}</span>
           </DropdownMenuItem>
-        ) : (
-          <Link href="/meet-together">
-            <DropdownMenuItem className="cursor-pointer">
-              <CalendarClock className="mr-2 h-4 w-4" />
-              <span>{t('meet-together')}</span>
-            </DropdownMenuItem>
-          </Link>
-        )}
+        </Link>
       </DropdownMenuGroup>
     </>
   );

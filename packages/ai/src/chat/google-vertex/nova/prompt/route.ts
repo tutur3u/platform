@@ -10,7 +10,6 @@ import type { SafetySetting } from '@google/generative-ai';
 import type {
   NovaSubmissionCriteria,
   NovaSubmissionTestCase,
-  ResponseMode,
 } from '@tuturuuu/ai/types';
 import {
   createAdminClient,
@@ -163,7 +162,6 @@ export async function POST(
       model?: string;
       prompt?: string;
       sessionId?: string;
-      mode?: ResponseMode;
     };
 
     // Authenticate user

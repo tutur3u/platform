@@ -2,24 +2,9 @@
 
 import { DEV_MODE } from '@/constants/common';
 import {
-  BookText,
-  Building,
   Calendar,
-  Factory,
-  FileText,
-  Github,
-  GraduationCap,
-  HardHat,
-  Hotel,
-  Info,
-  Paintbrush,
-  Pill,
-  Shield,
   Sparkles,
-  Store,
-  Users,
   UsersRound,
-  Utensils,
   WandSparkles,
 } from '@tuturuuu/ui/icons';
 import { ReactNode } from 'react';
@@ -73,109 +58,9 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     },
   ];
 
-  const solutions: NavItem[] = [
-    {
-      href: '/solutions/manufacturing',
-      label: t('common.manufacturing'),
-      description: t('common.manufacturing-description'),
-      icon: <Factory className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/restaurants',
-      label: t('common.restaurants'),
-      description: t('common.restaurants-description'),
-      icon: <Utensils className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/pharmacies',
-      label: t('common.pharmacies'),
-      description: t('common.pharmacies-description'),
-      icon: <Pill className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/realestate',
-      label: t('common.realestate'),
-      description: t('common.realestate-description'),
-      icon: <Building className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/retail',
-      label: t('common.retail'),
-      description: t('common.retail-description'),
-      icon: <Store className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/education',
-      label: t('common.education'),
-      description: t('common.education-description'),
-      icon: <GraduationCap className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/hospitality',
-      label: t('common.hospitality'),
-      description: t('common.hospitality-description'),
-      icon: <Hotel className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/construction',
-      label: t('common.construction'),
-      description: t('common.construction-description'),
-      icon: <HardHat className="h-4 w-4" />,
-    },
-  ];
+  const solutions: NavItem[] = [];
 
-  const resources: NavItem[] = [
-    {
-      href: '/blog',
-      label: t('common.blog'),
-      description: t('common.blog-description'),
-      icon: <BookText className="h-4 w-4" />,
-    },
-    {
-      href: '/about',
-      label: t('common.about'),
-      description: t('common.about-description'),
-      icon: <Info className="h-4 w-4" />,
-    },
-    {
-      href: '/careers',
-      label: t('common.careers'),
-      description: t('common.careers-description'),
-      icon: <Users className="h-4 w-4" />,
-    },
-    {
-      href: '/contributors',
-      label: t('common.contributors'),
-      description: t('common.contributors-description'),
-      icon: <Users className="h-4 w-4" />,
-    },
-    {
-      href: '/security',
-      label: t('common.security'),
-      description: t('common.security-description'),
-      icon: <Shield className="h-4 w-4" />,
-    },
-    {
-      href: '/branding',
-      label: t('common.branding'),
-      description: t('common.branding-description'),
-      icon: <Paintbrush className="h-4 w-4" />,
-    },
-    {
-      href: 'https://docs.tuturuuu.com',
-      label: t('common.documentation'),
-      description: t('common.documentation-description'),
-      icon: <FileText className="h-4 w-4" />,
-      external: true,
-    },
-    {
-      href: 'https://github.com/tutur3u',
-      label: 'GitHub',
-      description: t('common.github-description'),
-      icon: <Github className="h-4 w-4" />,
-      external: true,
-    },
-  ];
+  const resources: NavItem[] = [];
 
   const company: NavItem[] = [
     {

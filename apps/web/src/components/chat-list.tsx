@@ -45,8 +45,8 @@ export function ChatList({
 
   return (
     <div
-      className={`relative ${
-        embeddedUrl ? 'w-full' : 'mx-auto lg:max-w-4xl xl:max-w-6xl'
+      className={`relative h-full ${
+        embeddedUrl ? 'w-full' : '@lg:max-w-4xl @xl:max-w-6xl mx-auto'
       }`}
     >
       {(!!chatTitle || !!chatId) && (

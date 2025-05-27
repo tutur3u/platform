@@ -1,4 +1,3 @@
-import type { ResponseMode } from '../../types';
 import { vertex } from '@ai-sdk/google-vertex/edge';
 import {
   createAdminClient,
@@ -28,17 +27,11 @@ export async function POST(req: Request) {
     id,
     model = DEFAULT_MODEL_NAME,
     messages,
-    mode,
   } = (await req.json()) as {
     id?: string;
     model?: string;
     messages?: CoreMessage[];
-    mode?: ResponseMode;
   };
-
-  if (!mode || !['short', 'medium', 'long'].includes(mode)) {
-    return new Response('Invalid mode', { status: 400 });
-  }
 
   try {
     // if (!id) return new Response('Missing chat ID', { status: 400 });
@@ -105,13 +98,7 @@ export async function POST(req: Request) {
       experimental_transform: smoothStream(),
       model: vertexModel,
       messages: messages,
-      system: `${systemInstruction}\n\nSYSTEM NOTE: The user has requested that Mira assistant's response must be ${
-        mode === 'short'
-          ? 'extremely short, concise, and to the point. No flashcards or quizzes are included'
-          : mode === 'medium'
-            ? 'medium in length, informative, and provides a good chunk of helpful insights'
-            : 'long, detailed, comprehensive and look into all possible aspects for a perfect answer. Be as long and comprehensive as possible'
-      }.`,
+      system: systemInstruction,
       onFinish: async (response) => {
         console.log('AI Response:', response);
 

@@ -24,7 +24,13 @@ export default function DashboardMenuItem() {
     <>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <Link href={`/${workspaces?.[0]?.id || 'onboarding'}`}>
+        <Link
+          href={`${
+            DEV_MODE
+              ? `http://localhost:7803/${workspaces?.[0]?.id || 'onboarding'}`
+              : `https://tuturuuu.com/${workspaces?.[0]?.id || 'onboarding'}`
+          }`}
+        >
           <DropdownMenuItem className="cursor-pointer">
             <ActivitySquare className="mr-2 h-4 w-4" />
             <span>{t('dashboard')}</span>

@@ -23,6 +23,8 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   count?: number | null;
   hasKeys: { openAI: boolean; anthropic: boolean; google: boolean };
   locale: string;
+  disableScrollToTop?: boolean;
+  disableScrollToBottom?: boolean;
 }
 
 const Chat = ({
@@ -34,6 +36,8 @@ const Chat = ({
   className,
   hasKeys,
   locale,
+  disableScrollToTop,
+  disableScrollToBottom,
 }: ChatProps) => {
   const t = useTranslations('ai_chat');
 
@@ -185,6 +189,7 @@ const Chat = ({
 
     if (chat?.id && input) {
       setInput(input.toString());
+      if (disableScrollToBottom && disableScrollToTop) return;
       router.replace(`/${wsId}/chat/${chat.id}`);
     }
 
@@ -241,6 +246,7 @@ const Chat = ({
     if (id) {
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
+      if (disableScrollToBottom && disableScrollToTop) return;
       router.replace(`/${wsId}/chat?id=${id}`);
     }
   };
@@ -296,8 +302,8 @@ const Chat = ({
   }, [chat?.id, pathname, messages]);
 
   return (
-    <div className="relative">
-      <div className={cn('md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
+    <div className="@container relative h-full">
+      <div className={cn('@md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
         {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
@@ -325,6 +331,14 @@ const Chat = ({
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
+        ) : disableScrollToTop && disableScrollToBottom ? (
+          <h1 className="mb-2 flex h-full w-full items-center justify-center text-center text-lg font-semibold">
+            {t('welcome_to')}{' '}
+            <span className="bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky overflow-hidden bg-clip-text font-bold text-transparent">
+              Rewise
+            </span>
+            .
+          </h1>
         ) : (
           <EmptyScreen
             wsId={wsId}
@@ -358,6 +372,8 @@ const Chat = ({
           clearChat={clearChat}
           setCollapsed={setCollapsed}
           defaultRoute={`/${wsId}/chat`}
+          disableScrollToTop={disableScrollToTop}
+          disableScrollToBottom={disableScrollToBottom}
         />
       )}
     </div>
