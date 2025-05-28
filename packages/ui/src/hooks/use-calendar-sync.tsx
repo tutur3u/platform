@@ -123,6 +123,26 @@ export const CalendarSyncProvider = ({
     }
 
     setGoogleData(googleData.events);
+
+    // Upsert to database
+    const eventsWithWsId = googleData.events.map((event: WorkspaceCalendarEvent) => ({
+      ...event,
+      ws_id: wsId
+    }));
+
+    const { data: upsertData, error: upsertError } = await supabase
+      .from('workspace_calendar_events')
+      .upsert(eventsWithWsId)
+      .eq('ws_id', wsId)
+      .select();
+
+    if (upsertError) {
+      console.error(upsertError);
+      setError(upsertError);
+      return;
+    }
+
+    setData(upsertData);
   };
 
   const syncToGoogle = async () => {};
