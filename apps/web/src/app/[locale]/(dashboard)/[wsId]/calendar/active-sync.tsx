@@ -8,8 +8,14 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 
 const InnerComponent = () => {
-  const { data, error, currentView, syncToTuturuuu, setCurrentView } =
-    useCalendarSync();
+  const {
+    data,
+    googleData,
+    error,
+    currentView,
+    syncToTuturuuu,
+    setCurrentView,
+  } = useCalendarSync();
   return (
     <div>
       <div className="mb-4 flex gap-2">
@@ -54,6 +60,17 @@ const InnerComponent = () => {
             ))}
           </div>
           <Separator className="my-2" />
+        </>
+      )}
+
+      {googleData && (
+        <>
+          <Separator className="my-2" />
+          <div>
+            {googleData.map((event) => (
+              <div key={event.id}>{event.title}</div>
+            ))}
+          </div>
         </>
       )}
 

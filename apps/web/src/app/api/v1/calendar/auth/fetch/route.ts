@@ -145,6 +145,7 @@ export async function GET(request: Request) {
         hasAccessToken: !!tokens?.access_token,
         hasRefreshToken: !!tokens?.refresh_token,
       });
+
       return NextResponse.json(
         {
           error: 'Failed to fetch Google Calendar events',
