@@ -1,6 +1,7 @@
 import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarClientPage from './client';
 import TasksSidebar from './components/tasks-sidebar';
+import { DEV_MODE } from '@/constants/common';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
@@ -33,7 +34,7 @@ export default async function CalendarPage({ params }: PageProps) {
 
   return (
     <>
-      <CalendarActiveSyncDebugger wsId={wsId} />
+      {DEV_MODE && <CalendarActiveSyncDebugger wsId={wsId} />}
       <div className="flex h-[calc(100%-2rem-4px)]">
         <CalendarClientPage
           experimentalGoogleToken={googleToken || undefined}

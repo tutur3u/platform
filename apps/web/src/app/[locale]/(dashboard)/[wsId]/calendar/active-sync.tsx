@@ -5,9 +5,11 @@ import {
   CalendarSyncProvider,
   useCalendarSync,
 } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { Separator } from '@tuturuuu/ui/separator';
 
 const InnerComponent = () => {
-  const { currentView, sync, setCurrentView } = useCalendarSync();
+  const { data, error, currentView, syncToTuturuuu, setCurrentView } =
+    useCalendarSync();
   return (
     <div>
       <div className="mb-4 flex gap-2">
@@ -41,7 +43,27 @@ const InnerComponent = () => {
         </Button>
       </div>
 
-      <Button onClick={sync}>Sync</Button>
+      <Button onClick={syncToTuturuuu}>Sync to Tuturuuu</Button>
+
+      {data && (
+        <>
+          <Separator className="my-2" />
+          <div>
+            {data.map((event) => (
+              <div key={event.id}>{event.title}</div>
+            ))}
+          </div>
+          <Separator className="my-2" />
+        </>
+      )}
+
+      {error && (
+        <>
+          <Separator className="my-2" />
+          <div>{error.message}</div>
+          <Separator className="my-2" />
+        </>
+      )}
     </div>
   );
 };

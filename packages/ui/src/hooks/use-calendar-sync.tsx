@@ -1,15 +1,22 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
 import { createContext, useContext, useState } from 'react';
 
 const CalendarSyncContext = createContext<{
+  data: WorkspaceCalendarEvent[] | null;
+  error: Error | null;
   currentView: 'day' | '4-day' | 'week' | 'month';
   setCurrentView: (view: 'day' | '4-day' | 'week' | 'month') => void;
-  sync: () => void;
+  syncToTuturuuu: () => Promise<void>;
+  syncToGoogle: () => Promise<void>;
 }>({
+  data: null,
+  error: null,
   currentView: 'day',
   setCurrentView: () => {},
-  sync: () => {},
+  syncToTuturuuu: async () => {},
+  syncToGoogle: async () => {},
 });
 
 export const CalendarSyncProvider = ({
@@ -19,11 +26,13 @@ export const CalendarSyncProvider = ({
   children: React.ReactNode;
   wsId: string;
 }) => {
+  const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [currentView, setCurrentView] = useState<
     'day' | '4-day' | 'week' | 'month'
   >('day');
 
-  const sync = async () => {
+  const syncToTuturuuu = async () => {
     const supabase = createClient();
 
     const now = dayjs();
@@ -67,16 +76,22 @@ export const CalendarSyncProvider = ({
 
     if (error) {
       console.error(error);
+      setError(error);
       return;
     }
 
-    console.log(data.map((event) => event.title));
+    setData(data);
   };
 
+  const syncToGoogle = async () => {};
+
   const value = {
+    data,
+    error,
     currentView,
     setCurrentView,
-    sync,
+    syncToTuturuuu,
+    syncToGoogle,
   };
 
   return (
