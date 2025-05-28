@@ -21,7 +21,7 @@ const CalendarSyncContext = createContext<{
   syncToGoogle: async () => {},
 });
 
-interface GoogleCalendarStatusText {
+interface GoogleCalendarErrorResponse {
   error?: string;
   statusCode?: number;
   googleError?: string;
@@ -110,7 +110,7 @@ export const CalendarSyncProvider = ({
     const googleData = await response.json();
 
     if (!response.ok) {
-      const googleError: GoogleCalendarStatusText = googleData;
+      const googleError: GoogleCalendarErrorResponse = googleData;
       const errorMessage =
         googleError.error +
         ' ' +
