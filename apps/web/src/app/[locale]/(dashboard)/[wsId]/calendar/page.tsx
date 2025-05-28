@@ -1,3 +1,4 @@
+import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarClientPage from './client';
 import TasksSidebar from './components/tasks-sidebar';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
@@ -31,12 +32,15 @@ export default async function CalendarPage({ params }: PageProps) {
   if (!workspace) return null;
 
   return (
-    <div className="flex h-[calc(100%-2rem-4px)]">
-      <CalendarClientPage
-        experimentalGoogleToken={googleToken || undefined}
-        workspace={workspace}
-      />
-      <TasksSidebar wsId={wsId} locale={locale} />
-    </div>
+    <>
+      <CalendarActiveSyncDebugger wsId={wsId} />
+      <div className="flex h-[calc(100%-2rem-4px)]">
+        <CalendarClientPage
+          experimentalGoogleToken={googleToken || undefined}
+          workspace={workspace}
+        />
+        <TasksSidebar wsId={wsId} locale={locale} />
+      </div>
+    </>
   );
 }

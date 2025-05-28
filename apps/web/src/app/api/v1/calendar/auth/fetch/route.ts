@@ -35,10 +35,29 @@ export async function GET(request: Request) {
   let googleTokens;
   let googleTokensError;
 
+  let timeMin: Date | null = null;
+  let timeMax: Date | null = null;
+
   try {
     // Get wsId from query parameters
     const url = new URL(request.url);
     const wsId = url.searchParams.get('wsId');
+    const startDate = url.searchParams.get('startDate');
+    const endDate = url.searchParams.get('endDate');
+
+    if (startDate) {
+      timeMin = new Date(startDate);
+    } else {
+      timeMin = new Date();
+      timeMin.setFullYear(timeMin.getFullYear() - 1);
+    }
+
+    if (endDate) {
+      timeMax = new Date(endDate);
+    } else {
+      timeMax = new Date();
+      timeMax.setFullYear(timeMax.getFullYear() + 1);
+    }
 
     if (!wsId) {
       return NextResponse.json(
@@ -145,12 +164,6 @@ export async function GET(request: Request) {
     try {
       const auth = getGoogleAuthClient(tokens);
       const calendar = google.calendar({ version: 'v3', auth });
-
-      // define the time range for the events
-      const timeMin = new Date();
-      timeMin.setFullYear(timeMin.getFullYear() - 1);
-      const timeMax = new Date();
-      timeMax.setFullYear(timeMax.getFullYear() + 1);
 
       const response = await calendar.events.list({
         calendarId: 'primary',
