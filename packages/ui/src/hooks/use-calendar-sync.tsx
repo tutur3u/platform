@@ -42,7 +42,9 @@ export const CalendarSyncProvider = ({
   wsId: string;
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
-  const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(null);
+  const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(
+    null
+  );
   const [error, setError] = useState<Error | null>(null);
   const [currentView, setCurrentView] = useState<
     'day' | '4-day' | 'week' | 'month'
@@ -109,7 +111,12 @@ export const CalendarSyncProvider = ({
 
     if (!response.ok) {
       const googleError: GoogleCalendarStatusText = googleData;
-      const errorMessage = googleError.error + ' ' + googleError.googleError + ': ' + googleError.details?.reason;
+      const errorMessage =
+        googleError.error +
+        ' ' +
+        googleError.googleError +
+        ': ' +
+        googleError.details?.reason;
       console.error(errorMessage);
       setError(new Error(errorMessage));
       return;
