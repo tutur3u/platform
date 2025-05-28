@@ -4,22 +4,22 @@
     "badge": "Your AI-Enhanced Learning Experience",
     "title": "Explore smart tools, interactive lessons, and seamless collaboration",
     "cards": {
-      "courses": {
-        "title": "Courses",
-        "description": "Learn the fundamentals and advanced techniques of prompt engineering through step-by-step lessons and practical examples."
-      },
-      "quizzes": {
-        "title": "Quizzes",
-        "description": "Test your understanding with interactive quizzes designed to reinforce key concepts and sharpen your prompt design skills."
-      },
-      "challenges": {
-        "title": "Challenges",
-        "description": "Take on creative challenges that push your limits and inspire innovative prompt solutions using AI."
-      },
-      "ai-chat": {
-        "title": "AI Chat",
-        "description": "Engage in real-time conversations with AI to practice prompt engineering, get instant feedback, and refine your skills."
-      }
+    "courses": {
+      "title": "Courses",
+      "description": "Explore diverse subjects through structured lessons that build knowledge step-by-step."
+    },
+    "quizzes": {
+      "title": "Quizzes",
+      "description": "Strengthen what you’ve learned with interactive quizzes across various topics."
+    },
+    "challenges": {
+      "title": "Challenges",
+      "description": "Put your knowledge to the test with fun and creative real-world challenges."
+    },
+    "ai-chat": {
+      "title": "AI Chat",
+      "description": "Chat with AI for instant help, study tips, and personalized learning support."
+    }
     },
     "get-certificate": "Get Your Certificate"
   },

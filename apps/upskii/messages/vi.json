@@ -6,19 +6,19 @@
     "cards": {
       "courses": {
         "title": "Khóa học",
-        "description": "Nắm vững các kỹ thuật thiết kế prompt từ cơ bản đến nâng cao thông qua bài học từng bước và ví dụ thực tiễn."
+        "description": "Khám phá các chủ đề khác nhau qua các bài học được thiết kế từng bước rõ ràng."
       },
       "quizzes": {
-        "title": "Câu hỏi ôn tập",
-        "description": "Kiểm tra mức độ hiểu biết của bạn với các câu hỏi tương tác giúp củng cố kiến thức và nâng cao kỹ năng thiết kế prompt."
+        "title": "Trắc nghiệm",
+        "description": "Củng cố kiến thức qua các bài trắc nghiệm tương tác trên nhiều chủ đề."
       },
       "challenges": {
         "title": "Thử thách",
-        "description": "Tham gia các thử thách sáng tạo để vượt qua giới hạn và khám phá các giải pháp prompt đột phá cùng AI."
+        "description": "Vận dụng kiến thức với các thử thách thực tế sáng tạo và thú vị."
       },
       "ai-chat": {
         "title": "Trò chuyện với AI",
-        "description": "Luyện tập kỹ năng thiết kế prompt qua các cuộc đối thoại thời gian thực với AI, nhận phản hồi ngay lập tức và cải thiện hiệu quả."
+        "description": "Trò chuyện cùng AI để nhận hỗ trợ học tập và lời khuyên hữu ích."
       }
     },
     "get-certificate": "Nhận chứng chỉ của bạn"
