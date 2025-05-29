@@ -9,7 +9,12 @@ const CalendarSyncContext = createContext<{
   error: Error | null;
   currentView: 'day' | '4-day' | 'week' | 'month';
   setCurrentView: (view: 'day' | '4-day' | 'week' | 'month') => void;
-  syncToTuturuuu: () => Promise<void>;
+  syncToTuturuuu: (progressCallback?: (progress: {
+    phase: 'get' | 'fetch' | 'upsert' | 'complete';
+    percentage: number;
+    statusMessage: string;
+    changesMade: boolean;
+  }) => void) => Promise<void>;
   syncToGoogle: () => Promise<void>;
 }>({
   data: null,
@@ -17,7 +22,12 @@ const CalendarSyncContext = createContext<{
   error: null,
   currentView: 'day',
   setCurrentView: () => {},
-  syncToTuturuuu: async () => {},
+  syncToTuturuuu: async (progressCallback?: (progress: {
+    phase: 'get' | 'fetch' | 'upsert' | 'complete';
+    percentage: number;
+    statusMessage: string;
+    changesMade: boolean;
+  }) => void) => {},
   syncToGoogle: async () => {},
 });
 
@@ -37,7 +47,12 @@ export const CalendarSyncProvider = ({
     'day' | '4-day' | 'week' | 'month'
   >('day');
 
-  const syncToTuturuuu = async () => {
+  const syncToTuturuuu = async (progressCallback?: (progress: {
+    phase: 'get' | 'fetch' | 'upsert' | 'complete';
+    percentage: number;
+    statusMessage: string;
+    changesMade: boolean;
+  }) => void) => {
     const supabase = createClient();
 
     const now = dayjs();
@@ -71,8 +86,19 @@ export const CalendarSyncProvider = ({
         endDate = now.endOf('day');
     }
 
+    // Report get phase starting
+    if (progressCallback) {
+      progressCallback({
+        phase: 'get',
+        percentage: 0,
+        statusMessage: 'Fetching events from database...',
+        changesMade: false
+      });
+      await new Promise(resolve => setTimeout(resolve, 500)); // Add small delay
+    }
+
     // Fetch from database
-    const { data, error } = await supabase
+    const { data: dbData, error: dbError } = await supabase
       .from('workspace_calendar_events')
       .select('*')
       .eq('ws_id', wsId)
@@ -80,38 +106,54 @@ export const CalendarSyncProvider = ({
       .lte('end_at', endDate.toISOString())
       .order('start_at', { ascending: true });
 
-    if (error) {
-      console.error(error);
-      setError(error);
+    if (dbError) {
+      console.error(dbError);
+      setError(dbError);
       return;
     }
 
-    setData(data);
+    setData(dbData);
+
+    if (progressCallback) {
+      progressCallback({
+        phase: 'fetch',
+        percentage: 25,
+        statusMessage: 'Fetching events from Google Calendar...',
+        changesMade: false
+      });
+      await new Promise(resolve => setTimeout(resolve, 500)); // Add small delay
+    }
 
     // Fetch from Google Calendar
     const response = await fetch(
       `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
     );
 
-    console.log('response', response);
-    const googleData = await response.json();
+    const googleResponse = await response.json();
 
     if (!response.ok) {
-      const errorMessage =
-        googleData.error +
-        '. ' +
-        googleData.googleError +
-        ': ' +
-        googleData.details?.reason;
+      const errorMessage = googleResponse.error + '. ' 
+        + googleResponse.googleError + ': ' 
+        + googleResponse.details?.reason;
       console.error(errorMessage);
       setError(new Error(errorMessage));
       return;
     }
 
-    setGoogleData(googleData.events);
+    setGoogleData(googleResponse.events);
+
+    if (progressCallback) {
+      progressCallback({
+        phase: 'upsert',
+        percentage: 50,
+        statusMessage: 'Syncing events to database...',
+        changesMade: false
+      });
+      await new Promise(resolve => setTimeout(resolve, 500)); // Add small delay
+    }
 
     // Upsert to database
-    const eventsWithWsId = googleData.events.map((event: WorkspaceCalendarEvent) => ({
+    const eventsWithWsId = googleResponse.events.map((event: WorkspaceCalendarEvent) => ({
       ...event,
       ws_id: wsId
     }));
@@ -129,6 +171,16 @@ export const CalendarSyncProvider = ({
     }
 
     setData(upsertData);
+
+    if (progressCallback) {
+      progressCallback({
+        phase: 'complete',
+        percentage: 100,
+        statusMessage: 'Sync completed successfully',
+        changesMade: true
+      });
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Longer delay at completion
+    }
   };
 
   const syncToGoogle = async () => {};

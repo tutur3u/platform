@@ -5,7 +5,9 @@ import {
   CalendarSyncProvider,
   useCalendarSync,
 } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
+import { useState } from 'react';
 
 const InnerComponent = () => {
   const {
@@ -16,6 +18,42 @@ const InnerComponent = () => {
     syncToTuturuuu,
     setCurrentView,
   } = useCalendarSync();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<{
+    phase: 'get' | 'fetch' | 'upsert' | 'complete';
+    percentage: number;
+    statusMessage: string;
+    changesMade: boolean;
+  }>({
+    phase: 'complete',
+    percentage: 100,
+    statusMessage: '',
+    changesMade: false,
+  });
+
+  const handleSyncToTuturuuu = async () => {
+    setIsSyncing(true);
+    setSyncProgress({
+      phase: 'get',
+      percentage: 0,
+      statusMessage: 'Starting sync...',
+      changesMade: false,
+    });
+
+    try {
+      await syncToTuturuuu((progress) => {
+        setSyncProgress({
+          phase: progress.phase,
+          percentage: progress.percentage,
+          statusMessage: progress.statusMessage,
+          changesMade: progress.changesMade,
+        });
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div>
       <div className="mb-4 flex gap-2">
@@ -49,7 +87,28 @@ const InnerComponent = () => {
         </Button>
       </div>
 
-      <Button onClick={syncToTuturuuu}>Sync to Tuturuuu</Button>
+      {/* Add sync progress bar when syncing */}
+      {isSyncing && (<>
+                      <Separator className="my-2" />
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-green-700 dark:text-green-400">
+                            {syncProgress.statusMessage}
+                          </span>
+                          <span className="text-green-700 dark:text-green-400">
+                            {Math.round(syncProgress.percentage)}%
+                          </span>
+                        </div>
+                        <Progress
+                          value={syncProgress.percentage}
+                          className="h-1.5 w-full"
+                        />
+                      </div>
+                      <Separator className="my-2" />
+                      </>
+                    )}
+                    
+      <Button onClick={handleSyncToTuturuuu}>Sync to Tuturuuu</Button>
 
       {data && (
         <>
