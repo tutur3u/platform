@@ -67,7 +67,7 @@
     "@next/bundle-analyzer": "^15.3.2",
     "@next/eslint-plugin-next": "^15.3.2",
     "@tanstack/eslint-plugin-query": "^5.78.0",
-    "@tanstack/react-query-devtools": "^5.77.2",
+    "@tanstack/react-query-devtools": "^5.79.0",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
