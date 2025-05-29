@@ -19,6 +19,7 @@ export default async function ModuleQuizzesPage({ params }: Props) {
   const { wsId, moduleId } = await params;
   const t = await getTranslations();
   const quizzes = await getQuizzes(moduleId);
+  const moduleName = await getModuleName(moduleId);
 
   return (
     <div className="grid gap-4">
@@ -47,7 +48,7 @@ export default async function ModuleQuizzesPage({ params }: Props) {
         )}
 
         <div className="col-span-full">
-          <AIQuizzes wsId={wsId} moduleId={moduleId} />
+          <AIQuizzes wsId={wsId} moduleId={moduleId} moduleName={moduleName} />
         </div>
       </div>
     </div>
@@ -67,4 +68,20 @@ const getQuizzes = async (moduleId: string) => {
   }
 
   return data || [];
+};
+
+const getModuleName = async (moduleId: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('workspace_course_modules')
+    .select('name')
+    .eq('id', moduleId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching module name:', error);
+    throw error;
+  }
+
+  return data.name as string;
 };

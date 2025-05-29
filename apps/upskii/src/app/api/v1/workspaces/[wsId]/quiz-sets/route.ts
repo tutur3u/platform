@@ -32,12 +32,48 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId: id } = await params;
 
-  const { moduleId, quiz_options, ...rest } = await req.json();
+  const { moduleId, name, quiz_options, ...rest } = await req.json();
+  // Quiz set name validation
+  if (!name || name.trim().length === 0) {
+    return NextResponse.json(
+      { message: 'Quiz set name is required' },
+      { status: 400 }
+    );
+  }
+  const formattedName = name.trim();
+  const { data: quizSetName, error: quizSetNameError } = await supabase
+    .from('workspace_quiz_sets')
+    .select('name')
+    .eq('ws_id', id)
+    .eq('name', `${formattedName}%`);
+
+  if (quizSetNameError) {
+    console.log(quizSetNameError);
+    return NextResponse.json(
+      { message: 'Error fetching workspace quiz set name' },
+      { status: 500 }
+    );
+  }
+  let renderedName = "";
+  if (!quizSetName || quizSetName.length === 0) {
+    renderedName = formattedName;
+  } else {
+    const existingNames = quizSetName.map((d) => d.name);
+    const baseName = formattedName;
+    let suffix = 2;
+    let newName = `${baseName} ${suffix}`;
+    while (existingNames.includes(newName)) {
+      suffix++;
+      newName = `${baseName} ${suffix}`;
+    }
+    renderedName = newName;
+  }
 
   const { data, error } = await supabase
     .from('workspace_quiz_sets')
     .insert({
       ...rest,
+      name: renderedName,
       ws_id: id,
     })
     .select('id')

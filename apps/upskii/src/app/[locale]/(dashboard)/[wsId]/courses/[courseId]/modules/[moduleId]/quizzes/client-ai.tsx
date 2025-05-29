@@ -13,9 +13,11 @@ import { useState } from 'react';
 export default function AIQuizzes({
   wsId,
   moduleId,
+  moduleName,
 }: {
   wsId: string;
   moduleId: string;
+  moduleName: string;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -32,10 +34,22 @@ export default function AIQuizzes({
     if (!object?.quizzes?.length) return;
 
     try {
+      // Step 1: Create a quiz set (if needed)
+      const quizSetRes = await fetch(`/api/v1/workspaces/${wsId}/quiz-sets`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Quizzes For ' + moduleName,
+          moduleId,
+        }),
+      });
+      if (!quizSetRes.ok) throw new Error('Failed to create quiz set');
+      const quizSet = await quizSetRes.json();
+
       const promises = object.quizzes.map((quiz) =>
         fetch(`/api/v1/workspaces/${wsId}/quizzes`, {
           method: 'POST',
           body: JSON.stringify({
+            setId: quizSet.id,
             moduleId,
             question: quiz?.question,
             quiz_options: quiz?.quiz_options,
