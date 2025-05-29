@@ -108,5 +108,5 @@ export async function POST(req: Request, { params }: Params) {
       .insert(quiz_options.map((o: any) => ({ ...o, quiz_id: data.id })));
   }
 
-  return NextResponse.json({ message: 'success' });
+  return NextResponse.json({ message: 'success', setId: data.id, name: renderedName });
 }
