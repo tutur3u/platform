@@ -21,19 +21,6 @@ const CalendarSyncContext = createContext<{
   syncToGoogle: async () => {},
 });
 
-interface GoogleCalendarErrorResponse {
-  error?: string;
-  statusCode?: number;
-  googleError?: string;
-  details?: {
-    reason?: string;
-    tokenError?: string;
-    hasAccessToken?: boolean;
-    hasRefreshToken?: boolean;
-    userId?: string;
-  };
-}
-
 export const CalendarSyncProvider = ({
   children,
   wsId,
@@ -110,13 +97,12 @@ export const CalendarSyncProvider = ({
     const googleData = await response.json();
 
     if (!response.ok) {
-      const googleError: GoogleCalendarErrorResponse = googleData;
       const errorMessage =
-        googleError.error +
-        ' ' +
-        googleError.googleError +
+        googleData.error +
+        '. ' +
+        googleData.googleError +
         ': ' +
-        googleError.details?.reason;
+        googleData.details?.reason;
       console.error(errorMessage);
       setError(new Error(errorMessage));
       return;
