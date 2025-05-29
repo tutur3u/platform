@@ -138,6 +138,8 @@ export const CalendarSyncProvider = ({
       console.error(errorMessage);
       setError(new Error(errorMessage));
       return;
+    } else {
+      setError(null);
     }
 
     setGoogleData(googleResponse.events);
@@ -152,22 +154,40 @@ export const CalendarSyncProvider = ({
       await new Promise(resolve => setTimeout(resolve, 500)); // Add small delay
     }
 
-    // Upsert to database
-    const eventsWithWsId = googleResponse.events.map((event: WorkspaceCalendarEvent) => ({
-      ...event,
-      ws_id: wsId
-    }));
+    // Insert id (uuid) if not present for Google events already in the database by comparing with data's events (same google_event_id and ws_id)
+    const eventsWithWsId = googleResponse.events.map((event: WorkspaceCalendarEvent) => {
+      const existingEvent = data?.find((e) => e.google_event_id === event.google_event_id && e.ws_id === wsId);
+      console.log('existingEvent', existingEvent);
+      if (existingEvent) {
+        console.log('existingEvent.id', existingEvent.id);
+        return {
+          ...event,
+          id: existingEvent.id,
+          ws_id: wsId
+        };
+      }
+      return {
+        ...event,
+        id: crypto.randomUUID(),
+        ws_id: wsId
+      };
+    });
 
+    // Upsert to database
     const { data: upsertData, error: upsertError } = await supabase
       .from('workspace_calendar_events')
-      .upsert(eventsWithWsId)
-      .eq('ws_id', wsId)
+      .upsert(eventsWithWsId, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      })
       .select();
 
     if (upsertError) {
       console.error(upsertError);
       setError(upsertError);
       return;
+    } else {
+      setError(null);
     }
 
     setData(upsertData);
