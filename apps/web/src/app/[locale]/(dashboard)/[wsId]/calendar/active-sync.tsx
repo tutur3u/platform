@@ -1,10 +1,7 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
-import {
-  CalendarSyncProvider,
-  useCalendarSync,
-} from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useState } from 'react';
@@ -88,26 +85,27 @@ const InnerComponent = () => {
       </div>
 
       {/* Add sync progress bar when syncing */}
-      {isSyncing && (<>
-                      <Separator className="my-2" />
-                      <div className="mt-3 space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-green-700 dark:text-green-400">
-                            {syncProgress.statusMessage}
-                          </span>
-                          <span className="text-green-700 dark:text-green-400">
-                            {Math.round(syncProgress.percentage)}%
-                          </span>
-                        </div>
-                        <Progress
-                          value={syncProgress.percentage}
-                          className="h-1.5 w-full"
-                        />
-                      </div>
-                      <Separator className="my-2" />
-                      </>
-                    )}
-                    
+      {isSyncing && (
+        <>
+          <Separator className="my-2" />
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-green-700 dark:text-green-400">
+                {syncProgress.statusMessage}
+              </span>
+              <span className="text-green-700 dark:text-green-400">
+                {Math.round(syncProgress.percentage)}%
+              </span>
+            </div>
+            <Progress
+              value={syncProgress.percentage}
+              className="h-1.5 w-full"
+            />
+          </div>
+          <Separator className="my-2" />
+        </>
+      )}
+
       <Button onClick={handleSyncToTuturuuu}>Sync to Tuturuuu</Button>
 
       {data && (
@@ -118,7 +116,6 @@ const InnerComponent = () => {
               <div key={event.id}>{event.title}</div>
             ))}
           </div>
-          <Separator className="my-2" />
         </>
       )}
 
@@ -145,9 +142,5 @@ const InnerComponent = () => {
 };
 
 export const CalendarActiveSyncDebugger = ({ wsId }: { wsId: string }) => {
-  return (
-    <CalendarSyncProvider wsId={wsId}>
-      <InnerComponent />
-    </CalendarSyncProvider>
-  );
+  return <InnerComponent />;
 };
