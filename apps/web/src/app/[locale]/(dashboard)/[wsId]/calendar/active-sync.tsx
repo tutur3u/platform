@@ -126,7 +126,7 @@ const InnerComponent = () => {
           <Separator className="my-2" />
           <div>
             {googleData.map((event) => (
-              <div key={event.id}>{event.title}</div>
+              <div key={event.google_event_id}>{event.title}</div>
             ))}
           </div>
         </>
