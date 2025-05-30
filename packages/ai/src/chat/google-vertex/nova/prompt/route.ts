@@ -5,7 +5,6 @@ import {
   TEST_CASE_EVALUATION_PROMPT,
 } from './prompts';
 import { google } from '@ai-sdk/google';
-import { vertex } from '@ai-sdk/google-vertex/edge';
 import type { SafetySetting } from '@google/generative-ai';
 import type {
   NovaSubmissionCriteria,
@@ -20,18 +19,6 @@ import { checkPermission } from '@tuturuuu/utils/nova/submissions/check-permissi
 import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
-
-// Model provider selection strategy
-function getModelProvider() {
-  // Use timestamp to create simple round-robin with 70% preference for Google
-  // const timestamp = Date.now();
-  // return timestamp % 10 < 7 ? 'google' : 'vertex';
-
-  // Always use Google (higher rate limit)
-  return 'google';
-}
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -51,18 +38,13 @@ const modelSafetySettings = [
 ] as SafetySetting[];
 
 // Initialize model with appropriate provider
-const vertexModel =
-  process.env.NODE_ENV === 'production'
-    ? getModelProvider() === 'vertex'
-      ? vertex(DEFAULT_MODEL_NAME, {
-          safetySettings: modelSafetySettings,
-        })
-      : google(DEFAULT_MODEL_NAME, {
-          safetySettings: modelSafetySettings,
-        })
-    : google(DEFAULT_MODEL_NAME, {
-        safetySettings: modelSafetySettings,
-      });
+const critizierModel = google('gemini-2.0-flash', {
+  safetySettings: modelSafetySettings,
+});
+
+const evaluatorModel = google('gemini-2.0-flash-lite', {
+  safetySettings: modelSafetySettings,
+});
 
 // Schema definitions
 const PlagiarismSchema = z.object({
@@ -374,7 +356,7 @@ async function checkPlagiarism(problem: NovaProblem, prompt: string) {
       .replace('{{user_prompt}}', prompt);
 
     const { object: plagiarismCheck } = await generateObject({
-      model: vertexModel,
+      model: critizierModel,
       schema: PlagiarismSchema,
       prompt: plagiarismPrompt,
       temperature: 0.1,
@@ -452,7 +434,7 @@ async function performCriteriaEvaluation(
     );
 
     const { object } = await generateObject({
-      model: vertexModel,
+      model: critizierModel,
       schema: CriteriaEvaluationSchema,
       prompt: ctx.userPrompt,
       system: systemInstruction,
@@ -521,7 +503,7 @@ async function performTestCaseEvaluation(ctx: any) {
     );
 
     const { object } = await generateObject({
-      model: vertexModel,
+      model: evaluatorModel,
       schema: TestCaseEvaluationSchema,
       prompt: ctx.userPrompt,
       system: testCaseInstruction,
@@ -614,7 +596,7 @@ async function evaluateOutputMatch(
       .replace('{{user_prompt}}', prompt);
 
     const { object } = await generateObject({
-      model: vertexModel,
+      model: critizierModel,
       schema: TestCaseCheckSchema,
       prompt: evaluationPrompt,
     });
