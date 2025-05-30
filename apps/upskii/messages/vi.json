@@ -1,4 +1,48 @@
 {
+  "quiz-set-statistics": {
+    "title": "Thống Kê",
+    "description": "Xem thống kê chi tiết về các bài kiểm tra của bạn, bao gồm điểm trung bình, tỷ lệ hoàn thành và nhiều thông tin khác.",
+    "average_pass_rate": "Tỷ Lệ Đạt Trung Bình",
+    "average_score": "Điểm Trung Bình",
+    "total_participants": "Tổng Số Người Tham Gia",
+    "total_quizzes": "Tổng Số Bài Kiểm Tra",
+    "active_quizzes": "Bài kiểm tra hiện có",
+    "total_attempts": "Tổng Số Lượt Làm Bài",
+    "accross_all_quizzes": "Trên tất cả bài kiểm tra",
+    "individual_quiz_performance": "Số Liệu Từng Bài Kiểm Tra",
+    "back": "Quay Lại",
+    "pass_rate": "Tỷ Lệ Đạt",
+    "active_students": "Học Viên Đang Hoạt Động",
+    "unique_participants": "Người tham gia khác nhau",
+    "last_attempt": "Lần Làm Bài Gần Nhất",
+    "no_quizzes": "Không Có Dữ Liệu Bài Kiểm Tra",
+    "no_quizzes_description": "Không tìm thấy lượt làm bài nào cho bộ câu hỏi này. Học viên chưa bắt đầu làm bài kiểm tra."
+  },
+  "home-hero": {
+    "welcome": "Xin chào, {username}!",
+    "badge": "Trải nghiệm học tập nâng cao với AI",
+    "title": "Khám phá các công cụ hiện đại, bài học sinh động và cộng tác dễ dàng",
+    "cards": {
+      "courses": {
+        "title": "Khóa học",
+        "description": "Nắm vững các kỹ thuật thiết kế prompt từ cơ bản đến nâng cao thông qua bài học từng bước và ví dụ thực tiễn."
+      },
+      "quizzes": {
+        "title": "Câu hỏi ôn tập",
+        "description": "Kiểm tra mức độ hiểu biết của bạn với các câu hỏi tương tác giúp củng cố kiến thức và nâng cao kỹ năng thiết kế prompt."
+      },
+      "challenges": {
+        "title": "Thử thách",
+        "description": "Tham gia các thử thách sáng tạo để vượt qua giới hạn và khám phá các giải pháp prompt đột phá cùng AI."
+      },
+      "ai-chat": {
+        "title": "Trò chuyện với AI",
+        "description": "Luyện tập kỹ năng thiết kế prompt qua các cuộc đối thoại thời gian thực với AI, nhận phản hồi ngay lập tức và cải thiện hiệu quả."
+      }
+    },
+    "get-certificate": "Nhận chứng chỉ của bạn"
+  },
+>>>>>>> Stashed changes
   "score-calculator": {
     "test_formula": "(Số Bài Đạt / Tổng Số Bài Kiểm Tra) × 10 × Trọng Số",
     "criteria_formula": "(Tổng Điểm Tiêu Chí / (Tổng Số Tiêu Chí × 10)) × 10 × Trọng Số",
@@ -276,6 +320,7 @@
     "events": "Sự kiện"
   },
   "common": {
+    "statistics": "Thống kê",
     "allow_manage_all_challenges": "Cho phép quản lý tất cả các thử thách",
     "name_placeholder": "Nhập tên",
     "name": "Tên",
