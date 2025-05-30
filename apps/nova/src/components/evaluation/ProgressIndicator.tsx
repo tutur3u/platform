@@ -111,10 +111,10 @@ export function ProgressIndicator({
     <Card
       className={cn(
         'transform transition-all duration-700 ease-out',
-        'border bg-gradient-to-br from-background/95 via-background/98 to-background/95',
+        'from-background/95 via-background/98 to-background/95 border bg-gradient-to-br',
         'shadow-lg backdrop-blur-sm',
         isEvaluationComplete
-          ? 'scale-[1.01] border-dynamic-green/30 shadow-2xl shadow-dynamic-green/20'
+          ? 'border-dynamic-green/30 shadow-dynamic-green/20 scale-[1.01] shadow-2xl'
           : isError
             ? 'border-dynamic-red/30 shadow-dynamic-red/20'
             : isWarning
@@ -125,38 +125,38 @@ export function ProgressIndicator({
       )}
     >
       <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-3 text-xl text-foreground">
+        <CardTitle className="text-foreground flex items-center gap-3 text-xl">
           {isEvaluationComplete ? (
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-dynamic-green/90 shadow-lg">
+                <div className="bg-dynamic-green/90 flex h-8 w-8 items-center justify-center rounded-full shadow-lg">
                   <CheckCircle className="h-5 w-5 text-white" />
                 </div>
                 <div className="absolute inset-0 animate-ping">
-                  <div className="h-8 w-8 rounded-full bg-dynamic-green/60" />
+                  <div className="bg-dynamic-green/60 h-8 w-8 rounded-full" />
                 </div>
               </div>
-              <span className="to-dynamic-emerald bg-gradient-to-r from-dynamic-green bg-clip-text font-bold text-transparent">
+              <span className="to-dynamic-emerald from-dynamic-green bg-gradient-to-r bg-clip-text font-bold text-transparent">
                 ✨ Evaluation Complete!
               </span>
             </div>
           ) : (
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-dynamic-blue/90 shadow-lg">
+                <div className="bg-dynamic-blue/90 flex h-8 w-8 items-center justify-center rounded-full shadow-lg">
                   <LoadingIndicator className="h-5 w-5 text-white" />
                 </div>
                 <div className="absolute inset-0">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-dynamic-blue/30 border-t-transparent opacity-60" />
+                  <div className="border-dynamic-blue/30 h-8 w-8 animate-spin rounded-full border-2 border-t-transparent opacity-60" />
                 </div>
               </div>
-              <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-clip-text font-bold text-transparent">
+              <span className="from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-gradient-to-r bg-clip-text font-bold text-transparent">
                 🤖 AI Evaluation in Progress
               </span>
             </div>
           )}
         </CardTitle>
-        <CardDescription className="flex items-center justify-between text-base text-foreground/70">
+        <CardDescription className="text-foreground/70 flex items-center justify-between text-base">
           <span>
             {isEvaluationComplete
               ? '🎉 Your prompt has been successfully evaluated and results are ready to view!'
@@ -164,7 +164,7 @@ export function ProgressIndicator({
                 'AI models are analyzing your prompt...'}
           </span>
           {currentStepInfo.timestamp && (
-            <span className="text-xs text-foreground/50">
+            <span className="text-foreground/50 text-xs">
               {currentStepInfo.timestamp}
             </span>
           )}
@@ -176,7 +176,7 @@ export function ProgressIndicator({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="text-2xl font-bold text-foreground">
+              <div className="text-foreground text-2xl font-bold">
                 {Math.round(overallProgress)}%
               </div>
             </div>
@@ -210,7 +210,7 @@ export function ProgressIndicator({
           <div className="relative">
             <Progress
               value={overallProgress}
-              className="h-4 border border-dynamic-blue/20 bg-background"
+              className="border-dynamic-blue/20 bg-background h-4 border"
               indicatorClassName={cn(
                 'transition-all duration-700 ease-out',
                 isEvaluationComplete
@@ -219,7 +219,7 @@ export function ProgressIndicator({
                     ? 'bg-dynamic-red'
                     : isWarning
                       ? 'bg-dynamic-amber'
-                      : 'bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo'
+                      : 'from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-gradient-to-r'
               )}
             />
             {!isEvaluationComplete && overallProgress > 0 && (
@@ -258,13 +258,13 @@ export function ProgressIndicator({
                   {currentStepInfo.currentStep.step === 'parsing_error' ? (
                     <AlertCircle className="text-dynamic-amber h-5 w-5" />
                   ) : currentStepInfo.currentStep.step === 'error' ? (
-                    <AlertCircle className="h-5 w-5 text-dynamic-red" />
+                    <AlertCircle className="text-dynamic-red h-5 w-5" />
                   ) : (
-                    <LoadingIndicator className="h-5 w-5 text-dynamic-blue" />
+                    <LoadingIndicator className="text-dynamic-blue h-5 w-5" />
                   )}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-foreground">
+                  <div className="text-foreground font-medium">
                     {STEP_CONFIG[currentStepInfo.currentStep.step]?.label ||
                       currentStepInfo.currentStep.step}
                   </div>
@@ -282,7 +282,7 @@ export function ProgressIndicator({
                   </div>
                   {STEP_CONFIG[currentStepInfo.currentStep.step]
                     ?.description && (
-                    <div className="mt-1 text-xs text-foreground/60">
+                    <div className="text-foreground/60 mt-1 text-xs">
                       {
                         STEP_CONFIG[currentStepInfo.currentStep.step]
                           ?.description
@@ -311,8 +311,8 @@ export function ProgressIndicator({
             <Separator className="bg-foreground/10" />
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Cog className="h-4 w-4 text-foreground/60" />
-                <h4 className="font-semibold text-foreground">
+                <Cog className="text-foreground/60 h-4 w-4" />
+                <h4 className="text-foreground font-semibold">
                   Detailed Progress
                 </h4>
                 <Badge variant="outline" className="ml-auto text-xs">
@@ -342,7 +342,7 @@ export function ProgressIndicator({
                       open={isExpanded}
                       onOpenChange={() => onToggleCategory(category)}
                     >
-                      <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg border border-foreground/10 bg-background/60 p-3 text-left transition-all hover:bg-background/80">
+                      <CollapsibleTrigger className="border-foreground/10 bg-background/60 hover:bg-background/80 group flex w-full items-center justify-between rounded-lg border p-3 text-left transition-all">
                         <div className="flex items-center gap-3">
                           <div
                             className={cn(
@@ -364,7 +364,7 @@ export function ProgressIndicator({
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-foreground">
+                              <span className="text-foreground text-sm font-medium">
                                 {categoryConfig.label}
                               </span>
                             </div>
@@ -372,9 +372,9 @@ export function ProgressIndicator({
                         </div>
                         <div className="flex items-center gap-2">
                           {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-foreground/60 transition-transform group-hover:text-foreground" />
+                            <ChevronDown className="text-foreground/60 group-hover:text-foreground h-4 w-4 transition-transform" />
                           ) : (
-                            <ChevronRight className="h-4 w-4 text-foreground/60 transition-transform group-hover:text-foreground" />
+                            <ChevronRight className="text-foreground/60 group-hover:text-foreground h-4 w-4 transition-transform" />
                           )}
                         </div>
                       </CollapsibleTrigger>
