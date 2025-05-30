@@ -93,7 +93,7 @@
     "use-debounce": "^10.0.4",
     "uuid": "^11.1.0",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
-    "zod": "^3.25.41"
+    "zod": "^3.25.42"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
