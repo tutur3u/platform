@@ -701,6 +701,62 @@ export type Database = {
           },
         ];
       };
+      course_module_completion_status: {
+        Row: {
+          completed_at: string | null;
+          completion_id: string;
+          completion_status: boolean;
+          created_at: string | null;
+          module_id: string;
+          user_id: string | null;
+        };
+        Insert: {
+          completed_at?: string | null;
+          completion_id?: string;
+          completion_status?: boolean;
+          created_at?: string | null;
+          module_id?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          completed_at?: string | null;
+          completion_id?: string;
+          completion_status?: boolean;
+          created_at?: string | null;
+          module_id?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_module_completion_status_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_completion_status_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'course_module_completion_status_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'course_module_completion_status_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       course_module_flashcards: {
         Row: {
           created_at: string;

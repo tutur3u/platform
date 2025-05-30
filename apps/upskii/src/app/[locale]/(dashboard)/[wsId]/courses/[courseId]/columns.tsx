@@ -95,6 +95,21 @@ export const getWorkspaceCourseModuleColumns = (
     ),
   },
   {
+    accessorKey: 'is_completed',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.is_completed`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="font-semibold">
+        {row.getValue('is_completed') ? <Check /> : <X />}
+      </div>
+    ),
+  },
+  {
     accessorKey: 'created_at',
     header: ({ column }) => (
       <DataTableColumnHeader
