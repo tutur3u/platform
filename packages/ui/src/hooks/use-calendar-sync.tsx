@@ -96,6 +96,17 @@ export const CalendarSyncProvider = ({
       return;
     }
 
+    // Debug log for database data
+    console.log(
+      'Database events:',
+      dbData?.map((e: WorkspaceCalendarEvent) => ({
+        id: e.id,
+        title: e.title,
+        google_event_id: e.google_event_id,
+        ws_id: e.ws_id,
+      }))
+    );
+
     setData(dbData);
 
     if (progressCallback) {
@@ -129,6 +140,17 @@ export const CalendarSyncProvider = ({
       setError(null);
     }
 
+    // Debug log for Google events
+    console.log(
+      'Google Calendar events:',
+      googleResponse.events?.map((e: WorkspaceCalendarEvent) => ({
+        title: e.title,
+        google_event_id: e.google_event_id,
+        start_at: e.start_at,
+        end_at: e.end_at,
+      }))
+    );
+
     setGoogleData(googleResponse.events);
 
     if (progressCallback) {
@@ -141,21 +163,63 @@ export const CalendarSyncProvider = ({
       await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
     }
 
-    // Insert id (uuid) if not present for Google events already in the database by comparing with data's events (same google_event_id and ws_id)
-    const eventsWithWsId = googleResponse.events.map(
+    // Prepare events for upsert by matching with existing events
+    const eventsToUpsert = googleResponse.events.map(
       (event: WorkspaceCalendarEvent) => {
-        const existingEvent = data?.find(
-          (e) => e.google_event_id === event.google_event_id && e.ws_id === wsId
-        );
-        console.log('existingEvent', existingEvent);
+        // Only try to match if we have google_event_id
+        if (!event.google_event_id) {
+          console.log('Event has no google_event_id:', event.title);
+          return {
+            ...event,
+            id: crypto.randomUUID(),
+            ws_id: wsId,
+          };
+        }
+
+        // Debug log for each comparison attempt
+        console.log('Trying to match event:', {
+          title: event.title,
+          google_event_id: event.google_event_id,
+          start_at: event.start_at,
+          end_at: event.end_at,
+        });
+
+        // Find existing event with same google_event_id
+        const existingEvent = dbData?.find((e) => {
+          const matches =
+            e.google_event_id === event.google_event_id &&
+            e.google_event_id !== null;
+          if (matches) {
+            console.log('Found match:', {
+              dbEvent: {
+                id: e.id,
+                title: e.title,
+                google_event_id: e.google_event_id,
+                ws_id: e.ws_id,
+              },
+              googleEvent: {
+                title: event.title,
+                google_event_id: event.google_event_id,
+              },
+            });
+          }
+          return matches;
+        });
+
         if (existingEvent) {
-          console.log('existingEvent.id', existingEvent.id);
+          console.log('Using existing event ID:', {
+            title: event.title,
+            existingId: existingEvent.id,
+            google_event_id: event.google_event_id,
+          });
           return {
             ...event,
             id: existingEvent.id,
             ws_id: wsId,
           };
         }
+
+        console.log('No match found, generating new ID for:', event.title);
         return {
           ...event,
           id: crypto.randomUUID(),
@@ -164,17 +228,28 @@ export const CalendarSyncProvider = ({
       }
     );
 
-    // Upsert to database
+    // Debug log for final upsert data
+    console.log(
+      'Events to upsert:',
+      eventsToUpsert.map((e: WorkspaceCalendarEvent) => ({
+        id: e.id,
+        title: e.title,
+        google_event_id: e.google_event_id,
+        ws_id: e.ws_id,
+      }))
+    );
+
+    // Upsert using id as conflict target since we've properly assigned ids
     const { data: upsertData, error: upsertError } = await supabase
       .from('workspace_calendar_events')
-      .upsert(eventsWithWsId, {
+      .upsert(eventsToUpsert, {
         onConflict: 'id',
         ignoreDuplicates: false,
       })
       .select();
 
     if (upsertError) {
-      console.error(upsertError);
+      console.error('Error upserting events:', upsertError);
       setError(upsertError);
       return;
     } else {
