@@ -156,6 +156,7 @@ const InnerComponent = () => {
   );
 };
 
-export const CalendarActiveSyncDebugger = () => {
+export const CalendarActiveSyncDebugger = (wsId: { wsId: string }) => {
+  console.log('wsId', wsId);
   return <InnerComponent />;
 };
