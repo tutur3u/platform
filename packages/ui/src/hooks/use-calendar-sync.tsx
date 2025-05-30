@@ -66,6 +66,7 @@ export const CalendarSyncProvider = ({
     'day' | '4-day' | 'week' | 'month'
   >('day');
   const prevGoogleDataRef = useRef<string>('');
+  const prevDatesRef = useRef<string>('');
 
   // Fetch google events every 30 seconds
   const { data: fetchedGoogleData } = useQuery({
@@ -97,6 +98,17 @@ export const CalendarSyncProvider = ({
       setError(null);
     }
     return googleResponse.events;
+  };
+
+  // Helper to check if dates have actually changed
+  const areDatesEqual = (newDates: Date[]) => {
+    const newDatesStr = JSON.stringify(newDates.map((d) => d.toISOString()));
+    const prevDatesStr = prevDatesRef.current;
+    const areEqual = newDatesStr === prevDatesStr;
+    if (!areEqual) {
+      prevDatesRef.current = newDatesStr;
+    }
+    return areEqual;
   };
 
   // Sync Google events of current view to Tuturuuu database
@@ -354,6 +366,7 @@ export const CalendarSyncProvider = ({
     [wsId, dates]
   );
 
+  // Sync to Tuturuuu database when google data changes for current view
   useEffect(() => {
     // Convert current data to strings for comparison
     const currentGoogleDataStr = JSON.stringify(fetchedGoogleData);
@@ -362,11 +375,33 @@ export const CalendarSyncProvider = ({
     const hasDataChanged = currentGoogleDataStr !== prevGoogleDataRef.current;
 
     if (hasDataChanged) {
+      console.log('useEffect 1');
       syncToTuturuuu();
       // Update refs with current values
       prevGoogleDataRef.current = currentGoogleDataStr;
     }
   }, [fetchedGoogleData, syncToTuturuuu]);
+
+  // Sync to Tuturuuu database when changing views AND there are changes in Google data
+  useEffect(() => {
+    // Skip if dates haven't actually changed
+    if (areDatesEqual(dates)) {
+      return;
+    }
+
+    const syncData = async () => {
+      const ggData = await fetchGoogleCalendarEvents();
+      if (ggData) {
+        const currentGoogleDataStr = JSON.stringify(ggData);
+
+        // Only sync if the data has changed for this view
+        console.log('useEffect 2');
+        syncToTuturuuu();
+        prevGoogleDataRef.current = currentGoogleDataStr;
+      }
+    };
+    syncData();
+  }, [dates]);
 
   const syncToGoogle = async () => {};
 
