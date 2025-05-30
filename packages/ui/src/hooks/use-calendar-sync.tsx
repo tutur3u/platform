@@ -1,9 +1,20 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace, WorkspaceCalendarEvent } from '@tuturuuu/types/db';
+import type {
+  Workspace,
+  WorkspaceCalendarEvent,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
-import { createContext, useContext, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const CalendarSyncContext = createContext<{
   data: WorkspaceCalendarEvent[] | null;
@@ -37,9 +48,13 @@ const CalendarSyncContext = createContext<{
 export const CalendarSyncProvider = ({
   children,
   wsId,
+  experimentalGoogleToken,
+  useQuery,
 }: {
   children: React.ReactNode;
   wsId: Workspace['id'];
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  useQuery: any;
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(
@@ -50,82 +65,24 @@ export const CalendarSyncProvider = ({
   const [currentView, setCurrentView] = useState<
     'day' | '4-day' | 'week' | 'month'
   >('day');
+  const prevGoogleDataRef = useRef<string>('');
 
-  const syncToTuturuuu = async (
-    progressCallback?: (progress: {
-      phase: 'get' | 'fetch' | 'delete' | 'upsert' | 'complete';
-      percentage: number;
-      statusMessage: string;
-      changesMade: boolean;
-    }) => void
-  ) => {
-    const supabase = createClient();
+  // Fetch google events every 30 seconds
+  const { data: fetchedGoogleData } = useQuery({
+    queryKey: ['googleCalendarEvents', wsId],
+    enabled: !!wsId && experimentalGoogleToken?.ws_id === wsId,
+    queryFn: () => fetchGoogleCalendarEvents(),
+    refetchInterval: 30000,
+  });
 
-    if (!dates.length) {
-      console.error('No dates available for sync');
-      return;
-    }
-
-    // Use the exact range from dates array
-    const startDate = dayjs(dates[0]).startOf('day');
-    const endDate = dayjs(dates[dates.length - 1]).endOf('day');
-
-    // Report get phase starting
-    if (progressCallback) {
-      progressCallback({
-        phase: 'get',
-        percentage: 0,
-        statusMessage: 'Fetching events from database...',
-        changesMade: false,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-    }
-
-    // Fetch from database
-    const { data: dbData, error: dbError } = await supabase
-      .from('workspace_calendar_events')
-      .select('*')
-      .eq('ws_id', wsId)
-      .gte('start_at', startDate.toISOString())
-      .lte('end_at', endDate.toISOString())
-      .order('start_at', { ascending: true });
-
-    if (dbError) {
-      console.error(dbError);
-      setError(dbError);
-      return;
-    }
-
-    // Debug log for database data
-    console.log(
-      'Database events:',
-      dbData?.map((e: WorkspaceCalendarEvent) => ({
-        id: e.id,
-        title: e.title,
-        google_event_id: e.google_event_id,
-        ws_id: e.ws_id,
-      }))
-    );
-
-    setData(dbData);
-
-    if (progressCallback) {
-      progressCallback({
-        phase: 'fetch',
-        percentage: 25,
-        statusMessage: 'Fetching events from Google Calendar...',
-        changesMade: false,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-    }
-
-    // Fetch from Google Calendar
+  const fetchGoogleCalendarEvents = async () => {
+    console.log('30 SECONDS fetch google events');
+    let startDate = dayjs(dates[0]).startOf('day');
+    let endDate = dayjs(dates[dates.length - 1]).endOf('day');
     const response = await fetch(
       `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
     );
-
     const googleResponse = await response.json();
-
     if (!response.ok) {
       const errorMessage =
         googleResponse.error +
@@ -139,168 +96,277 @@ export const CalendarSyncProvider = ({
     } else {
       setError(null);
     }
+    return googleResponse.events;
+  };
 
-    // Debug log for Google events
-    console.log(
-      'Google Calendar events:',
-      googleResponse.events?.map((e: WorkspaceCalendarEvent) => ({
-        title: e.title,
-        google_event_id: e.google_event_id,
-        start_at: e.start_at,
-        end_at: e.end_at,
-      }))
-    );
+  // Sync Google events of current view to Tuturuuu database
+  const syncToTuturuuu = useCallback(
+    async (
+      progressCallback?: (progress: {
+        phase: 'get' | 'fetch' | 'delete' | 'upsert' | 'complete';
+        percentage: number;
+        statusMessage: string;
+        changesMade: boolean;
+      }) => void
+    ) => {
+      const supabase = createClient();
 
-    setGoogleData(googleResponse.events);
+      if (!dates.length) {
+        console.error('No dates available for sync');
+        return;
+      }
 
-    if (progressCallback) {
-      progressCallback({
-        phase: 'delete',
-        percentage: 50,
-        statusMessage: 'Deleting events from database...',
-        changesMade: false,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-    }
+      // Use the exact range from dates array
+      const startDate = dayjs(dates[0]).startOf('day');
+      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
 
-    // Create a set of google_event_id from googleResponse.events
-    const googleEventIds = new Set(
-      googleResponse.events.map(
-        (e: WorkspaceCalendarEvent) => e.google_event_id
-      )
-    );
+      // Report get phase starting
+      if (progressCallback) {
+        progressCallback({
+          phase: 'get',
+          percentage: 0,
+          statusMessage: 'Fetching events from database...',
+          changesMade: false,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
+      }
 
-    // Filter data not in googleEventIds
-    const dataToDelete = dbData?.filter(
-      (e: WorkspaceCalendarEvent) => !googleEventIds.has(e.google_event_id)
-    );
-    console.log('dataToDelete', dataToDelete);
-    // Delete dataToDelete
-    if (dataToDelete) {
-      await supabase
+      // Fetch from database
+      const { data: dbData, error: dbError } = await supabase
         .from('workspace_calendar_events')
-        .delete()
-        .in(
-          'id',
-          dataToDelete.map((e) => e.id)
-        );
-    }
+        .select('*')
+        .eq('ws_id', wsId)
+        .gte('start_at', startDate.toISOString())
+        .lte('end_at', endDate.toISOString())
+        .order('start_at', { ascending: true });
 
-    if (progressCallback) {
-      progressCallback({
-        phase: 'upsert',
-        percentage: 75,
-        statusMessage: 'Syncing events to database...',
-        changesMade: false,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-    }
+      if (dbError) {
+        console.error(dbError);
+        setError(dbError);
+        return;
+      }
 
-    // Prepare events for upsert by matching with existing events
-    const eventsToUpsert = googleResponse.events.map(
-      (event: WorkspaceCalendarEvent) => {
-        // Only try to match if we have google_event_id
-        if (!event.google_event_id) {
-          console.log('Event has no google_event_id:', event.title);
+      // Debug log for database data
+      console.log(
+        'Database events:',
+        dbData?.map((e: WorkspaceCalendarEvent) => ({
+          id: e.id,
+          title: e.title,
+          google_event_id: e.google_event_id,
+          ws_id: e.ws_id,
+        }))
+      );
+
+      setData(dbData);
+
+      if (progressCallback) {
+        progressCallback({
+          phase: 'fetch',
+          percentage: 25,
+          statusMessage: 'Fetching events from Google Calendar...',
+          changesMade: false,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
+      }
+
+      // Fetch from Google Calendar
+      const response = await fetch(
+        `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+      );
+
+      const googleResponse = await response.json();
+
+      if (!response.ok) {
+        const errorMessage =
+          googleResponse.error +
+          '. ' +
+          googleResponse.googleError +
+          ': ' +
+          googleResponse.details?.reason;
+        console.error(errorMessage);
+        setError(new Error(errorMessage));
+        return;
+      } else {
+        setError(null);
+      }
+
+      // Debug log for Google events
+      console.log(
+        'Google Calendar events:',
+        googleResponse.events?.map((e: WorkspaceCalendarEvent) => ({
+          title: e.title,
+          google_event_id: e.google_event_id,
+          start_at: e.start_at,
+          end_at: e.end_at,
+        }))
+      );
+
+      setGoogleData(googleResponse.events);
+
+      if (progressCallback) {
+        progressCallback({
+          phase: 'delete',
+          percentage: 50,
+          statusMessage: 'Deleting events from database...',
+          changesMade: false,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
+      }
+
+      // Create a set of google_event_id from googleResponse.events
+      const googleEventIds = new Set(
+        googleResponse.events.map(
+          (e: WorkspaceCalendarEvent) => e.google_event_id
+        )
+      );
+
+      // Filter data not in googleEventIds
+      const dataToDelete = dbData?.filter(
+        (e: WorkspaceCalendarEvent) => !googleEventIds.has(e.google_event_id)
+      );
+      console.log('dataToDelete', dataToDelete);
+      // Delete dataToDelete
+      if (dataToDelete) {
+        await supabase
+          .from('workspace_calendar_events')
+          .delete()
+          .in(
+            'id',
+            dataToDelete.map((e) => e.id)
+          );
+      }
+
+      if (progressCallback) {
+        progressCallback({
+          phase: 'upsert',
+          percentage: 75,
+          statusMessage: 'Syncing events to database...',
+          changesMade: false,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
+      }
+
+      // Prepare events for upsert by matching with existing events
+      const eventsToUpsert = googleResponse.events.map(
+        (event: WorkspaceCalendarEvent) => {
+          // Only try to match if we have google_event_id
+          if (!event.google_event_id) {
+            console.log('Event has no google_event_id:', event.title);
+            return {
+              ...event,
+              id: crypto.randomUUID(),
+              ws_id: wsId,
+            };
+          }
+
+          // Debug log for each comparison attempt
+          console.log('Trying to match event:', {
+            title: event.title,
+            google_event_id: event.google_event_id,
+            start_at: event.start_at,
+            end_at: event.end_at,
+          });
+
+          // Find existing event with same google_event_id
+          const existingEvent = dbData?.find((e) => {
+            const matches =
+              e.google_event_id === event.google_event_id &&
+              e.google_event_id !== null;
+            if (matches) {
+              console.log('Found match:', {
+                dbEvent: {
+                  id: e.id,
+                  title: e.title,
+                  google_event_id: e.google_event_id,
+                  ws_id: e.ws_id,
+                },
+                googleEvent: {
+                  title: event.title,
+                  google_event_id: event.google_event_id,
+                },
+              });
+            }
+            return matches;
+          });
+
+          if (existingEvent) {
+            console.log('Using existing event ID:', {
+              title: event.title,
+              existingId: existingEvent.id,
+              google_event_id: event.google_event_id,
+            });
+            return {
+              ...event,
+              id: existingEvent.id,
+              ws_id: wsId,
+            };
+          }
+
+          console.log('No match found, generating new ID for:', event.title);
           return {
             ...event,
             id: crypto.randomUUID(),
             ws_id: wsId,
           };
         }
+      );
 
-        // Debug log for each comparison attempt
-        console.log('Trying to match event:', {
-          title: event.title,
-          google_event_id: event.google_event_id,
-          start_at: event.start_at,
-          end_at: event.end_at,
-        });
+      // Debug log for final upsert data
+      console.log(
+        'Events to upsert:',
+        eventsToUpsert.map((e: WorkspaceCalendarEvent) => ({
+          id: e.id,
+          title: e.title,
+          google_event_id: e.google_event_id,
+          ws_id: e.ws_id,
+        }))
+      );
 
-        // Find existing event with same google_event_id
-        const existingEvent = dbData?.find((e) => {
-          const matches =
-            e.google_event_id === event.google_event_id &&
-            e.google_event_id !== null;
-          if (matches) {
-            console.log('Found match:', {
-              dbEvent: {
-                id: e.id,
-                title: e.title,
-                google_event_id: e.google_event_id,
-                ws_id: e.ws_id,
-              },
-              googleEvent: {
-                title: event.title,
-                google_event_id: event.google_event_id,
-              },
-            });
-          }
-          return matches;
-        });
+      // Upsert using id as conflict target since we've properly assigned ids
+      const { data: upsertData, error: upsertError } = await supabase
+        .from('workspace_calendar_events')
+        .upsert(eventsToUpsert, {
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        })
+        .select();
 
-        if (existingEvent) {
-          console.log('Using existing event ID:', {
-            title: event.title,
-            existingId: existingEvent.id,
-            google_event_id: event.google_event_id,
-          });
-          return {
-            ...event,
-            id: existingEvent.id,
-            ws_id: wsId,
-          };
-        }
-
-        console.log('No match found, generating new ID for:', event.title);
-        return {
-          ...event,
-          id: crypto.randomUUID(),
-          ws_id: wsId,
-        };
+      if (upsertError) {
+        console.error('Error upserting events:', upsertError);
+        setError(upsertError);
+        return;
+      } else {
+        setError(null);
       }
-    );
 
-    // Debug log for final upsert data
-    console.log(
-      'Events to upsert:',
-      eventsToUpsert.map((e: WorkspaceCalendarEvent) => ({
-        id: e.id,
-        title: e.title,
-        google_event_id: e.google_event_id,
-        ws_id: e.ws_id,
-      }))
-    );
+      setData(upsertData);
 
-    // Upsert using id as conflict target since we've properly assigned ids
-    const { data: upsertData, error: upsertError } = await supabase
-      .from('workspace_calendar_events')
-      .upsert(eventsToUpsert, {
-        onConflict: 'id',
-        ignoreDuplicates: false,
-      })
-      .select();
+      if (progressCallback) {
+        progressCallback({
+          phase: 'complete',
+          percentage: 100,
+          statusMessage: 'Sync completed successfully',
+          changesMade: true,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Longer delay at completion
+      }
+    },
+    [wsId, dates]
+  );
 
-    if (upsertError) {
-      console.error('Error upserting events:', upsertError);
-      setError(upsertError);
-      return;
-    } else {
-      setError(null);
+  useEffect(() => {
+    // Convert current data to strings for comparison
+    const currentGoogleDataStr = JSON.stringify(fetchedGoogleData);
+
+    // Only sync if the data has actually changed
+    const hasDataChanged = currentGoogleDataStr !== prevGoogleDataRef.current;
+
+    if (hasDataChanged) {
+      syncToTuturuuu();
+      // Update refs with current values
+      prevGoogleDataRef.current = currentGoogleDataStr;
     }
-
-    setData(upsertData);
-
-    if (progressCallback) {
-      progressCallback({
-        phase: 'complete',
-        percentage: 100,
-        statusMessage: 'Sync completed successfully',
-        changesMade: true,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Longer delay at completion
-    }
-  };
+  }, [fetchedGoogleData, syncToTuturuuu]);
 
   const syncToGoogle = async () => {};
 

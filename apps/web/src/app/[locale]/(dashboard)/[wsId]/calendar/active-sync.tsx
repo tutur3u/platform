@@ -19,7 +19,7 @@ const InnerComponent = () => {
   } = useCalendarSync();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{
-    phase: 'get' | 'fetch' | 'upsert' | 'complete';
+    phase: 'get' | 'fetch' | 'delete' | 'upsert' | 'complete';
     percentage: number;
     statusMessage: string;
     changesMade: boolean;
