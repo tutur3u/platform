@@ -4,12 +4,14 @@ import { Button } from '@tuturuuu/ui/button';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 
 const InnerComponent = () => {
   const {
     data,
     googleData,
+    dates,
     error,
     currentView,
     syncToTuturuuu,
@@ -130,6 +132,19 @@ const InnerComponent = () => {
         </>
       )}
 
+      {dates && (
+        <>
+          <Separator className="my-2" />
+          <div>
+            {dates.map((date) => (
+              <div key={date.toISOString()}>
+                {dayjs(date).format('YYYY-MM-DD')}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {error && (
         <>
           <Separator className="my-2" />
@@ -141,6 +156,6 @@ const InnerComponent = () => {
   );
 };
 
-export const CalendarActiveSyncDebugger = ({ wsId }: { wsId: string }) => {
+export const CalendarActiveSyncDebugger = ({}: { wsId: string }) => {
   return <InnerComponent />;
 };

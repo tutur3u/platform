@@ -65,7 +65,6 @@ export const CalendarSyncProvider = ({
       console.error('No dates available for sync');
       return;
     }
-    console.log('dates', dates);
 
     // Use the exact range from dates array
     const startDate = dayjs(dates[0]).startOf('day');
