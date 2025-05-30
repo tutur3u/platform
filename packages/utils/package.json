@@ -15,7 +15,7 @@
     "@tuturuuu/supabase": "workspace:*",
     "clsx": "^2.1.1",
     "eslint": "^9.27.0",
-    "next": "15.4.0-canary.57",
+    "next": "15.4.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwind-merge": "^3.3.0",
