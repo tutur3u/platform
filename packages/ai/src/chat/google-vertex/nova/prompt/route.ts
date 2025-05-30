@@ -42,7 +42,7 @@ const critizierModel = google('gemini-2.0-flash', {
   safetySettings: modelSafetySettings,
 });
 
-const evaluatorModel = google('gemini-2.0-flash-lite', {
+const evaluatorModel = google('gemini-2.0-flash', {
   safetySettings: modelSafetySettings,
 });
 
