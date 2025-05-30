@@ -413,45 +413,45 @@ export default function PromptForm({ problem, session, submissions }: Props) {
       <Card
         className={cn(
           'mb-6 transition-all duration-500 ease-in-out',
-          'border bg-background/95 shadow-lg backdrop-blur-sm',
+          'bg-background/95 border shadow-lg backdrop-blur-sm',
           isEvaluationComplete
             ? 'border-dynamic-green/20 shadow-dynamic-green/10'
             : 'border-dynamic-blue/20 shadow-dynamic-blue/10'
         )}
       >
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-xl text-foreground">
+          <CardTitle className="text-foreground flex items-center gap-3 text-xl">
             {isEvaluationComplete ? (
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-dynamic-green/90 shadow-lg">
+                  <div className="bg-dynamic-green/90 flex h-8 w-8 items-center justify-center rounded-full shadow-lg">
                     <CheckCircle className="h-5 w-5 text-white" />
                   </div>
                   <div className="absolute inset-0 animate-ping">
-                    <div className="h-8 w-8 rounded-full bg-dynamic-green/60" />
+                    <div className="bg-dynamic-green/60 h-8 w-8 rounded-full" />
                   </div>
                 </div>
-                <span className="to-dynamic-emerald bg-gradient-to-r from-dynamic-green bg-clip-text font-bold text-transparent">
+                <span className="to-dynamic-emerald from-dynamic-green bg-gradient-to-r bg-clip-text font-bold text-transparent">
                   ✨ Evaluation Complete!
                 </span>
               </div>
             ) : (
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-dynamic-blue/90 shadow-lg">
+                  <div className="bg-dynamic-blue/90 flex h-8 w-8 items-center justify-center rounded-full shadow-lg">
                     <LoadingIndicator className="h-5 w-5 text-white" />
                   </div>
                   <div className="absolute inset-0">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-dynamic-blue/30 border-t-transparent opacity-60" />
+                    <div className="border-dynamic-blue/30 h-8 w-8 animate-spin rounded-full border-2 border-t-transparent opacity-60" />
                   </div>
                 </div>
-                <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-clip-text font-bold text-transparent">
+                <span className="from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-gradient-to-r bg-clip-text font-bold text-transparent">
                   🤖 AI Evaluation in Progress
                 </span>
               </div>
             )}
           </CardTitle>
-          <CardDescription className="flex items-center justify-between text-base text-foreground/70">
+          <CardDescription className="text-foreground/70 flex items-center justify-between text-base">
             <span>
               {isEvaluationComplete
                 ? '🎉 Your prompt has been successfully evaluated and results are ready to view!'
@@ -459,7 +459,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                   'AI models are analyzing your prompt...'}
             </span>
             {currentStepInfo.timestamp && (
-              <span className="text-xs text-foreground/50">
+              <span className="text-foreground/50 text-xs">
                 {currentStepInfo.timestamp}
               </span>
             )}
@@ -471,7 +471,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="text-2xl font-bold text-foreground">
+                <div className="text-foreground text-2xl font-bold">
                   {Math.round(overallProgress)}%
                 </div>
               </div>
@@ -505,14 +505,14 @@ export default function PromptForm({ problem, session, submissions }: Props) {
             <div className="relative">
               <Progress
                 value={overallProgress}
-                className="h-4 border border-dynamic-blue/20 bg-background"
+                className="border-dynamic-blue/20 bg-background h-4 border"
                 indicatorClassName={cn(
                   'transition-all duration-700 ease-out',
                   isEvaluationComplete
                     ? 'bg-dynamic-green'
                     : currentProgress?.step === 'error'
                       ? 'bg-dynamic-red'
-                      : 'bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo'
+                      : 'from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-gradient-to-r'
                 )}
               />
               {!isEvaluationComplete && overallProgress > 0 && (
@@ -527,22 +527,22 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
             {/* Current Step Details */}
             {currentStepInfo.currentStep && !isEvaluationComplete && (
-              <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+              <div className="border-dynamic-blue/20 bg-dynamic-blue/5 rounded-lg border p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-dynamic-blue/30 bg-dynamic-blue/20">
-                    <LoadingIndicator className="h-5 w-5 text-dynamic-blue" />
+                  <div className="border-dynamic-blue/30 bg-dynamic-blue/20 flex h-10 w-10 items-center justify-center rounded-full border">
+                    <LoadingIndicator className="text-dynamic-blue h-5 w-5" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-foreground">
+                    <div className="text-foreground font-medium">
                       {STEP_CONFIG[currentStepInfo.currentStep.step]?.label ||
                         currentStepInfo.currentStep.step}
                     </div>
-                    <div className="text-sm text-foreground/70">
+                    <div className="text-foreground/70 text-sm">
                       {currentStepInfo.currentStep.message}
                     </div>
                     {STEP_CONFIG[currentStepInfo.currentStep.step]
                       ?.description && (
-                      <div className="mt-1 text-xs text-foreground/60">
+                      <div className="text-foreground/60 mt-1 text-xs">
                         {
                           STEP_CONFIG[currentStepInfo.currentStep.step]
                             ?.description
@@ -561,8 +561,8 @@ export default function PromptForm({ problem, session, submissions }: Props) {
               <Separator className="bg-foreground/10" />
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Cog className="h-4 w-4 text-foreground/60" />
-                  <h4 className="font-semibold text-foreground">
+                  <Cog className="text-foreground/60 h-4 w-4" />
+                  <h4 className="text-foreground font-semibold">
                     Detailed Progress
                   </h4>
                   <Badge variant="outline" className="ml-auto text-xs">
@@ -592,7 +592,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                         open={isExpanded}
                         onOpenChange={() => toggleCategory(category)}
                       >
-                        <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg border border-foreground/10 bg-background/60 p-3 text-left transition-all hover:bg-background/80">
+                        <CollapsibleTrigger className="border-foreground/10 bg-background/60 hover:bg-background/80 group flex w-full items-center justify-between rounded-lg border p-3 text-left transition-all">
                           <div className="flex items-center gap-3">
                             <div
                               className={cn(
@@ -614,7 +614,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-foreground">
+                                <span className="text-foreground text-sm font-medium">
                                   {categoryConfig.label}
                                 </span>
                               </div>
@@ -622,9 +622,9 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                           </div>
                           <div className="flex items-center gap-2">
                             {isExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-foreground/60 transition-transform group-hover:text-foreground" />
+                              <ChevronDown className="text-foreground/60 group-hover:text-foreground h-4 w-4 transition-transform" />
                             ) : (
-                              <ChevronRight className="h-4 w-4 text-foreground/60 transition-transform group-hover:text-foreground" />
+                              <ChevronRight className="text-foreground/60 group-hover:text-foreground h-4 w-4 transition-transform" />
                             )}
                           </div>
                         </CollapsibleTrigger>
@@ -689,8 +689,8 @@ export default function PromptForm({ problem, session, submissions }: Props) {
               <Separator className="bg-dynamic-green/20" />
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-dynamic-green" />
-                  <h4 className="font-semibold text-foreground">
+                  <TrendingUp className="text-dynamic-green h-4 w-4" />
+                  <h4 className="text-foreground font-semibold">
                     Live Results
                   </h4>
                   <Badge variant="secondary" className="ml-auto text-xs">
@@ -700,30 +700,30 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   {evaluationPreview.criteriaEvaluation?.length && (
-                    <div className="rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-3">
+                    <div className="border-dynamic-purple/20 bg-dynamic-purple/5 rounded-lg border p-3">
                       <div className="mb-2 flex items-center gap-2">
-                        <Brain className="h-4 w-4 text-dynamic-purple" />
-                        <span className="text-sm font-medium text-foreground">
+                        <Brain className="text-dynamic-purple h-4 w-4" />
+                        <span className="text-foreground text-sm font-medium">
                           Criteria (
                           {evaluationPreview.criteriaEvaluation.length})
                         </span>
                       </div>
-                      <div className="text-xs text-foreground/60">
+                      <div className="text-foreground/60 text-xs">
                         Evaluation criteria being assessed in real-time
                       </div>
                     </div>
                   )}
 
                   {evaluationPreview.testCaseResults?.length && (
-                    <div className="rounded-lg border border-dynamic-indigo/20 bg-dynamic-indigo/5 p-3">
+                    <div className="border-dynamic-indigo/20 bg-dynamic-indigo/5 rounded-lg border p-3">
                       <div className="mb-2 flex items-center gap-2">
-                        <FlaskConical className="h-4 w-4 text-dynamic-indigo" />
-                        <span className="text-sm font-medium text-foreground">
+                        <FlaskConical className="text-dynamic-indigo h-4 w-4" />
+                        <span className="text-foreground text-sm font-medium">
                           Test Cases ({evaluationPreview.testCaseResults.length}
                           )
                         </span>
                       </div>
-                      <div className="text-xs text-foreground/60">
+                      <div className="text-foreground/60 text-xs">
                         Test case outputs being generated
                       </div>
                     </div>
@@ -744,24 +744,24 @@ export default function PromptForm({ problem, session, submissions }: Props) {
           <TabsList className="grid h-full w-full grid-cols-2 gap-1 bg-transparent shadow-sm">
             <TabsTrigger
               value="prompt"
-              className="relative border bg-background text-foreground data-[state=active]:border-dynamic-blue/20 data-[state=active]:bg-dynamic-blue/10 data-[state=active]:text-dynamic-blue"
+              className="bg-background text-foreground data-[state=active]:border-dynamic-blue/20 data-[state=active]:bg-dynamic-blue/10 data-[state=active]:text-dynamic-blue relative border"
             >
               <PlayCircle className="mr-2 h-4 w-4" />
               Prompt
               {isSubmitting && (
-                <div className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full bg-dynamic-blue shadow-lg shadow-dynamic-blue/50" />
+                <div className="bg-dynamic-blue shadow-dynamic-blue/50 absolute -right-1 -top-1 h-3 w-3 animate-pulse rounded-full shadow-lg" />
               )}
             </TabsTrigger>
             <TabsTrigger
               value="submissions"
-              className="border bg-background text-foreground data-[state=active]:border-dynamic-green/20 data-[state=active]:bg-dynamic-green/10 data-[state=active]:text-dynamic-green"
+              className="bg-background text-foreground data-[state=active]:border-dynamic-green/20 data-[state=active]:bg-dynamic-green/10 data-[state=active]:text-dynamic-green border"
             >
               <TrendingUp className="mr-2 h-4 w-4" />
               Submissions
               {submissions && submissions.length > 0 && (
                 <Badge
                   variant="secondary"
-                  className="ml-2 border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green shadow-sm"
+                  className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green ml-2 shadow-sm"
                 >
                   {submissions.length}
                 </Badge>
@@ -774,19 +774,19 @@ export default function PromptForm({ problem, session, submissions }: Props) {
               {renderEnhancedProgressIndicator()}
 
               {!isSubmitting && (
-                <div className="mb-4 flex items-center justify-between rounded-lg border border-foreground/10 bg-background/60 p-4 backdrop-blur-sm">
-                  <div className="flex items-center gap-3 text-sm text-foreground/70">
+                <div className="border-foreground/10 bg-background/60 mb-4 flex items-center justify-between rounded-lg border p-4 backdrop-blur-sm">
+                  <div className="text-foreground/70 flex items-center gap-3 text-sm">
                     <div className="flex items-center gap-2">
-                      <div className="min-w-8 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-2 py-0.5 text-center">
-                        <span className="font-mono text-xs text-dynamic-blue">
+                      <div className="border-dynamic-blue/20 bg-dynamic-blue/10 min-w-8 rounded-full border px-2 py-0.5 text-center">
+                        <span className="text-dynamic-blue font-mono text-xs">
                           {prompt.length}
                         </span>
                       </div>
                       <span>/ {problem.max_prompt_length} characters</span>
                     </div>
-                    <div className="h-1 w-20 overflow-hidden rounded-full border border-foreground/20 bg-background shadow-inner">
+                    <div className="border-foreground/20 bg-background h-1 w-20 overflow-hidden rounded-full border shadow-inner">
                       <div
-                        className="relative h-full overflow-hidden bg-gradient-to-r from-dynamic-blue to-dynamic-purple transition-all duration-300"
+                        className="from-dynamic-blue to-dynamic-purple relative h-full overflow-hidden bg-gradient-to-r transition-all duration-300"
                         style={{
                           width: `${Math.min((prompt.length / problem.max_prompt_length) * 100, 100)}%`,
                         }}
@@ -837,28 +837,28 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                   <div className="flex items-center justify-center py-20">
                     <div className="space-y-6 text-center">
                       <div className="relative">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 backdrop-blur-sm">
-                          <LoadingIndicator className="h-8 w-8 text-dynamic-blue" />
+                        <div className="border-dynamic-blue/20 bg-dynamic-blue/10 mx-auto flex h-16 w-16 items-center justify-center rounded-full border backdrop-blur-sm">
+                          <LoadingIndicator className="text-dynamic-blue h-8 w-8" />
                         </div>
                         <div className="absolute inset-0 animate-ping">
-                          <div className="mx-auto h-16 w-16 rounded-full border border-dynamic-blue/30 bg-dynamic-blue/20" />
+                          <div className="border-dynamic-blue/30 bg-dynamic-blue/20 mx-auto h-16 w-16 rounded-full border" />
                         </div>
-                        <div className="absolute -top-2 -right-2">
-                          <Sparkles className="h-6 w-6 animate-pulse text-dynamic-purple" />
+                        <div className="absolute -right-2 -top-2">
+                          <Sparkles className="text-dynamic-purple h-6 w-6 animate-pulse" />
                         </div>
                       </div>
                       <div className="space-y-3">
-                        <p className="text-xl font-semibold text-foreground">
+                        <p className="text-foreground text-xl font-semibold">
                           {STEP_CONFIG[currentProgress.step]?.label ||
                             currentProgress.step}
                         </p>
-                        <p className="mx-auto max-w-md leading-relaxed text-foreground/70">
+                        <p className="text-foreground/70 mx-auto max-w-md leading-relaxed">
                           {currentProgress.message}
                         </p>
                         <div className="flex justify-center">
                           <Badge
                             variant="outline"
-                            className="border-dynamic-blue/20 bg-dynamic-blue/10 px-3 py-1 text-dynamic-blue"
+                            className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue px-3 py-1"
                           >
                             {Math.round(
                               calculateOverallProgress(evaluationSteps)
@@ -881,12 +881,12 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                             ? 'Maximum attempts reached'
                             : 'Write your prompt here...\n\nTip: Press Ctrl+Enter (or Cmd+Enter on Mac) to submit'
                         }
-                        className="min-h-[200px] flex-1 resize-none border border-foreground/20 bg-background text-foreground shadow-sm transition-all duration-200 placeholder:text-foreground/40 focus-visible:ring-transparent"
+                        className="border-foreground/20 bg-background text-foreground placeholder:text-foreground/40 min-h-[200px] flex-1 resize-none border shadow-sm transition-all duration-200 focus-visible:ring-transparent"
                         maxLength={problem.max_prompt_length}
                         disabled={remainingAttempts === 0 || isSubmitting}
                       />
                       {prompt.length > problem.max_prompt_length && (
-                        <div className="absolute right-2 bottom-2 animate-pulse rounded-md bg-dynamic-red/90 px-2 py-1 text-xs text-white shadow-lg">
+                        <div className="bg-dynamic-red/90 absolute bottom-2 right-2 animate-pulse rounded-md px-2 py-1 text-xs text-white shadow-lg">
                           Exceeds limit by{' '}
                           {prompt.length - problem.max_prompt_length}
                         </div>
@@ -894,7 +894,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                     </div>
 
                     <div className="mt-4 flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-foreground/60">
+                      <div className="text-foreground/60 flex items-center gap-2 text-xs">
                         <div className="flex items-center gap-1">
                           <span className="font-mono">Ctrl</span>
                           <Plus className="h-3 w-3" />
@@ -910,7 +910,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                           remainingAttempts === 0 ||
                           prompt.length > problem.max_prompt_length
                         }
-                        className="gap-2 border-0 bg-gradient-to-r from-dynamic-blue to-dynamic-purple px-6 py-2 font-medium text-white shadow-lg transition-all duration-200 hover:scale-[1.02] hover:from-dynamic-blue/90 hover:to-dynamic-purple/90 hover:shadow-dynamic-blue/25 active:scale-[0.98] disabled:bg-foreground/20 disabled:text-foreground/40 disabled:shadow-none"
+                        className="from-dynamic-blue to-dynamic-purple hover:from-dynamic-blue/90 hover:to-dynamic-purple/90 hover:shadow-dynamic-blue/25 disabled:bg-foreground/20 disabled:text-foreground/40 gap-2 border-0 bg-gradient-to-r px-6 py-2 font-medium text-white shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:shadow-none"
                       >
                         {isSubmitting ? (
                           <>
@@ -929,13 +929,13 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                 )}
 
                 {error && (
-                  <div className="mt-3 flex items-start gap-3 rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4 shadow-sm">
-                    <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-red" />
+                  <div className="border-dynamic-red/20 bg-dynamic-red/10 mt-3 flex items-start gap-3 rounded-lg border p-4 shadow-sm">
+                    <AlertCircle className="text-dynamic-red mt-0.5 h-5 w-5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-dynamic-red">
+                      <p className="text-dynamic-red text-sm font-medium">
                         Error
                       </p>
-                      <p className="mt-1 text-sm text-dynamic-red/80">
+                      <p className="text-dynamic-red/80 mt-1 text-sm">
                         {error}
                       </p>
                     </div>
@@ -947,17 +947,17 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
           <TabsContent value="submissions" className="space-y-4">
             {submissions && submissions.length == 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-foreground/20 bg-background/50 p-12 text-center backdrop-blur-sm">
+              <div className="border-foreground/20 bg-background/50 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center backdrop-blur-sm">
                 <div className="relative mb-4">
-                  <Clock className="mx-auto h-12 w-12 text-foreground/40" />
+                  <Clock className="text-foreground/40 mx-auto h-12 w-12" />
                   <div className="absolute inset-0 animate-pulse">
-                    <Clock className="mx-auto h-12 w-12 text-foreground/20" />
+                    <Clock className="text-foreground/20 mx-auto h-12 w-12" />
                   </div>
                 </div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">
+                <h3 className="text-foreground mb-2 text-xl font-semibold">
                   No submissions yet
                 </h3>
-                <p className="max-w-md text-base text-foreground/70">
+                <p className="text-foreground/70 max-w-md text-base">
                   Your submission history will appear here after you submit your
                   first prompt.
                 </p>
@@ -971,13 +971,13 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                 <TabsList className="grid h-full w-full grid-cols-2 gap-1 bg-transparent">
                   <TabsTrigger
                     value="current"
-                    className="relative border bg-background text-foreground data-[state=active]:border-dynamic-blue/20 data-[state=active]:bg-dynamic-blue/10 data-[state=active]:text-dynamic-blue"
+                    className="bg-background text-foreground data-[state=active]:border-dynamic-blue/20 data-[state=active]:bg-dynamic-blue/10 data-[state=active]:text-dynamic-blue relative border"
                   >
                     Current Session
                     {currentSubmissions.length > 0 && (
                       <Badge
                         variant="secondary"
-                        className="ml-2 border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue"
+                        className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue ml-2"
                       >
                         {currentSubmissions.length}
                       </Badge>
@@ -985,13 +985,13 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                   </TabsTrigger>
                   <TabsTrigger
                     value="past"
-                    className="relative border bg-background text-foreground data-[state=active]:border-dynamic-purple/20 data-[state=active]:bg-dynamic-purple/10 data-[state=active]:text-dynamic-purple"
+                    className="bg-background text-foreground data-[state=active]:border-dynamic-purple/20 data-[state=active]:bg-dynamic-purple/10 data-[state=active]:text-dynamic-purple relative border"
                   >
                     Past Sessions
                     {pastSubmissions.length > 0 && (
                       <Badge
                         variant="secondary"
-                        className="ml-2 border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple"
+                        className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple ml-2"
                       >
                         {pastSubmissions.length}
                       </Badge>
@@ -1001,14 +1001,14 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
                 <TabsContent value="current" className="space-y-4">
                   {currentSubmissions.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-foreground/20 bg-background/50 p-8 text-center backdrop-blur-sm">
-                      <div className="mb-4 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 p-3">
-                        <Clock className="h-10 w-10 text-dynamic-blue" />
+                    <div className="border-foreground/20 bg-background/50 flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center backdrop-blur-sm">
+                      <div className="border-dynamic-blue/20 bg-dynamic-blue/10 mb-4 rounded-full border p-3">
+                        <Clock className="text-dynamic-blue h-10 w-10" />
                       </div>
-                      <h3 className="mb-2 text-lg font-medium text-foreground">
+                      <h3 className="text-foreground mb-2 text-lg font-medium">
                         No submissions in current session
                       </h3>
-                      <p className="text-sm text-foreground/70">
+                      <p className="text-foreground/70 text-sm">
                         Submit your first prompt to see results here.
                       </p>
                     </div>
@@ -1035,14 +1035,14 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
                 <TabsContent value="past" className="space-y-4">
                   {pastSubmissions.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-foreground/20 bg-background/50 p-8 text-center backdrop-blur-sm">
-                      <div className="mb-4 rounded-full border border-dynamic-purple/20 bg-dynamic-purple/10 p-3">
-                        <Clock className="h-10 w-10 text-dynamic-purple" />
+                    <div className="border-foreground/20 bg-background/50 flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center backdrop-blur-sm">
+                      <div className="border-dynamic-purple/20 bg-dynamic-purple/10 mb-4 rounded-full border p-3">
+                        <Clock className="text-dynamic-purple h-10 w-10" />
                       </div>
-                      <h3 className="mb-2 text-lg font-medium text-foreground">
+                      <h3 className="text-foreground mb-2 text-lg font-medium">
                         No submissions from past sessions
                       </h3>
-                      <p className="text-sm text-foreground/70">
+                      <p className="text-foreground/70 text-sm">
                         Past session submissions will appear here.
                       </p>
                     </div>
