@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
+import type { Workspace, WorkspaceCalendarEvent } from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
 import { createContext, useContext, useState } from 'react';
 
@@ -15,7 +15,7 @@ const CalendarSyncContext = createContext<{
   setCurrentView: (view: 'day' | '4-day' | 'week' | 'month') => void;
   syncToTuturuuu: (
     progressCallback?: (progress: {
-      phase: 'get' | 'fetch' | 'upsert' | 'complete';
+      phase: 'get' | 'fetch' | 'delete' | 'upsert' | 'complete';
       percentage: number;
       statusMessage: string;
       changesMade: boolean;
@@ -39,7 +39,7 @@ export const CalendarSyncProvider = ({
   wsId,
 }: {
   children: React.ReactNode;
-  wsId: string;
+  wsId: Workspace['id'];
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(
@@ -53,7 +53,7 @@ export const CalendarSyncProvider = ({
 
   const syncToTuturuuu = async (
     progressCallback?: (progress: {
-      phase: 'get' | 'fetch' | 'upsert' | 'complete';
+      phase: 'get' | 'fetch' | 'delete' | 'upsert' | 'complete';
       percentage: number;
       statusMessage: string;
       changesMade: boolean;
@@ -155,8 +155,41 @@ export const CalendarSyncProvider = ({
 
     if (progressCallback) {
       progressCallback({
-        phase: 'upsert',
+        phase: 'delete',
         percentage: 50,
+        statusMessage: 'Deleting events from database...',
+        changesMade: false,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
+    }
+
+    // Create a set of google_event_id from googleResponse.events
+    const googleEventIds = new Set(
+      googleResponse.events.map(
+        (e: WorkspaceCalendarEvent) => e.google_event_id
+      )
+    );
+
+    // Filter data not in googleEventIds
+    const dataToDelete = dbData?.filter(
+      (e: WorkspaceCalendarEvent) => !googleEventIds.has(e.google_event_id)
+    );
+    console.log('dataToDelete', dataToDelete);
+    // Delete dataToDelete
+    if (dataToDelete) {
+      await supabase
+        .from('workspace_calendar_events')
+        .delete()
+        .in(
+          'id',
+          dataToDelete.map((e) => e.id)
+        );
+    }
+
+    if (progressCallback) {
+      progressCallback({
+        phase: 'upsert',
+        percentage: 75,
         statusMessage: 'Syncing events to database...',
         changesMade: false,
       });

@@ -926,7 +926,7 @@ export const CalendarProvider = ({
     return await response.json();
   };
 
-  // Query to fetch Google Calendar events every 30 seconds
+  // Query to fetch Google Calendar events every 1 hour
   const { data: googleData } = useQuery({
     queryKey: ['googleCalendarEvents', ws?.id],
     queryFn: fetchGoogleCalendarEvents,
