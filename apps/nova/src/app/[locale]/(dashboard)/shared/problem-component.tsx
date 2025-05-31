@@ -9,9 +9,21 @@ interface Props {
   };
 }
 
+const copyProtectionStyles: React.CSSProperties = {
+  WebkitUserSelect: 'none',
+  MozUserSelect: 'none',
+  msUserSelect: 'none',
+  userSelect: 'none',
+  WebkitTouchCallout: 'none',
+};
+
 export default function ProblemComponent({ problem }: Props) {
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      style={copyProtectionStyles}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BookOpen className="text-primary h-5 w-5" />

@@ -13,12 +13,24 @@ export interface TestCaseComponentProps {
   className?: string;
 }
 
+const copyProtectionStyles: React.CSSProperties = {
+  WebkitUserSelect: 'none',
+  MozUserSelect: 'none',
+  msUserSelect: 'none',
+  userSelect: 'none',
+  WebkitTouchCallout: 'none',
+};
+
 export default function TestCaseComponent({
   testCases,
   className,
 }: TestCaseComponentProps) {
   return (
-    <div className={className}>
+    <div
+      className={className}
+      style={copyProtectionStyles}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
