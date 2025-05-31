@@ -32,6 +32,9 @@ export async function parseStreamingResponse(
   }
 
   const decoder = new TextDecoder();
+  let buffer = '';
+  let parseErrorCount = 0;
+  const maxParseErrors = 5; // Limit consecutive parse errors
 
   try {
     while (true) {
@@ -39,12 +42,39 @@ export async function parseStreamingResponse(
       if (done) break;
 
       const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
+      buffer += chunk;
+
+      // Process complete lines
+      const lines = buffer.split('\n');
+      // Keep the last line in buffer if it doesn't end with \n
+      buffer = buffer.endsWith('\n') ? '' : lines.pop() || '';
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           try {
-            const progressData: ProgressUpdate = JSON.parse(line.substring(6));
+            const jsonData = line.substring(6).trim();
+
+            // Skip empty data lines
+            if (!jsonData) {
+              continue;
+            }
+
+            // Try to parse the JSON
+            const progressData: ProgressUpdate = JSON.parse(jsonData);
+
+            // Validate the progress data structure
+            if (
+              !progressData.step ||
+              typeof progressData.progress !== 'number' ||
+              !progressData.message
+            ) {
+              console.warn('Invalid progress data structure:', progressData);
+              continue;
+            }
+
+            // Reset error count on successful parse
+            parseErrorCount = 0;
+
             onProgress(progressData);
 
             // Check for error state
@@ -59,17 +89,54 @@ export async function parseStreamingResponse(
               }
             }
           } catch (parseError) {
-            console.error('Error parsing progress data:', parseError);
+            parseErrorCount++;
+            console.error(
+              `Parse error ${parseErrorCount}/${maxParseErrors}:`,
+              parseError
+            );
+            console.error('Problematic line:', line);
+
+            // If we've had too many consecutive parse errors, fail
+            if (parseErrorCount >= maxParseErrors) {
+              const fatalError = new Error(
+                `Too many consecutive parse errors (${maxParseErrors}). Last error: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`
+              );
+              if (onError) {
+                onError(fatalError);
+              } else {
+                throw fatalError;
+              }
+              return;
+            }
+
+            // For individual parse errors, send a recovery progress update
             if (onError) {
               onError(
-                parseError instanceof Error
-                  ? parseError
-                  : new Error('Parse error')
+                new Error(
+                  `JSON parse error: ${parseError instanceof Error ? parseError.message : 'Unknown parse error'}`
+                )
               );
+            }
+
+            // Try to recover by sending a generic progress update
+            try {
+              onProgress({
+                step: 'parsing_error',
+                progress: 0,
+                message: 'Encountered data parsing issue, continuing...',
+                data: { recoverable: true },
+              });
+            } catch (recoveryError) {
+              console.error('Failed to send recovery progress:', recoveryError);
             }
           }
         }
       }
+    }
+
+    // Process any remaining data in buffer
+    if (buffer.trim()) {
+      console.warn('Unprocessed data in buffer:', buffer);
     }
   } finally {
     reader.releaseLock();
@@ -228,27 +295,27 @@ export const STEP_CONFIG: Record<
   },
   test_case_ai_processing: {
     icon: 'flask',
-    label: 'Test Processing',
+    label: 'AI Generation',
     color: 'bg-dynamic-indigo',
-    description: 'AI generating outputs',
+    description: 'AI generating test outputs',
     category: 'ai-processing',
     weight: 3,
     order: 12,
   },
   test_case_streaming: {
     icon: 'trending',
-    label: 'Live Testing',
+    label: 'Generating Outputs',
     color: 'bg-dynamic-indigo',
-    description: 'Streaming test results',
+    description: 'Creating test case outputs',
     category: 'ai-processing',
     weight: 2,
     order: 13,
   },
   test_case_completed: {
     icon: 'check-circle',
-    label: 'Tests Done',
+    label: 'Generation Done',
     color: 'bg-dynamic-green',
-    description: 'Test cases complete',
+    description: 'Output generation complete',
     category: 'ai-processing',
     weight: 1,
     order: 14,
@@ -264,9 +331,9 @@ export const STEP_CONFIG: Record<
   },
   processing_test_results: {
     icon: 'cog',
-    label: 'Processing Results',
+    label: 'Evaluating Results',
     color: 'bg-dynamic-blue',
-    description: 'Analyzing outputs',
+    description: 'Comparing outputs with expected results',
     category: 'finalization',
     weight: 2,
     order: 15,
@@ -297,6 +364,15 @@ export const STEP_CONFIG: Record<
     category: 'finalization',
     weight: 0,
     order: 18,
+  },
+  parsing_error: {
+    icon: 'alert-circle',
+    label: 'Communication Issue',
+    color: 'bg-dynamic-amber',
+    description: 'Data parsing issue detected',
+    category: 'validation',
+    weight: 0,
+    order: 19,
   },
 };
 
@@ -472,6 +548,7 @@ export function shouldShowStep(
     'finalizing',
     'completed',
     'error',
+    'parsing_error', // Always show parsing errors for transparency
   ];
 
   if (alwaysShow.includes(stepName)) {
