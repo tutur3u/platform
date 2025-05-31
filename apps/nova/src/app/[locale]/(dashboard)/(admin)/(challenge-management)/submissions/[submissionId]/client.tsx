@@ -13,10 +13,10 @@ import {
   User,
 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
+import { toast } from '@tuturuuu/ui/sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { toast } from 'sonner';
 
 interface SubmissionClientProps {
   submission: NovaSubmissionData;
