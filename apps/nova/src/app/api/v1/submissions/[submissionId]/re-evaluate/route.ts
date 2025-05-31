@@ -178,7 +178,7 @@ interface Params {
 }
 
 // API route handler
-export async function POST(req: NextRequest, { params }: Params) {
+export async function POST(_: NextRequest, { params }: Params) {
   const encoder = new TextEncoder();
   const supabase = await createClient();
   const sbAdmin = await createAdminClient();
