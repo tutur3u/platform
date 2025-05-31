@@ -3,16 +3,17 @@
 import { getFullSubmission } from './actions';
 import { SubmissionCard } from '@/components/common/SubmissionCard';
 import {
-  CATEGORY_CONFIG,
+  LiveResultsPreview,
+  LiveScoresDisplay,
+} from '@/components/evaluation/LiveScoresDisplay';
+import { ProgressIndicator } from '@/components/evaluation/ProgressIndicator';
+import { PromptInput } from '@/components/evaluation/PromptInput';
+import {
   ProgressUpdate,
   STEP_CONFIG,
-  calculateOverallProgress,
   evaluatePromptStreaming,
-  getActiveSteps,
-  getCategoryStatus,
-  getCurrentStepInfo,
-  getStepsByCategory,
 } from '@/lib/streaming';
+import '@/styles/evaluation-animations.css';
 import {
   NovaProblem,
   NovaProblemTestCase,
@@ -21,42 +22,12 @@ import {
   NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@tuturuuu/ui/collapsible';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  AlertCircle,
-  Brain,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  Cog,
-  FlaskConical,
-  PlayCircle,
-  Plus,
-  Sparkles,
-  TrendingUp,
-} from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Clock, PlayCircle, TrendingUp } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
   problem: NovaProblem & {
@@ -74,6 +45,17 @@ interface EvaluationPreview {
   testCaseResults?: any[];
   submissionId?: string;
   overallAssessment?: string;
+  testCaseScores?: {
+    passed: number;
+    total: number;
+    percentage: number;
+  };
+  criteriaScores?: {
+    totalScore: number;
+    maxScore: number;
+    percentage: number;
+  };
+  generationPhase?: boolean;
 }
 
 const MAX_ATTEMPTS = 3;
@@ -226,13 +208,6 @@ export default function PromptForm({ problem, session, submissions }: Props) {
     getSubmissions();
   }, [getSubmissions]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   const handleProgressUpdate = useCallback((progressData: ProgressUpdate) => {
     setCurrentProgress(progressData);
 
@@ -255,6 +230,15 @@ export default function PromptForm({ problem, session, submissions }: Props) {
       setExpandedCategories((prev) => new Set(prev).add(stepCategory));
     }
 
+    // Handle parsing errors gracefully
+    if (progressData.step === 'parsing_error') {
+      console.warn(
+        'Communication issue detected, but evaluation is continuing...'
+      );
+      // Don't treat parsing errors as fatal - just log and continue
+      return;
+    }
+
     // Update evaluation preview with streaming data
     if (progressData.data?.partialEvaluation) {
       setEvaluationPreview((prev) => ({
@@ -265,27 +249,127 @@ export default function PromptForm({ problem, session, submissions }: Props) {
     }
 
     if (progressData.data?.evaluation) {
+      const evaluation = progressData.data.evaluation;
       setEvaluationPreview((prev) => ({
         ...prev,
-        criteriaEvaluation: progressData.data.evaluation.criteriaEvaluation,
-        overallAssessment: progressData.data.evaluation.overallAssessment,
+        criteriaEvaluation: evaluation.criteriaEvaluation,
+        overallAssessment: evaluation.overallAssessment,
+        criteriaScores: evaluation.criteriaEvaluation
+          ? {
+              totalScore: evaluation.criteriaEvaluation.reduce(
+                (sum: number, criteria: any) => sum + (criteria.score || 0),
+                0
+              ),
+              maxScore: evaluation.criteriaEvaluation.length * 10,
+              percentage:
+                evaluation.criteriaEvaluation.length > 0
+                  ? Math.round(
+                      (evaluation.criteriaEvaluation.reduce(
+                        (sum: number, criteria: any) =>
+                          sum + (criteria.score || 0),
+                        0
+                      ) /
+                        (evaluation.criteriaEvaluation.length * 10)) *
+                        100
+                    )
+                  : 0,
+            }
+          : undefined,
       }));
     }
 
     if (progressData.data?.partialResults) {
-      setEvaluationPreview((prev) => ({
-        ...prev,
-        testCaseResults: progressData.data.partialResults,
-      }));
+      const partialResults = Array.isArray(progressData.data.partialResults)
+        ? progressData.data.partialResults
+        : [];
+
+      // Handle generation phase differently from evaluation phase
+      if (progressData.data?.phase === 'generation') {
+        setEvaluationPreview((prev) => ({
+          ...prev,
+          testCaseResults: partialResults,
+          testCaseScores: {
+            passed: 0, // Don't show pass rate during generation
+            total: progressData.data?.totalCount || partialResults.length,
+            percentage: 0, // Don't show percentage during generation
+          },
+          generationPhase: true, // Flag to indicate we're in generation phase
+        }));
+      } else {
+        setEvaluationPreview((prev) => ({
+          ...prev,
+          testCaseResults: partialResults,
+          testCaseScores: {
+            passed: 0, // Will be calculated after test case evaluation
+            total: partialResults.length,
+            percentage: 0,
+          },
+          generationPhase: false,
+        }));
+      }
     }
 
     if (progressData.data?.testCaseResults) {
+      const testCaseResults = Array.isArray(progressData.data.testCaseResults)
+        ? progressData.data.testCaseResults
+        : [];
+
+      // Only show pass rates if we're in evaluation phase
+      if (
+        progressData.data?.phase === 'evaluation' ||
+        progressData.data?.phase === 'evaluation_start'
+      ) {
+        setEvaluationPreview((prev) => ({
+          ...prev,
+          testCaseResults: testCaseResults,
+          testCaseScores: {
+            passed: 0, // Will be updated when backend provides match results
+            total: testCaseResults.length,
+            percentage: 0,
+          },
+          generationPhase: false,
+        }));
+      } else if (progressData.data?.phase === 'generation_complete') {
+        setEvaluationPreview((prev) => ({
+          ...prev,
+          testCaseResults: testCaseResults,
+          testCaseScores: {
+            passed: 0,
+            total: testCaseResults.length,
+            percentage: 0,
+          },
+          generationPhase: false, // Mark generation as complete
+        }));
+      }
+    }
+
+    // Handle real-time test case match results from backend
+    if (
+      progressData.data?.matchedTestCases !== undefined &&
+      progressData.data?.totalTestCases !== undefined
+    ) {
+      const passed = progressData.data.matchedTestCases;
+      const total = progressData.data.totalTestCases;
+
+      console.log('Test case results update:', {
+        passed,
+        total,
+        isPartial: progressData.data.isPartialResults,
+      });
+
       setEvaluationPreview((prev) => ({
         ...prev,
-        testCaseResults: progressData.data.testCaseResults,
+        testCaseResults:
+          progressData.data.testCaseResults || prev.testCaseResults,
+        testCaseScores: {
+          passed,
+          total,
+          percentage: total > 0 ? Math.round((passed / total) * 100) : 0,
+        },
       }));
     }
 
+    // Handle submission ID
     if (progressData.data?.submissionId) {
       setEvaluationPreview((prev) => ({
         ...prev,
@@ -356,23 +440,72 @@ export default function PromptForm({ problem, session, submissions }: Props) {
         handleProgressUpdate,
         (error) => {
           console.error('Streaming error:', error);
+
+          // Check if this is a recoverable parsing error
+          if (
+            error.message.includes('JSON parse error') ||
+            error.message.includes('parse error')
+          ) {
+            // For parsing errors, show a warning but don't fail completely
+            toast({
+              title: '⚠️ Communication Issue',
+              description:
+                'Some data transmission issues occurred, but evaluation is continuing. Please wait for completion.',
+              variant: 'default',
+            });
+
+            // Set a temporary progress update to show the issue
+            setCurrentProgress({
+              step: 'parsing_error',
+              progress: 0,
+              message: 'Recovering from communication issue...',
+              data: { recoverable: true },
+            });
+
+            return; // Don't end the submission process for recoverable errors
+          }
+
+          // For other errors, show the full error
           toast({
             title: '❌ Evaluation Error',
             description: error.message,
             variant: 'destructive',
           });
+
+          // Set error state and end submission
+          setIsSubmitting(false);
+          setError(error.message);
         }
       );
     } catch (error) {
       console.error('Error submitting prompt:', error);
-      toast({
-        title: '❌ Submission Failed',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to submit prompt. Please try again.',
-        variant: 'destructive',
-      });
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to submit prompt. Please try again.';
+
+      // Check if this is a network or parsing related error
+      if (
+        errorMessage.includes('fetch') ||
+        errorMessage.includes('network') ||
+        errorMessage.includes('parse')
+      ) {
+        toast({
+          title: '🌐 Connection Issue',
+          description:
+            'There was a network or communication problem. Please check your connection and try again.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: '❌ Submission Failed',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+
+      setError(errorMessage);
     } finally {
       getSubmissions();
       setIsSubmitting(false);
@@ -399,352 +532,23 @@ export default function PromptForm({ problem, session, submissions }: Props) {
     });
   };
 
-  const renderEnhancedProgressIndicator = () => {
-    if (!isSubmitting && !currentProgress && !isEvaluationComplete) return null;
-
-    const activeSteps = getActiveSteps(evaluationSteps);
-    const overallProgress = isEvaluationComplete
-      ? 100
-      : calculateOverallProgress(evaluationSteps);
-    const stepCategories = getStepsByCategory(evaluationSteps);
-    const currentStepInfo = getCurrentStepInfo(evaluationSteps);
-
-    return (
-      <Card
-        className={cn(
-          'mb-6 transition-all duration-500 ease-in-out',
-          'bg-background/95 border shadow-lg backdrop-blur-sm',
-          isEvaluationComplete
-            ? 'border-dynamic-green/20 shadow-dynamic-green/10'
-            : 'border-dynamic-blue/20 shadow-dynamic-blue/10'
-        )}
-      >
-        <CardHeader className="pb-4">
-          <CardTitle className="text-foreground flex items-center gap-3 text-xl">
-            {isEvaluationComplete ? (
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="bg-dynamic-green/90 flex h-8 w-8 items-center justify-center rounded-full shadow-lg">
-                    <CheckCircle className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="absolute inset-0 animate-ping">
-                    <div className="bg-dynamic-green/60 h-8 w-8 rounded-full" />
-                  </div>
-                </div>
-                <span className="to-dynamic-emerald from-dynamic-green bg-gradient-to-r bg-clip-text font-bold text-transparent">
-                  ✨ Evaluation Complete!
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="bg-dynamic-blue/90 flex h-8 w-8 items-center justify-center rounded-full shadow-lg">
-                    <LoadingIndicator className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="absolute inset-0">
-                    <div className="border-dynamic-blue/30 h-8 w-8 animate-spin rounded-full border-2 border-t-transparent opacity-60" />
-                  </div>
-                </div>
-                <span className="from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-gradient-to-r bg-clip-text font-bold text-transparent">
-                  🤖 AI Evaluation in Progress
-                </span>
-              </div>
-            )}
-          </CardTitle>
-          <CardDescription className="text-foreground/70 flex items-center justify-between text-base">
-            <span>
-              {isEvaluationComplete
-                ? '🎉 Your prompt has been successfully evaluated and results are ready to view!'
-                : currentProgress?.message ||
-                  'AI models are analyzing your prompt...'}
-            </span>
-            {currentStepInfo.timestamp && (
-              <span className="text-foreground/50 text-xs">
-                {currentStepInfo.timestamp}
-              </span>
-            )}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          {/* Main Progress Display */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="text-foreground text-2xl font-bold">
-                  {Math.round(overallProgress)}%
-                </div>
-              </div>
-              {currentStepInfo.currentStep && (
-                <div className="text-right">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      'border px-3 py-1',
-                      STEP_CONFIG[currentStepInfo.currentStep.step]
-                        ?.category === 'ai-processing' &&
-                        'border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple',
-                      STEP_CONFIG[currentStepInfo.currentStep.step]
-                        ?.category === 'setup' &&
-                        'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
-                      STEP_CONFIG[currentStepInfo.currentStep.step]
-                        ?.category === 'validation' &&
-                        'border-dynamic-amber/30 bg-dynamic-amber/10 text-dynamic-amber',
-                      STEP_CONFIG[currentStepInfo.currentStep.step]
-                        ?.category === 'finalization' &&
-                        'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
-                    )}
-                  >
-                    {STEP_CONFIG[currentStepInfo.currentStep.step]?.label ||
-                      currentStepInfo.currentStep.step}
-                  </Badge>
-                </div>
-              )}
-            </div>
-
-            <div className="relative">
-              <Progress
-                value={overallProgress}
-                className="border-dynamic-blue/20 bg-background h-4 border"
-                indicatorClassName={cn(
-                  'transition-all duration-700 ease-out',
-                  isEvaluationComplete
-                    ? 'bg-dynamic-green'
-                    : currentProgress?.step === 'error'
-                      ? 'bg-dynamic-red'
-                      : 'from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-gradient-to-r'
-                )}
-              />
-              {!isEvaluationComplete && overallProgress > 0 && (
-                <div className="absolute inset-0 overflow-hidden rounded-full">
-                  <div
-                    className="h-full animate-pulse bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                    style={{ width: `${overallProgress}%` }}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Current Step Details */}
-            {currentStepInfo.currentStep && !isEvaluationComplete && (
-              <div className="border-dynamic-blue/20 bg-dynamic-blue/5 rounded-lg border p-4">
-                <div className="flex items-center gap-3">
-                  <div className="border-dynamic-blue/30 bg-dynamic-blue/20 flex h-10 w-10 items-center justify-center rounded-full border">
-                    <LoadingIndicator className="text-dynamic-blue h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-foreground font-medium">
-                      {STEP_CONFIG[currentStepInfo.currentStep.step]?.label ||
-                        currentStepInfo.currentStep.step}
-                    </div>
-                    <div className="text-foreground/70 text-sm">
-                      {currentStepInfo.currentStep.message}
-                    </div>
-                    {STEP_CONFIG[currentStepInfo.currentStep.step]
-                      ?.description && (
-                      <div className="text-foreground/60 mt-1 text-xs">
-                        {
-                          STEP_CONFIG[currentStepInfo.currentStep.step]
-                            ?.description
-                        }
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Collapsible Category Progress */}
-          {activeSteps.length > 3 && (
-            <>
-              <Separator className="bg-foreground/10" />
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Cog className="text-foreground/60 h-4 w-4" />
-                  <h4 className="text-foreground font-semibold">
-                    Detailed Progress
-                  </h4>
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    {
-                      Object.keys(stepCategories).filter(
-                        (cat) =>
-                          stepCategories[cat as keyof typeof stepCategories]
-                            .length > 0
-                      ).length
-                    }{' '}
-                    categories
-                  </Badge>
-                </div>
-
-                {Object.entries(stepCategories).map(
-                  ([category, categorySteps]) => {
-                    if (categorySteps.length === 0) return null;
-
-                    const categoryConfig =
-                      CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG];
-                    const status = getCategoryStatus(category, evaluationSteps);
-                    const isExpanded = expandedCategories.has(category);
-
-                    return (
-                      <Collapsible
-                        key={category}
-                        open={isExpanded}
-                        onOpenChange={() => toggleCategory(category)}
-                      >
-                        <CollapsibleTrigger className="border-foreground/10 bg-background/60 hover:bg-background/80 group flex w-full items-center justify-between rounded-lg border p-3 text-left transition-all">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={cn(
-                                'flex h-6 w-6 items-center justify-center rounded-full border text-xs transition-all',
-                                status.isComplete
-                                  ? 'border-dynamic-green bg-dynamic-green text-white'
-                                  : status.isActive
-                                    ? `border-dynamic-${categoryConfig.color} bg-dynamic-${categoryConfig.color}/20 text-dynamic-${categoryConfig.color}`
-                                    : 'border-foreground/20 bg-background text-foreground/60'
-                              )}
-                            >
-                              {status.isComplete ? (
-                                <CheckCircle className="h-3 w-3" />
-                              ) : status.isActive ? (
-                                <Clock className="h-3 w-3" />
-                              ) : (
-                                <Clock className="h-3 w-3" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-foreground text-sm font-medium">
-                                  {categoryConfig.label}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {isExpanded ? (
-                              <ChevronDown className="text-foreground/60 group-hover:text-foreground h-4 w-4 transition-transform" />
-                            ) : (
-                              <ChevronRight className="text-foreground/60 group-hover:text-foreground h-4 w-4 transition-transform" />
-                            )}
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="mt-2 space-y-1 px-3">
-                          {categorySteps.map((step, index) => {
-                            const isActive =
-                              step.step === currentProgress?.step;
-                            const isCompleted =
-                              step.progress === 100 ||
-                              step.step.includes('completed');
-                            const stepConfig = STEP_CONFIG[step.step];
-
-                            return (
-                              <div
-                                key={`${step.step}-${index}`}
-                                className={cn(
-                                  'flex items-center gap-3 rounded-md p-2 text-sm transition-all',
-                                  isActive && 'bg-dynamic-blue/10',
-                                  isCompleted &&
-                                    !isActive &&
-                                    'text-foreground/70',
-                                  !isActive &&
-                                    !isCompleted &&
-                                    'text-foreground/60'
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    'flex h-4 w-4 items-center justify-center rounded-full text-xs',
-                                    isCompleted
-                                      ? 'text-dynamic-green'
-                                      : isActive
-                                        ? 'text-dynamic-blue'
-                                        : 'text-foreground/40'
-                                  )}
-                                >
-                                  {isCompleted ? (
-                                    <CheckCircle className="h-3 w-3" />
-                                  ) : (
-                                    <Clock className="h-3 w-3" />
-                                  )}
-                                </div>
-                                <span className="flex-1 truncate">
-                                  {stepConfig?.label || step.step}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    );
-                  }
-                )}
-              </div>
-            </>
-          )}
-
-          {/* Live Results Preview */}
-          {(evaluationPreview.criteriaEvaluation?.length ||
-            evaluationPreview.testCaseResults?.length) && (
-            <>
-              <Separator className="bg-dynamic-green/20" />
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="text-dynamic-green h-4 w-4" />
-                  <h4 className="text-foreground font-semibold">
-                    Live Results
-                  </h4>
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    Real-time
-                  </Badge>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  {evaluationPreview.criteriaEvaluation?.length && (
-                    <div className="border-dynamic-purple/20 bg-dynamic-purple/5 rounded-lg border p-3">
-                      <div className="mb-2 flex items-center gap-2">
-                        <Brain className="text-dynamic-purple h-4 w-4" />
-                        <span className="text-foreground text-sm font-medium">
-                          Criteria (
-                          {evaluationPreview.criteriaEvaluation.length})
-                        </span>
-                      </div>
-                      <div className="text-foreground/60 text-xs">
-                        Evaluation criteria being assessed in real-time
-                      </div>
-                    </div>
-                  )}
-
-                  {evaluationPreview.testCaseResults?.length && (
-                    <div className="border-dynamic-indigo/20 bg-dynamic-indigo/5 rounded-lg border p-3">
-                      <div className="mb-2 flex items-center gap-2">
-                        <FlaskConical className="text-dynamic-indigo h-4 w-4" />
-                        <span className="text-foreground text-sm font-medium">
-                          Test Cases ({evaluationPreview.testCaseResults.length}
-                          )
-                        </span>
-                      </div>
-                      <div className="text-foreground/60 text-xs">
-                        Test case outputs being generated
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-    );
-  };
-
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid h-full w-full grid-cols-2 gap-1 bg-transparent shadow-sm">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex h-full w-full flex-col"
+        >
+          <TabsList className="border-foreground/10 from-background/80 via-background/95 to-background/80 grid h-12 w-full grid-cols-2 gap-2 border bg-gradient-to-r shadow-lg backdrop-blur-sm">
             <TabsTrigger
               value="prompt"
-              className="bg-background text-foreground data-[state=active]:border-dynamic-blue/20 data-[state=active]:bg-dynamic-blue/10 data-[state=active]:text-dynamic-blue relative border"
+              className={cn(
+                'bg-background text-foreground relative border-2 font-medium transition-all duration-300',
+                'data-[state=active]:border-dynamic-blue/30 data-[state=active]:from-dynamic-blue/10 data-[state=active]:to-dynamic-blue/15 data-[state=active]:text-dynamic-blue data-[state=active]:bg-gradient-to-r',
+                'hover:border-foreground/30 hover:bg-background/80',
+                'focus-visible:ring-dynamic-blue/50 focus-visible:ring-2 focus-visible:ring-offset-2'
+              )}
             >
               <PlayCircle className="mr-2 h-4 w-4" />
               Prompt
@@ -754,14 +558,19 @@ export default function PromptForm({ problem, session, submissions }: Props) {
             </TabsTrigger>
             <TabsTrigger
               value="submissions"
-              className="bg-background text-foreground data-[state=active]:border-dynamic-green/20 data-[state=active]:bg-dynamic-green/10 data-[state=active]:text-dynamic-green border"
+              className={cn(
+                'bg-background text-foreground relative border-2 font-medium transition-all duration-300',
+                'data-[state=active]:border-dynamic-green/30 data-[state=active]:from-dynamic-green/10 data-[state=active]:to-dynamic-green/15 data-[state=active]:text-dynamic-green data-[state=active]:bg-gradient-to-r',
+                'hover:border-foreground/30 hover:bg-background/80',
+                'focus-visible:ring-dynamic-green/50 focus-visible:ring-2 focus-visible:ring-offset-2'
+              )}
             >
               <TrendingUp className="mr-2 h-4 w-4" />
               Submissions
               {submissions && submissions.length > 0 && (
                 <Badge
                   variant="secondary"
-                  className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green ml-2 shadow-sm"
+                  className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green ml-2 font-medium shadow-sm"
                 >
                   {submissions.length}
                 </Badge>
@@ -769,180 +578,37 @@ export default function PromptForm({ problem, session, submissions }: Props) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="prompt" className="space-y-4">
-            <div className="flex h-full flex-col">
-              {renderEnhancedProgressIndicator()}
+          <TabsContent
+            value="prompt"
+            className="mt-6 flex flex-1 flex-col space-y-6"
+          >
+            {/* Progress Indicator */}
+            <ProgressIndicator
+              isSubmitting={isSubmitting}
+              currentProgress={currentProgress}
+              isEvaluationComplete={isEvaluationComplete}
+              evaluationSteps={evaluationSteps}
+              evaluationPreview={evaluationPreview}
+              expandedCategories={expandedCategories}
+              onToggleCategory={toggleCategory}
+            />
 
-              {!isSubmitting && (
-                <div className="border-foreground/10 bg-background/60 mb-4 flex items-center justify-between rounded-lg border p-4 backdrop-blur-sm">
-                  <div className="text-foreground/70 flex items-center gap-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="border-dynamic-blue/20 bg-dynamic-blue/10 min-w-8 rounded-full border px-2 py-0.5 text-center">
-                        <span className="text-dynamic-blue font-mono text-xs">
-                          {prompt.length}
-                        </span>
-                      </div>
-                      <span>/ {problem.max_prompt_length} characters</span>
-                    </div>
-                    <div className="border-foreground/20 bg-background h-1 w-20 overflow-hidden rounded-full border shadow-inner">
-                      <div
-                        className="from-dynamic-blue to-dynamic-purple relative h-full overflow-hidden bg-gradient-to-r transition-all duration-300"
-                        style={{
-                          width: `${Math.min((prompt.length / problem.max_prompt_length) * 100, 100)}%`,
-                        }}
-                      >
-                        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                      </div>
-                    </div>
-                    {prompt.length / problem.max_prompt_length > 0.8 && (
-                      <Badge
-                        variant="outline"
-                        className="bg-dynamic-amber/10 text-dynamic-amber border-dynamic-amber/20 text-xs"
-                      >
-                        {prompt.length === problem.max_prompt_length
-                          ? 'Full'
-                          : prompt.length > problem.max_prompt_length
-                            ? 'Exceeded'
-                            : 'Almost full'}
-                      </Badge>
-                    )}
-                  </div>
-                  {remainingAttempts !== null && (
-                    <div className="flex items-center gap-3">
-                      <Badge
-                        variant={
-                          remainingAttempts === 0 ? 'destructive' : 'outline'
-                        }
-                        className={cn(
-                          'px-3 py-1 shadow-sm',
-                          remainingAttempts === 0
-                            ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red shadow-dynamic-red/20'
-                            : remainingAttempts <= 1
-                              ? 'bg-dynamic-amber/10 text-dynamic-amber border-dynamic-amber/20'
-                              : 'border-foreground/20 bg-background text-foreground'
-                        )}
-                      >
-                        <Clock className="mr-1 h-3 w-3" />
-                        {remainingAttempts}{' '}
-                        {remainingAttempts === 1 ? 'attempt' : 'attempts'}{' '}
-                        remaining
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              )}
+            <PromptInput
+              prompt={prompt}
+              onPromptChange={setPrompt}
+              onSubmit={handleSend}
+              isSubmitting={isSubmitting}
+              error={error}
+              maxLength={problem.max_prompt_length}
+              remainingAttempts={remainingAttempts}
+              currentProgress={currentProgress}
+            />
 
-              <div className="flex flex-1 flex-col pb-4">
-                {isSubmitting && currentProgress ? (
-                  <div className="flex items-center justify-center py-20">
-                    <div className="space-y-6 text-center">
-                      <div className="relative">
-                        <div className="border-dynamic-blue/20 bg-dynamic-blue/10 mx-auto flex h-16 w-16 items-center justify-center rounded-full border backdrop-blur-sm">
-                          <LoadingIndicator className="text-dynamic-blue h-8 w-8" />
-                        </div>
-                        <div className="absolute inset-0 animate-ping">
-                          <div className="border-dynamic-blue/30 bg-dynamic-blue/20 mx-auto h-16 w-16 rounded-full border" />
-                        </div>
-                        <div className="absolute -right-2 -top-2">
-                          <Sparkles className="text-dynamic-purple h-6 w-6 animate-pulse" />
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <p className="text-foreground text-xl font-semibold">
-                          {STEP_CONFIG[currentProgress.step]?.label ||
-                            currentProgress.step}
-                        </p>
-                        <p className="text-foreground/70 mx-auto max-w-md leading-relaxed">
-                          {currentProgress.message}
-                        </p>
-                        <div className="flex justify-center">
-                          <Badge
-                            variant="outline"
-                            className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue px-3 py-1"
-                          >
-                            {Math.round(
-                              calculateOverallProgress(evaluationSteps)
-                            )}
-                            % complete
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="relative flex-1">
-                      <Textarea
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={
-                          remainingAttempts === 0
-                            ? 'Maximum attempts reached'
-                            : 'Write your prompt here...\n\nTip: Press Ctrl+Enter (or Cmd+Enter on Mac) to submit'
-                        }
-                        className="border-foreground/20 bg-background text-foreground placeholder:text-foreground/40 min-h-[200px] flex-1 resize-none border shadow-sm transition-all duration-200 focus-visible:ring-transparent"
-                        maxLength={problem.max_prompt_length}
-                        disabled={remainingAttempts === 0 || isSubmitting}
-                      />
-                      {prompt.length > problem.max_prompt_length && (
-                        <div className="bg-dynamic-red/90 absolute bottom-2 right-2 animate-pulse rounded-md px-2 py-1 text-xs text-white shadow-lg">
-                          Exceeds limit by{' '}
-                          {prompt.length - problem.max_prompt_length}
-                        </div>
-                      )}
-                    </div>
+            {/* Real-time Scores Display */}
+            <LiveScoresDisplay evaluationPreview={evaluationPreview} />
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="text-foreground/60 flex items-center gap-2 text-xs">
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono">Ctrl</span>
-                          <Plus className="h-3 w-3" />
-                          <span className="font-mono">Enter</span>
-                        </div>
-                        <span>to submit</span>
-                      </div>
-                      <Button
-                        onClick={handleSend}
-                        disabled={
-                          !prompt.trim() ||
-                          isSubmitting ||
-                          remainingAttempts === 0 ||
-                          prompt.length > problem.max_prompt_length
-                        }
-                        className="from-dynamic-blue to-dynamic-purple hover:from-dynamic-blue/90 hover:to-dynamic-purple/90 hover:shadow-dynamic-blue/25 disabled:bg-foreground/20 disabled:text-foreground/40 gap-2 border-0 bg-gradient-to-r px-6 py-2 font-medium text-white shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:shadow-none"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <LoadingIndicator className="h-4 w-4" />
-                            Evaluating...
-                          </>
-                        ) : (
-                          <>
-                            <PlayCircle className="h-4 w-4" />
-                            Submit & Evaluate
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-
-                {error && (
-                  <div className="border-dynamic-red/20 bg-dynamic-red/10 mt-3 flex items-start gap-3 rounded-lg border p-4 shadow-sm">
-                    <AlertCircle className="text-dynamic-red mt-0.5 h-5 w-5 flex-shrink-0" />
-                    <div>
-                      <p className="text-dynamic-red text-sm font-medium">
-                        Error
-                      </p>
-                      <p className="text-dynamic-red/80 mt-1 text-sm">
-                        {error}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Live Results Preview */}
+            <LiveResultsPreview evaluationPreview={evaluationPreview} />
           </TabsContent>
 
           <TabsContent value="submissions" className="space-y-4">

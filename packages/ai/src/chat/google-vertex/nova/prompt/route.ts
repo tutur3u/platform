@@ -132,6 +132,46 @@ const ProgressUpdateSchema = z.object({
 
 type ProgressUpdate = z.infer<typeof ProgressUpdateSchema>;
 
+// Helper function to safely serialize progress data
+function safeSerializeProgress(update: ProgressUpdate): string {
+  try {
+    // Sanitize the message to prevent JSON parsing issues
+    const sanitized = {
+      ...update,
+      message: update.message
+        .replace(/[\n\r]/g, ' ') // Replace newlines with spaces
+        .replace(/\\/g, '\\\\') // Escape backslashes
+        .replace(/"/g, '\\"') // Escape quotes
+        .trim(),
+      step: update.step.trim(),
+    };
+
+    // If there's data, sanitize it as well
+    if (sanitized.data) {
+      // Convert data to string and sanitize if it's not already a primitive
+      if (typeof sanitized.data === 'object') {
+        try {
+          sanitized.data = JSON.parse(JSON.stringify(sanitized.data));
+        } catch {
+          // If data can't be serialized, remove it to prevent errors
+          sanitized.data = { error: 'Data serialization failed' };
+        }
+      }
+    }
+
+    return JSON.stringify(sanitized);
+  } catch (error) {
+    console.error('Error serializing progress update:', error);
+    // Return a safe fallback
+    return JSON.stringify({
+      step: 'error',
+      progress: 0,
+      message: 'Serialization error occurred',
+      data: { originalError: String(error) },
+    });
+  }
+}
+
 // API route handler
 export async function POST(
   req: NextRequest,
@@ -147,8 +187,20 @@ export async function POST(
     async start(controller) {
       try {
         const sendProgress = (update: ProgressUpdate) => {
-          const data = `data: ${JSON.stringify(update)}\n\n`;
-          controller.enqueue(encoder.encode(data));
+          try {
+            const serializedData = safeSerializeProgress(update);
+            const data = `data: ${serializedData}\n\n`;
+            controller.enqueue(encoder.encode(data));
+          } catch (error) {
+            console.error('Failed to send progress update:', error);
+            // Send a safe error message instead
+            const errorData = `data: ${JSON.stringify({
+              step: 'error',
+              progress: 0,
+              message: 'Communication error occurred',
+            })}\n\n`;
+            controller.enqueue(encoder.encode(errorData));
+          }
         };
 
         // Parse request data
@@ -321,7 +373,13 @@ export async function POST(
         // Step 2: Stream test case evaluation if test cases exist
         if (testCases && testCases.length > 0) {
           const testCaseEvaluation = await streamTestCaseEvaluation(
-            ctx,
+            {
+              userPrompt: prompt,
+              testCaseInputs: testCases.map((tc) => ({
+                id: tc.id,
+                input: tc.input,
+              })),
+            },
             sendProgress
           );
 
@@ -337,7 +395,8 @@ export async function POST(
             testCases,
             problem,
             prompt,
-            submissionId
+            submissionId,
+            sendProgress
           );
 
           await saveTestCaseResults(testCaseInserts);
@@ -512,8 +571,13 @@ async function streamTestCaseEvaluation(
       sendProgress({
         step: 'test_case_streaming',
         progress: Math.min(70 + progressIncrement, 82),
-        message: `Processing test case ${Array.isArray(delta) ? delta.length : 0} of ${ctx.testCaseInputs.length}...`,
-        data: { partialResults: delta },
+        message: `Generating output ${Array.isArray(delta) ? delta.length : 0} of ${ctx.testCaseInputs.length}...`,
+        data: {
+          partialResults: delta,
+          phase: 'generation', // Explicitly mark as generation phase
+          generatedCount: Array.isArray(delta) ? delta.length : 0,
+          totalCount: ctx.testCaseInputs.length,
+        },
       });
     }
 
@@ -538,8 +602,11 @@ async function streamTestCaseEvaluation(
     sendProgress({
       step: 'test_case_completed',
       progress: 83,
-      message: 'Test case evaluation completed!',
-      data: { testCaseResults: finalObject },
+      message: 'Test case generation completed!',
+      data: {
+        testCaseResults: finalObject,
+        phase: 'generation_complete',
+      },
     });
 
     return finalObject;
@@ -755,7 +822,8 @@ async function processTestCaseResults(
   testCases: any[],
   problem: any,
   prompt: string,
-  submissionId: string | null
+  submissionId: string | null,
+  sendProgress?: (update: ProgressUpdate) => void
 ) {
   if (!submissionId) {
     throw new Error('Submission ID is required');
@@ -767,6 +835,22 @@ async function processTestCaseResults(
       reasoning?: string;
     }
   > = [];
+
+  let processedCount = 0;
+  const totalCount = testCaseEvaluation.length;
+
+  // Send initial evaluation phase message
+  if (sendProgress) {
+    sendProgress({
+      step: 'processing_test_results',
+      progress: 85,
+      message: 'Starting evaluation of test case outputs...',
+      data: {
+        phase: 'evaluation_start',
+        totalTestCases: totalCount,
+      },
+    });
+  }
 
   for (const testCase of testCaseEvaluation) {
     const matchingTestCase = testCases.find((tc) => tc.id === testCase.id);
@@ -791,6 +875,36 @@ async function processTestCaseResults(
         confidence,
         reasoning,
       });
+
+      processedCount++;
+
+      // Send progress update with current match results
+      if (sendProgress) {
+        const currentMatched = testCaseInserts.filter(
+          (tc) => tc.matched
+        ).length;
+        const progressPercentage =
+          85 + Math.round((processedCount / totalCount) * 10); // 85-95% range
+
+        sendProgress({
+          step: 'processing_test_results',
+          progress: progressPercentage,
+          message: `Evaluated ${processedCount}/${totalCount} test cases (${currentMatched} passed)`,
+          data: {
+            phase: 'evaluation',
+            testCaseResults: testCaseInserts.map((tc) => ({
+              id: tc.test_case_id,
+              matched: tc.matched,
+              output: tc.output,
+              confidence: tc.confidence,
+              reasoning: tc.reasoning,
+            })),
+            matchedTestCases: currentMatched,
+            totalTestCases: processedCount,
+            isPartialResults: processedCount < totalCount,
+          },
+        });
+      }
     }
   }
 
