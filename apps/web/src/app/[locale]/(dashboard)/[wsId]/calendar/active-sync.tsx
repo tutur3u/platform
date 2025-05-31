@@ -17,6 +17,7 @@ const InnerComponent = () => {
     syncToTuturuuu,
     setCurrentView,
   } = useCalendarSync();
+
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{
     phase: 'get' | 'fetch' | 'delete' | 'upsert' | 'complete';
@@ -156,7 +157,6 @@ const InnerComponent = () => {
   );
 };
 
-export const CalendarActiveSyncDebugger = (wsId: { wsId: string }) => {
-  console.log('wsId', wsId);
+export const CalendarActiveSyncDebugger = () => {
   return <InnerComponent />;
 };
