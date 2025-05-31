@@ -32,11 +32,11 @@ export default async function CalendarPage({ params }: PageProps) {
     .maybeSingle();
 
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
-  if (!workspace) return null;
+  if (!workspace?.id) return null;
 
   return (
     <CalendarSyncProvider
-      wsId={workspace?.id || ''}
+      wsId={workspace.id}
       experimentalGoogleToken={googleToken}
       useQuery={useQuery}
     >
