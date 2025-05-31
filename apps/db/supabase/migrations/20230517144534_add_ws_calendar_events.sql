@@ -19,8 +19,7 @@ create table "public"."workspace_calendar_events" (
     "end_at" timestamp with time zone not null,
     "color" text,
     "ws_id" uuid not null,
-    "created_at" timestamp with time zone default now(),
-    "google_event_id" text
+    "created_at" timestamp with time zone default now()
 );
 alter table "public"."workspace_calendar_events" enable row level security;
 CREATE UNIQUE INDEX calendar_event_colors_pkey ON public.calendar_event_colors USING btree (value);
