@@ -71,7 +71,7 @@ describe('Streaming utilities', () => {
       expect(errors[0]?.message).toBe('Test error');
     });
 
-    it('should handle malformed data gracefully', async () => {
+    it('should handle parsing errors gracefully with recovery', async () => {
       const updates: ProgressUpdate[] = [];
       const errors: Error[] = [];
 
@@ -89,9 +89,81 @@ describe('Streaming utilities', () => {
         (error) => errors.push(error)
       );
 
+      // Should have the recovery progress update plus the valid one
+      expect(updates.length).toBeGreaterThanOrEqual(1);
+      expect(updates.some((u) => u.step === 'valid')).toBe(true);
+      expect(errors).toHaveLength(1);
+      expect(errors[0]?.message).toContain('JSON parse error');
+    });
+
+    it('should fail after too many consecutive parse errors', async () => {
+      const updates: ProgressUpdate[] = [];
+      const errors: Error[] = [];
+
+      // Create a response with multiple consecutive parse errors
+      const invalidData = Array(6).fill('data: invalid json\n\n').join('');
+      const mockResponse = new Response(invalidData, {
+        headers: { 'Content-Type': 'text/event-stream' },
+      });
+
+      await parseStreamingResponse(
+        mockResponse,
+        (update) => updates.push(update),
+        (error) => errors.push(error)
+      );
+
+      // Should stop after 5 consecutive errors
+      expect(errors.length).toBeGreaterThan(1);
+      expect(errors[errors.length - 1]?.message).toContain(
+        'Too many consecutive parse errors'
+      );
+    });
+
+    it('should handle partial JSON chunks correctly', async () => {
+      const updates: ProgressUpdate[] = [];
+      const errors: Error[] = [];
+
+      // Simulate a JSON object split across chunks
+      const mockResponse = new Response(
+        'data: {"step":"test","pro\n' +
+          'gress":50,"message":"Split message"}\n\n' +
+          'data: {"step":"complete","progress":100,"message":"Done"}\n\n',
+        {
+          headers: { 'Content-Type': 'text/event-stream' },
+        }
+      );
+
+      await parseStreamingResponse(
+        mockResponse,
+        (update) => updates.push(update),
+        (error) => errors.push(error)
+      );
+
+      // Should handle the complete message correctly
+      expect(updates.some((u) => u.step === 'complete')).toBe(true);
+    });
+
+    it('should validate progress data structure', async () => {
+      const updates: ProgressUpdate[] = [];
+      const errors: Error[] = [];
+
+      const mockResponse = new Response(
+        'data: {"invalid":"structure"}\n\n' +
+          'data: {"step":"valid","progress":50,"message":"Good data"}\n\n',
+        {
+          headers: { 'Content-Type': 'text/event-stream' },
+        }
+      );
+
+      await parseStreamingResponse(
+        mockResponse,
+        (update) => updates.push(update),
+        (error) => errors.push(error)
+      );
+
+      // Should only process the valid structure
       expect(updates).toHaveLength(1);
       expect(updates[0]?.step).toBe('valid');
-      expect(errors).toHaveLength(1);
     });
   });
 
@@ -242,6 +314,7 @@ describe('Streaming utilities', () => {
         'finalizing',
         'completed',
         'error',
+        'parsing_error',
       ];
 
       coreSteps.forEach((step) => {
@@ -285,6 +358,12 @@ describe('Streaming utilities', () => {
         expect(config.weight).toBeGreaterThanOrEqual(0);
         expect(config.order).toBeGreaterThan(0);
       });
+    });
+
+    it('should include parsing_error step', () => {
+      expect(STEP_CONFIG.parsing_error).toBeDefined();
+      expect(STEP_CONFIG.parsing_error.label).toBe('Communication Issue');
+      expect(STEP_CONFIG.parsing_error.category).toBe('validation');
     });
 
     it('should have unique order values', () => {
