@@ -139,7 +139,7 @@ export const CalendarProvider = ({
   useQueryClient: any;
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 }) => {
   const queryClient = useQueryClient();
 

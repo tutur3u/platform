@@ -53,7 +53,7 @@ export const CalendarSyncProvider = ({
 }: {
   children: React.ReactNode;
   wsId: Workspace['id'];
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
   useQuery: any;
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);

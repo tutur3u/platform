@@ -37,13 +37,13 @@ export default async function CalendarPage({ params }: PageProps) {
   return (
     <CalendarSyncProvider
       wsId={workspace?.id || ''}
-      experimentalGoogleToken={googleToken || undefined}
+      experimentalGoogleToken={googleToken}
       useQuery={useQuery}
     >
       {DEV_MODE && <CalendarActiveSyncDebugger />}
       <div className="flex h-[calc(100%-2rem-4px)]">
         <CalendarClientPage
-          experimentalGoogleToken={googleToken || undefined}
+          experimentalGoogleToken={googleToken}
           workspace={workspace}
         />
         <TasksSidebar wsId={wsId} locale={locale} />

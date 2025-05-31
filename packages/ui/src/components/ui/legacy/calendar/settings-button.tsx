@@ -14,7 +14,7 @@ export const SettingsButton = ({
   onSaveSettings,
 }: {
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
   initialSettings?: Partial<CalendarSettings>;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
@@ -42,7 +42,7 @@ export const SettingsButton = ({
   };
 
   return (
-    <div className="z-15 fixed bottom-6 right-20 flex gap-2">
+    <div className="fixed right-20 bottom-6 z-15 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
