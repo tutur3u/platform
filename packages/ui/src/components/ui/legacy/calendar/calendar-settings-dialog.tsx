@@ -116,7 +116,7 @@ const SettingsContent = ({
 }: {
   wsId: string;
   section: keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar';
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 }) => {
   const { settings, updateSettings } = useCalendarSettings();
 
@@ -185,7 +185,7 @@ function SettingsDialogContent({
 }: {
   onClose: (save?: boolean) => void;
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 }) {
   const [activeSection, setActiveSection] = React.useState<
     keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar'
@@ -319,7 +319,7 @@ export function CalendarSettingsDialog({
   initialSettings?: Partial<CalendarSettings>;
   onSave?: (settings: CalendarSettings) => Promise<void>;
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 }) {
   const handleClose = () => {
     onOpenChange(false);

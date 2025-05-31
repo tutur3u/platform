@@ -139,7 +139,7 @@ export const CalendarProvider = ({
   useQueryClient: any;
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 }) => {
   const queryClient = useQueryClient();
 
@@ -926,7 +926,7 @@ export const CalendarProvider = ({
     return await response.json();
   };
 
-  // Query to fetch Google Calendar events every 30 seconds
+  // Query to fetch Google Calendar events every 1 hour
   const { data: googleData } = useQuery({
     queryKey: ['googleCalendarEvents', ws?.id],
     queryFn: fetchGoogleCalendarEvents,

@@ -11,6 +11,7 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { cn } from '@tuturuuu/utils/format';
@@ -33,7 +34,7 @@ export const CalendarContent = ({
   workspace?: Workspace;
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;
@@ -47,11 +48,11 @@ export const CalendarContent = ({
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendar();
+  const { dates, setDates } = useCalendarSync();
 
   const [initialized, setInitialized] = useState(false);
   const [date, setDate] = useState(externalState?.date || new Date());
   const [view, setView] = useState<CalendarView>(externalState?.view || 'week');
-  const [dates, setDates] = useState<Date[]>([]);
   const [availableViews, setAvailableViews] = useState<
     { value: string; label: string; disabled?: boolean }[]
   >(externalState?.availableViews || []);
@@ -104,6 +105,7 @@ export const CalendarContent = ({
       handleSetView('4-days');
       setDates(dates);
     });
+    console.log('enable4DayView', dates);
   }, [date, transition, handleSetView, setDates]);
 
   const enableWeekView = useCallback(() => {
