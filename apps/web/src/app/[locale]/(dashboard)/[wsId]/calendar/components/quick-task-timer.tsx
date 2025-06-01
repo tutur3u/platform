@@ -3,9 +3,9 @@
 import type { WorkspaceTask } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Clock, Play } from '@tuturuuu/ui/icons';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
 
 interface QuickTaskTimerProps {
   wsId: string;

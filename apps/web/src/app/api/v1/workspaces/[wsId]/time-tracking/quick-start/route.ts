@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
@@ -55,7 +58,7 @@ export async function POST(
     }
 
     // Use service role client for secure operations
-    const adminSupabase = await createClient(true);
+    const adminSupabase = await createAdminClient();
 
     // Stop any existing running sessions
     await adminSupabase

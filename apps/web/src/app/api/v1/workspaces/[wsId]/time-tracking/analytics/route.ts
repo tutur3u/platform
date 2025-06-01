@@ -93,6 +93,7 @@ export async function GET(
     // Daily breakdown
     const dailyBreakdown = sessions?.reduce((acc: any, session) => {
       const date = new Date(session.start_time).toISOString().split('T')[0];
+      if (!date) return acc;
       if (!acc[date]) {
         acc[date] = { date, time: 0, sessions: 0 };
       }

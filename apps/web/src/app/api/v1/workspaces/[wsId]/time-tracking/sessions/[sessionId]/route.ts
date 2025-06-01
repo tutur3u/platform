@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(
@@ -62,7 +65,7 @@ export async function PATCH(
     } = body;
 
     // Use service role client for secure operations
-    const adminSupabase = await createClient(true);
+    const adminSupabase = await createAdminClient();
 
     if (action === 'stop') {
       if (!sessionCheck.is_running) {
@@ -225,7 +228,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ wsId: string; sessionId: string }> }
 ) {
   try {
@@ -280,7 +283,7 @@ export async function DELETE(
     }
 
     // Use service role client for secure operations
-    const adminSupabase = await createClient(true);
+    const adminSupabase = await createAdminClient();
 
     // Delete the session
     const { error } = await adminSupabase
