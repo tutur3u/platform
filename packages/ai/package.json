@@ -47,7 +47,7 @@
     "next": "15.4.0-canary.59",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.42"
+    "zod": "^3.25.46"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
