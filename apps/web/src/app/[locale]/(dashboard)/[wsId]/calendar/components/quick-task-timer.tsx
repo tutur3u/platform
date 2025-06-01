@@ -1,11 +1,10 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceTask } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Clock, Play } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 interface QuickTaskTimerProps {
@@ -22,7 +21,28 @@ export default function QuickTaskTimer({
   size = 'xs',
 }: QuickTaskTimerProps) {
   const [isStarting, setIsStarting] = useState(false);
-  const supabase = createClient();
+
+  const apiCall = useCallback(
+    async (url: string, options: RequestInit = {}) => {
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        ...options,
+      });
+
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Unknown error' }));
+        throw new Error(error.error || `HTTP ${response.status}`);
+      }
+
+      return response.json();
+    },
+    []
+  );
 
   const startTimerForTask = async () => {
     if (!task.id || !task.name) return;
@@ -30,41 +50,14 @@ export default function QuickTaskTimer({
     setIsStarting(true);
 
     try {
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) {
-        toast.error('Not authenticated');
-        return;
-      }
-
-      // First, stop any running timers
-      const { error: stopError } = await supabase
-        .from('time_tracking_sessions')
-        .update({
-          end_time: new Date().toISOString(),
-          is_running: false,
-        })
-        .eq('ws_id', wsId)
-        .eq('user_id', user.data.user.id)
-        .eq('is_running', true);
-
-      if (stopError) {
-        console.warn('Error stopping previous timers:', stopError);
-      }
-
-      // Start new timer for this task
-      const { error: startError } = await supabase
-        .from('time_tracking_sessions')
-        .insert({
-          ws_id: wsId,
-          user_id: user.data.user.id,
-          task_id: task.id,
-          title: `Working on: ${task.name}`,
-          description: task.description || null,
-          start_time: new Date().toISOString(),
-          is_running: true,
-        });
-
-      if (startError) throw startError;
+      await apiCall(`/api/v1/workspaces/${wsId}/time-tracking/quick-start`, {
+        method: 'POST',
+        body: JSON.stringify({
+          taskId: task.id,
+          taskName: task.name,
+          taskDescription: task.description || null,
+        }),
+      });
 
       toast.success(`Timer started for "${task.name}"`);
     } catch (error) {
@@ -76,39 +69,44 @@ export default function QuickTaskTimer({
   };
 
   return (
-    <Button
-      variant="ghost"
-      size={size}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        startTimerForTask();
-      }}
-      disabled={isStarting}
-      className={cn(
-        'h-auto p-1 opacity-0 transition-opacity group-hover:opacity-100',
-        size === 'xs' && 'h-6 w-6',
-        size === 'sm' && 'h-7 w-7',
-        className
-      )}
-      title={`Start timer for ${task.name}`}
-    >
-      {isStarting ? (
-        <Clock
-          className={cn(
-            'animate-spin',
-            size === 'xs' && 'h-3 w-3',
-            size === 'sm' && 'h-3.5 w-3.5'
-          )}
-        />
-      ) : (
-        <Play
-          className={cn(
-            size === 'xs' && 'h-3 w-3',
-            size === 'sm' && 'h-3.5 w-3.5'
-          )}
-        />
-      )}
-    </Button>
+    <div className="@container">
+      <Button
+        variant="ghost"
+        size={size}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          startTimerForTask();
+        }}
+        disabled={isStarting}
+        className={cn(
+          'h-auto p-1 opacity-0 transition-all duration-200 group-hover:opacity-100',
+          'hover:bg-primary/10 hover:text-primary',
+          size === 'xs' && 'h-6 w-6',
+          size === 'sm' && 'h-7 w-7',
+          'w-full',
+          '@[50px]:opacity-60', // Show partially visible on larger containers
+          className
+        )}
+        title={`Start timer for ${task.name}`}
+      >
+        {isStarting ? (
+          <Clock
+            className={cn(
+              'animate-spin',
+              size === 'xs' && 'h-3 w-3',
+              size === 'sm' && 'h-3.5 w-3.5'
+            )}
+          />
+        ) : (
+          <Play
+            className={cn(
+              size === 'xs' && 'h-3 w-3',
+              size === 'sm' && 'h-3.5 w-3.5'
+            )}
+          />
+        )}
+      </Button>
+    </div>
   );
 }

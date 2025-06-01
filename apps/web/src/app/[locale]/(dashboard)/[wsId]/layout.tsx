@@ -170,6 +170,22 @@ export default async function Layout({ children, params }: LayoutProps) {
       shortcut: 'T',
       experimental: 'beta',
     },
+    {
+      title: t('sidebar_tabs.time_tracker'),
+      href: `/${wsId}/time-tracker`,
+      icon: <CircleCheck className="h-4 w-4" />,
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) ||
+        withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'beta',
+    },
     // {
     //   title: t('sidebar_tabs.workouts'),
     //   href: `/${wsId}/workouts`,
@@ -483,7 +499,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -492,7 +508,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />

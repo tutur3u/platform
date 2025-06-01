@@ -2,6 +2,7 @@
 
 import Chat from '../../chat/chat';
 import { TaskBoardForm } from '../../tasks/boards/form';
+import QuickTaskTimer from './quick-task-timer';
 import { TaskForm } from './task-form';
 import { TaskListForm } from './task-list-form';
 import TimeTracker from './time-tracker';
@@ -215,14 +216,17 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="ml-2 flex h-full w-1/3 flex-col rounded-lg border border-border bg-background/80 text-foreground shadow-lg backdrop-blur-sm">
+      <div className="@container ml-2 flex h-full w-1/3 flex-col rounded-lg border border-border bg-background/80 text-foreground shadow-lg backdrop-blur-sm">
         {/* Header */}
-        <div className="flex items-center justify-between rounded-t-lg border-b bg-muted/30 px-4 py-3">
+        <div className="@container flex items-center justify-between rounded-t-lg border-b bg-muted/30 px-4 py-3">
           <div className="flex items-center space-x-2">
             <Calendar className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Workspace</h2>
+            <h2 className="hidden text-lg font-semibold @[200px]:block">
+              Workspace
+            </h2>
+            <h2 className="text-sm font-semibold @[200px]:hidden">WS</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 @[300px]:gap-2">
             <TimeTracker wsId={wsId} tasks={allTasks} />
             <Button
               variant="ghost"
@@ -244,9 +248,10 @@ export default function TasksSidebarContent({
         >
           <div className="border-b bg-muted/20 p-2">
             <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
-              <TabsTrigger value="tasks">
+              <TabsTrigger value="tasks" className="@container">
                 <LayoutDashboard className="h-4 w-4" />
-                <span>Tasks</span>
+                <span className="hidden @[80px]:inline">Tasks</span>
+                <span className="@[80px]:hidden">T</span>
                 {totalTasks > 0 && (
                   <Badge
                     variant="secondary"
@@ -256,9 +261,10 @@ export default function TasksSidebarContent({
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="ai-chat">
+              <TabsTrigger value="ai-chat" className="@container">
                 <Bot className="h-4 w-4" />
-                <span>AI Chat</span>
+                <span className="hidden @[80px]:inline">AI Chat</span>
+                <span className="@[80px]:hidden">AI</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -523,7 +529,7 @@ export default function TasksSidebarContent({
                                 {list?.tasks?.map((task) => (
                                   <div
                                     key={task?.id ?? ''}
-                                    className="group relative rounded-md border bg-background/50 p-3 transition-all hover:bg-accent/30 hover:shadow-sm"
+                                    className="group @container relative rounded-md border bg-background/50 p-3 transition-all hover:bg-accent/30 hover:shadow-sm @md:p-4"
                                   >
                                     <Link
                                       href={`/${wsId}/tasks/boards/${selectedBoard.id}?taskId=${task.id}`}
@@ -532,11 +538,11 @@ export default function TasksSidebarContent({
                                     >
                                       <div className="flex items-start justify-between">
                                         <div className="min-w-0 flex-1">
-                                          <h4 className="truncate pr-2 text-sm font-medium">
+                                          <h4 className="truncate pr-2 text-sm font-medium @md:text-base">
                                             {task.name}
                                           </h4>
                                           {task.description && (
-                                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground @md:text-sm">
                                               {task.description}
                                             </p>
                                           )}
