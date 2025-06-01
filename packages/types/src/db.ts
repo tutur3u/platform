@@ -69,6 +69,10 @@ export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {
 };
 export type WorkspaceCalendarGoogleToken = Tables<'calendar_auth_tokens'>;
 
+export type TimeTrackingCategory = Tables<'time_tracking_categories'>;
+export type TimeTrackingSession = Tables<'time_tracking_sessions'>;
+export type TimeTrackingGoal = Tables<'time_tracking_goals'>;
+
 export type AuroraStatisticalForecast = Tables<'aurora_statistical_forecast'>;
 export type AuroraStatisticalMetrics = Tables<'aurora_statistical_metrics'>;
 export type AuroraMLForecast = Tables<'aurora_ml_forecast'>;
