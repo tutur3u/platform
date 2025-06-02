@@ -123,11 +123,6 @@ export const CalendarSyncProvider = ({
     ) => {
       const supabase = createClient();
 
-      if (!dates.length) {
-        console.error('No dates available for sync');
-        return;
-      }
-
       // Use the exact range from dates array
       const startDate = dayjs(dates[0]).startOf('day');
       const endDate = dayjs(dates[dates.length - 1]).endOf('day');
