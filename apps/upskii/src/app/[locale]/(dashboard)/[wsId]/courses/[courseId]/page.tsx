@@ -1,3 +1,5 @@
+import { getWorkspaceCourseModuleColumns } from './columns';
+import CourseModuleForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
@@ -5,8 +7,6 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
-import { getWorkspaceCourseModuleColumns } from './columns';
-import CourseModuleForm from './form';
 
 interface SearchParams {
   q?: string;
@@ -45,7 +45,8 @@ export default async function WorkspaceCoursesPage({
     href: `/${wsId}/courses/${courseId}/modules/${m.id}`,
   })) as ModuleWithCompletion[];
 
-  const allModulesCompleted = modules.length > 0 && modules.every((module) => module.is_completed);
+  const allModulesCompleted =
+    modules.length > 0 && modules.every((module) => module.is_completed);
 
   return (
     <>
