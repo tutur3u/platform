@@ -202,7 +202,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
             <div className="flex items-center gap-3">
               <Calendar className="h-8 w-8 text-blue-500 transition-transform group-hover:scale-110" />
               <div>
-                <p className="text-sm text-muted-foreground">Today</p>
+                <p className="text-muted-foreground text-sm">Today</p>
                 <p className="text-2xl font-bold">
                   {formatDuration(timerStats.todayTime)}
                 </p>
@@ -216,7 +216,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
             <div className="flex items-center gap-3">
               <TrendingUp className="h-8 w-8 text-green-500 transition-transform group-hover:scale-110" />
               <div>
-                <p className="text-sm text-muted-foreground">This Week</p>
+                <p className="text-muted-foreground text-sm">This Week</p>
                 <p className="text-2xl font-bold">
                   {formatDuration(timerStats.weekTime)}
                 </p>
@@ -230,7 +230,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
             <div className="flex items-center gap-3">
               <Zap className="h-8 w-8 text-purple-500 transition-transform group-hover:scale-110" />
               <div>
-                <p className="text-sm text-muted-foreground">This Month</p>
+                <p className="text-muted-foreground text-sm">This Month</p>
                 <p className="text-2xl font-bold">
                   {formatDuration(timerStats.monthTime)}
                 </p>
@@ -244,7 +244,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
             <div className="flex items-center gap-3">
               <Clock className="h-8 w-8 text-orange-500 transition-transform group-hover:scale-110" />
               <div>
-                <p className="text-sm text-muted-foreground">Streak</p>
+                <p className="text-muted-foreground text-sm">Streak</p>
                 <p className="text-2xl font-bold">{timerStats.streak} days</p>
               </div>
             </div>
@@ -312,7 +312,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
                           <p className="truncate font-medium">
                             {session.title}
                           </p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-2 text-sm">
                             {session.category && (
                               <span>{session.category.name}</span>
                             )}
@@ -334,7 +334,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
                       </div>
                     ))}
                     {recentSessions.length === 0 && (
-                      <p className="py-8 text-center text-muted-foreground">
+                      <p className="text-muted-foreground py-8 text-center">
                         No sessions yet. Start your first timer!
                       </p>
                     )}

@@ -199,7 +199,7 @@ export default function TasksSidebarContent({
 
   if (isCollapsed) {
     return (
-      <div className="ml-2 flex h-full flex-col items-center rounded-lg border border-border bg-background/50 p-2 shadow-sm backdrop-blur-sm">
+      <div className="border-border bg-background/50 ml-2 flex h-full flex-col items-center rounded-lg border p-2 shadow-sm backdrop-blur-sm">
         <Button
           variant="ghost"
           size="icon"
@@ -207,7 +207,7 @@ export default function TasksSidebarContent({
           aria-label="Expand sidebar"
           className="hover:bg-accent/50"
         >
-          <PanelLeftClose className="h-5 w-5 text-foreground" />
+          <PanelLeftClose className="text-foreground h-5 w-5" />
         </Button>
       </div>
     );
@@ -215,9 +215,9 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="@container ml-2 hidden h-full w-1/3 flex-col rounded-lg border border-border bg-background/80 text-foreground shadow-lg backdrop-blur-sm xl:flex">
+      <div className="@container border-border bg-background/80 text-foreground ml-2 hidden h-full w-1/3 flex-col rounded-lg border shadow-lg backdrop-blur-sm xl:flex">
         {/* Header */}
-        <div className="@container flex items-center justify-between rounded-t-lg border-b bg-muted/30 px-4 py-3">
+        <div className="@container bg-muted/30 flex items-center justify-between rounded-t-lg border-b px-4 py-3">
           <div className="flex w-full items-center justify-between gap-1">
             <TimeTracker wsId={wsId} tasks={allTasks} />
             <Button
@@ -227,7 +227,7 @@ export default function TasksSidebarContent({
               aria-label="Collapse sidebar"
               className="hover:bg-accent/50"
             >
-              <PanelRightClose className="h-5 w-5 text-foreground" />
+              <PanelRightClose className="text-foreground h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -238,11 +238,11 @@ export default function TasksSidebarContent({
           onValueChange={setActiveTab}
           className="flex flex-1 flex-col gap-0"
         >
-          <div className="border-b bg-muted/20 p-2">
+          <div className="bg-muted/20 border-b p-2">
             <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
               <TabsTrigger value="tasks" className="@container">
                 <LayoutDashboard className="h-4 w-4" />
-                <span className="hidden @[80px]:inline">Tasks</span>
+                <span className="@[80px]:inline hidden">Tasks</span>
                 <span className="@[80px]:hidden">T</span>
                 {totalTasks > 0 && (
                   <Badge
@@ -255,7 +255,7 @@ export default function TasksSidebarContent({
               </TabsTrigger>
               <TabsTrigger value="ai-chat" className="@container">
                 <Bot className="h-4 w-4" />
-                <span className="hidden @[80px]:inline">AI Chat</span>
+                <span className="@[80px]:inline hidden">AI Chat</span>
                 <span className="@[80px]:hidden">AI</span>
               </TabsTrigger>
             </TabsList>
@@ -268,22 +268,22 @@ export default function TasksSidebarContent({
           >
             {/* Board Summary Card */}
             {selectedBoard && (
-              <div className="rounded-lg border border-primary/20 bg-gradient-to-r from-primary/10 to-primary/5 p-3">
+              <div className="border-primary/20 from-primary/10 to-primary/5 rounded-lg border bg-gradient-to-r p-3">
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-medium">Board Progress</h3>
                   <Badge variant="outline" className="text-xs">
                     {completedTasks}/{totalTasks}
                   </Badge>
                 </div>
-                <div className="h-2 w-full rounded-full bg-muted/50">
+                <div className="bg-muted/50 h-2 w-full rounded-full">
                   <div
-                    className="h-2 rounded-full bg-primary transition-all duration-300"
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
                     style={{
                       width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%`,
                     }}
                   />
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-muted-foreground mt-1 text-xs">
                   {totalTasks === 0
                     ? 'No tasks yet'
                     : completedTasks === totalTasks
@@ -304,7 +304,7 @@ export default function TasksSidebarContent({
                   role="combobox"
                   aria-expanded={boardSelectorOpen}
                   aria-label="Select a task board"
-                  className="w-full justify-start truncate hover:bg-accent/50"
+                  className="hover:bg-accent/50 w-full justify-start truncate"
                 >
                   <LayoutDashboard className="mr-2 h-4 w-4 flex-none" />
                   <span className="truncate">
@@ -401,7 +401,7 @@ export default function TasksSidebarContent({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full hover:bg-accent/50"
+                        className="hover:bg-accent/50 w-full"
                       >
                         <ListPlus className="mr-2 h-3.5 w-3.5" />
                         Add List to "{selectedBoard.name}"
@@ -425,11 +425,11 @@ export default function TasksSidebarContent({
 
                   {selectedBoard?.lists?.length === 0 ? (
                     <div className="py-8 text-center">
-                      <LayoutDashboard className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
+                      <LayoutDashboard className="text-muted-foreground mx-auto mb-3 h-12 w-12" />
+                      <p className="text-muted-foreground text-sm">
                         No task lists in this board yet.
                       </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="text-muted-foreground mt-1 text-xs">
                         Create your first list to get started.
                       </p>
                     </div>
@@ -444,9 +444,9 @@ export default function TasksSidebarContent({
                         <AccordionItem
                           value={`list-${list?.id}`}
                           key={list?.id}
-                          className="rounded-lg border border-border/60 bg-card/50 shadow-sm backdrop-blur-sm"
+                          className="border-border/60 bg-card/50 rounded-lg border shadow-sm backdrop-blur-sm"
                         >
-                          <AccordionTrigger className="flex w-full items-center justify-between rounded-t-lg px-4 py-3 text-sm font-medium hover:bg-accent/30 data-[state=open]:rounded-b-none data-[state=open]:border-b data-[state=open]:border-border/60">
+                          <AccordionTrigger className="hover:bg-accent/30 data-[state=open]:border-border/60 flex w-full items-center justify-between rounded-t-lg px-4 py-3 text-sm font-medium data-[state=open]:rounded-b-none data-[state=open]:border-b">
                             <span
                               className="flex-grow truncate text-left"
                               title={list?.name ?? ''}
@@ -472,7 +472,7 @@ export default function TasksSidebarContent({
                               </Badge>
                             </div>
                           </AccordionTrigger>
-                          <AccordionContent className="px-3 pt-1 pb-3">
+                          <AccordionContent className="px-3 pb-3 pt-1">
                             <Dialog
                               open={addTaskDialogOpen[list?.id ?? ''] || false}
                               onOpenChange={(isOpen) =>
@@ -486,7 +486,7 @@ export default function TasksSidebarContent({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="mb-2 w-full justify-start text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                                  className="text-muted-foreground hover:bg-accent/50 hover:text-foreground mb-2 w-full justify-start"
                                 >
                                   <FilePlus2 className="mr-2 h-3 w-3" /> Add New
                                   Task
@@ -511,8 +511,8 @@ export default function TasksSidebarContent({
 
                             {list?.tasks?.length === 0 ? (
                               <div className="py-4 text-center">
-                                <FilePlus2 className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                                <p className="text-xs text-muted-foreground">
+                                <FilePlus2 className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+                                <p className="text-muted-foreground text-xs">
                                   No tasks in this list.
                                 </p>
                               </div>
@@ -521,7 +521,7 @@ export default function TasksSidebarContent({
                                 {list?.tasks?.map((task) => (
                                   <div
                                     key={task?.id ?? ''}
-                                    className="group @container relative rounded-md border bg-background/50 p-3 transition-all hover:bg-accent/30 hover:shadow-sm @md:p-4"
+                                    className="@container bg-background/50 hover:bg-accent/30 @md:p-4 group relative rounded-md border p-3 transition-all hover:shadow-sm"
                                   >
                                     <Link
                                       href={`/${wsId}/tasks/boards/${selectedBoard.id}?taskId=${task.id}`}
@@ -530,11 +530,11 @@ export default function TasksSidebarContent({
                                     >
                                       <div className="flex items-start justify-between">
                                         <div className="min-w-0 flex-1">
-                                          <h4 className="truncate pr-2 text-sm font-medium @md:text-base">
+                                          <h4 className="@md:text-base truncate pr-2 text-sm font-medium">
                                             {task.name}
                                           </h4>
                                           {task.description && (
-                                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground @md:text-sm">
+                                            <p className="text-muted-foreground @md:text-sm mt-1 line-clamp-2 text-xs">
                                               {task.description}
                                             </p>
                                           )}
@@ -556,7 +556,7 @@ export default function TasksSidebarContent({
                                         </div>
                                       </div>
                                       {task.end_date && (
-                                        <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                                        <div className="text-muted-foreground mt-2 flex items-center text-xs">
                                           <Clock className="mr-1 h-3 w-3" />
                                           Due:{' '}
                                           {new Date(
@@ -579,8 +579,8 @@ export default function TasksSidebarContent({
             ) : (
               initialTaskBoards.length > 0 && (
                 <div className="py-8 text-center">
-                  <LayoutDashboard className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
+                  <LayoutDashboard className="text-muted-foreground mx-auto mb-3 h-12 w-12" />
+                  <p className="text-muted-foreground text-sm">
                     Select a board to view its tasks.
                   </p>
                 </div>
