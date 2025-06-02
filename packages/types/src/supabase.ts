@@ -701,6 +701,59 @@ export type Database = {
           },
         ];
       };
+      course_certificates: {
+        Row: {
+          completed_date: string;
+          course_id: string;
+          created_at: string;
+          id: string;
+          user_id: string;
+        };
+        Insert: {
+          completed_date: string;
+          course_id: string;
+          created_at?: string;
+          id?: string;
+          user_id?: string;
+        };
+        Update: {
+          completed_date?: string;
+          course_id?: string;
+          created_at?: string;
+          id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_certificates_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_courses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'course_certificates_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       course_module_completion_status: {
         Row: {
           completed_at: string | null;
@@ -7268,6 +7321,7 @@ export type Database = {
           email: string;
           new_email: string;
           birthday: string;
+          full_name: string;
           team_name: string[];
         }[];
       };
