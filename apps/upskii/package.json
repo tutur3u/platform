@@ -82,7 +82,7 @@
     "@next/bundle-analyzer": "15.4.0-canary.59",
     "@next/eslint-plugin-next": "15.4.0-canary.59",
     "@tanstack/eslint-plugin-query": "^5.78.0",
-    "@tanstack/react-query-devtools": "^5.79.0",
+    "@tanstack/react-query-devtools": "^5.79.2",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
