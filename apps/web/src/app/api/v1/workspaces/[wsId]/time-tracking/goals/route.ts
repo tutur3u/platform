@@ -37,18 +37,24 @@ export async function GET(
       );
     }
 
-    // Fetch categories
+    // Fetch goals with category information
     const { data, error } = await supabase
-      .from('time_tracking_categories')
-      .select('*')
+      .from('time_tracking_goals')
+      .select(
+        `
+        *,
+        category:time_tracking_categories(*)
+      `
+      )
       .eq('ws_id', wsId)
-      .order('name');
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    return NextResponse.json({ categories: data });
+    return NextResponse.json({ goals: data });
   } catch (error) {
-    console.error('Error fetching time tracking categories:', error);
+    console.error('Error fetching time tracking goals:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -90,36 +96,60 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { name, description, color } = body;
+    const { categoryId, dailyGoalMinutes, weeklyGoalMinutes, isActive } = body;
 
-    if (!name?.trim()) {
+    if (!dailyGoalMinutes || dailyGoalMinutes <= 0) {
       return NextResponse.json(
-        { error: 'Category name is required' },
+        { error: 'Daily goal minutes must be positive' },
         { status: 400 }
       );
+    }
+
+    // Verify category exists if provided
+    if (categoryId) {
+      const { data: categoryCheck } = await supabase
+        .from('time_tracking_categories')
+        .select('id')
+        .eq('id', categoryId)
+        .eq('ws_id', wsId)
+        .single();
+
+      if (!categoryCheck) {
+        return NextResponse.json(
+          { error: 'Category not found' },
+          { status: 404 }
+        );
+      }
     }
 
     // Use admin client for insertion
     const adminSupabase = await createAdminClient();
 
     const { data, error } = await adminSupabase
-      .from('time_tracking_categories')
+      .from('time_tracking_goals')
       .insert({
         ws_id: wsId,
-        name: name.trim(),
-        description: description?.trim() || null,
-        color: color || 'BLUE',
+        user_id: user.id,
+        category_id: categoryId || null,
+        daily_goal_minutes: dailyGoalMinutes,
+        weekly_goal_minutes: weeklyGoalMinutes || null,
+        is_active: isActive !== undefined ? isActive : true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .select('*')
+      .select(
+        `
+        *,
+        category:time_tracking_categories(*)
+      `
+      )
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ category: data }, { status: 201 });
+    return NextResponse.json({ goal: data }, { status: 201 });
   } catch (error) {
-    console.error('Error creating time tracking category:', error);
+    console.error('Error creating time tracking goal:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

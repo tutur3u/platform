@@ -122,47 +122,83 @@ export async function GET(
       );
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
+      // Get all sessions with category information for breakdown
       const [todayData, weekData, monthData] = await Promise.all([
         supabase
           .from('time_tracking_sessions')
-          .select('duration_seconds')
+          .select('duration_seconds, category_id')
           .eq('ws_id', wsId)
           .eq('user_id', user.id)
           .gte('start_time', startOfToday.toISOString())
           .not('duration_seconds', 'is', null),
         supabase
           .from('time_tracking_sessions')
-          .select('duration_seconds')
+          .select('duration_seconds, category_id')
           .eq('ws_id', wsId)
           .eq('user_id', user.id)
           .gte('start_time', startOfWeek.toISOString())
           .not('duration_seconds', 'is', null),
         supabase
           .from('time_tracking_sessions')
-          .select('duration_seconds')
+          .select('duration_seconds, category_id')
           .eq('ws_id', wsId)
           .eq('user_id', user.id)
           .gte('start_time', startOfMonth.toISOString())
           .not('duration_seconds', 'is', null),
       ]);
 
+      // Calculate total times
+      const totalTodayTime =
+        todayData.data?.reduce(
+          (sum, session) => sum + (session.duration_seconds || 0),
+          0
+        ) || 0;
+
+      const totalWeekTime =
+        weekData.data?.reduce(
+          (sum, session) => sum + (session.duration_seconds || 0),
+          0
+        ) || 0;
+
+      const totalMonthTime =
+        monthData.data?.reduce(
+          (sum, session) => sum + (session.duration_seconds || 0),
+          0
+        ) || 0;
+
+      // Calculate category breakdowns
+      const todayByCategory: Record<string, number> = {};
+      const weekByCategory: Record<string, number> = {};
+      const monthByCategory: Record<string, number> = {};
+
+      todayData.data?.forEach((session) => {
+        const categoryKey = session.category_id || 'general';
+        todayByCategory[categoryKey] =
+          (todayByCategory[categoryKey] || 0) + (session.duration_seconds || 0);
+      });
+
+      weekData.data?.forEach((session) => {
+        const categoryKey = session.category_id || 'general';
+        weekByCategory[categoryKey] =
+          (weekByCategory[categoryKey] || 0) + (session.duration_seconds || 0);
+      });
+
+      monthData.data?.forEach((session) => {
+        const categoryKey = session.category_id || 'general';
+        monthByCategory[categoryKey] =
+          (monthByCategory[categoryKey] || 0) + (session.duration_seconds || 0);
+      });
+
       const stats = {
-        todayTime:
-          todayData.data?.reduce(
-            (sum, session) => sum + (session.duration_seconds || 0),
-            0
-          ) || 0,
-        weekTime:
-          weekData.data?.reduce(
-            (sum, session) => sum + (session.duration_seconds || 0),
-            0
-          ) || 0,
-        monthTime:
-          monthData.data?.reduce(
-            (sum, session) => sum + (session.duration_seconds || 0),
-            0
-          ) || 0,
+        todayTime: totalTodayTime,
+        weekTime: totalWeekTime,
+        monthTime: totalMonthTime,
         streak: 0, // Can be calculated based on requirements
+        categoryBreakdown: {
+          today: todayByCategory,
+          week: weekByCategory,
+          month: monthByCategory,
+        },
       };
 
       return NextResponse.json({ stats });

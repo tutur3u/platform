@@ -22,6 +22,7 @@ import {
   ChartArea,
   CircleCheck,
   Clock,
+  ClockFading,
   Cog,
   Database,
   FileText,
@@ -173,7 +174,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     {
       title: t('sidebar_tabs.time_tracker'),
       href: `/${wsId}/time-tracker`,
-      icon: <CircleCheck className="h-4 w-4" />,
+      icon: <ClockFading className="h-4 w-4" />,
       disabled:
         ENABLE_AI_ONLY ||
         !(await verifySecret({
@@ -499,7 +500,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -508,7 +509,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />
