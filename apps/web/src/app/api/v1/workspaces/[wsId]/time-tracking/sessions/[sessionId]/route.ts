@@ -203,7 +203,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ wsId: string; sessionId: string }> }
 ) {
   try {
