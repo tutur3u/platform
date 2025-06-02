@@ -17,9 +17,7 @@
   },
   "tailwindCSS.experimental.configFile": "packages/ui/src/globals.css",
   "i18n-ally.enabledFrameworks": ["next-intl"],
-  "i18n-ally.localesPaths": [
-    "apps/web/messages",
-  ],
+  "i18n-ally.localesPaths": ["apps/web/messages"],
   "i18n-ally.autoDetection": true,
   "i18n-ally.keystyle": "nested",
   "[xml]": {

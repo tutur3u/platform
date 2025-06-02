@@ -93,8 +93,8 @@ export default function Members() {
           <div
             key={index}
             className={`flex justify-center p-4 transition duration-300 ${
-            highlightedDepartment &&
-            !p.departments.includes(highlightedDepartment)
+              highlightedDepartment &&
+              !p.departments.includes(highlightedDepartment)
                 ? 'opacity-30'
                 : 'opacity-100'
             }`}
