@@ -368,6 +368,11 @@ export const CalendarSyncProvider = ({
 
   // Sync to Tuturuuu database when google data changes for current view
   useEffect(() => {
+    // If have not connected to google, don't sync
+    if (experimentalGoogleToken?.ws_id !== wsId) {
+      return;
+    }
+
     // Convert current data to strings for comparison
     const currentGoogleDataStr = JSON.stringify(fetchedGoogleData);
 
@@ -384,6 +389,10 @@ export const CalendarSyncProvider = ({
 
   // Sync to Tuturuuu database when changing views AND there are changes in Google data
   useEffect(() => {
+    // If have not connected to google, don't sync
+    if (experimentalGoogleToken?.ws_id !== wsId) {
+      return;
+    }
     // Skip if dates haven't actually changed
     if (areDatesEqual(dates)) {
       return;
