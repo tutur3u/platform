@@ -1,5 +1,5 @@
 import { Model, models, providers } from '@/data/models';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -7,15 +7,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@repo/ui/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { cn } from '@repo/ui/lib/utils';
-import { Check } from 'lucide-react';
+} from '@tuturuuu/ui/command';
+import { Check } from '@tuturuuu/ui/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 
 export function ChatModelSelector({

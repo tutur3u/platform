@@ -1,9 +1,9 @@
 'use client';
 
 import { UserFieldRowActions } from './row-actions';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const userFieldColumns = (
@@ -41,7 +41,7 @@ export const userFieldColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('id')}
       </div>
     ),
@@ -56,7 +56,7 @@ export const userFieldColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('name') || '-'}
       </div>
     ),
@@ -71,7 +71,7 @@ export const userFieldColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('description') || '-'}
       </div>
     ),
@@ -86,7 +86,7 @@ export const userFieldColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('type')
           ? t((row.getValue('type') as string).toLowerCase())
           : '-'}
@@ -103,13 +103,13 @@ export const userFieldColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[12rem] break-all">
+      <div className="line-clamp-1 max-w-48 break-all">
         {(row.getValue('possible_values') as string[] | null)?.length ? (
           <div className="flex flex-wrap gap-1">
             {(row.getValue('possible_values') as string[]).map((value) => (
               <div
                 key={value}
-                className="border-foreground/10 bg-foreground/5 line-clamp-1 max-w-[8rem] break-all rounded-lg border p-1"
+                className="border-foreground/10 bg-foreground/5 line-clamp-1 max-w-32 break-all rounded-lg border p-1"
               >
                 {value}
               </div>
@@ -131,7 +131,7 @@ export const userFieldColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('default_value') || '-'}
       </div>
     ),
@@ -146,7 +146,7 @@ export const userFieldColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('notes') || '-'}
       </div>
     ),
@@ -161,7 +161,7 @@ export const userFieldColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 max-w-[8rem] break-all">
+      <div className="line-clamp-2 max-w-32 break-all">
         {row.getValue('created_at')
           ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}

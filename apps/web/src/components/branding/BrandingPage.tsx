@@ -1,5 +1,5 @@
 import LogoTab from './LogoTab';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 
 const LandingPage = () => {

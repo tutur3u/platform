@@ -1,9 +1,9 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tuturuuu/ui/button';
+import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';

@@ -1,15 +1,18 @@
 import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
 import MemberTabs from './_components/member-tabs';
-import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
   getWorkspace,
   verifyHasSecrets,
 } from '@/lib/workspace-helper';
-import { User } from '@/types/primitives/User';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
-import { Separator } from '@repo/ui/components/ui/separator';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { User } from '@tuturuuu/types/primitives/User';
+import { Separator } from '@tuturuuu/ui/separator';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
@@ -36,7 +39,7 @@ export default async function WorkspaceMembersPage({
   if (withoutPermission('manage_workspace_members'))
     redirect(`/${wsId}/settings`);
 
-  const ws = await getWorkspace(wsId);
+  const ws = await getWorkspace(wsId, true);
   const user = await getCurrentUser();
   const members = await getMembers(wsId, await searchParams);
 

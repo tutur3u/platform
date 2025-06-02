@@ -1,16 +1,16 @@
 'use client';
 
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { Button } from '@repo/ui/components/ui/button';
+import { Row } from '@tanstack/react-table';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Row } from '@tanstack/react-table';
-import { Ellipsis, Eye } from 'lucide-react';
+} from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

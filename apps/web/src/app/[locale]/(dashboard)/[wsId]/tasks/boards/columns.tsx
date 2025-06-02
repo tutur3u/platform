@@ -1,9 +1,9 @@
 'use client';
 
 import { ProjectRowActions } from './row-action';
-import { TaskBoard } from '@/types/primitives/TaskBoard';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const projectColumns = (
@@ -41,7 +41,7 @@ export const projectColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('id')}
       </div>
     ),
@@ -56,7 +56,7 @@ export const projectColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('name') || '-'}
       </div>
     ),

@@ -1,10 +1,10 @@
 import { secretColumns } from './columns';
 import SecretForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -67,7 +67,7 @@ async function getSecrets(
       count: 'exact',
     })
     .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
+    .order('name', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 

@@ -1,11 +1,11 @@
 import { userFieldColumns } from './columns';
 import UserFieldEditDialog from './edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Plus } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import { Button } from '@tuturuuu/ui/button';
+import { Plus } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

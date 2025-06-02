@@ -1,18 +1,11 @@
 'use client';
 
 import { DatePicker } from '@/components/row-actions/users/date-picker';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
-import { generateRandomUUID } from '@/utils/uuid-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
-import { SelectField } from '@repo/ui/components/ui/custom/select-field';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
+import { SelectField } from '@tuturuuu/ui/custom/select-field';
 import {
   Form,
   FormControl,
@@ -21,22 +14,26 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Loader2, UserIcon } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
+import { getInitials } from '@tuturuuu/utils/name-helper';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import dayjs from 'dayjs';
-import { Loader2, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
   wsId: string;
   data?: WorkspaceUser;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
@@ -46,7 +43,8 @@ const FormSchema = z.object({
   display_name: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  gender: z.string().optional(),
+  // gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
   birthday: z.date().optional(),
   ethnicity: z.string().optional(),
   guardian: z.string().optional(),
@@ -64,7 +62,7 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
   );
   const [file, setFile] = useState<File | null>(null); // Track the file selected
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,

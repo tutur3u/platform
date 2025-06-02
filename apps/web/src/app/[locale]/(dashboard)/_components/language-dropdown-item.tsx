@@ -1,7 +1,7 @@
 'use client';
 
-import { DropdownMenuItem } from '@repo/ui/components/ui/dropdown-menu';
-import { Check, Hexagon } from 'lucide-react';
+import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
+import { Check, Hexagon } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 
 interface Props {

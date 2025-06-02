@@ -1,12 +1,12 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
-import { cn } from '@/lib/utils';
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Button } from '@tuturuuu/ui/button';
+import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -101,7 +101,7 @@ export default function GroupSchedule({
             <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
-                <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
+                <div className="bg-foreground/20 rotate-30 mx-2 h-4 w-px" />
                 <span className="text-lg font-semibold md:text-xl">
                   {thisMonth}
                 </span>

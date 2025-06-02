@@ -1,4 +1,7 @@
-import { createAdminClient, createClient } from '@/utils/supabase/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -59,7 +62,6 @@ async function getDataWithApiKey({
     );
   }
 
-  // @ts-expect-error
   return NextResponse.json(data?.sum || 0);
 }
 
@@ -81,6 +83,5 @@ async function getDataFromSession({ wsId }: { wsId: string }) {
     );
   }
 
-  // @ts-expect-error
   return NextResponse.json(data?.sum || 0);
 }

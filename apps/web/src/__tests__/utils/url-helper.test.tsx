@@ -182,3 +182,39 @@ it('should extract YouTube video ID from URL with short embed path', () => {
     'dQw4w9WgXcQ'
   );
 });
+
+// YouTube ID extraction tests
+it('should extract video ID from standard YouTube URL', () => {
+  expect(extractYoutubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe(
+    'dQw4w9WgXcQ'
+  );
+  expect(extractYoutubeId('https://youtube.com/watch?v=dQw4w9WgXcQ')).toBe(
+    'dQw4w9WgXcQ'
+  );
+});
+
+it('should extract video ID from shortened YouTube URL', () => {
+  expect(extractYoutubeId('https://youtu.be/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+});
+
+it('should handle invalid YouTube URLs', () => {
+  expect(extractYoutubeId('https://example.com')).toBeUndefined();
+  expect(extractYoutubeId('https://youtube.com')).toBeUndefined();
+  expect(extractYoutubeId('https://youtube.com/watch')).toBeUndefined();
+});
+
+it('should handle malformed YouTube URLs', () => {
+  expect(extractYoutubeId('')).toBeUndefined();
+  expect(extractYoutubeId('not a url')).toBeUndefined();
+});
+
+it('should handle YouTube URLs with additional parameters', () => {
+  expect(
+    extractYoutubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=123')
+  ).toBe('dQw4w9WgXcQ');
+  expect(
+    extractYoutubeId(
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=share'
+    )
+  ).toBe('dQw4w9WgXcQ');
+});

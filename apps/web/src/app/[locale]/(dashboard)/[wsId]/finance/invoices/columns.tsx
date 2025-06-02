@@ -1,15 +1,15 @@
 'use client';
 
 import { InvoiceRowActions } from './row-actions';
-import { Invoice } from '@/types/primitives/Invoice';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { ColumnDef } from '@tanstack/react-table';
+import { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { ColumnDef } from '@tanstack/react-table';
+} from '@tuturuuu/ui/tooltip';
 import moment from 'moment';
 
 export const invoiceColumns = (
@@ -47,7 +47,7 @@ export const invoiceColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+      <div className="line-clamp-1 min-w-32">{row.getValue('id')}</div>
     ),
   },
   {
@@ -73,7 +73,7 @@ export const invoiceColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('customer') || '-'}</div>
+      <div className="min-w-32">{row.getValue('customer') || '-'}</div>
     ),
   },
   {
@@ -86,7 +86,7 @@ export const invoiceColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         {Intl.NumberFormat('vi-VN', {
           style: 'currency',
           currency: 'VND',
@@ -104,7 +104,7 @@ export const invoiceColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         {row.getValue('total_diff') === 0
           ? '-'
           : Intl.NumberFormat('vi-VN', {
@@ -125,7 +125,7 @@ export const invoiceColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         <TooltipProvider>
           <Tooltip delayDuration={0}>
             <TooltipTrigger className="font-semibold">
@@ -177,7 +177,7 @@ export const invoiceColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('notice') || '-'}</div>
+      <div className="min-w-32">{row.getValue('notice') || '-'}</div>
     ),
   },
   {
@@ -190,7 +190,7 @@ export const invoiceColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('note') || '-'}</div>
+      <div className="min-w-32">{row.getValue('note') || '-'}</div>
     ),
   },
   {
@@ -203,7 +203,7 @@ export const invoiceColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         {row.getValue('created_at')
           ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}

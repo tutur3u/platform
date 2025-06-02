@@ -1,12 +1,12 @@
 'use client';
 
-import { Invoice, InvoiceProduct, InvoicePromotion } from '@/types/db';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Invoice, InvoiceProduct, InvoicePromotion } from '@tuturuuu/types/db';
+import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import { Button } from '@tuturuuu/ui/button';
+import { ImageIcon, PrinterIcon } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
-import { ImageIcon, PrinterIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useRef } from 'react';
 

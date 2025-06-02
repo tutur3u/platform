@@ -1,8 +1,7 @@
 'use client';
 
 import { DEV_MODE } from '@/constants/common';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
   FormControl,
@@ -11,21 +10,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from '@repo/ui/components/ui/input-otp';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { IconBrandGmail, IconBrandWindows } from '@tabler/icons-react';
-import { Mail } from 'lucide-react';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Mail } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 const FormSchema = z.object({
@@ -261,7 +256,7 @@ export default function LoginForm() {
                     variant="outline"
                     disabled={loading}
                   >
-                    <IconBrandGmail size={18} className="mr-1" />
+                    <Mail size={18} className="mr-1" />
                     {t('open_gmail')}
                   </Button>
                 </Link>
@@ -277,7 +272,7 @@ export default function LoginForm() {
                     variant="outline"
                     disabled={loading}
                   >
-                    <IconBrandWindows size={18} className="mr-1" />
+                    <Mail size={18} className="mr-1" />
                     {t('open_outlook')}
                   </Button>
                 </Link>

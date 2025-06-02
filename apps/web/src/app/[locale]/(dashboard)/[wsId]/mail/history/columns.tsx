@@ -1,9 +1,9 @@
 'use client';
 
 // import { UserRowActions } from './row-actions';
-import { EmailHistoryEntry } from '@/types/db';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { EmailHistoryEntry } from '@tuturuuu/types/db';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 
@@ -22,7 +22,7 @@ export const getEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+      <div className="line-clamp-1 min-w-32">{row.getValue('id')}</div>
     ),
   },
   {
@@ -101,7 +101,7 @@ export const getEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
       </div>
     ),

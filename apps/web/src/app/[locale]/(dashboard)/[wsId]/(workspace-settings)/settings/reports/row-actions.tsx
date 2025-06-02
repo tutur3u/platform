@@ -1,17 +1,17 @@
 'use client';
 
 import ConfigEditDialog from './edit-dialog';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { Button } from '@repo/ui/components/ui/button';
+import { Row } from '@tanstack/react-table';
+import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { Row } from '@tanstack/react-table';
-import { Ellipsis } from 'lucide-react';
+} from '@tuturuuu/ui/dropdown-menu';
+import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

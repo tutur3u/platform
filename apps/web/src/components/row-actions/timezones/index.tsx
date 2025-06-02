@@ -1,18 +1,18 @@
 'use client';
 
 import TimezoneEditDialog from './edit-dialog';
-import { Timezone } from '@/types/primitives/Timezone';
-import { Button } from '@repo/ui/components/ui/button';
+import { Row } from '@tanstack/react-table';
+import { Timezone } from '@tuturuuu/types/primitives/Timezone';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Row } from '@tanstack/react-table';
-import { Ellipsis } from 'lucide-react';
+} from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

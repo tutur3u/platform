@@ -5,9 +5,9 @@ import PlanLogin from './plan-login';
 import PlanUserFilter from './plan-user-filter';
 import { TimeBlockingProvider } from './time-blocking-provider';
 import UtilityButtons from './utility-buttons';
-import { getCurrentUser } from '@/lib/user-helper';
-import { createAdminClient } from '@/utils/supabase/server';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { Separator } from '@tuturuuu/ui/separator';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import 'dayjs/locale/vi';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -40,7 +40,7 @@ export default async function MeetTogetherPlanDetailsPage({ params }: Props) {
             <div className="text-foreground flex w-full max-w-6xl flex-col gap-6 p-4 md:px-8 lg:gap-14 lg:px-14">
               <div className="flex w-full flex-col items-center">
                 <UtilityButtons plan={plan} platformUser={platformUser} />
-                <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl font-semibold !leading-tight md:mb-4 lg:text-3xl">
+                <p className="leading-tight! my-4 flex max-w-xl items-center gap-2 text-center text-2xl font-semibold md:mb-4 lg:text-3xl">
                   {plan.name} <EditPlanDialog plan={plan} />
                 </p>
 

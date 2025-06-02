@@ -1,11 +1,11 @@
 import { productColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { Product } from '@/types/primitives/Product';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Plus } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Product } from '@tuturuuu/types/primitives/Product';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Plus } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 

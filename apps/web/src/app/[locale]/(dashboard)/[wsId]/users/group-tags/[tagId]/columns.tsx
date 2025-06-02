@@ -1,10 +1,10 @@
 'use client';
 
 import { UserGroupRowActions } from './row-actions';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
-import { Check, X } from 'lucide-react';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { Check, X } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -56,7 +56,7 @@ export const getUserGroupColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link href={row.original.href || '#'} className="min-w-[8rem]">
+      <Link href={row.original.href || '#'} className="min-w-32">
         {row.getValue('name') || '-'}
       </Link>
     ),

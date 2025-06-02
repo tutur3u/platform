@@ -4,8 +4,8 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { UserPlus } from 'lucide-react';
+} from '@tuturuuu/ui/dropdown-menu';
+import { UserPlus } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';

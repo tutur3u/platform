@@ -1,9 +1,9 @@
 import Chat from '../chat';
 import { getChats } from '../helper';
 import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
-import { AIChat } from '@/types/db';
-import { createClient } from '@/utils/supabase/server';
-import { Message } from 'ai';
+import { type Message } from '@tuturuuu/ai/types';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { AIChat } from '@tuturuuu/types/db';
 import { notFound } from 'next/navigation';
 
 interface Props {

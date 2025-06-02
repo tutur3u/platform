@@ -1,15 +1,20 @@
 import { ChatList } from './chat-list';
-import { capitalize, cn } from '@/lib/utils';
-import { AIChat } from '@/types/db';
-import { Button } from '@repo/ui/components/ui/button';
-import { IconArrowRight } from '@repo/ui/components/ui/icons';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Message } from 'ai';
-import { UseChatHelpers } from 'ai/react';
+import { Message, UseChatHelpers } from '@tuturuuu/ai/types';
+import { AIChat } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Box,
+  Globe,
+  IconArrowRight,
+  Lock,
+  MessageCircle,
+  Sparkle,
+} from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { Box, Globe, Lock, MessageCircle, Sparkle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';

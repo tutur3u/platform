@@ -3,27 +3,93 @@
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
 import { ChatMessageActions } from '@/components/chat-message-actions';
-import { MemoizedReactMarkdown } from '@/components/markdown';
-import { capitalize, cn } from '@/lib/utils';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { CodeBlock } from '@repo/ui/components/ui/codeblock';
-import { IconUser } from '@repo/ui/components/ui/icons';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Message } from 'ai';
+import { type Message } from '@tuturuuu/ai/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { CodeBlock } from '@tuturuuu/ui/codeblock';
+import { Bot, IconUser, Send, Sparkle } from '@tuturuuu/ui/icons';
+import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
+import { Separator } from '@tuturuuu/ui/separator';
+import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { Bot, Send, Sparkle } from 'lucide-react';
+import mermaid from 'mermaid';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+
+function MermaidRenderer({ content }: { content: string }) {
+  const elementRef = useRef<HTMLDivElement>(null);
+  const [svgContent, setSvgContent] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    mermaid.initialize({
+      theme: 'default',
+      startOnLoad: false,
+      securityLevel: 'strict',
+      themeVariables: {
+        fontSize: '14px',
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: 'linear',
+      },
+    });
+
+    const renderDiagram = async () => {
+      try {
+        // Clean and preprocess the content
+        const cleanContent = content
+          .replace(/\\n/g, '\n')
+          .replace(/\\t/g, '  ')
+          .trim();
+
+        // First try to parse the diagram
+        await mermaid.parse(cleanContent);
+
+        // If parsing succeeds, render it
+        const { svg } = await mermaid.render('mermaid-diagram', cleanContent);
+        setSvgContent(svg);
+        setError('');
+      } catch (error) {
+        console.error('Mermaid rendering error:', error);
+        setError(
+          error instanceof Error ? error.message : 'Failed to render diagram'
+        );
+        setSvgContent('');
+      }
+    };
+
+    renderDiagram();
+  }, [content]);
+
+  if (error) {
+    return (
+      <div className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red rounded-lg border p-4 text-sm">
+        <p className="font-semibold">Failed to render diagram:</p>
+        <pre className="mt-2 whitespace-pre-wrap font-mono text-xs">
+          {error}
+        </pre>
+      </div>
+    );
+  }
+
+  if (!svgContent) {
+    return <div className="animate-pulse">Loading diagram...</div>;
+  }
+
+  return (
+    <div
+      ref={elementRef}
+      className="overflow-x-auto"
+      dangerouslySetInnerHTML={{ __html: svgContent }}
+    />
+  );
+}
 
 export interface ChatMessageProps {
   message: Message & {
@@ -109,21 +175,21 @@ export function ChatMessage({
 
             <div className="flex flex-wrap items-center gap-1 text-xs font-semibold">
               {message.model && (
-                <span className="border-dynamic-yellow/10 text-dynamic-yellow bg-dynamic-yellow/10 hidden items-center gap-1 rounded border px-1 font-mono md:inline-flex">
+                <span className="border-dynamic-yellow/10 bg-dynamic-yellow/10 text-dynamic-yellow @md:inline-flex hidden items-center gap-1 rounded border px-1 font-mono">
                   <Sparkle className="h-3 w-3" />
                   {message.model}
                 </span>
               )}
               {message.prompt_tokens !== undefined &&
                 message.prompt_tokens !== 0 && (
-                  <span className="border-dynamic-green/10 text-dynamic-green bg-dynamic-green/10 inline-flex items-center gap-1 rounded border px-1 font-mono">
+                  <span className="border-dynamic-green/10 bg-dynamic-green/10 text-dynamic-green inline-flex items-center gap-1 rounded border px-1 font-mono">
                     <Send className="h-3 w-3" />
                     {Intl.NumberFormat(locale).format(message.prompt_tokens)}
                   </span>
                 )}
               {message.completion_tokens !== undefined &&
                 message.completion_tokens !== 0 && (
-                  <span className="border-dynamic-purple/10 text-dynamic-purple bg-dynamic-purple/10 inline-flex items-center gap-1 rounded border px-1 font-mono">
+                  <span className="border-dynamic-purple/10 bg-dynamic-purple/10 text-dynamic-purple inline-flex items-center gap-1 rounded border px-1 font-mono">
                     <Bot className="h-3 w-3" />
                     {Intl.NumberFormat(locale).format(
                       message.completion_tokens
@@ -159,16 +225,20 @@ export function ChatMessage({
           ?.map((responseType, index) => (
             <span
               key={index}
-              className="bg-foreground/5 text-foreground/80 border-foreground/20 inline-block rounded border px-2 py-1 text-xs font-semibold"
+              className="border-foreground/20 bg-foreground/5 text-foreground/80 inline-block rounded border px-2 py-1 text-xs font-semibold"
             >
               {t(responseType)}
             </span>
           ))}
       </div>
 
-      <div className="flex-1 space-y-2">
+      <div
+        className={cn(
+          'flex-1 space-y-2',
+          'prose text-foreground @md:w-152 @lg:w-full dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2 w-[calc(100%-8rem)] min-w-full break-words'
+        )}
+      >
         <MemoizedReactMarkdown
-          className="text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 w-[calc(100vw-8rem)] min-w-full break-words md:w-[38rem] lg:w-full"
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
@@ -230,12 +300,12 @@ export function ChatMessage({
                 const optionsElements = options.map((option, index) => (
                   <button
                     key={index}
-                    className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
+                    className={`@md:text-center w-full rounded border px-3 py-1 text-left font-semibold transition ${
                       revealCorrect && option.isCorrect
-                        ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
+                        ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
                         : revealCorrect
                           ? 'bg-foreground/5 text-foreground opacity-50'
-                          : 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
+                          : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
                     onClick={() => handleOptionClick(option)}
                   >
@@ -248,10 +318,10 @@ export function ChatMessage({
                     {questionElement}
                     <Separator className="my-2" />
                     <div
-                      className={`grid w-full gap-2 md:grid-cols-2 ${
+                      className={`@md:grid-cols-2 grid w-full gap-2 ${
                         options.length === 3
-                          ? 'xl:grid-cols-3'
-                          : 'xl:grid-cols-4'
+                          ? '@xl:grid-cols-3'
+                          : '@xl:grid-cols-4'
                       }`}
                     >
                       {optionsElements}
@@ -280,7 +350,7 @@ export function ChatMessage({
                         </div>
 
                         <Separator className="my-4" />
-                        <div className="border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10 w-full rounded border p-1 text-center text-sm font-semibold">
+                        <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple w-full rounded border p-1 text-center text-sm font-semibold">
                           {t('experimental_disclaimer')}
                         </div>
                       </>
@@ -332,7 +402,7 @@ export function ChatMessage({
                         <>
                           <div className="text-dynamic-yellow">{answer}</div>
                           <Separator className="my-4" />
-                          <div className="border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10 w-full rounded border p-1 text-center text-sm">
+                          <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple w-full rounded border p-1 text-center text-sm">
                             {t('experimental_disclaimer')}
                           </div>
                         </>
@@ -360,7 +430,7 @@ export function ChatMessage({
                 if (embeddedUrl)
                   return (
                     <Link
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left font-semibold no-underline transition last:mb-0"
+                      className="bg-foreground/5 text-foreground hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left font-semibold no-underline transition last:mb-0"
                       href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -372,7 +442,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left font-semibold transition last:mb-0"
+                      className="bg-foreground/5 text-foreground hover:bg-foreground/10 mb-2 rounded-full border text-left font-semibold transition last:mb-0"
                       onClick={() => setInput(content || '')}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -382,7 +452,7 @@ export function ChatMessage({
                   );
 
                 return (
-                  <span className="text-foreground bg-foreground/5 mb-2 inline-block rounded-full border text-left transition last:mb-0">
+                  <span className="bg-foreground/5 text-foreground mb-2 inline-block rounded-full border text-left transition last:mb-0">
                     <span className="line-clamp-1 px-3 py-1">
                       {content || '...'}
                     </span>
@@ -475,12 +545,12 @@ export function ChatMessage({
                 const optionsElements = options.map((option, index) => (
                   <button
                     key={index}
-                    className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
+                    className={`@md:text-center w-full rounded border px-3 py-1 text-left font-semibold transition ${
                       revealCorrect && option.isCorrect
-                        ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
+                        ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
                         : revealCorrect
                           ? 'bg-foreground/5 text-foreground opacity-50'
-                          : 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
+                          : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
                     onClick={() => handleOptionClick(option)}
                   >
@@ -493,10 +563,10 @@ export function ChatMessage({
                     {questionElement}
                     <Separator className="my-2" />
                     <div
-                      className={`grid w-full gap-2 md:grid-cols-2 ${
+                      className={`@md:grid-cols-2 grid w-full gap-2 ${
                         options.length === 3
-                          ? 'xl:grid-cols-3'
-                          : 'xl:grid-cols-4'
+                          ? '@xl:grid-cols-3'
+                          : '@xl:grid-cols-4'
                       }`}
                     >
                       {optionsElements}
@@ -525,7 +595,7 @@ export function ChatMessage({
                         </div>
 
                         <Separator className="my-4" />
-                        <div className="border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10 w-full rounded border p-1 text-center text-sm font-semibold">
+                        <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple w-full rounded border p-1 text-center text-sm font-semibold">
                           {t('experimental_disclaimer')}
                         </div>
                       </>
@@ -577,7 +647,7 @@ export function ChatMessage({
                         <>
                           <div className="text-dynamic-yellow">{answer}</div>
                           <Separator className="my-4" />
-                          <div className="border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10 w-full rounded border p-1 text-center text-sm">
+                          <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple w-full rounded border p-1 text-center text-sm">
                             {t('experimental_disclaimer')}
                           </div>
                         </>
@@ -605,7 +675,7 @@ export function ChatMessage({
                 if (embeddedUrl)
                   return (
                     <Link
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left font-semibold no-underline transition last:mb-0"
+                      className="bg-foreground/5 text-foreground hover:bg-foreground/10 mb-2 inline-block break-all rounded-full border text-left font-semibold no-underline transition last:mb-0"
                       href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -617,7 +687,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left font-semibold transition last:mb-0"
+                      className="bg-foreground/5 text-foreground hover:bg-foreground/10 mb-2 break-all rounded-full border text-left font-semibold transition last:mb-0"
                       onClick={() => setInput(content || '')}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -627,7 +697,7 @@ export function ChatMessage({
                   );
 
                 return (
-                  <span className="text-foreground bg-foreground/5 mb-2 inline-block rounded-full border text-left transition last:mb-0">
+                  <span className="bg-foreground/5 text-foreground mb-2 inline-block break-all rounded-full border text-left transition last:mb-0">
                     <span className="line-clamp-1 px-3 py-1">
                       {content || '...'}
                     </span>
@@ -666,6 +736,16 @@ export function ChatMessage({
               }
 
               const match = /language-(\w+)/.exec(className || '');
+
+              if (match && match[1] === 'mermaid') {
+                return (
+                  <div className="my-4">
+                    <MermaidRenderer
+                      content={String(children).replace(/\n$/, '')}
+                    />
+                  </div>
+                );
+              }
 
               return match ? (
                 <CodeBlock

@@ -1,8 +1,7 @@
 'use client';
 
 import QuizForm from '../../../../../quizzes/form';
-import { cn } from '@/lib/utils';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,10 +12,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/ui/components/ui/alert-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Pencil, Trash, X } from 'lucide-react';
+} from '@tuturuuu/ui/alert-dialog';
+import { Button } from '@tuturuuu/ui/button';
+import { Pencil, Trash, X } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -40,6 +40,7 @@ export default function ClientQuizzes({
               created_at?: string;
               id?: string;
               is_correct?: boolean;
+              explanation?: string | null;
               points?: number | null;
               quiz_id?: string;
               value?: string;
@@ -109,17 +110,31 @@ export default function ClientQuizzes({
                 <Separator className="my-2" />
                 <ul className="mt-4 grid gap-2">
                   {quiz?.quiz_options?.map((option, oidx) => (
-                    <li
+                    <div
                       key={option?.id || oidx}
                       className={cn(
                         'rounded-md border p-2',
                         option?.is_correct
-                          ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
-                          : 'bg-foreground/5 border-foreground/5'
+                          ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+                          : 'border-foreground/5 bg-foreground/5'
                       )}
                     >
-                      {option?.value} {option?.is_correct && '(Correct)'}
-                    </li>
+                      <span className="font-semibold">{option?.value}</span>
+                      {option?.explanation && (
+                        <>
+                          <Separator
+                            className={cn(
+                              option?.is_correct
+                                ? 'bg-dynamic-green/10'
+                                : 'bg-foreground/10'
+                            )}
+                          />
+                          <div className="mt-2 text-sm opacity-80">
+                            {option.explanation}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   ))}
                 </ul>
               </div>

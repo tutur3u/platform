@@ -1,7 +1,7 @@
 'use client';
 
 import CopyLinkButton from './copy-link-button';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import { QrCode } from 'lucide-react';
+} from '@tuturuuu/ui/dialog';
+import { QrCode } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
-import { QRCode } from 'react-qrcode-logo';
+import { QRCodeCanvas } from 'qrcode.react';
 
 export default function ShowQRButton({ url }: { url: string }) {
   const t = useTranslations();
@@ -35,12 +35,11 @@ export default function ShowQRButton({ url }: { url: string }) {
         </DialogHeader>
 
         <div className="flex items-center justify-center">
-          <QRCode
+          <QRCodeCanvas
             value={url}
             size={256}
-            style={{
-              borderRadius: '0.5rem',
-            }}
+            marginSize={2}
+            className="rounded-lg"
           />
         </div>
 

@@ -5,8 +5,8 @@ import DateSelector from './date-selector';
 import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
 import timezones from '@/data/timezones.json';
-import { Timezone } from '@/types/primitives/Timezone';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Timezone } from '@tuturuuu/types/primitives/Timezone';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -35,8 +35,6 @@ export default function Form() {
     endTime,
     timezone,
   };
-
-  const missingFields = !dates?.length || !startTime || !endTime || !timezone;
 
   return (
     <div className="flex flex-col items-center gap-8 px-4 text-center md:mb-8 md:flex-row md:gap-16">
@@ -76,16 +74,7 @@ export default function Form() {
           <TimezoneSelector value={timezone} onValueChange={setTimezone} />
         </div>
 
-        <div className="group relative col-span-full mt-4 inline-flex">
-          <div
-            className={`animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-rose-400 to-orange-300 blur-lg transition-all dark:from-rose-400/60 dark:to-orange-300/60 ${
-              missingFields
-                ? 'cursor-not-allowed opacity-30'
-                : 'opacity-70 group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'
-            }`}
-          />
-          <CreatePlanDialog plan={plan} />
-        </div>
+        <CreatePlanDialog plan={plan} />
       </div>
     </div>
   );

@@ -1,18 +1,14 @@
-import { UserDatabaseFilter } from '../../../users/filters';
+import { Filter } from '../../../users/filters';
 import { SectionProps } from './index';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
-import SearchBar from '@repo/ui/components/ui/custom/search-bar';
 import { useQuery } from '@tanstack/react-query';
-import { User, X } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
+import SearchBar from '@tuturuuu/ui/custom/search-bar';
+import { User, X } from '@tuturuuu/ui/icons';
+import { cn } from '@tuturuuu/utils/format';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -77,12 +73,12 @@ export default function RoleFormMembersSection({
 
   return (
     <>
-      <div className="bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
+      <div className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
         {form.watch('name') || '-'}
       </div>
       <div className="flex items-center gap-2">
         <SearchBar t={t} className={cn('w-full')} onSearch={setQuery} />
-        <UserDatabaseFilter
+        <Filter
           title={t('ws-members.invite_member')}
           icon={<User className="mr-2 h-4 w-4" />}
           options={users.map((user) => ({

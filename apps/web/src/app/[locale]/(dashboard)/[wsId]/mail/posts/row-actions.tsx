@@ -1,9 +1,9 @@
-import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
-import { PostEmail } from '@/types/primitives/post-email';
-import { Button } from '@repo/ui/components/ui/button';
+import { PostEmail } from '@tuturuuu/types/primitives/post-email';
+import { Button } from '@tuturuuu/ui/button';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { CircleAlert, CircleSlash, MailCheck, Send } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
-import { CircleAlert, CircleSlash, MailCheck, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 export default function RowActions({ data }: { data: PostEmail }) {

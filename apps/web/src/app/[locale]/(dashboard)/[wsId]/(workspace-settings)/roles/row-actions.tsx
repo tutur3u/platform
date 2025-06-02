@@ -1,19 +1,19 @@
 'use client';
 
 import { RoleForm } from './form';
-import { WorkspaceRole } from '@/types/db';
-import { Button } from '@repo/ui/components/ui/button';
-import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
+import { Row } from '@tanstack/react-table';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { WorkspaceRole } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { User } from '@supabase/supabase-js';
-import { Row } from '@tanstack/react-table';
-import { Ellipsis, Pencil } from 'lucide-react';
+} from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Ellipsis, Pencil } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -84,7 +84,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         form={
           <RoleForm
             wsId={data.ws_id}
-            user={{} as unknown as User}
+            user={{} as unknown as SupabaseUser}
             data={data}
           />
         }

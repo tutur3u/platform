@@ -2,10 +2,10 @@ import { getUserGroupColumns } from './columns';
 import Filters from './filters';
 import UserGroupForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

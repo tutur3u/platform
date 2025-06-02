@@ -6,15 +6,12 @@ import {
   PROD_MODE,
   ROOT_WORKSPACE_ID,
 } from '@/constants/common';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { buttonVariants } from '@repo/ui/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { DraftingCompass, FlaskConical } from 'lucide-react';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { buttonVariants } from '@tuturuuu/ui/button';
+import { DraftingCompass, FlaskConical } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -24,7 +21,7 @@ interface NavProps {
   wsId: string;
   currentUser: WorkspaceUser | null;
   isCollapsed: boolean;
-  links: NavLink[];
+  links: (NavLink | null)[];
   onClick?: () => void;
 }
 
@@ -44,7 +41,7 @@ export function Nav({
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
   useEffect(() => {
-    if (urlToLoad) setUrlToLoad(undefined);
+    if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
   }, [pathname, searchParams]);
 
   function hasFocus(selector: string) {
@@ -65,7 +62,7 @@ export function Nav({
   useEffect(() => {
     function down(e: KeyboardEvent) {
       links.forEach((link) => {
-        if (!link.shortcut || !link.href) return;
+        if (!link || !link.shortcut || !link.href) return;
         const { ctrl, shift, key } = parseShortcut(link.shortcut);
         if (
           !hasFocus('input, select, textarea') &&
@@ -90,14 +87,13 @@ export function Nav({
   }, [links, pathname]);
 
   return (
-    <div
-      data-collapsed={isCollapsed}
-      className="group flex flex-col gap-4 py-2 data-[collapsed=true]:py-2"
-    >
-      <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
-        {links.map((link, index) => {
+    <nav className={cn('grid gap-1 p-2', isCollapsed && 'justify-center')}>
+      {links
+        .map((link, idx) => {
+          if (!link) return <Separator key={idx} className="my-1" />;
+
           // If the link is disabled, don't render it
-          if (link?.disabled) return null;
+          if (!link || link?.disabled) return null;
 
           // If the link is disabled on production, don't render it
           if (link?.disableOnProduction && PROD_MODE) return null;
@@ -128,12 +124,11 @@ export function Nav({
               .filter(Boolean).length > 0;
 
           return isCollapsed ? (
-            <Tooltip key={index} delayDuration={0}>
+            <Tooltip key={link.href} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
-                  href={
-                    link.forceRefresh ? `${link.href}?refresh=true` : link.href
-                  }
+                  scroll={false}
+                  href={link.href}
                   className={cn(
                     buttonVariants({
                       variant: isActive ? 'secondary' : 'ghost',
@@ -156,7 +151,7 @@ export function Nav({
               <TooltipContent
                 side="right"
                 className={cn(
-                  'flex items-center gap-4',
+                  'bg-background text-foreground flex items-center gap-4 border',
                   ((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
                     link.experimental) &&
                     'flex-col items-start gap-1'
@@ -201,8 +196,8 @@ export function Nav({
             </Tooltip>
           ) : (
             <Link
-              key={index}
-              href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
+              key={link.href + 'no-tooltip'}
+              href={link.href}
               className={cn(
                 buttonVariants({
                   variant: isActive ? 'secondary' : 'ghost',
@@ -264,8 +259,15 @@ export function Nav({
               )}
             </Link>
           );
+        })
+        // filter out consecutive Separator components
+        .filter((link, idx, arr) => {
+          if (link?.type === Separator) {
+            const nextLink = arr[idx + 1];
+            if (!nextLink || nextLink?.type === Separator) return false;
+          }
+          return true;
         })}
-      </nav>
-    </div>
+    </nav>
   );
 }

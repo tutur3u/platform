@@ -1,26 +1,12 @@
 import { Mail } from '../data';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { Label } from '@repo/ui/components/ui/label';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Switch } from '@repo/ui/components/ui/switch';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { format } from 'date-fns';
+} from '@tuturuuu/ui/dropdown-menu';
 import {
   Archive,
   Forward,
@@ -28,7 +14,13 @@ import {
   Reply,
   ReplyAll,
   Trash2,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Label } from '@tuturuuu/ui/label';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Switch } from '@tuturuuu/ui/switch';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { format } from 'date-fns';
 
 interface MailDisplayProps {
   mail: Mail | null;

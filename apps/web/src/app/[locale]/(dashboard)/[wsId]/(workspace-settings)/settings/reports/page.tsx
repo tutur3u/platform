@@ -2,10 +2,10 @@ import { configColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { availableConfigs } from '@/constants/configs/reports';
 import { getPermissions } from '@/lib/workspace-helper';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { createClient } from '@/utils/supabase/server';
-import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import ReportPreview from '@tuturuuu/ui/custom/report-preview';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -41,7 +41,7 @@ export default async function WorkspaceReportsSettingsPage({
   const configs = data.map((config) => ({
     ...config,
     ws_id: wsId,
-    name: config?.id ? t(config.id.toLowerCase() as any) : '',
+    name: config?.id ? t(`ws-reports.${config.id.toLowerCase()}` as any) : '',
   }));
 
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
@@ -60,7 +60,7 @@ export default async function WorkspaceReportsSettingsPage({
         return (
           <span
             key={key + index}
-            className="text-background bg-foreground rounded px-1 py-0.5 font-semibold"
+            className="bg-foreground text-background rounded px-1 py-0.5 font-semibold"
           >
             {key}
           </span>

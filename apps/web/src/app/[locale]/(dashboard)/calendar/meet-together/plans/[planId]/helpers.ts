@@ -1,5 +1,5 @@
-import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { createAdminClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { notFound } from 'next/navigation';
 
 export async function getPlan(planId: string) {

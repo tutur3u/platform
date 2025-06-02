@@ -1,4 +1,7 @@
-import { createAdminClient, createClient } from '@/utils/supabase/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';

@@ -1,9 +1,9 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import { batchColumns } from '@/data/columns/batches';
-import { ProductBatch } from '@/types/primitives/ProductBatch';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

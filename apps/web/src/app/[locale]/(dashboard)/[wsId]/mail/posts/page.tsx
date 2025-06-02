@@ -1,11 +1,11 @@
 import { getPostEmailColumns } from './columns';
 import Filters from './filters';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { PostEmail } from '@/types/primitives/post-email';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { MailWarning, Send } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { PostEmail } from '@tuturuuu/types/primitives/post-email';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { MailWarning, Send } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -42,7 +42,7 @@ export default async function WorkspacePostEmailsPage({
       />
       <Separator className="my-4" />
       <div className="gird-cols-1 grid gap-2 md:grid-cols-2">
-        <div className="bg-dynamic-purple/15 text-dynamic-purple border-dynamic-purple/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="border-dynamic-purple/15 bg-dynamic-purple/15 text-dynamic-purple flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <Send />
             {t('ws-post-emails.sent_emails')}
@@ -53,7 +53,7 @@ export default async function WorkspacePostEmailsPage({
             <span className="opacity-50">/{count || 0}</span>
           </div>
         </div>
-        <div className="bg-dynamic-red/15 text-dynamic-red border-dynamic-red/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="border-dynamic-red/15 bg-dynamic-red/15 text-dynamic-red flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <MailWarning />
             {t('ws-post-emails.pending_emails')}

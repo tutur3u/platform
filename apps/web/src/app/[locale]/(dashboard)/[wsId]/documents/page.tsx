@@ -1,12 +1,12 @@
 import { DocumentCard } from './card';
 import MyDialogContent from './dialog-content';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Dialog, DialogTrigger } from '@repo/ui/components/ui/dialog';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { FilePlus } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
+import { FilePlus } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

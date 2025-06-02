@@ -1,8 +1,7 @@
 'use client';
 
-import { Timezone } from '@/types/primitives/Timezone';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { Timezone } from '@tuturuuu/types/primitives/Timezone';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
@@ -19,15 +18,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
@@ -60,13 +60,10 @@ export default function CreatePlanDialog({ plan }: Props) {
   const t = useTranslations('meet-together');
   const router = useRouter();
 
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme?.includes('dark');
-
   const [isOpened, setIsOpened] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       name: t('untitled_plan'),
@@ -127,7 +124,7 @@ export default function CreatePlanDialog({ plan }: Props) {
     if (res.ok) {
       const { id } = await res.json();
       const normalizedId = id.replace(/-/g, '');
-      router.push(`/calendar/meet-together/plans/${normalizedId}`);
+      router.push(`/meet-together/plans/${normalizedId}`);
       router.refresh();
     } else {
       setCreating(false);
@@ -151,35 +148,49 @@ export default function CreatePlanDialog({ plan }: Props) {
     >
       <DialogTrigger asChild>
         <button
-          className={`${
+          className={cn(
+            'group relative col-span-full mt-4 inline-flex w-full',
             missingFields || creating
               ? 'cursor-not-allowed opacity-30'
               : 'cursor-pointer'
+          )}
+          onClick={() => setIsOpened(true)}
+          disabled={missingFields || creating}
+        >
+          <div
+            className={cn(
+              'animate-tilt from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 bg-linear-to-r absolute -inset-px rounded-lg opacity-70 blur-lg transition-all',
+              missingFields ||
+                creating ||
+                'group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'
+            )}
+          />
+          <div className="from-dynamic-light-red/60 via-dynamic-light-pink/60 to-dynamic-light-blue/60 bg-linear-to-r relative inline-flex w-full items-center justify-center rounded-lg px-8 py-2 font-bold text-white transition-all md:text-lg">
+            {t('create_plan')}
+          </div>
+        </button>
+        {/* <button
+          className={`${
+            
           } group relative inline-flex w-full`}
           onClick={() => setIsOpened(true)}
           disabled={missingFields || creating}
         >
           <div
-            className={`${
-              isDark
-                ? 'from-rose-400/60 to-orange-300/60'
-                : 'from-rose-400 to-orange-300 dark:from-rose-400/60 dark:to-orange-300/60'
-            } ${
+            className={cn(
+              'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r',
               missingFields || creating
-                ? 'opacity-30'
-                : 'group-hover:-inset-1 group-hover:opacity-100'
-            } animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r blur-lg transition-all duration-500`}
+                ? 'opacity-10'
+                : 'group-hover:opacity-30',
+              'absolute rounded-lg blur transition-all duration-500'
+            )}
           />
           <div
-            className={`${
-              isDark
-                ? 'from-rose-400/60 to-orange-300/60'
-                : 'from-rose-400 to-orange-300 dark:from-rose-400/60 dark:to-orange-300/60'
-            } relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r px-8 py-2 font-bold text-white transition-all md:text-lg`}
+            className={`from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue relative inline-flex w-full items-center justify-center rounded-lg bg-linear-to-r px-8 py-2 font-bold text-white transition-all md:text-lg`}
           >
             {t('create_plan')}
           </div>
-        </button>
+        </button> */}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

@@ -1,13 +1,13 @@
 'use client';
 
 import { NeoCrushGame } from './game';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import Image from 'next/image';
 
 export default function NeoCrushGamePage() {

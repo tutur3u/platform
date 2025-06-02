@@ -9,9 +9,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/ui/components/ui/alert-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
+} from '@tuturuuu/ui/alert-dialog';
+import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -19,15 +19,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { cn } from '@repo/ui/lib/utils';
+} from '@tuturuuu/ui/dialog';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { BookPlus, Clock, Eye, Pencil, Trash2 } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import { BookPlus, Clock, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

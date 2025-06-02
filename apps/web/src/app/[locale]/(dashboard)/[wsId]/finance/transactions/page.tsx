@@ -3,10 +3,10 @@ import ExportDialogContent from './export-dialog-content';
 import { TransactionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPermissions } from '@/lib/workspace-helper';
-import { Transaction } from '@/types/primitives/Transaction';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

@@ -1,5 +1,5 @@
 import GetStartedButton from '@/app/[locale]/(marketing)/get-started-button';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 

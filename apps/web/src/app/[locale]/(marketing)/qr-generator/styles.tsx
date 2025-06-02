@@ -1,8 +1,8 @@
-import LogoTitle from '../../logo-title';
-import { cn } from '@/lib/utils';
-import { X } from 'lucide-react';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { X } from '@tuturuuu/ui/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { QRCode } from 'react-qrcode-logo';
+import { QRCodeCanvas } from 'qrcode.react';
 
 function QRStyles({
   style,
@@ -35,7 +35,12 @@ function QRStyles({
         >
           <div className="rounded-lg border bg-black p-2 font-bold text-white">
             <div className="aspect-square w-full rounded bg-white p-2 pb-0">
-              <QRCode value="..." size={128} quietZone={0} />
+              <QRCodeCanvas
+                value="..."
+                size={128}
+                marginSize={2}
+                className="rounded-lg"
+              />
             </div>
             <div className="mt-1 uppercase">
               <LogoTitle className="text-base" />
@@ -51,7 +56,12 @@ function QRStyles({
         >
           <div className="rounded-lg border bg-black p-2 font-bold text-white">
             <div className="aspect-square w-full rounded bg-white p-2 pb-0">
-              <QRCode value="..." size={128} quietZone={0} />
+              <QRCodeCanvas
+                value="..."
+                size={128}
+                marginSize={2}
+                className="rounded-lg"
+              />
             </div>
             <div className="mt-1 uppercase">{t('common.scan_me')}</div>
           </div>

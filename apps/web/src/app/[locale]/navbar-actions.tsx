@@ -2,7 +2,7 @@ import { LanguageWrapper } from './language-wrapper';
 import NotificationPopover from './notification-popover';
 import { UserNavWrapper } from './user-nav-wrapper';
 import GetStartedButton from '@/components/layouts/GetStartedButton';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export default async function NavbarActions({
   hideMetadata = false,

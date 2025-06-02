@@ -3,8 +3,8 @@
 import UserGroupPosts, {
   UserGroupPost,
 } from '../../users/groups/[groupId]/posts';
-import { createClient } from '@/utils/supabase/client';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

@@ -1,7 +1,7 @@
 import { Mail } from '../data';
 import { useMail } from '../use-mail';
-import { cn } from '@/lib/utils';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { cn } from '@tuturuuu/utils/format';
 import { formatDistanceToNow } from 'date-fns';
 
 interface MailListProps {

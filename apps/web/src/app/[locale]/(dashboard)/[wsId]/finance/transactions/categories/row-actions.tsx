@@ -1,19 +1,19 @@
 'use client';
 
 import { TransactionCategoryForm } from './form';
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
-import { Button } from '@repo/ui/components/ui/button';
-import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
+import { Row } from '@tanstack/react-table';
+import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import { Button } from '@tuturuuu/ui/button';
+import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Row } from '@tanstack/react-table';
-import { Ellipsis } from 'lucide-react';
+} from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

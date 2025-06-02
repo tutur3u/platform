@@ -1,8 +1,7 @@
 'use client';
 
-import { User } from '@/types/primitives/User';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { User } from '@tuturuuu/types/primitives/User';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
@@ -19,14 +18,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { UserPlus } from 'lucide-react';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { UserPlus } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
@@ -41,7 +41,8 @@ const FormSchema = z.object({
   wsId: z.string().uuid(),
   email: z.string().email(),
   role: z.string(),
-  accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
+  accessLevel: z.string(),
+  // accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
 });
 
 export default function InviteMemberButton({
@@ -55,7 +56,7 @@ export default function InviteMemberButton({
 
   const [open, setOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       wsId: wsId,

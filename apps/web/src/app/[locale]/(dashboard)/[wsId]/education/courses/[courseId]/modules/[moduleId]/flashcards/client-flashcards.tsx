@@ -1,8 +1,7 @@
 'use client';
 
 import FlashcardForm from '../../../../../flashcards/form';
-import { cn } from '@/lib/utils';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,12 +12,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/ui/components/ui/alert-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { Pencil, Trash, X } from 'lucide-react';
+} from '@tuturuuu/ui/alert-dialog';
+import { Button } from '@tuturuuu/ui/button';
+import { Pencil, Trash, X } from '@tuturuuu/ui/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Flashcard } from 'react-quizlet-flashcard';
 
 export default function ClientFlashcards({
@@ -34,8 +34,8 @@ export default function ClientFlashcards({
         id: string;
         front: string;
         back: string;
-        frontHTML: string | JSX.Element;
-        backHTML: string | JSX.Element;
+        frontHTML: string | React.JSX.Element;
+        backHTML: string | React.JSX.Element;
         frontCardStyle?: React.CSSProperties;
         frontContentStyle?: React.CSSProperties;
         backCardStyle?: React.CSSProperties;
@@ -77,7 +77,7 @@ export default function ClientFlashcards({
           key={card?.id || idx}
           className={cn(
             previewMode ||
-              'bg-foreground/5 border-foreground/5 rounded-lg border p-2 md:p-4'
+              'border-foreground/5 bg-foreground/5 rounded-lg border p-2 md:p-4'
           )}
         >
           {editingCardId === card?.id ? (

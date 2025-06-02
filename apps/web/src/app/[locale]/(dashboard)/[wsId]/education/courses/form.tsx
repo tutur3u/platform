@@ -1,8 +1,7 @@
 'use client';
 
-import { WorkspaceCourse } from '@/types/db';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { WorkspaceCourse } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
   FormControl,
@@ -10,12 +9,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
@@ -34,7 +34,7 @@ export default function CourseForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations('ws-courses');
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,

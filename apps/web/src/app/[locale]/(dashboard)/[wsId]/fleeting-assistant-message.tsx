@@ -1,16 +1,12 @@
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
 import { ChatMessageActions } from '@/components/chat-message-actions';
-import { MemoizedReactMarkdown } from '@/components/markdown';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { CodeBlock } from '@repo/ui/components/ui/codeblock';
-import { IconUser } from '@repo/ui/components/ui/icons';
-import { cn } from '@repo/ui/lib/utils';
-import { Message } from 'ai';
+import { type Message } from '@tuturuuu/ai/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { CodeBlock } from '@tuturuuu/ui/codeblock';
+import { IconUser } from '@tuturuuu/ui/icons';
+import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
+import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -24,6 +20,7 @@ import remarkMath from 'remark-math';
 export interface ChatMessageProps {
   message: Message & { chat_id?: string; created_at?: string };
   model?: string | null;
+  // eslint-disable-next-line no-unused-vars
   setInput?: (input: string) => void;
 }
 
@@ -88,7 +85,7 @@ export function FleetingAssistantMessage({
                 t('you')
               ) : (
                 <span
-                  className={`overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent ${
+                  className={`bg-linear-to-r overflow-hidden bg-clip-text font-bold text-transparent ${
                     isDark
                       ? 'from-pink-300 via-amber-200 to-blue-300'
                       : 'from-pink-600 via-purple-500 to-sky-500'
@@ -104,9 +101,13 @@ export function FleetingAssistantMessage({
         <ChatMessageActions message={message} />
       </div>
 
-      <div className="flex-1 space-y-2">
+      <div
+        className={cn(
+          'flex-1 space-y-2',
+          'prose text-foreground dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2 md:w-152 w-[calc(100vw-8rem)] min-w-full break-words lg:w-full'
+        )}
+      >
         <MemoizedReactMarkdown
-          className="text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 w-[calc(100%-2rem)] break-words md:w-[30.8rem]"
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
@@ -161,7 +162,7 @@ export function FleetingAssistantMessage({
                 if (setInput)
                   return (
                     <button
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left font-semibold transition last:mb-0"
+                      className="bg-foreground/5 text-foreground hover:bg-foreground/10 mb-2 rounded-full border text-left font-semibold transition last:mb-0"
                       onClick={() => setInput(content || '')}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -171,7 +172,7 @@ export function FleetingAssistantMessage({
                   );
 
                 return (
-                  <span className="text-foreground bg-foreground/5 mb-2 inline-block rounded-full border text-left transition last:mb-0">
+                  <span className="bg-foreground/5 text-foreground mb-2 inline-block rounded-full border text-left transition last:mb-0">
                     <span className="line-clamp-1 px-3 py-1">
                       {content || '...'}
                     </span>
@@ -190,7 +191,7 @@ export function FleetingAssistantMessage({
                 </blockquote>
               );
             },
-            code({ node, className, children, ...props }) {
+            code({ className, children, ...props }) {
               if (children && Array.isArray(children) && children.length) {
                 if (children[0] == '▍') {
                   return (

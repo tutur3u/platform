@@ -1,8 +1,7 @@
 'use client';
 
 import ApiKeyForm, { ApiConfigFormSchema } from './form';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
-import { generateRandomUUID } from '@/utils/uuid-helper';
+import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
 import {
   Dialog,
   DialogContent,
@@ -10,8 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tuturuuu/ui/dialog';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';

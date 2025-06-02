@@ -1,5 +1,4 @@
 import { Fruit, getColorCode, getColorSrc } from './types';
-import { cn } from '@/lib/utils';
 import {
   Bomb,
   ChevronDown,
@@ -8,7 +7,8 @@ import {
   ChevronUp,
   LoaderPinwheel,
   Sparkle,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 
 function FruitPlaceholder({

@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 
 interface Props {

@@ -1,12 +1,19 @@
 import UserCard from './card';
 import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
-import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import {
+  Check,
+  CheckCheck,
+  CircleHelp,
+  Clock,
+  Send,
+  X,
+} from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { format } from 'date-fns';
-import { Check, CheckCheck, CircleHelp, Clock, Send, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -70,7 +77,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         }
         description={
           <div className="flex flex-col gap-2">
-            <h2 className="text-dynamic-blue bg-dynamic-blue/15 border-dynamic-blue/15 w-fit rounded border px-2 text-xl font-semibold uppercase">
+            <h2 className="border-dynamic-blue/15 bg-dynamic-blue/15 text-dynamic-blue w-fit rounded border px-2 text-xl font-semibold uppercase">
               {post?.title?.trim() || t('common.unknown')}
             </h2>
             <p className="text-sm opacity-70">
@@ -108,7 +115,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
       />
       <Separator className="my-4" />
       <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <div className="bg-dynamic-purple/15 text-dynamic-purple border-dynamic-purple/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="border-dynamic-purple/15 bg-dynamic-purple/15 text-dynamic-purple flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <Send />
             {t('ws-post-emails.sent_emails')}
@@ -119,7 +126,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
-        <div className="bg-dynamic-green/15 text-dynamic-green border-dynamic-green/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="border-dynamic-green/15 bg-dynamic-green/15 text-dynamic-green flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <Check />
             {t('common.completed')}
@@ -130,7 +137,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
-        <div className="bg-dynamic-red/15 text-dynamic-red border-dynamic-red/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="border-dynamic-red/15 bg-dynamic-red/15 text-dynamic-red flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <X />
             {t('common.incomplete')}
@@ -141,7 +148,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
-        <div className="bg-dynamic-blue/15 text-dynamic-blue border-dynamic-blue/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="border-dynamic-blue/15 bg-dynamic-blue/15 text-dynamic-blue flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <CircleHelp />
             {t('common.unknown')}
@@ -253,22 +260,13 @@ async function getUserData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .rpc(
-      'get_workspace_users',
-      {
-        _ws_id: wsId,
-        included_groups: [groupId],
-        excluded_groups: Array.isArray(excludedGroups)
-          ? excludedGroups
-          : [excludedGroups],
-        search_query: q || '',
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('*')
-    .order('full_name', { ascending: true, nullsFirst: false });
+    .from('workspace_user_groups_users')
+    .select('...workspace_users!inner(*)', {
+      count: 'exact',
+    })
+    .eq('group_id', groupId);
+
+  if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
 
   // if (page && pageSize) {
   //   const parsedPage = Number.parseInt(page);

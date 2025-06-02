@@ -1,12 +1,8 @@
 import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/server';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { SupabaseClient } from '@supabase/supabase-js';
-import { User } from 'lucide-react';
+import { SupabaseClient } from '@tuturuuu/supabase/next/client';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { User } from '@tuturuuu/ui/icons';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 

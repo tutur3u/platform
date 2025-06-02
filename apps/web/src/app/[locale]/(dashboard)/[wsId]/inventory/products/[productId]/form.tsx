@@ -2,18 +2,11 @@
 
 import { ProductCategoryForm } from '../../categories/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
-import { cn } from '@/lib/utils';
-import { ProductCategory } from '@/types/primitives/ProductCategory';
-import { ProductUnit } from '@/types/primitives/ProductUnit';
-import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@repo/ui/components/ui/card';
+import { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
+import { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
+import { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Command,
   CommandEmpty,
@@ -22,8 +15,8 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@repo/ui/components/ui/command';
-import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
+} from '@tuturuuu/ui/command';
+import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   Form,
   FormControl,
@@ -31,28 +24,26 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
+} from '@tuturuuu/ui/form';
+import { useFieldArray, useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Check, ChevronsUpDown, Plus, Trash } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Check, ChevronsUpDown, Plus, Trash } from 'lucide-react';
+} from '@tuturuuu/ui/select';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 const InventorySchema = z.object({
@@ -97,7 +88,7 @@ export function ProductForm({
   const [showWarehouseDialog, setWarehouseDialog] = useState(false);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       ...data,
@@ -478,7 +469,7 @@ export function ProductForm({
             </Card>
           </div>
 
-          <div className="w-full flex-shrink-0 space-y-4 lg:max-w-sm">
+          <div className="w-full shrink-0 space-y-4 lg:max-w-sm">
             <Card>
               <CardHeader>
                 <CardTitle>

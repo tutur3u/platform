@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@repo/ui/lib/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { ReactNode } from 'react';
 
 export default function GradientHeadline({

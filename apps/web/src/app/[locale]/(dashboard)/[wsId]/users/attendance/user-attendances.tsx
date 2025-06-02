@@ -1,6 +1,6 @@
 import ClientUserAttendances from './client-user-attendances';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ReactElement } from 'react';
 
 interface SearchParams {

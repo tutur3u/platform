@@ -1,29 +1,22 @@
 import { ChatModelSelector } from './chat-model-selector';
-import LoadingIndicator from './common/LoadingIndicator';
 import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
-import { Model } from '@/data/models';
-import { AIChat } from '@/types/db';
-import { createDynamicClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  FileUploader,
-  StatedFile,
-} from '@repo/ui/components/ui/custom/file-uploader';
+import { Model } from '@tuturuuu/ai/models';
+import { type Message, type UseChatHelpers } from '@tuturuuu/ai/types';
+import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import { AIChat } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import { FileUploader, StatedFile } from '@tuturuuu/ui/custom/file-uploader';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { cn } from '@repo/ui/lib/utils';
-import { Message } from 'ai';
-import { type UseChatHelpers } from 'ai/react';
+} from '@tuturuuu/ui/dialog';
 import {
   ArrowDownToLine,
   Check,
@@ -33,11 +26,14 @@ import {
   Globe,
   LinkIcon,
   Lock,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { QRCodeCanvas } from 'qrcode.react';
 import React, { useEffect, useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
 
 export interface ChatPanelProps
   extends Pick<
@@ -56,14 +52,20 @@ export interface ChatPanelProps
   chats?: AIChat[];
   count?: number | null;
   defaultRoute: string;
-  inputRef: React.RefObject<HTMLTextAreaElement>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
   model?: Model;
+  // eslint-disable-next-line no-unused-vars
   setModel: (model: Model) => void;
+  // eslint-disable-next-line no-unused-vars
   createChat: (input: string) => Promise<void>;
+  // eslint-disable-next-line no-unused-vars
   updateChat: (data: Partial<AIChat>) => Promise<void>;
   clearChat: () => void;
   initialMessages?: Message[];
   collapsed: boolean;
+  disableScrollToTop?: boolean;
+  disableScrollToBottom?: boolean;
+  // eslint-disable-next-line no-unused-vars
   setCollapsed: (collapsed: boolean) => void;
 }
 
@@ -85,6 +87,8 @@ export function ChatPanel({
   updateChat,
   clearChat,
   collapsed,
+  disableScrollToTop,
+  disableScrollToBottom,
   setCollapsed,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
@@ -142,35 +146,39 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="fixed inset-x-0 bottom-0 md:sticky md:-bottom-64 lg:-bottom-96">
+      <div className="fixed inset-x-0 md:bottom-4">
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',
-            !!chats ? 'right-2 md:-right-2 lg:-right-6' : 'right-2 md:right-4'
+            chats ? 'right-2 md:-right-2 lg:-right-6' : 'right-2 md:right-4'
           )}
           style={{
             bottom: chatInputHeight ? chatInputHeight + 4 : '1rem',
           }}
         >
-          <ScrollToTopButton />
-          <ScrollToBottomButton />
+          {!disableScrollToTop && <ScrollToTopButton />}
+          {!disableScrollToBottom && <ScrollToBottomButton />}
 
-          {!!chats && count !== undefined && id && (
-            <div className="flex w-full gap-2">
-              <Button
-                size="icon"
-                variant="outline"
-                className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
-                onClick={() => setCollapsed(!collapsed)}
-              >
-                {collapsed ? (
-                  <FolderOpen className="h-5 w-5" />
-                ) : (
-                  <ArrowDownToLine className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
-          )}
+          {!disableScrollToTop &&
+            !disableScrollToBottom &&
+            !!chats &&
+            count !== undefined &&
+            id && (
+              <div className="flex w-full gap-2">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
+                  onClick={() => setCollapsed(!collapsed)}
+                >
+                  {collapsed ? (
+                    <FolderOpen className="h-5 w-5" />
+                  ) : (
+                    <ArrowDownToLine className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            )}
         </div>
 
         {!!chats && count !== undefined && (
@@ -413,12 +421,11 @@ export function ChatPanel({
                   <Separator className="my-4" />
 
                   <div className="flex items-center justify-center">
-                    <QRCode
+                    <QRCodeCanvas
                       value={`${BASE_URL}/ai/chats/${id}`}
                       size={256}
-                      style={{
-                        borderRadius: '0.5rem',
-                      }}
+                      marginSize={2}
+                      className="rounded-lg"
                     />
                   </div>
                 </>

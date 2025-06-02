@@ -1,14 +1,14 @@
-import { UserDatabaseFilter } from '../filters';
+import { Filter } from '../filters';
 import { getUserReportColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceUserReport } from '@/types/db';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Plus, PlusCircle, User } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceUserReport } from '@tuturuuu/types/db';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Plus, PlusCircle, User } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -78,7 +78,7 @@ export default async function WorkspaceUserReportsPage({
           created_at: false,
         }}
         filters={[
-          <UserDatabaseFilter
+          <Filter
             key="group-filter"
             tag="groupId"
             title={t('user-data-table.group')}
@@ -92,7 +92,7 @@ export default async function WorkspaceUserReportsPage({
             }))}
             multiple={false}
           />,
-          <UserDatabaseFilter
+          <Filter
             key="user-filter"
             tag="userId"
             title={t('user-data-table.user')}
@@ -164,10 +164,8 @@ async function getData(
   const { data: rawData, error, count } = await queryBuilder;
 
   const data = rawData?.map((row) => ({
-    // @ts-expect-error
     user_name: row.user.full_name,
-    // @ts-expect-error
-    creator_name: row.creator.full_name,
+    creator_name: row.creator?.full_name,
     ...row,
   }));
 

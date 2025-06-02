@@ -1,9 +1,9 @@
 'use client';
 
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { Button } from '@tuturuuu/ui/button';
+import { ChevronLeft, ChevronRight, Users } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -66,7 +66,7 @@ export default function ExternalGroupMembers({
               <div className="w-full">
                 <Link
                   href={`/${wsId}/users/groups/${group.id}`}
-                  className="hover:bg-foreground/10 hover:border-foreground/10 line-clamp-1 break-all rounded border border-transparent text-center font-semibold"
+                  className="hover:border-foreground/10 hover:bg-foreground/10 line-clamp-1 break-all rounded border border-transparent text-center font-semibold"
                 >
                   {group.name}
                 </Link>

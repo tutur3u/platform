@@ -1,13 +1,13 @@
-import { UserDatabaseFilter } from '../filters';
+import { Filter } from '../filters';
 import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
 import { CustomMonthPicker } from '@/components/custom-month-picker';
-import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { MinusCircle, PlusCircle } from 'lucide-react';
+import GeneralSearchBar from '@/components/general-search-bar';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { MinusCircle, PlusCircle } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
@@ -59,7 +59,7 @@ export default async function WorkspaceUserAttendancePage({
           lang={locale}
           className="col-span-full md:col-span-1"
         />
-        <UserDatabaseFilter
+        <Filter
           key="included-user-groups-filter"
           tag="includedGroups"
           title={t('user-data-table.included_groups')}
@@ -70,7 +70,7 @@ export default async function WorkspaceUserAttendancePage({
             count: group.amount,
           }))}
         />
-        <UserDatabaseFilter
+        <Filter
           key="excluded-user-groups-filter"
           tag="excludedGroups"
           title={t('user-data-table.excluded_groups')}

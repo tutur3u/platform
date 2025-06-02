@@ -1,20 +1,16 @@
 'use client';
 
-import { UserDatabaseFilter } from '../../../users/filters';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
-import SearchBar from '@repo/ui/components/ui/custom/search-bar';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { Filter } from '../../../users/filters';
 import { useQuery } from '@tanstack/react-query';
-import { User, X } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
+import SearchBar from '@tuturuuu/ui/custom/search-bar';
+import { User, X } from '@tuturuuu/ui/icons';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { cn } from '@tuturuuu/utils/format';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -91,7 +87,7 @@ export default function GroupMemberForm({
     <>
       <div className="flex items-center gap-2">
         <SearchBar t={t} className={cn('w-full')} onSearch={setQuery} />
-        <UserDatabaseFilter
+        <Filter
           title={t('ws-members.invite_member')}
           icon={<User className="mr-2 h-4 w-4" />}
           options={users.map((user) => ({
@@ -177,7 +173,7 @@ export default function GroupMemberForm({
 }
 
 async function getWorkspaceUsers(wsId: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_users')
@@ -192,7 +188,7 @@ async function getWorkspaceUsers(wsId: string) {
 }
 
 async function getUsers(groupId: string, query?: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_users')

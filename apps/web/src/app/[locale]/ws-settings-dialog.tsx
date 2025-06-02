@@ -7,25 +7,15 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@repo/ui/components/ui/breadcrumb';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tuturuuu/ui/breadcrumb';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from '@repo/ui/components/ui/sidebar';
+} from '@tuturuuu/ui/dialog';
 import {
   Bell,
   Check,
@@ -39,7 +29,17 @@ import {
   Paintbrush,
   Settings,
   Video,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from '@tuturuuu/ui/sidebar';
 import * as React from 'react';
 
 const data = {

@@ -1,8 +1,8 @@
+import LocalWorkspaceSelect from './local-workspace-select';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
 import ServerMenu from './server-menu';
-import WorkspaceSelect from './workspace-select';
-import { cn } from '@/lib/utils';
+import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -37,7 +37,7 @@ export default function Navbar({
                 <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
               }
             >
-              <WorkspaceSelect />
+              <LocalWorkspaceSelect />
             </Suspense>
           </div>
 

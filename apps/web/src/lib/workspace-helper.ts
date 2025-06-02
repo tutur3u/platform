@@ -1,14 +1,18 @@
 import { permissions as rolePermissions } from './permissions';
 import { DEV_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { PermissionId } from '@/types/db';
-import { Workspace } from '@/types/primitives/Workspace';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import {
+  PermissionId,
+  Workspace,
+  type WorkspaceUserRole,
+} from '@tuturuuu/types/db';
+import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 
-export async function getWorkspace(id?: string) {
-  if (!id) return null;
-
+export async function getWorkspace(id: string, requireUserRole = false) {
   const supabase = await createClient();
 
   const {
@@ -17,13 +21,15 @@ export async function getWorkspace(id?: string) {
 
   if (!user) redirect('/login');
 
-  const { data, error } = await supabase
+  const queryBuilder = supabase
     .from('workspaces')
     .select(
       'id, name, avatar_url, logo_url, created_at, workspace_members(role)'
     )
-    .eq('id', id)
-    .single();
+    .eq('id', id);
+
+  if (requireUserRole) queryBuilder.eq('workspace_members.user_id', user.id);
+  const { data, error } = await queryBuilder.single();
 
   const workspaceJoined = !!data?.workspace_members[0]?.role;
 
@@ -36,7 +42,10 @@ export async function getWorkspace(id?: string) {
     joined: workspaceJoined,
   };
 
-  return ws as Workspace;
+  return ws as Workspace & {
+    role: WorkspaceUserRole;
+    joined: boolean;
+  };
 }
 
 export async function getWorkspaces(noRedirect?: boolean) {
@@ -60,7 +69,7 @@ export async function getWorkspaces(noRedirect?: boolean) {
 
   if (error) notFound();
 
-  return data as Workspace[];
+  return data;
 }
 
 export async function getWorkspaceInvites() {
@@ -219,7 +228,14 @@ export async function getPermissions({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) throw new Error('User not found');
+  if (!user) {
+    console.error('User not found');
+    return {
+      permissions: [],
+      containsPermission: () => false,
+      withoutPermission: () => true,
+    };
+  }
 
   const permissionsQuery = supabase
     .from('workspace_role_permissions')

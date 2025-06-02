@@ -5,7 +5,7 @@ import {
   MessageCircle,
   PencilRuler,
   Sparkles,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
 import { ReactNode } from 'react';
 
 interface Feature {

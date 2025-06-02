@@ -1,7 +1,6 @@
-import { Timezone } from '@/types/primitives/Timezone';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { Timezone } from '@tuturuuu/types/primitives/Timezone';
+import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -9,9 +8,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { useForm } from 'react-hook-form';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import * as z from 'zod';
 
 interface Props {

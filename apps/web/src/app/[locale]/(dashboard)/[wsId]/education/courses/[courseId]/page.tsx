@@ -1,10 +1,10 @@
 import { getWorkspaceCourseModuleColumns } from './columns';
 import CourseModuleForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceCourseModule } from '@/types/db';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -35,7 +35,7 @@ export default async function WorkspaceCoursesPage({
   const modules = data.map((m) => ({
     ...m,
     ws_id: wsId,
-    href: `/${wsId}/education/courses/${courseId}/modules/${m.id}`,
+    href: `/${wsId}/courses/${courseId}/modules/${m.id}`,
   }));
 
   return (

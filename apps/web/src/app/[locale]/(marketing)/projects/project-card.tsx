@@ -1,5 +1,5 @@
 import { Project } from './data';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@tuturuuu/ui/separator';
 
 interface ProjectCardProps {
   project: Project;

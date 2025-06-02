@@ -5,22 +5,17 @@ import { useMail } from '../use-mail';
 import { MailDisplay } from './mail-display';
 import { MailList } from './mail-list';
 import { Nav } from './nav';
-import { cn } from '@/lib/utils';
-import { Input } from '@repo/ui/components/ui/input';
+import { Archive, Inbox, Search, Send } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@repo/ui/components/ui/resizable';
-import { Separator } from '@repo/ui/components/ui/separator';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@repo/ui/components/ui/tabs';
-import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
-import { Archive, Inbox, Search, Send } from 'lucide-react';
+} from '@tuturuuu/ui/resizable';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { TooltipProvider } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import * as React from 'react';
 
 interface MailProps {
@@ -56,17 +51,25 @@ export function Mail({
           collapsible={true}
           minSize={15}
           maxSize={20}
-          onCollapse={() => {
+          onCollapse={async () => {
             setIsCollapsed(true);
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-              true
-            )}`;
+            await fetch('/api/v1/infrastructure/sidebar', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ collapsed: true }),
+            });
           }}
-          onResize={() => {
+          onResize={async () => {
             setIsCollapsed(false);
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-              false
-            )}`;
+            await fetch('/api/v1/infrastructure/sidebar', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ collapsed: false }),
+            });
           }}
           className={cn(
             isCollapsed &&
@@ -172,7 +175,7 @@ export function Mail({
               </TabsList>
             </div>
             <Separator />
-            <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 p-4 backdrop-blur">
+            <div className="bg-background/95 supports-backdrop-filter:bg-background/60 p-4 backdrop-blur">
               <form>
                 <div className="relative">
                   <Search className="text-muted-foreground absolute left-2 top-2.5 h-4 w-4" />

@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@repo/ui/components/ui/button';
-import { Moon, Sun } from 'lucide-react';
+import { Button } from '@tuturuuu/ui/button';
+import { Moon, Sun } from '@tuturuuu/ui/icons';
 import { useTheme } from 'next-themes';
 
 export function ThemeToggle({

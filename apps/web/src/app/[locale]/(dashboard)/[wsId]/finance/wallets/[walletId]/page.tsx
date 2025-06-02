@@ -1,11 +1,11 @@
 import { transactionColumns } from '../../transactions/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { Transaction } from '@/types/primitives/Transaction';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Calendar, CreditCard, DollarSign, Wallet } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import 'dayjs/locale/vi';
-import { Calendar, CreditCard, DollarSign, Wallet } from 'lucide-react';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';

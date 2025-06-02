@@ -1,9 +1,9 @@
 'use client';
 
 import { WorkspaceFlashcardRowActions } from './row-actions';
-import { WorkspaceFlashcard } from '@/types/db';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { WorkspaceFlashcard } from '@tuturuuu/types/db';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const getWorkspaceFlashcardColumns = (
@@ -52,7 +52,7 @@ export const getWorkspaceFlashcardColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('front') || '-'}</div>
+      <div className="min-w-32">{row.getValue('front') || '-'}</div>
     ),
   },
   {

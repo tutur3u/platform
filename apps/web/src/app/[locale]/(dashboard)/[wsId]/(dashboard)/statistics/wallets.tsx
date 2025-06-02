@@ -1,14 +1,14 @@
 import type { FinanceDashboardSearchParams } from '../../finance/(dashboard)/page';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
 export default async function WalletsStatistics({
   wsId,
-  searchParams: { showFinanceStats } = {},
+  searchParams: { showFinanceStats = true } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;

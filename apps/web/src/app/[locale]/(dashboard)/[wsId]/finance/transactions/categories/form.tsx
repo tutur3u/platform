@@ -1,9 +1,8 @@
 'use client';
 
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { SelectField } from '@repo/ui/components/ui/custom/select-field';
+import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import { Button } from '@tuturuuu/ui/button';
+import { SelectField } from '@tuturuuu/ui/custom/select-field';
 import {
   Form,
   FormControl,
@@ -11,25 +10,28 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
   wsId: string;
   data?: TransactionCategory;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1).max(255),
-  type: z.enum(['INCOME', 'EXPENSE']),
+  type: z.string(),
+  // type: z.enum(['INCOME', 'EXPENSE']),
 });
 
 export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
@@ -38,7 +40,7 @@ export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       id: data?.id,
@@ -144,7 +146,7 @@ export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading
             ? t('common.processing')
-            : !!data?.id
+            : data?.id
               ? t('ws-transaction-categories.edit')
               : t('ws-transaction-categories.create')}
         </Button>

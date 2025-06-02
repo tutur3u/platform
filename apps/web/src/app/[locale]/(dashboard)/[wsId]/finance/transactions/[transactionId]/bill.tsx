@@ -1,18 +1,15 @@
 'use client';
 
-import { createDynamicClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  FileUploader,
-  StatedFile,
-} from '@repo/ui/components/ui/custom/file-uploader';
+import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import { Button } from '@tuturuuu/ui/button';
+import { FileUploader, StatedFile } from '@tuturuuu/ui/custom/file-uploader';
+import { File, FileText, ImageIcon, X } from '@tuturuuu/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { File, FileText, ImageIcon, X } from 'lucide-react';
+} from '@tuturuuu/ui/tooltip';
 import { useState } from 'react';
 
 interface Props {

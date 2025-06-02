@@ -1,12 +1,12 @@
-import { UserDatabaseFilter } from '../../filters';
+import { Filter } from '../../filters';
 import EditableReportPreview from './editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
-import { WorkspaceUserReport } from '@/types/db';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
-import { PlusCircle, User } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceUserReport } from '@tuturuuu/types/db';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { PlusCircle, User } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
@@ -66,7 +66,7 @@ export default async function WorkspaceUserDetailsPage({
   return (
     <div className="flex min-h-full w-full flex-col">
       <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
-        <UserDatabaseFilter
+        <Filter
           key="group-filter"
           tag="groupId"
           title={t('group')}
@@ -81,7 +81,7 @@ export default async function WorkspaceUserDetailsPage({
           multiple={false}
         />
 
-        <UserDatabaseFilter
+        <Filter
           key="user-filter"
           tag="userId"
           title={t('user')}
@@ -108,7 +108,7 @@ export default async function WorkspaceUserDetailsPage({
         />
 
         {reports.length > 0 && (
-          <UserDatabaseFilter
+          <Filter
             key="report-filter"
             tag="reportId"
             title={t('report')}
@@ -174,11 +174,11 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   } = {
     user_name: Array.isArray(rawData.user)
       ? rawData.user?.[0]?.full_name
-      : // @ts-expect-error
+      : //
         (rawData.user?.full_name ?? undefined),
     creator_name: Array.isArray(rawData.creator)
       ? rawData.creator?.[0]?.full_name
-      : // @ts-expect-error
+      : //
         (rawData.creator?.full_name ?? undefined),
     ...rawData,
   };
@@ -255,10 +255,8 @@ async function getReports(
   if (error) throw error;
 
   const data = rawData?.map((rawData) => ({
-    // @ts-expect-error
     user_name: rawData.user.full_name,
-    // @ts-expect-error
-    creator_name: rawData.creator.full_name,
+    creator_name: rawData.creator?.full_name,
     ...rawData,
   }));
 
@@ -282,7 +280,9 @@ async function getConfigs(wsId: string) {
 
   queryBuilder.in(
     'id',
-    availableConfigs.map(({ id }) => id)
+    availableConfigs
+      .map(({ id }) => id)
+      .filter((id): id is string => id !== undefined)
   );
 
   const { data: rawData, error } = await queryBuilder;

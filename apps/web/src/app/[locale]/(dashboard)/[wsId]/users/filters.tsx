@@ -1,8 +1,8 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Button } from '@repo/ui/components/ui/button';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -11,21 +11,17 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@repo/ui/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { cn } from '@repo/ui/lib/utils';
-import { Check, CheckCheck, Trash, Undo } from 'lucide-react';
+} from '@tuturuuu/ui/command';
+import { Check, CheckCheck, Trash, Undo } from '@tuturuuu/ui/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
-interface UserDatabaseFilterProps {
+interface FilterProps {
   tag?: string;
   icon?: ReactNode;
   title: string;
@@ -59,10 +55,11 @@ interface UserDatabaseFilterProps {
   className?: string;
   contentClassName?: string;
   hideSelected?: boolean;
+  // eslint-disable-next-line no-unused-vars
   onSet?: (values: string[]) => Promise<void> | void;
 }
 
-export function UserDatabaseFilter({
+export function Filter({
   tag,
   icon,
   title,
@@ -82,7 +79,7 @@ export function UserDatabaseFilter({
   contentClassName,
   hideSelected = false,
   onSet,
-}: UserDatabaseFilterProps) {
+}: FilterProps) {
   const t = useTranslations('user-data-table');
 
   const searchParams = useSearchParams();

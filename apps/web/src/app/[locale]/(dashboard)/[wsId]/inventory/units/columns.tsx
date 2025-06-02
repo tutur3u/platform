@@ -1,9 +1,9 @@
 'use client';
 
 import { ProductUnitRowActions } from './row-actions';
-import { ProductUnit } from '@/types/primitives/ProductUnit';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const productUnitColumns = (

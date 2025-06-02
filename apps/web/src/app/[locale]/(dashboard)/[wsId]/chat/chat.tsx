@@ -4,13 +4,13 @@ import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
-import { Model, defaultModel, models } from '@/data/models';
-import { AIChat } from '@/types/db';
-import { createClient } from '@/utils/supabase/client';
-import { useChat } from '@ai-sdk/react';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { cn } from '@repo/ui/lib/utils';
-import { Message } from 'ai';
+import { Model, defaultModel, models } from '@tuturuuu/ai/models';
+import { useChat } from '@tuturuuu/ai/react';
+import { type Message } from '@tuturuuu/ai/types';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { AIChat } from '@tuturuuu/types/db';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
@@ -19,23 +19,25 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: Partial<AIChat>;
   wsId?: string;
   initialMessages?: Message[];
-  previousMessages?: Message[];
   chats?: AIChat[];
   count?: number | null;
   hasKeys: { openAI: boolean; anthropic: boolean; google: boolean };
   locale: string;
+  disableScrollToTop?: boolean;
+  disableScrollToBottom?: boolean;
 }
 
 const Chat = ({
   defaultChat,
   wsId,
   initialMessages,
-  previousMessages,
   chats,
   count,
   className,
   hasKeys,
   locale,
+  disableScrollToTop,
+  disableScrollToBottom,
 }: ChatProps) => {
   const t = useTranslations('ai_chat');
 
@@ -52,13 +54,12 @@ const Chat = ({
       initialMessages,
       api:
         chat?.model || model?.value
-          ? `/api/ai/chat/${
-              chat?.model
-                ? models
-                    .find((m) => m.value === chat.model)
-                    ?.provider.toLowerCase() || model?.provider.toLowerCase()
-                : model?.provider.toLowerCase()
-            }`
+          ? `/api/ai/chat/${(chat?.model
+              ? models
+                  .find((m) => m.value === chat.model)
+                  ?.provider.toLowerCase() || model?.provider.toLowerCase()
+              : model?.provider.toLowerCase()
+            )?.replaceAll(' ', '-')}`
           : undefined,
       body: {
         id: chat?.id,
@@ -188,6 +189,7 @@ const Chat = ({
 
     if (chat?.id && input) {
       setInput(input.toString());
+      if (disableScrollToBottom && disableScrollToTop) return;
       router.replace(`/${wsId}/chat/${chat.id}`);
     }
 
@@ -244,6 +246,7 @@ const Chat = ({
     if (id) {
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
+      if (disableScrollToBottom && disableScrollToTop) return;
       router.replace(`/${wsId}/chat?id=${id}`);
     }
   };
@@ -299,8 +302,8 @@ const Chat = ({
   }, [chat?.id, pathname, messages]);
 
   return (
-    <div className="relative">
-      <div className={cn('md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
+    <div className="@container relative h-full">
+      <div className={cn('@md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
         {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
@@ -328,13 +331,19 @@ const Chat = ({
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
+        ) : disableScrollToTop && disableScrollToBottom ? (
+          <h1 className="mb-2 flex h-full w-full items-center justify-center text-center text-lg font-semibold">
+            {t('welcome_to')}{' '}
+            <span className="bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky overflow-hidden bg-clip-text font-bold text-transparent">
+              Rewise
+            </span>
+            .
+          </h1>
         ) : (
           <EmptyScreen
             wsId={wsId}
             chats={chats}
-            count={count}
             setInput={setInput}
-            previousMessages={previousMessages}
             locale={locale}
           />
         )}
@@ -363,6 +372,8 @@ const Chat = ({
           clearChat={clearChat}
           setCollapsed={setCollapsed}
           defaultRoute={`/${wsId}/chat`}
+          disableScrollToTop={disableScrollToTop}
+          disableScrollToBottom={disableScrollToBottom}
         />
       )}
     </div>

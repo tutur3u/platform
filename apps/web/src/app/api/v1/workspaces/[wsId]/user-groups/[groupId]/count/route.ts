@@ -1,4 +1,7 @@
-import { createAdminClient, createClient } from '@/utils/supabase/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -71,7 +74,6 @@ async function getDataWithApiKey({
     );
   }
 
-  // @ts-expect-error: Supabase types don't support count() yet
   return NextResponse.json(data?.count || 0);
 }
 
@@ -99,6 +101,5 @@ async function getDataFromSession({
     );
   }
 
-  // @ts-expect-error: Supabase types don't support count() yet
   return NextResponse.json(data?.count || 0);
 }

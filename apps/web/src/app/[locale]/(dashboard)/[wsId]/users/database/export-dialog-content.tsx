@@ -1,25 +1,25 @@
 'use client';
 
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Progress } from '@repo/ui/components/ui/progress';
+} from '@tuturuuu/ui/dialog';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
+import { Progress } from '@tuturuuu/ui/progress';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
+} from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';

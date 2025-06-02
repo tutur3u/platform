@@ -1,5 +1,5 @@
 import LogoTab from '@/components/branding/LogoTab';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 
 const LandingPage = () => {

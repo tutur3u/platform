@@ -1,18 +1,16 @@
 import { getUserColumns } from '../../database/columns';
-import { UserDatabaseFilter } from '../../filters';
+import { Filter } from '../../filters';
 import ExternalGroupMembers from './external-group-members';
 import GroupMemberForm from './form';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { cn } from '@/lib/utils';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   Box,
   Calendar,
@@ -20,7 +18,9 @@ import {
   FileUser,
   MinusCircle,
   UserCheck,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -159,22 +159,27 @@ export default async function UserGroupDetailsPage({
       <Separator className="my-4" />
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
         {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 opacity-50 md:flex-row md:items-start"> */}
-        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
-          <div className="mb-2 text-xl font-semibold">
-            {t('ws-roles.members')}
+        {excludedUserGroups.length ? (
+          <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+            <div className="mb-2 text-xl font-semibold">
+              {t('ws-roles.members')}
+            </div>
+
+            <ExternalGroupMembers
+              wsId={wsId}
+              totalUsers={usersCount}
+              groups={excludedUserGroups}
+            />
           </div>
-          <ExternalGroupMembers
-            wsId={wsId}
-            totalUsers={usersCount}
-            groups={excludedUserGroups}
-          />
-        </div>
+        ) : null}
+
         <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <div className="mb-2 text-xl font-semibold">
             {t('ws-user-group-details.schedule')}
           </div>
           <GroupSchedule wsId={wsId} groupId={groupId} />
         </div>
+
         <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <PostsClient
             wsId={wsId}
@@ -183,28 +188,31 @@ export default async function UserGroupDetailsPage({
             count={postsCount}
           />
         </div>
-        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
-          <div className="mb-2 text-xl font-semibold">
-            {t('user-data-table.linked_products')}
-            {!!lpCount && ` (${lpCount})`}
-          </div>
-          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-            {linkedProducts.map((product) => (
-              <div
-                key={product.id}
-                className="bg-background flex items-center rounded-lg border p-2 md:p-4"
-              >
-                <Box className="mr-2 h-8 w-8" />
-                <div>
-                  <div className="text-lg font-semibold">{product.name}</div>
-                  {product.description && (
-                    <div className="text-sm">{product.description}</div>
-                  )}
+
+        {lpCount ? (
+          <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+            <div className="mb-2 text-xl font-semibold">
+              {t('user-data-table.linked_products')}
+              {!!lpCount && ` (${lpCount})`}
+            </div>
+            <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+              {linkedProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-background flex items-center rounded-lg border p-2 md:p-4"
+                >
+                  <Box className="mr-2 h-8 w-8" />
+                  <div>
+                    <div className="text-lg font-semibold">{product.name}</div>
+                    {product.description && (
+                      <div className="text-sm">{product.description}</div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
         {/* <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <div className="text-xl font-semibold">
             {t('user-group-data-table.special_users')}
@@ -220,7 +228,7 @@ export default async function UserGroupDetailsPage({
         extraData={{ locale, wsId, groupId }}
         count={usersCount}
         filters={[
-          <UserDatabaseFilter
+          <Filter
             key="excluded-user-groups-filter"
             tag="excludedGroups"
             title={t('user-data-table.excluded_groups')}
@@ -284,22 +292,13 @@ async function getUserData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .rpc(
-      'get_workspace_users',
-      {
-        _ws_id: wsId,
-        included_groups: [groupId],
-        excluded_groups: Array.isArray(excludedGroups)
-          ? excludedGroups
-          : [excludedGroups],
-        search_query: q || '',
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('*')
-    .order('full_name', { ascending: true, nullsFirst: false });
+    .from('workspace_user_groups_users')
+    .select('...workspace_users!inner(*)', {
+      count: 'exact',
+    })
+    .eq('group_id', groupId);
+
+  if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);

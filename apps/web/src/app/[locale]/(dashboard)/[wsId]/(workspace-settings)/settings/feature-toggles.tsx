@@ -1,6 +1,6 @@
 'use client';
 
-import FeatureToggle from '@/components/cards/FeatureToggle';
+import FeatureToggle from '@/components/feature-toggle';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -25,7 +25,6 @@ export default function FeatureToggles() {
   const availableFeatures = [
     'documents',
     'users',
-    'healthcare',
     'inventory',
     'finance',
   ] as const;

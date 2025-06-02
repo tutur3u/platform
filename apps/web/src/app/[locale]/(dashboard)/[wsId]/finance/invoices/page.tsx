@@ -1,10 +1,13 @@
 import { invoiceColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { Invoice } from '@/types/primitives/Invoice';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Plus } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface Props {
   params: Promise<{
@@ -39,6 +42,14 @@ export default async function WorkspaceInvoicesPage({
         description={t('ws-invoices.description')}
         createTitle={t('ws-invoices.create')}
         createDescription={t('ws-invoices.create_description')}
+        action={
+          <Link href={`/${wsId}/finance/invoices/new`}>
+            <Button>
+              <Plus />
+              {t('ws-invoices.create')}
+            </Button>
+          </Link>
+        }
       />
       <Separator className="my-4" />
       <CustomDataTable
@@ -91,7 +102,6 @@ async function getData(
 
   const data = rawData.map(({ customer, ...rest }) => ({
     ...rest,
-    // @ts-expect-error
     customer: customer?.full_name || '-',
   }));
 

@@ -1,21 +1,17 @@
 import InviteMemberButton from './invite-member-button';
 import { MemberSettingsButton } from './member-settings-button';
-import { getCurrentUser } from '@/lib/user-helper';
-import { User } from '@/types/primitives/User';
-import { Workspace } from '@/types/primitives/Workspace';
-import { getInitials } from '@/utils/name-helper';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { cn } from '@repo/ui/lib/utils';
-import { User as UserIcon } from 'lucide-react';
+import { Workspace, type WorkspaceUserRole } from '@tuturuuu/types/db';
+import { User } from '@tuturuuu/types/primitives/User';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { User as UserIcon } from '@tuturuuu/ui/icons';
+import { cn } from '@tuturuuu/utils/format';
+import { getInitials } from '@tuturuuu/utils/name-helper';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import moment from 'moment';
 import { getLocale, getTranslations } from 'next-intl/server';
 
 interface Props {
-  workspace?: Workspace | null;
+  workspace?: (Workspace & { role: WorkspaceUserRole }) | null;
   members: User[];
   invited?: boolean;
   loading?: boolean;
@@ -55,7 +51,7 @@ export default async function MemberList({
 
   return members.map((member) => (
     <div
-      key={member.id}
+      key={member.id || member.email}
       className={`border-border relative rounded-lg border p-4 ${
         member?.pending
           ? 'border-dashed bg-transparent'

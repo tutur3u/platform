@@ -3,24 +3,19 @@
 import QRColorPicker from './color';
 import QRDisplay from './display';
 import QRFormats from './formats';
-import QRShapes from './shapes';
 import QRStyles from './styles';
-import { Button } from '@repo/ui/components/ui/button';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Textarea } from '@repo/ui/components/ui/textarea';
+import { Button } from '@tuturuuu/ui/button';
+import { Label } from '@tuturuuu/ui/label';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
 
 export default function QR() {
   const t = useTranslations();
 
-  const ref = useRef<QRCode>(null);
+  const ref = useRef<HTMLCanvasElement>(null);
 
-  const [name, setName] = useState('');
   const [value, setValue] = useState('');
-  const [shape, setShape] = useState<'squares' | 'dots' | 'fluid'>('squares');
   const [style, setStyle] = useState<'default' | 'brand' | 'scan-me'>(
     'default'
   );
@@ -33,15 +28,6 @@ export default function QR() {
     <>
       <div className="flex flex-col items-center justify-between gap-8 md:flex-row md:items-start">
         <div className="w-full">
-          <div className="mb-4 grid gap-2">
-            <Label>{t('common.qr_name')}</Label>
-            <Input
-              placeholder={t('common.qr_name')}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-
           <div className="grid gap-2">
             <Label>{t('ws-user-fields.value')}</Label>
             <Textarea
@@ -58,36 +44,30 @@ export default function QR() {
             setBgColor={setBgColor}
           />
 
-          <QRShapes shape={shape} setShape={setShape} />
           <QRStyles style={style} setStyle={setStyle} />
           <QRFormats format={format} setFormat={setFormat} />
         </div>
         <div>
           <QRDisplay
-            ref={ref}
+            ref={ref as React.RefObject<HTMLCanvasElement>}
             value={value}
             color={color}
             bgColor={bgColor}
-            shape={shape}
             style={style}
           />
           <div className="mt-2 flex gap-2">
             <Button
               variant="destructive"
               onClick={() => {
-                setName('');
                 setValue('');
                 setColor('#000000');
                 setBgColor('#FFFFFF');
-                setShape('squares');
                 setStyle('default');
               }}
               disabled={
-                !name &&
                 !value &&
                 color === '#000000' &&
                 bgColor === '#FFFFFF' &&
-                shape === 'squares' &&
                 style === 'default'
               }
             >
@@ -96,7 +76,16 @@ export default function QR() {
             <Button
               className="w-full"
               onClick={() => {
-                ref.current?.download(format, name || 'qr-code');
+                if (!ref.current) return;
+
+                const canvas = ref.current;
+                const link = document.createElement('a');
+
+                link.download = `Tuturuuu.${format}`;
+                link.href = canvas.toDataURL(`image/${format}`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
               }}
             >
               {t('common.download')}

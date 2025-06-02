@@ -3,23 +3,19 @@
 import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
 import { PUBLIC_PATHS } from '@/constants/common';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { Separator } from '@repo/ui/components/ui/separator';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@repo/ui/components/ui/sheet';
-import { User } from '@supabase/supabase-js';
-import { MenuIcon } from 'lucide-react';
+import { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { MenuIcon } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Sheet, SheetContent, SheetTrigger } from '@tuturuuu/ui/sheet';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 interface MenuProps {
-  sbUser: User | null;
+  sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
   t?: any;
 }

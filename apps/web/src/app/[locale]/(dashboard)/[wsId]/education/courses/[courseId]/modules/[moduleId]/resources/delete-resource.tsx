@@ -1,8 +1,8 @@
 'use client';
 
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import { Trash } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Button } from '@tuturuuu/ui/button';
+import { Trash } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

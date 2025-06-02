@@ -1,13 +1,12 @@
 import { DEV_MODE } from '@/constants/common';
-import { Workspace } from '@/types/primitives/Workspace';
-import { createClient } from '@/utils/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { useQuery } from '@tanstack/react-query';
-import { ActivitySquare, Database } from 'lucide-react';
+} from '@tuturuuu/ui/dropdown-menu';
+import { ActivitySquare, Database } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -64,5 +63,5 @@ async function fetchWorkspaces() {
     .eq('workspace_members.user_id', user.id);
 
   if (error) return;
-  return workspaces as Workspace[];
+  return workspaces;
 }

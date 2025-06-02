@@ -1,13 +1,8 @@
 'use client';
 
-import LoadingIndicator from '@/components/common/LoadingIndicator';
-import { Workspace } from '@/types/primitives/Workspace';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+import { Workspace } from '@tuturuuu/types/db';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
@@ -15,8 +10,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tuturuuu/ui/card';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -104,7 +100,7 @@ export default function InvitationCard({
                 ? `https://avatar.vercel.sh/${workspace.name}.png`
                 : undefined
             }
-            alt={workspace.name}
+            alt={workspace.name ?? ''}
           />
           <AvatarFallback>
             {workspace.name?.slice(0, 2).toUpperCase() || 'WS'}

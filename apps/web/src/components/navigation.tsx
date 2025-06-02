@@ -1,7 +1,7 @@
 'use client';
 
 import { DEV_MODE, PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { User } from '@/types/primitives/User';
+import { User } from '@tuturuuu/types/primitives/User';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';

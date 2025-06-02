@@ -1,25 +1,25 @@
 'use client';
 
-import { createClient } from '@/utils/supabase/client';
-import { generateUUID } from '@/utils/uuid-helper';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Progress } from '@repo/ui/components/ui/progress';
-import { Separator } from '@repo/ui/components/ui/separator';
+} from '@tuturuuu/ui/dialog';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
   CheckCheck,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
+import { Progress } from '@tuturuuu/ui/progress';
+import { Separator } from '@tuturuuu/ui/separator';
+import { generateUUID } from '@tuturuuu/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -72,10 +72,9 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
           header: 1,
         }) as any[][];
         const formattedData = jsonData
-          .slice(1)
           .map((row: any[]) => ({
             fullName: sentenceCase(row[1]) || '',
-            email: row[2]?.toLowerCase(),
+            email: row[0]?.toLowerCase(),
           }))
           // only take rows with email
           .filter((row) => row.email)
@@ -230,7 +229,7 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
               {paginatedData.map((row, index) => (
                 <div
                   key={index}
-                  className="bg-foreground/5 border-foreground/5 rounded border p-2"
+                  className="border-foreground/5 bg-foreground/5 rounded border p-2"
                 >
                   <div className="line-clamp-1 font-semibold">
                     {row.fullName}

@@ -1,11 +1,11 @@
 'use client';
 
 import ClientFlashcards from './client-flashcards';
-import { flashcardSchema } from '@/app/api/ai/objects/types';
 import { GenerateDialog } from '@/components/generate-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { experimental_useObject as useObject } from 'ai/react';
+import { useObject } from '@tuturuuu/ai/object/core';
+import { flashcardSchema } from '@tuturuuu/ai/object/types';
+import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

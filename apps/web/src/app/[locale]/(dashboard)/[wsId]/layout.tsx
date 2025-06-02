@@ -1,11 +1,14 @@
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
-import FleetingNavigator from './fleeting-navigator';
 import InvitationCard from './invitation-card';
 import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
-import { getCurrentUser } from '@/lib/user-helper';
+import {
+  MAIN_CONTENT_SIZE_COOKIE_NAME,
+  ROOT_WORKSPACE_ID,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+  SIDEBAR_SIZE_COOKIE_NAME,
+} from '@/constants/common';
 import {
   getPermissions,
   getWorkspace,
@@ -14,24 +17,31 @@ import {
 import {
   Archive,
   Banknote,
+  Box,
   Calendar,
   ChartArea,
   CircleCheck,
+  Clock,
   Cog,
+  Database,
   FileText,
   GraduationCap,
   HardDrive,
-  HeartPulse,
+  Logs,
   Mail,
   MessageCircleIcon,
+  PencilLine,
+  Play,
   Presentation,
+  ScanSearch,
   Sparkles,
   Users,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { type ReactNode, Suspense } from 'react';
+import { ReactNode, Suspense } from 'react';
 
 interface LayoutProps {
   params: Promise<{
@@ -48,19 +58,27 @@ export default async function Layout({ children, params }: LayoutProps) {
     wsId,
   });
 
-  const navLinks: NavLink[] = [
+  const ENABLE_AI_ONLY = await verifySecret({
+    forceAdmin: true,
+    wsId,
+    name: 'ENABLE_AI_ONLY',
+    value: 'true',
+  });
+
+  const navLinks: (NavLink | null)[] = [
     {
       title: t('sidebar_tabs.chat_with_ai'),
       href: `/${wsId}/chat`,
       icon: <MessageCircleIcon className="h-4 w-4" />,
-      forceRefresh: true,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_CHAT',
           value: 'true',
-        })) || withoutPermission('ai_chat'),
+        })) ||
+        withoutPermission('ai_chat'),
       shortcut: 'X',
       experimental: 'beta',
     },
@@ -71,67 +89,68 @@ export default async function Layout({ children, params }: LayoutProps) {
       matchExact: true,
       shortcut: 'D',
     },
+    null,
+    // {
+    //   title: t('sidebar_tabs.ai'),
+    //   href: `/${wsId}/ai`,
+    //   icon: <Sparkles className="h-4 w-4" />,
+    //   disabled:
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_AI',
+    //       value: 'true',
+    //     })) || withoutPermission('ai_lab'),
+    //   shortcut: 'A',
+    //   experimental: 'beta',
+    // },
     {
-      title: t('sidebar_tabs.ai'),
-      href: `/${wsId}/ai`,
+      title: 'Spark',
+      href: `/${wsId}/ai/spark`,
       icon: <Sparkles className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
-          name: 'ENABLE_AI',
+          name: 'ENABLE_TASKS',
           value: 'true',
-        })) || withoutPermission('ai_lab'),
-      shortcut: 'A',
-      experimental: 'beta',
-    },
-    {
-      title: t('sidebar_tabs.education'),
-      href: `/${wsId}/education`,
-      icon: <GraduationCap className="h-4 w-4" />,
-      disabled:
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) || withoutPermission('ai_lab'),
-      shortcut: 'A',
+        })) ||
+        withoutPermission('manage_projects'),
+      shortcut: 'T',
       experimental: 'alpha',
     },
     {
-      title: t('sidebar_tabs.slides'),
-      href: `/${wsId}/slides`,
-      icon: <Presentation className="h-4 w-4" />,
-      disabled: !(await verifySecret({
-        forceAdmin: true,
-        wsId,
-        name: 'ENABLE_SLIDES',
-        value: 'true',
-      })),
-      shortcut: 'S',
-      experimental: 'beta',
-    },
-    {
-      title: t('sidebar_tabs.mail'),
-      href:
-        wsId === ROOT_WORKSPACE_ID ? `/${wsId}/mail` : `/${wsId}/mail/posts`,
-      icon: <Mail className="h-4 w-4" />,
+      title: 'TLDraw',
+      href: `/${wsId}/tldraw`,
+      icon: <PencilLine className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
-          name: 'ENABLE_EMAIL_SENDING',
+          name: 'ENABLE_TASKS',
           value: 'true',
-        })) || withoutPermission('send_user_group_post_emails'),
-      shortcut: 'M',
-      experimental: 'beta',
+        })) ||
+        withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'alpha',
     },
+    ...(ENABLE_AI_ONLY ||
+    !(await verifySecret({
+      forceAdmin: true,
+      wsId,
+      name: 'ENABLE_TASKS',
+      value: 'true',
+    })) ||
+    withoutPermission('manage_projects')
+      ? []
+      : [null]),
     {
       title: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
       icon: <Calendar className="h-4 w-4" />,
-      disabled: withoutPermission('manage_calendar'),
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
       shortcut: 'C',
       experimental: 'alpha',
     },
@@ -140,26 +159,238 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/tasks/boards`,
       icon: <CircleCheck className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_TASKS',
           value: 'true',
-        })) || withoutPermission('manage_projects'),
+        })) ||
+        withoutPermission('manage_projects'),
       shortcut: 'T',
+      experimental: 'beta',
+    },
+    // {
+    //   title: t('sidebar_tabs.workouts'),
+    //   href: `/${wsId}/workouts`,
+    //   icon: <Dumbbell className="h-4 w-4" />,
+    //   disabled:
+    //     ENABLE_AI_ONLY ||
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_TASKS',
+    //       value: 'true',
+    //     })) ||
+    //     withoutPermission('manage_projects'),
+    //   shortcut: 'T',
+    //   experimental: 'alpha',
+    // },
+    // {
+    //   title: t('sidebar_tabs.readings'),
+    //   href: `/${wsId}/readings`,
+    //   icon: <Book className="h-4 w-4" />,
+    //   disabled:
+    //     ENABLE_AI_ONLY ||
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_TASKS',
+    //       value: 'true',
+    //     })) ||
+    //     withoutPermission('manage_projects'),
+    //   shortcut: 'T',
+    //   experimental: 'alpha',
+    // },
+    // {
+    //   title: t('sidebar_tabs.diet_and_nutrition'),
+    //   href: `/${wsId}/diet`,
+    //   icon: <Utensils className="h-4 w-4" />,
+    //   disabled:
+    //     ENABLE_AI_ONLY ||
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_TASKS',
+    //       value: 'true',
+    //     })) ||
+    //     withoutPermission('manage_projects'),
+    //   shortcut: 'T',
+    //   experimental: 'alpha',
+    // },
+    // {
+    //   title: t('sidebar_tabs.progress'),
+    //   href: `/${wsId}/progress`,
+    //   icon: <CircleDashed className="h-4 w-4" />,
+    //   disabled:
+    //     ENABLE_AI_ONLY ||
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_TASKS',
+    //       value: 'true',
+    //     })) ||
+    //     withoutPermission('manage_projects'),
+    //   shortcut: 'T',
+    //   experimental: 'alpha',
+    // },
+    // {
+    //   title: t('sidebar_tabs.metrics'),
+    //   href: `/${wsId}/metrics`,
+    //   icon: <ChartColumn className="h-4 w-4" />,
+    //   disabled:
+    //     ENABLE_AI_ONLY ||
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_TASKS',
+    //       value: 'true',
+    //     })) ||
+    //     withoutPermission('manage_projects'),
+    //   shortcut: 'T',
+    //   experimental: 'alpha',
+    // },
+    null,
+    {
+      title: t('sidebar_tabs.models'),
+      href: `/${wsId}/models`,
+      icon: <Box className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
       experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.datasets'),
+      href: `/${wsId}/datasets`,
+      icon: <Database className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      experimental: 'beta',
+    },
+    {
+      title: t('sidebar_tabs.pipelines'),
+      href: `/${wsId}/pipelines`,
+      icon: <Play className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.crawlers'),
+      href: `/${wsId}/crawlers`,
+      icon: <ScanSearch className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.cron'),
+      href: `/${wsId}/cron`,
+      icon: <Clock className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.queues'),
+      href: `/${wsId}/queues`,
+      icon: <Logs className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      experimental: 'alpha',
+    },
+    null,
+    {
+      title: t('sidebar_tabs.education'),
+      href: `/${wsId}/education`,
+      icon: <GraduationCap className="h-4 w-4" />,
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) ||
+        withoutPermission('ai_lab'),
+      shortcut: 'A',
+      experimental: 'beta',
+    },
+    {
+      title: t('sidebar_tabs.slides'),
+      href: `/${wsId}/slides`,
+      icon: <Presentation className="h-4 w-4" />,
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_SLIDES',
+          value: 'true',
+        })),
+      shortcut: 'S',
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.mail'),
+      href:
+        wsId === ROOT_WORKSPACE_ID ? `/${wsId}/mail` : `/${wsId}/mail/posts`,
+      icon: <Mail className="h-4 w-4" />,
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_EMAIL_SENDING',
+          value: 'true',
+        })) ||
+        withoutPermission('send_user_group_post_emails'),
+      shortcut: 'M',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.documents'),
       href: `/${wsId}/documents`,
       icon: <FileText className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_DOCS',
           value: 'true',
-        })) || withoutPermission('manage_documents'),
+        })) ||
+        withoutPermission('manage_documents'),
       shortcut: 'O',
       experimental: 'beta',
     },
@@ -182,37 +413,25 @@ export default async function Layout({ children, params }: LayoutProps) {
       aliases: [`/${wsId}/users`],
       href: `/${wsId}/users/database`,
       icon: <Users className="h-4 w-4" />,
-      disabled: withoutPermission('manage_users'),
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_users'),
       shortcut: 'U',
     },
     {
       title: t('sidebar_tabs.inventory'),
       href: `/${wsId}/inventory`,
       icon: <Archive className="h-4 w-4" />,
-      disabled: withoutPermission('manage_inventory'),
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_inventory'),
       shortcut: 'I',
-    },
-    {
-      title: t('sidebar_tabs.healthcare'),
-      href: `/${wsId}/healthcare`,
-      icon: <HeartPulse className="h-4 w-4" />,
-      disabled: !(await verifySecret({
-        forceAdmin: true,
-        wsId,
-        name: 'ENABLE_HEALTHCARE',
-        value: 'true',
-      })),
-      shortcut: 'H',
-      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.finance'),
       aliases: [`/${wsId}/finance`],
       href: `/${wsId}/finance/transactions`,
       icon: <Banknote className="h-4 w-4" />,
-      disabled: withoutPermission('manage_finance'),
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_finance'),
       shortcut: 'F',
     },
+    null,
     {
       title: t('common.settings'),
       href: `/${wsId}/settings`,
@@ -232,10 +451,16 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
-  const layout = (await cookies()).get('react-resizable-panels:layout:default');
-  const collapsed = (await cookies()).get('react-resizable-panels:collapsed');
+  const sidebarSize = (await cookies()).get(SIDEBAR_SIZE_COOKIE_NAME);
+  const mainSize = (await cookies()).get(MAIN_CONTENT_SIZE_COOKIE_NAME);
 
-  const defaultLayout = layout ? JSON.parse(layout.value) : undefined;
+  const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
+
+  const defaultLayout =
+    sidebarSize !== undefined && mainSize !== undefined
+      ? [JSON.parse(sidebarSize.value), JSON.parse(mainSize.value)]
+      : undefined;
+
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
 
   if (!workspace) redirect('/onboarding');
@@ -247,43 +472,34 @@ export default async function Layout({ children, params }: LayoutProps) {
     );
 
   return (
-    <>
-      <Structure
-        wsId={wsId}
-        user={user}
-        workspace={workspace}
-        defaultLayout={defaultLayout}
-        defaultCollapsed={defaultCollapsed}
-        navCollapsedSize={4}
-        links={navLinks}
-        actions={
-          <Suspense
-            fallback={
-              <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
-            }
-          >
-            <NavbarActions />
-          </Suspense>
-        }
-        userPopover={
-          <Suspense
-            fallback={
-              <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
-            }
-          >
-            <UserNav hideMetadata />
-          </Suspense>
-        }
-      >
-        {children}
-      </Structure>
-
-      {(await verifySecret({
-        forceAdmin: true,
-        wsId,
-        name: 'ENABLE_CHAT',
-        value: 'true',
-      })) && <FleetingNavigator wsId={wsId} />}
-    </>
+    <Structure
+      wsId={wsId}
+      user={user}
+      workspace={workspace}
+      defaultLayout={defaultLayout}
+      defaultCollapsed={defaultCollapsed}
+      navCollapsedSize={4}
+      links={navLinks}
+      actions={
+        <Suspense
+          fallback={
+            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+          }
+        >
+          <NavbarActions />
+        </Suspense>
+      }
+      userPopover={
+        <Suspense
+          fallback={
+            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+          }
+        >
+          <UserNav hideMetadata />
+        </Suspense>
+      }
+    >
+      {children}
+    </Structure>
   );
 }

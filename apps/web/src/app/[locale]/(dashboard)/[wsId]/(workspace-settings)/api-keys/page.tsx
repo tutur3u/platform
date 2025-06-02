@@ -2,11 +2,11 @@ import { apiKeyColumns } from './columns';
 import ApiKeyEditDialog from './edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPermissions } from '@/lib/workspace-helper';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Plus } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import { Button } from '@tuturuuu/ui/button';
+import { Plus } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

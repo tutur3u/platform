@@ -1,16 +1,11 @@
 'use client';
 
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
 import { generateRandomUUID } from '@/utils/uuid-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -19,15 +14,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import { Form } from '@repo/ui/components/ui/form';
-import { Label } from '@repo/ui/components/ui/label';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Loader2, Settings, UserIcon } from 'lucide-react';
+} from '@tuturuuu/ui/dialog';
+import { Form } from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Loader2, Settings, UserIcon } from '@tuturuuu/ui/icons';
+import { Label } from '@tuturuuu/ui/label';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface AvatarProps {

@@ -1,13 +1,13 @@
 import { invoiceColumns } from '../../../finance/invoices/columns';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceUserReport } from '@/types/db';
-import { Invoice } from '@/types/primitives/Invoice';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { TicketCheck, Users } from 'lucide-react';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceUserReport } from '@tuturuuu/types/db';
+import { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
+import { TicketCheck, Users } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
@@ -71,7 +71,7 @@ export default async function WorkspaceUserDetailsPage({
             height={128}
             src={data.avatar_url}
             alt="Avatar"
-            className="aspect-square min-w-[8rem] rounded-lg object-cover"
+            className="aspect-square min-w-32 rounded-lg object-cover"
           />
           {data.full_name && <div>{data.full_name}</div>}
         </div>
@@ -407,7 +407,6 @@ async function getInvoiceData(
 
   const data = rawData.map(({ customer, ...rest }) => ({
     ...rest,
-    // @ts-expect-error
     customer: customer?.full_name || '-',
   }));
 

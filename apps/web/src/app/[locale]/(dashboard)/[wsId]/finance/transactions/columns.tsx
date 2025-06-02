@@ -1,10 +1,10 @@
 'use client';
 
 import { TransactionRowActions } from './row-actions';
-import { Transaction } from '@/types/primitives/Transaction';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
-import { Check, X } from 'lucide-react';
+import { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { Check, X } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
@@ -47,7 +47,7 @@ export const transactionColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+        <div className="line-clamp-1 min-w-32">{row.getValue('id')}</div>
       ),
     },
     {
@@ -60,7 +60,7 @@ export const transactionColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="min-w-[8rem] font-semibold">
+        <div className="min-w-32 font-semibold">
           {row.getValue('wallet') || '-'}
         </div>
       ),
@@ -75,7 +75,7 @@ export const transactionColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="min-w-[8rem]">
+        <div className="min-w-32">
           <div className="font-semibold">{row.original.category || '-'}</div>
           {row.original.description && (
             <div className="opacity-70">{row.original.description}</div>
@@ -93,7 +93,7 @@ export const transactionColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="min-w-[8rem]">
+        <div className="min-w-32">
           {Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -124,7 +124,7 @@ export const transactionColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="min-w-[8rem]">
+        <div className="min-w-32">
           {row.getValue('taken_at')
             ? `${moment(row.getValue('taken_at')).locale(locale).fromNow()}, ${moment(
                 row.getValue('taken_at')
@@ -145,7 +145,7 @@ export const transactionColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="min-w-[8rem]">
+        <div className="min-w-32">
           {row.getValue('created_at')
             ? moment(row.getValue('created_at'))
                 .locale(locale)

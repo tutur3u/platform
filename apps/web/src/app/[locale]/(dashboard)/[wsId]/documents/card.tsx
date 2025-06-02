@@ -1,5 +1,5 @@
-import { WorkspaceDocument } from '@/types/db';
-import { FilePlus } from 'lucide-react';
+import { WorkspaceDocument } from '@tuturuuu/types/db';
+import { FilePlus } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
@@ -30,7 +30,7 @@ export const DocumentCard = ({ wsId, document }: Props) => {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 justify-self-start text-sm font-semibold">
-        <div className="bg-dynamic-blue/5 border-dynamic-blue/20 text-dynamic-blue flex w-full max-w-full items-center gap-1 rounded-lg border px-2 py-1.5">
+        <div className="border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue flex w-full max-w-full items-center gap-1 rounded-lg border px-2 py-1.5">
           <FilePlus className="w-5 flex-none" />
           <div className="line-clamp-1">{creationDate}</div>
         </div>

@@ -1,6 +1,5 @@
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
   FormControl,
@@ -8,10 +7,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
@@ -30,7 +30,7 @@ export const ApiConfigFormSchema = FormSchema;
 export default function ApiKeyForm({ data, submitLabel, onSubmit }: Props) {
   const t = useTranslations('ws-api-keys');
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       name: data.name || '',

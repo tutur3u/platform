@@ -1,6 +1,5 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -9,19 +8,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Loader2, Sparkles } from 'lucide-react';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { Loader2, Sparkles } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const formSchema = z.object({

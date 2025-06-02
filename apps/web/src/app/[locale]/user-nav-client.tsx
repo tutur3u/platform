@@ -9,15 +9,10 @@ import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Dialog } from '@repo/ui/components/ui/dialog';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,8 +25,9 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { Globe, Palette, Settings, User } from 'lucide-react';
+} from '@tuturuuu/ui/dropdown-menu';
+import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';

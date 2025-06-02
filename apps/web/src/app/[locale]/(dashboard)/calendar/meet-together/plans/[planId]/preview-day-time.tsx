@@ -1,16 +1,15 @@
 import { useTimeBlocking } from './time-blocking-provider';
-import { Timeblock } from '@/types/primitives/Timeblock';
 import { timetzToTime } from '@/utils/date-helper';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { ShieldCheck, ShieldMinus } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
+} from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
-import { ShieldCheck, ShieldMinus } from 'lucide-react';
-import { useTheme } from 'next-themes';
 
 export default function PreviewDayTime({
   timeblocks: serverTimeblocks,
@@ -25,9 +24,6 @@ export default function PreviewDayTime({
   end: number;
   disabled: boolean;
 }) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme?.includes('dark');
-
   const {
     filteredUserIds,
     previewDate,
@@ -150,16 +146,14 @@ export default function PreviewDayTime({
                   />
                 </TooltipTrigger>
                 {isSelectable && previewDate && (
-                  <TooltipContent className="pointer-events-none">
+                  <TooltipContent className="bg-background text-foreground pointer-events-none border">
                     <div className="font-bold">
                       {dayjs(previewDate).format('HH:mm')} -{' '}
                       {dayjs(previewDate).add(15, 'minutes').format('HH:mm')} (
                       {dayjs(previewDate).format('DD/MM/YYYY')})
                     </div>
                     <Separator className="my-1" />
-                    <div
-                      className={`font-semibold ${isDark ? 'text-green-300' : 'text-green-700 dark:text-green-300'}`}
-                    >
+                    <div className={`text-dynamic-green font-semibold`}>
                       {getPreviewUsers(timeblocks).available.map((user) => (
                         <div
                           key={user.id}
@@ -174,9 +168,7 @@ export default function PreviewDayTime({
                         </div>
                       ))}
                     </div>
-                    <div
-                      className={`font-semibold ${isDark ? 'text-red-300' : 'text-red-700 dark:text-red-300'}`}
-                    >
+                    <div className={`text-dynamic-red font-semibold`}>
                       {getPreviewUsers(timeblocks).unavailable.map((user) => (
                         <div
                           key={user.id}

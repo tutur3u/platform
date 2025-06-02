@@ -1,5 +1,5 @@
-import { Timezone } from '@/types/primitives/Timezone';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Timezone } from '@tuturuuu/types/primitives/Timezone';
+import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
 
 interface Props {

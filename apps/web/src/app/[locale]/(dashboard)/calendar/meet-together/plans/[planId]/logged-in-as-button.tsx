@@ -1,8 +1,8 @@
 import AccountBadge from './account-badge';
 import { useTimeBlocking } from './time-blocking-provider';
-import { User as PlatformUser } from '@/types/primitives/User';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { User as PlatformUser } from '@tuturuuu/types/primitives/User';
+import { Button } from '@tuturuuu/ui/button';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 
 export default function LoggedInAsButton({
@@ -16,7 +16,7 @@ export default function LoggedInAsButton({
   const user = guestUser ?? platformUser;
 
   return (
-    <div className="bg-foreground/5 border-foreground/20 w-full rounded border p-2 text-center md:w-fit md:min-w-64">
+    <div className="border-foreground/20 bg-foreground/5 w-full rounded border p-2 text-center md:w-fit md:min-w-64">
       <div className="text-sm opacity-80">
         {user?.id
           ? t('meet-together-plan-details.interacting_as')

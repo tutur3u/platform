@@ -1,7 +1,6 @@
 'use client';
 
-import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,8 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/ui/components/ui/alert-dialog';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tuturuuu/ui/alert-dialog';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
@@ -30,15 +29,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Pencil } from 'lucide-react';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Pencil } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
@@ -59,7 +59,7 @@ export default function EditPlanDialog({ plan }: Props) {
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       name: plan.name || t('meet-together.untitled_plan'),
@@ -109,7 +109,7 @@ export default function EditPlanDialog({ plan }: Props) {
     });
 
     if (res.ok) {
-      router.push('/calendar/meet-together');
+      router.push('/meet-together');
     } else {
       setDeleting(false);
       toast({

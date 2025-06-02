@@ -1,4 +1,4 @@
-import { Switch } from '@repo/ui/components/ui/switch';
+import { Switch } from '@tuturuuu/ui/switch';
 import { ReactNode } from 'react';
 
 export default function RolePermission({

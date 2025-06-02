@@ -3,16 +3,16 @@ import { ProductionIndicator } from '@/components/production-indicator';
 import { Providers } from '@/components/providers';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { siteConfig } from '@/constants/configs';
-import { routing, supportedLocales } from '@/i18n/routing';
+import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
-import { Toaster } from '@repo/ui/components/ui/toaster';
-import '@repo/ui/globals.css';
-import { cn } from '@repo/ui/lib/utils';
+import '@tuturuuu/ui/globals.css';
+import { Toaster } from '@tuturuuu/ui/toaster';
+import { cn } from '@tuturuuu/utils/format';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, setRequestLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 import { Inter } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -104,53 +104,27 @@ export function generateStaticParams() {
 }
 
 export default async function RootLayout({ children, params }: Props) {
+  const { locale } = await params;
+
   // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes((await params).locale as any)) {
+  if (!routing.locales.includes(locale as Locale)) {
     notFound();
   }
 
-  const { locale } = await params;
-  setRequestLocale(locale);
-  const messages = await getMessages();
+  setRequestLocale(locale as Locale);
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'bg-background overflow-hidden antialiased',
+          'bg-background overflow-y-scroll antialiased',
           font.className
         )}
       >
         <VercelAnalytics />
         <VercelInsights />
-        <Providers
-          attribute="class"
-          defaultTheme="dark"
-          themes={[
-            'system',
-
-            'light',
-            'light-pink',
-            'light-purple',
-            'light-yellow',
-            'light-orange',
-            'light-green',
-            'light-blue',
-
-            'dark',
-            'dark-pink',
-            'dark-purple',
-            'dark-yellow',
-            'dark-orange',
-            'dark-green',
-            'dark-blue',
-          ]}
-          enableColorScheme={false}
-          enableSystem={false}
-        >
-          <NextIntlClientProvider messages={messages}>
-            {children}
-          </NextIntlClientProvider>
+        <Providers>
+          <NextIntlClientProvider>{children}</NextIntlClientProvider>
         </Providers>
         <TailwindIndicator />
         <ProductionIndicator />

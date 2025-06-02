@@ -4,7 +4,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
+} from '@tuturuuu/ui/select';
 import { useLocale } from 'next-intl';
 
 interface Props {

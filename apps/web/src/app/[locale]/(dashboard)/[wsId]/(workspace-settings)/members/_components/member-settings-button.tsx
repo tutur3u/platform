@@ -1,15 +1,9 @@
 'use client';
 
-import { User } from '@/types/primitives/User';
-import { Workspace } from '@/types/primitives/Workspace';
-import { getInitials } from '@/utils/name-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+import { Workspace } from '@tuturuuu/types/db';
+import { User } from '@tuturuuu/types/primitives/User';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
@@ -26,14 +20,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Settings, User as UserIcon } from 'lucide-react';
+} from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Settings, User as UserIcon } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
@@ -44,7 +40,8 @@ interface Props {
 
 const FormSchema = z.object({
   role: z.string(),
-  accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
+  accessLevel: z.string(),
+  // accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
 });
 
 export function MemberSettingsButton({
@@ -55,7 +52,7 @@ export function MemberSettingsButton({
   const router = useRouter();
   const t = useTranslations('ws-members');
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       role: user?.role_title || '',

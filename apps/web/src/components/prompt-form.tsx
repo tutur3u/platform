@@ -1,24 +1,17 @@
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-import type { AIChat } from '@/types/db';
-import { Button } from '@repo/ui/components/ui/button';
-import { StatedFile } from '@repo/ui/components/ui/custom/file-uploader';
-import { Dialog } from '@repo/ui/components/ui/dialog';
-import { IconArrowElbow } from '@repo/ui/components/ui/icons';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { cn } from '@repo/ui/lib/utils';
-import type { UseChatHelpers } from 'ai/react';
+import type { UseChatHelpers } from '@tuturuuu/ai/types';
+import type { AIChat } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   ArrowDownWideNarrow,
   Bolt,
   File,
   FileText,
   Globe,
+  IconArrowElbow,
   ImageIcon,
   Languages,
   Lock,
@@ -29,7 +22,14 @@ import {
   RefreshCw,
   SquareStack,
   X,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
@@ -42,7 +42,7 @@ export interface PromptProps
   chat: Partial<AIChat> | undefined;
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
-  inputRef: React.RefObject<HTMLTextAreaElement>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
   showExtraOptions: boolean;
