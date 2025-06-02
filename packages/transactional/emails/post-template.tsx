@@ -1,4 +1,4 @@
-import { Head, Html, Img, Tailwind } from '@react-email/components';
+import { Head, Html, Img, Tailwind } from '@tuturuuu/transactional/react/email';
 
 export interface UserGroupPost {
   id?: string;
@@ -64,7 +64,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 </div>
                 <div className="text-blue-500">{nextPost.group_name}</div>
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-muted-foreground text-sm">
                 Trung tâm Easy thân gửi phụ huynh báo cáo tiến độ học tập của em{' '}
                 <span className="font-semibold text-purple-600">
                   Huỳnh Tấn Phát
@@ -81,11 +81,11 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 </span>
                 , với nội dung như sau:
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-muted-foreground text-sm">
                 <span className="font-semibold">Bài học:</span>{' '}
                 <span className="">{nextPost.title}</span>
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-muted-foreground text-sm">
                 <span className="font-semibold">Nội dung:</span>{' '}
                 {nextPost.content}
               </p>
@@ -103,7 +103,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 </div>
                 <div className="text-blue-500">{nextPost.group_name}</div>
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-muted-foreground text-sm">
                 Easy Center kindly sends parents a report on the learning
                 progress of{' '}
                 <span className="font-semibold text-purple-600">
@@ -121,11 +121,11 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 </span>
                 , with the following content:
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-muted-foreground text-sm">
                 <span className="font-semibold">Lesson:</span>{' '}
                 <span className="">{nextPost.title}</span>
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-muted-foreground text-sm">
                 <span className="font-semibold">Content:</span>{' '}
                 {nextPost.content}
               </p>

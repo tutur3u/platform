@@ -23,9 +23,12 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { cn } from '@tuturuuu/utils/format';
 import { ReactNode, useState } from 'react';
 
 export interface DataTableProps<TData, TValue> {
+  hideToolbar?: boolean;
+  hidePagination?: boolean;
   columns?: ColumnDef<TData, TValue>[];
   filters?: ReactNode[] | ReactNode;
   extraColumns?: any[];
@@ -43,6 +46,8 @@ export interface DataTableProps<TData, TValue> {
   isEmpty?: boolean;
   toolbarImportContent?: ReactNode;
   toolbarExportContent?: ReactNode;
+  className?: string;
+  preserveParams?: string[];
   onRefresh?: () => void;
   // eslint-disable-next-line no-unused-vars
   onSearch?: (query: string) => void;
@@ -63,6 +68,8 @@ export interface DataTableProps<TData, TValue> {
 }
 
 export function DataTable<TData, TValue>({
+  hideToolbar = false,
+  hidePagination = false,
   columns,
   filters,
   extraColumns,
@@ -81,6 +88,7 @@ export function DataTable<TData, TValue>({
   t,
   toolbarImportContent,
   toolbarExportContent,
+  className,
   onRefresh,
   onSearch,
   setParams,
@@ -125,25 +133,27 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="space-y-4">
-      <DataTableToolbar
-        hasData={!!data}
-        namespace={namespace}
-        table={table}
-        newObjectTitle={newObjectTitle}
-        editContent={editContent}
-        filters={filters}
-        extraColumns={extraColumns}
-        disableSearch={disableSearch}
-        t={t}
-        isEmpty={isEmpty || !data?.length}
-        defaultQuery={defaultQuery}
-        onSearch={onSearch || (() => {})}
-        onRefresh={onRefresh || (() => {})}
-        resetParams={resetParams || (() => {})}
-        importContent={toolbarImportContent}
-        exportContent={toolbarExportContent}
-      />
+    <div className={cn('space-y-4', className)}>
+      {hideToolbar || (
+        <DataTableToolbar
+          hasData={!!data}
+          namespace={namespace}
+          table={table}
+          newObjectTitle={newObjectTitle}
+          editContent={editContent}
+          filters={filters}
+          extraColumns={extraColumns}
+          disableSearch={disableSearch}
+          t={t}
+          isEmpty={isEmpty || !data?.length}
+          defaultQuery={defaultQuery}
+          onSearch={onSearch || (() => {})}
+          onRefresh={onRefresh || (() => {})}
+          resetParams={resetParams || (() => {})}
+          importContent={toolbarImportContent}
+          exportContent={toolbarExportContent}
+        />
+      )}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -200,18 +210,20 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      {count !== undefined && (
-        <>
-          <DataTablePagination
-            t={t}
-            table={table}
-            count={count}
-            className="bg-foreground/[0.025] dark:bg-foreground/5 rounded-lg border px-4 py-2 backdrop-blur-xl"
-            setParams={setParams}
-          />
-          <div className="h-4" />
-        </>
-      )}
+
+      {hidePagination ||
+        (count !== undefined && (
+          <>
+            <DataTablePagination
+              t={t}
+              table={table}
+              count={count}
+              className="bg-foreground/[0.025] dark:bg-foreground/5 rounded-lg border px-4 py-2 backdrop-blur-xl"
+              setParams={setParams}
+            />
+            <div className="h-4" />
+          </>
+        ))}
     </div>
   );
 }

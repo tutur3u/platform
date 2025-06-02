@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '../../../lib/utils';
 import { Button } from '../button';
 import {
   Command,
@@ -12,6 +11,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
+import { cn } from '@tuturuuu/utils/format';
 import { CommandList } from 'cmdk';
 import { Check, ChevronsUpDown, Plus } from 'lucide-react';
 import * as React from 'react';
@@ -84,7 +84,7 @@ export function Combobox({
           >
             {label ??
               (selected && selected.length > 0 ? (
-                <div className="relative mr-auto flex flex-grow flex-wrap items-center overflow-hidden">
+                <div className="relative mr-auto flex grow flex-wrap items-center overflow-hidden">
                   <span>
                     {mode === 'multiple' && Array.isArray(selected)
                       ? selected

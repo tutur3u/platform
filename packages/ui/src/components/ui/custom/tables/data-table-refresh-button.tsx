@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '../../../../lib/utils';
 import { Button } from '../../button';
+import { cn } from '@tuturuuu/utils/format';
 import { RefreshCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

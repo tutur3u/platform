@@ -40,21 +40,24 @@
       "pages": [
         "introduction",
         "development",
+        "monorepo-architecture",
+        "git-conventions",
+        "local-supabase-development",
+        "ci-cd-pipelines",
         "documenting"
       ]
     },
     {
       "group": "Features",
-      "pages": [
-        "features/meet-together"
-      ]
+      "pages": ["features/meet-together"]
+    },
+    {
+      "group": "AI Features",
+      "pages": ["ai-structured-data"]
     },
     {
       "group": "Personalization",
-      "pages": [
-        "personalization/themes",
-        "personalization/language"
-      ]
+      "pages": ["personalization/themes", "personalization/language"]
     },
     {
       "group": "Experiments",
@@ -64,6 +67,20 @@
         "experiments/finance",
         "experiments/project-management",
         "experiments/ai-chat"
+      ]
+    },
+    {
+      "group": "Prompt Engineering",
+      "pages": [
+        "prompt-engineering/introduction",
+        "prompt-engineering/prompt-design-strategies/prompt-design-strategies",
+        "prompt-engineering/prompt-design-strategies/01-clear-instructions",
+        "prompt-engineering/prompt-design-strategies/02-few-shot-examples",
+        "prompt-engineering/prompt-design-strategies/03-context-strategies",
+        "prompt-engineering/prompt-design-strategies/04-prefixes-and-patterns",
+        "prompt-engineering/prompt-design-strategies/05-modular-prompts",
+        "prompt-engineering/prompt-design-strategies/06-parameters-and-iteration",
+        "prompt-engineering/prompt-design-strategies/07-fallback-caution"
       ]
     }
   ],

@@ -1,14 +1,33 @@
-name: Test code coverage
-on:
-  push:
-    branches: ['main', 'staging', 'production']
-  pull_request:
-    types: [opened, synchronize]
+name: Run tests and upload coverage
+
+on: push
 
 jobs:
-  run:
+  test:
+    name: Run tests and collect coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: codecov/codecov-action@v4
-    env:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpm vitest run --coverage
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

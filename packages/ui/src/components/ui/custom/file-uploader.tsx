@@ -1,10 +1,10 @@
 'use client';
 
-import { cn, formatBytes } from '../../../../../../apps/web/src/lib/utils';
 import { useControllableState } from '../../../hooks/use-controllable-state';
 import { Button } from '../button';
 import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
+import { cn, formatBytes } from '@tuturuuu/utils/format';
 import { File, FileText, Upload, X } from 'lucide-react';
 import { HTMLAttributes, useCallback, useState } from 'react';
 import Dropzone, {
@@ -174,7 +174,7 @@ export function FileUploader(props: FileUploaderProps) {
             {...getRootProps()}
             className={cn(
               'border-muted-foreground/25 hover:bg-muted/25 group relative grid h-52 w-full cursor-pointer place-items-center rounded-lg border-2 border-dashed px-6 py-2 text-center transition',
-              'ring-offset-background focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+              'ring-offset-background focus-visible:ring-ring focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2',
               isDragActive && 'border-muted-foreground/50',
               isDisabled && 'pointer-events-none opacity-60',
               className

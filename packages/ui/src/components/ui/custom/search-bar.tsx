@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '../../../lib/utils';
 import { Input } from '../input';
+import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useState } from 'react';
 

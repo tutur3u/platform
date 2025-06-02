@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '../../../lib/utils';
 import { Button } from '../button';
 import { Calendar } from '../calendar';
 import { Label } from '../label';
@@ -14,6 +13,7 @@ import {
 } from '../select';
 import { Switch } from '../switch';
 import { DateInput } from './date-input';
+import { cn } from '@tuturuuu/utils/format';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -113,8 +113,8 @@ export const ComparedDateRangePicker = ({
   );
 
   // Refs to store the values of range and rangeCompare when the date picker is opened
-  const openedRangeRef = useRef<DateRange | undefined>();
-  const openedRangeCompareRef = useRef<DateRange | undefined>();
+  const openedRangeRef = useRef<DateRange | undefined>(undefined);
+  const openedRangeCompareRef = useRef<DateRange | undefined>(undefined);
 
   const [selectedPreset, setSelectedPreset] = useState<string | undefined>(
     undefined
@@ -293,7 +293,7 @@ export const ComparedDateRangePicker = ({
     preset: string;
     label: string;
     isSelected: boolean;
-  }): JSX.Element => (
+  }): React.ReactNode => (
     <Button
       className={cn(isSelected && 'pointer-events-none')}
       variant="ghost"

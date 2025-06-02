@@ -1,23 +1,20 @@
 {
-  "name": "transactional",
+  "name": "@tuturuuu/transactional",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    ".react-email"
-  ],
   "scripts": {
     "dev": "email dev -p 3001",
     "export": "email export"
   },
-  "packageManager": "pnpm@9.12.3",
+  "packageManager": "pnpm@10.11.0",
   "dependencies": {
-    "@react-email/components": "0.0.26",
-    "@react-email/tailwind": "1.0.0",
-    "react": "18.3.1",
-    "react-email": "3.0.2"
+    "@react-email/components": "^0.0.41",
+    "@react-email/tailwind": "^1.0.5",
+    "react": "^19.1.0",
+    "react-email": "^4.0.15"
   },
   "devDependencies": {
-    "@types/node": "^22.8.6",
-    "@types/react": "^18.3.12"
+    "@types/node": "^22.15.29",
+    "@types/react": "^19.1.6"
   }
 }

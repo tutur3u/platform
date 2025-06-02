@@ -1,0 +1,39 @@
+{
+  "name": "@tuturuuu/supabase",
+  "license": "MIT",
+  "version": "0.0.7",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.49.8",
+    "@tuturuuu/types": "workspace:*",
+    "eslint": "^9.28.0",
+    "next": "15.4.0-canary.59",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.46"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.28.0",
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^22.15.29",
+    "@types/react": "^19.1.6",
+    "@typescript-eslint/eslint-plugin": "^8.33.0",
+    "@typescript-eslint/parser": "^8.33.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  }
+}

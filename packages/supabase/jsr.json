@@ -1,0 +1,14 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@tuturuuu/supabase",
+  "license": "MIT",
+  "version": "0.0.7",
+  "exports": {
+    "./next/client": "./src/next/client.ts",
+    "./next/common": "./src/next/common.ts",
+    "./next/middleware": "./src/next/middleware.ts",
+    "./next/realtime": "./src/next/realtime.ts",
+    "./next/server": "./src/next/server.ts",
+    "./next/user": "./src/next/user.ts"
+  }
+}

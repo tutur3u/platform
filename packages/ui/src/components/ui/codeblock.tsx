@@ -24,7 +24,7 @@ interface languageMap {
 }
 
 export const programmingLanguages: languageMap = {
-  javascript: '.js',
+  javascript: '',
   python: '.py',
   java: '.java',
   c: '.c',

@@ -1,0 +1,964 @@
+---
+title: 'Local Supabase Development'
+description: 'Learn how to work with Supabase locally in the Tuturuuu development workflow.'
+---
+
+<Info>
+  **Prerequisite**: You should have installed
+  [Docker](https://www.docker.com/products/docker-desktop/) and followed the
+  [Development](/development) setup guide.
+</Info>
+
+## Overview
+
+Tuturuuu utilizes Supabase for database management and authentication. This guide explains how to work efficiently with Supabase in the local development workflow.
+
+## Basic Commands
+
+### Starting Supabase
+
+To start a local Supabase instance tailored for Tuturuuu:
+
+```bash
+pnpm sb:start
+```
+
+This command launches a local Supabase instance on your machine, accessible at [http://localhost:8003](http://localhost:8003).
+
+### Stopping Supabase
+
+To stop the local Supabase instance:
+
+```bash
+pnpm sb:stop
+```
+
+### Checking Status
+
+To view the current URLs and status of your local Supabase instance:
+
+```bash
+pnpm sb:status
+```
+
+## Development Workflow
+
+### Recommended Startup
+
+When developing for Tuturuuu, you have several options to start your environment:
+
+1. **Standard Approach**: Start Next.js apps and Supabase separately.
+
+   ```bash
+   pnpm dev      # Starts all Next.js apps
+   pnpm sb:start # Starts Supabase
+   ```
+
+2. **Enhanced Development Experience**: Use the `devx` command for a streamlined setup.
+
+   ```bash
+   pnpm devx
+   ```
+
+   This command:
+
+   - Stops any running Supabase instance and saves current data as backup
+   - Installs all dependencies
+   - Starts a new Supabase instance (using backed up data)
+   - Starts all Next.js apps in development mode
+
+3. **Fresh Database Setup**: When switching branches with potential schema changes.
+   ```bash
+   pnpm sb:devrs
+   ```
+   This command:
+   - Stops any running Supabase instance (without backup)
+   - Installs all dependencies
+   - Starts a new Supabase instance
+   - Resets the database to use the latest schema
+   - Starts all Next.js apps in development mode
+
+<Warning>
+  Use `pnpm sb:devrs` when switching between branches that might have different
+  database migrations to ensure your local database schema matches the branch
+  you're working on.
+</Warning>
+
+### Syncing With Schema Changes
+
+If you're keeping your Next.js server running but need to reset your database to match the current branch's schema:
+
+```bash
+pnpm sb:reset
+```
+
+This command will reset your local database to use the latest schema definitions and automatically regenerate TypeScript types.
+
+## Database Schema Management
+
+### Making Schema Changes
+
+There are two approaches to modifying the database schema:
+
+#### 1. Using the Supabase UI
+
+1. Navigate to your local Supabase Studio at [http://localhost:8003](http://localhost:8003)
+2. Make your changes through the UI
+3. Generate a migration file:
+   ```bash
+   pnpm sb:diff
+   ```
+   This creates a migration file based on the differences between your current schema and the previous state.
+
+<Warning>
+  Be cautious when using `sb:diff` for schema changes. If you rename columns or
+  tables, the migration will drop the old ones and create new ones, which can
+  result in data loss in production environments.
+</Warning>
+
+#### 2. Creating Manual Migrations
+
+For more control, you can create empty migration files and populate them manually:
+
+```bash
+pnpm sb:new
+```
+
+This creates a new empty migration file in `apps/db/supabase/migrations` that you can edit to include your desired schema changes.
+
+### Applying Migrations
+
+After creating a migration, apply it to your local database:
+
+```bash
+pnpm sb:up
+```
+
+<Info>
+  This same process is used to keep our production database up-to-date with the
+  schema defined in the `production` branch.
+</Info>
+
+### Generating TypeScript Types
+
+After schema changes, regenerate the TypeScript types to keep your code in sync with the database schema:
+
+```bash
+pnpm sb:typegen
+```
+
+Alternatively, you can use the shorthand:
+
+```bash
+pnpm typegen
+```
+
+<Info>
+  This step is automatically performed when running `pnpm sb:reset`, making it
+  useful when catching up with a new branch's schema.
+</Info>
+
+### Using Generated TypeScript Types
+
+The Supabase-generated TypeScript types are available at `packages/types/src/supabase.ts`. These types are accessible to all apps that have the `@tuturuuu/types` package installed.
+
+You can use these types to ensure type safety when working with Supabase data:
+
+```typescript
+import type { Database } from '@tuturuuu/types/supabase';
+
+// Type-safe access to tables
+const { data, error } = await supabase
+  .from<
+    Database['public']['Tables']['workspace_members']['Row']
+  >('workspace_members')
+  .select('*')
+  .eq('ws_id', workspaceId);
+
+// Type-safe access to specific columns
+const { data: workspace } = await supabase
+  .from('workspaces')
+  .select('id, name, handle')
+  .eq('id', workspaceId)
+  .single();
+
+// TypeScript knows the structure of 'workspace' with proper types
+const workspaceName: string = workspace?.name;
+```
+
+### Short-hand Type Access
+
+For more convenient access to common table types, Tuturuuu also provides short-hand type definitions in `packages/types/src/db.ts`. These are easier to use and remember than the full database type paths:
+
+```typescript
+import type { WorkspaceCourse, WorkspaceRole } from '@tuturuuu/types/db';
+
+// Use short-hand types directly
+const { data: roles } = await supabase
+  .from('workspace_roles')
+  .select('*')
+  .eq('ws_id', workspaceId);
+
+// Type is now WorkspaceRole[]
+roles?.forEach((role: WorkspaceRole) => {
+  console.log(role.name, role.permissions);
+});
+
+// Short-hand types can also include extended properties
+const course: WorkspaceCourse = {
+  id: 'course-id',
+  ws_id: 'workspace-id',
+  name: 'Course Name',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  href: '/courses/course-id', // Extended property not in the database
+};
+```
+
+You can add your own short-hand types to `db.ts` for tables you frequently work with. This is especially useful for tables that have complex structures or need additional client-side properties.
+
+This ensures that your code correctly interacts with the database schema, reducing runtime errors and improving development experience.
+
+## Migration Files
+
+All migration files are stored in `apps/db/supabase/migrations`. These files:
+
+- Contain SQL commands that create and modify the database schema
+- Are executed in order based on the timestamp prefix in their filenames
+- Include descriptive names after the timestamp to help developers understand their purpose
+
+<Warning>
+  When contributing new migrations in a Pull Request, always add them after the
+  latest migration file from the `main` branch. This maintains the correct
+  execution order and prevents issues when syncing the production database.
+</Warning>
+
+## Local Authentication
+
+A local mail server (**InBucket**) is automatically set up by Supabase to handle authentication emails. You can access it at [http://localhost:8004](http://localhost:8004).
+
+With InBucket, you can:
+
+- Receive all authentication emails sent by your local Supabase instance
+- Test any email combination without needing actual mail delivery
+- View password reset links, confirmation emails, and other authentication flows
+- Troubleshoot email templates and content
+
+This makes it easy to test different authentication scenarios without configuring a real email service or waiting for actual email delivery.
+
+Five seed accounts are pre-configured for local development:
+
+1. local@tuturuuu.com
+2. user1@tuturuuu.com
+3. user2@tuturuuu.com
+4. user3@tuturuuu.com
+5. user4@tuturuuu.com
+
+These accounts are already set up with the necessary data, allowing you to quickly test the app's functionality. However, you can register any new email address and the authentication emails will be captured by InBucket for you to inspect.
+
+## Further Information
+
+For more details about Supabase CLI usage, refer to the [Supabase CLI documentation](https://supabase.com/docs/guides/local-development/cli/getting-started).
+
+## Row Level Security (RLS)
+
+Row Level Security (RLS) is a powerful Postgres feature that allows you to control access to rows in a database table based on the user making the request. In Tuturuuu, we use RLS extensively to ensure data security.
+
+### Enabling RLS
+
+RLS should be enabled on all tables in exposed schemas (like `public`). When creating tables through the Supabase UI, RLS is enabled by default. For tables created using SQL, you need to explicitly enable RLS:
+
+```sql
+alter table <schema_name>.<table_name> enable row level security;
+```
+
+### Creating RLS Policies
+
+Policies define the conditions under which users can access or modify data. Here are some common patterns used in Tuturuuu:
+
+#### Organization-based Access
+
+In Tuturuuu, most resources belong to an organization (workspace). Here's how to create policies for organization-based access:
+
+```sql
+-- Allow users to select data from their organizations
+create policy "Users can view data from their organizations"
+on public.table_name
+for select
+to authenticated
+using (
+  auth.uid() in (
+    select user_id from public.workspace_members
+    where workspace_id = table_name.workspace_id
+  )
+);
+
+-- Allow organization admins to insert data
+create policy "Organization admins can insert data"
+on public.table_name
+for insert
+to authenticated
+with check (
+  auth.uid() in (
+    select user_id from public.workspace_members
+    where workspace_id = table_name.workspace_id
+    and role = 'admin'
+  )
+);
+
+-- Allow organization admins to update data
+create policy "Organization admins can update data"
+on public.table_name
+for update
+to authenticated
+using (
+  auth.uid() in (
+    select user_id from public.workspace_members
+    where workspace_id = table_name.workspace_id
+    and role = 'admin'
+  )
+)
+with check (
+  auth.uid() in (
+    select user_id from public.workspace_members
+    where workspace_id = table_name.workspace_id
+    and role = 'admin'
+  )
+);
+
+-- Allow organization admins to delete data
+create policy "Organization admins can delete data"
+on public.table_name
+for delete
+to authenticated
+using (
+  auth.uid() in (
+    select user_id from public.workspace_members
+    where workspace_id = table_name.workspace_id
+    and role = 'admin'
+  )
+);
+```
+
+#### Role-based Access
+
+For more granular control based on user roles:
+
+```sql
+-- Allow members with specific permission to access a resource
+create policy "Members with view_projects permission can view projects"
+on public.projects
+for select
+to authenticated
+using (
+  exists (
+    select 1 from public.workspace_member_permissions
+    where user_id = auth.uid()
+    and workspace_id = projects.workspace_id
+    and permission = 'view_projects'
+  )
+);
+```
+
+### Performance Optimization for RLS
+
+For better performance in your RLS policies:
+
+1. **Wrap function calls in subqueries**:
+
+   ```sql
+   -- Instead of this
+   using (auth.uid() = user_id);
+
+   -- Use this
+   using ((select auth.uid()) = user_id);
+   ```
+
+2. **Use security definer functions** for complex access logic:
+
+   ```sql
+   create or replace function private.can_access_workspace(workspace_uuid uuid)
+   returns boolean
+   language plpgsql
+   security definer
+   as $$
+   begin
+     return exists (
+       select 1 from public.workspace_members
+       where user_id = auth.uid()
+       and workspace_id = workspace_uuid
+     );
+   end;
+   $$;
+
+   -- Use the function in your policy
+   create policy "Users can access workspace data"
+   on public.table_name
+   for select
+   to authenticated
+   using (private.can_access_workspace(workspace_id));
+   ```
+
+3. **Add explicit filters** in your queries even when you have RLS:
+   ```typescript
+   // Even though RLS will filter by workspace_id, adding the filter explicitly improves performance
+   const { data } = await supabase
+     .from('projects')
+     .select()
+     .eq('workspace_id', workspaceId);
+   ```
+
+### Testing RLS Policies
+
+To test your RLS policies during local development:
+
+1. Create a SQL file in `apps/db/supabase/tests` with your test cases
+2. Use the `pnpm sb:test` command to run the tests
+
+Example test file:
+
+```sql
+-- Test normal user can view their own workspace
+BEGIN;
+  SET LOCAL ROLE authenticated;
+
+  -- Mock the auth.uid() function
+  CREATE OR REPLACE FUNCTION auth.uid() RETURNS UUID LANGUAGE SQL AS 'SELECT ''user1-uuid''::UUID';
+
+  -- Should return data
+  SELECT is(
+    (SELECT count(*) FROM public.projects WHERE workspace_id = 'workspace1-uuid'),
+    1,
+    'User should be able to see their workspace project'
+  );
+
+  -- Should return no data
+  SELECT is(
+    (SELECT count(*) FROM public.projects WHERE workspace_id = 'workspace2-uuid'),
+    0,
+    'User should not be able to see projects from other workspaces'
+  );
+ROLLBACK;
+```
+
+## Database Triggers
+
+Triggers in Postgres allow you to automatically execute a function when a specified database event occurs (INSERT, UPDATE, DELETE). In Tuturuuu, we use triggers for various purposes like:
+
+- Maintaining audit logs
+- Syncing data between tables
+- Enforcing complex business rules
+
+### Creating Triggers
+
+Here's how to create a trigger in your Tuturuuu development workflow:
+
+1. First, create a trigger function:
+
+```sql
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  -- Create a personal workspace for the new user
+  insert into public.workspaces (id, name, created_by)
+  values (gen_random_uuid(), new.email || '''s workspace', new.id);
+
+  -- Make the user an admin of their personal workspace
+  insert into public.workspace_members (workspace_id, user_id, role)
+  values (
+    (select id from public.workspaces where created_by = new.id),
+    new.id,
+    'admin'
+  );
+
+  return new;
+end;
+$$;
+```
+
+2. Then, create the trigger:
+
+```sql
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row
+  execute function public.handle_new_user();
+```
+
+### Common Triggers in Tuturuuu
+
+#### Audit Logging
+
+```sql
+create or replace function private.audit_log_changes()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  insert into public.audit_logs (
+    table_name,
+    record_id,
+    action,
+    old_data,
+    new_data,
+    performed_by
+  )
+  values (
+    TG_TABLE_NAME,
+    coalesce(new.id, old.id),
+    TG_OP,
+    case when TG_OP = 'DELETE' or TG_OP = 'UPDATE' then row_to_json(old) else null end,
+    case when TG_OP = 'INSERT' or TG_OP = 'UPDATE' then row_to_json(new) else null end,
+    coalesce(auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid)
+  );
+  return coalesce(new, old);
+end;
+$$;
+
+-- Apply this trigger to a table
+create trigger projects_audit_trigger
+  after insert or update or delete
+  on public.projects
+  for each row
+  execute function private.audit_log_changes();
+```
+
+#### Automated Timestamps
+
+```sql
+create or replace function public.update_timestamp()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+-- Apply to a table
+create trigger update_projects_timestamp
+  before update
+  on public.projects
+  for each row
+  execute function public.update_timestamp();
+```
+
+### Testing Triggers
+
+You can test triggers by running SQL commands in the local Supabase instance and verifying the results:
+
+```sql
+-- Insert a test user
+insert into auth.users (id, email)
+values ('test-uuid', 'test@example.com');
+
+-- Verify the trigger created a workspace
+select * from public.workspaces where created_by = 'test-uuid';
+
+-- Verify the user is an admin of the workspace
+select * from public.workspace_members
+where user_id = 'test-uuid' and role = 'admin';
+```
+
+## Seeding Your Database
+
+Database seeding is the process of populating your database with initial data. In Tuturuuu, we use seeding to:
+
+1. Create test users and workspaces for local development
+2. Initialize lookup tables with standard values
+3. Ensure a consistent starting point for all developers
+
+### Seed Files Location
+
+In Tuturuuu, seed files are stored in `apps/db/supabase/seed.sql`. This file is automatically executed when you run `pnpm sb:reset` or start a fresh Supabase instance.
+
+### Real Examples from Tuturuuu's Seed File
+
+Let's look at some real examples from Tuturuuu's seed.sql file:
+
+#### 1. Authentication Users
+
+The seed file creates five default test users with pre-set passwords:
+
+```sql
+-- Populate auth users
+INSERT INTO
+    "auth"."users" (
+        "instance_id",
+        "id",
+        "aud",
+        "role",
+        "email",
+        "encrypted_password",
+        "email_confirmed_at",
+        /* other fields... */
+    )
+VALUES
+    (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000001',
+        'authenticated',
+        'authenticated',
+        'local@tuturuuu.com',
+        crypt('password123', gen_salt('bf')),
+        '2023-02-18 23:31:13.017218+00',
+        /* other values... */
+    ),
+    /* additional users... */
+```
+
+All seed users have the same password: `password123`, making it easy to log in for testing.
+
+#### 2. Workspaces
+
+The seed creates several workspaces for testing different scenarios:
+
+```sql
+-- Populate workspaces
+insert into
+    public.workspaces (id, name, handle, creator_id)
+values
+    (
+        '00000000-0000-0000-0000-000000000000',
+        'Tuturuuu',
+        'tuturuuu',
+        '00000000-0000-0000-0000-000000000001'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000001',
+        'Prototype All',
+        'prototype-all',
+        null
+    ),
+    /* additional workspaces... */
+```
+
+#### 3. Workspace Members and Roles
+
+The seed also sets up relationships between users and workspaces with different roles:
+
+```sql
+-- Populate workspace_members
+insert into
+    public.workspace_members (user_id, ws_id, role)
+values
+    (
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000000',
+        'OWNER'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        '00000000-0000-0000-0000-000000000000',
+        'ADMIN'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        '00000000-0000-0000-0000-000000000000',
+        'MEMBER'
+    ),
+    /* additional members... */
+```
+
+#### 4. Workspace Features Configuration
+
+The seed file configures workspace features using secrets:
+
+```sql
+-- Populate workspace_secrets
+insert into
+    public.workspace_secrets (ws_id, name, value)
+values
+    (
+        '00000000-0000-0000-0000-000000000000',
+        'ENABLE_CHAT',
+        'true'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000000',
+        'ENABLE_EDUCATION',
+        'true'
+    ),
+    /* additional features... */
+```
+
+#### 5. Domain-specific Data
+
+The seed includes domain-specific data for different workspace types. For example, healthcare data:
+
+```sql
+-- Populate healthcare_vitals
+insert into
+    public.healthcare_vitals (id, ws_id, name, unit)
+values
+    (
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000003',
+        'Nhiệt độ',
+        '°C'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        '00000000-0000-0000-0000-000000000003',
+        'Chiều cao',
+        'cm'
+    ),
+    /* additional vitals... */
+```
+
+### Creating Seed Data
+
+Here's how to create and modify seed data:
+
+1. Edit the `apps/db/supabase/seed.sql` file
+2. Add SQL statements to insert your data
+3. Run `pnpm sb:reset` to apply the seed data
+
+Example seed data format:
+
+```sql
+-- Create a new user group
+INSERT INTO public.workspace_user_groups (id, name, ws_id)
+VALUES
+  ('your-uuid-here', 'New Group', 'workspace-uuid-here')
+ON CONFLICT (id) DO NOTHING;
+
+-- Add a new workspace feature
+INSERT INTO public.workspace_secrets (ws_id, name, value)
+VALUES
+  ('workspace-uuid-here', 'ENABLE_NEW_FEATURE', 'true')
+ON CONFLICT (ws_id, name) DO UPDATE
+SET value = EXCLUDED.value;
+```
+
+### Creating a Custom Seed File
+
+Sometimes you might want to create a custom seed file for specific testing scenarios:
+
+1. Create a new SQL file in the `apps/db/supabase` directory
+2. Add your custom seed data
+3. Run it with the Supabase CLI:
+
+```bash
+pnpm supabase db reset --db-url=postgresql://postgres:postgres@localhost:54322/postgres
+psql postgresql://postgres:postgres@localhost:54322/postgres -f apps/db/supabase/my_custom_seed.sql
+```
+
+### Exporting Current Data as Seed
+
+You can also export your current database data to use as seed data:
+
+```bash
+# Export only data (not schema) to seed.sql
+pnpm supabase db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/db/supabase/new_seed.sql
+```
+
+This is helpful when you've set up data manually and want to preserve it for future development environments.
+
+### Recommended Seeding Workflow
+
+For Tuturuuu development, we recommend:
+
+1. Start with a fresh database: `pnpm sb:reset`
+2. Make changes through the UI or your app
+3. When you're satisfied, export the data: `pnpm supabase db dump --data-only > apps/db/supabase/new_seed.sql`
+4. Edit the generated SQL to keep only what you need
+5. Update the main `seed.sql` file with your changes
+6. Test by running `pnpm sb:reset` again
+
+## AI Integration with Vercel AI SDK
+
+Tuturuuu uses Vercel's AI SDK for its AI features, utilizing structured data generation capabilities that integrate with Supabase. This section covers how to work with AI features in the development workflow.
+
+### Overview of AI SDK in Tuturuuu
+
+The AI SDK standardizes integrating various AI models across supported providers into Tuturuuu applications. It enables structured data generation, tool calling, and streaming responses to create rich AI-powered features.
+
+The main libraries used are:
+
+- `ai` - Core Vercel AI SDK package
+- `@ai-sdk/google` - Provider-specific integration for Google models
+- `@tuturuuu/supabase` - Supabase client with Tuturuuu-specific utilities
+
+### Generating Structured Data
+
+Tuturuuu uses the AI SDK's structured data generation capabilities to create typed responses from AI models. This approach ensures type safety and consistent data structures for features like:
+
+- Flashcards generation
+- Quiz generation
+- Learning plans
+- Task management
+
+#### Example: Flashcard Generation
+
+The structured data pattern used in Tuturuuu follows this workflow:
+
+1. Define a schema using Zod
+2. Connect to Supabase for authentication and workspace validation
+3. Generate structured data using the AI SDK
+4. Stream the response to the client
+
+Here's an example from Tuturuuu's codebase:
+
+```typescript
+// 1. Define the schema
+import { z } from 'zod';
+
+export const flashcardSchema = z.object({
+  flashcards: z.array(
+    z.object({
+      front: z.string().describe('Question. Do not use emojis or links.'),
+      back: z.string().describe('Answer. Do not use emojis or links.'),
+    })
+  ),
+});
+
+// 2. Setup API endpoint
+export async function POST(req: Request) {
+  const sbAdmin = await createAdminClient();
+  const { wsId, context } = await req.json();
+
+  // Validate user and workspace permissions
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return new Response('Unauthorized', { status: 401 });
+
+  // Check workspace feature flag
+  const { count, error } = await sbAdmin
+    .from('workspace_secrets')
+    .select('*', { count: 'exact', head: true })
+    .eq('ws_id', wsId)
+    .eq('name', 'ENABLE_CHAT')
+    .eq('value', 'true');
+
+  if (error) return new Response(error.message, { status: 500 });
+  if (count === 0)
+    return new Response('You are not allowed to use this feature.', {
+      status: 401,
+    });
+
+  // 3. Generate structured data using AI SDK
+  const result = streamObject({
+    model: google('gemini-2.0-flash-001', {
+      safetySettings: [
+        // Safety settings configuration...
+      ],
+    }),
+    prompt: `Generate 10 flashcards with the following context: ${context}`,
+    schema: flashcardSchema,
+  });
+
+  // 4. Stream the response to the client
+  return result.toTextStreamResponse();
+}
+```
+
+### Available Models
+
+Tuturuuu supports multiple AI models through Vercel AI SDK. You can define which models are available in your application by updating the `models.ts` file in the `packages/ai` directory:
+
+```typescript
+export const models = [
+  {
+    value: 'gemini-2.0-flash-001',
+    label: 'gemini-2.0-flash',
+    provider: 'Google',
+    description: 'Gemini 2.0 Flash delivers next-gen features...',
+    context: 1000000,
+  },
+  // Add other models here...
+];
+
+export const defaultModel = models.find(
+  (model) =>
+    model.value === 'gemini-2.0-flash-001' && model.provider === 'Google Vertex'
+);
+```
+
+### Creating Custom Schema Types
+
+To create new structured data types for AI generation, add your schema definition to the `packages/ai/src/object/types.ts` file:
+
+```typescript
+export const myNewSchema = z.object({
+  items: z.array(
+    z.object({
+      name: z.string().describe('Name of the item'),
+      description: z.string().describe('Description of the item'),
+      priority: z.enum(['high', 'medium', 'low']).describe('Priority level'),
+    })
+  ),
+});
+```
+
+### Integration with Supabase
+
+Tuturuuu's AI features leverage Supabase for:
+
+1. **Authentication** - Validating users before making AI requests
+2. **Authorization** - Checking workspace permissions via `workspace_secrets`
+3. **Feature Flags** - Using `workspace_secrets` to enable/disable AI features per workspace
+4. **Storage** - Storing AI-generated content for later use
+
+To enable AI features for a workspace, ensure the appropriate flags are set in the `workspace_secrets` table:
+
+```sql
+-- Enable AI chat features for a workspace
+INSERT INTO public.workspace_secrets (ws_id, name, value)
+VALUES ('your-workspace-id', 'ENABLE_CHAT', 'true');
+
+-- Enable AI document features for a workspace
+INSERT INTO public.workspace_secrets (ws_id, name, value)
+VALUES ('your-workspace-id', 'ENABLE_DOCS', 'true');
+```
+
+### Testing AI Features Locally
+
+When testing AI features in your local environment:
+
+1. Ensure you have the required API keys set in your `.env.local` file:
+
+   ```
+   GOOGLE_GENERATIVE_AI_API_KEY=your-api-key
+   ```
+
+2. Verify the workspace has the necessary feature flags enabled in your local database
+
+   ```sql
+   SELECT * FROM workspace_secrets WHERE ws_id = 'your-workspace-id' AND name = 'ENABLE_CHAT';
+   ```
+
+3. Use the AI-enabled accounts from the seed data (`local@tuturuuu.com`) as they often have additional permissions
+
+### Error Handling
+
+When integrating AI features, implement proper error handling to account for:
+
+1. Missing API keys
+2. Model unavailability
+3. Invalid user input
+4. Exceeded token limits
+
+Example error handling pattern used in Tuturuuu:
+
+```typescript
+try {
+  // AI SDK code here
+} catch (error: any) {
+  console.log(error);
+  return NextResponse.json(
+    {
+      message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+    },
+    {
+      status: 200,
+    }
+  );
+}
+```

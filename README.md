@@ -7,8 +7,6 @@ This repository is a monorepo for all of NCT Hub's services, powered by Turborep
 - `apps/web`: Main application (rmitnct.club)
 - `apps/docs`: Documentation website powered by Mintlify
 
-- `app`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/) support that contains all public information about NCT Hub, including the landing page, pricing plans, branding-related resources and NCT Hub's services through a web application interface. On production, this app is located at [**rmitnct.club**](https://rmitnct.club).
-
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v20+)
@@ -20,14 +18,24 @@ This repository is a monorepo for all of NCT Hub's services, powered by Turborep
 
 ## Getting Started
 
-1. Clone the repository
-2. Install dependencies:
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/rmit-nct/hub.git
+   cd hub
+   ```
+
+2. **Configure Tiptap Pro Registry:**
+
+   > This step is no longer needed.
+
+3. **Install dependencies:**
 
    ```bash
    pnpm i
    ```
 
-3. Start the Supabase local development environment:
+4. **Start the Supabase local development environment:**
 
    ```bash
    pnpm sb:start
@@ -35,9 +43,24 @@ This repository is a monorepo for all of NCT Hub's services, powered by Turborep
 
    This will provide the necessary URLs and keys for local development.
 
-4. Create a `.env.local` file in each app directory (`apps/*/.env.local`) using the corresponding `.env.example` template and add the Supabase URLs and keys from the previous step.
+5. **Create environment files:**
 
-5. Start the desired application(s) using the appropriate pnpm scripts.
+   Create a `.env.local` file in each app directory (`apps/*/.env.local`) using the corresponding `.env.example` template and add the Supabase URLs and keys from the previous step.
+
+6. **Start the desired application(s):**
+
+   Use the appropriate pnpm scripts to start the applications.
+
+   ```bash
+   pnpm dev
+   ```
+
+## Community & Support
+
+If you have any questions, feel free to reach out to our community or support team:
+
+- Follow us on [X/Twitter](https://x.com/tutur3u) for updates and announcements.
+- Check out our [GitHub Discussions](https://github.com/orgs/tutur3u/discussions) for more in-depth conversations and support.
 
 ## Development Tools
 
@@ -115,8 +138,6 @@ To stop the local supabase instance, run the following command:
 ```bash
 pnpm sb:stop
 ```
-
-</CodeGroup>
 
 #### Better Development Experience
 

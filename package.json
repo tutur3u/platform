@@ -3,58 +3,86 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "buildx": "pnpm i && turbo test lint build",
-    "preview": "cd apps/web && pnpm preview",
+    "buildx": "pnpm i && bun i && turbo test lint build",
     "dev": "turbo run dev --parallel",
-    "bdevx": "cd apps/web && pnpm bdevx",
-    "devx": "cd apps/web && pnpm supabase stop && pnpm i && pnpm supabase start && cd ../.. && pnpm turbo run dev --parallel",
-    "bdevrs": "cd apps/web && pnpm bdevrs",
-    "devrs": "cd apps/web && pnpm devrs",
+    "devx": "cd apps/db && pnpm supabase stop && pnpm i && pnpm supabase start && cd ../.. && turbo run dev --parallel",
+    "devx:web": "cd apps/db && pnpm supabase stop && pnpm i && pnpm supabase start && cd ../.. && turbo run dev -F @tuturuuu/web",
+    "devrs": "cd apps/db && pnpm supabase stop && pnpm i && pnpm supabase start && pnpm sb:reset && pnpm sb:typegen && cd ../.. && turbo run dev --parallel",
+    "devrs:web": "cd apps/db && pnpm supabase stop && pnpm i && pnpm supabase start && pnpm sb:reset && pnpm sb:typegen && cd ../.. && turbo run dev -F @tuturuuu/web",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "stop": "cd apps/web && pnpm stop",
-    "sb:status": "cd apps/web && pnpm sb:status",
-    "sb:start": "cd apps/web && pnpm sb:start",
-    "sb:stop": "cd apps/web && pnpm sb:stop",
-    "sb:sync": "cd apps/web && pnpm sb:sync",
-    "sb:link": "cd apps/web && pnpm supabase link",
-    "sb:reset": "cd apps/web && pnpm sb:reset",
-    "sb:diff": "cd apps/web && pnpm sb:diff",
-    "sb:new": "cd apps/web && pnpm sb:new",
-    "sb:up": "cd apps/web && pnpm sb:up",
-    "sb:typegen": "cd apps/web && pnpm sb:typegen",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "stop": "cd apps/db && pnpm stop",
+    "diff": "cd apps/db && pnpm sb:diff",
+    "typegen": "cd apps/db && pnpm sb:typegen",
+    "sb:status": "cd apps/db && pnpm sb:status",
+    "sb:start": "cd apps/db && pnpm sb:start",
+    "sb:stop": "cd apps/db && pnpm sb:stop",
+    "sb:pull": "cd apps/db && pnpm sb:pull",
+    "sb:push": "cd apps/db && pnpm sb:push",
+    "sb:link": "cd apps/db && pnpm sb:link",
+    "sb:linkpush": "cd apps/db && pnpm sb:link && pnpm sb:push",
+    "sb:reset": "cd apps/db && pnpm sb:reset",
+    "sb:diff": "cd apps/db && pnpm sb:up && pnpm sb:diff",
+    "sb:new": "cd apps/db && pnpm sb:new",
+    "sb:up": "cd apps/db && pnpm sb:up",
+    "sb:typegen": "cd apps/db && pnpm sb:typegen",
     "ui:add": "pnpm --filter ui ui:add",
     "ui:diff": "pnpm --filter ui ui:diff"
   },
+  "dependencies": {
+    "react-scan": "^0.3.4"
+  },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.1.0",
-    "@eslint/js": "^9.14.0",
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
-    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "eslint": "^9.14.0",
-    "prettier": "^3.3.3",
-    "prettier-plugin-tailwindcss": "^0.6.8",
-    "turbo": "^2.2.3",
-    "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.28.0",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@vitest/coverage-v8": "^3.1.4",
+    "eslint": "^9.28.0",
+    "prettier": "^3.5.3",
+    "prettier-eslint": "^16.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.12",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vitest": "^3.1.4"
   },
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "pnpm@9.12.3",
-  "workspaces": {
-    "packages": [
-      "apps/*",
-      "packages/*"
-    ]
-  },
+  "packageManager": "pnpm@10.11.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "trustedDependencies": [
+    "@tailwindcss/oxide",
     "@vercel/speed-insights",
+    "canvas",
+    "core-js",
+    "cytoscape",
     "esbuild",
+    "puppeteer",
     "sharp",
-    "supabase"
-  ]
+    "supabase",
+    "unrs-resolver"
+  ],
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
+      "@vercel/speed-insights",
+      "canvas",
+      "core-js",
+      "cytoscape",
+      "esbuild",
+      "puppeteer",
+      "sharp",
+      "supabase",
+      "unrs-resolver"
+    ]
+  }
 }

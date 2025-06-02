@@ -1,5 +1,5 @@
-import { cn } from '../../../lib/utils';
-import { Card, CardDescription, CardTitle } from '@repo/ui/components/ui/card';
+import { Card, CardDescription, CardTitle } from '@tuturuuu/ui/card';
+import { cn } from '@tuturuuu/utils/format';
 import { Image } from 'lucide-react';
 import React from 'react';
 
