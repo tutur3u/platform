@@ -42,8 +42,29 @@ export async function GET(
     const taskId = url.searchParams.get('taskId');
     const dateFrom = url.searchParams.get('dateFrom');
     const dateTo = url.searchParams.get('dateTo');
+    const targetUserId = url.searchParams.get('userId'); // New parameter for viewing other users
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '10'), 50);
     const offset = parseInt(url.searchParams.get('offset') || '0');
+
+    // Determine which user's data to fetch (current user or specified user)
+    const queryUserId = targetUserId || user.id;
+
+    // If targeting another user, verify they're in the same workspace
+    if (targetUserId && targetUserId !== user.id) {
+      const { data: targetUserCheck } = await supabase
+        .from('workspace_members')
+        .select('id:user_id')
+        .eq('ws_id', wsId)
+        .eq('user_id', targetUserId)
+        .single();
+
+      if (!targetUserCheck) {
+        return NextResponse.json(
+          { error: 'Target user not found in workspace' },
+          { status: 404 }
+        );
+      }
+    }
 
     if (type === 'running') {
       // Get current running session
@@ -57,7 +78,7 @@ export async function GET(
         `
         )
         .eq('ws_id', wsId)
-        .eq('user_id', user.id)
+        .eq('user_id', queryUserId)
         .eq('is_running', true)
         .maybeSingle();
 
@@ -77,7 +98,7 @@ export async function GET(
         `
         )
         .eq('ws_id', wsId)
-        .eq('user_id', user.id);
+        .eq('user_id', queryUserId);
 
       if (type === 'recent') {
         query = query.eq('is_running', false);
@@ -128,21 +149,21 @@ export async function GET(
           .from('time_tracking_sessions')
           .select('duration_seconds, category_id')
           .eq('ws_id', wsId)
-          .eq('user_id', user.id)
+          .eq('user_id', queryUserId)
           .gte('start_time', startOfToday.toISOString())
           .not('duration_seconds', 'is', null),
         supabase
           .from('time_tracking_sessions')
           .select('duration_seconds, category_id')
           .eq('ws_id', wsId)
-          .eq('user_id', user.id)
+          .eq('user_id', queryUserId)
           .gte('start_time', startOfWeek.toISOString())
           .not('duration_seconds', 'is', null),
         supabase
           .from('time_tracking_sessions')
           .select('duration_seconds, category_id')
           .eq('ws_id', wsId)
-          .eq('user_id', user.id)
+          .eq('user_id', queryUserId)
           .gte('start_time', startOfMonth.toISOString())
           .not('duration_seconds', 'is', null),
       ]);

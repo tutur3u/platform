@@ -54,6 +54,8 @@ interface CategoryManagerProps {
   wsId: string;
   categories: TimeTrackingCategory[];
   onCategoriesUpdate: () => void;
+  readOnly?: boolean;
+  // eslint-disable-next-line no-unused-vars
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
 }
 
@@ -74,6 +76,7 @@ export function CategoryManager({
   wsId,
   categories,
   onCategoriesUpdate,
+  readOnly = false,
   apiCall,
 }: CategoryManagerProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -211,34 +214,38 @@ export function CategoryManager({
               <Settings className="h-5 w-5" />
               Category Management
             </CardTitle>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={openAddDialog}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Category
-                </Button>
-              </DialogTrigger>
-            </Dialog>
+            {!readOnly && (
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={openAddDialog}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Category
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+            )}
           </div>
         </CardHeader>
         <CardContent>
           {categories.length === 0 ? (
             <div className="py-12 text-center">
-              <Palette className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-              <p className="text-muted-foreground text-lg">
+              <Palette className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <p className="text-lg text-muted-foreground">
                 No categories created yet
               </p>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Create categories to organize your time tracking sessions
               </p>
-              <Button
-                onClick={openAddDialog}
-                variant="outline"
-                className="mt-4"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create First Category
-              </Button>
+              {!readOnly && (
+                <Button
+                  onClick={openAddDialog}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create First Category
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -258,7 +265,7 @@ export function CategoryManager({
                             {category.name}
                           </h3>
                           {category.description && (
-                            <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">
+                            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                               {category.description}
                             </p>
                           )}
@@ -270,33 +277,35 @@ export function CategoryManager({
                         </div>
                       </div>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => openEditDialog(category)}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Category
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => setCategoryToDelete(category)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Category
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {!readOnly && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => openEditDialog(category)}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Category
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setCategoryToDelete(category)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete Category
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

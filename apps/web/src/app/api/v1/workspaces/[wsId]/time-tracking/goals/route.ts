@@ -5,7 +5,7 @@ import {
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
@@ -37,6 +37,27 @@ export async function GET(
       );
     }
 
+    const url = new URL(request.url);
+    const targetUserId = url.searchParams.get('userId');
+    const queryUserId = targetUserId || user.id;
+
+    // If targeting another user, verify they're in the same workspace
+    if (targetUserId && targetUserId !== user.id) {
+      const { data: targetUserCheck } = await supabase
+        .from('workspace_members')
+        .select('id:user_id')
+        .eq('ws_id', wsId)
+        .eq('user_id', targetUserId)
+        .single();
+
+      if (!targetUserCheck) {
+        return NextResponse.json(
+          { error: 'Target user not found in workspace' },
+          { status: 404 }
+        );
+      }
+    }
+
     // Fetch goals with category information
     const { data, error } = await supabase
       .from('time_tracking_goals')
@@ -47,7 +68,7 @@ export async function GET(
       `
       )
       .eq('ws_id', wsId)
-      .eq('user_id', user.id)
+      .eq('user_id', queryUserId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;

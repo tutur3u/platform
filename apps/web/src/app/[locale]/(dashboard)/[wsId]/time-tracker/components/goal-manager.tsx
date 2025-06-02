@@ -84,6 +84,7 @@ interface GoalManagerProps {
   categories: TimeTrackingCategory[];
   timerStats: TimerStats;
   onGoalsUpdate: () => void;
+  readOnly?: boolean;
   // eslint-disable-next-line no-unused-vars
   formatDuration: (seconds: number) => string;
   // eslint-disable-next-line no-unused-vars
@@ -96,6 +97,7 @@ export function GoalManager({
   categories,
   timerStats,
   onGoalsUpdate,
+  readOnly = false,
   formatDuration,
   apiCall,
 }: GoalManagerProps) {
@@ -293,7 +295,7 @@ export function GoalManager({
                     <Calendar className="h-4 w-4 text-blue-500" />
                     <span className="font-medium">Today's Progress</span>
                   </div>
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     {formatDuration(timerStats.todayTime)}
                   </span>
                 </div>
@@ -326,7 +328,7 @@ export function GoalManager({
                             </span>
                           </div>
                           <Progress value={progress} className="h-2" />
-                          <div className="text-muted-foreground flex justify-between text-xs">
+                          <div className="flex justify-between text-xs text-muted-foreground">
                             <span>{formatDuration(goalTodayTime)}</span>
                             <span>
                               {formatMinutes(goal.daily_goal_minutes)}
@@ -337,7 +339,7 @@ export function GoalManager({
                     })}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground py-4 text-center">
+                  <div className="py-4 text-center text-muted-foreground">
                     <Target className="mx-auto mb-2 h-8 w-8" />
                     <p className="text-sm">No daily goals set</p>
                   </div>
@@ -351,7 +353,7 @@ export function GoalManager({
                     <TrendingUp className="h-4 w-4 text-green-500" />
                     <span className="font-medium">This Week's Progress</span>
                   </div>
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     {formatDuration(timerStats.weekTime)}
                   </span>
                 </div>
@@ -386,7 +388,7 @@ export function GoalManager({
                               </span>
                             </div>
                             <Progress value={progress} className="h-2" />
-                            <div className="text-muted-foreground flex justify-between text-xs">
+                            <div className="flex justify-between text-xs text-muted-foreground">
                               <span>{formatDuration(goalWeekTime)}</span>
                               <span>
                                 {formatMinutes(goal.weekly_goal_minutes!)}
@@ -397,7 +399,7 @@ export function GoalManager({
                       })}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground py-4 text-center">
+                  <div className="py-4 text-center text-muted-foreground">
                     <Target className="mx-auto mb-2 h-8 w-8" />
                     <p className="text-sm">No weekly goals set</p>
                   </div>
@@ -415,45 +417,52 @@ export function GoalManager({
                 <Target className="h-5 w-5" />
                 Goal Management
               </CardTitle>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={openAddDialog}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Goal
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
+              {!readOnly && (
+                <Dialog
+                  open={isAddDialogOpen}
+                  onOpenChange={setIsAddDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button onClick={openAddDialog}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Goal
+                    </Button>
+                  </DialogTrigger>
+                </Dialog>
+              )}
             </div>
           </CardHeader>
           <CardContent>
             {goals.length === 0 ? (
               <div className="py-12 text-center">
                 <div className="relative mx-auto mb-4 h-16 w-16">
-                  <Goal className="text-muted-foreground/50 h-16 w-16" />
-                  <Target className="text-primary absolute -right-1 -top-1 h-6 w-6 animate-pulse" />
+                  <Goal className="h-16 w-16 text-muted-foreground/50" />
+                  <Target className="absolute -top-1 -right-1 h-6 w-6 animate-pulse text-primary" />
                 </div>
-                <p className="text-muted-foreground text-lg font-medium">
+                <p className="text-lg font-medium text-muted-foreground">
                   Ready to set your time goals?
                 </p>
-                <p className="text-muted-foreground mt-2 text-sm">
+                <p className="mt-2 text-sm text-muted-foreground">
                   Create daily and weekly time goals to track your productivity.
                   <br />
                   Set goals for specific categories or general time tracking.
                 </p>
-                <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-                  <Button onClick={openAddDialog} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Create First Goal
-                  </Button>
-                  <Button
-                    onClick={openAddDialog}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Target className="h-4 w-4" />
-                    Learn About Goals
-                  </Button>
-                </div>
+                {!readOnly && (
+                  <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                    <Button onClick={openAddDialog} className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Create First Goal
+                    </Button>
+                    <Button
+                      onClick={openAddDialog}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Target className="h-4 w-4" />
+                      Learn About Goals
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -554,7 +563,7 @@ export function GoalManager({
                                   value={dailyProgress}
                                   className="h-2"
                                 />
-                                <div className="text-muted-foreground flex justify-between text-xs">
+                                <div className="flex justify-between text-xs text-muted-foreground">
                                   <span>{formatDuration(goalTodayTime)}</span>
                                   <span>
                                     {formatMinutes(goal.daily_goal_minutes)}
@@ -578,7 +587,7 @@ export function GoalManager({
                                     value={weeklyProgress || 0}
                                     className="h-2"
                                   />
-                                  <div className="text-muted-foreground flex justify-between text-xs">
+                                  <div className="flex justify-between text-xs text-muted-foreground">
                                     <span>{formatDuration(goalWeekTime)}</span>
                                     <span>
                                       {formatMinutes(goal.weekly_goal_minutes)}
@@ -589,33 +598,35 @@ export function GoalManager({
                             </div>
                           </div>
 
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => openEditDialog(goal)}
-                              >
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Goal
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => setGoalToDelete(goal)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Goal
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {!readOnly && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => openEditDialog(goal)}
+                                >
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit Goal
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => setGoalToDelete(goal)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Goal
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -651,7 +662,7 @@ export function GoalManager({
                       <div className="h-3 w-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
                       <div className="flex flex-col items-start justify-start">
                         <div className="font-medium">General Goal</div>
-                        <div className="text-muted-foreground text-xs">
+                        <div className="text-xs text-muted-foreground">
                           Tracks time across all categories
                         </div>
                       </div>
@@ -668,7 +679,7 @@ export function GoalManager({
                         />
                         <div className="flex flex-col items-start justify-start">
                           <div className="font-medium">{category.name}</div>
-                          <div className="text-muted-foreground text-xs">
+                          <div className="text-xs text-muted-foreground">
                             Category-specific goal
                           </div>
                         </div>
@@ -677,7 +688,7 @@ export function GoalManager({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-muted-foreground">
                 {categoryId === 'general'
                   ? 'This goal will track time from all your sessions, regardless of category.'
                   : categories.find((c) => c.id === categoryId)
@@ -702,7 +713,7 @@ export function GoalManager({
                 min="15"
                 max="1440"
               />
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-muted-foreground">
                 Target:{' '}
                 <span className="font-medium">
                   {formatMinutes(dailyGoalMinutes)}
@@ -732,7 +743,7 @@ export function GoalManager({
                 min="15"
                 max="10080"
               />
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-muted-foreground">
                 Target:{' '}
                 <span className="font-medium">
                   {formatMinutes(weeklyGoalMinutes)}
@@ -800,7 +811,7 @@ export function GoalManager({
                       <div className="h-3 w-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
                       <div className="flex flex-col items-start justify-start">
                         <div className="font-medium">General Goal</div>
-                        <div className="text-muted-foreground text-xs">
+                        <div className="text-xs text-muted-foreground">
                           Tracks time across all categories
                         </div>
                       </div>
@@ -817,7 +828,7 @@ export function GoalManager({
                         />
                         <div className="flex flex-col items-start justify-start">
                           <div className="font-medium">{category.name}</div>
-                          <div className="text-muted-foreground text-xs">
+                          <div className="text-xs text-muted-foreground">
                             Category-specific goal
                           </div>
                         </div>
@@ -826,7 +837,7 @@ export function GoalManager({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-muted-foreground">
                 {categoryId === 'general'
                   ? 'This goal will track time from all your sessions, regardless of category.'
                   : categories.find((c) => c.id === categoryId)
@@ -851,7 +862,7 @@ export function GoalManager({
                 min="15"
                 max="1440"
               />
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-muted-foreground">
                 Target:{' '}
                 <span className="font-medium">
                   {formatMinutes(dailyGoalMinutes)}
@@ -881,7 +892,7 @@ export function GoalManager({
                 min="15"
                 max="10080"
               />
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-muted-foreground">
                 Target:{' '}
                 <span className="font-medium">
                   {formatMinutes(weeklyGoalMinutes)}

@@ -2,7 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
@@ -14,6 +14,7 @@ export async function GET(
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -33,44 +34,55 @@ export async function GET(
       );
     }
 
-    // Get session templates using the database function
-    const { data, error } = await supabase.rpc('get_session_templates', {
-      workspace_id: wsId,
-      user_id_param: user.id,
-      limit_count: 10,
+    // For now, return templates based on recent sessions
+    // In the future, this could be a separate table for saved templates
+    const { data: recentSessions } = await supabase
+      .from('time_tracking_sessions')
+      .select(
+        `
+        title,
+        description,
+        category_id,
+        task_id,
+        category:time_tracking_categories(*),
+        task:tasks(*)
+      `
+      )
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .eq('is_running', false)
+      .not('duration_seconds', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Group by similar sessions to create templates
+    const templateMap = new Map();
+
+    recentSessions?.forEach((session) => {
+      const key = `${session.title}-${session.category_id}-${session.task_id}`;
+      if (templateMap.has(key)) {
+        templateMap.get(key).usage_count++;
+      } else {
+        templateMap.set(key, {
+          title: session.title,
+          description: session.description,
+          category_id: session.category_id,
+          task_id: session.task_id,
+          category: session.category,
+          task: session.task,
+          usage_count: 1,
+        });
+      }
     });
 
-    if (error) throw error;
-
-    // Transform the data to match the expected format
-    const templates =
-      data?.map((template: any) => ({
-        title: template.title,
-        description: template.description,
-        category_id: template.category_id,
-        task_id: template.task_id,
-        tags: template.tags,
-        category: template.category_name
-          ? {
-              id: template.category_id,
-              name: template.category_name,
-              color: template.category_color,
-            }
-          : null,
-        task: template.task_name
-          ? {
-              id: template.task_id,
-              name: template.task_name,
-            }
-          : null,
-        usage_count: template.usage_count,
-        avg_duration: template.avg_duration,
-        last_used: template.last_used,
-      })) || [];
+    // Convert to array and sort by usage
+    const templates = Array.from(templateMap.values())
+      .sort((a, b) => b.usage_count - a.usage_count)
+      .slice(0, 5); // Top 5 templates
 
     return NextResponse.json({ templates });
   } catch (error) {
-    console.error('Error fetching session templates:', error);
+    console.error('Error fetching time tracking templates:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
