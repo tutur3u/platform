@@ -1,11 +1,12 @@
-import { getWorkspaceCourseModuleColumns } from './columns';
-import CourseModuleForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { getWorkspaceCourseModuleColumns } from './columns';
+import CourseModuleForm from './form';
 
 interface SearchParams {
   q?: string;
@@ -23,6 +24,12 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
+type ModuleWithCompletion = WorkspaceCourseModule & {
+  is_completed: boolean;
+  ws_id: string;
+  href: string;
+};
+
 export default async function WorkspaceCoursesPage({
   params,
   searchParams,
@@ -36,7 +43,9 @@ export default async function WorkspaceCoursesPage({
     ...m,
     ws_id: wsId,
     href: `/${wsId}/courses/${courseId}/modules/${m.id}`,
-  }));
+  })) as ModuleWithCompletion[];
+
+  const allModulesCompleted = modules.length > 0 && modules.every((module) => module.is_completed);
 
   return (
     <>
@@ -49,6 +58,15 @@ export default async function WorkspaceCoursesPage({
         form={<CourseModuleForm wsId={wsId} courseId={courseId} />}
       />
       <Separator className="my-4" />
+      {allModulesCompleted ? (
+        <div className="mb-4">
+          <Button variant="default" size="lg">
+            Elligible for certificate
+          </Button>
+        </div>
+      ) : (
+        <></>
+      )}
       <CustomDataTable
         data={modules}
         columnGenerator={getWorkspaceCourseModuleColumns}
