@@ -32,18 +32,18 @@ export default async function CalendarPage({ params }: PageProps) {
     .maybeSingle();
 
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
-  if (!workspace) return null;
+  if (!workspace?.id) return null;
 
   return (
     <CalendarSyncProvider
-      wsId={workspace?.id || ''}
-      experimentalGoogleToken={googleToken || undefined}
+      wsId={workspace.id}
+      experimentalGoogleToken={googleToken}
       useQuery={useQuery}
     >
-      {DEV_MODE && <CalendarActiveSyncDebugger wsId={wsId} />}
+      {DEV_MODE && <CalendarActiveSyncDebugger />}
       <div className="flex h-[calc(100%-2rem-4px)]">
         <CalendarClientPage
-          experimentalGoogleToken={googleToken || undefined}
+          experimentalGoogleToken={googleToken}
           workspace={workspace}
         />
         <TasksSidebar wsId={wsId} locale={locale} />

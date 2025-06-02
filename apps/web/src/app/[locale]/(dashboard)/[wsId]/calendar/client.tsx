@@ -9,7 +9,7 @@ export default function CalendarClientPage({
   experimentalGoogleToken,
   workspace,
 }: {
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
   workspace: Workspace;
 }) {
   const t = useTranslations('calendar');
@@ -25,7 +25,7 @@ export default function CalendarClientPage({
       experimentalGoogleToken={
         experimentalGoogleToken?.ws_id === workspace.id
           ? experimentalGoogleToken
-          : undefined
+          : null
       }
     />
   );

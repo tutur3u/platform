@@ -50,7 +50,7 @@ export const defaultSmartSchedulingData: SmartSchedulingData = {
 
 type GoogleCalendarSettingsProps = {
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 };
 
 export function GoogleCalendarSettings({

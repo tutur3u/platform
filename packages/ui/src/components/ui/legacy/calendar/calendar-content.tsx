@@ -34,7 +34,7 @@ export const CalendarContent = ({
   workspace?: Workspace;
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;

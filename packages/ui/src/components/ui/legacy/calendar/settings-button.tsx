@@ -14,7 +14,7 @@ export const SettingsButton = ({
   onSaveSettings,
 }: {
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
   initialSettings?: Partial<CalendarSettings>;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
