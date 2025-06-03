@@ -145,11 +145,11 @@ const CertificateHeader = ({ title }: { title: string }) => (
 
 const CertificateBody = ({ data }: { data: CertificateData }) => (
   <View style={styles.body}>
-    <Text style={styles.subtitle}>{data.certify_text}</Text>
+    <Text style={styles.subtitle}>{data.certifyText}</Text>
     <Text style={styles.name}>{data.certData.studentName}</Text>
-    <Text style={styles.subtitle}>{data.completion_text}</Text>
+    <Text style={styles.subtitle}>{data.completionText}</Text>
     <Text style={styles.course}>{data.certData.courseName}</Text>
-    <Text style={styles.subtitle}>{data.offered_by}</Text>
+    <Text style={styles.subtitle}>{data.offeredBy}</Text>
     <Text style={styles.instructor}>{data.certData.courseLecturer}</Text>
   </View>
 );
@@ -157,11 +157,11 @@ const CertificateBody = ({ data }: { data: CertificateData }) => (
 const CertificateFooter = ({ data }: { data: CertificateData }) => (
   <View style={styles.footer}>
     <View style={styles.footerBlock}>
-      <Text style={styles.footerLabel}>{data.completion_date}:</Text>
+      <Text style={styles.footerLabel}>{data.completionDateLabel}:</Text>
       <Text style={styles.footerValue}>{data.certData.completionDate}</Text>
     </View>
     <View style={styles.footerBlockRight}>
-      <Text style={styles.footerLabel}>{data.certificate_id}:</Text>
+      <Text style={styles.footerLabel}>{data.certificateIdLabel}:</Text>
       <Text style={styles.footerValue}>{data.certData.certificateId}</Text>
     </View>
   </View>
