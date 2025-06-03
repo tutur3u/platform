@@ -69,7 +69,6 @@ const CalendarContext = createContext<{
   getActiveEvent: () => CalendarEvent | undefined;
   isModalActive: () => boolean;
   // google calendar API
-  syncWithGoogleCalendar: (event: CalendarEvent) => Promise<void>;
   syncGoogleCalendarNow: (
     progressCallback?: (progress: {
       phase: 'fetch' | 'delete' | 'update' | 'insert' | 'complete';
@@ -108,7 +107,6 @@ const CalendarContext = createContext<{
   getActiveEvent: () => undefined,
   isModalActive: () => false,
   // Google Calendar API
-  syncWithGoogleCalendar: () => Promise.resolve(),
   syncGoogleCalendarNow: () => Promise.resolve(false),
 
   settings: defaultCalendarSettings,
@@ -342,7 +340,8 @@ export const CalendarProvider = ({
     ],
     queryFn: fetchCalendarEvents,
     enabled: !!ws?.id,
-    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 30,
   });
 
   // Process events to remove duplicates, then memoize the result
@@ -1293,67 +1292,6 @@ export const CalendarProvider = ({
 
     return () => clearInterval(interval); // Clean up interval on unmount
   }, [ws?.id, syncEvents]);
-  // Google Calendar sync moved to API Route
-  const syncWithGoogleCalendar = useCallback(
-    async (event: CalendarEvent) => {
-      if (!experimentalGoogleToken) {
-        return;
-      }
-
-      try {
-        let response;
-        if (event.google_event_id) {
-          // Update an existing event on Google Calendar
-          response = await fetch('/api/v1/calendar/auth/sync', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              eventId: event.id,
-              googleCalendarEventId: event.google_event_id,
-              eventUpdates: {
-                title: event.title,
-                description: event.description,
-                start_at: event.start_at,
-                end_at: event.end_at,
-                color: event.color,
-                location: event.location,
-                priority: event.priority,
-              },
-            }),
-          });
-        } else {
-          // create a new event on Google Calendar
-          response = await fetch('/api/v1/calendar/auth/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ event }),
-          });
-        }
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          if (errorData.needsReAuth) {
-            console.error('Google token needs refresh/re-auth.');
-            throw new Error('Google token invalid, please re-authenticate.');
-          } else if (errorData.eventNotFound) {
-            console.warn('Event not found on Google Calendar.');
-            // Handle the case where the event is not found
-          } else {
-            throw new Error(
-              errorData.error || 'Failed to sync with Google Calendar'
-            );
-          }
-        }
-
-        console.log('Event synced with Google Calendar');
-        refresh();
-      } catch (error) {
-        console.error('Failed to sync with Google Calendar:', error);
-        throw error;
-      }
-    },
-    [refresh, experimentalGoogleToken]
-  );
 
   // Modal management
   const openModal = useCallback((eventId?: string) => {
@@ -1639,7 +1577,6 @@ export const CalendarProvider = ({
     showModal,
 
     // Google Calendar API
-    syncWithGoogleCalendar,
     syncGoogleCalendarNow,
 
     // Settings API
