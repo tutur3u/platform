@@ -7,7 +7,6 @@ import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-ite
 import DashboardMenuItem from './dashboard-menu-item';
 import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
-import RewiseMenuItem from './rewise-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -109,7 +108,6 @@ export default function UserNavClient({
             </div>
           </DropdownMenuLabel>
           <DashboardMenuItem />
-          <RewiseMenuItem />
           <MeetTogetherMenuItem />
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
