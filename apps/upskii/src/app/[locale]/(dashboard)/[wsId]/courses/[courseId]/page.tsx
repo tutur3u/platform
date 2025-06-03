@@ -75,12 +75,20 @@ async function getData(
 ) {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
   const queryBuilder = supabase
     .from('workspace_course_modules')
-    .select('*', {
+    .select('*, course_module_completion_status!left(completion_status)', {
       count: 'exact',
     })
     .eq('course_id', courseId)
+    .eq('course_module_completion_status.user_id', user.id)
     .order('name');
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
@@ -99,5 +107,12 @@ async function getData(
     return getData(courseId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: WorkspaceCourseModule[]; count: number };
+  return {
+    data: data.map(({ course_module_completion_status, ...rest }) => ({
+      ...rest,
+      is_completed:
+        course_module_completion_status?.[0]?.completion_status || false,
+    })),
+    count,
+  } as { data: WorkspaceCourseModule[]; count: number };
 }
