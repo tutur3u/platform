@@ -6,7 +6,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
-  ArrowDownWideNarrow,
   Bolt,
   File,
   FileText,
@@ -15,12 +14,8 @@ import {
   ImageIcon,
   Languages,
   Lock,
-  NotebookPen,
-  NotebookTabs,
   Paperclip,
-  PencilLine,
   RefreshCw,
-  SquareStack,
   X,
 } from '@tuturuuu/ui/icons';
 import {
@@ -192,13 +187,13 @@ export function PromptForm({
   //   };
   // }, [microphoneState, connectionState]);
 
-  const [responseTypes, setResponseTypes] = useState<{
-    summary?: boolean;
-    notes?: boolean;
-    multiChoiceQuiz?: boolean;
-    paragraphQuiz?: boolean;
-    flashcards?: boolean;
-  }>({});
+  // const [responseTypes, setResponseTypes] = useState<{
+  //   summary?: boolean;
+  //   notes?: boolean;
+  //   multiChoiceQuiz?: boolean;
+  //   paragraphQuiz?: boolean;
+  //   flashcards?: boolean;
+  // }>({});
 
   const [element, setElement] = useState<HTMLElement | null>(null);
 
@@ -230,7 +225,8 @@ export function PromptForm({
         className="w-full"
       >
         <div className="mb-2 flex items-center justify-between gap-2">
-          <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
+          <div />
+          {/* <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
             <Button
               size="xs"
               type="button"
@@ -336,7 +332,7 @@ export function PromptForm({
               <NotebookTabs className="mr-1 h-4 w-4" />
               {t('ai_chat.flashcards')}
             </Button>
-          </div>
+          </div> */}
 
           <div className="flex items-center">
             <Tooltip>

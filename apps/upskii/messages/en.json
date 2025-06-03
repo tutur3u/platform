@@ -1,4 +1,28 @@
 {
+  "home-hero": {
+    "welcome": "Welcome back, {username}!",
+    "badge": "Your AI-Enhanced Learning Experience",
+    "title": "Explore smart tools, interactive lessons, and seamless collaboration",
+    "cards": {
+      "courses": {
+        "title": "Courses",
+        "description": "Explore diverse subjects through structured lessons that build knowledge step-by-step."
+      },
+      "quizzes": {
+        "title": "Quizzes",
+        "description": "Strengthen what you’ve learned with interactive quizzes across various topics."
+      },
+      "challenges": {
+        "title": "Challenges",
+        "description": "Put your knowledge to the test with fun and creative real-world challenges."
+      },
+      "ai-chat": {
+        "title": "AI Chat",
+        "description": "Chat with AI for instant help, study tips, and personalized learning support."
+      }
+    },
+    "get-certificate": "Get Your Certificate"
+  },
   "score-calculator": {
     "title": "Score Calculator",
     "subtitle": "Calculate your submission score based on test results and criteria evaluation",

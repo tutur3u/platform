@@ -1,4 +1,28 @@
 {
+  "home-hero": {
+    "welcome": "Xin chào, {username}!",
+    "badge": "Trải nghiệm học tập nâng cao với AI",
+    "title": "Khám phá các công cụ hiện đại, bài học sinh động và cộng tác dễ dàng",
+    "cards": {
+      "courses": {
+        "title": "Khóa học",
+        "description": "Khám phá các chủ đề khác nhau qua các bài học được thiết kế từng bước rõ ràng."
+      },
+      "quizzes": {
+        "title": "Trắc nghiệm",
+        "description": "Củng cố kiến thức qua các bài trắc nghiệm tương tác trên nhiều chủ đề."
+      },
+      "challenges": {
+        "title": "Thử thách",
+        "description": "Vận dụng kiến thức với các thử thách thực tế sáng tạo và thú vị."
+      },
+      "ai-chat": {
+        "title": "Trò chuyện với AI",
+        "description": "Trò chuyện cùng AI để nhận hỗ trợ học tập và lời khuyên hữu ích."
+      }
+    },
+    "get-certificate": "Nhận chứng chỉ của bạn"
+  },
   "score-calculator": {
     "test_formula": "(Số Bài Đạt / Tổng Số Bài Kiểm Tra) × 10 × Trọng Số",
     "criteria_formula": "(Tổng Điểm Tiêu Chí / (Tổng Số Tiêu Chí × 10)) × 10 × Trọng Số",

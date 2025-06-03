@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { ChatModelSelector } from './chat-model-selector';
-import { PromptForm, ResponseMode } from './prompt-form';
+import { PromptForm } from './prompt-form';
 import { ChatPermissions } from '@/components/chat-permissions';
 import { Model } from '@tuturuuu/ai/models';
 import { type Message, type UseChatHelpers } from '@tuturuuu/ai/types';
@@ -55,8 +55,6 @@ export interface ChatPanelProps
   initialMessages?: Message[];
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
-  mode: ResponseMode;
-  setMode: (mode: ResponseMode) => void;
   disabled?: boolean;
   presenceState?: RealtimePresenceState<PresenceState>;
   currentUserId?: string;
@@ -74,8 +72,6 @@ export function ChatPanel({
   setModel,
   createChat,
   updateChat,
-  mode,
-  setMode,
   disabled,
   currentUserId,
 }: ChatPanelProps) {
@@ -122,7 +118,7 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="from-muted/30 to-muted/30 dark:from-background/0 dark:to-background/80 bg-linear-to-b pointer-events-none fixed inset-x-0 bottom-0 from-0% to-50% dark:from-10%">
+      <div className="bg-linear-to-b from-muted/30 to-muted/30 dark:from-background/0 dark:to-background/80 pointer-events-none fixed inset-x-0 bottom-0 from-0% to-50% dark:from-10%">
         <div className="pointer-events-auto mx-auto sm:max-w-2xl sm:px-4">
           <div className="bg-background space-y-4 border-t px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
             {showExtraOptions && (
@@ -166,8 +162,6 @@ export function ChatPanel({
                 setDialogType('visibility');
                 setShowDialog((prev) => !prev);
               }}
-              mode={mode}
-              setMode={setMode}
               disabled={disabled}
             />
           </div>

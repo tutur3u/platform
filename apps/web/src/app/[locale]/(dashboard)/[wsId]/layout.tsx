@@ -22,6 +22,7 @@ import {
   ChartArea,
   CircleCheck,
   Clock,
+  ClockFading,
   Cog,
   Database,
   FileText,
@@ -158,6 +159,22 @@ export default async function Layout({ children, params }: LayoutProps) {
       title: t('sidebar_tabs.tasks'),
       href: `/${wsId}/tasks/boards`,
       icon: <CircleCheck className="h-4 w-4" />,
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) ||
+        withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'beta',
+    },
+    {
+      title: t('sidebar_tabs.time_tracker'),
+      href: `/${wsId}/time-tracker`,
+      icon: <ClockFading className="h-4 w-4" />,
       disabled:
         ENABLE_AI_ONLY ||
         !(await verifySecret({

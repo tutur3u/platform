@@ -6,6 +6,7 @@ env:
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
   GOOGLE_VERTEX_PROJECT: ${{ secrets.GOOGLE_VERTEX_PROJECT }}
   GOOGLE_VERTEX_LOCATION: ${{ secrets.GOOGLE_VERTEX_LOCATION }}
+  ENABLE_EXPERIMENTAL_COREPACK: 1
 on:
   push:
     branches-ignore:

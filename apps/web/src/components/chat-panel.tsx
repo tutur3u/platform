@@ -63,6 +63,8 @@ export interface ChatPanelProps
   clearChat: () => void;
   initialMessages?: Message[];
   collapsed: boolean;
+  disableScrollToTop?: boolean;
+  disableScrollToBottom?: boolean;
   // eslint-disable-next-line no-unused-vars
   setCollapsed: (collapsed: boolean) => void;
 }
@@ -85,6 +87,8 @@ export function ChatPanel({
   updateChat,
   clearChat,
   collapsed,
+  disableScrollToTop,
+  disableScrollToBottom,
   setCollapsed,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
@@ -152,25 +156,29 @@ export function ChatPanel({
             bottom: chatInputHeight ? chatInputHeight + 4 : '1rem',
           }}
         >
-          <ScrollToTopButton />
-          <ScrollToBottomButton />
+          {!disableScrollToTop && <ScrollToTopButton />}
+          {!disableScrollToBottom && <ScrollToBottomButton />}
 
-          {!!chats && count !== undefined && id && (
-            <div className="flex w-full gap-2">
-              <Button
-                size="icon"
-                variant="outline"
-                className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
-                onClick={() => setCollapsed(!collapsed)}
-              >
-                {collapsed ? (
-                  <FolderOpen className="h-5 w-5" />
-                ) : (
-                  <ArrowDownToLine className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
-          )}
+          {!disableScrollToTop &&
+            !disableScrollToBottom &&
+            !!chats &&
+            count !== undefined &&
+            id && (
+              <div className="flex w-full gap-2">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
+                  onClick={() => setCollapsed(!collapsed)}
+                >
+                  {collapsed ? (
+                    <FolderOpen className="h-5 w-5" />
+                  ) : (
+                    <ArrowDownToLine className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            )}
         </div>
 
         {!!chats && count !== undefined && (

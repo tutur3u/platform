@@ -175,7 +175,7 @@ export function ChatMessage({
 
             <div className="flex flex-wrap items-center gap-1 text-xs font-semibold">
               {message.model && (
-                <span className="border-dynamic-yellow/10 bg-dynamic-yellow/10 text-dynamic-yellow hidden items-center gap-1 rounded border px-1 font-mono md:inline-flex">
+                <span className="border-dynamic-yellow/10 bg-dynamic-yellow/10 text-dynamic-yellow @md:inline-flex hidden items-center gap-1 rounded border px-1 font-mono">
                   <Sparkle className="h-3 w-3" />
                   {message.model}
                 </span>
@@ -235,7 +235,7 @@ export function ChatMessage({
       <div
         className={cn(
           'flex-1 space-y-2',
-          'prose text-foreground dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2 md:w-152 w-[calc(100vw-8rem)] min-w-full break-words lg:w-full'
+          'prose text-foreground @md:w-152 @lg:w-full dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2 w-[calc(100%-8rem)] min-w-full break-words'
         )}
       >
         <MemoizedReactMarkdown
@@ -300,7 +300,7 @@ export function ChatMessage({
                 const optionsElements = options.map((option, index) => (
                   <button
                     key={index}
-                    className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
+                    className={`@md:text-center w-full rounded border px-3 py-1 text-left font-semibold transition ${
                       revealCorrect && option.isCorrect
                         ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
                         : revealCorrect
@@ -318,10 +318,10 @@ export function ChatMessage({
                     {questionElement}
                     <Separator className="my-2" />
                     <div
-                      className={`grid w-full gap-2 md:grid-cols-2 ${
+                      className={`@md:grid-cols-2 grid w-full gap-2 ${
                         options.length === 3
-                          ? 'xl:grid-cols-3'
-                          : 'xl:grid-cols-4'
+                          ? '@xl:grid-cols-3'
+                          : '@xl:grid-cols-4'
                       }`}
                     >
                       {optionsElements}
@@ -545,7 +545,7 @@ export function ChatMessage({
                 const optionsElements = options.map((option, index) => (
                   <button
                     key={index}
-                    className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
+                    className={`@md:text-center w-full rounded border px-3 py-1 text-left font-semibold transition ${
                       revealCorrect && option.isCorrect
                         ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
                         : revealCorrect
@@ -563,10 +563,10 @@ export function ChatMessage({
                     {questionElement}
                     <Separator className="my-2" />
                     <div
-                      className={`grid w-full gap-2 md:grid-cols-2 ${
+                      className={`@md:grid-cols-2 grid w-full gap-2 ${
                         options.length === 3
-                          ? 'xl:grid-cols-3'
-                          : 'xl:grid-cols-4'
+                          ? '@xl:grid-cols-3'
+                          : '@xl:grid-cols-4'
                       }`}
                     >
                       {optionsElements}
@@ -675,7 +675,7 @@ export function ChatMessage({
                 if (embeddedUrl)
                   return (
                     <Link
-                      className="bg-foreground/5 text-foreground hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left font-semibold no-underline transition last:mb-0"
+                      className="bg-foreground/5 text-foreground hover:bg-foreground/10 mb-2 inline-block break-all rounded-full border text-left font-semibold no-underline transition last:mb-0"
                       href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -687,7 +687,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
-                      className="bg-foreground/5 text-foreground hover:bg-foreground/10 mb-2 rounded-full border text-left font-semibold transition last:mb-0"
+                      className="bg-foreground/5 text-foreground hover:bg-foreground/10 mb-2 break-all rounded-full border text-left font-semibold transition last:mb-0"
                       onClick={() => setInput(content || '')}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -697,7 +697,7 @@ export function ChatMessage({
                   );
 
                 return (
-                  <span className="bg-foreground/5 text-foreground mb-2 inline-block rounded-full border text-left transition last:mb-0">
+                  <span className="bg-foreground/5 text-foreground mb-2 inline-block break-all rounded-full border text-left transition last:mb-0">
                     <span className="line-clamp-1 px-3 py-1">
                       {content || '...'}
                     </span>
