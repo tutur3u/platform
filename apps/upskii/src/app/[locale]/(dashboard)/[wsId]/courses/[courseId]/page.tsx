@@ -52,7 +52,6 @@ export default async function WorkspaceCoursesPage({
   // Check for existing certificate
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  console.log('user', user);
   
   let certificateId: string | null = null;
   if (allModulesCompleted && user) {

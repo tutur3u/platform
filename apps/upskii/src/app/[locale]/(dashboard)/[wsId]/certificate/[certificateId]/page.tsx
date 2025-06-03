@@ -6,8 +6,8 @@ import Certificate from '../certificate-page';
 export type CertificateProps = {
   certDetails: {
     courseName: string;
-    studentName: string;
-    courseLecturer: string;
+    studentName: string | null;
+    courseLecturer: string | null;
     completionDate: string;
     certificateId: string;
   };
@@ -32,7 +32,6 @@ export default async function CertificatePage({ params }: PageProps) {
   try {
     // This will throw an error if the user is not the owner
     const certDetails = await getCertificateDetails(certificateId, user.id);
-
     return (
       <div>
         <Certificate certDetails={certDetails} />

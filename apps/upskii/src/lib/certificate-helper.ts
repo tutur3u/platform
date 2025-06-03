@@ -1,8 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Database } from '@tuturuuu/types/supabase';
 
-// Types for the database response
-type CertificateWithDetails = Database['public']['Tables']['course_certificates']['Row'] & {
+export type CertificateWithDetails = Database['public']['Tables']['course_certificates']['Row'] & {
   workspace_courses: Pick<Database['public']['Tables']['workspace_courses']['Row'], 'name' | 'ws_id'> & {
     workspaces: Pick<Database['public']['Tables']['workspaces']['Row'], 'name'>;
   };
@@ -11,7 +10,6 @@ type CertificateWithDetails = Database['public']['Tables']['course_certificates'
   };
 };
 
-// Type for the formatted certificate data
 export type CertificateDetails = {
   courseName: string;
   studentName: string;
@@ -20,19 +18,7 @@ export type CertificateDetails = {
   certificateId: string;
 };
 
-// Custom error class for certificate-related errors
-export class CertificateError extends Error {
-  constructor(message: string, public statusCode: number = 404) {
-    super(message);
-    this.name = 'CertificateError';
-  }
-}
-
-/**
- * Fetches and formats certificate details for a given certificate ID and user
- * @throws {CertificateError} If the certificate cannot be found or user is unauthorized
- */
-export async function getCertificateDetails(certificateId: string, userId: string): Promise<CertificateDetails> {
+export async function getCertificateDetails(certificateId: string, userId: string) {
   const supabase = await createClient();
 
   const { data: certificate, error } = await supabase
@@ -56,14 +42,14 @@ export async function getCertificateDetails(certificateId: string, userId: strin
     `)
     .eq('id', certificateId)
     .eq('user_id', userId)
-    .single();
+    .single() as { data: CertificateWithDetails | null; error: any };
 
   if (error) {
-    throw new CertificateError('Failed to fetch certificate', 500);
+    throw new Error('Failed to fetch certificate');
   }
 
   if (!certificate) {
-    throw new CertificateError('Certificate not found');
+    throw new Error('Certificate not found');
   }
 
   return {
