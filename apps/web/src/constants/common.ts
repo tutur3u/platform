@@ -1,4 +1,4 @@
-import { supportedLocales } from '@/i18n/routing';
+import { APP_PUBLIC_PATHS } from './public_paths';
 
 export const GITHUB_OWNER = 'tutur3u';
 export const GITHUB_REPO = 'platform';
@@ -35,20 +35,4 @@ export const HIDE_TAILWIND_INDICATOR =
 export const IS_PRODUCTION_DB =
   process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
 
-export const PUBLIC_PATHS = [
-  '/login',
-  '/about',
-  '/projects',
-  '/neo-crush',
-  '/neo-chess',
-  '/meet-together',
-].reduce((acc: string[], path) => {
-  // Add the original path
-  acc.push(path);
-
-  // Add localized paths
-  const localizedPaths = supportedLocales.map((locale) => `/${locale}${path}`);
-  acc.push(...localizedPaths);
-
-  return acc;
-}, []);
+export const PUBLIC_PATHS = APP_PUBLIC_PATHS;

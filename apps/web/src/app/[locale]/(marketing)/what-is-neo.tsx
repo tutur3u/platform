@@ -1,9 +1,12 @@
 'use client';
 
-import GetStartedButton from './get-started-button';
+import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 export default function WhatIsNeo() {
+  const t = useTranslations();
+
   return (
     <motion.div
       className="mt-4 flex flex-col items-center text-center md:mt-28"
@@ -47,7 +50,7 @@ export default function WhatIsNeo() {
         ))}
       </div>
 
-      <GetStartedButton href="/login" />
+      <GetStartedButton href="/login" text={t('common.get-started')} />
     </motion.div>
   );
 }

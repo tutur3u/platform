@@ -2,26 +2,11 @@ import { supportedLocales } from '@/i18n/routing';
 
 export const APP_PUBLIC_PATHS = [
   '/login',
-  '/pricing',
   '/about',
-  '/contact',
-  '/features',
-  '/products',
-  '/solutions',
-  '/careers',
-  '/security',
-  '/security/bug-bounty',
-  '/contributors',
-  '/blog',
-  '/faq',
-  '/terms',
-  '/privacy',
-  '/branding',
-  '/ai/chats',
-  '/qr-generator',
-  '/documents',
+  '/projects',
+  '/neo-crush',
+  '/neo-chess',
   '/meet-together',
-  '/visualizations/horse-racing',
 ].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);

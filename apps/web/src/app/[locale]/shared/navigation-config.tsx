@@ -1,27 +1,5 @@
 'use client';
 
-import { DEV_MODE, GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
-import {
-  BookText,
-  Building,
-  Calendar,
-  Factory,
-  FileText,
-  Github,
-  GraduationCap,
-  HardHat,
-  Hotel,
-  Info,
-  Paintbrush,
-  Pill,
-  Shield,
-  Sparkles,
-  Store,
-  Users,
-  UsersRound,
-  Utensils,
-  WandSparkles,
-} from '@tuturuuu/ui/icons';
 import { ReactNode } from 'react';
 
 export interface NavItem {
@@ -40,159 +18,54 @@ export interface NavCategory {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const useNavigation = (t: any): { categories: NavCategory[] } => {
+  const main: NavItem[] = [
+    { href: '/', label: t('common.home') },
+    { href: '/about', label: t('common.about') },
+    { href: '/projects', label: t('common.projects') },
+    { href: '/neo-crush', label: 'Neo Crush' },
+    { href: '/neo-chess', label: 'Neo Chess' },
+    { href: '/meet-together', label: t('common.meet-together') },
+  ];
+
   const products: NavItem[] = [
-    {
-      href: '/meet-together',
-      label: t('common.meet-together'),
-      description: t('common.meet-together-description'),
-      icon: <UsersRound className="h-4 w-4" />,
-    },
-    {
-      href: DEV_MODE
-        ? 'http://localhost:7001'
-        : 'https://calendar.tuturuuu.com',
-      label: t('common.calendar'),
-      description: t('common.calendar-description'),
-      icon: <Calendar className="h-4 w-4" />,
-    },
-    {
-      href: DEV_MODE ? 'http://localhost:7804' : 'https://rewise.me',
-      label: 'Rewise',
-      description: t('common.rewise-description'),
-      icon: <Sparkles className="h-4 w-4" />,
-      badge: t('common.waitlist'),
-      external: true,
-    },
-    {
-      href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
-      label: 'Nova',
-      description: t('common.nova-description'),
-      icon: <WandSparkles className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-      external: true,
-    },
+    { href: '/', label: t('common.home') },
+    { href: '/about', label: t('common.about') },
+    { href: '/projects', label: t('common.projects') },
+    { href: '/neo-crush', label: 'Neo Crush' },
+    { href: '/neo-chess', label: 'Neo Chess' },
+    { href: '/meet-together', label: t('common.meet-together') },
   ];
 
   const solutions: NavItem[] = [
-    {
-      href: '/solutions/manufacturing',
-      label: t('common.manufacturing'),
-      description: t('common.manufacturing-description'),
-      icon: <Factory className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/restaurants',
-      label: t('common.restaurants'),
-      description: t('common.restaurants-description'),
-      icon: <Utensils className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/pharmacies',
-      label: t('common.pharmacies'),
-      description: t('common.pharmacies-description'),
-      icon: <Pill className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/realestate',
-      label: t('common.realestate'),
-      description: t('common.realestate-description'),
-      icon: <Building className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/retail',
-      label: t('common.retail'),
-      description: t('common.retail-description'),
-      icon: <Store className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/education',
-      label: t('common.education'),
-      description: t('common.education-description'),
-      icon: <GraduationCap className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/hospitality',
-      label: t('common.hospitality'),
-      description: t('common.hospitality-description'),
-      icon: <Hotel className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/construction',
-      label: t('common.construction'),
-      description: t('common.construction-description'),
-      icon: <HardHat className="h-4 w-4" />,
-    },
+    { href: '/', label: t('common.home') },
+    { href: '/about', label: t('common.about') },
+    { href: '/projects', label: t('common.projects') },
+    { href: '/neo-crush', label: 'Neo Crush' },
+    { href: '/neo-chess', label: 'Neo Chess' },
+    { href: '/meet-together', label: t('common.meet-together') },
   ];
 
   const resources: NavItem[] = [
-    {
-      href: '/blog',
-      label: t('common.blog'),
-      description: t('common.blog-description'),
-      icon: <BookText className="h-4 w-4" />,
-    },
-    {
-      href: '/about',
-      label: t('common.about'),
-      description: t('common.about-description'),
-      icon: <Info className="h-4 w-4" />,
-    },
-    {
-      href: '/careers',
-      label: t('common.careers'),
-      description: t('common.careers-description'),
-      icon: <Users className="h-4 w-4" />,
-    },
-    {
-      href: '/contributors',
-      label: t('common.contributors'),
-      description: t('common.contributors-description'),
-      icon: <Users className="h-4 w-4" />,
-    },
-    {
-      href: '/security',
-      label: t('common.security'),
-      description: t('common.security-description'),
-      icon: <Shield className="h-4 w-4" />,
-    },
-    {
-      href: '/branding',
-      label: t('common.branding'),
-      description: t('common.branding-description'),
-      icon: <Paintbrush className="h-4 w-4" />,
-    },
-    {
-      href: 'https://docs.tuturuuu.com',
-      label: t('common.documentation'),
-      description: t('common.documentation-description'),
-      icon: <FileText className="h-4 w-4" />,
-      external: true,
-    },
-    {
-      href: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`,
-      label: 'GitHub',
-      description: t('common.github-description'),
-      icon: <Github className="h-4 w-4" />,
-      external: true,
-    },
+    { href: '/', label: t('common.home') },
+    { href: '/about', label: t('common.about') },
+    { href: '/projects', label: t('common.projects') },
+    { href: '/neo-crush', label: 'Neo Crush' },
+    { href: '/neo-chess', label: 'Neo Chess' },
+    { href: '/meet-together', label: t('common.meet-together') },
   ];
 
   const company: NavItem[] = [
-    {
-      href: '/#pricing',
-      label: t('common.pricing'),
-      description: '',
-    },
-    {
-      href: '/contact',
-      label: t('common.contact'),
-      description: '',
-    },
+    { href: '/', label: t('common.home') },
+    { href: '/about', label: t('common.about') },
+    { href: '/projects', label: t('common.projects') },
+    { href: '/neo-crush', label: 'Neo Crush' },
+    { href: '/neo-chess', label: 'Neo Chess' },
+    { href: '/meet-together', label: t('common.meet-together') },
   ];
 
   return {
     categories: [
-      { title: 'main', items: [{ href: '/', label: t('common.home') }] },
+      { title: 'main', items: main },
       { title: 'products', items: products },
       { title: 'solutions', items: solutions },
       { title: 'resources', items: resources },

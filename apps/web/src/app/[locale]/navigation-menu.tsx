@@ -3,7 +3,7 @@
 import { useNavigation } from './shared/navigation-config';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import { BookText, Zap } from '@tuturuuu/ui/icons';
+import { BookText, Building, Zap } from '@tuturuuu/ui/icons';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -24,8 +24,8 @@ export function MainNavigationMenu() {
 
   const products =
     categories.find((cat) => cat.title === 'products')?.items || [];
-  // const solutions =
-  //   categories.find((cat) => cat.title === 'solutions')?.items || [];
+  const solutions =
+    categories.find((cat) => cat.title === 'solutions')?.items || [];
   const resources =
     categories.find((cat) => cat.title === 'resources')?.items || [];
   const company =
@@ -67,7 +67,7 @@ export function MainNavigationMenu() {
           </NavigationMenuContent>
         </NavigationMenuItem>
 
-        {/* <NavigationMenuItem>
+        <NavigationMenuItem>
           <NavigationMenuTrigger className="hover:bg-foreground/5 group bg-transparent font-semibold transition-all duration-300">
             <span className="flex items-center gap-2">
               {t('common.solutions')}
@@ -96,7 +96,7 @@ export function MainNavigationMenu() {
               ))}
             </ul>
           </NavigationMenuContent>
-        </NavigationMenuItem> */}
+        </NavigationMenuItem>
 
         <NavigationMenuItem>
           <NavigationMenuTrigger className="hover:bg-foreground/5 group bg-transparent font-semibold transition-all duration-300">
