@@ -1,5 +1,5 @@
 import { TokenVerifierCore } from './token-verifier-core';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
 import Image from 'next/image';
 import { Suspense } from 'react';
 

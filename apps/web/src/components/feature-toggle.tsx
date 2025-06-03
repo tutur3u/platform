@@ -1,5 +1,5 @@
-import { Button } from '@tuturuuu/ui/button';
-import { Check, X } from '@tuturuuu/ui/icons';
+import { Button } from '@ncthub/ui/button';
+import { Check, X } from '@ncthub/ui/icons';
 
 interface Props {
   label: string;

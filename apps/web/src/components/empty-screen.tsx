@@ -1,6 +1,6 @@
-import { type UseChatHelpers } from '@tuturuuu/ai/types';
-import { AIChat } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
+import { type UseChatHelpers } from '@ncthub/ai/types';
+import { AIChat } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
 import {
   ArrowDownToDot,
   Box,
@@ -13,9 +13,9 @@ import {
   NotebookPen,
   Sigma,
   Sparkle,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { capitalize, cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { capitalize, cn } from '@ncthub/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

@@ -1,4 +1,4 @@
-import { Plus } from '@tuturuuu/ui/icons';
+import { Plus } from '@ncthub/ui/icons';
 import Link from 'next/link';
 
 interface Props {

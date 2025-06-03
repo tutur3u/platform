@@ -1,8 +1,8 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/db';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
+import { Workspace } from '@ncthub/types/db';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
 import {
   Card,
   CardContent,
@@ -10,9 +10,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+} from '@ncthub/ui/card';
+import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
+import { toast } from '@ncthub/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

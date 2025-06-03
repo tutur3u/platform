@@ -2,7 +2,7 @@
 
 import { addWhitelistDomain } from '../emails/actions';
 import WhitelistDomainForm from './domain-form';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 
 interface Props {

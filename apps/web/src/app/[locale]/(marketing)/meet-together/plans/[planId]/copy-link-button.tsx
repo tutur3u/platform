@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { Check, LinkIcon } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
+import { Button } from '@ncthub/ui/button';
+import { Check, LinkIcon } from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 

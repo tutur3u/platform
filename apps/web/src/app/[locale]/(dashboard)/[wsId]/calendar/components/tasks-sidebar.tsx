@@ -1,12 +1,12 @@
 import { getChats } from '../../chat/helper';
 import TasksSidebarContent from './tasks-sidebar-content';
 import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import type {
   WorkspaceTask,
   WorkspaceTaskBoard,
   WorkspaceTaskList,
-} from '@tuturuuu/types/db';
+} from '@ncthub/types/db';
 
 interface TasksSidebarProps {
   wsId: string;

@@ -1,10 +1,10 @@
 import { Bill } from './bill';
 import { DetailObjects } from './objects';
 import { joinPath } from '@/utils/path-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { CalendarIcon, DollarSign, Wallet } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { CalendarIcon, DollarSign, Wallet } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';

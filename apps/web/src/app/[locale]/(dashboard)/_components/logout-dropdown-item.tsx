@@ -1,7 +1,7 @@
 'use client';
 
-import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
-import { LogOut } from '@tuturuuu/ui/icons';
+import { DropdownMenuItem } from '@ncthub/ui/dropdown-menu';
+import { LogOut } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 

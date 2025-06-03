@@ -1,16 +1,16 @@
 import { DuplicateHandler } from './components/duplicate-handler';
 import { DatasetCrawler } from './explore/dataset-crawler';
 import { getDatasetMetrics } from './utils';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@ncthub/supabase/next/server';
+import { Button } from '@ncthub/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
-import { BarChart, FileText, RefreshCw, Upload } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/card';
+import { BarChart, FileText, RefreshCw, Upload } from '@ncthub/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
 

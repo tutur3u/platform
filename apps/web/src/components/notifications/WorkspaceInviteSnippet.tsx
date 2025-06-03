@@ -1,7 +1,7 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/db';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Workspace } from '@ncthub/types/db';
+import { toast } from '@ncthub/ui/hooks/use-toast';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale, useTranslations } from 'next-intl';

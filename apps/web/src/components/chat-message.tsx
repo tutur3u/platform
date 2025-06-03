@@ -3,13 +3,13 @@
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
 import { ChatMessageActions } from '@/components/chat-message-actions';
-import { type Message } from '@tuturuuu/ai/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { CodeBlock } from '@tuturuuu/ui/codeblock';
-import { Bot, IconUser, Send, Sparkle } from '@tuturuuu/ui/icons';
-import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
-import { Separator } from '@tuturuuu/ui/separator';
-import { capitalize, cn } from '@tuturuuu/utils/format';
+import { type Message } from '@ncthub/ai/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { CodeBlock } from '@ncthub/ui/codeblock';
+import { Bot, IconUser, Send, Sparkle } from '@ncthub/ui/icons';
+import { MemoizedReactMarkdown } from '@ncthub/ui/markdown';
+import { Separator } from '@ncthub/ui/separator';
+import { capitalize, cn } from '@ncthub/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

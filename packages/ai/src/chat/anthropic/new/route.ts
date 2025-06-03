@@ -3,7 +3,7 @@ import {
   HarmBlockThreshold,
   HarmCategory,
 } from '@google/generative-ai';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { Message } from 'ai';
 import { NextResponse } from 'next/server';
 

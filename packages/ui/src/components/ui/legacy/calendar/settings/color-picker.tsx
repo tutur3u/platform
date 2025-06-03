@@ -1,8 +1,8 @@
 'use client';
 
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+import { SupportedColor } from '@ncthub/types/primitives/SupportedColors';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 
 // Color map with display names and CSS classes - Added cbg to avoid other color problems
 export const colorMap: Record<

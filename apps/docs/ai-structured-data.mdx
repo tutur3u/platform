@@ -115,11 +115,8 @@ Create a new route file in the appropriate Next.js app, for example:
 ```typescript
 // app/api/ai/flashcards/route.ts
 import { google } from '@ai-sdk/google';
-import { flashcardSchema } from '@tuturuuu/ai/object/types';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { flashcardSchema } from '@ncthub/ai/object/types';
+import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
 import { streamObject } from 'ai';
 
 export const runtime = 'edge';
@@ -262,12 +259,12 @@ Tuturuuu's AI features are tightly integrated with Supabase for several purposes
 
 ### TypeScript Types
 
-Supabase-generated TypeScript types are available at `packages/types/src/supabase.ts`. These types are automatically generated when you run `pnpm sb:typegen` or `pnpm sb:reset` and are accessible to all apps that have the `@tuturuuu/types` package installed.
+Supabase-generated TypeScript types are available at `packages/types/src/supabase.ts`. These types are automatically generated when you run `pnpm sb:typegen` or `pnpm sb:reset` and are accessible to all apps that have the `@ncthub/types` package installed.
 
 You can use these types to ensure type safety when working with Supabase data in your AI features:
 
 ```typescript
-import type { Database } from '@tuturuuu/types/supabase';
+import type { Database } from '@ncthub/types/supabase';
 
 // Type-safe access to workspace_secrets table
 const { data, error } = await supabase
@@ -294,7 +291,7 @@ const workspaceName: string = workspace?.name;
 For more convenient access to common table types in your AI features, Tuturuuu also provides short-hand type definitions in `packages/types/src/db.ts`. These are easier to use and remember than the full database type paths:
 
 ```typescript
-import type { AIChat, AIPrompt, WorkspaceDocument } from '@tuturuuu/types/db';
+import type { AIChat, AIPrompt, WorkspaceDocument } from '@ncthub/types/db';
 
 // Use short-hand types directly for AI-related tables
 const { data: chats } = await supabase

@@ -2,14 +2,14 @@
 
 import { InvoiceRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { Invoice } from '@tuturuuu/types/primitives/Invoice';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { Invoice } from '@ncthub/types/primitives/Invoice';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
+} from '@ncthub/ui/tooltip';
 import moment from 'moment';
 
 export const invoiceColumns = (

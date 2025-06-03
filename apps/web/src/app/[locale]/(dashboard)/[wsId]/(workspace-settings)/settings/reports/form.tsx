@@ -1,7 +1,7 @@
 import { isValidURL } from '@/utils/url-helper';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
-import { Button } from '@tuturuuu/ui/button';
-import { AutosizeTextarea } from '@tuturuuu/ui/custom/autosize-textarea';
+import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
+import { Button } from '@ncthub/ui/button';
+import { AutosizeTextarea } from '@ncthub/ui/custom/autosize-textarea';
 import {
   Form,
   FormControl,
@@ -9,9 +9,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import * as z from 'zod';
 

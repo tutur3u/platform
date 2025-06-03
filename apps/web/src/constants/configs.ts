@@ -7,8 +7,8 @@ export const siteConfig = {
     ? 'http://localhost:7803/media/logos/og-image.png'
     : 'https://rmitnct.club/media/logos/og-image.png',
   links: {
-    twitter: 'https://twitter.com/tutur3u',
-    github: 'https://github.com/tutur3u/platform',
+    twitter: 'https://twitter.com/rmit-nct',
+    github: 'https://github.com/rmit-nct/hub',
   },
 };
 

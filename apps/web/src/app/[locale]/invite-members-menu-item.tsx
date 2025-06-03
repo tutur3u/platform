@@ -4,8 +4,8 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@tuturuuu/ui/dropdown-menu';
-import { UserPlus } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { UserPlus } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';

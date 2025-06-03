@@ -1,10 +1,10 @@
 import WhitelistDomainClient from '../domains/domain-client-page';
 import { getAIWhitelistDomainColumns } from '../domains/domain-columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { createAdminClient } from '@ncthub/supabase/next/server';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

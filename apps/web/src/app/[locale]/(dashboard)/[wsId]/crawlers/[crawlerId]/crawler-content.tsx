@@ -2,18 +2,18 @@
 
 import CrawlButton from './crawl-button';
 import { formatHTML, unescapeMarkdownString } from './utils';
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '@ncthub/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
-import { CheckIcon, CopyIcon } from '@tuturuuu/ui/icons';
-import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/card';
+import { CheckIcon, CopyIcon } from '@ncthub/ui/icons';
+import { MemoizedReactMarkdown } from '@ncthub/ui/markdown';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { cn } from '@ncthub/utils/format';
 import { formatDistance } from 'date-fns';
 import Link from 'next/link';
 import { useState } from 'react';

@@ -2,8 +2,8 @@
 
 import { ProjectRowActions } from './row-action';
 import { ColumnDef } from '@tanstack/react-table';
-import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { TaskBoard } from '@ncthub/types/primitives/TaskBoard';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const projectColumns = (

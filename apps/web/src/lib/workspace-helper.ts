@@ -3,13 +3,13 @@ import { DEV_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
+} from '@ncthub/supabase/next/server';
 import {
   PermissionId,
   Workspace,
   type WorkspaceUserRole,
-} from '@tuturuuu/types/db';
-import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
+} from '@ncthub/types/db';
+import { WorkspaceSecret } from '@ncthub/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 
 export async function getWorkspace(id: string, requireUserRole = false) {

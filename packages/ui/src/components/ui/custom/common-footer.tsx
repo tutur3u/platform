@@ -53,7 +53,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
             </Link>
 
             <Link
-              href="https://x.com/tutur3u"
+              href="https://x.com/rmit-nct"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="X (formerly Twitter)"
             >
@@ -74,7 +74,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
             </Link>
 
             <Link
-              href="https://github.com/tutur3u"
+              href="https://github.com/rmit-nct"
               className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="Github"
             >
@@ -194,7 +194,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
               {t('common.documentation')}
             </Link>
             <Link
-              href="https://github.com/tutur3u/platform"
+              href="https://github.com/rmit-nct/hub"
               target="_blank"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >

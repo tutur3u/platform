@@ -10,15 +10,15 @@ import type {
   AIChat,
   WorkspaceTask,
   WorkspaceTaskBoard,
-} from '@tuturuuu/types/db';
+} from '@ncthub/types/db';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
+} from '@ncthub/ui/accordion';
+import { Badge } from '@ncthub/ui/badge';
+import { Button } from '@ncthub/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -26,14 +26,14 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@tuturuuu/ui/command';
+} from '@ncthub/ui/command';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Bot,
   CheckCircle2,
@@ -46,11 +46,11 @@ import {
   PanelRightClose,
   Plus,
   PlusCircle,
-} from '@tuturuuu/ui/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@ncthub/ui/popover';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { cn } from '@ncthub/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';

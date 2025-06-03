@@ -9,9 +9,9 @@ import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Dialog } from '@tuturuuu/ui/dialog';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Dialog } from '@ncthub/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,10 +24,10 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+} from '@ncthub/ui/dropdown-menu';
+import { Globe, Palette, Settings, User } from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
+import { getInitials } from '@ncthub/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';

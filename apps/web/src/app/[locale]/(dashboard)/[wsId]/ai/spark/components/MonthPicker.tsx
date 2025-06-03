@@ -1,12 +1,12 @@
-import { Button } from '@tuturuuu/ui/button';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
+import { Button } from '@ncthub/ui/button';
+import { ChevronLeft, ChevronRight } from '@ncthub/ui/icons';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
+} from '@ncthub/ui/select';
 import { useState } from 'react';
 
 interface MonthPickerProps {

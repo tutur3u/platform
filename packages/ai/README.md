@@ -1,15 +1,15 @@
-# @tuturuuu/ai
+# @ncthub/ai
 
 AI utilities and helpers for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install @tuturuuu/ai
+npm install @ncthub/ai
 # or
-yarn add @tuturuuu/ai
+yarn add @ncthub/ai
 # or
-pnpm add @tuturuuu/ai
+pnpm add @ncthub/ai
 ```
 
 ## Development
@@ -24,4 +24,4 @@ pnpm test
 
 ## License
 
-MIT © [Tuturuuu](https://github.com/tutur3u)
+MIT © [Tuturuuu](https://github.com/rmit-nct)

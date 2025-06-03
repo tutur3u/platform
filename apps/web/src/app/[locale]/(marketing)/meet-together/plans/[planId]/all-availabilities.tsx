@@ -2,8 +2,8 @@
 
 import DatePlanner from './date-planner';
 import { useTimeBlocking } from './time-blocking-provider';
-import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
+import { Timeblock } from '@ncthub/types/primitives/Timeblock';
 import { useTranslations } from 'next-intl';
 
 export default function AllAvailabilities({

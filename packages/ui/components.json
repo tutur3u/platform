@@ -11,10 +11,10 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@tuturuuu/ui/components",
-    "ui": "@tuturuuu/ui/components/ui",
-    "utils": "@tuturuuu/ui/lib/utils",
-    "lib": "@tuturuuu/ui/lib",
-    "hooks": "@tuturuuu/ui/hooks"
+    "components": "@ncthub/ui/components",
+    "ui": "@ncthub/ui/components/ui",
+    "utils": "@ncthub/ui/lib/utils",
+    "lib": "@ncthub/ui/lib",
+    "hooks": "@ncthub/ui/hooks"
   }
 }

@@ -6,7 +6,7 @@ import { CalendarView } from './calendar-view';
 import { ListView } from './list-view';
 import { getTasks } from '@/lib/task-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createClient } from '@ncthub/supabase/next/client';
 import { useEffect, useState } from 'react';
 
 interface Props {

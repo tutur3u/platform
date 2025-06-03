@@ -1,7 +1,7 @@
 'use client';
 
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@ncthub/utils/format';
 import * as React from 'react';
 
 function TooltipProvider({

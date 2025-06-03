@@ -1,16 +1,16 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
+import { Button } from '@ncthub/ui/button';
+import { Input } from '@ncthub/ui/input';
+import { Label } from '@ncthub/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
-import { Switch } from '@tuturuuu/ui/switch';
+} from '@ncthub/ui/select';
+import { Switch } from '@ncthub/ui/switch';
 import { PlusIcon, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 

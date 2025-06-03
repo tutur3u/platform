@@ -1,5 +1,5 @@
-import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
-import { Separator } from '@tuturuuu/ui/separator';
+import { GetStartedButton } from '@ncthub/ui/custom/get-started-button';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 

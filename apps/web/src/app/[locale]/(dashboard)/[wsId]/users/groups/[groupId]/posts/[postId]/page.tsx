@@ -1,9 +1,9 @@
 import UserCard from './card';
 import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { createClient } from '@ncthub/supabase/next/server';
+import type { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import {
   Check,
   CheckCheck,
@@ -11,8 +11,8 @@ import {
   Clock,
   Send,
   X,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { format } from 'date-fns';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

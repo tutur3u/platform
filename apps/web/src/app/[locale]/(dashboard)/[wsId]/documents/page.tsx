@@ -1,12 +1,12 @@
 import { DocumentCard } from './card';
 import MyDialogContent from './dialog-content';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
-import { FilePlus } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { Button } from '@ncthub/ui/button';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Dialog, DialogTrigger } from '@ncthub/ui/dialog';
+import { FilePlus } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

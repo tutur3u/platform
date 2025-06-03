@@ -1,16 +1,16 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { Button } from '@tuturuuu/ui/button';
-import { YearCalendar } from '@tuturuuu/ui/custom/calendar/year-calendar';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { Button } from '@ncthub/ui/button';
+import { YearCalendar } from '@ncthub/ui/custom/calendar/year-calendar';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import {
   CalendarIcon,
   ChartColumn,
   FileUser,
   UserCheck,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { getTranslations } from 'next-intl/server';

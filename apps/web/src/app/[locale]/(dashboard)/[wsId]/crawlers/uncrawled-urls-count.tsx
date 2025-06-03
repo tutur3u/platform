@@ -1,9 +1,9 @@
 'use client';
 
-import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
-import { Card, CardContent } from '@tuturuuu/ui/card';
-import { AlertCircle, ArrowUpRight, Globe } from '@tuturuuu/ui/icons';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { Alert, AlertDescription } from '@ncthub/ui/alert';
+import { Card, CardContent } from '@ncthub/ui/card';
+import { AlertCircle, ArrowUpRight, Globe } from '@ncthub/ui/icons';
+import { Skeleton } from '@ncthub/ui/skeleton';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 

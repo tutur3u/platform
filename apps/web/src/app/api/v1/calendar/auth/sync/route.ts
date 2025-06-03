@@ -1,5 +1,5 @@
-import { CalendarEvent as BaseCalendarEvent } from '@tuturuuu/ai/calendar/events';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { CalendarEvent as BaseCalendarEvent } from '@ncthub/ai/calendar/events';
+import { createClient } from '@ncthub/supabase/next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';

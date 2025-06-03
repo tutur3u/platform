@@ -1,5 +1,5 @@
-import { Button } from '@tuturuuu/ui/button';
-import { ArrowUp } from '@tuturuuu/ui/icons';
+import { Button } from '@ncthub/ui/button';
+import { ArrowUp } from '@ncthub/ui/icons';
 
 interface Props {
   elementId: string;

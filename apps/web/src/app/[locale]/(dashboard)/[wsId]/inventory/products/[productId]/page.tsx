@@ -1,12 +1,12 @@
 import { ProductForm } from './form';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { Product2 } from '@tuturuuu/types/primitives/Product';
-import { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
-import { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
-import { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
-import { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { Product2 } from '@ncthub/types/primitives/Product';
+import { ProductCategory } from '@ncthub/types/primitives/ProductCategory';
+import { ProductInventory } from '@ncthub/types/primitives/ProductInventory';
+import { ProductUnit } from '@ncthub/types/primitives/ProductUnit';
+import { ProductWarehouse } from '@ncthub/types/primitives/ProductWarehouse';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

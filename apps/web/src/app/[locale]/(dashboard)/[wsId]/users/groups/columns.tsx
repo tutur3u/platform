@@ -3,9 +3,9 @@
 import GroupAttendanceStats from './attendance-stats';
 import { UserGroupRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { Check, X } from '@tuturuuu/ui/icons';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { Check, X } from '@ncthub/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
 

@@ -1,15 +1,15 @@
 'use client';
 
 import { useCalendar } from '../../../../hooks/use-calendar';
-import { Workspace } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
+import { Workspace } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from '@tuturuuu/ui/hover-card';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/hover-card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import {
   eachDayOfInterval,
   endOfMonth,

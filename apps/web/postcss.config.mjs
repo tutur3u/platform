@@ -1,1 +1,1 @@
-export { default } from '@tuturuuu/ui/postcss.config';
+export { default } from '@ncthub/ui/postcss.config';

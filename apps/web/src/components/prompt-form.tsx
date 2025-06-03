@@ -1,10 +1,10 @@
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-import { type UseChatHelpers } from '@tuturuuu/ai/types';
-import type { AIChat } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
-import { Dialog } from '@tuturuuu/ui/dialog';
+import { type UseChatHelpers } from '@ncthub/ai/types';
+import type { AIChat } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
+import { StatedFile } from '@ncthub/ui/custom/file-uploader';
+import { Dialog } from '@ncthub/ui/dialog';
 import {
   Bolt,
   File,
@@ -17,14 +17,14 @@ import {
   Paperclip,
   RefreshCw,
   X,
-} from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import type React from 'react';

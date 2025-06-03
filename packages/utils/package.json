@@ -1,5 +1,5 @@
 {
-  "name": "@tuturuuu/utils",
+  "name": "@ncthub/utils",
   "license": "MIT",
   "version": "0.0.1",
   "publishConfig": {
@@ -12,7 +12,7 @@
   },
   "packageManager": "pnpm@10.11.1",
   "dependencies": {
-    "@tuturuuu/supabase": "workspace:*",
+    "@ncthub/supabase": "workspace:*",
     "clsx": "^2.1.1",
     "eslint": "^9.28.0",
     "next": "15.4.0-canary.62",
@@ -25,9 +25,9 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.28.0",
-    "@tuturuuu/eslint-config": "workspace:*",
-    "@tuturuuu/types": "workspace:*",
-    "@tuturuuu/typescript-config": "workspace:*",
+    "@ncthub/eslint-config": "workspace:*",
+    "@ncthub/types": "workspace:*",
+    "@ncthub/typescript-config": "workspace:*",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.6",
     "@typescript-eslint/eslint-plugin": "^8.33.1",

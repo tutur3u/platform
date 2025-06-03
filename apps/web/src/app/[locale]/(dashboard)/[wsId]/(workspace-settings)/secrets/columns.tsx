@@ -7,10 +7,10 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { Loader2 } from '@tuturuuu/ui/icons';
-import { Switch } from '@tuturuuu/ui/switch';
+import { WorkspaceSecret } from '@ncthub/types/primitives/WorkspaceSecret';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { Loader2 } from '@ncthub/ui/icons';
+import { Switch } from '@ncthub/ui/switch';
 import moment from 'moment';
 import { useParams, useRouter } from 'next/navigation';
 

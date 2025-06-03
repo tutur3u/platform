@@ -2,12 +2,12 @@
 
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
-import { WorkspaceUserReport } from '@tuturuuu/types/db';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
-import ReportPreview from '@tuturuuu/ui/custom/report-preview';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { Separator } from '@tuturuuu/ui/separator';
+import { WorkspaceUserReport } from '@ncthub/types/db';
+import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
+import ReportPreview from '@ncthub/ui/custom/report-preview';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { Separator } from '@ncthub/ui/separator';
 import { useLocale, useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
 import * as z from 'zod';

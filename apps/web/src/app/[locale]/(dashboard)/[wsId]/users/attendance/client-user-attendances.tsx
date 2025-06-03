@@ -2,8 +2,8 @@
 
 import UserMonthAttendance from './user-month-attendance';
 import useSearchParams from '@/hooks/useSearchParams';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { DataTablePagination } from '@tuturuuu/ui/custom/tables/data-table-pagination';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { DataTablePagination } from '@ncthub/ui/custom/tables/data-table-pagination';
 import { useTranslations } from 'next-intl';
 import { FC } from 'react';
 

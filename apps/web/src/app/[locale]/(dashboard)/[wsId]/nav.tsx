@@ -6,12 +6,12 @@ import {
   PROD_MODE,
   ROOT_WORKSPACE_ID,
 } from '@/constants/common';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { buttonVariants } from '@tuturuuu/ui/button';
-import { DraftingCompass, FlaskConical } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { buttonVariants } from '@ncthub/ui/button';
+import { DraftingCompass, FlaskConical } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';

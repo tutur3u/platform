@@ -1,7 +1,7 @@
 import AIPromptsTable from './table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { AIPrompt } from '@tuturuuu/types/db';
+import { createClient } from '@ncthub/supabase/next/server';
+import { AIPrompt } from '@ncthub/types/db';
 
 interface Props {
   params: Promise<{

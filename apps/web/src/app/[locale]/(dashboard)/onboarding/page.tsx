@@ -1,6 +1,6 @@
 import WorkspaceInvites from './workspace-invites';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { Separator } from '@tuturuuu/ui/separator';
+import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 

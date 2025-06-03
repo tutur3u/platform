@@ -1,17 +1,17 @@
 'use client';
 
-import type { AuroraForecast } from '@tuturuuu/types/db';
-import { Alert, AlertTitle } from '@tuturuuu/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { AlertCircle } from '@tuturuuu/ui/icons';
+import type { AuroraForecast } from '@ncthub/types/db';
+import { Alert, AlertTitle } from '@ncthub/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
+import { AlertCircle } from '@ncthub/ui/icons';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
+} from '@ncthub/ui/select';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';

@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { InputField } from '@tuturuuu/ui/custom/input-field';
+import { Button } from '@ncthub/ui/button';
+import { InputField } from '@ncthub/ui/custom/input-field';
 import {
   Form,
   FormControl,
@@ -9,11 +9,11 @@ import {
   FormField,
   FormItem,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Check, Loader2 } from '@tuturuuu/ui/icons';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Check, Loader2 } from '@ncthub/ui/icons';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

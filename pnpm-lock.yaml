@@ -21,10 +21,10 @@ importers:
       '@trivago/prettier-plugin-sort-imports':
         specifier: ^5.2.2
         version: 5.2.2(@vue/compiler-sfc@3.5.12)(prettier@3.5.3)(svelte@5.1.6)
-      '@tuturuuu/eslint-config':
+      '@ncthub/eslint-config':
         specifier: workspace:*
         version: link:packages/eslint-config
-      '@tuturuuu/typescript-config':
+      '@ncthub/typescript-config':
         specifier: workspace:*
         version: link:packages/typescript-config
       '@vitest/coverage-v8':
@@ -105,25 +105,25 @@ importers:
       '@tldraw/sync':
         specifier: ^3.13.1
         version: 3.13.1(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@tuturuuu/ai':
+      '@ncthub/ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@tuturuuu/auth':
+      '@ncthub/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@tuturuuu/supabase':
+      '@ncthub/supabase':
         specifier: workspace:*
         version: link:../../packages/supabase
-      '@tuturuuu/transactional':
+      '@ncthub/transactional':
         specifier: workspace:*
         version: link:../../packages/transactional
-      '@tuturuuu/types':
+      '@ncthub/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@tuturuuu/ui':
+      '@ncthub/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@tuturuuu/utils':
+      '@ncthub/utils':
         specifier: workspace:*
         version: link:../../packages/utils
       '@upstash/qstash':
@@ -280,10 +280,10 @@ importers:
       '@testing-library/react':
         specifier: ^16.3.0
         version: 16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@tuturuuu/eslint-config':
+      '@ncthub/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
-      '@tuturuuu/typescript-config':
+      '@ncthub/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       '@types/canvas-confetti':
@@ -430,10 +430,10 @@ importers:
       '@google/generative-ai':
         specifier: ^0.24.1
         version: 0.24.1
-      '@tuturuuu/supabase':
+      '@ncthub/supabase':
         specifier: workspace:*
         version: link:../supabase
-      '@tuturuuu/utils':
+      '@ncthub/utils':
         specifier: workspace:*
         version: link:../utils
       ai:
@@ -461,13 +461,13 @@ importers:
       '@eslint/js':
         specifier: ^9.28.0
         version: 9.28.0
-      '@tuturuuu/eslint-config':
+      '@ncthub/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@tuturuuu/types':
+      '@ncthub/types':
         specifier: workspace:*
         version: link:../types
-      '@tuturuuu/typescript-config':
+      '@ncthub/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
@@ -491,16 +491,16 @@ importers:
 
   packages/auth:
     dependencies:
-      '@tuturuuu/supabase':
+      '@ncthub/supabase':
         specifier: workspace:*
         version: link:../supabase
-      '@tuturuuu/types':
+      '@ncthub/types':
         specifier: workspace:*
         version: link:../types
-      '@tuturuuu/ui':
+      '@ncthub/ui':
         specifier: workspace:*
         version: link:../ui
-      '@tuturuuu/utils':
+      '@ncthub/utils':
         specifier: workspace:*
         version: link:../utils
       next:
@@ -552,7 +552,7 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.49.9
         version: 2.49.9
-      '@tuturuuu/types':
+      '@ncthub/types':
         specifier: workspace:*
         version: link:../types
       eslint:
@@ -577,10 +577,10 @@ importers:
       '@eslint/js':
         specifier: ^9.28.0
         version: 9.28.0
-      '@tuturuuu/eslint-config':
+      '@ncthub/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@tuturuuu/typescript-config':
+      '@ncthub/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
@@ -645,10 +645,10 @@ importers:
       '@eslint/js':
         specifier: ^9.28.0
         version: 9.28.0
-      '@tuturuuu/eslint-config':
+      '@ncthub/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@tuturuuu/typescript-config':
+      '@ncthub/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
@@ -779,13 +779,13 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^2.12.0
         version: 2.12.0
-      '@tuturuuu/ai':
+      '@ncthub/ai':
         specifier: workspace:*
         version: link:../ai
-      '@tuturuuu/supabase':
+      '@ncthub/supabase':
         specifier: workspace:*
         version: link:../supabase
-      '@tuturuuu/utils':
+      '@ncthub/utils':
         specifier: workspace:*
         version: link:../utils
       class-variance-authority:
@@ -891,13 +891,13 @@ importers:
       '@tailwindcss/typography':
         specifier: ^0.5.16
         version: 0.5.16(tailwindcss@4.1.8)
-      '@tuturuuu/eslint-config':
+      '@ncthub/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@tuturuuu/types':
+      '@ncthub/types':
         specifier: workspace:*
         version: link:../types
-      '@tuturuuu/typescript-config':
+      '@ncthub/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/lodash':
@@ -939,7 +939,7 @@ importers:
 
   packages/utils:
     dependencies:
-      '@tuturuuu/supabase':
+      '@ncthub/supabase':
         specifier: workspace:*
         version: link:../supabase
       clsx:
@@ -973,13 +973,13 @@ importers:
       '@eslint/js':
         specifier: ^9.28.0
         version: 9.28.0
-      '@tuturuuu/eslint-config':
+      '@ncthub/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@tuturuuu/types':
+      '@ncthub/types':
         specifier: workspace:*
         version: link:../types
-      '@tuturuuu/typescript-config':
+      '@ncthub/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':

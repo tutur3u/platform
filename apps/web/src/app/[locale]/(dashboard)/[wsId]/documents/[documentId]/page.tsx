@@ -1,8 +1,8 @@
 'use client';
 
 import DocumentShareDialog from '../document-share-dialog';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { WorkspaceDocument } from '@tuturuuu/types/db';
+import { createClient } from '@ncthub/supabase/next/client';
+import { WorkspaceDocument } from '@ncthub/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,8 +13,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@tuturuuu/ui/alert-dialog';
-import { Button } from '@tuturuuu/ui/button';
+} from '@ncthub/ui/alert-dialog';
+import { Button } from '@ncthub/ui/button';
 import {
   AlertCircle,
   ChevronLeft,
@@ -23,10 +23,10 @@ import {
   Loader2,
   Lock,
   Share2,
-} from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import debounce from 'lodash/debounce';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

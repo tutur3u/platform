@@ -5,8 +5,8 @@ import DateSelector from './date-selector';
 import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
 import timezones from '@/data/timezones.json';
-import { Timezone } from '@tuturuuu/types/primitives/Timezone';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Timezone } from '@ncthub/types/primitives/Timezone';
+import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 

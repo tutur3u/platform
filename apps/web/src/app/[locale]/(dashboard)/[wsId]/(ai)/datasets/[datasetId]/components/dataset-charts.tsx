@@ -6,7 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
+} from '@ncthub/ui/card';
 import {
   Bar,
   BarChart,

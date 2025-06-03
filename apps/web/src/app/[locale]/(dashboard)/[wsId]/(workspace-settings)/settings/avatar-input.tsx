@@ -1,12 +1,12 @@
 'use client';
 
 import { downloadPublicObject, uploadObject } from '@/lib/storage-helper';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Workspace } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Check, Loader2 } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Workspace } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Check, Loader2 } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';

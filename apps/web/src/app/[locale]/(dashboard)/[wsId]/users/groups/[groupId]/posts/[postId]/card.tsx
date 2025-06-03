@@ -2,13 +2,13 @@
 
 import useEmail from '@/hooks/useEmail';
 import { isEmail } from '@/utils/email-helper';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { GroupPostCheck } from '@tuturuuu/types/db';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { createClient } from '@ncthub/supabase/next/client';
+import type { GroupPostCheck } from '@ncthub/types/db';
+import type { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
+import { Card } from '@ncthub/ui/card';
+import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
 import {
   Check,
   CircleSlash,
@@ -18,9 +18,9 @@ import {
   Save,
   Send,
   X,
-} from '@tuturuuu/ui/icons';
-import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { Textarea } from '@ncthub/ui/textarea';
+import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';

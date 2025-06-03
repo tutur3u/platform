@@ -12,7 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { Separator } from '../../separator';
 import { Column } from '@tanstack/react-table';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@ncthub/utils/format';
 import { Check, PlusCircle } from 'lucide-react';
 import * as React from 'react';
 

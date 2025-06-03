@@ -1,13 +1,13 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '@ncthub/ui/button';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@tuturuuu/ui/resizable';
-import { TooltipProvider } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/resizable';
+import { TooltipProvider } from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import { Menu, X } from 'lucide-react';
 import { ReactNode } from 'react';
 

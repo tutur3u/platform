@@ -9,9 +9,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@tuturuuu/ui/alert-dialog';
-import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
+} from '@ncthub/ui/alert-dialog';
+import { Button } from '@ncthub/ui/button';
+import { Checkbox } from '@ncthub/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -19,14 +19,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { BookPlus, Clock, Eye, Pencil, Trash2 } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/dialog';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { BookPlus, Clock, Eye, Pencil, Trash2 } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Label } from '@ncthub/ui/label';
+import { Separator } from '@ncthub/ui/separator';
+import { Textarea } from '@ncthub/ui/textarea';
+import { cn } from '@ncthub/utils/format';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

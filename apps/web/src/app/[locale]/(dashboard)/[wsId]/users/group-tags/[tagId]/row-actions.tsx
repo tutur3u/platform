@@ -1,16 +1,16 @@
 'use client';
 
 import { Row } from '@tanstack/react-table';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { Button } from '@tuturuuu/ui/button';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Ellipsis, Eye } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { Mail } from '@tuturuuu/ui/icons';
+import { Button } from '@ncthub/ui/button';
+import { Mail } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

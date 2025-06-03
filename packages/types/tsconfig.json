@@ -1,9 +1,9 @@
 {
-  "extends": "@tuturuuu/typescript-config/react-library.json",
+  "extends": "@ncthub/typescript-config/react-library.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@tuturuuu/types/*": ["./src/*"]
+      "@ncthub/types/*": ["./src/*"]
     }
   },
   "include": ["src"],

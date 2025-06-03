@@ -4,7 +4,7 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
+} from '@ncthub/supabase/next/server';
 import dayjs from 'dayjs';
 import juice from 'juice';
 import { NextRequest, NextResponse } from 'next/server';

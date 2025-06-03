@@ -3,10 +3,10 @@ import { Task, TaskCard } from './task';
 import { TaskForm } from './task-form';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
-import { GripVertical } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
+import { Badge } from '@ncthub/ui/badge';
+import { Card } from '@ncthub/ui/card';
+import { GripVertical } from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
 
 export interface Column {
   id: string;

@@ -1,10 +1,10 @@
 import { getWorkspaceCourseModuleColumns } from './columns';
 import { QuizsetModuleLinker } from './linker';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceCourseModule } from '@ncthub/types/db';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

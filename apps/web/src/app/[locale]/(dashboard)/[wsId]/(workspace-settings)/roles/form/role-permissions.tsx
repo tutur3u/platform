@@ -6,10 +6,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
-import { FormField, FormItem } from '@tuturuuu/ui/form';
-import { ShieldCheck } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/ui/accordion';
+import { FormField, FormItem } from '@ncthub/ui/form';
+import { ShieldCheck } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
 

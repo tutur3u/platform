@@ -1,6 +1,6 @@
 {
   "$schema": "https://jsr.io/schema/config-file.v1.json",
-  "name": "@tuturuuu/ai",
+  "name": "@ncthub/ai",
   "license": "MIT",
   "version": "0.0.10",
   "exports": {

@@ -4,9 +4,9 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/supabase/next/server';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

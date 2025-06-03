@@ -1,4 +1,4 @@
-import { POST } from '@tuturuuu/ai/object/quizzes/explanation/route';
+import { POST } from '@ncthub/ai/object/quizzes/explanation/route';
 
 export const config = {
   maxDuration: 90,

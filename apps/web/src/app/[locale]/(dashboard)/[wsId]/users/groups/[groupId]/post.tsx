@@ -1,7 +1,7 @@
 import { useInViewport } from '@mantine/hooks';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Check, CircleHelp, Send, X } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Check, CircleHelp, Send, X } from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
 import { useEffect, useState } from 'react';
 
 export function PostEmailStatus({

@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createClient } from '@ncthub/supabase/next/client';
 import { useEffect, useState } from 'react';
 
 export function useCurrentUser() {

@@ -1,6 +1,6 @@
 import { APP_PUBLIC_PATHS } from './public_paths';
 
-export const GITHUB_OWNER = 'tutur3u';
+export const GITHUB_OWNER = 'rmit-nct';
 export const GITHUB_REPO = 'platform';
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';

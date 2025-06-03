@@ -1,4 +1,4 @@
-import { Button, Tailwind } from '@tuturuuu/transactional/react/email';
+import { Button, Tailwind } from '@ncthub/transactional/react/email';
 
 const Email = () => {
   return (

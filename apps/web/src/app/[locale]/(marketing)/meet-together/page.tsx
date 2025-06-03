@@ -4,10 +4,10 @@ import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/supabase/next/server';
+import type { SupabaseUser } from '@ncthub/supabase/next/user';
+import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
+import { Separator } from '@ncthub/ui/separator';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { getLocale, getTranslations } from 'next-intl/server';

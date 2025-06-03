@@ -1,10 +1,10 @@
 'use client';
 
-import type { WorkspaceTask } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import { Clock, Play } from '@tuturuuu/ui/icons';
-import { toast } from '@tuturuuu/ui/sonner';
-import { cn } from '@tuturuuu/utils/format';
+import type { WorkspaceTask } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
+import { Clock, Play } from '@ncthub/ui/icons';
+import { toast } from '@ncthub/ui/sonner';
+import { cn } from '@ncthub/utils/format';
 import { useCallback, useState } from 'react';
 
 interface QuickTaskTimerProps {

@@ -1,6 +1,6 @@
 import { Button } from '../../button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
-import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendar } from '@ncthub/ui/hooks/use-calendar';
 import { PlusIcon } from 'lucide-react';
 
 export const CreateEventButton = () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+} from '@ncthub/ui/dialog';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
 import {
   AlertCircle,
   CheckCircle,
@@ -18,9 +18,9 @@ import {
   RefreshCw,
   Trash2,
   XCircle,
-} from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+} from '@ncthub/ui/icons';
+import { Progress } from '@ncthub/ui/progress';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

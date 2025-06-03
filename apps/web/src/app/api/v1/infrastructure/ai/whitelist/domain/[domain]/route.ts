@@ -1,7 +1,7 @@
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
+} from '@ncthub/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export async function PUT(

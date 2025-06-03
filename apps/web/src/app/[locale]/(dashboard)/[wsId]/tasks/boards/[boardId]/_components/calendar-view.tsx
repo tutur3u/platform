@@ -1,15 +1,15 @@
 import { TaskActions } from '../task-actions';
 import { getTasks } from '@/lib/task-helper';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Task } from '@tuturuuu/types/primitives/TaskBoard';
-import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Task } from '@ncthub/types/primitives/TaskBoard';
+import { Button } from '@ncthub/ui/button';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from '@tuturuuu/ui/hover-card';
-import { Flag, MoreHorizontal } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/hover-card';
+import { Flag, MoreHorizontal } from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
 import {
   addDays,
   eachDayOfInterval,

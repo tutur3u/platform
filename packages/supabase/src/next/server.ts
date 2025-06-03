@@ -1,7 +1,7 @@
 import { SupabaseCookie, checkEnvVariables } from './common';
 import { createServerClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@tuturuuu/types/supabase';
+import { Database } from '@ncthub/types/supabase';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { cookies } from 'next/headers';
 

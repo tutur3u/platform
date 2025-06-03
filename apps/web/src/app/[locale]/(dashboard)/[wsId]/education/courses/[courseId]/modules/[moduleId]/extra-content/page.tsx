@@ -1,6 +1,6 @@
-import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { BookText, Sparkles } from '@tuturuuu/ui/icons';
+import { Button } from '@ncthub/ui/button';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { BookText, Sparkles } from '@ncthub/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 // interface Props {

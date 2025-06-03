@@ -1,12 +1,12 @@
 import { DEV_MODE } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createClient } from '@ncthub/supabase/next/client';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@tuturuuu/ui/dropdown-menu';
-import { ActivitySquare, Database } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { ActivitySquare, Database } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

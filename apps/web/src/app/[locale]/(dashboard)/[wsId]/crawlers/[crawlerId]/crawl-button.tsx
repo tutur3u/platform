@@ -1,10 +1,10 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { BugPlay, ExternalLink, Loader2, RefreshCw } from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
-import { cn } from '@tuturuuu/utils/format';
+import { Button } from '@ncthub/ui/button';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
+import { BugPlay, ExternalLink, Loader2, RefreshCw } from '@ncthub/ui/icons';
+import { Progress } from '@ncthub/ui/progress';
+import { cn } from '@ncthub/utils/format';
 import { useState } from 'react';
 
 export default function CrawlButton({

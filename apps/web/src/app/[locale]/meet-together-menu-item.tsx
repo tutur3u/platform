@@ -3,8 +3,8 @@
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
-} from '@tuturuuu/ui/dropdown-menu';
-import { CalendarClock } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { CalendarClock } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

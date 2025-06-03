@@ -3,20 +3,20 @@ import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
-import { Model } from '@tuturuuu/ai/models';
-import { type Message, type UseChatHelpers } from '@tuturuuu/ai/types';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
-import { AIChat } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import { FileUploader, StatedFile } from '@tuturuuu/ui/custom/file-uploader';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { Model } from '@ncthub/ai/models';
+import { type Message, type UseChatHelpers } from '@ncthub/ai/types';
+import { createDynamicClient } from '@ncthub/supabase/next/client';
+import { AIChat } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
+import { FileUploader, StatedFile } from '@ncthub/ui/custom/file-uploader';
+import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   ArrowDownToLine,
   Check,
@@ -26,10 +26,10 @@ import {
   Globe,
   LinkIcon,
   Lock,
-} from '@tuturuuu/ui/icons';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { QRCodeCanvas } from 'qrcode.react';

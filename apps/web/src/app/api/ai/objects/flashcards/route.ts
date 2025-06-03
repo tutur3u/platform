@@ -1,4 +1,4 @@
-import { POST } from '@tuturuuu/ai/object/flashcards/route';
+import { POST } from '@ncthub/ai/object/flashcards/route';
 
 export const config = {
   maxDuration: 90,

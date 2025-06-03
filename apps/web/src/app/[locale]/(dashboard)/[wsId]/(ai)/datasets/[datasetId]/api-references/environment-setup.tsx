@@ -1,9 +1,9 @@
 'use client';
 
 import ApiKeySelector from './api-key-selector';
-import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
-import { CodeBlock } from '@tuturuuu/ui/codeblock';
-import { Info } from '@tuturuuu/ui/icons';
+import { Alert, AlertDescription } from '@ncthub/ui/alert';
+import { CodeBlock } from '@ncthub/ui/codeblock';
+import { Info } from '@ncthub/ui/icons';
 import { useEffect, useState } from 'react';
 
 interface Props {

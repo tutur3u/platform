@@ -1,7 +1,7 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { HOUR_HEIGHT } from './config';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
-import { cn } from '@tuturuuu/utils/format';
+import { getEventStyles } from '@ncthub/utils/color-helper';
+import { cn } from '@ncthub/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';

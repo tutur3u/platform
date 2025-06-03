@@ -4,8 +4,8 @@ import CopyLinkButton from './copy-link-button';
 import EmailButton from './email-button';
 import LoggedInAsButton from './logged-in-as-button';
 import ShowQRButton from './show-qr-button';
-import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import { User } from '@tuturuuu/types/primitives/User';
+import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
+import { User } from '@ncthub/types/primitives/User';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

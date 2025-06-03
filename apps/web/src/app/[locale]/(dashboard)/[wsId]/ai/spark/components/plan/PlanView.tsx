@@ -4,15 +4,15 @@ import { Task, YearPlan } from '../../types';
 import { MonthPicker } from '../MonthPicker';
 import { MonthlyOverview } from '../overview/MonthlyOverview';
 import { TaskList } from '../tasks/TaskList';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
+import { Badge } from '@ncthub/ui/badge';
+import { Button } from '@ncthub/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
+} from '@ncthub/ui/card';
 import {
   AlertCircle,
   BarChart,
@@ -25,10 +25,10 @@ import {
   ListTodo,
   Target,
   Timer,
-} from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+} from '@ncthub/ui/icons';
+import { Progress } from '@ncthub/ui/progress';
+import { Separator } from '@ncthub/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
 import { format, isValid, isWithinInterval, parseISO } from 'date-fns';
 import { useCallback, useMemo, useState } from 'react';
 

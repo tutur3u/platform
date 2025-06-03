@@ -1,8 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { GraduationCap } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { GraduationCap } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

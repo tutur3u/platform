@@ -6,9 +6,9 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+} from '@ncthub/supabase/next/server';
+import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

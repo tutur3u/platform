@@ -1,19 +1,19 @@
 'use client';
 
 import { useCalendar } from '../../../../../hooks/use-calendar';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
-import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import type { WorkspaceCalendarGoogleToken } from '@ncthub/types/db';
+import { Alert, AlertDescription } from '@ncthub/ui/alert';
+import { Button } from '@ncthub/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { Progress } from '@tuturuuu/ui/progress';
+} from '@ncthub/ui/card';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
+import { Progress } from '@ncthub/ui/progress';
 import { Check, ExternalLink, Link, Loader2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

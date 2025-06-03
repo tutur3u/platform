@@ -2,9 +2,9 @@
 
 import { ApiKeyRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
-import { ColorPicker } from '@tuturuuu/ui/color-picker';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { WorkspaceApiKey } from '@ncthub/types/primitives/WorkspaceApiKey';
+import { ColorPicker } from '@ncthub/ui/color-picker';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const groupTagColumns = (

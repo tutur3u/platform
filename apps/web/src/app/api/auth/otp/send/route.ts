@@ -1,12 +1,12 @@
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
+} from '@ncthub/supabase/next/server';
 import {
   checkIfUserExists,
   generateRandomPassword,
   validateEmail,
-} from '@tuturuuu/utils/email';
+} from '@ncthub/utils/email';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';

@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '../../dropdown-menu';
 import { Column } from '@tanstack/react-table';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@ncthub/utils/format';
 import { ArrowDown, ArrowUp, ChevronDown, EyeOff } from 'lucide-react';
 import React from 'react';
 

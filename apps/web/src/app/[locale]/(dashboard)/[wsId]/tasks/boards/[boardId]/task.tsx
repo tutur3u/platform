@@ -4,12 +4,12 @@ import { updateTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Task as TaskType } from '@tuturuuu/types/primitives/TaskBoard';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Task as TaskType } from '@ncthub/types/primitives/TaskBoard';
+import { Badge } from '@ncthub/ui/badge';
+import { Button } from '@ncthub/ui/button';
+import { Card } from '@ncthub/ui/card';
+import { Checkbox } from '@ncthub/ui/checkbox';
 import {
   AlertCircle,
   Calendar,
@@ -18,9 +18,9 @@ import {
   GripVertical,
   Loader2,
   Pencil,
-} from '@tuturuuu/ui/icons';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 

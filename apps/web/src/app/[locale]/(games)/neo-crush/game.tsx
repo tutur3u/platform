@@ -11,10 +11,10 @@ import { DEFAULT_TURNS, Fruit, Fruits } from './types';
 import { useGameLogic } from './use-game-logic';
 import { createBoard } from './utils';
 import { DEV_MODE } from '@/constants/common';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+import { Button } from '@ncthub/ui/button';
+import { Card } from '@ncthub/ui/card';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import React, { useEffect, useMemo, useState } from 'react';
 
 export const NeoCrushGame: React.FC = () => {

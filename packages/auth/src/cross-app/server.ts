@@ -1,5 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { AppName } from '@tuturuuu/utils/internal-domains';
+import { createClient } from '@ncthub/supabase/next/server';
+import type { AppName } from '@ncthub/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export function createPOST(appName: AppName) {

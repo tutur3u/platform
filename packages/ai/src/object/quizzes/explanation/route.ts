@@ -3,7 +3,7 @@ import { google } from '@ai-sdk/google';
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
+} from '@ncthub/supabase/next/server';
 import { streamObject } from 'ai';
 import { NextResponse } from 'next/server';
 

@@ -1,8 +1,8 @@
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
-import { validateEmail, validateOtp } from '@tuturuuu/utils/email';
+} from '@ncthub/supabase/next/server';
+import { validateEmail, validateOtp } from '@ncthub/utils/email';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 

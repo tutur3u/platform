@@ -2,8 +2,8 @@
 
 import { ProductWarehouseRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { ProductWarehouse } from '@ncthub/types/primitives/ProductWarehouse';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const productWarehouseColumns = (

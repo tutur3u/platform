@@ -1,7 +1,7 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Checkbox } from '@ncthub/ui/checkbox';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 

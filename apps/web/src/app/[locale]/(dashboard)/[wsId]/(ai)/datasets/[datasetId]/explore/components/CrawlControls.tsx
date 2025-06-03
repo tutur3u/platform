@@ -1,6 +1,6 @@
-import { Button } from '@tuturuuu/ui/button';
-import { Pause, Play, StopCircle } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
+import { Button } from '@ncthub/ui/button';
+import { Pause, Play, StopCircle } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
 
 interface Props {
   crawlState: 'idle' | 'running' | 'paused' | 'completed';

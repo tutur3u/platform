@@ -1,8 +1,8 @@
 'use client';
 
 import { useTimeBlocking } from './time-blocking-provider';
-import { ShieldCheck } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { ShieldCheck } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
 
 export default function PlanUserFilter({ users }: { users: any[] }) {

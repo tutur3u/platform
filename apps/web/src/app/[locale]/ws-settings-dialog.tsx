@@ -7,15 +7,15 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@tuturuuu/ui/breadcrumb';
-import { Button } from '@tuturuuu/ui/button';
+} from '@ncthub/ui/breadcrumb';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Bell,
   Check,
@@ -29,7 +29,7 @@ import {
   Paintbrush,
   Settings,
   Video,
-} from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/icons';
 import {
   Sidebar,
   SidebarContent,
@@ -39,7 +39,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-} from '@tuturuuu/ui/sidebar';
+} from '@ncthub/ui/sidebar';
 import * as React from 'react';
 
 const data = {

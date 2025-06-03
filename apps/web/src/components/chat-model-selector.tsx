@@ -1,5 +1,5 @@
-import { Model, models, providers } from '@tuturuuu/ai/models';
-import { Button } from '@tuturuuu/ui/button';
+import { Model, models, providers } from '@ncthub/ai/models';
+import { Button } from '@ncthub/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -7,11 +7,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@tuturuuu/ui/command';
-import { Check } from '@tuturuuu/ui/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/command';
+import { Check } from '@ncthub/ui/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@ncthub/ui/popover';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import { useState } from 'react';
 
 export function ChatModelSelector({

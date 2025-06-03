@@ -1,10 +1,10 @@
 import DeleteResourceButton from './delete-resource';
 import FileDisplay from './file-display';
 import { StorageObjectForm } from '@/app/[locale]/(dashboard)/[wsId]/drive/form';
-import { createDynamicClient } from '@tuturuuu/supabase/next/server';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Paperclip } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createDynamicClient } from '@ncthub/supabase/next/server';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Paperclip } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

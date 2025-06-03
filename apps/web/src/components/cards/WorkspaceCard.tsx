@@ -1,5 +1,5 @@
-import { Workspace } from '@tuturuuu/types/db';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Workspace } from '@ncthub/types/db';
+import { Separator } from '@ncthub/ui/separator';
 import moment from 'moment';
 
 interface Props {

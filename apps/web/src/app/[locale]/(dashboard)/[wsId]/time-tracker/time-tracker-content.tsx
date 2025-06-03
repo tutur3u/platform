@@ -10,10 +10,10 @@ import type {
   TimeTrackingCategory,
   TimeTrackingSession,
   WorkspaceTask,
-} from '@tuturuuu/types/db';
-import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+} from '@ncthub/types/db';
+import { Alert, AlertDescription } from '@ncthub/ui/alert';
+import { Button } from '@ncthub/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
 import {
   AlertCircle,
   Calendar,
@@ -23,10 +23,10 @@ import {
   Timer,
   TrendingUp,
   Zap,
-} from '@tuturuuu/ui/icons';
-import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { toast } from '@ncthub/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { cn } from '@ncthub/utils/format';
 import { useCallback, useEffect, useState } from 'react';
 
 interface TimeTrackerContentProps {

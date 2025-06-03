@@ -1,7 +1,7 @@
 'use client';
 
 import AvatarInput from './avatar-input';
-import { Workspace } from '@tuturuuu/types/db';
+import { Workspace } from '@ncthub/types/db';
 import { useTranslations } from 'next-intl';
 
 interface Props {

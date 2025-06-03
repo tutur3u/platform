@@ -1,7 +1,7 @@
 import { Filter } from '../filters';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { MinusCircle, PlusCircle } from '@tuturuuu/ui/icons';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { MinusCircle, PlusCircle } from '@ncthub/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

@@ -1,25 +1,25 @@
 import { getColumns } from '../../executions/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import type {
   WorkspaceCronExecution,
   WorkspaceCronJob,
-} from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
+} from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
+} from '@ncthub/ui/card';
 import {
   ArrowLeft,
   CheckCircle,
   Clock,
   PowerOff,
   XCircle,
-} from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/icons';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 

@@ -13,7 +13,7 @@ import {
 import { SmartSchedulingSettings } from './settings/smart-scheduling-settings';
 import { TaskSettings } from './settings/task-settings';
 import { TimezoneSettings } from './settings/timezone-settings';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
+import type { WorkspaceCalendarGoogleToken } from '@ncthub/types/db';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,21 +21,21 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@tuturuuu/ui/breadcrumb';
-import { Button } from '@tuturuuu/ui/button';
+} from '@ncthub/ui/breadcrumb';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
+} from '@ncthub/ui/select';
 import {
   Sidebar,
   SidebarContent,
@@ -45,8 +45,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-} from '@tuturuuu/ui/sidebar';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/sidebar';
+import { cn } from '@ncthub/utils/format';
 import {
   CalendarClock,
   CalendarDays,

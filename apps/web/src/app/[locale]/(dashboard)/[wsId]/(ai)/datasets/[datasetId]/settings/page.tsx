@@ -1,17 +1,17 @@
 import { ClearDataDialog } from './clear-data-dialog';
 import { DeleteDatasetDialog } from './delete-dataset-dialog';
 import { ManageColumns } from './manage-columns';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { Alert, AlertTitle } from '@tuturuuu/ui/alert';
+import { createClient } from '@ncthub/supabase/next/server';
+import { Alert, AlertTitle } from '@ncthub/ui/alert';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
-import { AlertCircle } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/ui/card';
+import { AlertCircle } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { notFound } from 'next/navigation';
 
 interface Props {

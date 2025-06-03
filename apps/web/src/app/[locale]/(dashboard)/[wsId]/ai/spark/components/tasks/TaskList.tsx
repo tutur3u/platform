@@ -1,15 +1,15 @@
 'use client';
 
 import { Priority, Task, TaskStatus } from '../../types';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
+import { Badge } from '@ncthub/ui/badge';
+import { Button } from '@ncthub/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
+} from '@ncthub/ui/card';
 import {
   AlertCircle,
   Calendar,
@@ -18,7 +18,7 @@ import {
   ExternalLink,
   Target,
   Timer,
-} from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/icons';
 import { format, parseISO } from 'date-fns';
 
 interface TaskListProps {

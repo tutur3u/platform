@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
+import { Badge } from '@ncthub/ui/badge';
 
 export function Hero() {
   return (

@@ -1,15 +1,15 @@
 'use client';
 
 import { StorageFolderForm, StorageObjectForm } from './form';
-import { Button } from '@tuturuuu/ui/button';
-import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
+import { Button } from '@ncthub/ui/button';
+import ModifiableDialogTrigger from '@ncthub/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { FileText, Folder, Plus } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { FileText, Folder, Plus } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

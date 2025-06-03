@@ -5,17 +5,17 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
-import { Badge } from '@tuturuuu/ui/badge';
+} from '@ncthub/ui/accordion';
+import { Badge } from '@ncthub/ui/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
-import { CalendarDays } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/card';
+import { CalendarDays } from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
 
 interface Task {
   title: string;

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '@ncthub/ui/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

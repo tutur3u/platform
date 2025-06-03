@@ -2,17 +2,17 @@
 
 import TimezoneEditDialog from './edit-dialog';
 import { Row } from '@tanstack/react-table';
-import { Timezone } from '@tuturuuu/types/primitives/Timezone';
-import { Button } from '@tuturuuu/ui/button';
+import { Timezone } from '@ncthub/types/primitives/Timezone';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Ellipsis } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Ellipsis } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

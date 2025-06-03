@@ -1,8 +1,8 @@
 import type { CrawlMetrics } from '../types';
 import { formatDuration, formatTime } from '../utils/time';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Progress } from '@tuturuuu/ui/progress';
+import { Badge } from '@ncthub/ui/badge';
+import { Card, CardContent } from '@ncthub/ui/card';
+import { Progress } from '@ncthub/ui/progress';
 
 interface Props {
   metrics: CrawlMetrics;

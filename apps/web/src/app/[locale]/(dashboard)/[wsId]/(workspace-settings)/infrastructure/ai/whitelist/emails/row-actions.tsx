@@ -1,15 +1,15 @@
 'use client';
 
 import { Row } from '@tanstack/react-table';
-import { AIWhitelistEmail } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
+import { AIWhitelistEmail } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { Ellipsis } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { Ellipsis } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 

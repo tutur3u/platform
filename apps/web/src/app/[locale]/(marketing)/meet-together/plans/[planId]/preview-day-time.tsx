@@ -1,14 +1,14 @@
 import { useTimeBlocking } from './time-blocking-provider';
 import { timetzToTime } from '@/utils/date-helper';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import { ShieldCheck, ShieldMinus } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Timeblock } from '@ncthub/types/primitives/Timeblock';
+import { ShieldCheck, ShieldMinus } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
+} from '@ncthub/ui/tooltip';
 import dayjs from 'dayjs';
 
 export default function PreviewDayTime({

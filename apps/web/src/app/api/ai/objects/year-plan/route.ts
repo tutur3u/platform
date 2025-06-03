@@ -1,3 +1,3 @@
-import { POST } from '@tuturuuu/ai/object/year-plan/route';
+import { POST } from '@ncthub/ai/object/year-plan/route';
 
 export { POST };

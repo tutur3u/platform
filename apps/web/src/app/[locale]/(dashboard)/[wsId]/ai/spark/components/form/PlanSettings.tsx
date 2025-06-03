@@ -6,15 +6,15 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
-import { Settings2 } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/card';
+import { Settings2 } from '@ncthub/ui/icons';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
+} from '@ncthub/ui/select';
 
 interface PlanSettingsProps {
   planDuration: number;

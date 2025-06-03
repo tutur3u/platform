@@ -1,8 +1,8 @@
 import InvoiceCard from './invoice-card';
 import { availableConfigs } from '@/constants/configs/reports';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import {
   Box,
   Calendar,
@@ -10,8 +10,8 @@ import {
   FileText,
   Percent,
   ShoppingCart,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';

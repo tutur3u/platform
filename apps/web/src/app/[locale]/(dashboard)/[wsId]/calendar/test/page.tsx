@@ -1,9 +1,9 @@
 'use client';
 
-import { calendarEventSchema } from '@tuturuuu/ai/calendar/events';
-import { useObject } from '@tuturuuu/ai/object/core';
-import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
-import { Button } from '@tuturuuu/ui/button';
+import { calendarEventSchema } from '@ncthub/ai/calendar/events';
+import { useObject } from '@ncthub/ai/object/core';
+import { Alert, AlertDescription, AlertTitle } from '@ncthub/ui/alert';
+import { Button } from '@ncthub/ui/button';
 import {
   Card,
   CardContent,
@@ -11,8 +11,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
-import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
+} from '@ncthub/ui/card';
+import { DateTimePicker } from '@ncthub/ui/date-time-picker';
 import {
   Form,
   FormControl,
@@ -21,26 +21,26 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
 import {
   AlertCircle,
   Calendar as CalendarIcon,
   Loader2,
-} from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
+} from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
-import { Switch } from '@tuturuuu/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Textarea } from '@tuturuuu/ui/textarea';
+} from '@ncthub/ui/select';
+import { Switch } from '@ncthub/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { Textarea } from '@ncthub/ui/textarea';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';

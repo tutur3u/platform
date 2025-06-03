@@ -1,7 +1,7 @@
 import { FinanceDashboardSearchParams } from '../../finance/(dashboard)/page';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import dayjs, { OpUnitType } from 'dayjs';
 import { getTranslations } from 'next-intl/server';
 

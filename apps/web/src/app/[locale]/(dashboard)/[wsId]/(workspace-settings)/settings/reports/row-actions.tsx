@@ -2,16 +2,16 @@
 
 import ConfigEditDialog from './edit-dialog';
 import { Row } from '@tanstack/react-table';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
-import { Button } from '@tuturuuu/ui/button';
+import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { Ellipsis } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { Ellipsis } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

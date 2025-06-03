@@ -3,10 +3,10 @@ import { RoleForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { permissions, totalPermissions } from '@/lib/permissions';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceRole } from '@tuturuuu/types/db';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceRole } from '@ncthub/types/db';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

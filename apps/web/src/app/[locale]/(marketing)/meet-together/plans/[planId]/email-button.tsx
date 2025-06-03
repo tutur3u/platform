@@ -1,6 +1,6 @@
-import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import { Button } from '@tuturuuu/ui/button';
-import { Mail } from '@tuturuuu/ui/icons';
+import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
+import { Button } from '@ncthub/ui/button';
+import { Mail } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

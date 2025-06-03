@@ -1,15 +1,15 @@
-# @tuturuuu/crawler
+# @ncthub/crawler
 
 Web crawling and scraping utilities for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install @tuturuuu/crawler
+npm install @ncthub/crawler
 # or
-yarn add @tuturuuu/crawler
+yarn add @ncthub/crawler
 # or
-pnpm add @tuturuuu/crawler
+pnpm add @ncthub/crawler
 ```
 
 ## Features
@@ -31,4 +31,4 @@ pnpm test
 
 ## License
 
-MIT © [Tuturuuu](https://github.com/tutur3u)
+MIT © [Tuturuuu](https://github.com/rmit-nct)

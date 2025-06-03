@@ -8,7 +8,7 @@ const isDev = process.env.NODE_ENV === 'development';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@tuturuuu/ui'],
+  transpilePackages: ['@ncthub/ui'],
   images: {
     remotePatterns: [
       {
@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
           // Use wildcard in development, which is more permissive
           {
             key: 'Access-Control-Allow-Origin',
-            value: isDev ? '*' : 'https://tuturuuu.com',
+            value: isDev ? '*' : 'https://rmitnct.club',
           },
           {
             key: 'Access-Control-Allow-Methods',
@@ -69,7 +69,7 @@ const nextConfig: NextConfig = {
           // Use wildcard in development, which is more permissive
           {
             key: 'Access-Control-Allow-Origin',
-            value: isDev ? '*' : 'https://tuturuuu.com',
+            value: isDev ? '*' : 'https://rmitnct.club',
           },
           {
             key: 'Access-Control-Allow-Methods',
@@ -94,7 +94,7 @@ const nextConfig: NextConfig = {
           // Use wildcard in development, which is more permissive
           {
             key: 'Access-Control-Allow-Origin',
-            value: isDev ? '*' : 'https://tuturuuu.com',
+            value: isDev ? '*' : 'https://rmitnct.club',
           },
           {
             key: 'Access-Control-Allow-Methods',

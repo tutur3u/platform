@@ -22,7 +22,7 @@ export default [
     ],
   },
   ...compat.extends(
-    '@tuturuuu/eslint-config/next.js',
+    '@ncthub/eslint-config/next.js',
     'plugin:@next/next/recommended'
     // "plugin:@tanstack/eslint-plugin-query/recommended",
   ),

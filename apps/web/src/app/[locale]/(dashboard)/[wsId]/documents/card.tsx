@@ -1,5 +1,5 @@
-import { WorkspaceDocument } from '@tuturuuu/types/db';
-import { FilePlus } from '@tuturuuu/ui/icons';
+import { WorkspaceDocument } from '@ncthub/types/db';
+import { FilePlus } from '@ncthub/ui/icons';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';

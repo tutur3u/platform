@@ -1,7 +1,7 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
-import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
-import { cn } from '@tuturuuu/utils/format';
+import { CalendarEvent } from '@ncthub/types/primitives/calendar-event';
+import { getEventStyles } from '@ncthub/utils/color-helper';
+import { cn } from '@ncthub/utils/format';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import timezone from 'dayjs/plugin/timezone';

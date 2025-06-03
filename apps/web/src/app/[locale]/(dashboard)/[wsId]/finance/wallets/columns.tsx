@@ -2,9 +2,9 @@
 
 import { WalletRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { Wallet } from '@tuturuuu/types/primitives/Wallet';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { Check, X } from '@tuturuuu/ui/icons';
+import { Wallet } from '@ncthub/types/primitives/Wallet';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { Check, X } from '@ncthub/ui/icons';
 import moment from 'moment';
 
 export const walletColumns = (

@@ -7,14 +7,14 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
+} from '@ncthub/ui/card';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from '@tuturuuu/ui/chart';
-import { TrendingUp } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/chart';
+import { TrendingUp } from '@ncthub/ui/icons';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 
 const chartData = [

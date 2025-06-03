@@ -1,11 +1,11 @@
 import { getUserGroupColumns } from './columns';
 import UserGroupForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { UserGroupTag } from '@ncthub/types/primitives/UserGroupTag';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 

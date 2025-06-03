@@ -2,13 +2,13 @@
 
 import { AuthButton } from './auth-button';
 import { PUBLIC_PATHS } from '@/constants/common';
-import { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
-import { MenuIcon } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Sheet, SheetContent, SheetTrigger } from '@tuturuuu/ui/sheet';
-import { cn } from '@tuturuuu/utils/format';
+import { SupabaseUser } from '@ncthub/supabase/next/user';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { ThemeToggle } from '@ncthub/ui/custom/theme-toggle';
+import { MenuIcon } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { Sheet, SheetContent, SheetTrigger } from '@ncthub/ui/sheet';
+import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

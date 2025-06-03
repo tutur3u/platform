@@ -1,9 +1,9 @@
 import type { UrlWithProgress } from '../types';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Check, X } from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
-import { cn } from '@tuturuuu/utils/format';
+import { Badge } from '@ncthub/ui/badge';
+import { Card, CardContent } from '@ncthub/ui/card';
+import { Check, X } from '@ncthub/ui/icons';
+import { Progress } from '@ncthub/ui/progress';
+import { cn } from '@ncthub/utils/format';
 
 interface Props {
   recentFetches: UrlWithProgress[];

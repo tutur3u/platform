@@ -16,28 +16,28 @@ import {
   OverlapWarning,
 } from './event-form-components';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
-import { useObject } from '@tuturuuu/ai/object/core';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import { calendarEventsSchema } from '@ncthub/ai/calendar/events';
+import { useObject } from '@ncthub/ai/object/core';
+import { SupportedColor } from '@ncthub/types/primitives/SupportedColors';
 import {
   CalendarEvent,
   EventPriority,
-} from '@tuturuuu/types/primitives/calendar-event';
+} from '@ncthub/types/primitives/calendar-event';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
+} from '@ncthub/ui/accordion';
+import { Badge } from '@ncthub/ui/badge';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Form,
   FormControl,
@@ -46,13 +46,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
+import { Separator } from '@ncthub/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { getEventStyles } from '@ncthub/utils/color-helper';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import ts from 'dayjs/plugin/timezone';

@@ -1,7 +1,7 @@
 'use client';
 
-import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
-import { Check, Hexagon } from '@tuturuuu/ui/icons';
+import { DropdownMenuItem } from '@ncthub/ui/dropdown-menu';
+import { Check, Hexagon } from '@ncthub/ui/icons';
 import { useRouter } from 'next/navigation';
 
 interface Props {

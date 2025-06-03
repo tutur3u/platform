@@ -5,12 +5,12 @@ import GroupMemberForm from './form';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
-import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@ncthub/types/primitives/WorkspaceUserField';
+import { Button } from '@ncthub/ui/button';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import {
   Box,
   Calendar,
@@ -18,9 +18,9 @@ import {
   FileUser,
   MinusCircle,
   UserCheck,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

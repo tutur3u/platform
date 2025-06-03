@@ -1,9 +1,9 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Workspace } from '@tuturuuu/types/db';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Workspace } from '@ncthub/types/db';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -12,7 +12,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@tuturuuu/ui/command';
+} from '@ncthub/ui/command';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Form,
   FormControl,
@@ -29,21 +29,21 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Input } from '@tuturuuu/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Input } from '@ncthub/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@ncthub/ui/popover';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
-import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+} from '@ncthub/ui/select';
+import { cn } from '@ncthub/utils/format';
+import { getInitials } from '@ncthub/utils/name-helper';
 import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';

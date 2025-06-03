@@ -6,7 +6,7 @@ import {
   isDateAbsent,
   isDateAttended,
 } from './utils';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@ncthub/utils/format';
 import { isAfter } from 'date-fns';
 import { Fragment } from 'react';
 

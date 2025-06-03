@@ -1,9 +1,9 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -12,15 +12,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
-import { Form } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Loader2, Settings, UserIcon } from '@tuturuuu/ui/icons';
-import { Label } from '@tuturuuu/ui/label';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { getInitials } from '@tuturuuu/utils/name-helper';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
+} from '@ncthub/ui/dialog';
+import { Form } from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Loader2, Settings, UserIcon } from '@ncthub/ui/icons';
+import { Label } from '@ncthub/ui/label';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { getInitials } from '@ncthub/utils/name-helper';
+import { generateRandomUUID } from '@ncthub/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

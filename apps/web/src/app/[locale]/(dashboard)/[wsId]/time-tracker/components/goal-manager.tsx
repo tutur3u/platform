@@ -1,6 +1,6 @@
 'use client';
 
-import type { TimeTrackingCategory } from '@tuturuuu/types/db';
+import type { TimeTrackingCategory } from '@ncthub/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,24 +10,24 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@tuturuuu/ui/alert-dialog';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+} from '@ncthub/ui/alert-dialog';
+import { Badge } from '@ncthub/ui/badge';
+import { Button } from '@ncthub/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
+} from '@ncthub/ui/dropdown-menu';
 import {
   Calendar,
   CheckCircle,
@@ -39,20 +39,20 @@ import {
   Target,
   Trash2,
   TrendingUp,
-} from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import { Progress } from '@tuturuuu/ui/progress';
+} from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Label } from '@ncthub/ui/label';
+import { Progress } from '@ncthub/ui/progress';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
-import { toast } from '@tuturuuu/ui/sonner';
-import { Switch } from '@tuturuuu/ui/switch';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/select';
+import { toast } from '@ncthub/ui/sonner';
+import { Switch } from '@ncthub/ui/switch';
+import { cn } from '@ncthub/utils/format';
 import { useState } from 'react';
 
 interface TimeTrackingGoal {

@@ -1,14 +1,14 @@
 'use client';
 
-import type { AuroraForecast } from '@tuturuuu/types/db';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import type { AuroraForecast } from '@ncthub/types/db';
+import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
+} from '@ncthub/ui/select';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useState } from 'react';

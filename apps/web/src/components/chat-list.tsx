@@ -1,8 +1,8 @@
 import { ChatMessage } from '@/components/chat-message';
-import { type Message } from '@tuturuuu/ai/types';
-import { Box, Globe, Lock, Sparkle } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+import { type Message } from '@ncthub/ai/types';
+import { Box, Globe, Lock, Sparkle } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
 

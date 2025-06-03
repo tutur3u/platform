@@ -1,4 +1,4 @@
-import { createPOST } from '@tuturuuu/ai/chat/google/new/route';
+import { createPOST } from '@ncthub/ai/chat/google/new/route';
 
 export const config = {
   maxDuration: 90,

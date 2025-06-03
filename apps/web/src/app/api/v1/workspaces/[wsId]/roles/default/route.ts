@@ -1,5 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceRole } from '@tuturuuu/types/db';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceRole } from '@ncthub/types/db';
 import { NextResponse } from 'next/server';
 
 interface Params {

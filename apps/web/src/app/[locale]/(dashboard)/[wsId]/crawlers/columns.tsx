@@ -2,9 +2,9 @@
 
 import { RowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import type { CrawledUrl } from '@tuturuuu/types/db';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { Check, X } from '@tuturuuu/ui/icons';
+import type { CrawledUrl } from '@ncthub/types/db';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { Check, X } from '@ncthub/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
 

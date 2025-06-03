@@ -1,5 +1,5 @@
 import LoginForm from './form';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';

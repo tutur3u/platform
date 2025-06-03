@@ -2,11 +2,11 @@
 
 import { Filter } from '../filters';
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
-import { Button } from '@tuturuuu/ui/button';
-import { ColorPicker } from '@tuturuuu/ui/color-picker';
+import { createClient } from '@ncthub/supabase/next/client';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { UserGroupTag } from '@ncthub/types/primitives/UserGroupTag';
+import { Button } from '@ncthub/ui/button';
+import { ColorPicker } from '@ncthub/ui/color-picker';
 import {
   Form,
   FormControl,
@@ -14,13 +14,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Users } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Users } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import * as z from 'zod';

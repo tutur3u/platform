@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { Label } from '@tuturuuu/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { Switch } from '@tuturuuu/ui/switch';
+import { Button } from '@ncthub/ui/button';
+import { Label } from '@ncthub/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@ncthub/ui/popover';
+import { Switch } from '@ncthub/ui/switch';
 import { Check, ChevronDown } from 'lucide-react';
 import React from 'react';
 

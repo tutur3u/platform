@@ -1,5 +1,5 @@
 {
-  "name": "@tuturuuu/auth",
+  "name": "@ncthub/auth",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -15,10 +15,10 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/types": "workspace:*",
-    "@tuturuuu/ui": "workspace:*",
-    "@tuturuuu/utils": "workspace:*",
+    "@ncthub/supabase": "workspace:*",
+    "@ncthub/types": "workspace:*",
+    "@ncthub/ui": "workspace:*",
+    "@ncthub/utils": "workspace:*",
     "next": "15.4.0-canary.62",
     "react": "^19.1.0"
   },

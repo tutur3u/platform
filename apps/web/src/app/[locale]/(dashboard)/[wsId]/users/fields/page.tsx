@@ -1,11 +1,11 @@
 import { userFieldColumns } from './columns';
 import UserFieldEditDialog from './edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
-import { Button } from '@tuturuuu/ui/button';
-import { Plus } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceUserField } from '@ncthub/types/primitives/WorkspaceUserField';
+import { Button } from '@ncthub/ui/button';
+import { Plus } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

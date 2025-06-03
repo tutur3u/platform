@@ -2,18 +2,18 @@
 
 import { TaskBoardForm } from './form';
 import { Row } from '@tanstack/react-table';
-import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
-import { Button } from '@tuturuuu/ui/button';
-import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
+import { TaskBoard } from '@ncthub/types/primitives/TaskBoard';
+import { Button } from '@ncthub/ui/button';
+import ModifiableDialogTrigger from '@ncthub/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Ellipsis, Eye } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

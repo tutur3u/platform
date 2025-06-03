@@ -1,10 +1,10 @@
 import QuizForm from '../../../../../quizzes/form';
 import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { ListTodo } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { ListTodo } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

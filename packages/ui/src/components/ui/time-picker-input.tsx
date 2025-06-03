@@ -7,7 +7,7 @@ import {
   getDateByType,
   setDateByType,
 } from './time-picker-utils';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@ncthub/utils/format';
 import React from 'react';
 
 export interface TimePickerInputProps

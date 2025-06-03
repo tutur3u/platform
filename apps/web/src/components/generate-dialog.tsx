@@ -1,5 +1,5 @@
-import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Button } from '@ncthub/ui/button';
+import { Checkbox } from '@ncthub/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -8,18 +8,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { Loader2, Sparkles } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { Loader2, Sparkles } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';

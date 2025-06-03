@@ -160,12 +160,12 @@ pnpm typegen
 
 ### Using Generated TypeScript Types
 
-The Supabase-generated TypeScript types are available at `packages/types/src/supabase.ts`. These types are accessible to all apps that have the `@tuturuuu/types` package installed.
+The Supabase-generated TypeScript types are available at `packages/types/src/supabase.ts`. These types are accessible to all apps that have the `@ncthub/types` package installed.
 
 You can use these types to ensure type safety when working with Supabase data:
 
 ```typescript
-import type { Database } from '@tuturuuu/types/supabase';
+import type { Database } from '@ncthub/types/supabase';
 
 // Type-safe access to tables
 const { data, error } = await supabase
@@ -191,7 +191,7 @@ const workspaceName: string = workspace?.name;
 For more convenient access to common table types, Tuturuuu also provides short-hand type definitions in `packages/types/src/db.ts`. These are easier to use and remember than the full database type paths:
 
 ```typescript
-import type { WorkspaceCourse, WorkspaceRole } from '@tuturuuu/types/db';
+import type { WorkspaceCourse, WorkspaceRole } from '@ncthub/types/db';
 
 // Use short-hand types directly
 const { data: roles } = await supabase
@@ -783,7 +783,7 @@ The main libraries used are:
 
 - `ai` - Core Vercel AI SDK package
 - `@ai-sdk/google` - Provider-specific integration for Google models
-- `@tuturuuu/supabase` - Supabase client with Tuturuuu-specific utilities
+- `@ncthub/supabase` - Supabase client with Tuturuuu-specific utilities
 
 ### Generating Structured Data
 

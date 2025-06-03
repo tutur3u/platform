@@ -1,21 +1,21 @@
-# @tuturuuu/ui
+# @ncthub/ui
 
 Shared UI components and design system for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install @tuturuuu/ui
+npm install @ncthub/ui
 # or
-yarn add @tuturuuu/ui
+yarn add @ncthub/ui
 # or
-pnpm add @tuturuuu/ui
+pnpm add @ncthub/ui
 ```
 
 ## Usage
 
 ```typescript
-import { Button, Card } from '@tuturuuu/ui'
+import { Button, Card } from '@ncthub/ui'
 
 export default function MyComponent() {
   return (
@@ -43,4 +43,4 @@ pnpm install
 
 ## License
 
-MIT © [Tuturuuu](https://github.com/tutur3u)
+MIT © [Tuturuuu](https://github.com/rmit-nct)

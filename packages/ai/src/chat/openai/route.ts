@@ -2,7 +2,7 @@ import { openai } from '@ai-sdk/openai';
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
+} from '@ncthub/supabase/next/server';
 import { CoreMessage, smoothStream, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 

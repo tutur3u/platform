@@ -1,9 +1,9 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/db';
-import { User } from '@tuturuuu/types/primitives/User';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
+import { Workspace } from '@ncthub/types/db';
+import { User } from '@ncthub/types/primitives/User';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Form,
   FormControl,
@@ -20,13 +20,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Settings, User as UserIcon } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Settings, User as UserIcon } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { getInitials } from '@ncthub/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

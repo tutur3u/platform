@@ -1,20 +1,20 @@
 'use client';
 
 import CrawlButton from '../../[crawlerId]/crawl-button';
-import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Combobox } from '@tuturuuu/ui/custom/combobox';
-import { AlertCircle } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
+import { Alert, AlertDescription } from '@ncthub/ui/alert';
+import { Button } from '@ncthub/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
+import { Combobox } from '@ncthub/ui/custom/combobox';
+import { AlertCircle } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationLink,
   PaginationNext,
-} from '@tuturuuu/ui/pagination';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
+} from '@ncthub/ui/pagination';
+import { Skeleton } from '@ncthub/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';

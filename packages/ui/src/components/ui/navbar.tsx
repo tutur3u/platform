@@ -1,4 +1,4 @@
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode, Suspense } from 'react';

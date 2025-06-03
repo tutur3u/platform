@@ -1,4 +1,4 @@
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
 
 export const availableConfigs: (WorkspaceConfig & {
   defaultValue: string;

@@ -5,17 +5,17 @@ import { useMail } from '../use-mail';
 import { MailDisplay } from './mail-display';
 import { MailList } from './mail-list';
 import { Nav } from './nav';
-import { Archive, Inbox, Search, Send } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
+import { Archive, Inbox, Search, Send } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@tuturuuu/ui/resizable';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { TooltipProvider } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/resizable';
+import { Separator } from '@ncthub/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { TooltipProvider } from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import * as React from 'react';
 
 interface MailProps {

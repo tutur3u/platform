@@ -1,6 +1,6 @@
 'use server';
 
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@ncthub/supabase/next/server';
 import { revalidatePath } from 'next/cache';
 
 export async function addWhitelistEmail(

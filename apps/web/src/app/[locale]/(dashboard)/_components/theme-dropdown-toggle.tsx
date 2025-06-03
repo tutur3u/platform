@@ -1,11 +1,11 @@
 import { ThemeDropdownItems } from './theme-dropdown-items';
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { Moon, Sun } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { Moon, Sun } from '@ncthub/ui/icons';
 
 export function ThemeDropdownToggle() {
   return (

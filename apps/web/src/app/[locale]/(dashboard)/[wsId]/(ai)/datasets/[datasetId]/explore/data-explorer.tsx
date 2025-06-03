@@ -6,17 +6,17 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { WorkspaceDataset } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
+import type { WorkspaceDataset } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
-import { Plus, RotateCw, Trash, Upload } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
+} from '@ncthub/ui/dialog';
+import { Plus, RotateCw, Trash, Upload } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
 import {
   Pagination,
   PaginationContent,
@@ -25,16 +25,16 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@tuturuuu/ui/pagination';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+} from '@ncthub/ui/pagination';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
+} from '@ncthub/ui/select';
+import { Skeleton } from '@ncthub/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

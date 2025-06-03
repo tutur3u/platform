@@ -1,14 +1,14 @@
 'use client';
 
-import { Label } from '@tuturuuu/ui/label';
+import { Label } from '@ncthub/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+} from '@ncthub/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
 import { useTheme } from 'next-themes';
 
 export type CalendarTheme = 'light' | 'dark' | 'system';

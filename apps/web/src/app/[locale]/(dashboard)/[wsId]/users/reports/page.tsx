@@ -1,14 +1,14 @@
 import { Filter } from '../filters';
 import { getUserReportColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceUserReport } from '@tuturuuu/types/db';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Plus, PlusCircle, User } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceUserReport } from '@ncthub/types/db';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Button } from '@ncthub/ui/button';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Plus, PlusCircle, User } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 

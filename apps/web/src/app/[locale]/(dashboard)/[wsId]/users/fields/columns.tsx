@@ -2,8 +2,8 @@
 
 import { UserFieldRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { WorkspaceUserField } from '@ncthub/types/primitives/WorkspaceUserField';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const userFieldColumns = (

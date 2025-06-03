@@ -1,5 +1,5 @@
 import UncrawledUrlsList from './uncrawled-urls';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

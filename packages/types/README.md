@@ -1,23 +1,23 @@
-# @tuturuuu/types
+# @ncthub/types
 
 Common TypeScript types and interfaces for Tuturuuu Platform. This package provides strongly-typed definitions for all data structures used across the Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install @tuturuuu/types
+npm install @ncthub/types
 # or
-yarn add @tuturuuu/types
+yarn add @ncthub/types
 # or
-pnpm add @tuturuuu/types
+pnpm add @ncthub/types
 ```
 
 ## Usage
 
 ```typescript
-import { User, Workspace, WorkspaceUser } from '@tuturuuu/types';
+import { User, Workspace, WorkspaceUser } from '@ncthub/types';
 // Use type-safe database queries
-import { Tables } from '@tuturuuu/types/supabase';
+import { Tables } from '@ncthub/types/supabase';
 
 type AIChat = Tables<'ai_chats'>;
 ```
@@ -47,4 +47,4 @@ pnpm install
 
 ## License
 
-MIT © [Tuturuuu](https://github.com/tutur3u)
+MIT © [Tuturuuu](https://github.com/rmit-nct)

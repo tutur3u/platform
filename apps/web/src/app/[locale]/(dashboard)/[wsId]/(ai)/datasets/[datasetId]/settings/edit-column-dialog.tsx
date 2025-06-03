@@ -1,5 +1,5 @@
-import { Button } from '@tuturuuu/ui/button';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { Button } from '@ncthub/ui/button';
+import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
 import {
   Dialog,
   DialogContent,
@@ -7,8 +7,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import { Input } from '@tuturuuu/ui/input';
+} from '@ncthub/ui/dialog';
+import { Input } from '@ncthub/ui/input';
 import { useEffect, useState } from 'react';
 
 interface Props {

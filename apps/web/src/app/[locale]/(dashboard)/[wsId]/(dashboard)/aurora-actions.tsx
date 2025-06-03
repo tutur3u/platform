@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { Loader2 } from '@tuturuuu/ui/icons';
-import { toast } from '@tuturuuu/ui/sonner';
+import { Button } from '@ncthub/ui/button';
+import { Loader2 } from '@ncthub/ui/icons';
+import { toast } from '@ncthub/ui/sonner';
 import { useState } from 'react';
 
 export default function AuroraActions() {

@@ -3,9 +3,9 @@
 import type {
   AuroraMLMetrics,
   AuroraStatisticalMetrics,
-} from '@tuturuuu/types/db';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+} from '@ncthub/types/db';
+import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {

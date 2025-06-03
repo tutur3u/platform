@@ -324,7 +324,7 @@ jobs:
                         echo "$NEW_CHECKSUM" > .checksum
                         if [ -n "$(git status --porcelain .checksum)" ]; then
                           git add .checksum
-                          git commit -m "chore(@tuturuuu/${package}): update checksum [skip ci]"
+                          git commit -m "chore(@ncthub/${package}): update checksum [skip ci]"
                           git push origin HEAD
                         fi
                       else
@@ -344,7 +344,7 @@ jobs:
                       echo "$NEW_CHECKSUM" > .checksum
                       if [ -n "$(git status --porcelain .checksum)" ]; then
                         git add .checksum
-                        git commit -m "chore(@tuturuuu/${package}): update checksum [skip ci]"
+                        git commit -m "chore(@ncthub/${package}): update checksum [skip ci]"
                         git push origin HEAD
                       fi
                     fi
@@ -397,7 +397,7 @@ jobs:
                   
                   # Stage and commit changes
                   git add package.json .checksum
-                  git commit -m "chore(@tuturuuu/${package}): bump version to ${NEW_VERSION}"
+                  git commit -m "chore(@ncthub/${package}): bump version to ${NEW_VERSION}"
                   
                   # Push with error handling
                   if ! git push origin "$BRANCH_NAME"; then
@@ -409,7 +409,7 @@ jobs:
                   PR_BODY="## 📦 Automated Version Bump
                   
                   ### Overview
-                  - 📝 Package: \`@tuturuuu/${package}\`
+                  - 📝 Package: \`@ncthub/${package}\`
                   - 🔄 Version: \`${CURRENT_VERSION}\` → \`${NEW_VERSION}\`
                   - 🕒 Updated: $(date -u +"%Y-%m-%d %H:%M UTC")
                   
@@ -446,7 +446,7 @@ jobs:
                   
                   # Create PR with enhanced error handling
                   if ! gh pr create \
-                    --title "chore(@tuturuuu/${package}): bump version to ${NEW_VERSION}" \
+                    --title "chore(@ncthub/${package}): bump version to ${NEW_VERSION}" \
                     --body "$PR_BODY" \
                     --base "${GITHUB_BASE_REF:-main}" \
                     --head "$BRANCH_NAME" \

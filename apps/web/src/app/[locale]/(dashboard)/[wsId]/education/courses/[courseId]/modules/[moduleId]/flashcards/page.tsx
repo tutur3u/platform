@@ -1,10 +1,10 @@
 import FlashcardForm from '../../../../../flashcards/form';
 import { AIFlashcards } from './client-ai';
 import ClientFlashcards from './client-flashcards';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { SwatchBook } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { SwatchBook } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

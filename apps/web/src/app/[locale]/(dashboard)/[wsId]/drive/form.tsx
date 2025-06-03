@@ -1,9 +1,9 @@
 'use client';
 
 import { joinPath } from '@/utils/path-helper';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
-import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@ncthub/types/primitives/StorageObject';
+import { Button } from '@ncthub/ui/button';
 import {
   Form,
   FormControl,
@@ -11,14 +11,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Check, Trash } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Check, Trash } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
+import { generateRandomUUID } from '@ncthub/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';

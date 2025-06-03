@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { WorkspaceDataset } from '@tuturuuu/types/db';
+import type { WorkspaceDataset } from '@ncthub/types/db';
 
 export function useWorkspaceDatasets(wsId: string) {
   return useQuery({

@@ -1,5 +1,5 @@
 import { NavLink, Navigation } from '@/components/navigation';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import React from 'react';

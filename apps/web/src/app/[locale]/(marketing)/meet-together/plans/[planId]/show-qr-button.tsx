@@ -1,7 +1,7 @@
 'use client';
 
 import CopyLinkButton from './copy-link-button';
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
-import { QrCode } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dialog';
+import { QrCode } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 

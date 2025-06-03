@@ -1,5 +1,5 @@
-import { updateSession } from '@tuturuuu/supabase/next/middleware';
-import { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { updateSession } from '@ncthub/supabase/next/middleware';
+import { SupabaseUser } from '@ncthub/supabase/next/user';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 

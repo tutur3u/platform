@@ -1,5 +1,5 @@
 import { DEV_MODE } from '@/constants/common';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
 import React from 'react';
 
 interface SidebarButtonProps {

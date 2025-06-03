@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { CheckCheck, Copy } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
+import { Button } from '@ncthub/ui/button';
+import { CheckCheck, Copy } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Label } from '@ncthub/ui/label';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

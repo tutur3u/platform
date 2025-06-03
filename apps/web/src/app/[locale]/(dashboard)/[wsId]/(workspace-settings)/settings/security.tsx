@@ -1,8 +1,8 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Workspace } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
+import { toast } from '@ncthub/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

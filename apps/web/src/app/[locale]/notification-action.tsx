@@ -2,7 +2,7 @@
 
 import { NotificationAction as Action } from './notification-action-list';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '@ncthub/ui/button';
 import { useRouter } from 'next/navigation';
 
 interface Props {

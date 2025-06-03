@@ -1,7 +1,7 @@
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
+} from '@ncthub/supabase/next/server';
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 

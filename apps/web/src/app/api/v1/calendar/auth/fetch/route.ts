@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';

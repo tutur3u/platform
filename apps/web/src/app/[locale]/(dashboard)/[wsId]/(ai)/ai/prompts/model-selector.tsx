@@ -1,5 +1,5 @@
 import { fetcher } from '@/utils/fetcher';
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '@ncthub/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -7,11 +7,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@tuturuuu/ui/command';
-import { FormControl, FormLabel } from '@tuturuuu/ui/form';
-import { CheckIcon, ChevronsUpDown } from '@tuturuuu/ui/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/command';
+import { FormControl, FormLabel } from '@ncthub/ui/form';
+import { CheckIcon, ChevronsUpDown } from '@ncthub/ui/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@ncthub/ui/popover';
+import { cn } from '@ncthub/utils/format';
 import useSWR from 'swr';
 
 export default function AIModelSelector({

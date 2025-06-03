@@ -1,6 +1,6 @@
 'use client';
 
-import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
+import { GetStartedButton } from '@ncthub/ui/custom/get-started-button';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 

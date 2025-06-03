@@ -1,4 +1,4 @@
-import { Head, Html, Img, Tailwind } from '@tuturuuu/transactional/react/email';
+import { Head, Html, Img, Tailwind } from '@ncthub/transactional/react/email';
 
 export interface UserGroupPost {
   id?: string;

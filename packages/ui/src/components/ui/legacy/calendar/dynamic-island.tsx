@@ -1,6 +1,6 @@
-import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
-import { Separator } from '@tuturuuu/ui/separator';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
+import { useCalendar } from '@ncthub/ui/hooks/use-calendar';
+import { Separator } from '@ncthub/ui/separator';
+import { getEventStyles } from '@ncthub/utils/color-helper';
 import { Play, StopCircle } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useState } from 'react';

@@ -1,7 +1,7 @@
 import { BoardSummary } from './_components/board-summary';
 import { BoardViews } from './_components/board-views';
 import { getTaskBoard } from '@/lib/task-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { notFound } from 'next/navigation';
 
 interface Props {

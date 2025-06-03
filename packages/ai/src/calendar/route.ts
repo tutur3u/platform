@@ -1,6 +1,6 @@
 import { calendarEventsSchema } from './events';
 import { google } from '@ai-sdk/google';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { streamObject } from 'ai';
 
 export async function POST(req: Request) {

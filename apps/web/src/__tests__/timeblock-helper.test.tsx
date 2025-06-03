@@ -7,7 +7,7 @@ import {
   getDateStrings,
   _experimentalRemoveTimeblocks as removeTimeblocks,
 } from '@/utils/timeblock-helper';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { Timeblock } from '@ncthub/types/primitives/Timeblock';
 import dayjs from 'dayjs';
 import { describe, expect, test } from 'vitest';
 

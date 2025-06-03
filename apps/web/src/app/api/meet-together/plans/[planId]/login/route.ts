@@ -1,5 +1,5 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
+import { createAdminClient } from '@ncthub/supabase/next/server';
+import { generateSalt, hashPassword } from '@ncthub/utils/crypto';
 import { NextResponse } from 'next/server';
 
 interface Params {

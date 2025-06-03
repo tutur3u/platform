@@ -3,20 +3,20 @@
 import { AttendanceDialog } from './attendance-dialogue';
 import useSearchParams from '@/hooks/useSearchParams';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createClient } from '@ncthub/supabase/next/client';
 import {
   WorkspaceUser,
   WorkspaceUserAttendance,
-} from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Button } from '@tuturuuu/ui/button';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
+} from '@ncthub/types/primitives/WorkspaceUser';
+import { Button } from '@ncthub/ui/button';
+import { ChevronLeft, ChevronRight } from '@ncthub/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import { format, isAfter, parse, startOfDay } from 'date-fns';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';

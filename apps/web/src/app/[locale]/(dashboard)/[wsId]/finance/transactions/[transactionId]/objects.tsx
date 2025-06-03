@@ -2,10 +2,10 @@
 
 import { TransactionObjectRowActions } from './row-actions';
 import { joinPath } from '@/utils/path-helper';
-import { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
-import { Button } from '@tuturuuu/ui/button';
-import { FileText, LayoutGrid, LayoutList } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { StorageObject } from '@ncthub/types/primitives/StorageObject';
+import { Button } from '@ncthub/ui/button';
+import { FileText, LayoutGrid, LayoutList } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';

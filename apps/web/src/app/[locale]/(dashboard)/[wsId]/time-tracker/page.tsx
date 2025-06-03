@@ -1,6 +1,6 @@
 import TimeTrackerContent from './time-tracker-content';
 import { getWorkspace, verifySecret } from '@/lib/workspace-helper';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getCurrentUser } from '@ncthub/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 

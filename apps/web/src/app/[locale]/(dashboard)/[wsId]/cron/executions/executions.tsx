@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, Clock, XCircle } from '@tuturuuu/ui/icons';
+import { CheckCircle, Clock, XCircle } from '@ncthub/ui/icons';
 import {
   Table,
   TableBody,
@@ -8,7 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@tuturuuu/ui/table';
+} from '@ncthub/ui/table';
 import { useState } from 'react';
 
 type CronJob = {

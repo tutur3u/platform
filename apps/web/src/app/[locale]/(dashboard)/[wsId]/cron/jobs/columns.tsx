@@ -2,9 +2,9 @@
 
 import { RowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import type { WorkspaceCronJob } from '@tuturuuu/types/db';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { CheckCircle, Clock, PowerOff, XCircle } from '@tuturuuu/ui/icons';
+import type { WorkspaceCronJob } from '@ncthub/types/db';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { CheckCircle, Clock, PowerOff, XCircle } from '@ncthub/ui/icons';
 import parser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import moment from 'moment';

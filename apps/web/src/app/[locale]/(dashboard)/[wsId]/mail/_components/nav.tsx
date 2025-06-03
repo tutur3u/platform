@@ -1,9 +1,9 @@
 'use client';
 
-import { buttonVariants } from '@tuturuuu/ui/button';
-import { LucideIcon } from '@tuturuuu/ui/icons';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+import { buttonVariants } from '@ncthub/ui/button';
+import { LucideIcon } from '@ncthub/ui/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import Link from 'next/link';
 
 interface NavProps {

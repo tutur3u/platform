@@ -1,18 +1,18 @@
 'use client';
 
 import { ColorPicker, colorMap } from './settings/color-picker';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
-import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
-import { Button } from '@tuturuuu/ui/button';
-import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import { Slider } from '@tuturuuu/ui/slider';
-import { Switch } from '@tuturuuu/ui/switch';
-import { Textarea } from '@tuturuuu/ui/textarea';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
-import { cn } from '@tuturuuu/utils/format';
+import { SupportedColor } from '@ncthub/types/primitives/SupportedColors';
+import { EventPriority } from '@ncthub/types/primitives/calendar-event';
+import { Alert, AlertDescription, AlertTitle } from '@ncthub/ui/alert';
+import { Button } from '@ncthub/ui/button';
+import { DateTimePicker } from '@ncthub/ui/date-time-picker';
+import { Input } from '@ncthub/ui/input';
+import { Label } from '@ncthub/ui/label';
+import { Slider } from '@ncthub/ui/slider';
+import { Switch } from '@ncthub/ui/switch';
+import { Textarea } from '@ncthub/ui/textarea';
+import { getEventStyles } from '@ncthub/utils/color-helper';
+import { cn } from '@ncthub/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
 import React, { ReactNode } from 'react';
 

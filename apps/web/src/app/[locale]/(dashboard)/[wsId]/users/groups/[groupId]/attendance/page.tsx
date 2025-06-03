@@ -2,19 +2,19 @@ import UserAttendances from '../../../attendance/user-attendances';
 import UserAttendancesSkeleton from '../../../attendance/user-attendances-skeleton';
 import { Filter } from '../../../filters';
 import { CustomMonthPicker } from '@/components/custom-month-picker';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { Button } from '@ncthub/ui/button';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import {
   CalendarIcon,
   ChartColumn,
   FileUser,
   MinusCircle,
   UserCheck,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import 'dayjs/locale/vi';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

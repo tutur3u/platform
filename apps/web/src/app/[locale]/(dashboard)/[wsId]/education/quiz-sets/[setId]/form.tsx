@@ -1,9 +1,9 @@
 'use client';
 
-import { WorkspaceQuiz } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
-import { AutosizeTextarea } from '@tuturuuu/ui/custom/autosize-textarea';
+import { WorkspaceQuiz } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
+import { Checkbox } from '@ncthub/ui/checkbox';
+import { AutosizeTextarea } from '@ncthub/ui/custom/autosize-textarea';
 import {
   Form,
   FormControl,
@@ -11,14 +11,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useFieldArray, useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Loader, Pencil, Plus, PlusCircle, Wand } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/ui/form';
+import { useFieldArray, useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Loader, Pencil, Plus, PlusCircle, Wand } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
+import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';

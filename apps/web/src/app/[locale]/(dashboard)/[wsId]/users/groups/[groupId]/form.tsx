@@ -2,15 +2,15 @@
 
 import { Filter } from '../../../users/filters';
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
-import SearchBar from '@tuturuuu/ui/custom/search-bar';
-import { User, X } from '@tuturuuu/ui/icons';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import { createClient } from '@ncthub/supabase/next/client';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
+import SearchBar from '@ncthub/ui/custom/search-bar';
+import { User, X } from '@ncthub/ui/icons';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
+import { cn } from '@ncthub/utils/format';
+import { getInitials } from '@ncthub/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

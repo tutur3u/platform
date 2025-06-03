@@ -1,10 +1,10 @@
 'use client';
 
-import { Invoice, InvoiceProduct, InvoicePromotion } from '@tuturuuu/types/db';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
-import { Button } from '@tuturuuu/ui/button';
-import { ImageIcon, PrinterIcon } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Invoice, InvoiceProduct, InvoicePromotion } from '@ncthub/types/db';
+import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
+import { Button } from '@ncthub/ui/button';
+import { ImageIcon, PrinterIcon } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import { useTranslations } from 'next-intl';

@@ -1,15 +1,15 @@
-# @tuturuuu/typescript-config
+# @ncthub/typescript-config
 
 Shared TypeScript configurations for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install --dev @tuturuuu/typescript-config
+npm install --dev @ncthub/typescript-config
 # or
-yarn add --dev @tuturuuu/typescript-config
+yarn add --dev @ncthub/typescript-config
 # or
-pnpm add -D @tuturuuu/typescript-config
+pnpm add -D @ncthub/typescript-config
 ```
 
 ## Usage
@@ -18,7 +18,7 @@ pnpm add -D @tuturuuu/typescript-config
 
 ```json
 {
-  "extends": "@tuturuuu/typescript-config/nextjs.json"
+  "extends": "@ncthub/typescript-config/nextjs.json"
 }
 ```
 
@@ -26,7 +26,7 @@ pnpm add -D @tuturuuu/typescript-config
 
 ```json
 {
-  "extends": "@tuturuuu/typescript-config/base.json"
+  "extends": "@ncthub/typescript-config/base.json"
 }
 ```
 
@@ -40,4 +40,4 @@ This package contains reusable TypeScript configurations. To modify:
 
 ## License
 
-MIT © [Tuturuuu](https://github.com/tutur3u)
+MIT © [Tuturuuu](https://github.com/rmit-nct)

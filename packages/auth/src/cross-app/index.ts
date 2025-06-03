@@ -1,9 +1,9 @@
 import {
   type SupabaseClient,
   createClient,
-} from '@tuturuuu/supabase/next/client';
-import { Database } from '@tuturuuu/types/supabase';
-import { APP_DOMAIN_MAP } from '@tuturuuu/utils/internal-domains';
+} from '@ncthub/supabase/next/client';
+import { Database } from '@ncthub/types/supabase';
+import { APP_DOMAIN_MAP } from '@ncthub/utils/internal-domains';
 
 export * from './navigation';
 

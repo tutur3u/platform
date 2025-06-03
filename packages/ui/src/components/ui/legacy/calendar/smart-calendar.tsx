@@ -3,8 +3,8 @@
 import { CalendarProvider } from '../../../../hooks/use-calendar';
 import { CalendarContent } from './calendar-content';
 import { CalendarSettings } from './settings/settings-context';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import { Workspace } from '@tuturuuu/types/db';
+import type { WorkspaceCalendarGoogleToken } from '@ncthub/types/db';
+import { Workspace } from '@ncthub/types/db';
 
 export const SmartCalendar = ({
   t,

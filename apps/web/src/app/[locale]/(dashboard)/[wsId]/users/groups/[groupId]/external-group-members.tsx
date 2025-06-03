@@ -1,9 +1,9 @@
 'use client';
 
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { Button } from '@tuturuuu/ui/button';
-import { ChevronLeft, ChevronRight, Users } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { Button } from '@ncthub/ui/button';
+import { ChevronLeft, ChevronRight, Users } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import Link from 'next/link';
 import { useState } from 'react';
 

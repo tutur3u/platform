@@ -3,9 +3,9 @@ import ModuleToggles from './toggles';
 import {
   createClient,
   createDynamicClient,
-} from '@tuturuuu/supabase/next/server';
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+} from '@ncthub/supabase/next/server';
+import { WorkspaceCourseModule } from '@ncthub/types/db';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import {
   BookText,
   Box,
@@ -16,8 +16,8 @@ import {
   SquareCheck,
   SwatchBook,
   Youtube,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';

@@ -2,18 +2,18 @@
 
 import { TransactionCategoryForm } from './form';
 import { Row } from '@tanstack/react-table';
-import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
-import { Button } from '@tuturuuu/ui/button';
-import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
+import { TransactionCategory } from '@ncthub/types/primitives/TransactionCategory';
+import { Button } from '@ncthub/ui/button';
+import ModifiableDialogTrigger from '@ncthub/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Ellipsis } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Ellipsis } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

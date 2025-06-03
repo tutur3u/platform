@@ -1,3 +1,3 @@
-import { POST } from '@tuturuuu/ai/calendar/route';
+import { POST } from '@ncthub/ai/calendar/route';
 
 export { POST };

@@ -1,12 +1,12 @@
 'use client';
 
 import { CategoryColor, colorMap } from './color-picker';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Input } from '@tuturuuu/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
+import { SupportedColor } from '@ncthub/types/primitives/SupportedColors';
+import { Button } from '@ncthub/ui/button';
+import { Card, CardContent } from '@ncthub/ui/card';
+import { Input } from '@ncthub/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { cn } from '@ncthub/utils/format';
 import { InfoIcon, PlusIcon, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 

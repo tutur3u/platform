@@ -1,16 +1,16 @@
 'use client';
 
 import { Task, YearPlan } from '../../types';
-import { Badge } from '@tuturuuu/ui/badge';
+import { Badge } from '@ncthub/ui/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
-import { Calendar } from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
+} from '@ncthub/ui/card';
+import { Calendar } from '@ncthub/ui/icons';
+import { Progress } from '@ncthub/ui/progress';
 import {
   endOfMonth,
   format,

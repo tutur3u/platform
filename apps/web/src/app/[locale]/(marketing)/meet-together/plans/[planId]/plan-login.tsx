@@ -3,11 +3,11 @@
 import AvailabilityPlanner from './availability-planner';
 import { useTimeBlocking } from './time-blocking-provider';
 import { BASE_URL } from '@/constants/common';
-import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import { User } from '@tuturuuu/types/primitives/User';
-import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
+import { Timeblock } from '@ncthub/types/primitives/Timeblock';
+import { User } from '@ncthub/types/primitives/User';
+import { Button } from '@ncthub/ui/button';
+import { Checkbox } from '@ncthub/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Form,
   FormControl,
@@ -25,11 +25,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { Input } from '@tuturuuu/ui/input';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';

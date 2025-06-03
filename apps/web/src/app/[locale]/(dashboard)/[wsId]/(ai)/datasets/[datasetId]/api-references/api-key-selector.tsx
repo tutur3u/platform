@@ -1,14 +1,14 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { Key } from '@tuturuuu/ui/icons';
+import { Button } from '@ncthub/ui/button';
+import { Key } from '@ncthub/ui/icons';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
+} from '@ncthub/ui/select';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

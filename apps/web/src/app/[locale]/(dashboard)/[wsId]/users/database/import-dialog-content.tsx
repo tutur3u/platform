@@ -1,25 +1,25 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Button } from '@ncthub/ui/button';
 import {
   DialogClose,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
   CheckCheck,
   ChevronLeft,
   ChevronRight,
-} from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import { Progress } from '@tuturuuu/ui/progress';
-import { Separator } from '@tuturuuu/ui/separator';
-import { generateUUID } from '@tuturuuu/utils/uuid-helper';
+} from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Label } from '@ncthub/ui/label';
+import { Progress } from '@ncthub/ui/progress';
+import { Separator } from '@ncthub/ui/separator';
+import { generateUUID } from '@ncthub/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

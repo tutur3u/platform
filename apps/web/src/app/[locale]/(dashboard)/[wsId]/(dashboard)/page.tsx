@@ -27,11 +27,11 @@ import {
   getWorkspace,
   verifySecret,
 } from '@/lib/workspace-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { AuroraForecast } from '@tuturuuu/types/db';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { createClient } from '@ncthub/supabase/next/server';
+import type { AuroraForecast } from '@ncthub/types/db';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
+import { getCurrentSupabaseUser } from '@ncthub/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';

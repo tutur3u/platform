@@ -1,7 +1,7 @@
 'use client';
 
 import { Task } from '../../types';
-import { Badge } from '@tuturuuu/ui/badge';
+import { Badge } from '@ncthub/ui/badge';
 
 interface TaskCardProps {
   task: Task;

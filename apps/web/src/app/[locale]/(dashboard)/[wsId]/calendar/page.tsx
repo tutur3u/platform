@@ -1,7 +1,7 @@
 import CalendarClientPage from './client';
 import TasksSidebar from './components/tasks-sidebar';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { redirect } from 'next/navigation';
 
 interface PageProps {

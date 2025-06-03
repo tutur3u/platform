@@ -9,11 +9,11 @@ import { WeekdayBar } from './weekday-bar';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
-} from '@tuturuuu/types/db';
-import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
-import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
-import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/types/db';
+import { useCalendar } from '@ncthub/ui/hooks/use-calendar';
+import type { CalendarView } from '@ncthub/ui/hooks/use-view-transition';
+import { useViewTransition } from '@ncthub/ui/hooks/use-view-transition';
+import { cn } from '@ncthub/utils/format';
 import { useCallback, useEffect, useState } from 'react';
 
 export const CalendarContent = ({

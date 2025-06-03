@@ -1,12 +1,12 @@
 import { Mail } from '../data';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
+} from '@ncthub/ui/dropdown-menu';
 import {
   Archive,
   Forward,
@@ -14,12 +14,12 @@ import {
   Reply,
   ReplyAll,
   Trash2,
-} from '@tuturuuu/ui/icons';
-import { Label } from '@tuturuuu/ui/label';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Switch } from '@tuturuuu/ui/switch';
-import { Textarea } from '@tuturuuu/ui/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+} from '@ncthub/ui/icons';
+import { Label } from '@ncthub/ui/label';
+import { Separator } from '@ncthub/ui/separator';
+import { Switch } from '@ncthub/ui/switch';
+import { Textarea } from '@ncthub/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
 import { format } from 'date-fns';
 
 interface MailDisplayProps {

@@ -1,9 +1,9 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { Button } from '@tuturuuu/ui/button';
-import { cn } from '@tuturuuu/utils/format';
+import { createClient } from '@ncthub/supabase/next/client';
+import type { SupabaseUser } from '@ncthub/supabase/next/user';
+import { Button } from '@ncthub/ui/button';
+import { cn } from '@ncthub/utils/format';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 

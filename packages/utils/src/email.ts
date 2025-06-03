@@ -1,4 +1,4 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@ncthub/supabase/next/server';
 
 export const validateEmail = async (email?: string | null) => {
   if (!email) throw 'Email is required';

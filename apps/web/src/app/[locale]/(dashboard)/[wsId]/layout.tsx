@@ -37,8 +37,8 @@ import {
   ScanSearch,
   Sparkles,
   Users,
-} from '@tuturuuu/ui/icons';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+} from '@ncthub/ui/icons';
+import { getCurrentUser } from '@ncthub/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';

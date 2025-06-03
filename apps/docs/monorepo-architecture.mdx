@@ -19,7 +19,7 @@ It's important to note that a monorepo is not the same as a monolith. A monolith
 
 ## Why Tuturuuu Uses a Monorepo
 
-Tuturuuu's platform is built as a monorepo (`@tutur3u/platform`) for several key reasons:
+Tuturuuu's platform is built as a monorepo (`@rmit-nct/hub`) for several key reasons:
 
 ### 1. Code Sharing Without Overhead
 
@@ -140,7 +140,7 @@ packages/
 
 When working in our monorepo, you'll typically:
 
-1. Clone the repository: `git clone https://github.com/tutur3u/platform.git`
+1. Clone the repository: `git clone https://github.com/rmit-nct/hub.git`
 2. Install dependencies: `pnpm install`
 3. Start the development servers: `pnpm dev` or `pnpm devx` (with Supabase)
 
@@ -161,8 +161,8 @@ When one project depends on another within the monorepo, use workspace reference
 ```json
 {
   "dependencies": {
-    "@tuturuuu/ui": "workspace:*",
-    "@tuturuuu/types": "workspace:*"
+    "@ncthub/ui": "workspace:*",
+    "@ncthub/types": "workspace:*"
   }
 }
 ```

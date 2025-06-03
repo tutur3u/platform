@@ -1,7 +1,7 @@
 'use client';
 
-import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
-import { Button } from '@tuturuuu/ui/button';
+import { WorkspaceSecret } from '@ncthub/types/primitives/WorkspaceSecret';
+import { Button } from '@ncthub/ui/button';
 import {
   Form,
   FormControl,
@@ -9,11 +9,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Input } from '@tuturuuu/ui/input';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import * as z from 'zod';

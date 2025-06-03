@@ -1,11 +1,11 @@
 import { getPostEmailColumns } from './columns';
 import Filters from './filters';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { PostEmail } from '@tuturuuu/types/primitives/post-email';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { MailWarning, Send } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { PostEmail } from '@ncthub/types/primitives/post-email';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { MailWarning, Send } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

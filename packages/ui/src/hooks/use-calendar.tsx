@@ -1,12 +1,12 @@
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import { Workspace } from '@tuturuuu/types/db';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { createClient } from '@ncthub/supabase/next/client';
+import type { WorkspaceCalendarGoogleToken } from '@ncthub/types/db';
+import { Workspace } from '@ncthub/types/db';
+import { SupportedColor } from '@ncthub/types/primitives/SupportedColors';
+import { CalendarEvent } from '@ncthub/types/primitives/calendar-event';
 import {
   CalendarSettings,
   defaultCalendarSettings,
-} from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
+} from '@ncthub/ui/legacy/calendar/settings/settings-context';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';

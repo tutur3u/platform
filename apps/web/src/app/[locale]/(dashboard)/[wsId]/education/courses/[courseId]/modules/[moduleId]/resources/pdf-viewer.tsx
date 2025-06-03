@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
+import { Button } from '@ncthub/ui/button';
+import { ChevronLeft, ChevronRight } from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';

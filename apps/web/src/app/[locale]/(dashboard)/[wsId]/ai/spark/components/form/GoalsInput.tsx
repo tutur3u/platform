@@ -1,16 +1,16 @@
 'use client';
 
 import { PlanRequest, SkillLevel, TimeOfDay } from '../../types';
-import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
-import { Button } from '@tuturuuu/ui/button';
+import { Alert, AlertDescription } from '@ncthub/ui/alert';
+import { Button } from '@ncthub/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tuturuuu/ui/card';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
+} from '@ncthub/ui/card';
+import { Checkbox } from '@ncthub/ui/checkbox';
 import {
   Brain,
   Clock,
@@ -20,19 +20,19 @@ import {
   Sparkles,
   Target,
   Trash2,
-} from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
+} from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Label } from '@ncthub/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { TagInput } from '@tuturuuu/ui/tag-input';
+} from '@ncthub/ui/select';
+import { Separator } from '@ncthub/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { TagInput } from '@ncthub/ui/tag-input';
 import { useState } from 'react';
 
 type AdvancedSettings = Omit<PlanRequest, 'wsId' | 'goals'>;

@@ -2,10 +2,10 @@ import DeleteLinkButton from './delete-link';
 import { YoutubeEmbed } from './embed';
 import YouTubeLinkForm from './form';
 import { extractYoutubeId } from '@/utils/url-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Youtube } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Youtube } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 

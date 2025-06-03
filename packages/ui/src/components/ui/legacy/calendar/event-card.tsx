@@ -10,10 +10,10 @@ import {
   ContextMenuTrigger,
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
-import { cn } from '@tuturuuu/utils/format';
+import { SupportedColor } from '@ncthub/types/primitives/SupportedColors';
+import { CalendarEvent } from '@ncthub/types/primitives/calendar-event';
+import { getEventStyles } from '@ncthub/utils/color-helper';
+import { cn } from '@ncthub/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import {

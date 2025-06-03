@@ -2,7 +2,7 @@
 
 import { getTasks } from '@/lib/task-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createClient } from '@ncthub/supabase/next/client';
 import {
   AlertCircle,
   Calendar,
@@ -10,9 +10,9 @@ import {
   Clock,
   Flag,
   Users,
-} from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { Progress } from '@ncthub/ui/progress';
+import { cn } from '@ncthub/utils/format';
 import { format } from 'date-fns';
 import { useEffect } from 'react';
 

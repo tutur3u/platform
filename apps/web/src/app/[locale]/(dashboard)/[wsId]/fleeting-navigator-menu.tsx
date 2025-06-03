@@ -1,5 +1,5 @@
-import { Button } from '@tuturuuu/ui/button';
-import { Sparkles } from '@tuturuuu/ui/icons';
+import { Button } from '@ncthub/ui/button';
+import { Sparkles } from '@ncthub/ui/icons';
 
 export default function FleetingNavigatorMenu({
   setCurrentView,

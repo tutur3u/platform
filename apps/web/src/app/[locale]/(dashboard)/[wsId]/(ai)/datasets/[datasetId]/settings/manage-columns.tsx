@@ -2,17 +2,17 @@
 
 import { EditColumnDialog } from './edit-column-dialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import { Loader2, Pencil, Plus, X } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/dialog';
+import { Loader2, Pencil, Plus, X } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { cn } from '@ncthub/utils/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

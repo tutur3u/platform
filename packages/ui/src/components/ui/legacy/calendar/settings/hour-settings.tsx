@@ -5,10 +5,10 @@ import {
   WeekTimeRanges,
   defaultWeekTimeRanges,
 } from './time-range-picker';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Badge } from '@ncthub/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
 import { Briefcase, Calendar, Clock, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';

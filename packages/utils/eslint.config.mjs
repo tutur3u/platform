@@ -9,7 +9,7 @@ const compat = new FlatCompat({
 });
 
 export default [
-  ...compat.extends('@tuturuuu/eslint-config/react-internal.js'),
+  ...compat.extends('@ncthub/eslint-config/react-internal.js'),
   {
     languageOptions: {
       parser: tsParser,

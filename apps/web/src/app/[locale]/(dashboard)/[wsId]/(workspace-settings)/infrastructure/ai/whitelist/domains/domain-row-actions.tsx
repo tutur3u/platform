@@ -1,13 +1,13 @@
 import { Row } from '@tanstack/react-table';
-import type { AIWhitelistDomain } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
+import type { AIWhitelistDomain } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { Ellipsis } from '@tuturuuu/ui/icons';
+} from '@ncthub/ui/dropdown-menu';
+import { Ellipsis } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 

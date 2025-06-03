@@ -7,8 +7,8 @@ import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
   createDynamicClient,
-} from '@tuturuuu/supabase/next/server';
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+} from '@ncthub/supabase/next/server';
+import { WorkspaceCourseModule } from '@ncthub/types/db';
 import {
   BookText,
   Goal,
@@ -16,8 +16,8 @@ import {
   Paperclip,
   SwatchBook,
   Youtube,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

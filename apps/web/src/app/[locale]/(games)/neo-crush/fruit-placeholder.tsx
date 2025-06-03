@@ -7,8 +7,8 @@ import {
   ChevronUp,
   LoaderPinwheel,
   Sparkle,
-} from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 
 function FruitPlaceholder({

@@ -1,5 +1,5 @@
 {
-  "name": "@tuturuuu/ai",
+  "name": "@ncthub/ai",
   "license": "MIT",
   "version": "0.0.10",
   "publishConfig": {
@@ -40,8 +40,8 @@
     "@ai-sdk/togetherai": "^0.2.14",
     "@ai-sdk/xai": "^1.2.16",
     "@google/generative-ai": "^0.24.1",
-    "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/utils": "workspace:*",
+    "@ncthub/supabase": "workspace:*",
+    "@ncthub/utils": "workspace:*",
     "ai": "^4.3.16",
     "eslint": "^9.28.0",
     "next": "15.4.0-canary.62",
@@ -52,9 +52,9 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.28.0",
-    "@tuturuuu/eslint-config": "workspace:*",
-    "@tuturuuu/types": "workspace:*",
-    "@tuturuuu/typescript-config": "workspace:*",
+    "@ncthub/eslint-config": "workspace:*",
+    "@ncthub/types": "workspace:*",
+    "@ncthub/typescript-config": "workspace:*",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.6",
     "@typescript-eslint/eslint-plugin": "^8.33.1",

@@ -1,5 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import { createClient } from '@ncthub/supabase/next/server';
+import { Transaction } from '@ncthub/types/primitives/Transaction';
 import { NextResponse } from 'next/server';
 
 interface Params {

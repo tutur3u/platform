@@ -1,15 +1,15 @@
-# @tuturuuu/supabase
+# @ncthub/supabase
 
 Supabase client and utilities for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install @tuturuuu/supabase
+npm install @ncthub/supabase
 # or
-yarn add @tuturuuu/supabase
+yarn add @ncthub/supabase
 # or
-pnpm add @tuturuuu/supabase
+pnpm add @ncthub/supabase
 ```
 
 ## Development
@@ -24,4 +24,4 @@ pnpm test
 
 ## License
 
-MIT © [Tuturuuu](https://github.com/tutur3u)
+MIT © [Tuturuuu](https://github.com/rmit-nct)

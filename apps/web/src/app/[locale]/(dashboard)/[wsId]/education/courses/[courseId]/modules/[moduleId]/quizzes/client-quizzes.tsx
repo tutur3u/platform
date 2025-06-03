@@ -1,7 +1,7 @@
 'use client';
 
 import QuizForm from '../../../../../quizzes/form';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createClient } from '@ncthub/supabase/next/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,11 +12,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@tuturuuu/ui/alert-dialog';
-import { Button } from '@tuturuuu/ui/button';
-import { Pencil, Trash, X } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/alert-dialog';
+import { Button } from '@ncthub/ui/button';
+import { Pencil, Trash, X } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

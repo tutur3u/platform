@@ -2,8 +2,8 @@
 
 import { WorkspaceCourseRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceCourse } from '@tuturuuu/types/db';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { WorkspaceCourse } from '@ncthub/types/db';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 

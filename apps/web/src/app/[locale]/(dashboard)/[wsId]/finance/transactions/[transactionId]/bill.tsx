@@ -1,15 +1,15 @@
 'use client';
 
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
-import { Button } from '@tuturuuu/ui/button';
-import { FileUploader, StatedFile } from '@tuturuuu/ui/custom/file-uploader';
-import { File, FileText, ImageIcon, X } from '@tuturuuu/ui/icons';
+import { createDynamicClient } from '@ncthub/supabase/next/client';
+import { Button } from '@ncthub/ui/button';
+import { FileUploader, StatedFile } from '@ncthub/ui/custom/file-uploader';
+import { File, FileText, ImageIcon, X } from '@ncthub/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
+} from '@ncthub/ui/tooltip';
 import { useState } from 'react';
 
 interface Props {

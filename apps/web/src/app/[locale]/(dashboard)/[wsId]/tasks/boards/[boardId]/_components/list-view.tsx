@@ -1,14 +1,14 @@
 import { TaskActions } from '../task-actions';
 import { getTasks } from '@/lib/task-helper';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Task } from '@tuturuuu/types/primitives/TaskBoard';
-import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Task } from '@ncthub/types/primitives/TaskBoard';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
+} from '@ncthub/ui/dropdown-menu';
 import {
   ArrowDownUp,
   Calendar,
@@ -17,8 +17,8 @@ import {
   Flag,
   Search,
   Users,
-} from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
+} from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
 import {
   Table,
   TableBody,
@@ -26,8 +26,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@tuturuuu/ui/table';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/table';
+import { cn } from '@ncthub/utils/format';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 

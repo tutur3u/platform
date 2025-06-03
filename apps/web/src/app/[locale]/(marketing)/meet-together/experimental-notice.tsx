@@ -1,7 +1,7 @@
 'use client';
 
-import { FlaskConical } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { FlaskConical } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { verifyRouteToken } from '.';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 

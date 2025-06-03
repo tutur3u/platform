@@ -2,11 +2,11 @@ import { apiKeyColumns } from './columns';
 import ApiKeyEditDialog from './edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
-import { Button } from '@tuturuuu/ui/button';
-import { Plus } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceApiKey } from '@ncthub/types/primitives/WorkspaceApiKey';
+import { Button } from '@ncthub/ui/button';
+import { Plus } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

@@ -1,6 +1,6 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
 
 export default async function UserReportsStatistics({

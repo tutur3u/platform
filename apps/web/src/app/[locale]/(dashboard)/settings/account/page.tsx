@@ -2,9 +2,9 @@ import UserAvatar from '../../../settings-avatar';
 import DisplayNameInput from '../../../settings-display-name-input';
 import EmailInput from '../../../settings-email-input';
 import ResetPasswordForm from './reset-password-form';
-import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
-import { Separator } from '@tuturuuu/ui/separator';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { SettingItemTab } from '@ncthub/ui/custom/settings-item-tab';
+import { Separator } from '@ncthub/ui/separator';
+import { getCurrentUser } from '@ncthub/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 

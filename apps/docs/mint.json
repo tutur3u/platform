@@ -31,7 +31,7 @@
     {
       "name": "GitHub Repository",
       "icon": "github",
-      "url": "https://github.com/tutur3u/platform"
+      "url": "https://github.com/rmit-nct/hub"
     }
   ],
   "navigation": [
@@ -49,15 +49,22 @@
     },
     {
       "group": "Features",
-      "pages": ["features/meet-together"]
+      "pages": [
+        "features/meet-together"
+      ]
     },
     {
       "group": "AI Features",
-      "pages": ["ai-structured-data"]
+      "pages": [
+        "ai-structured-data"
+      ]
     },
     {
       "group": "Personalization",
-      "pages": ["personalization/themes", "personalization/language"]
+      "pages": [
+        "personalization/themes",
+        "personalization/language"
+      ]
     },
     {
       "group": "Experiments",
@@ -86,8 +93,8 @@
   ],
   "footerSocials": {
     "facebook": "https://www.facebook.com/tuturuuu",
-    "x": "https://x.com/tutur3u",
-    "github": "https://github.com/tutur3u",
+    "x": "https://x.com/rmit-nct",
+    "github": "https://github.com/rmit-nct",
     "linkedin": "https://www.linkedin.com/company/tuturuuu"
   },
   "feedback": {

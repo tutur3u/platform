@@ -1,5 +1,5 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@ncthub/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 

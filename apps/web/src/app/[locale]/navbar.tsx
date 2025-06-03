@@ -2,7 +2,7 @@ import LocalWorkspaceSelect from './local-workspace-select';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
 import ServerMenu from './server-menu';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';

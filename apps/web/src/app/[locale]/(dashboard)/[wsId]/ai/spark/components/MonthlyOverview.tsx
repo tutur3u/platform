@@ -1,10 +1,10 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { InfoIcon } from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
-import { cn } from '@tuturuuu/utils/format';
+import { Badge } from '@ncthub/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
+import { InfoIcon } from '@ncthub/ui/icons';
+import { Progress } from '@ncthub/ui/progress';
+import { cn } from '@ncthub/utils/format';
 
 interface Task {
   title: string;

@@ -1,12 +1,12 @@
 import InviteMemberButton from './invite-member-button';
 import { MemberSettingsButton } from './member-settings-button';
-import { Workspace, type WorkspaceUserRole } from '@tuturuuu/types/db';
-import { User } from '@tuturuuu/types/primitives/User';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { User as UserIcon } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { Workspace, type WorkspaceUserRole } from '@ncthub/types/db';
+import { User } from '@ncthub/types/primitives/User';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { User as UserIcon } from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
+import { getInitials } from '@ncthub/utils/name-helper';
+import { getCurrentUser } from '@ncthub/utils/user-helper';
 import moment from 'moment';
 import { getLocale, getTranslations } from 'next-intl/server';
 

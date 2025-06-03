@@ -1,12 +1,12 @@
 import { BASE_URL } from '@/constants/common';
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@tuturuuu/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Check,
   CheckCheck,
@@ -14,8 +14,8 @@ import {
   Globe,
   LinkIcon,
   Lock,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { QRCodeCanvas } from 'qrcode.react';
 import React, { useState } from 'react';
 

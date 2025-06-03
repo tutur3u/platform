@@ -17,7 +17,7 @@ export default [
       },
     },
   }),
-  ...compat.extends('@tuturuuu/eslint-config/library.js'),
+  ...compat.extends('@ncthub/eslint-config/library.js'),
   {
     languageOptions: {
       parser: tsParser,

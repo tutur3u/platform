@@ -3,11 +3,11 @@ import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
 import { CustomMonthPicker } from '@/components/custom-month-picker';
 import GeneralSearchBar from '@/components/general-search-bar';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { MinusCircle, PlusCircle } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { MinusCircle, PlusCircle } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 

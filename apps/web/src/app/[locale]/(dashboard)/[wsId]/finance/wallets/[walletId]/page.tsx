@@ -1,10 +1,10 @@
 import { transactionColumns } from '../../transactions/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { Transaction } from '@tuturuuu/types/primitives/Transaction';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Calendar, CreditCard, DollarSign, Wallet } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { Transaction } from '@ncthub/types/primitives/Transaction';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Calendar, CreditCard, DollarSign, Wallet } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';

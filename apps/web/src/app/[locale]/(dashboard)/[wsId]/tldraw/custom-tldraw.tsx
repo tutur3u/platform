@@ -1,6 +1,6 @@
 'use client';
 
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import { type Editor, Tldraw } from 'tldraw';

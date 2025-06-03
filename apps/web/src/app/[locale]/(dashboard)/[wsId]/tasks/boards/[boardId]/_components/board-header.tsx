@@ -1,11 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
+} from '@ncthub/ui/dropdown-menu';
 import {
   CalendarDays,
   LayoutGrid,
@@ -14,9 +14,9 @@ import {
   Pencil,
   Settings,
   Trash2,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

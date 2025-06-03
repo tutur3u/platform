@@ -1,4 +1,4 @@
-import { PATCH } from '@tuturuuu/ai/chat/anthropic/summary/route';
+import { PATCH } from '@ncthub/ai/chat/anthropic/summary/route';
 
 export const config = {
   maxDuration: 90,

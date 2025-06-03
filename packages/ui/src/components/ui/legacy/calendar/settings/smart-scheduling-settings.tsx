@@ -1,15 +1,15 @@
 'use client';
 
-import { Label } from '@tuturuuu/ui/label';
+import { Label } from '@ncthub/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
-import { Slider } from '@tuturuuu/ui/slider';
-import { Switch } from '@tuturuuu/ui/switch';
+} from '@ncthub/ui/select';
+import { Slider } from '@ncthub/ui/slider';
+import { Switch } from '@ncthub/ui/switch';
 
 export type SmartSchedulingData = {
   enableSmartScheduling: boolean;

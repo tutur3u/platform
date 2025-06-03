@@ -4,8 +4,8 @@ import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
-import { Workspace } from '@tuturuuu/types/db';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Workspace } from '@ncthub/types/db';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -13,17 +13,17 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from '@tuturuuu/ui/breadcrumb';
-import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
-import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
-import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
+} from '@ncthub/ui/breadcrumb';
+import { LogoTitle } from '@ncthub/ui/custom/logo-title';
+import { Structure as BaseStructure } from '@ncthub/ui/custom/structure';
+import { WorkspaceSelect } from '@ncthub/ui/custom/workspace-select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { cn } from '@tuturuuu/utils/format';
+} from '@ncthub/ui/dropdown-menu';
+import { cn } from '@ncthub/utils/format';
 import { debounce } from 'lodash';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';

@@ -9,10 +9,10 @@ import {
 import {
   createAdminClient,
   createClient,
-} from '@tuturuuu/supabase/next/server';
-import { User } from '@tuturuuu/types/primitives/User';
-import { Separator } from '@tuturuuu/ui/separator';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+} from '@ncthub/supabase/next/server';
+import { User } from '@ncthub/types/primitives/User';
+import { Separator } from '@ncthub/ui/separator';
+import { getCurrentUser } from '@ncthub/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

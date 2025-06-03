@@ -1,5 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { createClient } from '@ncthub/supabase/next/server';
+import type { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
 import { NextResponse } from 'next/server';
 
 export async function PUT(req: Request) {

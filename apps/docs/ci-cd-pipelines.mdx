@@ -253,7 +253,7 @@ This workflow runs on every push, ensuring that our TypeScript types are always 
 We publish several packages to make our code reusable across projects. Here's an example workflow for the types package:
 
 ```yaml
-name: Release @tuturuuu/types package
+name: Release @ncthub/types package
 
 on:
   pull_request:
@@ -265,7 +265,7 @@ on:
 
 jobs:
   check-version-bump:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tuturuuu/types)')
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@ncthub/types)')
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
@@ -517,7 +517,7 @@ on:
 
 jobs:
   check-version-bump:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tuturuuu/types)')
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@ncthub/types)')
     # ...
 ```
 

@@ -1,4 +1,4 @@
-import { PATCH } from '@tuturuuu/ai/chat/openai/summary/route';
+import { PATCH } from '@ncthub/ai/chat/openai/summary/route';
 
 export const config = {
   maxDuration: 90,
