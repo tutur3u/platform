@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "pnpm@10.11.0",
+  "packageManager": "pnpm@10.11.1",
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "clsx": "^2.1.1",
