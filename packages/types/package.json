@@ -13,7 +13,7 @@
     "eslint": "^9.28.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.46"
+    "zod": "^3.25.48"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -22,8 +22,8 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.6",
-    "@typescript-eslint/eslint-plugin": "^8.33.0",
-    "@typescript-eslint/parser": "^8.33.0",
+    "@typescript-eslint/eslint-plugin": "^8.33.1",
+    "@typescript-eslint/parser": "^8.33.1",
     "typescript": "^5.8.3"
   },
   "overrides": {

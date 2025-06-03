@@ -569,7 +569,8 @@
     "progress": "Tiến độ",
     "metrics": "Chỉ số",
     "crawlers": "Công cụ cào dữ liệu",
-    "queues": "Hàng chờ"
+    "queues": "Hàng chờ",
+    "time_tracker": "Trình theo dõi thời gian"
   },
   "team-tabs": {
     "overview": "Tổng quan",

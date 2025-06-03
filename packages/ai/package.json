@@ -21,7 +21,7 @@
     "@ai-sdk/deepinfra": "^0.2.15",
     "@ai-sdk/deepseek": "^0.2.14",
     "@ai-sdk/elevenlabs": "^0.0.3",
-    "@ai-sdk/fal": "^0.1.11",
+    "@ai-sdk/fal": "^0.1.12",
     "@ai-sdk/fireworks": "^0.2.14",
     "@ai-sdk/gladia": "^0.0.1",
     "@ai-sdk/google": "^1.2.18",
@@ -44,10 +44,10 @@
     "@tuturuuu/utils": "workspace:*",
     "ai": "^4.3.16",
     "eslint": "^9.28.0",
-    "next": "15.4.0-canary.59",
+    "next": "15.4.0-canary.61",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.46"
+    "zod": "^3.25.48"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -57,10 +57,10 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.6",
-    "@typescript-eslint/eslint-plugin": "^8.33.0",
-    "@typescript-eslint/parser": "^8.33.0",
+    "@typescript-eslint/eslint-plugin": "^8.33.1",
+    "@typescript-eslint/parser": "^8.33.1",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.4"
+    "vitest": "^3.2.0"
   },
   "exports": {
     "./*": "./src/*.ts"

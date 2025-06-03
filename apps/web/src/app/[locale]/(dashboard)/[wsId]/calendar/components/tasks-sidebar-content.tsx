@@ -2,9 +2,15 @@
 
 import Chat from '../../chat/chat';
 import { TaskBoardForm } from '../../tasks/boards/form';
+import QuickTaskTimer from './quick-task-timer';
 import { TaskForm } from './task-form';
 import { TaskListForm } from './task-list-form';
-import type { AIChat, WorkspaceTaskBoard } from '@tuturuuu/types/db';
+import TimeTracker from './time-tracker';
+import type {
+  AIChat,
+  WorkspaceTask,
+  WorkspaceTaskBoard,
+} from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,
@@ -30,7 +36,6 @@ import {
 } from '@tuturuuu/ui/dialog';
 import {
   Bot,
-  Calendar,
   CheckCircle2,
   ChevronDown,
   Clock,
@@ -179,6 +184,19 @@ export default function TasksSidebarContent({
     );
   }, [selectedBoard]);
 
+  // Get all tasks from all boards for time tracker
+  const allTasks = useMemo(() => {
+    const tasks: Partial<WorkspaceTask>[] = [];
+    initialTaskBoards.forEach((board) => {
+      board.lists?.forEach((list) => {
+        if (list.tasks) {
+          tasks.push(...list.tasks);
+        }
+      });
+    });
+    return tasks;
+  }, [initialTaskBoards]);
+
   if (isCollapsed) {
     return (
       <div className="border-border bg-background/50 ml-2 flex h-full flex-col items-center rounded-lg border p-2 shadow-sm backdrop-blur-sm">
@@ -197,22 +215,21 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="border-border bg-background/80 text-foreground ml-2 flex h-full w-1/3 flex-col rounded-lg border shadow-lg backdrop-blur-sm">
+      <div className="@container border-border bg-background/80 text-foreground ml-2 hidden h-full w-1/3 flex-col rounded-lg border shadow-lg backdrop-blur-sm xl:flex">
         {/* Header */}
-        <div className="bg-muted/30 flex items-center justify-between rounded-t-lg border-b px-4 py-3">
-          <div className="flex items-center space-x-2">
-            <Calendar className="text-primary h-5 w-5" />
-            <h2 className="text-lg font-semibold">Workspace</h2>
+        <div className="@container bg-muted/30 flex items-center justify-between rounded-t-lg border-b px-4 py-3">
+          <div className="flex w-full items-center justify-between gap-1">
+            <TimeTracker wsId={wsId} tasks={allTasks} />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsCollapsed(true)}
+              aria-label="Collapse sidebar"
+              className="hover:bg-accent/50"
+            >
+              <PanelRightClose className="text-foreground h-5 w-5" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsCollapsed(true)}
-            aria-label="Collapse sidebar"
-            className="hover:bg-accent/50"
-          >
-            <PanelRightClose className="text-foreground h-5 w-5" />
-          </Button>
         </div>
 
         {/* Tabs Navigation */}
@@ -223,9 +240,10 @@ export default function TasksSidebarContent({
         >
           <div className="bg-muted/20 border-b p-2">
             <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
-              <TabsTrigger value="tasks">
+              <TabsTrigger value="tasks" className="@container">
                 <LayoutDashboard className="h-4 w-4" />
-                <span>Tasks</span>
+                <span className="@[80px]:inline hidden">Tasks</span>
+                <span className="@[80px]:hidden">T</span>
                 {totalTasks > 0 && (
                   <Badge
                     variant="secondary"
@@ -235,9 +253,10 @@ export default function TasksSidebarContent({
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="ai-chat">
+              <TabsTrigger value="ai-chat" className="@container">
                 <Bot className="h-4 w-4" />
-                <span>AI Chat</span>
+                <span className="@[80px]:inline hidden">AI Chat</span>
+                <span className="@[80px]:hidden">AI</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -502,7 +521,7 @@ export default function TasksSidebarContent({
                                 {list?.tasks?.map((task) => (
                                   <div
                                     key={task?.id ?? ''}
-                                    className="bg-background/50 hover:bg-accent/30 group relative rounded-md border p-3 transition-all hover:shadow-sm"
+                                    className="@container bg-background/50 hover:bg-accent/30 @md:p-4 group relative rounded-md border p-3 transition-all hover:shadow-sm"
                                   >
                                     <Link
                                       href={`/${wsId}/tasks/boards/${selectedBoard.id}?taskId=${task.id}`}
@@ -511,25 +530,30 @@ export default function TasksSidebarContent({
                                     >
                                       <div className="flex items-start justify-between">
                                         <div className="min-w-0 flex-1">
-                                          <h4 className="truncate pr-2 text-sm font-medium">
+                                          <h4 className="@md:text-base truncate pr-2 text-sm font-medium">
                                             {task.name}
                                           </h4>
                                           {task.description && (
-                                            <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                                            <p className="text-muted-foreground @md:text-sm mt-1 line-clamp-2 text-xs">
                                               {task.description}
                                             </p>
                                           )}
                                         </div>
-                                        {/* <div className="ml-2 flex shrink-0 items-center space-x-1.5">
-                                          {task.priority && (
+                                        <div className="ml-2 flex shrink-0 items-center space-x-1.5">
+                                          <QuickTaskTimer
+                                            wsId={wsId}
+                                            task={task}
+                                            size="xs"
+                                          />
+                                          {/* {task.priority && (
                                             <PriorityIcon
                                               priority={task.priority}
                                             />
                                           )}
                                           {task.status && (
                                             <StatusIcon status={task.status} />
-                                          )}
-                                        </div> */}
+                                          )} */}
+                                        </div>
                                       </div>
                                       {task.end_date && (
                                         <div className="text-muted-foreground mt-2 flex items-center text-xs">
