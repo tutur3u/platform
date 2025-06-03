@@ -10,7 +10,7 @@ export default function Home() {
   useEffect(() => {
     const fetchTask = async () => {
       setIsLoading(true);
-      const task = await fetch('/api/ai/task');
+      const task = await fetch('/api/ai/object-generation');
       const taskData = await task.json();
       setTaskData(taskData);
       setIsLoading(false);
