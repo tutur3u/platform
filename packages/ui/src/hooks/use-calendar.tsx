@@ -1258,17 +1258,6 @@ export const CalendarProvider = ({
     [googleEvents, events, ws?.id, queryClient]
   );
 
-  // Set up an interval to sync events every 30 seconds
-  useEffect(() => {
-    if (!ws?.id || !experimentalGoogleToken) return;
-
-    const interval = setInterval(() => {
-      syncEvents();
-    }, 30000); // Sync every 30 seconds
-
-    return () => clearInterval(interval); // Clean up interval on unmount
-  }, [ws?.id, syncEvents]);
-
   // Modal management
   const openModal = useCallback((eventId?: string) => {
     if (eventId) {
