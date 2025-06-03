@@ -1,5 +1,6 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -14,7 +15,8 @@ dayjs.extend(timezone);
 const MAX_EVENTS_DISPLAY = 2;
 
 export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
-  const { allDayEvents, settings, openModal } = useCalendar();
+  const { settings, openModal } = useCalendar();
+  const { allDayEvents } = useCalendarSync();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
   const [expandedDates, setExpandedDates] = useState<string[]>([]);

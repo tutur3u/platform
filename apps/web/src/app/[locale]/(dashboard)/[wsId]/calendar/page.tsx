@@ -3,7 +3,7 @@ import CalendarClientPage from './client';
 import TasksSidebar from './components/tasks-sidebar';
 import { DEV_MODE } from '@/constants/common';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { redirect } from 'next/navigation';
@@ -39,6 +39,7 @@ export default async function CalendarPage({ params }: PageProps) {
       wsId={workspace.id}
       experimentalGoogleToken={googleToken}
       useQuery={useQuery}
+      useQueryClient={useQueryClient}
     >
       {DEV_MODE && <CalendarActiveSyncDebugger />}
       <div className="flex h-[calc(100%-2rem-4px)]">

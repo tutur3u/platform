@@ -6,12 +6,14 @@ import type {
   WorkspaceCalendarEvent,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
+import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import dayjs from 'dayjs';
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -32,6 +34,11 @@ const CalendarSyncContext = createContext<{
       changesMade: boolean;
     }) => void
   ) => Promise<void>;
+
+  // Show data from database to Tuturuuu
+  eventsWithoutAllDays: CalendarEvent[];
+  allDayEvents: CalendarEvent[];
+
   syncToGoogle: () => Promise<void>;
 }>({
   data: null,
@@ -42,6 +49,11 @@ const CalendarSyncContext = createContext<{
   currentView: 'day',
   setCurrentView: () => {},
   syncToTuturuuu: async () => {},
+
+  // Show data from database to Tuturuuu
+  eventsWithoutAllDays: [],
+  allDayEvents: [],
+
   syncToGoogle: async () => {},
 });
 
@@ -50,11 +62,13 @@ export const CalendarSyncProvider = ({
   wsId,
   experimentalGoogleToken,
   useQuery,
+  useQueryClient,
 }: {
   children: React.ReactNode;
   wsId: Workspace['id'];
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
   useQuery: any;
+  useQueryClient: any;
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(
@@ -67,6 +81,37 @@ export const CalendarSyncProvider = ({
   >('day');
   const prevGoogleDataRef = useRef<string>('');
   const prevDatesRef = useRef<string>('');
+  const queryClient = useQueryClient();
+
+  // Fetch database events every 30 seconds
+  const { data: fetchedData } = useQuery({
+    queryKey: ['databaseCalendarEvents', wsId],
+    enabled: !!wsId,
+    queryFn: () => fetchCalendarEvents(),
+    refetchInterval: 30000,
+  });
+
+  const fetchCalendarEvents = async () => {
+    const supabase = createClient();
+    let startDate = dayjs(dates[0]).startOf('day');
+    let endDate = dayjs(dates[dates.length - 1]).endOf('day');
+
+    // Fetch from database
+    const { data: fetchedData, error: dbError } = await supabase
+      .from('workspace_calendar_events')
+      .select('*')
+      .eq('ws_id', wsId)
+      .gte('start_at', startDate.toISOString())
+      .lte('end_at', endDate.toISOString())
+      .order('start_at', { ascending: true });
+
+    if (dbError) {
+      console.error(dbError);
+      setError(dbError);
+      return;
+    }
+    return fetchedData;
+  };
 
   // Fetch google events every 30 seconds
   const { data: fetchedGoogleData } = useQuery({
@@ -407,6 +452,129 @@ export const CalendarSyncProvider = ({
     syncData();
   }, [dates]);
 
+  /*
+  Show data from database to Tuturuuu
+  */
+
+  // Create a unique signature for an event based on its content
+  const createEventSignature = (event: CalendarEvent): string => {
+    return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
+  };
+
+  // Detect and remove duplicate events
+  const removeDuplicateEvents = useCallback(
+    async (eventsData: CalendarEvent[]) => {
+      if (!wsId || !eventsData || eventsData.length === 0) return eventsData;
+
+      // Group events by their signature
+      const eventGroups = new Map<string, CalendarEvent[]>();
+
+      eventsData.forEach((event) => {
+        const signature = createEventSignature(event);
+        if (!eventGroups.has(signature)) {
+          eventGroups.set(signature, []);
+        }
+        eventGroups.get(signature)!.push(event);
+      });
+
+      // Find duplicates that need to be removed
+      const eventsToDelete: string[] = [];
+      let deletionPerformed = false;
+
+      eventGroups.forEach((eventGroup, signature) => {
+        if (eventGroup.length > 1) {
+          console.log(
+            `Found ${eventGroup.length} duplicates with signature "${signature}"`
+          );
+
+          // Sort by creation time if available, otherwise by ID
+          // Keep the first/oldest event, delete the rest
+          const sortedEvents = [...eventGroup].sort((a, b) => {
+            // If we have created_at field, use it (check with optional chaining)
+            const aCreatedAt = (a as any)?.created_at;
+            const bCreatedAt = (b as any)?.created_at;
+            if (aCreatedAt && bCreatedAt) {
+              return (
+                new Date(aCreatedAt).getTime() - new Date(bCreatedAt).getTime()
+              );
+            }
+            // Otherwise sort by ID which is often sequential
+            return a.id.localeCompare(b.id);
+          });
+
+          // Keep the first event (oldest), mark the rest for deletion
+          const eventsToRemove = sortedEvents.slice(1);
+          eventsToRemove.forEach((event) => {
+            eventsToDelete.push(event.id);
+          });
+        }
+      });
+
+      // Delete duplicate events if any were found
+      if (eventsToDelete.length > 0) {
+        try {
+          const supabase = createClient();
+          // Delete in batches of 10 to avoid request size limitations
+          const batchSize = 10;
+          for (let i = 0; i < eventsToDelete.length; i += batchSize) {
+            const batch = eventsToDelete.slice(i, i + batchSize);
+            const { error } = await supabase
+              .from('workspace_calendar_events')
+              .delete()
+              .in('id', batch);
+
+            if (error) {
+              console.error('Error deleting duplicate events:', error);
+            } else {
+              deletionPerformed = true;
+              console.log(
+                `Successfully deleted ${batch.length} duplicate events`
+              );
+            }
+          }
+
+          // If events were deleted, refresh to get updated data
+          if (deletionPerformed) {
+            queryClient.invalidateQueries({
+              queryKey: ['calendarEvents', wsId],
+            });
+          }
+        } catch (err) {
+          console.error('Failed to delete duplicate events:', err);
+        }
+      }
+
+      // Return the filtered list without duplicates
+      return eventsData.filter((event) => !eventsToDelete.includes(event.id));
+    },
+    [wsId, queryClient]
+  );
+
+  // Process events to remove duplicates, then memoize the result
+  const events = useMemo(() => {
+    return (fetchedData ?? []) as CalendarEvent[];
+  }, [fetchedData, removeDuplicateEvents]);
+
+  const eventsWithoutAllDays = useMemo(() => {
+    return events.filter((event) => {
+      const start = dayjs(event.start_at);
+      const end = dayjs(event.end_at);
+
+      const duration = Math.abs(end.diff(start, 'seconds'));
+      return duration % (24 * 60 * 60) !== 0;
+    });
+  }, [events]);
+
+  const allDayEvents = useMemo(() => {
+    return events.filter((event) => {
+      const start = dayjs(event.start_at);
+      const end = dayjs(event.end_at);
+
+      const duration = Math.abs(end.diff(start, 'seconds'));
+      return duration % (24 * 60 * 60) === 0;
+    });
+  }, [events]);
+
   const syncToGoogle = async () => {};
 
   const value = {
@@ -419,6 +587,10 @@ export const CalendarSyncProvider = ({
     setCurrentView,
     syncToTuturuuu,
     syncToGoogle,
+
+    // Show data from database to Tuturuuu
+    eventsWithoutAllDays,
+    allDayEvents,
   };
 
   return (
