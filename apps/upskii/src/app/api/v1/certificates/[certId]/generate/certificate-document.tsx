@@ -1,3 +1,4 @@
+import { CertificateData } from './types';
 import { BASE_URL } from '@/constants/common';
 import {
   Document,
@@ -8,7 +9,6 @@ import {
   Text,
   View,
 } from '@react-pdf/renderer';
-import { CertificateData } from './types';
 
 // Register fonts
 Font.register({
@@ -167,7 +167,9 @@ const CertificateFooter = ({ data }: { data: CertificateData }) => (
   </View>
 );
 
-export const CertificateDocument: React.FC<{ data: CertificateData }> = ({ data }) => (
+export const CertificateDocument: React.FC<{ data: CertificateData }> = ({
+  data,
+}) => (
   <Document>
     <Page size="A4" orientation="landscape" style={styles.page}>
       <View style={styles.container}>

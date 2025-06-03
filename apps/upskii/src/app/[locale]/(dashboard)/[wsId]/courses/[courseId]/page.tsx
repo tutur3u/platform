@@ -1,3 +1,5 @@
+import { getWorkspaceCourseModuleColumns } from './columns';
+import CourseModuleForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
@@ -7,8 +9,6 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
-import { getWorkspaceCourseModuleColumns } from './columns';
-import CourseModuleForm from './form';
 
 interface SearchParams {
   q?: string;
@@ -47,12 +47,15 @@ export default async function WorkspaceCoursesPage({
     href: `/${wsId}/courses/${courseId}/modules/${m.id}`,
   })) as ModuleWithCompletion[];
 
-  const allModulesCompleted = modules.length > 0 && modules.every((module) => module.is_completed);
+  const allModulesCompleted =
+    modules.length > 0 && modules.every((module) => module.is_completed);
 
   // Check for existing certificate
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   let certificateId: string | null = null;
   if (allModulesCompleted && user) {
     try {
@@ -64,7 +67,8 @@ export default async function WorkspaceCoursesPage({
         .eq('course_id', courseId)
         .single();
 
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        // PGRST116 is "no rows returned"
         console.error('Error fetching certificate:', fetchError);
         return;
       }
