@@ -599,6 +599,67 @@ importers:
         specifier: ^3.2.0
         version: 3.2.0(@types/debug@4.1.12)(@types/node@22.15.29)(jiti@2.4.2)(jsdom@26.1.0(canvas@3.1.0))(lightningcss@1.30.1)(tsx@4.19.4)
 
+  apps/playground:
+    dependencies:
+      '@tuturuuu/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
+      '@tuturuuu/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@tuturuuu/supabase':
+        specifier: workspace:*
+        version: link:../../packages/supabase
+      '@tuturuuu/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@tuturuuu/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      '@tuturuuu/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@tuturuuu/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      next:
+        specifier: 15.4.0-canary.62
+        version: 15.4.0-canary.62(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react:
+        specifier: ^19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.1.0(react@19.1.0)
+      tailwindcss:
+        specifier: ^4.1.8
+        version: 4.1.8
+    devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3.3.1
+        version: 3.3.1
+      '@types/node':
+        specifier: ^22.15.27
+        version: 22.15.29
+      '@types/react':
+        specifier: ^19.1.6
+        version: 19.1.6
+      '@types/react-dom':
+        specifier: ^19.1.5
+        version: 19.1.5(@types/react@19.1.6)
+      eslint:
+        specifier: ^9.27.0
+        version: 9.28.0(jiti@2.4.2)
+      eslint-config-next:
+        specifier: 15.4.0-canary.62
+        version: 15.4.0-canary.62(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3)
+      postcss:
+        specifier: ^8.5.4
+        version: 8.5.4
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+
   apps/rewise:
     dependencies:
       '@deepgram/sdk':
