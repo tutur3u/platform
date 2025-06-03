@@ -1,14 +1,24 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Database } from '@tuturuuu/types/supabase';
 
-export type CertificateWithDetails = Database['public']['Tables']['course_certificates']['Row'] & {
-  workspace_courses: Pick<Database['public']['Tables']['workspace_courses']['Row'], 'name' | 'ws_id'> & {
-    workspaces: Pick<Database['public']['Tables']['workspaces']['Row'], 'name'>;
+export type CertificateWithDetails =
+  Database['public']['Tables']['course_certificates']['Row'] & {
+    workspace_courses: Pick<
+      Database['public']['Tables']['workspace_courses']['Row'],
+      'name' | 'ws_id'
+    > & {
+      workspaces: Pick<
+        Database['public']['Tables']['workspaces']['Row'],
+        'name'
+      >;
+    };
+    users: {
+      user_private_details: Pick<
+        Database['public']['Tables']['user_private_details']['Row'],
+        'full_name'
+      >;
+    };
   };
-  users: {
-    user_private_details: Pick<Database['public']['Tables']['user_private_details']['Row'], 'full_name'>;
-  };
-};
 
 export type CertificateDetails = {
   courseName: string;
@@ -18,12 +28,16 @@ export type CertificateDetails = {
   certificateId: string;
 };
 
-export async function getCertificateDetails(certificateId: string, userId: string) {
+export async function getCertificateDetails(
+  certificateId: string,
+  userId: string
+) {
   const supabase = await createClient();
 
-  const { data: certificate, error } = await supabase
+  const { data: certificate, error } = (await supabase
     .from('course_certificates')
-    .select(`
+    .select(
+      `
       id,
       completed_date,
       user_id,
@@ -39,10 +53,11 @@ export async function getCertificateDetails(certificateId: string, userId: strin
           full_name
         )
       )
-    `)
+    `
+    )
     .eq('id', certificateId)
     .eq('user_id', userId)
-    .single() as { data: CertificateWithDetails | null; error: any };
+    .single()) as { data: CertificateWithDetails | null; error: any };
 
   if (error) {
     throw new Error('Failed to fetch certificate');
@@ -59,4 +74,4 @@ export async function getCertificateDetails(certificateId: string, userId: strin
     completionDate: certificate.completed_date,
     certificateId: certificate.id,
   };
-} 
+}

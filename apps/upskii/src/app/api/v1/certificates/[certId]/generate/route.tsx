@@ -1,9 +1,9 @@
+import { CertificateDocument } from './certificate-document';
+import { CertificateData } from './types';
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { renderToStream } from '@react-pdf/renderer';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest } from 'next/server';
-import { CertificateDocument } from './certificate-document';
-import { CertificateData } from './types';
 
 export async function POST(
   req: NextRequest,
@@ -26,7 +26,9 @@ export async function POST(
 
     // Get the authenticated user
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user?.id) {
       return new Response('Unauthorized', { status: 401 });
     }

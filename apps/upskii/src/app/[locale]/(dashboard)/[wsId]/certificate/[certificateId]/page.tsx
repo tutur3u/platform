@@ -1,7 +1,7 @@
+import Certificate from '../certificate-page';
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
-import Certificate from '../certificate-page';
 
 export type CertificateProps = {
   certDetails: {
@@ -24,7 +24,9 @@ export default async function CertificatePage({ params }: PageProps) {
   const supabase = await createClient();
 
   // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user?.id) {
     redirect('/'); // Redirect to home if not authenticated
   }
