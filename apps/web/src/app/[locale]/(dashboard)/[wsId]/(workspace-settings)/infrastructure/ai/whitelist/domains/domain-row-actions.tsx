@@ -1,4 +1,3 @@
-import { Row } from '@tanstack/react-table';
 import type { AIWhitelistDomain } from '@ncthub/types/db';
 import { Button } from '@ncthub/ui/button';
 import {
@@ -8,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@ncthub/ui/dropdown-menu';
 import { Ellipsis } from '@ncthub/ui/icons';
+import { Row } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 

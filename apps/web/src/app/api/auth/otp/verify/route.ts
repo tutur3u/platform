@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@ncthub/supabase/next/server';
+import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
 import { validateEmail, validateOtp } from '@ncthub/utils/email';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';

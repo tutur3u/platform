@@ -2,14 +2,14 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   {
     name: 'hub',
     url: 'https://rmitnct.club',
-  }
+  },
 ] as const;
 
 export const DEV_INTERNAL_APP_DOMAINS = [
   {
     name: 'hub',
     url: 'http://localhost:7803',
-  }
+  },
 ] as const;
 
 export const APP_DOMAIN_MAP = [

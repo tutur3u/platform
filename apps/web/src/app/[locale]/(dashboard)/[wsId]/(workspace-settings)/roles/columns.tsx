@@ -1,10 +1,10 @@
 'use client';
 
 import { RoleRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
 import { WorkspaceRole } from '@ncthub/types/db';
 import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { UserCircle } from '@ncthub/ui/icons';
+import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
 export const roleColumns = (

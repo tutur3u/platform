@@ -1,7 +1,6 @@
 'use client';
 
 import { Filter } from '../../../users/filters';
-import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@ncthub/supabase/next/client';
 import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
@@ -11,6 +10,7 @@ import { User, X } from '@ncthub/ui/icons';
 import { ScrollArea } from '@ncthub/ui/scroll-area';
 import { cn } from '@ncthub/utils/format';
 import { getInitials } from '@ncthub/utils/name-helper';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

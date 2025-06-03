@@ -2,7 +2,6 @@
 
 import { AttendanceDialog } from './attendance-dialogue';
 import useSearchParams from '@/hooks/useSearchParams';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@ncthub/supabase/next/client';
 import {
   WorkspaceUser,
@@ -17,6 +16,7 @@ import {
   TooltipTrigger,
 } from '@ncthub/ui/tooltip';
 import { cn } from '@ncthub/utils/format';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { format, isAfter, parse, startOfDay } from 'date-fns';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';

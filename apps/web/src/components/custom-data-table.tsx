@@ -1,10 +1,7 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
-import {
-  DataTable,
-  DataTableProps,
-} from '@ncthub/ui/custom/tables/data-table';
+import { DataTable, DataTableProps } from '@ncthub/ui/custom/tables/data-table';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';

@@ -1,10 +1,10 @@
 'use client';
 
 import { TimezoneRowActions } from '@/components/row-actions/timezones';
-import { ColumnDef } from '@tanstack/react-table';
 import { Timezone, TimezoneStatus } from '@ncthub/types/primitives/Timezone';
 import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { Check, Clock, RefreshCw, RefreshCwOff, X } from '@ncthub/ui/icons';
+import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
 export const timezoneColumns = (

@@ -1,7 +1,6 @@
 'use client';
 
 import ConfigEditDialog from './edit-dialog';
-import { Row } from '@tanstack/react-table';
 import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
 import { Button } from '@ncthub/ui/button';
 import {
@@ -12,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@ncthub/ui/dropdown-menu';
 import { Ellipsis } from '@ncthub/ui/icons';
+import { Row } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

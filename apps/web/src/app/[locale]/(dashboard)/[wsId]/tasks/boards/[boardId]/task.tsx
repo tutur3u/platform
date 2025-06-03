@@ -3,7 +3,6 @@ import { TaskActions } from './task-actions';
 import { updateTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@ncthub/supabase/next/client';
 import { Task as TaskType } from '@ncthub/types/primitives/TaskBoard';
 import { Badge } from '@ncthub/ui/badge';
@@ -21,6 +20,7 @@ import {
 } from '@ncthub/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
 import { cn } from '@ncthub/utils/format';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 

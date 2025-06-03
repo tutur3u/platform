@@ -1,13 +1,13 @@
 'use client';
 
 import { Filter } from '../../../users/filters';
-import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@ncthub/supabase/next/client';
 import { UserGroup } from '@ncthub/types/primitives/UserGroup';
 import { Button } from '@ncthub/ui/button';
 import SearchBar from '@ncthub/ui/custom/search-bar';
 import { Users, X } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

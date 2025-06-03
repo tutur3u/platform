@@ -1,9 +1,6 @@
 import { flashcardSchema } from '../types';
 import { google } from '@ai-sdk/google';
-import {
-  createAdminClient,
-  createClient,
-} from '@ncthub/supabase/next/server';
+import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
 import { streamObject } from 'ai';
 import { NextResponse } from 'next/server';
 

@@ -1,6 +1,5 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
@@ -12,6 +11,7 @@ import {
   DialogTrigger,
 } from '@ncthub/ui/dialog';
 import { AlertTriangle, Trash2 } from '@ncthub/ui/icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

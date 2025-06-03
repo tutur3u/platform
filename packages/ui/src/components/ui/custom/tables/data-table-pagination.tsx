@@ -9,8 +9,8 @@ import {
   SelectValue,
 } from '../../select';
 import { Separator } from '../../separator';
-import { Table } from '@tanstack/react-table';
 import { cn } from '@ncthub/utils/format';
+import { Table } from '@tanstack/react-table';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,

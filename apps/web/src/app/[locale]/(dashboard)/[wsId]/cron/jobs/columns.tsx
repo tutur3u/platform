@@ -1,10 +1,10 @@
 'use client';
 
 import { RowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCronJob } from '@ncthub/types/db';
 import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { CheckCircle, Clock, PowerOff, XCircle } from '@ncthub/ui/icons';
+import { ColumnDef } from '@tanstack/react-table';
 import parser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import moment from 'moment';

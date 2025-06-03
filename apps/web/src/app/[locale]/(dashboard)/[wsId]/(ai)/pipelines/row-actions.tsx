@@ -1,9 +1,9 @@
 'use client';
 
-import { Row } from '@tanstack/react-table';
 import type { CrawledUrl } from '@ncthub/types/db';
 import { Button } from '@ncthub/ui/button';
 import { Eye } from '@ncthub/ui/icons';
+import { Row } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

@@ -1,9 +1,6 @@
 import { permissions as rolePermissions } from './permissions';
 import { DEV_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import {
-  createAdminClient,
-  createClient,
-} from '@ncthub/supabase/next/server';
+import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
 import {
   PermissionId,
   Workspace,

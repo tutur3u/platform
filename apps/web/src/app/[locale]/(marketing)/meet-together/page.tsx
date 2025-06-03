@@ -1,10 +1,7 @@
 import Form from './form';
 import UserTime from './user-time';
 import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
-import {
-  createAdminClient,
-  createClient,
-} from '@ncthub/supabase/next/server';
+import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
 import type { SupabaseUser } from '@ncthub/supabase/next/user';
 import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
 import { Separator } from '@ncthub/ui/separator';

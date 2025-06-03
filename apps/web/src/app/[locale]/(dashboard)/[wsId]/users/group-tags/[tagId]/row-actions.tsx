@@ -1,6 +1,5 @@
 'use client';
 
-import { Row } from '@tanstack/react-table';
 import { UserGroup } from '@ncthub/types/primitives/UserGroup';
 import { Button } from '@ncthub/ui/button';
 import {
@@ -11,6 +10,7 @@ import {
 } from '@ncthub/ui/dropdown-menu';
 import { toast } from '@ncthub/ui/hooks/use-toast';
 import { Ellipsis, Eye } from '@ncthub/ui/icons';
+import { Row } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

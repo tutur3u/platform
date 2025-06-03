@@ -2,10 +2,10 @@
 
 import GroupAttendanceStats from './attendance-stats';
 import { UserGroupRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
 import { UserGroup } from '@ncthub/types/primitives/UserGroup';
 import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@ncthub/ui/icons';
+import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import Link from 'next/link';
 

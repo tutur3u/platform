@@ -1,6 +1,5 @@
 import { Filter } from '../../../users/filters';
 import { SectionProps } from './index';
-import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@ncthub/supabase/next/client';
 import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
@@ -9,6 +8,7 @@ import SearchBar from '@ncthub/ui/custom/search-bar';
 import { User, X } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import { getInitials } from '@ncthub/utils/name-helper';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 

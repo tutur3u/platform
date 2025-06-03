@@ -1,7 +1,6 @@
 'use client';
 
 import { UserRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
 import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@ncthub/types/primitives/WorkspaceUserField';
 import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
@@ -11,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@ncthub/ui/tooltip';
+import { ColumnDef } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import moment from 'moment';

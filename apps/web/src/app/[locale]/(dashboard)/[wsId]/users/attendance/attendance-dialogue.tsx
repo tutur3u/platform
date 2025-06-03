@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@ncthub/supabase/next/client';
 import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
 import { Button } from '@ncthub/ui/button';
@@ -17,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@ncthub/ui/select';
+import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';

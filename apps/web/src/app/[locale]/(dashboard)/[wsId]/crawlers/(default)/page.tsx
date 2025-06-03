@@ -3,10 +3,7 @@ import ModelForm from '../form';
 import UncrawledUrlsCount from '../uncrawled-urls-count';
 import CrawlerFilters from './crawler-filters';
 import { CustomDataTable } from '@/components/custom-data-table';
-import {
-  createAdminClient,
-  createClient,
-} from '@ncthub/supabase/next/server';
+import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
 import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import { getTranslations } from 'next-intl/server';

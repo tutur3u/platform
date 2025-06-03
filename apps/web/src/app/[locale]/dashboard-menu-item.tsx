@@ -1,5 +1,4 @@
 import { DEV_MODE } from '@/constants/common';
-import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@ncthub/supabase/next/client';
 import {
   DropdownMenuGroup,
@@ -7,6 +6,7 @@ import {
   DropdownMenuSeparator,
 } from '@ncthub/ui/dropdown-menu';
 import { ActivitySquare, Database } from '@ncthub/ui/icons';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

@@ -1,9 +1,9 @@
 'use client';
 
 import { ProductWarehouseRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
 import { ProductWarehouse } from '@ncthub/types/primitives/ProductWarehouse';
 import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
 export const productWarehouseColumns = (

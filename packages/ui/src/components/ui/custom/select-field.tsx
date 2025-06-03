@@ -6,8 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../select';
-import { Root } from '@radix-ui/react-select';
 import { cn } from '@ncthub/utils/format';
+import { Root } from '@radix-ui/react-select';
 import React, { forwardRef } from 'react';
 
 type SelectOption = {

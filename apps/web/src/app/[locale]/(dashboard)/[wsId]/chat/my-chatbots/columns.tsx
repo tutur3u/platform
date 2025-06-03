@@ -1,10 +1,10 @@
 'use client';
 
 import { GroupTagRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
 import { UserGroupTag } from '@ncthub/types/primitives/UserGroupTag';
 import { ColorPicker } from '@ncthub/ui/color-picker';
 import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import Link from 'next/link';
 

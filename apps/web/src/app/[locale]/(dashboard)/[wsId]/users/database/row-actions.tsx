@@ -1,7 +1,6 @@
 'use client';
 
 import { DatePicker } from '../../../../../../components/row-actions/users/date-picker';
-import { Row } from '@tanstack/react-table';
 import { createClient } from '@ncthub/supabase/next/client';
 import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
@@ -38,6 +37,7 @@ import { zodResolver } from '@ncthub/ui/resolvers';
 import { Separator } from '@ncthub/ui/separator';
 import { getInitials } from '@ncthub/utils/name-helper';
 import { generateRandomUUID } from '@ncthub/utils/uuid-helper';
+import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

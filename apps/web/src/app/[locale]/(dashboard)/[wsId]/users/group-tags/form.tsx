@@ -1,7 +1,6 @@
 'use client';
 
 import { Filter } from '../filters';
-import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@ncthub/supabase/next/client';
 import { UserGroup } from '@ncthub/types/primitives/UserGroup';
 import { UserGroupTag } from '@ncthub/types/primitives/UserGroupTag';
@@ -21,6 +20,7 @@ import { Users } from '@ncthub/ui/icons';
 import { Input } from '@ncthub/ui/input';
 import { zodResolver } from '@ncthub/ui/resolvers';
 import { Separator } from '@ncthub/ui/separator';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import * as z from 'zod';

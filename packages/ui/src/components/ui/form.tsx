@@ -2,9 +2,9 @@
 
 import { FormRequiredIndicator } from './form-required-indicator';
 import { Label } from './label';
+import { cn } from '@ncthub/utils/format';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
-import { cn } from '@ncthub/utils/format';
 import * as React from 'react';
 import {
   Controller,

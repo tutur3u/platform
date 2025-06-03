@@ -1,7 +1,7 @@
 'use client';
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@ncthub/supabase/next/client';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 
 const GroupAttendanceStats = ({

@@ -1,7 +1,6 @@
 'use client';
 
 import { getTasks } from '@/lib/task-helper';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@ncthub/supabase/next/client';
 import {
   AlertCircle,
@@ -13,6 +12,7 @@ import {
 } from '@ncthub/ui/icons';
 import { Progress } from '@ncthub/ui/progress';
 import { cn } from '@ncthub/utils/format';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useEffect } from 'react';
 

@@ -6,10 +6,7 @@ import { MonthCalendar } from './month-calendar';
 import { SettingsButton } from './settings-button';
 import type { CalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
-import type {
-  Workspace,
-  WorkspaceCalendarGoogleToken,
-} from '@ncthub/types/db';
+import type { Workspace, WorkspaceCalendarGoogleToken } from '@ncthub/types/db';
 import { useCalendar } from '@ncthub/ui/hooks/use-calendar';
 import type { CalendarView } from '@ncthub/ui/hooks/use-view-transition';
 import { useViewTransition } from '@ncthub/ui/hooks/use-view-transition';

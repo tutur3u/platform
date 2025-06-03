@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@ncthub/supabase/next/server';
+import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(

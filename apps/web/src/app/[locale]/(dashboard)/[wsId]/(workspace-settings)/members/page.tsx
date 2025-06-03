@@ -6,10 +6,7 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@/lib/workspace-helper';
-import {
-  createAdminClient,
-  createClient,
-} from '@ncthub/supabase/next/server';
+import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
 import { User } from '@ncthub/types/primitives/User';
 import { Separator } from '@ncthub/ui/separator';
 import { getCurrentUser } from '@ncthub/utils/user-helper';

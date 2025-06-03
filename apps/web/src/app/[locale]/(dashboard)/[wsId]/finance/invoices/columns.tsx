@@ -1,7 +1,6 @@
 'use client';
 
 import { InvoiceRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
 import { Invoice } from '@ncthub/types/primitives/Invoice';
 import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import {
@@ -10,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@ncthub/ui/tooltip';
+import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
 export const invoiceColumns = (

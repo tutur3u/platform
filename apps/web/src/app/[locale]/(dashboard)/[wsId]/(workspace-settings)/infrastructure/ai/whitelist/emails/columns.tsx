@@ -1,16 +1,16 @@
 'use client';
 
 import { AIWhitelistEmailRowActions } from './row-actions';
+import { AIWhitelistEmail } from '@ncthub/types/db';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { Loader2 } from '@ncthub/ui/icons';
+import { Switch } from '@ncthub/ui/switch';
 import {
   useIsFetching,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { AIWhitelistEmail } from '@ncthub/types/db';
-import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
-import { Loader2 } from '@ncthub/ui/icons';
-import { Switch } from '@ncthub/ui/switch';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
 

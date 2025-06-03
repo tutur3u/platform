@@ -1,4 +1,3 @@
-import { Editor } from '@tiptap/react';
 import { Button } from '@ncthub/ui/button';
 import {
   AlignCenter,
@@ -17,6 +16,7 @@ import {
   Strikethrough,
 } from '@ncthub/ui/icons';
 import { Toggle } from '@ncthub/ui/toggle';
+import { Editor } from '@tiptap/react';
 
 interface ToolBarProps {
   editor: Editor | null;

@@ -1,9 +1,9 @@
 'use client';
 
 import { ProductCategoryRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
 import { ProductCategory } from '@ncthub/types/primitives/ProductCategory';
 import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
 export const productCategoryColumns = (
