@@ -40,13 +40,7 @@ export const PUBLIC_PATHS = [
   '/projects',
   '/neo-crush',
   '/neo-chess',
-  '/terms',
-  '/privacy',
-  '/branding',
-  '/ai/chats',
-  '/qr-generator',
-  '/documents',
-  '/calendar/meet-together',
+  '/meet-together',
 ].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);

@@ -39,7 +39,7 @@ const navItems = (t: any) => {
     { href: '/projects', label: t('common.projects') },
     { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/neo-chess', label: 'Neo Chess' },
-    { href: '/calendar/meet-together', label: t('common.meet-together') },
+    { href: '/meet-together', label: t('common.meet-together') },
   ] as NavItem[];
 };
 

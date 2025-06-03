@@ -87,7 +87,7 @@ export default async function Footer() {
           </div>
 
           <Link
-            href="/calendar/meet-together"
+            href="/meet-together"
             className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
           >
             {t('common.meet-together')}
