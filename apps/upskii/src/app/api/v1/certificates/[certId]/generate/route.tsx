@@ -26,7 +26,7 @@ export async function POST(
 
     // Get the authenticated user
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       return new Response('Unauthorized', { status: 401 });
     }
