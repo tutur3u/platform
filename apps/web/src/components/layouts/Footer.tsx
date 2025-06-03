@@ -1,4 +1,4 @@
-import GetStartedButton from '@/app/[locale]/(marketing)/get-started-button';
+import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ export default async function Footer() {
         Feel free to reach out if you want to collaborate with us, or simply
         have a chat.
       </div>
-      <GetStartedButton href="/login" />
+      <GetStartedButton href="/login" text={t('get_started')} />
       <Separator className="mt-8 h-1 bg-gradient-to-r from-[#5FC6E5] to-[#FBC821] blur-sm" />
 
       <div className="mx-auto flex flex-col items-center justify-evenly gap-5 py-8 md:flex-row md:py-24">

@@ -39,7 +39,7 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
 
   const [saving, setSaving] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       email: oldEmail || '',
@@ -136,7 +136,7 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
               disabled
             />
 
-            <FormDescription className="md:max-w-[31rem]">
+            <FormDescription className="md:max-w-124">
               {changeEmailDescription}
             </FormDescription>
           </div>

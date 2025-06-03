@@ -13,11 +13,14 @@ import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import { Inter } from 'next/font/google';
+import { Noto_Sans } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
-const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
+const font = Noto_Sans({
+  subsets: ['latin', 'vietnamese'],
+  display: 'block',
+});
 
 interface Props {
   children: ReactNode;
@@ -77,7 +80,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: siteConfig.name,
       description,
       images: [siteConfig.ogImage],
-      creator: '@tutur3u',
+      creator: '@tuturuuu',
     },
     icons: {
       icon: '/favicon.ico',

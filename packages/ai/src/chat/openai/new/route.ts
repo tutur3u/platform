@@ -1,3 +1,4 @@
+<<<<<<<< HEAD:packages/ai/src/chat/openai/new/route.ts
 import {
   GoogleGenerativeAI,
   HarmBlockThreshold,
@@ -108,61 +109,14 @@ const normalize = (message: Message) => {
   if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
   if (role === 'assistant') return `${AI_PROMPT} ${content}`;
   return content;
+========
+import { POST } from '@tuturuuu/ai/chat/openai/new/route';
+
+export const config = {
+  maxDuration: 90,
+  preferredRegion: 'sin1',
+  runtime: 'edge',
+>>>>>>>> upstream/main:apps/rewise/src/app/api/ai/chat/openai/new/route.ts
 };
 
-const normalizeMessages = (messages: Message[]) =>
-  [...leadingMessages, ...messages, ...trailingMessages]
-    .map(normalize)
-    .join('')
-    .trim();
-
-function buildPrompt(messages: Message[]) {
-  const normalizedMsgs = normalizeMessages(messages);
-  return normalizedMsgs + AI_PROMPT;
-}
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
-
-const safetySettings = [
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-];
-
-const leadingMessages: Message[] = [
-  {
-    id: 'initial-message',
-    role: 'assistant',
-    content:
-      'Please provide an initial message so I can generate a short and comprehensive title for this chat conversation.',
-  },
-];
-
-const trailingMessages: Message[] = [
-  {
-    id: 'final-message',
-    role: 'assistant',
-    content:
-      'Thank you, I will respond with a title in my next response that will briefly demonstrate what the chat conversation is about, and it will only contain the title without any quotation marks, markdown, and anything else but the title. The title will be in the language you provided the initial message in.',
-  },
-];
+export { POST };

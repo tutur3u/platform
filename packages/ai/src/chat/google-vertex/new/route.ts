@@ -1,3 +1,4 @@
+<<<<<<<< HEAD:packages/ai/src/chat/google-vertex/new/route.ts
 import { vertex } from '@ai-sdk/google-vertex/edge';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Message, generateText } from 'ai';
@@ -100,14 +101,21 @@ const normalize = (message: Message) => {
   if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
   if (role === 'assistant') return `${AI_PROMPT} ${content}`;
   return content;
+========
+import { createPOST } from '@tuturuuu/ai/chat/google/new/route';
+
+export const config = {
+  maxDuration: 90,
+  preferredRegion: 'sin1',
+  runtime: 'edge',
+>>>>>>>> upstream/main:apps/rewise/src/app/api/ai/chat/google/new/route.ts
 };
 
-const normalizeMessages = (messages: Message[]) =>
-  [...leadingMessages, ...messages, ...trailingMessages]
-    .map(normalize)
-    .join('')
-    .trim();
+const POST = createPOST({
+  serverAPIKeyFallback: true,
+});
 
+<<<<<<<< HEAD:packages/ai/src/chat/google-vertex/new/route.ts
 function buildPrompt(messages: Message[]) {
   const normalizedMsgs = normalizeMessages(messages);
   return normalizedMsgs + AI_PROMPT;
@@ -130,3 +138,6 @@ const trailingMessages: Message[] = [
       'Thank you, I will respond with a title in my next response that will briefly demonstrate what the chat conversation is about, and it will only contain the title without any quotation marks, markdown, and anything else but the title. The title will be in the language you provided the initial message in.',
   },
 ];
+========
+export { POST };
+>>>>>>>> upstream/main:apps/rewise/src/app/api/ai/chat/google/new/route.ts

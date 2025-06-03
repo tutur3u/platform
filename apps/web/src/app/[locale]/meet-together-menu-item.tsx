@@ -3,7 +3,6 @@
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
 import { CalendarClock } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
@@ -16,7 +15,6 @@ export default function MeetTogetherMenuItem() {
 
   return (
     <>
-      <DropdownMenuSeparator />
       <DropdownMenuGroup>
         {pathname === `/meet-together` ? (
           <DropdownMenuItem disabled>

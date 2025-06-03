@@ -1,17 +1,18 @@
 import { supportedLocales } from '@/i18n/routing';
 
+export const GITHUB_OWNER = 'tutur3u';
+export const GITHUB_REPO = 'platform';
+
 export const DEV_MODE = process.env.NODE_ENV === 'development';
 export const PROD_MODE = process.env.NODE_ENV === 'production';
 
 export const BASE_URL =
-  process.env.BASE_URL || PROD_MODE
-    ? 'https://tuturuuu.com'
-    : 'http://localhost:7803';
+  process.env.BASE_URL ||
+  (PROD_MODE ? 'https://tuturuuu.com' : 'http://localhost:7803');
 
 export const API_URL =
-  process.env.API_URL || PROD_MODE
-    ? 'https://tuturuuu.com/api'
-    : 'http://localhost:7803/api';
+  process.env.API_URL ||
+  (PROD_MODE ? 'https://tuturuuu.com/api' : 'http://localhost:7803/api');
 
 export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 

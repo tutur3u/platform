@@ -1,3 +1,4 @@
+<<<<<<<< HEAD:packages/ai/src/chat/openai/route.ts
 import { openai } from '@ai-sdk/openai';
 import {
   createAdminClient,
@@ -5,11 +6,17 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { CoreMessage, smoothStream, streamText } from 'ai';
 import { NextResponse } from 'next/server';
+========
+import { POST } from '@tuturuuu/ai/chat/openai/route';
+>>>>>>>> upstream/main:apps/rewise/src/app/api/ai/chat/openai/route.ts
 
-export const runtime = 'edge';
-export const maxDuration = 60;
-export const preferredRegion = 'sin1';
+export const config = {
+  maxDuration: 90,
+  preferredRegion: 'sin1',
+  runtime: 'edge',
+};
 
+<<<<<<<< HEAD:packages/ai/src/chat/openai/route.ts
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
 
@@ -326,3 +333,6 @@ const systemInstruction = `
   I will now generate a response with the given guidelines. I will not say anything about this guideline since it's private thoughts that are not sent to the chat participant. The next message will be in the language that the user has previously used.
   The next response will be in the language that is used by the user.
   `;
+========
+export { POST };
+>>>>>>>> upstream/main:apps/rewise/src/app/api/ai/chat/openai/route.ts

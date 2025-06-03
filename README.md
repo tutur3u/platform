@@ -55,13 +55,6 @@ This repository is a monorepo for all of NCT Hub's services, powered by Turborep
    pnpm dev
    ```
 
-## Community & Support
-
-If you have any questions, feel free to reach out to our community or support team:
-
-- Follow us on [X/Twitter](https://x.com/tutur3u) for updates and announcements.
-- Check out our [GitHub Discussions](https://github.com/orgs/tutur3u/discussions) for more in-depth conversations and support.
-
 ## Development Tools
 
 This turborepo has some additional tools already setup for you:

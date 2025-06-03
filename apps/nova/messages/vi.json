@@ -1,0 +1,3592 @@
+{
+  "score-calculator": {
+    "test_formula": "(Số Bài Đạt / Tổng Số Bài Kiểm Tra) × 10 × Trọng Số",
+    "criteria_formula": "(Tổng Điểm Tiêu Chí / (Tổng Số Tiêu Chí × 10)) × 10 × Trọng Số",
+    "final_formula": "Điểm Kiểm Tra + Điểm Tiêu Chí",
+    "weight": "Trọng Số",
+    "title": "Máy Tính Điểm",
+    "subtitle": "Tính toán điểm bài nộp của bạn dựa trên kết quả bài kiểm tra và đánh giá tiêu chí",
+    "input_metrics": "Các Chỉ Số Đầu Vào",
+    "test_results": "Kết Quả Kiểm Tra",
+    "total_tests": "Tổng Số Bài Kiểm Tra",
+    "total_tests_description": "Tổng số trường hợp kiểm tra",
+    "passed_tests": "Số Bài Đạt",
+    "passed_tests_description": "Số trường hợp kiểm tra đạt yêu cầu",
+    "criteria_evaluation": "Đánh Giá Tiêu Chí",
+    "total_criteria": "Tổng Số Tiêu Chí",
+    "total_criteria_description": "Số tiêu chí đánh giá",
+    "sum_criterion_score": "Tổng Điểm Tiêu Chí",
+    "sum_criterion_score_description": "Tổng điểm của tất cả các tiêu chí",
+    "score_calculation": "Tính Toán Điểm",
+    "no_calculation_yet": "Chưa có tính toán",
+    "fill_form_realtime": "Điền thông tin vào biểu mẫu để xem kết quả được cập nhật theo thời gian thực",
+    "final_score": "Điểm Cuối Cùng",
+    "of_maximum_score": "trong tổng số điểm tối đa",
+    "calculation_breakdown": "Chi Tiết Tính Toán",
+    "test_score_component": "Thành Phần Điểm Kiểm Tra",
+    "criteria_score_component": "Thành Phần Điểm Tiêu Chí",
+    "final_score_calculation": "Điểm Cuối Cùng",
+    "points": "điểm",
+    "scoring_rules": "Quy Tắc Tính Điểm",
+    "rule_1": "Mỗi bài nộp có thể đạt tối đa 10 điểm",
+    "rule_2": "Nếu có cả kiểm tra và tiêu chí, mỗi loại đóng góp 50% vào điểm cuối cùng",
+    "rule_3": "Nếu chỉ có kiểm tra, chúng đóng góp 100% vào điểm cuối cùng",
+    "rule_4": "Nếu chỉ có tiêu chí, chúng đóng góp 100% vào điểm cuối cùng",
+    "rule_5": "Mỗi tiêu chí được chấm điểm trên thang điểm từ 0-10",
+    "max": "tối đa"
+  },
+  "nova-apology-modal": {
+    "title": "Thông Báo Quan Trọng Đến Người Tham Gia Cuộc Thi NEO League",
+    "description": "Đội phát triển Nova muốn thông báo về các vấn đề kỹ thuật gần đây ảnh hưởng đến cuộc thi.",
+    "known_issues": "Lỗi Đã Biết",
+    "resolution_status": "Trạng Thái Giải Quyết",
+    "apology_message": "Chúng tôi xin chân thành xin lỗi tất cả người dùng nền tảng Nova và thí sinh tham gia cuộc thi NEO League. Đội ngũ của chúng tôi đang nỗ lực khắc phục các vấn đề sau đây:",
+    "ai_scoring_system": "Hệ Thống Chấm Điểm AI",
+    "ai_scoring_description": "Hệ thống chấm điểm hiện đang cấu hình sai và sẽ dẫn đến việc hầu hết người dùng nhận điểm 0. Chúng tôi đã xác định nguyên nhân gốc rễ và đang triển khai sửa chữa.",
+    "leaderboard_scores": "Tính Toán Điểm Bảng Xếp Hạng",
+    "leaderboard_description": "Điểm số trên bảng xếp hạng đang không tính toán chính xác, ảnh hưởng đến hiển thị thứ hạng trong cuộc thi. Đội ngũ của chúng tôi đã xác định vấn đề và đang triển khai sửa chữa toàn diện.",
+    "testcase_criteria": "Xử Lý Testcase & Tiêu Chí",
+    "testcase_description": "Người dùng không phải admin hiện không thể lưu testcase và đánh giá tiêu chí. Điều này ảnh hưởng đến việc xác thực và chấm điểm bài nộp.",
+    "critical": "Nghiêm trọng",
+    "high": "Cao",
+    "issue_tracked": "Vấn đề được theo dõi tại",
+    "issues_tracked": "Vấn đề được theo dõi tại",
+    "resolution_message": "Đội phát triển Nova đang làm việc không ngừng nghỉ để giải quyết các vấn đề này trước khi vòng 1 chính thức bắt đầu. Chúng tôi cam kết mang đến cho bạn trải nghiệm thi đấu tốt nhất có thể.",
+    "bugs_identified": "Tất cả lỗi nghiêm trọng đã được xác định và ưu tiên",
+    "ai_fix": "Đang phát triển bản sửa cho hệ thống chấm điểm AI",
+    "testcase_fix": "Đã sửa xử lý testcase trong giai đoạn đánh giá",
+    "leaderboard_fix": "Đang tiến hành sửa tính toán điểm bảng xếp hạng (dự kiến: trước vòng 1)",
+    "our_commitment": "Cam Kết Của Chúng Tôi",
+    "commitment_description": "Đội phát triển Nova cam kết hoàn toàn sẽ giải quyết các vấn đề này trước khi cuộc thi bắt đầu. Chúng tôi đánh giá cao sự kiên nhẫn và thông cảm của bạn khi chúng tôi nỗ lực cung cấp nền tảng tốt nhất có thể cho trải nghiệm thi đấu của bạn.",
+    "next_steps": "Các Bước Tiếp Theo:",
+    "step_1": "Triển khai bản vá khẩn cấp cho hệ thống chấm điểm",
+    "step_2": "Sửa xử lý testcase cho tất cả người dùng",
+    "step_3": "Giải quyết vấn đề tính toán điểm bảng xếp hạng",
+    "step_4": "Đảm bảo tất cả hệ thống sẵn sàng trước khi vòng 1 bắt đầu",
+    "updates_info": "Để cập nhật và thông tin mới nhất, hãy truy cập",
+    "github_issues": "GitHub Issues",
+    "report_issue": "Báo Cáo Lỗi",
+    "understand": "Tôi Hiểu",
+    "fixed": "Đã sửa",
+    "issue": "Vấn đề",
+    "and": "và"
+  },
+  "ai-prompts-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "model": "Mô hình AI",
+    "input": "Đầu vào",
+    "output": "Đầu ra",
+    "created_at": "Ngày tạo"
+  },
+  "ai-whitelist": {
+    "add_email": "Thêm email",
+    "add_domain": "Thêm tên miền"
+  },
+  "ai_chat": {
+    "welcome_to": "Chào mừng đến với",
+    "welcome_msg": "Bạn có thể bắt đầu một cuộc trò chuyện ở đây hoặc thử các ví dụ sau:",
+    "example_1": "Giải thích các khái niệm liên quan đến công nghệ",
+    "example_1_prompt": "Giải thích về vật lý lượng tử?",
+    "example_2": "Tạo ra danh sách bài tập toán",
+    "example_2_prompt": "Tạo ra một danh sách các bài toán toán học khó nhưng thú vị cho sinh viên đại học.",
+    "example_3": "Giải thích cho học sinh lớp 5",
+    "example_3_prompt": "Giải thích các khái niệm sau như thể tôi là học sinh lớp 5: \n\n",
+    "example_4": "Tóm tắt một văn bản",
+    "example_4_prompt": "Tóm tắt bài viết sau cho học sinh lớp 2: \n\n",
+    "example_5": "Viết một email",
+    "example_5_prompt": "Viết một email cho sếp tôi về vấn đề sau: \n\n",
+    "example_6": "Tạo một bài thơ",
+    "example_6_prompt": "Tạo một bài thơ về vấn đề sau: \n\n",
+    "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
+    "prompt_placeholder": "Nhập yêu cầu của bạn...",
+    "chats": "Các cuộc trò chuyện",
+    "no_chats": "Bắt đầu trò chuyện mới bằng cách gửi một yêu cầu.",
+    "new_chat": "Trò chuyện mới",
+    "reset_chat": "Đặt lại",
+    "creating_chat": "Đang tạo cuộc trò chuyện...",
+    "default_chat": "Mặc định",
+    "regenerate_response": "Tạo lại câu trả lời",
+    "stop_generating": "Dừng trả lời",
+    "something_went_wrong": "Có lỗi xảy ra.",
+    "try_again_later": "Vui lòng thử lại sau.",
+    "recent_conversations": "Các cuộc trò chuyện gần đây",
+    "latest_messages": "Tin nhắn mới nhất",
+    "view_conversation": "Xem cuộc trò chuyện",
+    "all_conversations": "Tất cả cuộc trò chuyện",
+    "created": "Đã tạo",
+    "anonymous": "Ẩn danh",
+    "you": "Bạn",
+    "chat_visibility": "Hiển thị trò chuyện",
+    "chat_visibility_description": "Chọn ai có thể xem cuộc trò chuyện này.",
+    "public": "Công khai",
+    "only_me": "Chỉ mình tôi",
+    "summarized": "Có tóm tắt",
+    "chat_updated": "Cập nhật trò chuyện",
+    "visibility_updated_desc": "Hiển thị trò chuyện đã được cập nhật.",
+    "copy_public_link": "Sao chép liên kết công khai",
+    "open_public_link": "Mở liên kết công khai",
+    "summary": "Tóm tắt",
+    "notes": "Ghi chú",
+    "multi_choice_quiz": "Câu hỏi nhiều lựa chọn",
+    "paragraph_quiz": "Câu hỏi đoạn văn",
+    "flashcards": "Thẻ ghi nhớ",
+    "correct_answer_is_highlighed": "Câu trả lời đúng đã được đánh dấu",
+    "you_selected": "Bạn đã chọn",
+    "which_is": "đó là một câu trả lời",
+    "correct": "chính xác",
+    "incorrect": "không chính xác",
+    "reveal_answer": "Xem đáp án",
+    "experimental_disclaimer": "Chú ý: Nội dung được tạo ra bởi AI có thể không chính xác hoặc cập nhật, vui lòng kiểm tra thông tin trước khi sử dụng.",
+    "add_attachments": "Thêm tệp đính kèm",
+    "voice_input": "Nhập bằng giọng nói",
+    "refresh_chat": "Làm mới trò chuyện",
+    "send_message": "Gửi tin nhắn",
+    "extra_options": "Tùy chọn khác",
+    "permission_denied": "Quyền truy cập bị từ chối",
+    "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
+    "upload_files": "Tải lên tập tin",
+    "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
+    "response_language": "Ngôn ngữ phản hồi",
+    "chat_summary": "Tóm tắt",
+    "chat_notes": "Ghi chú",
+    "multiple_choice": "Bộ trắc nghiệm",
+    "paragraph_answers": "Câu hỏi đoạn văn",
+    "ai_models": "Mô hình AI",
+    "quizzes": "Bộ câu hỏi",
+    "chatbots": "Thư viện chatbot",
+    "my_chatbots": "Chatbot của tôi",
+    "my_chatbots_description": "Quản lý chatbot tùy chỉnh của bạn với các lệnh nhắc và câu trả lời của riêng bạn.",
+    "new_chatbot": "Chatbot mới"
+  },
+  "api-key-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "value": "Giá trị",
+    "updated_at": "Cập nhật lúc",
+    "created_at": "Tạo lúc"
+  },
+  "aurora": {
+    "statistical_models": "Mô hình thống kê",
+    "ml_models": "Mô hình học máy",
+    "last_updated": "Cập nhật lần cuối",
+    "current_price": "Giá hiện tại",
+    "forecast_range": "Phạm vi dự báo",
+    "high": "Cao",
+    "low": "Thấp",
+    "average": "Trung bình",
+    "trend": "Xu hướng",
+    "volatility": "Biến động giá",
+    "90_confidence_high": "Tự tin 90% (cao)",
+    "90_confidence_lo": "Tự tin 90% (thấp)",
+    "ml_price_prediction": "Dự đoán giá mô hình học máy",
+    "slope": "độ dốc",
+    "prediction_insights": "Những insights từ dự đoán",
+    "relative": "liên quan",
+    "strong": "Mạnh",
+    "moderate": "Vừa phải",
+    "weak": "Yếu đuối",
+    "model_comparison": "So sánh mô hình",
+    "select_date": "Chọn ngày",
+    "model_correlation": "Tương quan mô hình",
+    "no_data": "Không có dữ liệu.",
+    "model_performance": "Hiệu suất mô hình",
+    "stable": "Ổn định",
+    "improving": "Cải thiện",
+    "declining": "Suy giảm",
+    "best_performing": "Hiệu năng tốt nhất",
+    "average_performance": "Hiệu năng trung bình",
+    "worst_performing": "Hiệu năng tệ nhất",
+    "scaled_model": "(Scaled)",
+    "weighted_score": "Trọng số",
+    "turning_point_accuracy": "Độ chính xác điểm",
+    "directional_accuracy": "Độ chính xác định hướng",
+    "accuracy": "Độ chính xác",
+    "consistency": "Tính nhất quán",
+    "overall": "Tổng thể"
+  },
+  "aurora_select_model": "Chọn mô hình",
+  "auth": {
+    "password": "Mật khẩu",
+    "notice-p1": "Bằng cách tiếp tục, bạn đồng ý với",
+    "notice-p2": "của Tuturuuu và nhận email định kỳ với các cập nhật mới",
+    "tos": "Điều khoản dịch vụ",
+    "privacy": "Chính sách bảo mật",
+    "by_continuing": "Bằng cách tiếp tục, bạn đồng ý với Tuturuuu về",
+    "consent_notice": "Bạn đồng ý cung cấp email của bạn cho mục đích xác thực và truy cập nền tảng. \nThông tin hồ sơ khác sẽ được thu thập khi bạn điền vào chi tiết hồ sơ của mình.",
+    "your_email": "Email",
+    "will_be_sent": "sẽ được sử dụng để gửi mật khẩu một lần (OTP) để xác thực.",
+    "decline": "Từ chối",
+    "accept_and_continue": "Chấp nhận và Tiếp tục"
+  },
+  "auth-email-sent": {
+    "email-sent-p1": "Chúng tôi đã gửi cho bạn một email xác nhận đến email",
+    "email-sent-p2": "Vui lòng kiểm tra hộp thư đến của bạn và sử dụng mã xác nhận được cung cấp để hoàn tất đăng ký của bạn."
+  },
+  "avatar": "Ảnh đại diện",
+  "basic-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "created_at": "Tạo lúc"
+  },
+  "batch-data-table": {
+    "id": "Mã số",
+    "price": "Giá",
+    "total_diff": "Tổng chênh lệch",
+    "warehouse": "Kho",
+    "supplier": "Nhà cung cấp",
+    "created_at": "Tạo lúc"
+  },
+  "branding": {
+    "branding": "Thương hiệu",
+    "our-logo": "Logo của chúng tôi",
+    "colors": "Màu sắc"
+  },
+  "calendar": {
+    "today": "Hôm nay",
+    "this-week": "Tuần này",
+    "current": "Hiện tại",
+    "day": "Ngày",
+    "4-days": "4 ngày",
+    "week": "Tuần"
+  },
+  "calendar-tabs": {
+    "calendar": "Lịch",
+    "overview": "Tổng quan",
+    "events": "Sự kiện"
+  },
+  "common": {
+    "allow_manage_all_challenges": "Cho phép quản lý tất cả các thử thách",
+    "name_placeholder": "Nhập tên",
+    "name": "Tên",
+    "members": "Thành viên",
+    "created_at": "Ngày tạo",
+    "alpha": "Alpha",
+    "beta": "Beta",
+    "and": "và",
+    "learn": "Học tập",
+    "login": "Đăng nhập",
+    "learn-description": "Learn description",
+    "maximize": "Tối ưu hóa",
+    "productivity": "năng suất",
+    "minimize": "giảm thiểu",
+    "export-content": "Xin hãy chọn định dạng thư mục",
+    "export": "Xuất dữ liệu",
+    "file-type": "Loại tệp",
+    "stress": "căng thẳng",
+    "title-v2": "Chuẩn bị cho tương lai, thành thạo AI",
+    "feature": "Tính năng",
+    "underconstruction": "Đang được xây dựng",
+    "coming_soon": "Sắp ra mắt",
+    "get-started": "Bắt đầu ngay",
+    "get-started-desc": "Đăng ký miễn phí và bắt đầu sử dụng nền tảng của chúng tôi ngay hôm nay.",
+    "copyright": "Bản quyền © 2025 Công ty Cổ phần Tuturuuu (MST: 0318898402) – Mọi quyền được bảo lưu.",
+    "legal": "Pháp lý",
+    "terms": "Điều khoản sử dụng",
+    "privacy": "Chính sách bảo mật",
+    "documentation": "Tài liệu",
+    "404-msg": "Trang bạn đang tìm kiếm không tồn tại.",
+    "500-msg": "Đã xảy ra lỗi. Vui lòng thử lại sau.",
+    "unsaved-changes": "Bạn có thay đổi chưa được lưu.",
+    "back-to-home": "Quay lại trang chủ",
+    "home": "Trang chủ",
+    "profile": "Trang cá nhân",
+    "docs": "Tài liệu",
+    "dashboard": "Bảng điều khiển",
+    "local_database": "CSDL cục bộ",
+    "meet-together": "Họp cùng nhau",
+    "theme": "Giao diện",
+    "light": "Sáng",
+    "dark": "Tối",
+    "standard": "Tiêu chuẩn",
+    "pink": "Hồng",
+    "purple": "Tím",
+    "yellow": "Vàng",
+    "orange": "Cam",
+    "green": "Xanh lá cây",
+    "blue": "Xanh dương",
+    "system": "Hệ thống",
+    "language": "Ngôn ngữ",
+    "settings": "Cài đặt",
+    "invite_users": "Mời người dùng",
+    "logout": "Đăng xuất",
+    "delete": "Xóa",
+    "create": "Tạo mới",
+    "add": "Thêm",
+    "new": "Mới",
+    "save": "Lưu",
+    "reset": "Đặt lại",
+    "cancel": "Hủy bỏ",
+    "start": "Bắt đầu",
+    "upload": "Tải lên",
+    "uploading": "Đang tải lên",
+    "uploaded": "Đã tải lên",
+    "download": "Tải xuống",
+    "rename": "Đổi tên",
+    "processing": "Đang xử lý...",
+    "saving": "Đang lưu...",
+    "loading": "Đang tải",
+    "success": "Thành công",
+    "complete": "Hoàn tất",
+    "default": "Mặc định",
+    "all": "Tất cả",
+    "general": "Chung",
+    "other": "Khác",
+    "empty": "Trống",
+    "error": "Lỗi",
+    "back": "Quay lại",
+    "untitled": "Chưa đặt tên",
+    "unknown": "Không xác định",
+    "completed": "Đã hoàn tất",
+    "continue": "Tiếp tục",
+    "cancel-completed": "Đã huỷ hoàn tất",
+    "pending-completion": "Đang chờ hoàn tất",
+    "return": "Quay lại",
+    "creating": "Đang tạo",
+    "unnamed-workspace": "Không có tên",
+    "resources": "Tài nguyên",
+    "branding": "Thương hiệu",
+    "developers": "Nhà phát triển",
+    "open-source": "Mã nguồn mở",
+    "copied": "Đã sao chép",
+    "edit": "Chỉnh sửa",
+    "remove": "Xóa",
+    "refresh": "Làm mới",
+    "view-options": "Trình bày",
+    "view": "Xem",
+    "show-all": "Hiển thị tất cả",
+    "hide-all": "Ẩn tất cả",
+    "columns": "Cột",
+    "toggle-columns": "Hiển thị cột",
+    "no-results": "Không có kết quả",
+    "of": "trên",
+    "selected": "Đã chọn",
+    "page": "Trang",
+    "row(s)": "dòng",
+    "result(s)": "kết quả",
+    "rows-per-page": "Dòng mỗi trang",
+    "ascending": "Tăng dần",
+    "descending": "Giảm dần",
+    "hide_column": "Ẩn cột",
+    "unnamed": "Chưa đặt tên",
+    "personal_account": "Tài khoản cá nhân",
+    "workspaces": "Không gian làm việc",
+    "create_new_workspace": "Tạo không gian mới",
+    "create_workspace": "Tạo không gian làm việc",
+    "create_workspace_description": "Thêm một không gian làm việc mới để dễ dàng quản lý mọi thứ thiết yếu, và hợp tác với đội của bạn một cách hiệu quả.",
+    "workspace_name": "Tên không gian làm việc",
+    "subscription_plan": "Gói đăng ký",
+    "free": "Miễn phí",
+    "pro": "Chuyên nghiệp",
+    "enterprise": "Doanh nghiệp",
+    "month": "Tháng",
+    "0_usd_per_month": "không có phí hàng tháng",
+    "currently_online": "Đang trực tuyến",
+    "no_online_users": "Không có ai trực tuyến",
+    "waiting_for_response": "Tôi sẽ trả lời bạn trong giây lát, vui lòng đợi...",
+    "qr_generator": "Tạo mã QR",
+    "qr_name": "Tên mã QR",
+    "shapes": "Hình dạng",
+    "styles": "Kiểu dáng",
+    "formats": "Định dạng",
+    "foreground": "Màu chi tiết",
+    "background": "Màu nền",
+    "scan_me": "Quét mã QR",
+    "qr_code": "Mã QR",
+    "current_plan": "Gói hiện tại",
+    "incomplete": "Chưa hoàn thành",
+    "file-name": "Tên tệp",
+    "date": "Ngày",
+    "status": "Trạng thái",
+    "years_old": "tuổi",
+    "year_old": "tuổi",
+    "average": "Trung bình",
+    "no_content_yet": "Chưa có nội dung",
+    "words": "từ",
+    "word": "từ",
+    "share": "Chia sẻ",
+    "confirm_delete_title": "Xác nhận xoá",
+    "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này? Hành động xoá này là vĩnh viễn và không thể thay đổi được.",
+    "saved": "Đã lưu",
+    "unsaved": "Chưa lưu",
+    "previous": "Trước đó",
+    "next": "Tiếp theo",
+    "published": "Đã xuất bản",
+    "option": "Lựa chọn",
+    "correct": "Chính xác",
+    "add_option": "Thêm tùy chọn",
+    "question": "Câu hỏi",
+    "create_new": "Tạo mới",
+    "import": "Nhập dữ liệu",
+    "invalid-file-type": "Loại tệp không hợp lệ",
+    "no-sheets-found": "Không tìm thấy trang tính nào.",
+    "generate_with_ai": "Tạo với AI",
+    "accept": "Chấp nhận",
+    "regenerate": "Tạo lại",
+    "context": "Bối cảnh",
+    "enter_context": "Nhập ngữ cảnh",
+    "generate": "Tạo nội dung",
+    "enabled": "Đã bật",
+    "explanation": "Giải thích",
+    "generate_explanation": "Tạo lời giải thích",
+    "products": "Các sản phẩm",
+    "solutions": "Giải pháp",
+    "pricing": "Bảng giá",
+    "about": "Giới thiệu",
+    "contact": "Liên hệ",
+    "ai-assistant": "Trợ lý AI",
+    "lms": "LMS",
+    "calendar": "Lịch",
+    "documents": "Tài liệu",
+    "drive": "Kho lưu trữ",
+    "crm": "CRM",
+    "inventory": "Quản kho",
+    "finance": "Tài chính",
+    "mail": "Hộp thư",
+    "tasks": "Tác vụ",
+    "workflows": "Quy trình",
+    "education": "Giáo dục",
+    "restaurants": "Nhà hàng",
+    "pharmacies": "Nhà thuốc",
+    "agencies": "Agency",
+    "realestate": "Bất động sản",
+    "blog": "Blog",
+    "blog-description": "Đọc các bài viết và cập nhật mới nhất của chúng tôi.",
+    "documentation-description": "Tìm tài liệu và hướng dẫn chi tiết.",
+    "education-description": "Giải pháp dành riêng cho các tổ chức giáo dục.",
+    "retail-description": "Giải pháp dành riêng cho các doanh nghiệp bán lẻ.",
+    "hospitality-description": "Giải pháp dành riêng cho các doanh nghiệp khách sạn.",
+    "construction-description": "Giải pháp dành riêng cho các doanh nghiệp xây dựng.",
+    "restaurants-description": "Quản lý hoạt động nhà hàng của bạn một cách hiệu quả.",
+    "manufacturing-description": "Giải pháp dành riêng cho các doanh nghiệp chế tạo.",
+    "pharmacies-description": "Chuẩn hóa việc quản lý và dịch vụ nhà thuốc.",
+    "realestate-description": "Tối ưu hóa hoạt động kinh doanh bất động sản của bạn.",
+    "meet-together-description": "Lên lịch cuộc họp dễ dàng giữa các múi giờ khác nhau và đội ngũ khác nhau.",
+    "ai-assistant-description": "Tận dụng AI để tự động hóa các nhiệm vụ và nâng cao năng suất.",
+    "lms-description": "Cung cấp và theo dõi nội dung giáo dục một cách hiệu quả.",
+    "calendar-description": "Hệ thống quản lý sự kiện và lịch toàn diện.",
+    "documents-description": "Quản lý và cộng tác tài liệu được hỗ trợ bởi AI.",
+    "drive-description": "Lưu trữ đám mây an toàn với tính năng chia sẻ tệp liền mạch.",
+    "crm-description": "Xây dựng và duy trì các mối quan hệ khách hàng có giá trị.",
+    "inventory-description": "Hợp lý hóa việc kiểm soát hàng tồn kho và quản lý hàng tồn kho.",
+    "branding-description": "Xem bộ nhận diện thương hiệu của Tuturuuu.",
+    "github-description": "Xem các dự án nguồn mở của chúng tôi trên GitHub.",
+    "finance-description": "Theo dõi tài chính và quản lý giao dịch hiệu quả.",
+    "mail-description": "Quản lý email và truyền thông mạnh mẽ.",
+    "tasks-description": "Tổ chức và theo dõi các dự án một cách rõ ràng.",
+    "workflows-description": "Tự động hóa và tối ưu hóa quy trình kinh doanh của bạn.",
+    "scroll_to_explore": "Cuộn để khám phá",
+    "features": "Các tính năng",
+    "learn_more": "Tìm hiểu thêm",
+    "pricing_hook": "Giá cả đơn giản, minh bạch",
+    "usage_based_pricing": "Bảng giá",
+    "usage_based_pricing_description": "Chỉ trả tiền cho những gì bạn sử dụng. Tất cả các gói đều bao gồm các tính năng cốt lõi với các giới hạn sử dụng khác nhau.",
+    "faq": "Câu hỏi thường gặp",
+    "unlink": "Hủy liên kết",
+    "add_column": "Thêm Cột",
+    "add_column_description": "Nhập tên cho cột mới",
+    "column_name": "Tên Cột",
+    "explore": "Khám phá",
+    "actions": "hành động",
+    "clear_all": "Xóa tất cả",
+    "clear_all_title": "Xóa tất cả nội dung",
+    "clear_all_description": "Bạn có chắc chắn muốn xóa tất cả nội dung? Hành động này không thể hoàn tác.",
+    "clearing": "Đang xoá",
+    "retail": "Bán lẻ",
+    "manufacturing": "Chế tạo",
+    "hospitality": "Du lịch & Khách sạn",
+    "construction": "Thi công",
+    "changelog": "Nhật ký thay đổi",
+    "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
+    "about-description": "Tìm hiểu thêm về Tuturuuu và sứ mệnh của chúng tôi.",
+    "terms-description": "Đọc các điều khoản dịch vụ và chính sách của chúng tôi.",
+    "privacy-description": "Tìm hiểu cách chúng tôi bảo vệ dữ liệu và quyền riêng tư của bạn.",
+    "security": "Bảo mật",
+    "security-description": "Tìm hiểu về cách chúng tôi bảo vệ dữ liệu và thông tin của bạn.",
+    "pitch-description": "Kế hoạch kinh doanh của Tuturuuu.",
+    "product-updates": "Cập nhật sản phẩm",
+    "product-updates-title": "Cập nhật sản phẩm",
+    "product-updates-description": "Theo dõi các tính năng, cải tiến và sửa lỗi mới nhất trong hành trình phát triển sản phẩm của chúng tôi.",
+    "new-features": "Tính năng mới",
+    "improvements": "Cải tiến",
+    "bug-fixes": "Sửa lỗi",
+    "stay-updated": "Cập nhật thường xuyên",
+    "changelog-subscribe-description": "Đăng ký nhận thông báo về các cập nhật và tính năng mới khi chúng được phát hành.",
+    "enter-email": "Nhập email của bạn",
+    "subscribe": "Đăng ký",
+    "view-full-documentation": "Xem tài liệu đầy đủ",
+    "company": "Công ty",
+    "pitch": "Kế hoạch kinh doanh",
+    "careers": "Việc làm",
+    "not_whitelisted": "Không có trong danh sách trắng",
+    "email_added": "Đã thêm email",
+    "error_adding_email": "Lỗi khi thêm email",
+    "history": "Lịch sử",
+    "public_document": "Tài liệu công khai",
+    "private_document": "Tài liệu riêng tư",
+    "last_saved": "Lần lưu cuối: {time}",
+    "unsaved_changes": "Bạn có thay đổi chưa được lưu",
+    "error_saving": "Lỗi khi lưu thay đổi",
+    "save_failed": "Không thể lưu thay đổi",
+    "retry_save": "Thử lưu lại",
+    "auto_save_enabled": "Tự động lưu đã bật",
+    "save_status": "Trạng thái lưu",
+    "document_status": "Trạng thái tài liệu",
+    "updating": "Đang cập nhật...",
+    "name_updated": "Đã cập nhật tên thành công",
+    "error_updating_name": "Lỗi khi cập nhật tên",
+    "visibility_updated": "Đã cập nhật quyền truy cập thành công",
+    "error_updating_visibility": "Lỗi khi cập nhật quyền truy cập",
+    "error_deleting": "Lỗi khi xoá tài liệu",
+    "domain_added": "Tên miền được thêm vào",
+    "error_adding_domain": "Không thể thêm miền",
+    "is_admin": "Quản trị viên",
+    "allow_challenge_management": "Quản lý thử thách",
+    "allow_role_management": "Quản lý vai trò",
+    "searching": "Đang tìm kiếm",
+    "or": "Hoặc",
+    "joined": "Tham gia"
+  },
+  "contact": {
+    "title": "Liên hệ với chúng tôi",
+    "description": "Có thắc mắc hoặc cần hỗ trợ? Chúng tôi ở đây để giúp đỡ. Hãy chọn cách ưa thích của bạn để tiếp cận chúng tôi.",
+    "get_in_touch": "Liên hệ",
+    "founder_contact": "Thông tin người sáng lập",
+    "founder_description": "Người sáng lập",
+    "on_github": "trên GitHub",
+    "send_us_a_message": "Cần hỗ trợ?",
+    "form": {
+      "name_label": "Tên",
+      "name_placeholder": "Tên của bạn",
+      "subject_label": "Chủ đề",
+      "subject_placeholder": "Chúng tôi có thể giúp gì?",
+      "message_label": "Tin nhắn",
+      "message_placeholder": "Tin nhắn của bạn...",
+      "submit_button": "Gửi tin nhắn",
+      "sent_message": "Cảm ơn bạn đã liên hệ với chúng tôi! Chúng tôi sẽ phản hồi bạn sớm nhất có thể."
+    }
+  },
+  "course-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "is_public": "Công khai",
+    "is_published": "Đã xuất bản",
+    "modules": "Mô-đun",
+    "created_at": "Ngày tạo"
+  },
+  "course-details-tabs": {
+    "preview": "Xem trước",
+    "module_objectives": "Mục tiêu của mô-đun",
+    "resources": "Tài nguyên",
+    "youtube_links": "Liên kết YouTube",
+    "extra_reading": "Đọc thêm",
+    "module_content": "Nội dung mô-đun",
+    "no_youtube_links": "Chưa có liên kết YouTube nào.",
+    "resource_preview_unavailable": "Bản xem trước tài nguyên không có sẵn"
+  },
+  "crawled-url-data-table": {
+    "id": "Mã số",
+    "url": "URL",
+    "html": "HTML",
+    "markdown": "Markdown",
+    "created_at": "Tạo lúc"
+  },
+  "cron-execution-data-table": {
+    "id": "Mã số",
+    "job": "Công việc",
+    "status": "Trạng thái",
+    "started_at": "Bắt đầu lúc",
+    "finished_at": "Kết thúc lúc",
+    "created_at": "Tạo lúc"
+  },
+  "cron-job-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "description": "Mô tả",
+    "schedule": "Lịch trình",
+    "status": "Trạng thái",
+    "last_run": "Lần chạy cuối",
+    "next_run": "Lần Chạy tới",
+    "inactive": "Không hoạt động",
+    "active": "Đang hoạt động",
+    "running": "Đang chạy",
+    "failed": "Thất bại",
+    "created_at": "Tạo lúc"
+  },
+  "crud-ops": {
+    "ops": "Thao tác",
+    "select_ops": "Chọn thao tác",
+    "insert": "Thêm mới",
+    "update": "Cập nhật",
+    "delete": "Xóa"
+  },
+  "date_helper": {
+    "time-unit": "Đơn vị thời gian",
+    "time-unit-placeholder": "Chọn đơn vị thời gian",
+    "time-range": "Khoảng thời gian",
+    "time-range-placeholder": "Chọn khoảng thời gian",
+    "day": "Ngày",
+    "week": "Tuần",
+    "month": "Tháng",
+    "year": "Năm",
+    "custom": "Tùy chỉnh",
+    "all": "Tất cả",
+    "today": "Hôm nay",
+    "yesterday": "Ngày hôm qua",
+    "tomorrow": "Ngày mai",
+    "this-week": "Tuần này",
+    "last-week": "Tuần trước",
+    "next-week": "Tuần sau",
+    "this_month": "Tháng này",
+    "last-month": "Tháng trước",
+    "next-month": "Tháng sau",
+    "this-year": "Năm nay",
+    "last-year": "Năm trước",
+    "next-year": "Năm sau"
+  },
+  "documents": {
+    "documents": "Tài liệu",
+    "new-document": "Tài liệu mới",
+    "delete-document": "Xóa tài liệu",
+    "delete-document-confirmation": "Bạn có chắc chắn muốn xóa tài liệu này?",
+    "create": "Tạo",
+    "save": "Lưu",
+    "delete": "Xóa",
+    "cancel": "Hủy",
+    "creating": "Đang tạo",
+    "no-documents": "Không có tài liệu nào trong không gian làm việc này",
+    "create-new-document": "Tạo tài liệu mới",
+    "create-document-error": "Đã xảy ra lỗi khi tạo tài liệu.",
+    "document-name": "Tên tài liệu",
+    "document-name-placeholder": "Nhập tên tài liệu",
+    "untitled-document": "Tài liệu chưa có tiêu đề",
+    "preview": "Xem trước",
+    "edit": "Chỉnh sửa"
+  },
+  "dworkspace-mail": {
+    "destination-addresses": "Địa chỉ đích"
+  },
+  "email-data-table": {
+    "id": "Mã số",
+    "recipient": "Người nhận",
+    "sender": "Người gửi",
+    "email": "Email",
+    "subject": "Chủ đề",
+    "source_name": "Tên nguồn",
+    "source_email": "Email nguồn",
+    "created_at": "Ngày tạo"
+  },
+  "experimental-notice": {
+    "experimental_feature": "Tính năng thử nghiệm",
+    "experimental_notice": "Đây là một tính năng thử nghiệm đang trong quá trình phát triển. Nó có thể không hoạt động như mong đợi và có thể thay đổi trong tương lai."
+  },
+  "finance-overview": {
+    "finance": "Tài chính",
+    "overview": "Tổng quan",
+    "total-balance": "Tổng tiền",
+    "total-expense": "Tổng chi",
+    "total-income": "Tổng thu",
+    "recent-transactions": "Giao dịch gần đây",
+    "no-transaction": "Không có giao dịch nào",
+    "show-finance-stats": "Hiển thị số liệu thống kê tài chính"
+  },
+  "flashcard-data-table": {
+    "id": "Mã số",
+    "front": "Mặt trước",
+    "back": "Mặt sau",
+    "created_at": "Ngày tạo"
+  },
+  "healthcare-tabs": {
+    "overview": "Tổng quan",
+    "checkups": "Kiểm tra sức khoẻ",
+    "diagnoses": "Chẩn đoán",
+    "vitals": "Chỉ số",
+    "vital-groups": "Nhóm chỉ số"
+  },
+  "home": {
+    "headline": "Lối tắt thông minh của bạn",
+    "subheadline": "Quản lý công việc, siêu tốc độ cùng AI",
+    "get-started": "Bắt đầu ngay",
+    "features-lead": "Bạn có thể làm gì với Tuturuuu?",
+    "features-1-title": "Tăng cường bởi AI",
+    "features-1-subtitle": "Tư duy và tổ chức ý tưởng của bạn với tốc độ tia chớp, với các công cụ thông minh được tăng cường bởi AI.",
+    "features-2-title": "Trò chuyện mượt mà",
+    "features-2-subtitle": "Trải nghiệm trò chuyện đầy đủ tính năng, hỗ trợ cho markdown, khối mã và nhiều hơn nữa, tất cả trong tầm tay của bạn.",
+    "features-3-title": "Quản lý công việc nhanh chóng",
+    "features-3-subtitle": "Tạo nhiệm vụ, giao cho đội của bạn và theo dõi tiến độ của họ, tất cả cùng một chỗ.",
+    "features-4-title": "Tài liệu trực quan",
+    "features-4-subtitle": "Quản lý tài liệu một cách dễ dàng, với một trình soạn thảo tài liệu trực quan và mạnh mẽ.",
+    "features-5-title": "Theo dõi tài chính linh hoạt",
+    "features-5-subtitle": "Theo dõi tài chính của bạn, và giữ cho đội của bạn luôn được cập nhật, để bạn có thể tập trung vào những điều quan trọng.",
+    "features-6-title": "Mã nguồn mở",
+    "features-6-subtitle": "Tuturuuu là dự án mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và biến nó trở nên tốt hơn cho mọi người."
+  },
+  "infrastructure-tabs": {
+    "infrastructure": "Cơ sở hạ tầng",
+    "overview": "Tổng quan",
+    "users": "Người dùng",
+    "workspaces": "Không gian làm việc",
+    "timezones": "Múi giờ",
+    "storage": "Lưu trữ",
+    "features": "Tính năng",
+    "monitoring": "Giám sát",
+    "backups": "Sao lưu",
+    "integrations": "Dịch vụ tích hợp",
+    "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI"
+  },
+  "inventory-overview": {
+    "products-with-prices": "Sản phẩm có đơn giá"
+  },
+  "invite": {
+    "invited-to": "Bạn được mời vào",
+    "accept-invite": "Chấp nhận lời mời",
+    "decline-invite": "Từ chối lời mời",
+    "accept-invite-success-title": "Bạn đã chấp nhận lời mời thành công.",
+    "accept-invite-success-msg": "Giờ bạn có thể truy cập vào không gian làm việc này.",
+    "decline-invite-success-title": "Bạn đã từ chối lời mời thành công.",
+    "decline-invite-success-msg": "Lời mời này sẽ không còn hiển thị nữa.",
+    "accept-invite-error-title": "Đã xảy ra lỗi khi chấp nhận lời mời.",
+    "accept-invite-error-msg": "Vui lòng thử lại sau.",
+    "decline-invite-error-title": "Đã xảy ra lỗi khi từ chối lời mời.",
+    "decline-invite-error-msg": "Vui lòng thử lại sau.",
+    "invited-you": "đã mời bạn",
+    "workspace-invitation": "Lời mời vào không gian làm việc",
+    "you-been-invited-to-join-the": "Bạn đã được mời tham gia vào không gian làm việc",
+    "accept-to-start-collaborating": ". Hãy chấp nhận lời mời để bắt đầu làm việc cùng nhau!"
+  },
+  "invoice-data-table": {
+    "id": "Mã số",
+    "customer_id": "Mã khách hàng",
+    "customer": "Khách hàng",
+    "price": "Tổng tiền gốc",
+    "final_price": "Tổng tiền",
+    "total_diff": "Chênh lệch giá",
+    "notice": "Mô tả",
+    "note": "Ghi chú",
+    "created_at": "Tạo lúc"
+  },
+  "invoices": {
+    "finance": "Tài chính",
+    "unnamed-ws": "Không gian làm việc không tên",
+    "invoices": "Hóa đơn",
+    "invoice": "Hóa đơn",
+    "show-phone": "Hiển thị số điện thoại",
+    "show-gender": "Hiển thị giới tính",
+    "show-address": "Hiển thị địa chỉ",
+    "show-time": "Hiển thị thời gian tạo",
+    "show-status": "Hiển thị trạng thái",
+    "show-amount": "Hiển thị số lượng sản phẩm",
+    "show-price": "Hiển thị giá tiền",
+    "show-creator": "Hiển thị người tạo",
+    "create": "Tạo mới",
+    "create-invoice": "Tạo hóa đơn mới",
+    "close-order-after-create": "Đóng đơn sau khi tạo",
+    "basic-info": "Thông tin cơ bản",
+    "time": "Thời điểm giao dịch",
+    "notice": "Lời dặn",
+    "notice-placeholder": "Nhập lời dặn cho hoá đơn này",
+    "add-notice": "Thêm lời dặn",
+    "note": "Ghi chú",
+    "note-placeholder": "Nhập ghi chú cho hoá đơn này",
+    "add-note": "Thêm ghi chú",
+    "total": "Tổng cộng",
+    "total-placeholder": "Nhập số tiền khách cần đưa",
+    "reset": "Đặt lại",
+    "discount": "Khách hàng sẽ được giảm",
+    "extra-pay": "Khách hàng sẽ trả thêm",
+    "for-this-invoice": "cho hoá đơn này.",
+    "products": "Sản phẩm",
+    "add-product": "Thêm sản phẩm",
+    "update-invoice": "Cập nhật hoá đơn",
+    "delete-invoice": "Xóa hoá đơn",
+    "reopen-invoice": "Mở lại hoá đơn",
+    "close-invoice": "Đóng hoá đơn",
+    "save-changes": "Lưu thay đổi",
+    "checkup": "Khám bệnh",
+    "bill_to": "Thanh toán cho",
+    "invoice_date": "Ngày tạo hóa đơn",
+    "description": "Mô tả",
+    "quantity": "Số lượng",
+    "price": "Giá",
+    "promotions": "Khuyến mãi",
+    "subtotal": "Tạm tính",
+    "discounts": "Giảm giá",
+    "rounding": "Làm tròn",
+    "print": "In",
+    "download_image": "Tải hình ảnh xuống",
+    "add_promotion": "Thêm khuyến mãi",
+    "files": "Tệp tin"
+  },
+  "landing": {
+    "headline": "Lối tắt thông minh của bạn",
+    "subheadline": "Kiểm soát quy trình làm việc, được tăng cường bởi AI",
+    "features": {
+      "title": "Tính năng",
+      "subtitle": "Khám phá các tính năng mạnh mẽ được thiết kế để nâng cao năng suất và tối ưu hóa quy trình làm việc của bạn",
+      "ai_powered": {
+        "title": "Được hỗ trợ bởi AI",
+        "description": "Phát triển và tổ chức ý tưởng của bạn với tốc độ tư duy, với các công cụ thông minh được hỗ trợ bởi AI"
+      },
+      "collaboration": {
+        "title": "Hợp tác Nhóm",
+        "description": "Tính năng giao tiếp và hợp tác liền mạch cho toàn bộ đội ngũ của bạn"
+      },
+      "task_management": {
+        "title": "Quản lý Công việc",
+        "description": "Tạo công việc, giao cho đội ngũ của bạn và theo dõi tiến độ, tất cả trong một nơi"
+      },
+      "document_management": {
+        "title": "Quản lý Tài liệu",
+        "description": "Viết và duy trì tài liệu của bạn một cách dễ dàng, với trình soạn thảo trực quan và mạnh mẽ"
+      },
+      "finance_tracking": {
+        "title": "Theo dõi Tài chính",
+        "description": "Theo dõi tài chính và cập nhật cho đội ngũ của bạn, để bạn có thể tập trung vào những điều quan trọng"
+      },
+      "open_source": {
+        "title": "Mã nguồn Mở",
+        "description": "Tuturuuu là mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và làm cho nó tốt hơn cho mọi người"
+      }
+    },
+    "products": {
+      "title": "Sản phẩm",
+      "subtitle": "Khám phá bộ sản phẩm mạnh mẽ được thiết kế để giúp bạn làm việc thông minh hơn",
+      "ai_assistant": {
+        "title": "Trợ lý AI",
+        "description": "Tự động hóa thông minh và thông tin chi tiết được hỗ trợ bởi AI tiên tiến"
+      },
+      "meet_together": {
+        "title": "Họp cùng nhau",
+        "description": "Cuộc họp trực tuyến, hợp tác nhóm và quản lý dự án trong một nơi"
+      },
+      "calendar": {
+        "title": "Lịch",
+        "description": "Công cụ lập lịch và quản lý thời gian thông minh"
+      },
+      "documents": {
+        "title": "Tài liệu",
+        "description": "Lưu trữ, chia sẻ và cộng tác tài liệu tập trung"
+      },
+      "drive": {
+        "title": "Kho lưu trữ",
+        "description": "Lưu trữ đám mây an toàn cho tất cả tệp và dữ liệu kinh doanh của bạn"
+      },
+      "crm": {
+        "title": "CRM",
+        "description": "Xây dựng và duy trì các mối quan hệ khách hàng có giá trị"
+      },
+      "finance": {
+        "title": "Tài chính",
+        "description": "Quản lý và báo cáo tài chính toàn diện"
+      },
+      "inventory": {
+        "title": "Kho hàng",
+        "description": "Theo dõi và quản lý kho hàng theo thời gian thực"
+      },
+      "tasks": {
+        "title": "Công việc",
+        "description": "Theo dõi công việc và phối hợp nhóm được tối ưu hóa"
+      },
+      "workflows": {
+        "title": "Quy trình",
+        "description": "Quy trình kinh doanh và công việc tự động hóa"
+      }
+    },
+    "solutions": {
+      "title": "Giải pháp",
+      "subtitle": "Giải pháp tùy chỉnh cho từng ngành",
+      "industries": {
+        "manufacturing": "Sản xuất",
+        "healthcare": "Y tế",
+        "education": "Giáo dục",
+        "retail": "Bán lẻ",
+        "real_estate": "Bất động sản",
+        "hospitality": "Khách sạn",
+        "construction": "Xây dựng",
+        "pharmacies": "Nhà thuốc"
+      }
+    },
+    "benefits": {
+      "title": "Lợi ích Vượt trội",
+      "subtitle": "Trải nghiệm những ưu điểm của nền tảng tất cả trong một được thiết kế cho doanh nghiệp hiện đại",
+      "for_businesses": {
+        "title": "Cho Doanh nghiệp",
+        "items": [
+          "Giảm chi phí vận hành",
+          "Cải thiện hiệu quả và năng suất",
+          "Ra quyết định tốt hơn với thông tin chi tiết từ AI",
+          "Tăng cường hợp tác nhóm",
+          "Tối ưu hóa quy trình làm việc",
+          "Giải pháp có thể mở rộng cho sự phát triển"
+        ]
+      },
+      "for_teams": {
+        "title": "Cho Đội ngũ",
+        "items": [
+          "Giao tiếp liền mạch",
+          "Hợp tác thời gian thực",
+          "Quản lý công việc tự động",
+          "Truy cập thông tin tập trung",
+          "Công cụ và tính năng tích hợp",
+          "Nâng cao năng suất"
+        ]
+      }
+    },
+    "how_it_works": {
+      "title": "Cách Hoạt động",
+      "subtitle": "Bắt đầu với Tuturuuu chỉ trong vài bước đơn giản",
+      "steps": {
+        "step1": {
+          "title": "Đăng Ký",
+          "description": "Tạo tài khoản trong vài giây và bắt đầu dùng thử miễn phí"
+        },
+        "step2": {
+          "title": "Thiết Lập Không Gian Làm Việc",
+          "description": "Tùy chỉnh không gian làm việc và mời các thành viên trong nhóm"
+        },
+        "step3": {
+          "title": "Bắt Đầu Cộng Tác",
+          "description": "Bắt đầu sử dụng các công cụ mạnh mẽ để tăng năng suất"
+        },
+        "step4": {
+          "title": "Mở Rộng & Phát Triển",
+          "description": "Mở rộng việc sử dụng khi doanh nghiệp phát triển với nền tảng linh hoạt của chúng tôi"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Người Dùng Nói Gì",
+      "subtitle": "Tham gia cùng hàng nghìn người dùng hài lòng tin tưởng Tuturuuu",
+      "items": [
+        {
+          "quote": "Tuturuuu đã thay đổi cách chúng tôi làm việc. Các tính năng AI thật đáng kinh ngạc!",
+          "author": "Sarah Chen",
+          "role": "Quản lý Sản phẩm",
+          "company": "TechCorp"
+        },
+        {
+          "quote": "Giải pháp tất cả trong một tốt nhất mà chúng tôi từng tìm thấy cho nhu cầu của đội ngũ.",
+          "author": "Michael Rodriguez",
+          "role": "Giám đốc Điều hành",
+          "company": "StartupX"
+        },
+        {
+          "quote": "Giao diện trực quan và tính năng mạnh mẽ. Rất đáng để giới thiệu!",
+          "author": "Emily Johnson",
+          "role": "Trưởng nhóm",
+          "company": "DesignPro"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Sẵn Sàng Bắt Đầu?",
+      "subtitle": "Tham gia cùng hàng nghìn đội nhóm đang sử dụng Tuturuuu",
+      "primary_button": "Dùng Thử Miễn Phí",
+      "secondary_button": "Liên Hệ Bán Hàng",
+      "no_card_required": "Không cần thẻ tín dụng"
+    },
+    "ai_revolution": {
+      "title": "Cuộc Cách Mạng AI",
+      "subtitle": "Trải nghiệm tương lai của công việc với AI hiểu, thích nghi và phát triển cùng bạn",
+      "items": [
+        {
+          "title": "Tư duy Nhanh hơn",
+          "description": "Thông tin chi tiết và tự động hóa được hỗ trợ bởi AI giúp bạn ra quyết định nhanh hơn 10 lần"
+        },
+        {
+          "title": "Làm việc Thông minh hơn",
+          "description": "Để AI xử lý các công việc lặp lại trong khi bạn tập trung vào những điều quan trọng nhất"
+        },
+        {
+          "title": "Phát triển Lớn mạnh hơn",
+          "description": "Mở rộng hoạt động một cách dễ dàng với AI học hỏi và thích nghi"
+        },
+        {
+          "title": "Luôn Dẫn đầu",
+          "description": "Luôn ở vị trí dẫn đầu với khả năng AI không ngừng phát triển"
+        }
+      ]
+    },
+    "universal_value": {
+      "title": "Cho Mọi người, Mọi nơi",
+      "subtitle": "Từ doanh nhân cá nhân đến doanh nghiệp toàn cầu, Tuturuuu thích nghi với nhu cầu của bạn",
+      "categories": {
+        "business_size": {
+          "title": "Mọi Quy mô",
+          "items": [
+            "Doanh nhân & Freelancer",
+            "Doanh nghiệp Vừa và Nhỏ",
+            "Doanh nghiệp Lớn",
+            "Tổ chức Toàn cầu"
+          ]
+        },
+        "industries": {
+          "title": "Mọi Ngành nghề",
+          "items": [
+            "Công nghệ & Đổi mới",
+            "Y tế & Sức khỏe",
+            "Giáo dục & Học tập",
+            "Bán lẻ & Thương mại điện tử",
+            "Sản xuất & Chế tạo",
+            "Dịch vụ & Tư vấn",
+            "Sáng tạo & Giải trí",
+            "Phi lợi nhuận & Tác động xã hội"
+          ]
+        },
+        "use_cases": {
+          "title": "Mọi Mục tiêu",
+          "items": [
+            "Tối ưu hóa Hoạt động",
+            "Tăng Năng suất",
+            "Nâng cao Hợp tác",
+            "Thúc đẩy Đổi mới",
+            "Cải thiện Trải nghiệm Khách hàng",
+            "Mở rộng Toàn cầu",
+            "Giảm Chi phí",
+            "Đạt được Tính bền vững"
+          ]
+        }
+      }
+    },
+    "ai_features": {
+      "title": "AI là Cốt lõi",
+      "subtitle": "Mọi tính năng đều được nâng cao bởi trí tuệ nhân tạo tiên tiến",
+      "features": [
+        {
+          "title": "Tự động hóa Thông minh",
+          "description": "Tự động hóa quy trình phức tạp với AI học hỏi từ sở thích của bạn"
+        },
+        {
+          "title": "Thông tin Chi tiết Thông minh",
+          "description": "Nhận các đề xuất hữu ích dựa trên dữ liệu và xu hướng ngành của bạn"
+        },
+        {
+          "title": "Hợp tác Tự nhiên",
+          "description": "Làm việc với AI hiểu ngữ cảnh và giao tiếp tự nhiên"
+        },
+        {
+          "title": "Phân tích Dự đoán",
+          "description": "Dự đoán thách thức và cơ hội với dự báo được hỗ trợ bởi AI"
+        },
+        {
+          "title": "Học hỏi Thích nghi",
+          "description": "AI liên tục cải thiện dựa trên mô hình sử dụng của đội ngũ bạn"
+        },
+        {
+          "title": "Trí tuệ Toàn cầu",
+          "description": "Truy cập thông tin từ dữ liệu toàn cầu trong khi vẫn đảm bảo quyền riêng tư"
+        }
+      ]
+    },
+    "success_metrics": {
+      "title": "Tác động Thực tế",
+      "subtitle": "Tham gia cùng hàng nghìn tổ chức đạt được kết quả đáng kinh ngạc",
+      "metrics": [
+        {
+          "value": "10x",
+          "label": "Ra quyết định Nhanh hơn"
+        },
+        {
+          "value": "80%",
+          "label": "Thời gian Tiết kiệm cho Công việc Thường xuyên"
+        },
+        {
+          "value": "50%",
+          "label": "Giảm Chi phí Hoạt động"
+        },
+        {
+          "value": "3x",
+          "label": "Tăng Năng suất Đội ngũ"
+        }
+      ]
+    },
+    "transformation": {
+      "title": "Chuyển đổi Công việc",
+      "subtitle": "Trải nghiệm sức mạnh của chuyển đổi được hỗ trợ bởi AI",
+      "steps": [
+        {
+          "title": "Bắt đầu Ngay lập tức",
+          "description": "Bắt đầu và vận hành trong vài phút với hướng dẫn trực quan"
+        },
+        {
+          "title": "Mở rộng Dễ dàng",
+          "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại"
+        },
+        {
+          "title": "Phát triển Liên tục",
+          "description": "Luôn dẫn đầu với AI học hỏi và cải thiện mỗi ngày"
+        }
+      ]
+    }
+  },
+  "login": {
+    "email_placeholder": "Địa chỉ email",
+    "email_description": "Nhập địa chỉ email của bạn để bắt đầu với Tuturuuu.",
+    "otp_code": "Mã xác thực",
+    "otp_description": "Nhập mã xác thực được gửi đến địa chỉ email của bạn.",
+    "open_inbucket": "Mở Inbucket",
+    "open_gmail": "Mở Gmail",
+    "open_outlook": "Mở Outlook",
+    "success": "Thành công!",
+    "failed": "Thất bại!",
+    "otp_sent": "Chúng tôi đã gửi mã xác thực đến địa chỉ email của bạn.",
+    "otp_verified": "Địa chỉ email của bạn đã được xác thực.",
+    "failed_to_send": "Không thể gửi mã xác thực.",
+    "failed_to_verify": "Không thể xác thực địa chỉ email của bạn.",
+    "invalid_verification_code": "Mã xác thực không hợp lệ.",
+    "resend": "Gửi lại",
+    "processing": "Đang xử lý...",
+    "continue": "Tiếp tục",
+    "continue_with_google": "Tiếp tục với Google",
+    "continue_with_github": "Tiếp tục với GitHub",
+    "continue_with_apple": "Tiếp tục với Apple",
+    "continue_with_discord": "Tiếp tục với Discord"
+  },
+  "logout": {
+    "logout": "Đăng xuất",
+    "description": "Đăng xuất khỏi tài khoản của bạn"
+  },
+  "marketing": {
+    "solutions": {
+      "education": {
+        "education_solutions": "Giải pháp dành riêng cho giáo dục",
+        "title": "Chuyển đổi giáo dục với AI",
+        "description": "Trao nguồn sức mạnh công nghệ cho giáo dục: Các giải pháp thông minh giúp cá nhân hóa việc học, kết nối dễ dàng và mang lại kết quả học tập vượt trội.",
+        "trusted_section_title": "Được tin cậy bởi các tổ chức giáo dục",
+        "trusted_section_description": "Nền tảng của chúng tôi được thiết kế để đáp ứng các tiêu chuẩn cao nhất về bảo mật và quyền riêng tư, đảm bảo môi trường học tập an toàn cho học sinh ở mọi lứa tuổi.",
+        "features_title": "Công cụ giáo dục mạnh mẽ",
+        "features": {
+          "smart_learning_management": "Quản lý học tập thông minh",
+          "smart_learning_management_desc": "LMS được hỗ trợ bởi AI thích ứng với phong cách và tốc độ học tập của từng học sinh.",
+          "interactive_classrooms": "Lớp học tương tác",
+          "interactive_classrooms_desc": "Thu hút học sinh bằng các công cụ lớp học ảo và cộng tác theo thời gian thực.",
+          "progress_tracking": "Theo dõi tiến độ",
+          "progress_tracking_desc": "Phân tích toàn diện để theo dõi hiệu suất và sự tham gia của sinh viên.",
+          "course_creation": "Tạo khóa học",
+          "course_creation_desc": "Các công cụ dễ sử dụng để tạo và quản lý nội dung giáo dục.",
+          "virtual_classrooms": "Lớp học ảo",
+          "virtual_classrooms_desc": "Tích hợp hội nghị truyền hình liền mạch cho việc học từ xa.",
+          "ai assessment": "Đánh giá bằng AI",
+          "ai assessment_desc": "Tự động chấm điểm và phản hồi được cá nhân hóa nhờ AI."
+        },
+        "use_cases_title": "Giải pháp cho mọi cấp độ",
+        "use_cases": {
+          "K_12_education": "Chương trình phổ thông 12 năm",
+          "K_12_education_desc": "Công cụ toàn diện để quản lý giáo dục tiểu học và trung học.",
+          "K_12_education_item1": "Bài học tương tác",
+          "K_12_education_item2": "Giao tiếp phụ huynh",
+          "K_12_education_item3": "Quản lý bài tập về nhà",
+          "K_12_education_item4": "Báo cáo tiến độ",
+          "higher_education": "Giáo dục bậc cao",
+          "higher_education_desc": "Các tính năng nâng cao dành cho các trường đại học và cao đẳng.",
+          "higher_education_item1": "Quản lý khóa học",
+          "higher_education_item2": "Hợp tác nghiên cứu",
+          "higher_education_item3": "Phân tích sinh viên",
+          "higher_education_item4": "Chia sẻ tài nguyên",
+          "professional_training": "Đào tạo chuyên nghiệp",
+          "professional_training_desc": "Giải pháp đào tạo và phát triển chuyên môn doanh nghiệp.",
+          "professional_training_item1": "Đánh giá kỹ năng",
+          "professional_training_item2": "Chương trình chứng nhận",
+          "professional_training_item3": "Giới thiệu nhân viên",
+          "professional_training_item4": "Theo dõi hiệu suất"
+        },
+        "bento_grid_title": "Học tập xuất sắc",
+        "bento_grid_subtitle": "Thư viện tổng hợp",
+        "bento_grid_description": "Truy cập hàng nghìn tài nguyên giáo dục, sách giáo khoa và nội dung đa phương tiện được tuyển chọn.",
+        "bento_grid_features": {
+          "global_reach": "Phạm vi tiếp cận toàn cầu",
+          "global_reach_desc": "Kết nối với người học trên toàn thế giới",
+          "gamification": "Trò chơi hóa",
+          "gamification_desc": "Kiếm huy hiệu và chứng chỉ",
+          "smart_network": "Mạng thông minh",
+          "smart_network_desc": "Lộ trình học tập được hỗ trợ bởi AI",
+          "custom_dashboard": "Trang tổng quan tùy chỉnh",
+          "custom_dashboard_desc": "Không gian học tập cá nhân hóa"
+        },
+        "timeline_title": "Hành trình thực hiện",
+        "timeline_steps": {
+          "step1": "Thiết lập nền tảng",
+          "week1": "Tuần 1",
+          "step2": "Đào tạo nhân viên",
+          "week2": "Tuần 2",
+          "step3": "Di chuyển dữ liệu",
+          "week3": "Tuần 3",
+          "step4": "Triển khai đầy đủ",
+          "week4": "Tuần 4"
+        },
+        "faq": {
+          "question1": "Hệ thống học tập được hỗ trợ bởi AI hoạt động như thế nào?",
+          "answer1": "Hệ thống AI của chúng tôi phân tích hiệu suất, mô hình học tập và mức độ tương tác của sinh viên để tạo ra lộ trình học tập được cá nhân hóa. \nNó thích ứng trong thời gian thực để cung cấp và hỗ trợ nội dung tối ưu.",
+          "question2": "Những biện pháp an ninh nào được áp dụng?",
+          "answer2": "Chúng tôi triển khai mã hóa cấp doanh nghiệp, kiểm tra bảo mật thường xuyên và tuân thủ các yêu cầu của FERPA và GDPR để đảm bảo bảo vệ dữ liệu của sinh viên.",
+          "question3": "Khả năng tích hợp với các hệ thống hiện có",
+          "answer3": "Có, nền tảng của chúng tôi cung cấp khả năng tích hợp API mạnh mẽ và hỗ trợ các tiêu chuẩn công nghệ giáo dục phổ biến để tích hợp liền mạch với các hệ thống hiện có.",
+          "question4": "Những hình thức hỗ trợ được cung cấp",
+          "answer4": "Chúng tôi cung cấp hỗ trợ kỹ thuật 24/7, người quản lý thành công của khách hàng tận tâm và hỗ trợ triển khai toàn diện. \nNhóm của chúng tôi cũng cung cấp các buổi đào tạo thường xuyên và hội thảo trực tuyến về giáo dục.",
+          "question5": "Nền tảng có thể tùy chỉnh như thế nào?",
+          "answer5": "Nền tảng này có khả năng tùy biến cao với các tùy chọn gắn nhãn trắng, nhãn hiệu tùy chỉnh, quy trình công việc có thể định cấu hình và tích hợp API. \nBạn có thể điều chỉnh trải nghiệm học tập để phù hợp với nhu cầu của tổ chức bạn.",
+          "question6": "Các yêu cầu phần cứng là gì?",
+          "answer6": "Nền tảng dựa trên đám mây của chúng tôi hoạt động trên mọi trình duyệt web hiện đại. \nĐể tổ chức hội nghị truyền hình tối ưu, chúng tôi khuyên bạn nên kết nối Internet ổn định và cập nhật các thiết bị có chức năng camera và micrô.",
+          "question7": "Việc sao lưu dữ liệu được xử lí như thế nào?",
+          "answer7": "Chúng tôi duy trì các bản sao lưu tự động hàng ngày với khả năng lưu giữ trong 30 ngày, lưu trữ dự phòng theo địa lý và các giao thức khắc phục thảm họa. \nDữ liệu của bạn luôn an toàn và có thể truy cập được."
+        }
+      }
+    }
+  },
+  "meet-together": {
+    "headline-p1": "Tìm khung giờ tốt nhất cho mọi người,",
+    "headline-p2": "dễ hơn bao giờ hết",
+    "dates-to-meet-together": "Những ngày gặp nhau",
+    "soonest-time-to-meet": "Giờ sớm nhất",
+    "latest-time-to-meet": "Giờ muộn nhất",
+    "time-zone": "Múi giờ",
+    "select-time-zone": "Chọn múi giờ",
+    "create_plan": "Tạo kế hoạch",
+    "creating_plan": "Đang tạo kế hoạch...",
+    "name": "Tên",
+    "your_plans": "Kế hoạch của bạn",
+    "no_plans_yet": "Bạn chưa có kế hoạch nào",
+    "new_plan": "Kế hoạch mới",
+    "new_plan_desc": "Kế hoạch này sẽ giúp bạn tìm thời điểm tốt nhất để gặp bạn bè, gia đình hoặc đồng nghiệp của bạn.",
+    "missing_fields": "Thiếu thông tin",
+    "start_time_required": "Vui lòng chọn thời gian bắt đầu",
+    "end_time_required": "Vui lòng chọn thời gian kết thúc",
+    "timezone_required": "Vui lòng chọn múi giờ",
+    "dates_required": "Vui lòng chọn ít nhất một ngày",
+    "something_went_wrong": "Đã có lỗi xảy ra",
+    "cant_create_plan_right_now": "Chúng tôi không thể tạo kế hoạch của bạn lúc này. Vui lòng thử lại sau.",
+    "local_time": "Giờ địa phương",
+    "login_to_save_plans": "Đăng nhập hoặc đăng ký tài khoản Tuturuuu để lưu kế hoạch của bạn.",
+    "untitled_plan": "Kế hoạch chưa đặt tên"
+  },
+  "meet-together-plan-details": {
+    "copy_link": "Sao chép liên kết",
+    "send_email": "Gửi email",
+    "mail_p1": "Xin chào mọi người",
+    "mail_p2": "Mình đang lên kế hoạch tìm ra khung giờ tối ưu cho mọi người để mọi người có thể tham gia",
+    "mail_p3": "Vui lòng truy cập",
+    "mail_p4": "để thêm khung giờ mà bạn có thể tham gia và giúp mọi người dễ dàng hơn trong việc tìm khung giờ phù hợp. Cảm ơn bạn",
+    "mail_p5": "Hân hạnh",
+    "your_availability": "Khung giờ bạn rảnh",
+    "everyone_availability": "Khung giờ mọi người rảnh",
+    "available": "Rảnh",
+    "unavailable": "Không rảnh",
+    "identity_protection": "Bảo vệ danh tính",
+    "identity_protection_desc": "Sử dụng tài khoản khách và tùy chọn đặt mật khẩu cho kế hoạch này để bảo vệ danh tính của bạn.",
+    "account_switcher": "Chuyển tài khoản",
+    "account_switcher_desc": "Tương tác với kế hoạch này thông qua tài khoản khách, hoặc sử dụng tài khoản Tuturuuu với nhiều tính năng nâng cao hơn.",
+    "use_guest_account": "Sử dụng tài khoản khách",
+    "use_other_guest_account": "Sử dụng tài khoản khách khác",
+    "use_tuturuuu_account": "Sử dụng tài khoản Tuturuuu",
+    "using_tuturuuu_account": "Bạn đang sử dụng tài khoản Tuturuuu",
+    "your_name": "Tên của bạn",
+    "your_name_desc": "Đây là tên mà mọi người sẽ thấy trong kế hoạch này.",
+    "password": "Mật khẩu (không bắt buộc)",
+    "password_desc": "Ngăn người khác sử dụng tên của bạn trong kế hoạch này mà không có sự cho phép của bạn.",
+    "viewing_as": "Đang xem bằng",
+    "anonymous": "Chế độ ẩn danh",
+    "interacting_as": "Đang tương tác bằng",
+    "guest": "Khách",
+    "guest_account": "Tài khoản khách",
+    "tuturuuu_account": "Tài khoản Tuturuuu",
+    "switch_account": "Chuyển tài khoản",
+    "plan_users": "Người dùng kế hoạch",
+    "timeblocks": "Khung giờ",
+    "name": "Tên",
+    "update_plan": "Cập nhật kế hoạch",
+    "delete_plan": "Xóa kế hoạch",
+    "updating_plan": "Đang cập nhật...",
+    "deleting_plan": "Đang xóa...",
+    "update_plan_desc": "Kế hoạch này sẽ giúp bạn tìm thời điểm tốt nhất để gặp bạn bè, gia đình hoặc đồng nghiệp của bạn.",
+    "something_went_wrong": "Có lỗi xảy ra. Vui lòng thử lại sau.",
+    "cant_update_plan_right_now": "Chúng tôi không thể cập nhật kế hoạch của bạn ngay bây giờ. Vui lòng thử lại sau.",
+    "cant_delete_plan_right_now": "Chúng tôi không thể xóa kế hoạch của bạn ngay bây giờ. Vui lòng thử lại sau.",
+    "no_users_yet": "Chưa có người dùng nào",
+    "are_you_absolutely_sure": "Bạn có chắc chắn không?",
+    "delete_plan_warning": "Thao tác này không thể hoàn tác. Kế hoạch và tất cả thông tin liên quan sẽ bị xóa vĩnh viễn khỏi hệ thống của Tuturuuu.",
+    "select_users_to_filter": "Chọn người dùng để lọc kết quả",
+    "show_qr_code": "Xem mã QR",
+    "qr_code_description": "Quét mã QR này để truy cập nhanh vào thông tin chi tiết về kế hoạch gặp mặt."
+  },
+  "notifications": {
+    "accept": "Chấp nhận",
+    "decline": "Từ chối",
+    "notifications": "Thông báo",
+    "no-notifications": "Bạn không có thông báo nào.",
+    "workspace-invite": "Lời mời tham gia",
+    "invited-to": "Bạn đã được mời tham gia"
+  },
+  "nova": {
+    "badge": "Chào mừng đến với tương lai của kỹ thuật tạo lệnh",
+    "title": "Làm chủ cuộc chơi với",
+    "description": "Sân chơi của bạn để chế tạo, thử nghiệm và hoàn thiện lời nhắc AI. Tham gia cộng đồng những người sáng tạo giải quyết các vấn đề thực tế thông qua kỹ thuật lời nhắc tiên tiến.",
+    "error": "Error",
+    "get-started": "Bắt đầu",
+    "explore": "Khám phá",
+    "season": "Mùa",
+    "feature-event": "Sự Kiện Nổi Bật",
+    "time-line": {
+      "virtual-badge": "Trực Tuyến",
+      "onsite-badge": "Trực Tiếp",
+      "open-cere": "Lễ Khai Mạc",
+      "open-cere-description": "Hãy tham gia cùng chúng tôi để khởi động NEO League Mùa 1",
+      "open-cere-date": "19 tháng 4 năm 2025",
+      "top-30-selection": "Vòng loại 30",
+      "top-30-selection-description": "Vòng tuyển chọn đầu tiên dành cho những người có thành tích cao nhất",
+      "top-30-selection-date": "26 tháng 4 năm 2025",
+      "top-15-selection": "Vòng loại 15",
+      "top-15-selection-description": "Vòng trực tuyến cuối cùng để xác định những người vào chung kết",
+      "top-15-selection-date": "10 tháng 5 năm 2025",
+      "final-competition": "Cuộc thi chung kết",
+      "final-competition-description": "Vòng chung kết để xác định người chiến thắng",
+      "final-competition-date": "31 tháng 5 năm 2025"
+    },
+    "challenges": "Các thử thách",
+    "leaderboard": "Bảng xếp hạng",
+    "performance-analysis-description": "Theo dõi và tối ưu hóa các nỗ lực kỹ thuật nhắc nhở của bạn",
+    "ai-capabilities": "Khả năng AI",
+    "performance-analysis": "Phân tích hiệu suất",
+    "module-4-description": "Khám phá các kỹ thuật nâng cao trong kỹ thuật tạo lệnh phức tạp",
+    "ai-capabilities-subtitle": "Được hỗ trợ bởi Công nghệ AI tiên tiến",
+    "ai-capabilities-description": "Trải nghiệm thế hệ kỹ thuật nhắc nhở tiếp theo với các tính năng và công cụ AI tiên tiến của chúng tôi",
+    "advanced-ai-models": "Các mô hình AI tiên tiến",
+    "advanced-ai-models-description": "Truy cập GPT-4, Claude và các mô hình AI tiên tiến khác",
+    "smart-templating": "Tạo mẫu thông minh",
+    "smart-templating-description": "Tạo và chia sẻ các mẫu nhắc nhở có thể tái sử dụng",
+    "performance-analytics": "Phân tích hiệu suất",
+    "start-button": "Bắt đầu",
+    "why-is-prompt-engineering": "Tại sao kỹ thuật tạo lệnh lại Quan Trọng?",
+    "why-is-prompt-engineering-description": "Kỹ thuật tạo lệnh rất quan trọng vì nó ảnh hưởng trực tiếp đến chất lượng và tính hữu ích của nội dung được tạo ra bởi AI. Những prompt được thiết kế tốt có thể cải thiện đáng kể độ chính xác, tính liên quan và sự mạch lạc của các kết quả do AI tạo ra.",
+    "learning-page-subtitle": "Hãy theo dõi chương trình học toàn diện của chúng tôi để trở thành chuyên gia trong việc tạo ra các prompt hiệu quả cho AI",
+    "module-1": "Giới Thiệu về kỹ thuật tạo lệnh",
+    "module-1-description": "Tìm hiểu các khái niệm cơ bản về kỹ thuật tạo lệnh và tầm quan trọng của nó trong phát triển AI",
+    "what-is-prompt-engineering": "Kỹ thuật tạo lệnh là gì?",
+    "what-is-prompt-engineering-description": "Kỹ thuật tạo lệnh là thực hành thiết kế và cải tiến các prompt đầu vào cho các mô hình ngôn ngữ AI để tạo ra các kết quả mong muốn. Nó liên quan đến việc soạn thảo các hướng dẫn rõ ràng, cụ thể và hiệu quả để hướng dẫn AI tạo ra các phản hồi chính xác và phù hợp.",
+    "module-2": "Kỹ Thuật Cơ Bản trong kỹ thuật tạo lệnh",
+    "module-2-description": "Làm chủ các chiến lược cơ bản để tạo prompt hiệu quả",
+    "zero-shot": "Zero-shot & Few-shot Prompting",
+    "zero-shot-description": "Tìm hiểu sự khác biệt giữa zero-shot và few-shot prompting, và khi nào sử dụng từng phương pháp hiệu quả.",
+    "chain-of-thought": "Chain of Thought Prompting",
+    "chain-of-thought-description": "Làm chủ kỹ thuật phân tách các vấn đề phức tạp thành các bước logic để có các phản hồi tốt hơn từ AI.",
+    "module-3": "Chiến Lược Nâng Cao",
+    "module-3-description": "Khám phá các kỹ thuật nâng cao trong kỹ thuật tạo lệnh phức tạp",
+    "iterative-refinement": "Cải Tiến Lặp Lại",
+    "iterative-refinement-description": "Tìm hiểu cách cải thiện prompt qua từng vòng lặp dựa trên các kết quả của AI để có được kết quả tối ưu.",
+    "module-4": "Các Thực Hành Tốt Nhất",
+    "Meta-prompting": "Meta Prompting",
+    "Meta-prompting-description": "Khám phá các kỹ thuật nâng cao để sử dụng các prompt nhằm tự động tạo ra các prompt khác.",
+    "performance-analytics-description": "Theo dõi và tối ưu hóa các nỗ lực kỹ thuật nhắc nhở của bạn",
+    "fine-tune-controls": "Tinh chỉnh các điều khiển",
+    "fine-tune-controls-description": "Điều chỉnh các tham số để có kết quả hoàn hảo",
+    "secure=processes": "Bảo mật Processes",
+    "secure-processes-description": "Bảo mật cấp doanh nghiệp cho dữ liệu của bạn",
+    "ethical-ai": "AI đạo đức",
+    "ethical-ai-description": "Phát hiện thiên vị tích hợp và hướng dẫn đạo đức",
+    "magic-commands": "Lệnh ma thuật",
+    "magic-commands-description": "Sử dụng các lệnh đặc biệt để nhanh chóng tạo lời nhắc được tối ưu hóa cho các trường hợp sử dụng khác nhau",
+    "commands": {
+      "story": "/story \"Tạo một câu chuyện sáng tạo về...\"",
+      "analyze": "/analyze \"Phân tích văn bản này để xác định cảm xúc...\"",
+      "improve": "/improve \"Làm cho văn bản này hấp dẫn hơn...\""
+    },
+    "interactive-demo": {
+      "title": "Trình diễn AI tương tác",
+      "badge": "Xem thử trực tiếp",
+      "input1": "Hãy tạo một câu chuyện sáng tạo về một nhà khoa học du hành thời gian.",
+      "response1": "Đây là một câu chuyện ngắn về Tiến sĩ Elena Chen, một nhà vật lý lượng tử vô tình khám phá ra du hành thời gian khi đang nghiên cứu sự vướng víu của các hạt...",
+      "input2": "Hãy làm cho câu chuyện hồi hộp hơn và thêm một tình tiết bất ngờ.",
+      "response2": "Khi Tiến sĩ Chen bước qua cánh cổng lượng tử, cô kinh hoàng nhận ra rằng mỗi 'dòng thời gian thay thế' mà cô từng đến đều đang tạo ra những bản sao nghịch lý của chính mình...",
+      "ai-typing": "AI đang trả lời...",
+      "user-typing": "Người dùng đang nhập...",
+      "input-place-holder": "Nhập nội dung trò chuyện..."
+    },
+    "browse-learning-resources": "Khám phá tài nguyên học tập",
+    "get-started-today": "Bắt đầu ngay hôm nay",
+    "get-started-today-subtitle": "Bạn đã sẵn sàng với AI? ",
+    "get-started-today-description": "Đăng ký miễn phí và bắt đầu sử dụng nền tảng của chúng tôi ngay hôm nay.",
+    "requirements": "Yêu cầu",
+    "based-in": "Tổ chức tại Thành phố Hồ Chí Minh",
+    "undergraduates": "Sinh viên đại học",
+    "age": "18+ tuổi",
+    "register": "Đăng kí NEO League",
+    "feature": "Tính năng",
+    "platform-feature": "Tính năng",
+    "feature-title": "Những thứ bạn cần biết để vượt trội kỹ thuật tạo lệnh",
+    "feature-title-description": "Một bộ công cụ toàn diện được thiết kế cho các kỹ sư hiện đại",
+    "advanced-ai": "Mô hình AI nâng cao",
+    "learning-resources": "Tài nguyên học tập",
+    "learning-subtitle": "Nắm vững kỹ thuật nhắc nhở thông qua Học tập có cấu trúc",
+    "learning-subtitle-description": "Truy cập các hướng dẫn, chỉ dẫn và ví dụ thực tế toàn diện để nâng cao kỹ năng kỹ thuật nhắc nhở của bạn. Học hỏi từ các chuyên gia trong ngành và tham gia cộng đồng hỗ trợ.",
+    "learning-tututorials": "Hướng dẫn và bài tập tương tác",
+    "real-world": "Ví dụ và nghiên cứu tình huống thực tế",
+    "expert-lead": "Hội thảo do chuyên gia hướng dẫn",
+    "community": "Thử thách và cuộc thi của cộng đồng",
+    "structure-learning": "Lộ trình học tập có cấu trúc",
+    "structure-learning-description": "Học hỏi từ các chuyên gia trong ngành và tham gia cộng đồng hỗ trợ.",
+    "community-support": "Hỗ trợ cộng đồng",
+    "community-support-description": "Học hỏi và phát triển cùng các kỹ sư nhắc nhở khác",
+    "earn-cert": "Nhận chứng chỉ",
+    "earn-cert-description": "Nhận chứng chỉ về kỹ thuật nhắc nhở và thể hiện kỹ năng của bạn",
+    "advanced-ai-description": "Truy cập các mô hình AI tiên tiến để có kỹ thuật nhắc nhở mạnh mẽ",
+    "real-time": "Kiểm tra theo thời gian thực",
+    "real-time-description": "Kiểm tra lời nhắc của bạn theo thời gian thực với phản hồi tức thì",
+    "collaborative-learning": "Học tập cộng tác",
+    "collaborative-learning-description": "Học hỏi và chia sẻ với cộng đồng",
+    "advanced-controls": "Kiểm soát nâng cao",
+    "advanced-controls-description": "Tinh chỉnh lời nhắc của bạn bằng các kiểm soát nâng cao",
+    "smart-templates": "Mẫu thông minh",
+    "smart-templates-description": "Bắt đầu với các mẫu lời nhắc được tối ưu hóa",
+    "performance": "Chế độ hiệu suất",
+    "performance-description": "Tối ưu hóa tốc độ và hiệu quả",
+    "AI-assistant": "Trợ lý AI",
+    "AI-assistant-description": "Nhận trợ giúp từ trợ lý AI của chúng tôi để có kỹ thuật nhanh chóng",
+    "program-objectives": "Mục tiêu chương trình",
+    "program-objectives-description-1": "Dân chủ hóa kỹ thuật nhanh chóng trên mọi nền tảng",
+    "program-objectives-description-2": "Phát triển các kỹ năng AI thực tế và khả năng giải quyết vấn đề",
+    "program-objectives-description-3": "Xây dựng cộng đồng những người đổi mới AI toàn cầu",
+    "program-objectives-description-4": "Nuôi dưỡng các giải pháp sáng tạo cho những thách thức trong thế giới thực",
+    "program-objectives-description-5": "Nâng cao hiểu biết về AI và hiểu biết về đạo đức",
+    "error-description": "An error occurred while processing your request. Please try again later.",
+    "error-404": "Page not found",
+    "error-404-description": "The page you are looking for does not exist.",
+    "error-500": "Internal server error",
+    "error-500-description": "Something went wrong. Please try again later.",
+    "dashboard": "Tổng Quan",
+    "problems": "Đề Bài",
+    "users": "Người Dùng",
+    "create-problem": "Tạo Đề Bài Mới",
+    "view-leaderboard": "Xem bảng xếp hạng",
+    "challenges-page": {
+      "prompt-engineering-challenges": "Thử thách về kỹ thuật tạo lệnh",
+      "start-challenge": "Bắt đầu thử thách",
+      "create-challenge": "Tạo Thử Thách Mới",
+      "search-placeholder": "Tìm kiếm thử thách...",
+      "filters": {
+        "all": "Tất cả",
+        "disabled": "Đã vô hiệu hóa",
+        "upcoming": "Sắp diễn ra",
+        "preview": "Xem trước",
+        "active": "Đang hoạt động",
+        "closed": "Đã đóng"
+      },
+      "no-challenges-found": {
+        "title": "Không tìm thấy thử thách",
+        "search-description": "Không có thử thách nào khớp với tiêu chí tìm kiếm của bạn. Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm.",
+        "default-description": "Hiện tại không có thử thách nào. Vui lòng quay lại sau hoặc liên hệ với quản trị viên."
+      },
+      "clear-filters": "Xóa bộ lọc"
+    },
+    "submission-page": {
+      "title": "Bài Nộp",
+      "description": "Quản lý và xem xét bài nộp của người dùng",
+      "total-submissions": "Tổng số bài nộp",
+      "total-submissions-description": "Tất cả bài nộp từ trước đến nay",
+      "unique-users": "Người dùng duy nhất",
+      "unique-users-description": "Người dùng đã nộp bài",
+      "latest-submission": "Bài nộp gần nhất",
+      "latest-submission-description": "Hoạt động gần đây nhất",
+      "no-submissions-yet": "Chưa có bài nộp nào",
+      "filters": {
+        "title": "Tất cả thử thách",
+        "filter-challenges": "Lọc theo thử thách",
+        "filter-problems": "Lọc theo vấn đề",
+        "all-problems": "Tất cả vấn đề",
+        "clear-filters": "Xóa bộ lọc",
+        "all-statuses": "Tất cả các trạng thái",
+        "in-progress": "Đang làm",
+        "ended": "Đã hoàn thành"
+      },
+      "submission-table": {
+        "status": {
+          "in_progress": "Đang làm",
+          "ended": "Đã hoàn thành"
+        },
+        "headers": {
+          "user": "Người dùng",
+          "problem": "Đề Bài",
+          "score": "Điểm",
+          "date": "Ngày",
+          "actions": "Hành động"
+        },
+        "empty-state": {
+          "no-results": "Không tìm thấy kết quả nào cho",
+          "no-submissions": "Không có bài nộp nào",
+          "clear-search": "Xóa tìm kiếm"
+        },
+        "actions": {
+          "view-details": "Xem chi tiết",
+          "challenge-results": "Kết quả thử thách"
+        }
+      }
+    },
+    "cards": {
+      "learn": {
+        "title": "Học hỏi",
+        "description": "Khám phá hướng dẫn và tài liệu toàn diện về các kỹ thuật thiết kế prompt."
+      },
+      "practice": {
+        "title": "Thực hành",
+        "description": "Đối mặt với những thử thách thực tế và nâng cao kỹ năng của bạn trong môi trường thực hành."
+      },
+      "innovate": {
+        "title": "Đổi mới",
+        "description": "Thúc đẩy giới hạn của những gì có thể với AI và tạo ra những prompt mang tính đột phá."
+      },
+      "compete": {
+        "title": "Cạnh tranh",
+        "description": "Tham gia bảng xếp hạng và so sánh kỹ năng thiết kế prompt của bạn với người khác."
+      }
+    },
+    "learn_more": "Tìm hiểu thêm",
+    "about": {
+      "title": "Đội Ngũ Phía Sau",
+      "subtitle": "Gặp gỡ đội ngũ tổ chức, nhà phát triển, nhà tài trợ và cộng tác viên đã tạo nên NEO League - Prompt the Future 2025.",
+      "event-intro": {
+        "badge": "Cuộc Thi Đầu Tiên",
+        "event-title": "NEO League – Prompt the Future 2025",
+        "event-description": "Cuộc thi kỹ thuật tạo lệnh đầu tiên được tổ chức bởi CLB Neo Culture Tech – RMIT SGS, với sự hỗ trợ kỹ thuật và nền tảng từ Tuturuuu, đơn vị tiên phong trong lĩnh vực AI và công cụ tăng năng suất thông minh.",
+        "features": {
+          "challengesTitle": "Thử Thách Sáng Tạo",
+          "challengesDesc": "Thí sinh đối mặt với các bài toán tạo prompt AI thực tiễn được thiết kế bởi các chuyên gia trong ngành.",
+          "skillsTitle": "Phát Triển Kỹ Năng",
+          "skillsDesc": "Tài nguyên học tập toàn diện và hỗ trợ từ cố vấn giúp thí sinh làm chủ kỹ năng tạo prompt.",
+          "communityTitle": "Xây Dựng Cộng Đồng",
+          "communityDesc": "Kết nối với những người đam mê AI và chuyên gia trong ngành trong suốt cuộc thi."
+        },
+        "call-to-action": {
+          "title": "Tham Gia Cuộc Cách Mạng",
+          "desc": "Hãy là một phần của cuộc thi kỹ thuật tạo lệnh đầu tiên, định hình tương lai tương tác với AI."
+        }
+      },
+      "prompt-intro": {
+        "badge": "Kỹ Thuật & Khoa Học",
+        "title1": "Kỹ thuật tạo lệnh ",
+        "title2": "Là Gì?",
+        "description": "Một lĩnh vực đang phát triển kết nối sáng tạo của con người với trí tuệ nhân tạo, nhằm khai phá toàn bộ tiềm năng của các hệ thống AI thông qua các hướng dẫn được thiết kế cẩn thận.",
+        "cards": {
+          "language-title": "Ngôn Ngữ Của AI",
+          "language-desc": "Kỹ thuật tạo lệnh là nghệ thuật giao tiếp hiệu quả với hệ thống AI, bằng cách xây dựng hướng dẫn chính xác giúp mô hình tạo ra kết quả mong muốn.",
+          "creativity-title": "Độ Chính Xác & Sáng Tạo",
+          "creativity-desc": "Kết hợp giữa sự chính xác kỹ thuật và tư duy sáng tạo để khai phá các khả năng ẩn trong mô hình AI, chuyển đổi ý tưởng mơ hồ thành kết quả cụ thể.",
+          "future-work-title": "Tương Lai Của Công Việc",
+          "future-work-desc": "Một kỹ năng thiết yếu trong thời đại AI, giúp các chuyên gia ở mọi ngành nghề tận dụng AI như một công cụ mạnh mẽ cho đổi mới và giải quyết vấn đề."
+        }
+      },
+      "prompt-impact": {
+        "badge": "Tầm quan trọng",
+        "title": "Cầu Nối Giữa Ý Định Con Người và Năng Lực AI",
+        "description": "Khi các hệ thống AI ngày càng mạnh mẽ, việc định hướng chúng một cách hiệu quả trở nên quan trọng hơn bao giờ hết. kỹ thuật tạo lệnh chính là chìa khóa để khai phá tiềm năng đó, biến các công cụ tinh vi thành giải pháp thực tiễn cho những thách thức đời thực.",
+        "cards": {
+          "democratize-title": "Cơ hội cho tất cả",
+          "democratize-desc": "Giúp AI tiên tiến tiếp cận được với tất cả mọi người.",
+          "precision-title": "Kiểm Soát Chính Xác",
+          "precision-desc": "Đạt được kết quả cụ thể, chính xác từ các mô hình AI đa năng.",
+          "skill-title": "Kỹ Năng Của Tương Lai",
+          "skill-desc": "Một năng lực thiết yếu cho các chuyên gia trong kỷ nguyên AI đang phát triển nhanh chóng."
+        },
+        "example-code": "Lập một kế hoạch chi tiết cho một thành phố thông minh bền vững tích hợp AI để quản lý tài nguyên."
+      },
+      "why-now-why-us": {
+        "why-now": {
+          "badge": "Tại sao là lúc này?",
+          "title": "Thời Điểm Hoàn Hảo",
+          "description": "Chúng ta đang ở một giai đoạn quan trọng trong sự phát triển của AI. Các mô hình ngôn ngữ lớn đã đạt đến mức độ mà kỹ thuật tạo lệnh không chỉ là kỹ năng kỹ thuật—mà còn là lĩnh vực sáng tạo với tiềm năng thay đổi nhiều ngành công nghiệp.",
+          "tagline": "Năm Của kỹ thuật tạo lệnh"
+        },
+        "why-us": {
+          "badge": "Tại sao là chúng tôi?",
+          "title": "Tiên Phong Trong Chất Lượng",
+          "description": "Sự hợp tác giữa CLB Neo Culture Tech – RMIT SGS và Tuturuuu kết hợp giữa tính học thuật nghiêm túc và đổi mới công nghệ. Chúng tôi ở vị thế đặc biệt để tổ chức một cuộc thi vừa đầy thử thách vừa cung cấp đầy đủ nguồn lực giúp thí sinh tỏa sáng.",
+          "academic": "Xuất Sắc Học Thuật",
+          "technical": "Đổi Mới Công Nghệ"
+        }
+      },
+      "organizers": {
+        "title": "Ban Tổ Chức",
+        "subtitle": "Đội ngũ dẫn dắt sáng kiến và cuộc thi NEO League.",
+        "members": {
+          "vo-hoang-phuc": {
+            "name": "Võ Hoàng Phúc",
+            "role": "Trưởng Dự Án Nova",
+            "organization": "Tuturuuu",
+            "bio": "Xây dựng nền tảng và đảm bảo cuộc thi diễn ra suôn sẻ, tập trung vào các khía cạnh kỹ thuật."
+          },
+          "nguyen-yen-ngoc": {
+            "name": "Nguyễn Yến Ngọc",
+            "role": "Trưởng Bộ Phận Đối Ngoại Nova",
+            "organization": "Tuturuuu",
+            "bio": "Làm việc với các tổ chức và đối tác bên ngoài để đảm bảo cuộc thi thành công."
+          },
+          "doan-huu-quoc": {
+            "name": "Đoàn Hữu Quốc",
+            "role": "Trưởng Bộ Phận Đảm Bảo Chất Lượng Nova",
+            "organization": "ZenBright",
+            "bio": "Đảm bảo nền tảng chất lượng cao và dễ sử dụng, tập trung vào trải nghiệm người dùng."
+          },
+          "cao-nguyen-viet-quang": {
+            "name": "Cao Nguyễn Việt Quang",
+            "role": "Trưởng Dự Án & Đối Ngoại Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Giám sát dự án và đảm bảo cuộc thi diễn ra suôn sẻ."
+          },
+          "dao-ngoc-khanh": {
+            "name": "Đào Ngọc Khanh",
+            "role": "Đồng Trưởng Dự Án & Truyền Thông Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Quảng bá cuộc thi và xây dựng cộng đồng."
+          },
+          "ngo-van-tai": {
+            "name": "Ngô Văn Tài",
+            "role": "Trưởng Chương Trình Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Phụ trách toàn bộ chương trình, bao gồm cả cuộc thi và cộng đồng."
+          },
+          "huynh-tan-phat": {
+            "name": "Huỳnh Tấn Phát",
+            "role": "Trưởng Bộ Phận Hậu Cần & Tài Chính Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Phụ trách hậu cần và tài chính cho cuộc thi."
+          },
+          "huynh-hoang-duc": {
+            "name": "Huỳnh Hoàng Đức",
+            "role": "Trưởng Bộ Phận Nội Bộ Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Phụ trách các hoạt động nội bộ của cuộc thi."
+          },
+          "nguyen-vo-phuong-quynh": {
+            "name": "Nguyễn Võ Phương Quỳnh",
+            "role": "Trưởng Bộ Phận Sáng Tạo Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Phụ trách mảng sáng tạo cho cuộc thi."
+          },
+          "tran-duc-linh": {
+            "name": "TS. Trần Đức Linh",
+            "role": "Cố Vấn Học Thuật Neo League",
+            "organization": "RMIT University",
+            "bio": "Cung cấp định hướng và xây dựng đề bài cho cuộc thi."
+          },
+          "pham-chi-thanh": {
+            "name": "TS. Phạm Chí Thanh",
+            "role": "Cố Vấn Học Thuật Neo League",
+            "organization": "RMIT University",
+            "bio": "Cung cấp định hướng và xây dựng đề bài cho cuộc thi."
+          },
+          "tom-huynh": {
+            "name": "TS. Tom Huynh",
+            "role": "Cố Vấn Học Thuật Neo League",
+            "organization": "RMIT University",
+            "bio": "Cung cấp định hướng và xây dựng đề bài cho cuộc thi."
+          }
+        }
+      },
+      "platform-builder": {
+        "title": "Đội Ngũ Phát Triển",
+        "subtitle": "Đội ngũ phát triển đã xây dựng nền tảng NEO League, vận hành trên công nghệ của Tuturuuu.",
+        "members": {
+          "vo-hoang-phuc": {
+            "name": "Võ Hoàng Phúc",
+            "role": "Trưởng Nhóm Phát Triển",
+            "organization": "Tuturuuu",
+            "bio": "Người duy trì chính của Tuturuuu và Nova, đam mê xây dựng các công cụ giúp mọi người sáng tạo và làm việc hiệu quả hơn."
+          },
+          "huynh-tan-phat": {
+            "name": "Huỳnh Tấn Phát",
+            "role": "Kỹ Sư Fullstack",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Xây dựng nền móng cho nền tảng Neo League, tập trung vào khả năng mở rộng và hiệu suất."
+          },
+          "nguyen-gia-khang": {
+            "name": "Nguyễn Gia Khang",
+            "role": "Kỹ Sư Fullstack",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Cải thiện trải nghiệm người dùng cho nền tảng Neo League, chú trọng đến tính thân thiện và dễ sử dụng."
+          },
+          "ngo-van-tai": {
+            "name": "Ngô Văn Tài",
+            "role": "Kỹ Sư Fullstack",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Củng cố nền tảng Neo League thông qua phát triển backend, bảo trì hệ thống và hỗ trợ cải tiến nền tảng."
+          },
+          "huynh-thai-duong": {
+            "name": "Huỳnh Thái Dương",
+            "role": "Kỹ Sư Frontend",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Phát triển giao diện người dùng thân thiện và hiển thị tốt trên mọi thiết bị cho nền tảng Neo League."
+          }
+        }
+      },
+      "sponsors": {
+        "badge": "Nhà Tài Trợ",
+        "title": "Nhà Tài Trợ",
+        "subtitle": "Các tổ chức đồng hành cùng NEO League.",
+        "call-to-action": {
+          "text": "Bạn muốn đồng hành tài trợ cho NEO League?",
+          "button": "Liên hệ ngay"
+        },
+        "tuturuuu": {
+          "name": "Tuturuuu",
+          "description": "Đơn vị tiên phong trong lĩnh vực AI và công cụ tăng năng suất thông minh, hỗ trợ kỹ thuật và nền tảng cho cuộc thi Neo League. Tuturuuu Nova đang cách mạng hóa cách con người tương tác với AI thông qua kỹ thuật tạo lệnh tiên tiến."
+        },
+        "rmit-neo-culture-tech": {
+          "name": "RMIT SGS Neo Culture Tech",
+          "description": "Đơn vị tổ chức cuộc thi Neo League - Prompt the Future 2025, hướng tới thúc đẩy đổi mới và xuất sắc kỹ thuật trong lĩnh vực AI và kỹ thuật tạo lệnh cho sinh viên."
+        },
+        "rmit-sset": {
+          "name": "RMIT SSET",
+          "description": "Đối tác của cuộc thi Neo League - Prompt the Future 2025, hướng tới thúc đẩy đổi mới và xuất sắc kỹ thuật trong lĩnh vực AI và kỹ thuật tạo lệnh cho sinh viên."
+        },
+        "aptech": {
+          "name": "Aptech",
+          "description": "APTECH đã có mặt tại Việt Nam từ năm 1999, cung cấp nền tảng giáo dục uy tín chủ yếu cho sinh viên và học sinh trung học. Tính đến nay, Tập đoàn APTECH đã đào tạo hơn 100.000 lập trình viên quốc tế cho ngành CNTT Việt Nam."
+        },
+        "holistics": {
+          "name": "Holistics",
+          "description": " Nhà Tài trợ của Neo League - Holistics cung cấp nền tảng business intelligence tự phục vụ giúp doanh nghiệp nâng cao khả năng dữ liệu một cách dễ dàng, tập trung vào việc tăng năng suất cho đội ngũ dữ liệu và làm cho các thông tin dễ dàng truy cập trên toàn công ty."
+        },
+        "AICT": {
+          "name": "AICT",
+          "description": "Đối tác của cuộc thi Neo League - Prompt the Future 2025, hướng tới thúc đẩy đổi mới và xuất sắc kỹ thuật trong lĩnh vực AI và kỹ thuật tạo lệnh cho sinh viên."
+        },
+        "student-council": {
+          "name": "RMIT Student Council",
+          "description": "Đối tác của Neo League - Hội đồng Sinh viên RMIT Việt Nam (SC) đại diện cho sinh viên và là cầu nối giữa sinh viên và Đại học, nhằm nâng cao trải nghiệm học tập, phúc lợi cá nhân và các hoạt động văn hóa, xã hội của sinh viên."
+        },
+        "netcompany": {
+          "name": "Netcompany",
+          "description": "Nhà Tài trợ của Neo League - Netcompany là công ty dịch vụ CNTT chuyên về các dự án chiến lược thúc đẩy chuyển đổi số thông qua các nền tảng kỹ thuật số, hệ thống cốt lõi và dịch vụ hạ tầng."
+        }
+      },
+      "special-thanks": {
+        "title": "Lời Cảm Ơn Đặc Biệt",
+        "subtitle": "Những cá nhân và tổ chức đã góp phần làm nên NEO League.",
+        "contributors": {
+          "rmit-university": {
+            "name": "RMIT University",
+            "contribution": "Hỗ trợ học thuật và cung cấp địa điểm tổ chức vòng chung kết"
+          },
+          "ai-research-community": {
+            "name": "Cộng Đồng Nghiên Cứu AI",
+            "contribution": "Thiết kế đề thi và cố vấn kỹ thuật"
+          },
+          "volunteer-mentors": {
+            "name": "Người Hướng Dẫn Tình Nguyện",
+            "contribution": "Cung cấp định hướng và hỗ trợ chuyên môn cho thí sinh tham gia Neo League"
+          },
+          "industry-experts": {
+            "name": "Chuyên Gia Từ Doanh Nghiệp",
+            "contribution": "Đảm nhiệm vai trò giám khảo và chia sẻ kinh nghiệm thực tiễn trong các buổi đào tạo chuyên sâu"
+          },
+          "student-ambassadors": {
+            "name": "Đại Sứ Sinh Viên",
+            "contribution": "Kết nối trong trường và hỗ trợ thí sinh"
+          },
+          "open-source-community": {
+            "name": "Cộng Đồng Mã Nguồn Mở",
+            "contribution": "Cung cấp thư viện và công cụ dùng trong nền tảng"
+          },
+          "beta-testers": {
+            "name": "Người Dùng Thử",
+            "contribution": "Kiểm thử và đóng góp phản hồi trước khi ra mắt"
+          },
+          "media-partners": {
+            "name": "Đối Tác Truyền Thông",
+            "contribution": "Đưa tin và quảng bá cho cuộc thi Neo League"
+          }
+        },
+        "community": {
+          "title": "Đóng Góp Từ Cộng Đồng",
+          "contribution": "Chúng tôi xin gửi lời cảm ơn đến tất cả thành viên cộng đồng, tình nguyện viên và người tham gia đã góp phần tạo nên thành công của NEO League. Chính sự đam mê và cống hiến của bạn đã thúc đẩy chúng tôi tiến bước."
+        }
+      },
+      "tech-sponsor": {
+        "title": "Vận Hành Bởi ",
+        "intro": "Nhóm Tuturuuu đã đóng vai trò quan trọng trong việc biến cuộc thi Neo League thành hiện thực. Không chỉ cung cấp nền tảng Nova, Tuturuuu còn đóng góp ở nhiều khía cạnh khác nhau của cuộc thi:",
+        "sections": {
+          "infrastructure": {
+            "title": "Hạ Tầng Kỹ Thuật",
+            "description": "Phát triển và duy trì toàn bộ nền tảng cuộc thi, bao gồm cả hệ thống đánh giá prompt."
+          },
+          "resources": {
+            "title": "Tài Nguyên Học Tập",
+            "description": "Xây dựng tài liệu và giáo trình giúp thí sinh làm chủ kỹ năng kỹ thuật tạo lệnh."
+          },
+          "challenges": {
+            "title": "Thiết Kế Đề Bài",
+            "description": "Tạo ra các thử thách kỹ thuật chất lượng, mang giá trị giáo dục cao về kỹ thuật tạo lệnh."
+          },
+          "mentorship": {
+            "title": "Hướng Dẫn & Hỗ Trợ",
+            "description": "Cung cấp cố vấn kỹ thuật và hỗ trợ xuyên suốt cho thí sinh trong suốt cuộc thi."
+          }
+        },
+        "quote": {
+          "text": "Cuộc thi này thể hiện cam kết của chúng tôi trong việc phát triển kỹ thuật tạo lệnh như một lĩnh vực và trao quyền cho thế hệ AI kế tiếp.",
+          "author": "Đội ngũ Tuturuuu"
+        }
+      }
+    },
+    "teams": "Các đội",
+    "submissions": "Bài nộp",
+    "home": "Trang chủ",
+    "leaderboard-page": {
+      "title": "Bảng Xếp Hạng",
+      "description": "Thi đấu với những người chơi giỏi nhất trên toàn thế giới. Leo lên bảng xếp hạng và giành lấy vị trí của bạn ở top đầu!",
+      "current-rank": "Xếp Hạng Hiện Tại",
+      "badge": {
+        "competition": "Cuộc Thi",
+        "active": "Đang Hoạt Động",
+        "live": "Trực Tiếp"
+      },
+      "statistics": {
+        "position": {
+          "title": "Vị Trí Của Bạn",
+          "not-ranked": "Chưa xếp hạng",
+          "top-position": "Đối thủ hàng đầu!",
+          "rising-position": "Đang thăng hạng!",
+          "normal-position": "Tiếp tục cố gắng nhé!"
+        },
+        "highest-score": {
+          "title": "Điểm Cao Nhất",
+          "description": "Đạt được bởi",
+          "no-participant": "Chưa có người tham gia"
+        },
+        "total": {
+          "player": "Tổng Số Người Chơi",
+          "teams": "Tổng Số Đội",
+          "description": "Tham gia cuộc thi!",
+          "heating-up": "Cuộc thi đang nóng lên!",
+          "join-now": "Tham gia cuộc thi ngay!"
+        }
+      },
+      "individual": "Cá Nhân",
+      "team": "Đội",
+      "share": "Chia sẻ",
+      "view-profile": "Xem Trang Cá Nhân",
+      "top-performers": {
+        "title": "Top Người Thể Hiện Xuất Sắc",
+        "ranks": {
+          "first-badge": "Nhà Vô Địch",
+          "second-badge": "Á quân",
+          "third-badge": "Hạng Ba"
+        }
+      },
+      "selected-challenges": "Thử Thách Đã Chọn",
+      "filter-challenges": {
+        "specific-challenge-title": "Hiển thị bảng xếp hạng cho thử thách cụ thể này",
+        "view-all-challenges": "Xem Tất Cả Thử Thách",
+        "total-participants": "Tổng số người tham gia",
+        "highest-score": "Điểm Cao Nhất",
+        "your-rank": "Hạng Của Bạn"
+      },
+      "load-more": "Tải Thêm",
+      "tutorials": {
+        "title": "Hướng Dẫn Chơi",
+        "step-1": "Hoàn thành thử thách và nhiệm vụ để tích lũy điểm",
+        "step-2": "Tổng điểm của bạn sẽ quyết định thứ hạng trên bảng xếp hạng",
+        "step-3": "Cạnh tranh với người chơi khác để giành vị trí cao nhất và nhận phần thưởng độc quyền"
+      },
+      "rewards": {
+        "current-rewards": "Phần thưởng hiện tại",
+        "1st-place": "Quán Quân",
+        "1st-place-reward": "185,000,000 VND (Tiền mặt + Học bổng)",
+        "2nd-place": "A Quân 1",
+        "2nd-place-reward": "111,000,000 VND (Tiền mặt + Học bổng)",
+        "3rd-place": "Á Quân 2",
+        "3rd-place-reward": "67,000,000 VND (Tiền mặt + Học bổng)",
+        "top-5": "Đồng Hạng Top 5",
+        "top-5-reward": "63,000,000 VND (Học bổng)",
+        "top-16": "Đồng Hạng Top 16",
+        "top-16-reward": "3,840,000 VND (Tài khoản DB Diagram Pro)",
+        "first-45-teams": "45 Đội Đầu Tiên",
+        "first-45-teams-reward": "Tài khoản Tuturuu Pro cho mỗi đội"
+      },
+      "share-leaderboard": "Chia Sẻ Bảng Xếp Hạng",
+      "last-updated": "Cập nhật lần cuối:",
+      "filters": {
+        "filters": "Bộ Lọc",
+        "all-challenges": "Tất Cả Thử Thách",
+        "search-competitors": "Tìm kiếm người chơi...",
+        "score-range": {
+          "name": "Khoảng điểm",
+          "all-scores": "Tất cả điểm số",
+          "high-scores": "Cao (1000+)",
+          "medium-scores": "Trung bình (500-999)",
+          "low-scores": "Thấp (0-499)"
+        },
+        "time-period": {
+          "name": "Khoảng thời gian",
+          "all-time": "Mọi thời gian",
+          "today": "Hôm nay",
+          "this-week": "Tuần này",
+          "this-month": "Tháng này"
+        },
+        "status": {
+          "name": "Trạng thái",
+          "all-users": "Tất cả người dùng",
+          "active": "Đang hoạt động",
+          "inactive": "Không hoạt động"
+        },
+        "region": {
+          "name": "Khu vực",
+          "global": "Toàn cầu",
+          "americas": "Châu Mỹ",
+          "europe": "Châu Âu",
+          "asia": "Châu Á"
+        }
+      },
+      "points": "Điểm",
+      "rankings": {
+        "challenge-breakdown": "Chi tiết thử thách",
+        "problem-breakdown": "Chi tiết bài nộp",
+        "show-breakdown": "Hiển thị Chi tiết",
+        "hide-breakdown": "Ẩn Chi tiết",
+        "title": "Bảng Xếp Hạng",
+        "rank": "Hạng",
+        "score": "Điểm",
+        "user": "Người dùng",
+        "highest-first": "Cao Nhất Trước",
+        "lowest-first": "Thấp Nhất Trước",
+        "best-in": "Tốt nhất trong:",
+        "you": "Bạn",
+        "hover-info": "Nhấn để thay đổi thứ tự sắp xếp",
+        "no-entries-found": "Không tìm thấy mục nào",
+        "first-join": "Hãy là người đầu tiên tham gia cuộc thi!",
+        "pts": "điểm"
+      },
+      "current-challenge-card": {
+        "title": "Cuộc thi Neo League",
+        "new": "Mới",
+        "description": "Mặc định, bảng xếp hạng này thể hiện tổng điểm từ tất cả các thử thách bạn đã tham gia. \nĐể xem kết quả cụ thể cho vòng 2 của cuộc thi Neo League, nhấp vào liên kết bên dưới.",
+        "view-current-challenge": "Xem kết quả Vòng 2",
+        "view-all-challenges": "Xem tất cả các thử thách",
+        "current-challenge-description": "Bạn hiện đang xem kết quả cho vòng 2 của cuộc thi Neo League. \nCác điểm số được hiển thị là cụ thể cho thử thách này.",
+        "active": "Đang hiển thị",
+        "current-challenge-title": "Xem Neo League Vòng 2"
+      },
+      "teams": "Đội"
+    },
+    "profile-page": {
+      "breadcrumb": {
+        "home": "Trang chủ",
+        "leaderboard": "Bảng xếp hạng"
+      },
+      "rank": "Hạng",
+      "challenge": "Thử thách",
+      "challenges": {
+        "title": "Thử thách",
+        "problems": "bài",
+        "no-challenges": "Chưa hoàn thành thử thách nào",
+        "no-challenges-description": "Bạn chưa thử thách nào cả. Khám phá thử thách để bắt đầu!",
+        "browse-challenges": "Khám phá thử thách"
+      },
+      "score": "Điểm",
+      "joined": "Tham gia",
+      "level": "Cấp độ",
+      "points": "điểm",
+      "share-profile": "Chia sẻ hồ sơ",
+      "edit-profile": "Chỉnh sửa hồ sơ",
+      "tabs": {
+        "overview": "Tổng quan",
+        "challenges": "Thử thách",
+        "activity": "Hoạt động"
+      },
+      "progress": {
+        "excellent": "Xuất sắc",
+        "great": "Rất tốt",
+        "good": "Tốt",
+        "progress": "Tiếp tục cố gắng",
+        "started": "Mới bắt đầu"
+      },
+      "stats": {
+        "title": "Thống kê",
+        "description": "Tổng quan về hiệu suất của bạn",
+        "total-score": "Tổng điểm",
+        "rank": "Xếp hạng",
+        "problems-attempted": "Bài đã thử",
+        "challenges": "Thử thách",
+        "overall-progress": "Tiến độ tổng thể",
+        "problems": "bài",
+        "leaderboard-position": "Vị trí trên bảng xếp hạng"
+      },
+      "overview": {
+        "best-performance": "Thử thách hay nhất",
+        "recent-activity": "Hoạt động gần đây",
+        "problem-submissions": "Số lần nộp bài",
+        "avg-score": "Điểm trung bình",
+        "best-score": "Điểm cao nhất",
+        "last-active": "Hoạt động gần đây",
+        "top-problems": "Điểm cao nhất theo bài",
+        "top-problems-description": "Những bài giải xuất sắc nhất của bạn",
+        "problems": "bài",
+        "view-challenge": "Xem thử thách"
+      },
+      "activity": {
+        "recent": "Hoạt động gần đây",
+        "description": "Các bài nộp gần đây của bạn",
+        "excellent": "Xuất sắc",
+        "good": "Tốt",
+        "average": "Trung bình",
+        "needs-work": "Cần cải thiện",
+        "no-activity": "Không có hoạt động gần đây",
+        "no-activity-description": "Bạn chưa nộp bài nào gần đây."
+      },
+      "profile-header": {
+        "joined": "Tham gia",
+        "points": "Điểm",
+        "level": "Cấp độ",
+        "level-progress": "đến cấp độ",
+        "edit-profile": "Sửa hồ sơ",
+        "share": "Chia sẻ",
+        "copied": "Đã sao chép!",
+        "view-leaderboard": "Xem bảng xếp hạng"
+      },
+      "info-tiles": {
+        "score": "ĐIỂM SỐ",
+        "rank": "XẾP HẠNG",
+        "challenges": "THỬ THÁCH",
+        "achievements": "THÀNH TỰU"
+      },
+      "overview-tab": {
+        "name": "Tổng Quan",
+        "summary-title": "Tóm tắt hoạt động",
+        "summary-submissions": "Lượt nộp bài",
+        "summary-average-score": "Điểm trung bình",
+        "summary-best-score": "Điểm cao nhất",
+        "challenge-title": "Thử Thách Xuất Sắc",
+        "challenge-description": "Thử thách có điểm cao nhất được hoàn thành bởi ",
+        "challenge-top-score": "Điểm cao nhất",
+        "challenge-performance": "Hiệu suất",
+        "challenge-view-all": "Xem Tất Cả Thử Thách",
+        "achievements-title": "Thành Tựu Gần Đây",
+        "achievements-description": "Huy hiệu và thành tựu đã đạt được",
+        "achievements-view-all": "Xem Tất Cả Thành Tựu",
+        "activity-title": "Hoạt Động Gần Đây",
+        "activity-description": "Các bài nộp gần đây",
+        "activity-view-all": "Xem tất cả hoạt động"
+      },
+      "challenges-tab": {
+        "name": "Thử Thách",
+        "title": "Hiệu suất thử thách",
+        "description": "Tất cả các thử thách đã hoàn thành với điểm số",
+        "progress": "Tiến Độ",
+        "no-challenges": "Chưa hoàn thành thử thách nào"
+      },
+      "achievements-tab": {
+        "name": "Thành Tựu",
+        "title": "Trưng bày thành tựu",
+        "description": "Huy hiệu và thành tựu đã đạt được",
+        "locked": "Chưa Mở Khoá",
+        "unlocked": "Đã Mở Khoá"
+      },
+      "activity-tab": {
+        "name": "Hoạt Động",
+        "title": "Hoạt động gần đây",
+        "description": "Các bài nộp và thử nghiệm gần đây",
+        "submitted-solution": "Đã nộp lời giải",
+        "no-activity": "Chưa có hoạt động nào gần đây"
+      },
+      "achievements": {
+        "adopter": "Người Tham Gia Sớm",
+        "adopter-description": "Tham chiến ngay từ thời sơ khai",
+        "master": "Bậc Thầy Thử Thách",
+        "master-description": "Cày xong 5 bài khác nhau, không đùa đâu nha!",
+        "high-scorer": "Người Ghi Điểm Cao",
+        "high-scorer-description": "Score cháy máy luôn, vượt mốc 500 điểm!",
+        "top-rank": "Top Xếp Hạng",
+        "top-rank-description": "Lọt top 10, đỉnh của chóp!",
+        "consistent": "Người Học Kiên Trì",
+        "consistent-description": "Nộp bài đều như cơm bữa, không lùi bước!",
+        "prompt-master": "Bậc Thầy Nhập Lệnh",
+        "prompt-master-description": "Chơi prompt đỉnh quá trời, toàn điểm tuyệt đối!"
+      }
+    },
+    "profile-team-page": {
+      "not-found": "Không tìm thấy đội",
+      "not-found-description": "Không thể tải thông tin đội được yêu cầu.",
+      "view-all-teams": "Xem tất cả đội",
+      "breadcrumb": {
+        "home": "Trang Chủ",
+        "teams": "Các Đội"
+      },
+      "members": "Thành viên",
+      "top-percentage": "Top 15%",
+      "rank": "Hạng",
+      "description": "Mô tả",
+      "edit-profile": "Chỉnh sửa hồ sơ",
+      "view-leaderboard": "Xem bảng xếp hạng",
+      "share": "Chia sẻ",
+      "copied": "Đã sao chép!",
+      "pts": "điểm",
+      "overview-tab": {
+        "title": "Tổng Quan",
+        "team-rank": "Thứ Hạng Đội",
+        "top-performers": "Đội này hiện đang nằm trong nhóm có thành tích cao nhất",
+        "competing": "Đội này đang tham gia bảng xếp hạng",
+        "rank-label": "Hạng",
+        "points": "Điểm",
+        "challenge-breakdown": "Chi tiết thử thách",
+        "breakdown-description": "Chi tiết về hiệu suất của đội trong từng thử thách",
+        "score-distribution": "Phân bổ điểm",
+        "challenge": "Thử thách",
+        "score": "Điểm",
+        "contribution": "Đóng góp",
+        "team-stats": "Thống kê đội",
+        "total-members": "Tổng số thành viên",
+        "active-since": "Hoạt động từ",
+        "activity-status": "Trạng thái hoạt động",
+        "active": "Hoạt động",
+        "quick-actions": "Thao tác nhanh",
+        "team-description": "Mô tả đội",
+        "view-team-goals": "Xem mục tiêu đội",
+        "performance-metrics": "Chỉ số hiệu suất",
+        "performance-description": "Các chỉ số hiệu suất chính của đội này",
+        "average-member-score": "Điểm trung bình thành viên",
+        "weekly-progress": "Tiến độ hàng tuần",
+        "points-this-week": "điểm tuần này",
+        "inactive": "Không hoạt động",
+        "last-7-days": "7 ngày qua",
+        "top-contributor": "Người đóng góp hàng đầu",
+        "of-team-score": "% điểm của đội"
+      },
+      "members-tab": {
+        "name": "Thành Viên",
+        "team-members": "Thành viên đội",
+        "members-description": "Thành viên và đóng góp của họ vào điểm của đội",
+        "team-lead": "Trưởng nhóm",
+        "joined": "Tham gia",
+        "contribution-percentage": "% đóng góp"
+      },
+      "activity-tab": {
+        "name": "Hoạt Động Đội",
+        "team-activity": "Hoạt động đội",
+        "activity-description": "Hiệu suất và thống kê gần đây của đội",
+        "team-average": "Trung bình đội",
+        "points-per-member": "điểm mỗi thành viên",
+        "weekly-activity": "Hoạt động hàng tuần",
+        "points-this-week": "điểm tuần này",
+        "top-member": "Thành viên hàng đầu",
+        "points-by": "điểm đạt bởi",
+        "member-contributions": "Đóng góp của thành viên",
+        "challenge-performance": "Hiệu suất thử thách",
+        "of-total-score": "% tổng điểm",
+        "no-activity": "Không có dữ liệu hoạt động gần đây"
+      }
+    },
+    "challenge": {
+      "edit": "Chỉnh sửa thử thách",
+      "update": "Cập nhật thử thách",
+      "create": "Tạo thử thách",
+      "create-challenge": "Tạo một thử thách prompt engineering mới để người dùng luyện tập.",
+      "edit-description": "Chỉnh sửa chi tiết và cài đặt của thử thách.",
+      "save-changes": "Lưu thay đổi",
+      "cancel": "Hủy",
+      "delete": "Xóa",
+      "delete-confirmation": "Bạn có chắc chắn muốn xóa thử thách này không? Hành động này không thể hoàn tác.",
+      "limits": "Giới hạn số lần thử",
+      "max-attempts": "Số lần thử tối đa",
+      "attempt-description": "Tổng số lần người dùng có thể thử thử thách này.",
+      "daily-attempts": "Số lần thử tối đa mỗi ngày",
+      "number-of-attempts": "Số lần người dùng có thể thử mỗi ngày.",
+      "details": {
+        "details": "Chi tiết",
+        "challenge-details": "Chi tiết thử thách",
+        "title": "Tiêu đề",
+        "title-description": "Đặt tiêu đề mô tả cho thử thách của bạn.",
+        "description": "Mô tả",
+        "description-placeholder": "Cung cấp mô tả chi tiết về thử thách.",
+        "form-description": "Mô tả biểu mẫu"
+      },
+      "judging-criteria": {
+        "judging-criteria": "Tiêu chí chấm điểm",
+        "judging-criteria-description": "Định nghĩa cách đánh giá bài nộp. Mỗi tiêu chí sẽ được chấm điểm riêng.",
+        "add-criteria": "Thêm tiêu chí",
+        "remove-criteria": "Xóa",
+        "criteria-name": "Tên tiêu chí",
+        "criteria-name-placeholder": "Tên tiêu chí (ví dụ: Rõ ràng, Hiệu quả)",
+        "criteria-description": "Mô tả tiêu chí",
+        "criteria-description-placeholder": "Giải thích cách tiêu chí này sẽ được đánh giá (ví dụ: 'Độ rõ ràng và không mơ hồ của đề bài?')",
+        "no-criteria": "Chưa có tiêu chí nào được thêm",
+        "criteria": "Tiêu chí"
+      },
+      "security": {
+        "security": "Bảo mật",
+        "security-description": "Bảo vệ thử thách của bạn bằng mật khẩu hoặc giới hạn truy cập cho người dùng cụ thể.",
+        "password-protect": "Bảo vệ bằng mật khẩu",
+        "password-description": "Yêu cầu mật khẩu để truy cập thử thách này",
+        "challenge-password": "Mật khẩu thử thách",
+        "leave-empty": "Để trống để giữ mật khẩu hiện tại",
+        "enter-password": "Nhập mật khẩu mới",
+        "enter-or-leave-password": "Nhập mật khẩu mới hoặc để trống để giữ mật khẩu hiện tại",
+        "must-be-6-characters": "Mật khẩu phải có ít nhất 6 ký tự",
+        "enable": "Kích hoạt",
+        "enable-description": "Thử thách này hiện đang được kích hoạt hay không."
+      },
+      "whitelist": {
+        "only": "Chỉ cho phép danh sách trắng",
+        "whitelist-only-description": "Chỉ cho phép truy cập đối với người dùng trong danh sách trắng.",
+        "emails": "Địa chỉ email trong danh sách trắng",
+        "emails-description": "Chỉ những địa chỉ email này mới có quyền truy cập thử thách.",
+        "remove": "Xóa",
+        "email-enter-placeholder": "Nhập địa chỉ email",
+        "add": "Thêm"
+      },
+      "duration": {
+        "duration": "Thời lượng",
+        "duration-description": "Thiết lập thời gian người tham gia có để hoàn thành thử thách sau khi bắt đầu.",
+        "seconds": "Giây",
+        "common-duration": "Thời lượng phổ biến:",
+        "30-minutes": "30 phút",
+        "1-hour": "1 giờ",
+        "2-hour": "2 giờ",
+        "4-hour": "4 giờ",
+        "duration-display-description": "Thời gian người dùng có để hoàn thành thử thách này sau khi bắt đầu."
+      },
+      "schedule": {
+        "schedule": "Lịch trình",
+        "schedule-description": "Thiết lập thời gian thử thách của bạn sẽ mở cho người tham gia.",
+        "timeline-recommendation": "Khuyến nghị về mốc thời gian",
+        "timeline-recommendation-description": "Để đạt kết quả tốt nhất, hãy đặt ngày theo thứ tự: Ngày xem trước ➝ Ngày mở ➝ Ngày kết thúc.",
+        "preview-available": "Có thể xem trước",
+        "preview-available-description": "Khi nào người tham gia có thể xem trước thử thách này trước khi bắt đầu.",
+        "open-at": "Bắt đầu ",
+        "open-at-description": "Thời gian thử thách bắt đầu",
+        "end-at": "Kết thúc ",
+        "end-at-description": "Thời gian thử thách kết thúc"
+      },
+      "cards": {
+        "disabled": "Đã tắt",
+        "upcoming": "Sắp diễn ra",
+        "preview": "Xem trước",
+        "active": "Đang hoạt động",
+        "closed": "Đã đóng",
+        "your-session": "Phiên của bạn",
+        "in-progress": "Đang tiến hành",
+        "time-remaining": "Thời gian còn lại",
+        "started-at": "Bắt đầu lúc",
+        "ends-at": "Kết thúc lúc",
+        "retry-challenges": "Thử lại thử thách",
+        "comeback-tomorrow": "Quay lại vào ngày mai",
+        "view-results": "Xem kết quả",
+        "resume-challenge": "Tiếp tục thử thách",
+        "start-challenge": "Bắt đầu thử thách",
+        "not-available": "Không khả dụng",
+        "available-soon": "Sắp khả dụng",
+        "not-yet-opened": "Chưa mở",
+        "open-menu": "Mở menu",
+        "edit": "Chỉnh sửa",
+        "delete": "Xóa",
+        "duration": "Thời lượng",
+        "total-attempts": "Tổng số lần thử",
+        "daily-attempts": "Số lần thử mỗi ngày",
+        "preview-available": "Có thể xem trước",
+        "open-in": "Sẽ mở sau",
+        "closes-in": "Sẽ đóng sau",
+        "delete-challenge": "Xóa thử thách",
+        "delete-challenge-description": "Bạn có chắc chắn muốn xóa thử thách này không? Hành động này không thể hoàn tác.",
+        "cancel": "Hủy"
+      }
+    },
+    "score-calculator": "Công cụ tính điểm",
+    "sessions": "Phiên làm bài"
+  },
+  "onboarding": {
+    "just-a-moment": "Bước cuối cùng!",
+    "just-a-moment-desc": "Chấp nhận lời mời để bắt đầu trải nghiệm",
+    "no-invites": "Bạn không có lời mời nào."
+  },
+  "platform-token-usage": {
+    "hourly_total_from_last_12_hours": "Tổng số token sử dụng hàng giờ trong 12 giờ gần đây",
+    "daily_total_from_14_recent_days": "Tổng số token sử dụng hàng ngày trong 14 ngày gần đây",
+    "monthly_total_from_12_recent_months": "Tổng số token sử dụng hàng tháng trong 12 tháng gần đây",
+    "prompt_tokens": "Token lệnh nhắc",
+    "completion_tokens": "Token hoàn thành"
+  },
+  "post-email-data-table": {
+    "id": "Mã số",
+    "recipient": "Người nhận",
+    "group_name": "Tên nhóm",
+    "post_title": "Tiêu đề bài viết",
+    "post_content": "Nội dung bài viết",
+    "email": "Email",
+    "subject": "Chủ đề",
+    "is_completed": "Làm xong",
+    "send_email": "Gửi email",
+    "preview": "Xem trước",
+    "notes": "Ghi chú",
+    "created_at": "Ngày tạo"
+  },
+  "product-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "category": "Danh mục",
+    "description": "Mô tả",
+    "manufacturer": "Nhà sản xuất",
+    "stock": "Tồn kho",
+    "unit": "Đơn vị",
+    "warehouse": "Kho",
+    "usage": "Cách dùng",
+    "price": "Giá",
+    "created_at": "Tạo lúc"
+  },
+  "promotion-data-table": {
+    "id": "Mã số",
+    "code": "Mã giảm giá",
+    "name": "Tên",
+    "description": "Mô tả",
+    "value": "Giá trị",
+    "created_at": "Tạo lúc"
+  },
+  "quiz-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "question": "Câu hỏi",
+    "created_at": "Ngày tạo"
+  },
+  "quiz-set-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "linked_modules": "Mô đun liên kết",
+    "is_public": "Public",
+    "is_published": "Published",
+    "created_at": "Created At"
+  },
+  "reset-password": {
+    "reset-password": "Đặt lại mật khẩu",
+    "reset-password-desc": "Nhập mật khẩu mới cho tài khoản của bạn",
+    "resetting": "Đang đặt lại"
+  },
+  "search": {
+    "search": "Tìm kiếm",
+    "search-placeholder": "Nhập từ khóa để tìm kiếm"
+  },
+  "secret-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "value": "Giá trị",
+    "created_at": "Tạo lúc"
+  },
+  "settings-account": {
+    "account": "Tài khoản",
+    "avatar": "Ảnh đại diện",
+    "avatar-description": "Cá nhân hoá hồ sơ của bạn với ảnh đại diện tùy chỉnh.",
+    "revert_changes": "Hoàn tác thay đổi",
+    "preview": "Xem trước",
+    "display-name": "Tên hiển thị",
+    "display-name-description": "Nhập tên bạn muốn hiển thị trên hồ sơ của mình.",
+    "handle-description": "Đây là URL tự chọn của bạn trong Tuturuuu.",
+    "birthday": "Ngày sinh",
+    "birthday-description": "Ngày sinh của bạn sẽ chỉ được dùng cho các tính năng xã hội.",
+    "birthday-placeholder": "Ngày sinh của bạn",
+    "email-description": "Email bạn dùng để đăng nhập.",
+    "current-email": "Email hiện tại",
+    "new-email": "Email mới",
+    "change-email-description": "Sau khi bạn xác nhận ở cả hai email, email mới của bạn sẽ được tự động cập nhật.",
+    "language": "Ngôn ngữ",
+    "language-description": "Thay đổi ngôn ngữ của trang web.",
+    "development": "Phát triển",
+    "development-description": "Tùy chỉnh cài đặt phát triển cục bộ.",
+    "hide-experimental-on-sidebar": "Ẩn tính năng thử nghiệm trên thanh bên",
+    "hide-experimental-on-top-nav": "Ẩn tính năng thử nghiệm trên thanh điều hướng trên cùng",
+    "logout-description": "Đăng xuất khỏi tài khoản của bạn.",
+    "confirm-account-deletion": "Xác nhận xóa tài khoản",
+    "change-password": "Đổi mật khẩu",
+    "change-password-description": "Đổi mật khẩu của bạn.",
+    "delete-account": "Xóa tài khoản",
+    "delete-account-description": "Xóa tài khoản của bạn.",
+    "delete-account-message": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản.",
+    "new_avatar": "Hình đại diện mới",
+    "upload_avatar": "Hình đại diện mới",
+    "remove_avatar": "Xóa hình đại diện",
+    "save_avatar": "Lưu hình đại diện"
+  },
+  "settings-appearance": {
+    "appearance": "Hiển thị",
+    "appearance-description": "Tuỳ chỉnh giao diện Tuturuuu",
+    "light-mode": "Chế độ sáng",
+    "dark-mode": "Chế độ tối"
+  },
+  "settings-security": {
+    "security": "Bảo mật",
+    "security-description": "Quản lý bảo mật tài khoản của bạn",
+    "change-email": "Đổi email",
+    "change-password": "Đổi mật khẩu",
+    "delete-account": "Xoá tài khoản"
+  },
+  "settings-tabs": {
+    "account": "Tài khoản",
+    "appearance": "Giao diện",
+    "security": "Bảo mật",
+    "notifications": "Thông báo",
+    "integrations": "Liên kết tích hợp",
+    "workspaces": "Không gian làm việc",
+    "activities": "Hoạt động",
+    "billing": "Thanh toán"
+  },
+  "settings-workspaces": {
+    "workspaces": "Không gian làm việc",
+    "workspaces-description": "Không gian làm việc mà bạn có quyền truy cập sẽ được liệt kê ở đây."
+  },
+  "sidebar_tabs": {
+    "invite": "Mời",
+    "more-members": "người khác",
+    "new": "Tạo mới",
+    "home": "Trang chủ",
+    "refresh": "Làm mới",
+    "chat_with_ai": "Trò chuyện với AI",
+    "calendar": "Lịch",
+    "projects": "Dự án",
+    "documents": "Tài liệu",
+    "drive": "Drive",
+    "users": "Người dùng",
+    "attendance": "Chấm công",
+    "healthcare": "Sức khỏe",
+    "inventory": "Kho hàng",
+    "classes": "Lớp học",
+    "finance": "Tài chính",
+    "databases": "Cơ sở dữ liệu",
+    "x": "X",
+    "ai": "Trí tuệ nhân tạo",
+    "infrastructure": "Cơ sở hạ tầng",
+    "migrations": "Chuyển dữ liệu",
+    "notifications": "Thông báo",
+    "new-ws": "Tạo tổ chức mới",
+    "new-team": "Tạo nhóm mới",
+    "new-task": "Tạo công việc mới",
+    "new-note": "Tạo ghi chú mới",
+    "new-transaction": "Tạo giao dịch mới",
+    "new-invoice": "Tạo hóa đơn mới",
+    "invite-people": "Mời người dùng",
+    "collapse-sidebar": "Đóng thanh bên",
+    "expand-sidebar": "Mở thanh bên",
+    "slides": "Trang trình bày",
+    "mail": "Hộp thư",
+    "tasks": "Nhiệm vụ",
+    "education": "Giáo dục",
+    "models": "Các mô hình",
+    "datasets": "Bộ dữ liệu",
+    "pipelines": "Quy trình",
+    "cron": "Công việc định kỳ",
+    "workouts": "Vận động thể chất",
+    "readings": "Đọc sách",
+    "diet_and_nutrition": "Ăn uống",
+    "progress": "Tiến độ",
+    "metrics": "Chỉ số",
+    "crawlers": "Công cụ cào dữ liệu",
+    "queues": "Hàng chờ"
+  },
+  "signup": {
+    "get-started": "Bắt đầu ngay",
+    "get-started-desc": "Tạo tài khoản để bắt đầu sử dụng",
+    "password": "Mật khẩu",
+    "signup": "Đăng ký",
+    "confirm": "Xác nhận",
+    "signing-up": "Đang đăng ký",
+    "login": "Đăng nhập",
+    "already-have-account": "Bạn đã có tài khoản?",
+    "notice-p1": "Bằng cách tiếp tục, bạn đồng ý với",
+    "notice-p2": "của Tuturuuu và nhận email định kỳ với các cập nhật mới",
+    "tos": "Điều khoản dịch vụ",
+    "privacy": "Chính sách bảo mật"
+  },
+  "slogan": {
+    "title": "Sẵn sàng để bắt đầu?",
+    "description": "Hãy tham gia danh sách chờ để trở thành một trong những người đầu tiên trải nghiệm nền tảng quản lý doanh nghiệp thông minh của chúng tôi khi nền tảng này ra mắt.",
+    "join_waitlist": "Tham gia danh sách chờ"
+  },
+  "storage-object-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "size": "Kích cỡ",
+    "created_at": "Ngày tạo",
+    "files": "Tệp tin",
+    "clear_files": "Huỷ tất cả",
+    "folder": {
+      "name": "Tên thư mục"
+    }
+  },
+  "team-tabs": {
+    "overview": "Tổng quan",
+    "members": "Thành viên",
+    "settings": "Cài đặt"
+  },
+  "teams": {
+    "plural": "Đội",
+    "singular": "Đội",
+    "description": "Đội được sử dụng để quản lý người dùng tham gia các thách thức khác nhau.",
+    "create": "Tạo đội",
+    "create_description": "Tạo một đội mới",
+    "name_description": "Tên đội",
+    "current_invitations": "Lời mời hiện tại",
+    "current_invitations_description": "Lời mời hiện tại cho đội này",
+    "no_invitations": "Không có lời mời nào",
+    "email": "Email",
+    "invited_at": "Đã mời lúc",
+    "actions": "Hành động",
+    "manage": "Quản lý",
+    "delete_success": "Đội đã xóa thành công",
+    "delete_error": "Không xóa được nhóm",
+    "email_already_invited": "Email đã được mời",
+    "invitation_sent": "Lời mời được gửi",
+    "failed_to_invite": "Không mời",
+    "invitations": "Lời mời",
+    "invited": "Được mời",
+    "find_users": "Tìm người dùng",
+    "current_members": "Thành viên hiện tại",
+    "no_members": "Chưa có thành viên.",
+    "members_count": "Nhóm này có {count} thành viên.",
+    "add_member": "Thêm thành viên",
+    "add_as_member": "Thêm thành viên",
+    "send_invitation": "Gửi lời mời",
+    "created": "Đã tạo",
+    "invitation_removed": "Lời mời đã xóa",
+    "failed_to_remove_invitation": "Không xóa được lời mời",
+    "remove_member": "Loại bỏ thành viên",
+    "remove_member_confirmation": "Bạn có chắc là bạn muốn xóa {name} với tư cách là thành viên của nhóm này không?",
+    "remove_invitation": "Loại bỏ lời mời",
+    "remove_invitation_description": "Bạn có chắc là bạn muốn thu hồi lời mời của {email} không?",
+    "user_not_found": "Người dùng không tìm thấy",
+    "member_added": "Thành viên được thêm vào",
+    "failed_to_add_member": "Không thể thêm thành viên",
+    "member_removed": "Thành viên đã bị loại bỏ",
+    "failed_to_remove_member": "Không thể loại bỏ thành viên",
+    "create_success": "Đội tạo thành công",
+    "create_error": "Không thể tạo nhóm",
+    "name_already_exists": "Tên nhóm đã tồn tại",
+    "members": "Thành viên"
+  },
+  "transaction-category-data-table": {
+    "id": "Mã số",
+    "category_name": "Tên danh mục",
+    "category_type": "Loại danh mục",
+    "name_examples": "Tiền mặt, chuyển khoản, v.v.",
+    "select_type": "Chọn loại",
+    "name": "Tên",
+    "amount": "Giao dịch",
+    "type": "Loại",
+    "income": "Thu nhập",
+    "expense": "Chi phí",
+    "is_expense": "Chi phí",
+    "created_at": "Tạo lúc"
+  },
+  "transaction-data-table": {
+    "id": "Mã số",
+    "wallet": "Ví",
+    "select_wallet": "Chọn ví",
+    "category": "Danh mục",
+    "select_category": "Chọn danh mục",
+    "amount": "Số tiền",
+    "description": "Mô tả",
+    "report_opt_in": "Hiển thị trong báo cáo",
+    "taken_at": "Thực hiện lúc",
+    "created_at": "Tạo lúc",
+    "income": "Thu nhập",
+    "expense": "Chi tiêu",
+    "daily_total_from_14_recent_days": "Tổng số tiền hàng ngày từ 14 ngày gần nhất",
+    "monthly_total_from_12_recent_months": "Tổng số tiền hàng tháng từ 12 tháng gần nhất"
+  },
+  "user-data-table": {
+    "id": "Mã số",
+    "avatar_url": "Ảnh đại diện",
+    "name": "Tên",
+    "full_name": "Họ và tên",
+    "display_name": "Tên hiển thị",
+    "description": "Mô tả",
+    "email": "Email",
+    "phone": "SĐT",
+    "gender": "Giới tính",
+    "male": "Nam",
+    "female": "Nữ",
+    "other": "Khác",
+    "birthday": "Ngày sinh",
+    "ethnicity": "Dân tộc",
+    "guardian": "Người giám hộ",
+    "national_id": "CMND/CCCD",
+    "address": "Địa chỉ",
+    "note": "Ghi chú",
+    "linked_users": "Người dùng liên kết",
+    "linked_to": "Đã liên kết với",
+    "created_at": "Ngày tạo",
+    "updated_at": "Ngày cập nhật cuối",
+    "reports": "Báo cáo",
+    "no_reports": "Chưa có báo cáo nào",
+    "coupons": "Mã giảm giá",
+    "no_coupons": "Chưa có mã giảm giá nào",
+    "joined_groups": "Nhóm đã tham gia",
+    "no_groups": "Không thuộc nhóm nào",
+    "user": "Người dùng",
+    "group": "Nhóm",
+    "report": "Báo cáo",
+    "group_count": "Số nhóm",
+    "included_groups": "Nhóm đã bao gồm",
+    "excluded_groups": "Nhóm đã loại trừ",
+    "select_all": "Chọn tất cả",
+    "clear_selection": "Bỏ chọn tất cả",
+    "revert_changes": "Hoàn tác",
+    "apply_changes": "Áp dụng",
+    "applying": "Đang áp dụng...",
+    "selected": "nhóm",
+    "linked_products": "Sản phẩm liên kết",
+    "remove-from-group": "Xóa khỏi nhóm",
+    "url": "Liên kết",
+    "columns": "Cột",
+    "rows": "Dòng",
+    "type": "Loại"
+  },
+  "user-field-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "description": "Mô tả",
+    "type": "Loại dữ liệu",
+    "possible_values": "Giá trị khả dụng",
+    "default_value": "Giá trị mặc định",
+    "null": "Không có giá trị",
+    "boolean": "Có/Không",
+    "text": "Văn bản",
+    "number": "Số",
+    "date": "Ngày, tháng, năm",
+    "datetime": "Ngày và giờ",
+    "notes": "Ghi chú",
+    "created_at": "Tạo lúc"
+  },
+  "user-group-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "attendance_stats": "Thống kê điểm danh",
+    "completed": "Đã hoàn thành",
+    "incomplete": "Chưa hoàn thành",
+    "no_attendance_today": "Không cần điểm danh hôm nay",
+    "amount": "Số thành viên",
+    "locked": "Bị khoá",
+    "created_at": "Tạo lúc",
+    "included_tags": "Gắn thẻ đã bao gồm",
+    "excluded_tags": "Gắn thẻ đã loại trừ",
+    "special_users": "Người dùng đặc biệt"
+  },
+  "user-group-tag-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "color": "Màu",
+    "updated_at": "Cập nhật lúc",
+    "created_at": "Tạo lúc"
+  },
+  "user-report-data-table": {
+    "id": "Mã số",
+    "user_id": "Mã số người dùng",
+    "user_name": "Tên người dùng",
+    "title": "Tiêu đề",
+    "content": "Nội dung",
+    "feedback": "Phản hồi",
+    "creator_name": "Tên người tạo",
+    "updated_at": "Cập nhật lúc",
+    "created_at": "Tạo lúc"
+  },
+  "validation": {
+    "invalid_email": "Email không hợp lệ",
+    "required": "Tên nhóm được yêu cầu"
+  },
+  "wallet-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "wallet_name": "Tên ví",
+    "description": "Mô tả",
+    "balance": "Số dư",
+    "wallet_balance": "Số dư ví",
+    "type": "Loại",
+    "wallet_type": "Loại ví",
+    "standard": "Tiêu chuẩn",
+    "credit": "Tín dụng",
+    "currency": "Tiền tệ",
+    "report_opt_in": "Hiển thị trong báo cáo",
+    "created_at": "Tạo lúc"
+  },
+  "workspace-ai-layout": {
+    "overview": "Tổng quan",
+    "test_generation": "Tạo test case tự động",
+    "prompts": "Lệnh nhắc",
+    "workflows": "Quy trình",
+    "pipeline": "Luồng xử lý",
+    "pipelines": "Luồng xử lý",
+    "executions": "Lịch sử chạy",
+    "cron_jobs": "Lịch trình",
+    "jobs": "Lịch trình"
+  },
+  "workspace-education-tabs": {
+    "overview": "Tổng quan",
+    "courses": "Khóa học",
+    "materials": "Tài liệu học tập",
+    "quizzes": "Câu hỏi trắc nghiệm",
+    "flashcards": "Thẻ từ vựng",
+    "quiz-sets": "Bộ trắc nghiệm",
+    "attempts": "Lịch sử làm bài"
+  },
+  "workspace-finance-tabs": {
+    "overview": "Tổng quan",
+    "wallets": "Ví",
+    "transactions": "Giao dịch",
+    "categories": "Danh mục giao dịch",
+    "invoices": "Hóa đơn",
+    "import": "Nhập dữ liệu",
+    "settings": "Cài đặt"
+  },
+  "workspace-inventory-tabs": {
+    "overview": "Tổng quan",
+    "products": "Sản phẩm",
+    "categories": "Danh mục",
+    "units": "Đơn vị",
+    "suppliers": "Nhà cung cấp",
+    "warehouses": "Kho hàng",
+    "batches": "Lô hàng",
+    "promotions": "Mã giảm giá"
+  },
+  "workspace-mail": {
+    "overview": "Tổng quan",
+    "emails": "Lịch sử gửi thư",
+    "history": "Lịch sử",
+    "send": "Gửi thư",
+    "posts": "Bài viết"
+  },
+  "workspace-role-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "description": "Mô tả",
+    "permissions": "Quyền",
+    "user_count": "Số người dùng",
+    "created_at": "Tạo lúc"
+  },
+  "workspace-settings-layout": {
+    "workspace": "Không gian làm việc",
+    "members": "Thành viên",
+    "roles": "Vai trò",
+    "teams": "Nhóm",
+    "reports": "Báo cáo",
+    "api_keys": "Khóa API",
+    "secrets": "Mã bí mật",
+    "infrastructure": "Cơ sở hạ tầng",
+    "migrations": "Chuyển dữ liệu",
+    "activities": "Hoạt động"
+  },
+  "workspace-users-tabs": {
+    "overview": "Tổng quan",
+    "database": "Danh sách",
+    "groups": "Nhóm",
+    "group_tags": "Gắn thẻ nhóm",
+    "attendance": "Điểm danh",
+    "reports": "Báo cáo",
+    "fields": "Trường thông tin"
+  },
+  "ws-activities": {
+    "description": "Xem tất cả các hoạt động trong không gian làm việc của bạn",
+    "created": "đã tạo",
+    "updated": "đã cập nhật",
+    "deleted": "đã xóa",
+    "added": "Đã thêm",
+    "invited": "Đã mời",
+    "removed": "Đã xóa",
+    "revoked_invite": "Đã thu hồi lời mời",
+    "no_changes": "Không có thay đổi",
+    "no_display_name": "Không có tên hiển thị",
+    "no_handle": "Không có tên người dùng",
+    "member": "thành viên",
+    "expense": "chi tiêu",
+    "income": "thu nhập",
+    "name": "Tên:",
+    "set_name_to": "Thiết lập tên thành",
+    "to": "sang",
+    "set_wallet_name_to": "Thiết lập tên nguồn tiền thành",
+    "rename_from": "Đổi tên từ",
+    "set_wallet_type_to": "Thiết lập loại nguồn tiền thành",
+    "change_type_from": "Thay đổi loại từ",
+    "set_wallet_currency_to": "Thiết lập đơn vị tiền tệ thành",
+    "change_currency_from": "Thay đổi đơn vị tiền tệ từ",
+    "set_wallet_balance_to": "Thiết lập số dư nguồn tiền thành",
+    "set_expense_type_to": "Thiết lập loại chi tiêu thành",
+    "change_expense_type_from": "Thay đổi loại chi tiêu từ",
+    "set_unit_to": "Thiết lập đơn vị tính thành",
+    "change_unit_from": "Thay đổi đơn vị tính từ",
+    "set_manufacturer_to": "Thiết lập nhà sản xuất thành",
+    "change_manufacturer_from": "Thay đổi nhà sản xuất từ",
+    "set_usage_to": "Thiết lập cách sử dụng thành",
+    "change_usage_from": "Thay đổi cách sử dụng từ",
+    "set_description_to": "Thiết lập mô tả thành",
+    "change_description_from": "Thay đổi mô tả từ",
+    "set_note_to": "Thiết lập ghi chú thành",
+    "change_note_from": "Thay đổi ghi chú từ",
+    "set_email_to": "Thiết lập email thành",
+    "change_email_from": "Thay đổi email từ",
+    "set_phone_to": "Thiết lập số điện thoại thành",
+    "change_phone_from": "Thay đổi số điện thoại từ",
+    "set_gender_to": "Thiết lập giới tính thành",
+    "change_gender_from": "Thay đổi giới tính thành",
+    "set_address_to": "Thiết lập địa chỉ thành",
+    "change_address_from": "Thay đổi địa chỉ từ",
+    "set_balance_to": "Thiết lập số dư thành",
+    "change_balance_from": "Thay đổi số dư từ",
+    "set_birthday_to": "Thiết lập ngày sinh thành",
+    "change_birthday_from": "Thay đổi ngày sinh từ",
+    "set_guardian_to": "Thiết lập người giám hộ thành",
+    "change_guardian_from": "Thay đổi người giám hộ từ",
+    "set_ethnicity_to": "Thiết lập dân tộc thành",
+    "change_ethnicity_from": "Thay đổi dân tộc từ",
+    "set_national_id_to": "Thiết lập CMND/CCCD thành",
+    "change_national_id_from": "Thay đổi CMND/CCCD từ",
+    "set_role_to": "Thiết lập vai trò thành",
+    "change_role_from": "Thay đổi vai trò từ",
+    "set_role_title_to": "Thiết lập vị trí thành",
+    "change_role_title_from": "Thay đổi vị trí từ",
+    "trailing_label_workspace_members": {
+      "one": "{{count}} thành viên",
+      "other": "{{count}} thành viên"
+    },
+    "trailing_label_workspace_invites": {
+      "one": "{{count}} lời mời lời mời tham gia",
+      "other": "{{count}} lời mời lời mời tham gia"
+    },
+    "trailing_label_workspace_teams": {
+      "one": "{{count}} nhóm",
+      "other": "{{count}} nhóm"
+    },
+    "trailing_label_workspace_documents": {
+      "one": "{{count}} tài liệu",
+      "other": "{{count}} tài liệu"
+    },
+    "trailing_label_workspace_boards": {
+      "one": "{{count}} bảng công việc",
+      "other": "{{count}} bảng công việc"
+    },
+    "trailing_label_workspace_wallets": {
+      "one": "{{count}} nguồn tiền",
+      "other": "{{count}} nguồn tiền"
+    },
+    "trailing_label_product_categories": {
+      "one": "{{count}} danh mục sản phẩm",
+      "other": "{{count}} danh mục sản phẩm"
+    },
+    "trailing_label_inventory_units": {
+      "one": "{{count}} đơn vị tính",
+      "other": "{{count}} đơn vị tính"
+    },
+    "trailing_label_workspace_products": {
+      "one": "{{count}} sản phẩm",
+      "other": "{{count}} sản phẩm"
+    },
+    "trailing_label_inventory_suppliers": {
+      "one": "{{count}} nhà cung cấp",
+      "other": "{{count}} nhà cung cấp"
+    },
+    "trailing_label_inventory_warehouses": {
+      "one": "{{count}} kho chứa",
+      "other": "{{count}} kho chứa"
+    },
+    "trailing_label_transaction_categories": {
+      "one": "{{count}} danh mục giao dịch",
+      "other": "{{count}} danh mục giao dịch"
+    },
+    "trailing_label_healthcare_vitals": {
+      "one": "{{count}} chỉ số sức khỏe",
+      "other": "{{count}} chỉ số sức khỏe"
+    },
+    "trailing_label_healthcare_diagnoses": {
+      "one": "{{count}} chuẩn đoán",
+      "other": "{{count}} chuẩn đoán"
+    },
+    "trailing_label_healthcare_vital_groups": {
+      "one": "{{count}} nhóm chỉ số sức khỏe",
+      "other": "{{count}} nhóm chỉ số sức khỏe"
+    },
+    "trailing_label_workspace_users": {
+      "one": "{{count}} người dùng",
+      "other": "{{count}} người dùng"
+    },
+    "trailing_label_workspace_user_roles": {
+      "one": "{{count}} vai trò người dùng",
+      "other": "{{count}} vai trò người dùng"
+    },
+    "trailing_label_workspace_user_groups": {
+      "one": "{{count}} nhóm người dùng",
+      "other": "{{count}} nhóm người dùng"
+    },
+    "trailing_label_workspaces": {
+      "0": "không gian làm việc",
+      "one": "{{count}} không gian làm việc",
+      "other": "{{count}} không gian làm việc"
+    },
+    "trailing_label_finance_invoices": {
+      "one": "{{count}} hóa đơn",
+      "other": "{{count}} hóa đơn"
+    },
+    "trailing_label_healthcare_checkups": {
+      "one": "{{count}} đơn khám sức khỏe",
+      "other": "{{count}} đơn khám sức khỏe"
+    },
+    "trailing_label_workspace_calendar_events": {
+      "one": "{{count}} sự kiện lịch",
+      "other": "{{count}} sự kiện lịch"
+    },
+    "trailing_label_wallet_transactions": {
+      "one": "{{count}} giao dịch ví",
+      "other": "{{count}} giao dịch ví"
+    },
+    "trailing_label_calendar_event_platform_participants": {
+      "one": "{{count}} người tham gia (người dùng nền tảng)",
+      "other": "{{count}} người tham gia (người dùng nền tảng)"
+    },
+    "trailing_label_calendar_event_virtual_participants": {
+      "one": "{{count}} người tham gia (người dùng ảo)",
+      "other": "{{count}} người tham gia (người dùng ảo)"
+    },
+    "trailing_label_calendar_event_participant_groups": {
+      "one": "{{count}} nhóm người tham gia",
+      "other": "{{count}} nhóm người tham gia"
+    }
+  },
+  "ws-ai-chatbots": {
+    "plural": "Thư viện chatbot",
+    "singular": "Chatbot",
+    "description": "Xem các chatbot tùy chỉnh được tạo bởi cộng đồng.",
+    "create": "Tạo chatbot",
+    "create_description": "Tạo một chatbot mới"
+  },
+  "ws-ai-whitelist-domains": {
+    "plural": "Tên miền thuộc danh sách trắng",
+    "singular": "Tên miền thuộc danh sách trắng",
+    "description": "Các miền được liệt kê trắng được sử dụng để cho phép các miền cụ thể truy cập các tính năng AI.",
+    "create": "Tạo tên miền danh sách trắng",
+    "create_description": "Tạo một miền được liệt kê trong danh sách trắng"
+  },
+  "ws-ai-whitelist-emails": {
+    "plural": "Email thuộc danh sách trắng",
+    "singular": "Email được đưa vào danh sách trắng",
+    "description": "Email được đưa vào danh sách trắng được sử dụng để cho phép các địa chỉ email cụ thể truy cập các tính năng AI.",
+    "create": "Tạo email được đưa vào danh sách trắng",
+    "create_description": "Tạo một email được đưa vào danh sách trắng mới"
+  },
+  "ws-ai-workflows": {
+    "module": "Quy trình",
+    "description": "Quy trình là một chuỗi các cặp \"đầu vào\"-\"đầu ra\" nhằm xác định hành vi của một mô hình.",
+    "name": "Tên",
+    "create": "Tạo Quy trình",
+    "edit": "Sửa Quy trình",
+    "add_new": "Thêm Quy trình mới vào không gian làm việc này.",
+    "edit_existing": "Sửa Quy trình đã tồn tại trong không gian làm việc này.",
+    "include_resources": "Bao gồm các tài nguyên tải lên",
+    "include_youtube_links": "Bao gồm các liên kết YouTube",
+    "include_module_content": "Bao gồm nội dung mô-đun"
+  },
+  "ws-api-keys": {
+    "api_key": "Khóa API",
+    "api_keys": "Khóa API",
+    "description": "Khóa API được sử dụng để xác thực các yêu cầu API.",
+    "name": "Tên",
+    "value": "Giá trị",
+    "create_key": "Tạo khóa",
+    "edit_key": "Sửa khóa",
+    "add_new_workspace_key": "Thêm khóa mới",
+    "edit_existing_workspace_key": "Sửa khóa hiện có",
+    "no_api_keys_found": "Không tìm thấy khóa API nào",
+    "select_api_key": "Chọn khóa API"
+  },
+  "ws-course-modules": {
+    "plural": "Mô-đun khóa học",
+    "singular": "Mô-đun khóa học",
+    "create": "Tạo mô-đun",
+    "create_description": "Tạo một mô-đun mới",
+    "description": "Quản lý các mô-đun trong khóa học nằm trong không gian làm việc của bạn.",
+    "edit": "Chỉnh sửa mô-đun",
+    "name": "Tên mô-đun",
+    "edit_description": "Chỉnh sửa mô-đun hiện có",
+    "add_link": "Thêm liên kết",
+    "add_youtube_link_description": "Thêm liên kết YouTube mới.",
+    "youtube_link": "Liên kết YouTube",
+    "youtube_links": "Liên kết YouTube",
+    "edit_link": "Chỉnh sửa liên kết",
+    "invalid_youtube_link": "Liên kết YouTube không hợp lệ",
+    "resource": "Tài nguyên",
+    "resources": "Tài nguyên",
+    "add_resource_description": "Thêm một tài nguyên mới.",
+    "add_resource": "Thêm tài nguyên"
+  },
+  "ws-courses": {
+    "plural": "Khóa học",
+    "singular": "Khóa học",
+    "description": "Quản lý các khóa học trong không gian làm việc của bạn bao gồm nội dung đánh dấu, trang trình bày, câu hỏi và thẻ ghi chú.",
+    "create": "Tạo khóa học",
+    "create_description": "Tạo một khóa học mới",
+    "edit": "Chỉnh sửa khóa học",
+    "name": "Tên khóa học",
+    "edit_description": "Chỉnh sửa khóa học hiện có"
+  },
+  "ws-crawlers": {
+    "plural": "Công cụ cào dữ liệu",
+    "singular": "Công cụ cào dữ liệu",
+    "description": "Công cụ cào dữ liệu được sử dụng để thu thập dữ liệu từ các trang web và nguồn dữ liệu khác.",
+    "create": "Tạo công cụ cào dữ liệu",
+    "create_description": "Tạo một công cụ cào dữ liệu mới"
+  },
+  "ws-cron": {
+    "description": "Lịch trình được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể."
+  },
+  "ws-cron-executions": {
+    "plural": "Lịch sử chạy",
+    "singular": "Lịch sử chạy",
+    "description": "Lịch sử chạy được sử dụng để xem lịch sử của các công việc định kỳ."
+  },
+  "ws-cron-jobs": {
+    "singular": "Công việc định kỳ",
+    "plural": "Công việc định kỳ",
+    "create": "Tạo công việc",
+    "create_description": "Tạo một công việc mới",
+    "description": "Công việc định kỳ được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể.",
+    "edit": "Chỉnh sửa công việc",
+    "edit_description": "Chỉnh sửa công việc hiện có"
+  },
+  "ws-datasets": {
+    "plural": "Bộ dữ liệu",
+    "singular": "Tập dữ liệu",
+    "description": "Tập dữ liệu được sử dụng để huấn luyện các mô hình AI.",
+    "create": "Tạo tập dữ liệu",
+    "create_description": "Tạo một tập dữ liệu",
+    "total_columns": "Tổng số cột",
+    "total_rows": "Tổng số dòng",
+    "last_updated": "Cập nhật lần cuối",
+    "add_row": "Thêm dòng",
+    "edit_row": "Chỉnh sửa dòng",
+    "delete_row": "Xóa dòng",
+    "confirm_delete_row": "Bạn có chắc chắn muốn xóa dòng này?",
+    "no_data": "Không có dữ liệu",
+    "columns_description": "Quản lý các cột trong bộ dữ liệu của bạn, bao gồm tên, mô tả và tên thay thế."
+  },
+  "ws-documents": {
+    "plural": "Tài liệu",
+    "singular": "Tài liệu",
+    "create_description": "Tạo một tài liệu mới",
+    "create": "Tạo tài liệu",
+    "description": "Tài liệu được sử dụng để hỗ trợ việc chia sẻ thông tin trong không gian làm việc của bạn."
+  },
+  "ws-emails": {
+    "plural": "Email",
+    "singular": "E-mail",
+    "description": "Xem lịch sử gửi thư thuộc không gian làm việc của bạn."
+  },
+  "ws-flashcards": {
+    "plural": "Thẻ từ vựng",
+    "singular": "Thẻ từ vựng",
+    "create": "Tạo thẻ từ vựng",
+    "create_description": "Tạo một thẻ từ vựng mới",
+    "description": "Quản lý thẻ từ vựng trong không gian làm việc của bạn có một mặt trước và mặt sau dành cho mục đích học tập.",
+    "edit": "Chỉnh sửa thẻ từ vựng",
+    "front": "Mặt trước",
+    "back": "Mặt sau",
+    "edit_description": "Chỉnh sửa thẻ từ vựng hiện có",
+    "generation_error": "Đã xảy ra lỗi khi tạo thẻ từ.",
+    "generation_accepted": "Thẻ từ do AI tạo đã được chấp nhận!"
+  },
+  "ws-home": {
+    "home": "Trang chủ",
+    "description_p1": "Tổng quan về không gian làm việc",
+    "description_p2": "và tiến độ liên quan.",
+    "latest_announcement": "Thông báo mới nhất",
+    "ai_chat_playground_experiment": "Thử nghiệm trò chuyện trí tuệ nhân tạo (Mira AI)",
+    "ai_chat_playground_discontinued_p1": "Chào bạn,\n\nChúng tôi rất tiếc phải thông báo rằng",
+    "ai_chat_playground_discontinued_p2": "tạm thời bị vô hiệu hóa để tiến hành cải thiện và kiểm tra thêm. Đừng lo lắng! Chúng tôi đang phát triển thêm nhiều tính năng thú vị để mang lại trải nghiệm tốt hơn cho bạn. Hãy chờ đợi sự trở lại với nhiều tính năng vượt trội hơn. Cảm ơn bạn đã kiên nhẫn và thấu hiểu cho chúng tôi.\n\nTrân trọng,\nTuturuuu"
+  },
+  "ws-inventory-batches": {
+    "plural": "Lô hàng",
+    "singular": "Lô hàng",
+    "description": "Lô hàng được sử dụng để quản lý các sản phẩm nhập và xuất kho.",
+    "create": "Tạo lô hàng",
+    "create_description": "Tạo một lô hàng mới"
+  },
+  "ws-inventory-categories": {
+    "plural": "Danh mục sản phẩm",
+    "singular": "Danh mục sản phẩm",
+    "description": "Danh mục được sử dụng để nhóm các sản phẩm tồn kho tương tự lại với nhau.",
+    "create": "Tạo danh mục",
+    "create_description": "Tạo một danh mục mới",
+    "placeholder": "Chọn danh mục sản phẩm"
+  },
+  "ws-inventory-products": {
+    "plural": "Sản phẩm",
+    "singular": "Sản phẩm",
+    "description": "Sản phẩm được sử dụng dưới dạng loại mặt hàng riêng lẻ mà bạn có trong kho của mình và có thể được sử dụng để liên kết với hóa đơn.",
+    "create": "Tạo sản phẩm",
+    "create_description": "Tạo một sản phẩm mới",
+    "form": {
+      "details": "Chi tiết",
+      "name": "Tên sản phẩm",
+      "manufacturer": "Nhà sản xuất",
+      "description": "Mô tả",
+      "usage": "Cách dùng",
+      "price": "Giá",
+      "stock": "Kho hàng",
+      "add_warehouse": "Thêm kho hàng",
+      "amount": "Số lượng",
+      "min_amount": "Số lượng ít nhất",
+      "category": "Danh mục"
+    }
+  },
+  "ws-inventory-promotions": {
+    "plural": "Khuyến mãi",
+    "singular": "Khuyến mãi",
+    "description": "Khuyến mãi được sử dụng để quản lý các sản phẩm khuyến mãi.",
+    "create": "Tạo khuyến mãi",
+    "create_description": "Tạo một khuyến mãi mới",
+    "update": "Cập nhật khuyến mãi",
+    "form": {
+      "name": "Tên",
+      "description": "Mô tả",
+      "code": "Mã giảm giá",
+      "value": "Giá trị",
+      "unit": {
+        "placeholder": "Đơn vị",
+        "currency": "Tiền tệ",
+        "percentage": "Phần trăm"
+      }
+    }
+  },
+  "ws-inventory-suppliers": {
+    "plural": "Nhà cung cấp",
+    "singular": "Nhà cung cấp",
+    "description": "Nhà cung cấp được sử dụng để liên kết các sản phẩm tồn kho với nhà cung cấp.",
+    "create": "Tạo nhà cung cấp",
+    "create_description": "Tạo một nhà cung cấp mới"
+  },
+  "ws-inventory-units": {
+    "plural": "Đơn vị tính",
+    "singular": "Đơn vị tính",
+    "description": "Đơn vị tính được sử dụng để đo lường các sản phẩm tồn kho.",
+    "create": "Tạo đơn vị tính",
+    "create_description": "Tạo một đơn vị tính mới",
+    "placeholder": "Chọn đơn vị tính"
+  },
+  "ws-inventory-warehouses": {
+    "plural": "Kho hàng",
+    "singular": "Kho hàng",
+    "description": "Kho hàng được sử dụng để lưu trữ các sản phẩm tồn kho.",
+    "create": "Tạo kho hàng",
+    "create_description": "Tạo một kho hàng mới",
+    "placeholder": "Chọn kho hàng"
+  },
+  "ws-invoices": {
+    "singular": "Hóa đơn",
+    "plural": "Hóa đơn",
+    "description": "Hóa đơn được sử dụng để liên kết các giao dịch tài chính và sản phẩm đã mua với các chương trình khuyến mãi được áp dụng từ kho hàng trong không gian làm việc của bạn.",
+    "create": "Tạo hóa đơn",
+    "create_description": "Tạo hóa đơn mới",
+    "edit": "Chỉnh sửa hóa đơn",
+    "edit_description": "Chỉnh sửa hóa đơn hiện có",
+    "new_invoice": "Hóa đơn mới",
+    "standard": "Hóa đơn tiêu chuẩn",
+    "subscription": "Hóa đơn định kỳ"
+  },
+  "ws-members": {
+    "description": "Quản lý thành viên trong không gian làm việc.",
+    "invite_member": "Mời thành viên",
+    "invite_member_disabled": "Mời thành viên đã bị vô hiệu hóa",
+    "enter_email_or_username": "Nhập email hoặc tên người dùng",
+    "member_since": "Đã tham gia",
+    "pending_invitations": "Lời mời đang chờ",
+    "invited": "Đã mời",
+    "joined": "Đã tham gia",
+    "all": "Tất cả",
+    "leave": "Rời khỏi",
+    "no_members_match": "Không có thành viên nào phù hợp với tìm kiếm của bạn",
+    "no_invited_members_found": "Chưa có thành viên nào được mời",
+    "remove_member": "Xóa thành viên",
+    "member_removed": "Thành viên đã bị xóa",
+    "revoke_invitation": "Thu hồi lời mời",
+    "invitation_sent": "Lời mời đã được gửi",
+    "invitation_revoked": "Lời mời đã bị thu hồi",
+    "invitation_to": "Lời mời đến",
+    "has_been_sent": "đã được gửi",
+    "has_been_revoked": "đã bị thu hồi",
+    "has_been_removed": "đã bị xóa khỏi không gian làm việc này",
+    "error": "Lỗi",
+    "invitation_error": "Không thể gửi lời mời",
+    "invitation_error_user_not_found": "Người dùng không tìm thấy hoặc chưa đăng ký trên nền tảng.",
+    "invitation_error_already_exist": "Người dùng đã là thành viên hoặc lời mời đã được gửi.",
+    "revoke_error": "Đã xảy ra lỗi khi thu hồi lời mời",
+    "remove_error": "Đã xảy ra lỗi khi xóa thành viên",
+    "member-settings": "Cài đặt thành viên",
+    "role": "Vai trò",
+    "role-placeholder": "Chọn vai trò",
+    "role-title": "Vị trí",
+    "role-title-placeholder": "Thiết kế, Quản lý dự án, v.v.",
+    "delete-member-description": "Bạn có thể xóa thành viên này khỏi không gian làm việc.",
+    "cannot-delete-last-owner": "Bạn không thể xóa chủ sở hữu cuối cùng của không gian làm việc.",
+    "member-updated": "Thành viên đã được cập nhật",
+    "has-been-updated": "đã được cập nhật",
+    "update-error": "Đã xảy ra lỗi khi cập nhật thành viên",
+    "member": "Thành viên",
+    "admin": "Quản trị viên",
+    "owner": "Chủ sở hữu",
+    "you": "Bạn"
+  },
+  "ws-models": {
+    "plural": "Các mô hình",
+    "singular": "Mô hình",
+    "create": "Tạo mô hình",
+    "create_description": "Tạo một mô hình mới",
+    "description": "Các mô hình là các mô hình AI được huấn luyện có thể được sử dụng cho các nhiệm vụ khác nhau."
+  },
+  "ws-pipelines": {
+    "plural": "Quy trình",
+    "singular": "Quy trình",
+    "description": "Quy trình được sử dụng để chạy các tác vụ có thể lập trình.",
+    "create": "Tạo quy trình",
+    "create_description": "Tạo một quy trình mới"
+  },
+  "ws-post-emails": {
+    "plural": "Bài viết",
+    "singular": "Bài viết",
+    "description": "Gửi email cho người dùng mà nhân viên có thẩm quyền đã kiểm tra công việc của họ trong các bài viết của nhóm người dùng cụ thể.",
+    "sent_emails": "Email đã gửi",
+    "pending_emails": "Email đang chờ được gửi"
+  },
+  "ws-product-categories": {
+    "singular": "Danh mục sản phẩm",
+    "plural": "Danh mục sản phẩm",
+    "description": "Danh mục sản phẩm giúp bạn phân loại tất cả các sản phẩm trong không gian làm việc của bạn.",
+    "create": "Tạo danh mục",
+    "edit": "Sửa danh mục",
+    "create_description": "Tạo một danh mục sản phẩm mới",
+    "edit_description": "Sửa danh mục sản phẩm hiện có"
+  },
+  "ws-product-suppliers": {
+    "singular": "Nhà cung cấp",
+    "plural": "Nhà cung cấp",
+    "description": "Nhà cung cấp giúp bạn quản lý tất cả các nhà cung cấp trong không gian làm việc của bạn.",
+    "create": "Tạo nhà cung cấp",
+    "edit": "Sửa nhà cung cấp",
+    "create_description": "Tạo một nhà cung cấp mới",
+    "edit_description": "Sửa nhà cung cấp hiện có"
+  },
+  "ws-product-units": {
+    "singular": "Đơn vị sản phẩm",
+    "plural": "Đơn vị sản phẩm",
+    "description": "Đơn vị sản phẩm giúp bạn quản lý tất cả các đơn vị sản phẩm trong không gian làm việc của bạn.",
+    "create": "Tạo đơn vị",
+    "edit": "Sửa đơn vị",
+    "create_description": "Tạo một đơn vị sản phẩm mới",
+    "edit_description": "Sửa đơn vị sản phẩm hiện có"
+  },
+  "ws-product-warehouses": {
+    "singular": "Kho hàng",
+    "plural": "Kho hàng",
+    "description": "Kho hàng giúp bạn quản lý vị trí lưu trữ của các sản phẩm trong không gian làm việc của bạn.",
+    "create": "Tạo kho hàng",
+    "edit": "Sửa kho hàng",
+    "create_description": "Tạo một kho hàng mới",
+    "edit_description": "Sửa kho hàng hiện có"
+  },
+  "ws-queues": {
+    "plural": "Hàng chờ",
+    "singular": "Hàng chờ",
+    "description": "Hàng chờ được sử dụng để quản lý các công việc và tác vụ.",
+    "create": "Tạo hàng chờ",
+    "create_description": "Tạo một hàng chờ mới"
+  },
+  "ws-quiz-sets": {
+    "plural": "Bộ trắc nghiệm",
+    "singular": "Bộ trắc nghiệm",
+    "description": "Quản lý các bộ trắc nghiệm trong không gian làm việc của bạn bao gồm các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
+    "create": "Tạo bộ trắc nghiệm",
+    "create_description": "Tạo bộ trắc nghiệm mới",
+    "name": "Tên bộ trắc nghiệm",
+    "edit": "Chỉnh sửa bộ",
+    "link-quizzes": "Liên kết câu hỏi",
+    "link-modules": "Liên kết mô-đun"
+  },
+  "ws-quizzes": {
+    "plural": "Câu hỏi trắc nghiệm",
+    "singular": "Bộ trắc nghiệm",
+    "create": "Tạo câu hỏi",
+    "create_description": "Tạo một bộ trắc nghiệm mới",
+    "description": "Quản lý bộ trắc nghiệm trong không gian làm việc của bạn có các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
+    "edit": "Chỉnh sửa bộ trắc nghiệm",
+    "question": "Câu hỏi",
+    "answer": "Câu trả lời",
+    "edit_description": "Chỉnh sửa bài kiểm tra hiện có",
+    "generation_error": "Đã xảy ra lỗi khi tạo bộ câu hỏi.",
+    "generation_accepted": "Các bộ câu hỏi do AI tạo ra đã được chấp nhận!"
+  },
+  "ws-reports": {
+    "report": "Báo cáo",
+    "reports": "Báo cáo",
+    "description": "Tuỳ chỉnh các cài đặt báo cáo của bạn.",
+    "name": "Tên",
+    "value": "Giá trị",
+    "edit_value": "Chỉnh sửa giá trị",
+    "reset_value": "Đặt lại giá trị",
+    "edit_existing_value": "Chỉnh sửa giá trị hiện tại",
+    "brand_logo_url": "URL logo thương hiệu",
+    "brand_name": "Tên thương hiệu",
+    "brand_location": "Vị trí thương hiệu",
+    "brand_phone_number": "Số điện thoại thương hiệu",
+    "report_title_prefix": "Tiền tố tiêu đề báo cáo",
+    "report_title_suffix": "Hậu tố tiêu đề báo cáo",
+    "report_intro": "Đoạn giới thiệu báo cáo",
+    "report_content_text": "Chữ hiển thị cho mục nội dung báo cáo",
+    "report_score_text": "Chữ hiển thị cho mục điểm báo cáo",
+    "report_feedback_text": "Chữ hiển thị cho mục phản hồi báo cáo",
+    "report_conclusion": "Đoạn kết báo cáo",
+    "report_closing": "Lời kết báo cáo"
+  },
+  "ws-roles": {
+    "singular": "Vai trò",
+    "plural": "Vai trò",
+    "description": "Vai trò được sử dụng để quản lý quyền của người dùng trong không gian làm việc bằng cách tạo vai trò và gán chúng cho người dùng.",
+    "create": "Tạo vai trò",
+    "edit": "Chỉnh sửa vai trò",
+    "create_description": "Tạo một vai trò mới cho không gian làm việc này.",
+    "edit_description": "Chỉnh sửa một vai trò hiện có trong không gian làm việc này.",
+    "display": "Hiển thị",
+    "permissions": "Phân quyền",
+    "members": "Thành viên",
+    "name": "Tên",
+    "admin": "Quản trị viên",
+    "admin_description": "Truy cập đầy đủ vào tất cả các tính năng và cài đặt.",
+    "infrastructure": "Cơ sở hạ tầng",
+    "view_infrastructure": "Xem cơ sở hạ tầng",
+    "view_infrastructure_description": "Cho phép thành viên xem thống kê và cài đặt cơ sở hạ tầng.",
+    "manage_workspace_secrets": "Quản lý mã bí mật",
+    "manage_workspace_secrets_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa mã bí mật không gian làm việc.",
+    "manage_external_migrations": "Quản lý chuyển dữ liệu từ bên ngoài",
+    "manage_external_migrations_description": "Cho phép thành viên xem và thực thi chuyển dữ liệu từ bên ngoài.",
+    "workspace": "Không gian làm việc",
+    "manage_default_permissions": "Quản lý quyền mặc định",
+    "default_permissions": "Quyền mặc định",
+    "default_permissions_description": "Những quyền này mặc định sẽ được áp dụng cho tất cả người dùng trong không gian làm việc của bạn.",
+    "manage_workspace_roles": "Quản lý vai trò",
+    "manage_workspace_roles_description": "Cho phép các thành viên thay đổi quyền và gán vai trò cho người dùng.",
+    "manage_workspace_members": "Quản lý thành viên",
+    "manage_workspace_members_description": "Cho phép các thành viên mời, xóa và cập nhật thành viên.",
+    "manage_workspace_invites": "Quản lý lời mời",
+    "manage_workspace_invites_description": "Cho phép các thành viên gửi, thu hồi và chấp nhận lời mời.",
+    "manage_workspace_settings": "Quản lý cài đặt",
+    "manage_workspace_settings_description": "Cho phép các thành viên thay đổi tên và logo của không gian làm việc.",
+    "manage_workspace_security": "Quản lý bảo mật",
+    "manage_workspace_security_description": "Cho phép các thành viên quản lý khoá API và khả năng xóa không gian làm việc.",
+    "manage_workspace_audit_logs": "Quản lý nhật ký kiểm toán",
+    "manage_workspace_audit_logs_description": "Cho phép các thành viên xem tất cả các hoạt động trong không gian làm việc.",
+    "manage_workspace_billing": "Quản lý thanh toán",
+    "manage_workspace_billing_description": "Cho phép các thành viên xem và cập nhật thông tin thanh toán.",
+    "ai": "Trí tuệ nhân tạo",
+    "ai_chat": "Trò chuyện trí tuệ nhân tạo",
+    "ai_chat_description": "Cho phép các thành viên tương tác với trí tuệ nhân tạo thông qua trò chuyện.",
+    "ai_lab": "Phòng thí nghiệm",
+    "ai_lab_description": "Cho phép các thành viên tạo, chỉnh sửa và xóa các câu hỏi tùy chỉnh cho trí tuệ nhân tạo.",
+    "manage_calendar": "Quản lý lịch",
+    "manage_calendar_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa sự kiện trong lịch không gian làm việc.",
+    "manage_projects": "Quản lý dự án",
+    "manage_projects_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa dự án trong không gian làm việc.",
+    "manage_documents": "Quản lý tài liệu",
+    "manage_documents_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa tài liệu trong không gian làm việc.",
+    "manage_drive": "Quản lý Tuturuuu Drive",
+    "manage_drive_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa tệp trong không gian làm việc.",
+    "manage_users": "Quản lý người dùng",
+    "manage_users_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa hồ sơ người dùng ảo trong không gian làm việc.",
+    "manage_inventory": "Quản lý kho",
+    "manage_inventory_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa các mặt hàng trong kho không gian làm việc.",
+    "manage_finance": "Quản lý tài chính",
+    "manage_finance_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa giao dịch tài chính trong không gian làm việc.",
+    "manage_user_report_templates": "Quản lý mẫu báo cáo người dùng",
+    "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng.",
+    "send_user_group_post_emails": "Gửi nội dung bài viết qua email",
+    "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài viết của nhóm người dùng cụ thể.",
+    "export_users_data": "Cho phép xuất dữ liệu người dùng",
+    "export_users_data_description": "Cho phép thành viên xuất dữ liệu người dùng ảo được tạo trong không gian làm việc của bạn.",
+    "export_finance_data": "Cho phép xuất dữ liệu tài chính",
+    "export_finance_data_description": "Cho phép thành viên xuất dữ liệu giao dịch tài chính được tạo trong không gian làm việc của bạn."
+  },
+  "ws-secrets": {
+    "secrets": "Mã bí mật",
+    "workspace_secret": "Mã bí mật",
+    "description": "Giá trị tùy chỉnh để tương tác với nền tảng của chúng tôi một cách an toàn và bảo mật.",
+    "name": "Tên",
+    "value": "Giá trị",
+    "create_secret": "Tạo mã bí mật",
+    "edit_secret": "Chỉnh sửa mã bí mật",
+    "add_new_workspace_secret": "Thêm mã bí mật mới",
+    "edit_existing_workspace_secret": "Chỉnh sửa mã bí mật hiện có cho không gian làm việc này.",
+    "plural": "Mã bí mật",
+    "singular": "Mã bí mật",
+    "create_description": "Tạo một mã bí mật mới",
+    "create": "Tạo mã bí mật"
+  },
+  "ws-settings": {
+    "description": "Quản lý các thiết lập không gian làm việc.",
+    "basic_info": "Thông tin cơ bản",
+    "basic_info_description": "Quản lý các thông tin cơ bản của không gian làm việc.",
+    "workspace_logo": "Logo",
+    "workspace_logo_description": "Quản lý logo của không gian làm việc để sử dụng trong báo cáo.",
+    "workspace_avatar": "Ảnh đại diện",
+    "workspace_avatar_description": "Tất cả mọi người trong không gian làm việc của bạn sẽ thấy ảnh đại diện này.",
+    "id": "ID không gian làm việc",
+    "name": "Tên không gian làm việc",
+    "name_placeholder": "Nhập tên không gian làm việc",
+    "created_at": "Không gian làm việc này được tạo lúc ",
+    "security": "Bảo mật",
+    "security_description": "Quản lý các thiết lập bảo mật của không gian làm việc.",
+    "features": "Các tính năng",
+    "features_description": "Quản lý các tính năng của không gian làm việc.",
+    "delete": "Xóa không gian làm việc",
+    "deleting": "Đang xóa"
+  },
+  "ws-slides": {
+    "singular": "Trang trình bày",
+    "plural": "Trang trình bày",
+    "description": "Trang trình bày được sử dụng để tạo bài thuyết trình cho không gian làm việc của bạn.",
+    "name": "Tên",
+    "create": "Tạo trang trình bày",
+    "edit": "Sửa trang trình bày",
+    "create_description": "Tạo một trang trình bày mới",
+    "edit_description": "Sửa trang trình bày hiện có"
+  },
+  "ws-storage-objects": {
+    "name": "Tuturuuu Drive",
+    "plural": "Tuturuuu Drive",
+    "singular": "Tuturuuu Drive",
+    "upload": "Tải lên",
+    "upload_description": "Tải tệp tin lên Tuturuuu Drive",
+    "description": "Lưu trữ tệp làm việc một cách an toàn và truy cập chúng từ bất kỳ nơi nào.",
+    "total_files": "Tổng số tệp",
+    "total_size": "Tổng dung lượng",
+    "largest_file": "Tệp lớn nhất",
+    "smallest_file": "Tệp nhỏ nhất",
+    "files": "Tệp tin",
+    "folder": "Thư mục",
+    "folder_create": "Tạo thư mục mới"
+  },
+  "ws-task-boards": {
+    "name": "Tên bảng",
+    "plural": "Bảng nhiệm vụ",
+    "singular": "Bảng nhiệm vụ",
+    "create": "Tạo bảng",
+    "create_description": "Tạo bảng nhiệm vụ",
+    "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể."
+  },
+  "ws-transaction-categories": {
+    "singular": "Danh mục giao dịch",
+    "plural": "Danh mục giao dịch",
+    "description": "Danh mục giao dịch giúp bạn phân loại tất cả các giao dịch tài chính trong không gian làm việc của bạn.",
+    "create": "Tạo danh mục",
+    "edit": "Sửa danh mục",
+    "create_description": "Tạo một danh mục giao dịch mới",
+    "edit_description": "Sửa danh mục giao dịch hiện có"
+  },
+  "ws-transactions": {
+    "singular": "Giao dịch",
+    "plural": "Giao dịch",
+    "description": "Giao dịch giúp bạn theo dõi tất cả các giao dịch tài chính trong không gian làm việc của bạn.",
+    "create": "Tạo giao dịch",
+    "edit": "Sửa giao dịch",
+    "create_description": "Tạo một giao dịch mới",
+    "edit_description": "Sửa giao dịch hiện có"
+  },
+  "ws-user-attendance": {
+    "singular": "Điểm danh",
+    "plural": "Điểm danh",
+    "description": "Điểm danh giúp bạn theo dõi tiến độ tham gia của người dùng trong không gian làm việc của bạn.",
+    "create": "Tạo điểm danh",
+    "edit": "Chỉnh sửa điểm danh",
+    "create_description": "Tạo một điểm danh mới",
+    "edit_description": "Chỉnh sửa điểm danh hiện có",
+    "present": "Có mặt",
+    "absent": "Vắng mặt",
+    "not-set": "Chưa đặt",
+    "select_group": "Chọn một nhóm",
+    "no_groups": "Không tìm thấy nhóm nào",
+    "update_error": "Lỗi cập nhật điểm danh",
+    "update_success": "Đã cập nhật điểm danh"
+  },
+  "ws-user-fields": {
+    "module": "Trường thông tin người dùng",
+    "module_description": "Trường thông tin người dùng được sử dụng để lưu trữ thông tin bổ sung về người dùng trong không gian làm việc của bạn.",
+    "name": "Tên",
+    "description": "Mô tả",
+    "select_type": "Chọn loại dữ liệu",
+    "type": "Loại dữ liệu",
+    "possible_values": "Giá trị khả dụng",
+    "possible_values_description": "Nếu bạn muốn có một danh sách thả xuống các giá trị khả dụng cho trường này, nhập chúng ở đây, mỗi giá trị một dòng.",
+    "add_possible_value": "Thêm giá trị khả dụng",
+    "default_value": "Giá trị mặc định",
+    "value": "Giá trị",
+    "notes": "Ghi chú",
+    "create_field": "Tạo trường",
+    "edit_field": "Sửa trường",
+    "add_new_user_field": "Thêm trường người dùng mới cho không gian làm việc này.",
+    "edit_existing_user_field": "Chỉnh sửa trường người dùng hiện tại cho không gian làm việc này."
+  },
+  "ws-user-group-details": {
+    "schedule": "Lịch nhóm",
+    "attendance": "Điểm danh nhóm",
+    "reports": "Báo cáo nhóm",
+    "metrics": "Số liệu nhóm"
+  },
+  "ws-user-group-tags": {
+    "singular": "Gắn thẻ nhóm",
+    "plural": "Gắn thẻ nhóm",
+    "description": "Gom các nhóm người dùng lại với nhau để quản lý dễ dàng hơn.",
+    "name": "Tên gắn thẻ",
+    "color": "Màu gắn thẻ",
+    "linked_user_groups": "Nhóm người dùng liên kết",
+    "enable_custom_color": "Bật màu tùy chỉnh",
+    "create": "Tạo gắn thẻ",
+    "edit": "Sửa gắn thẻ",
+    "create_description": "Thêm một gắn thẻ nhóm mới",
+    "edit_description": "Sửa gắn thẻ nhóm",
+    "add_group": "Thêm nhóm",
+    "add_group_description": "Thêm nhóm vào gắn thẻ"
+  },
+  "ws-user-groups": {
+    "singular": "Nhóm người dùng",
+    "plural": "Nhóm người dùng",
+    "description": "Sắp xếp người dùng thành từng nhóm phù hợp với nhu cầu của bạn.",
+    "name": "Tên nhóm",
+    "create": "Tạo nhóm",
+    "edit": "Sửa nhóm",
+    "create_description": "Thêm nhóm mới",
+    "edit_description": "Sửa nhóm hiện có",
+    "add_user": "Thêm người dùng",
+    "add_user_description": "Thêm người dùng vào nhóm",
+    "posts": "Bài viết",
+    "add_post": "Thêm bài viết",
+    "edit_post": "Chỉnh sửa bài viết",
+    "edit_post_description": "Thực hiện thay đổi cho bài viết của bạn ở đây.",
+    "add_post_description": "Thêm một bài viết mới.",
+    "show_post_content": "Hiển thị nội dung bài viết",
+    "show_post_status": "Hiển thị trạng thái bài viết"
+  },
+  "ws-user-reports": {
+    "singular": "Báo cáo người dùng",
+    "plural": "Báo cáo người dùng",
+    "description": "Báo cáo người dùng giúp bạn theo dõi tiến độ công việc của người dùng trong không gian làm việc của bạn.",
+    "create": "Tạo báo cáo",
+    "edit": "Sửa báo cáo",
+    "create_description": "Tạo một báo cáo mới",
+    "edit_description": "Sửa báo cáo hiện có"
+  },
+  "ws-users": {
+    "singular": "Người dùng",
+    "plural": "Người dùng",
+    "description": "Người dùng là những người có liên quan trực tiếp hoặc gián tiếp đến không gian làm việc của bạn. Họ có thể được gán cho các công việc, dự án và nhiều hơn nữa.",
+    "full_name": "Họ và tên",
+    "display_name": "Tên hiển thị",
+    "create": "Tạo người dùng",
+    "edit": "Chỉnh sửa người dùng",
+    "create_description": "Tạo một người dùng mới",
+    "edit_description": "Chỉnh sửa thông tin của người dùng"
+  },
+  "ws-wallets": {
+    "singular": "Ví",
+    "plural": "Ví",
+    "description": "Ví giúp bạn theo dõi tất cả các giao dịch tài chính trong không gian làm việc của bạn.",
+    "create": "Tạo ví",
+    "edit": "Sửa ví",
+    "create_description": "Tạo một ví mới",
+    "edit_description": "Sửa ví hiện có"
+  },
+  "ws_post_details": {
+    "check_all": "Đã kiểm tra tất cả"
+  }
+}

@@ -1,3 +1,4 @@
+<<<<<<<< HEAD:packages/ai/src/chat/anthropic/summary/route.ts
 import {
   GoogleGenerativeAI,
   HarmBlockThreshold,
@@ -6,11 +7,17 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Message } from 'ai';
 import { NextResponse } from 'next/server';
+========
+import { PATCH } from '@tuturuuu/ai/chat/anthropic/summary/route';
+>>>>>>>> upstream/main:apps/rewise/src/app/api/ai/chat/anthropic/summary/route.ts
 
-export const runtime = 'edge';
-export const maxDuration = 60;
-export const preferredRegion = 'sin1';
+export const config = {
+  maxDuration: 90,
+  preferredRegion: 'sin1',
+  runtime: 'edge',
+};
 
+<<<<<<<< HEAD:packages/ai/src/chat/anthropic/summary/route.ts
 const model = 'gemini-2.0-flash-001';
 
 // eslint-disable-next-line no-undef
@@ -190,3 +197,6 @@ const trailingMessages: Message[] = [
     content: `Note to self (this is private thoughts that are not sent to the chat participant): \n\n"""${systemInstruction}"""`,
   },
 ];
+========
+export { PATCH };
+>>>>>>>> upstream/main:apps/rewise/src/app/api/ai/chat/anthropic/summary/route.ts

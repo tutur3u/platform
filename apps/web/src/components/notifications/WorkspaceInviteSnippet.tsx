@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 interface Props {
-  ws: Workspace;
+  ws: Pick<Workspace, 'id' | 'name' | 'created_at'>;
   transparent?: boolean;
 }
 
@@ -37,7 +37,7 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   const declineInviteErrorTitle = t('decline-invite-error-title');
   const declineInviteErrorMessage = t('decline-invite-error-msg');
 
-  const acceptInvite = async (ws: Workspace) => {
+  const acceptInvite = async (ws: Pick<Workspace, 'id'>) => {
     const response = await fetch(`/api/workspaces/${ws.id}/accept-invite`, {
       method: 'POST',
     });
@@ -58,7 +58,7 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
     }
   };
 
-  const declineInvite = async (ws: Workspace) => {
+  const declineInvite = async (ws: Pick<Workspace, 'id'>) => {
     const response = await fetch(`/api/workspaces/${ws.id}/decline-invite`, {
       method: 'POST',
     });

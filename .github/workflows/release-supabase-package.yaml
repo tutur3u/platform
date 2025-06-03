@@ -1,0 +1,139 @@
+name: Release @tuturuuu/supabase package
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'packages/supabase/package.json'
+      - 'packages/supabase/jsr.json'
+  workflow_dispatch:
+
+jobs:
+  check-version-bump:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tuturuuu/supabase)')
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - id: check
+        run: echo "should_release=true" >> $GITHUB_OUTPUT
+
+  build:
+    needs: check-version-bump
+    if: needs.check-version-bump.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+
+    env:
+      # Use Vercel Remote Caching
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+      # Configure production Supabase client
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      # Configure infrastructure
+      PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
+      NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        working-directory: packages/supabase
+        run: pnpm test
+
+  publish-jsr:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          registry-url: https://npm.jsr.io
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Publish package to JSR
+        working-directory: packages/supabase
+        run: pnpm dlx jsr publish
+
+  publish-gpr:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          registry-url: https://npm.pkg.github.com
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Publish package
+        working-directory: packages/supabase
+        run: pnpm publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+  publish-npm:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Publish package
+        working-directory: packages/supabase
+        run: pnpm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}

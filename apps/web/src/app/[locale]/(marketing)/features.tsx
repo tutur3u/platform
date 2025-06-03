@@ -1,3 +1,4 @@
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   Banknote,
   Code,
@@ -45,7 +46,7 @@ export function getFeatures(t: any): Feature[] {
     {
       title: t('home.features-6-title'),
       subtitle: t('home.features-6-subtitle'),
-      url: 'https://github.com/tutur3u/platform',
+      url: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`,
       icon: <Code className="h-6 w-6" />,
     },
   ];

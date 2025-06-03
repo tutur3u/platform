@@ -7,9 +7,9 @@ import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-ite
 import DashboardMenuItem from './dashboard-menu-item';
 import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
+import RewiseMenuItem from './rewise-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
-import { getInitials } from '@/utils/name-helper';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -28,6 +28,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -56,10 +57,10 @@ export default function UserNavClient({
         <DropdownMenuTrigger asChild>
           <button
             className={cn(
-              'flex w-full gap-2 rounded-md p-1 text-start transition',
+              'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
               hideMetadata
                 ? 'items-center justify-center'
-                : 'hover:bg-foreground/10 bg-foreground/5 items-center justify-start md:bg-transparent'
+                : 'hover:bg-foreground/5 items-center justify-start'
             )}
           >
             <Avatar className="relative cursor-pointer overflow-visible font-semibold">
@@ -108,13 +109,14 @@ export default function UserNavClient({
             </div>
           </DropdownMenuLabel>
           <DashboardMenuItem />
+          <RewiseMenuItem />
           <MeetTogetherMenuItem />
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Palette className="mr-2 h-4 w-4" />
-                <span>{t('common.theme')}</span>
+                <Palette className="text-muted-foreground h-4 w-4" />
+                <span className="text-foreground">{t('common.theme')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent sideOffset={4}>
@@ -124,8 +126,8 @@ export default function UserNavClient({
             </DropdownMenuSub>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Globe className="mr-2 h-4 w-4" />
-                <span>{t('common.language')}</span>
+                <Globe className="text-muted-foreground h-4 w-4" />
+                <span className="text-foreground">{t('common.language')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent sideOffset={4}>

@@ -45,8 +45,8 @@ export function ChatList({
 
   return (
     <div
-      className={`relative ${
-        embeddedUrl ? 'w-full' : 'mx-auto lg:max-w-4xl xl:max-w-6xl'
+      className={`relative h-full ${
+        embeddedUrl ? 'w-full' : '@lg:max-w-4xl @xl:max-w-6xl mx-auto'
       }`}
     >
       {(!!chatTitle || !!chatId) && (
@@ -67,8 +67,8 @@ export function ChatList({
                 className={cn(
                   'inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase',
                   chatIsPublic
-                    ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
-                    : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
+                    ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
+                    : 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
                 )}
               >
                 {chatIsPublic ? (
@@ -84,13 +84,13 @@ export function ChatList({
                 )}
               </span>
               {chatModel && (
-                <span className="bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
+                <span className="border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
                   <Sparkle className="h-3 w-3" />
                   {chatModel}
                 </span>
               )}
               {chatSummary && (
-                <span className="bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
+                <span className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
                   <Box className="h-3 w-3" />
                   {t('summarized')}
                 </span>

@@ -49,6 +49,9 @@
     "delete": "Delete",
     "create": "Create",
     "add": "Add",
+    "add_column": "Add Column",
+    "add_column_description": "Enter a name for the new column",
+    "column_name": "Column Name",
     "new": "New",
     "save": "Save",
     "reset": "Reset",
@@ -60,7 +63,7 @@
     "download": "Download",
     "rename": "Rename",
     "processing": "Processing...",
-    "saving": "Saving",
+    "saving": "Saving changes...",
     "loading": "Loading",
     "success": "Success",
     "complete": "Complete",
@@ -92,6 +95,7 @@
     "view": "View",
     "show-all": "Show All",
     "hide-all": "Hide All",
+    "columns": "Columns",
     "toggle-columns": "Toggle Columns",
     "no-results": "No Results",
     "of": "of",
@@ -142,7 +146,7 @@
     "share": "Share",
     "confirm_delete_title": "Delete confirmation",
     "confirm_delete_description": "Are you sure you want to delete this item? This action is permanent and irreversible.",
-    "saved": "Saved",
+    "saved": "All changes saved",
     "unsaved": "Unsaved",
     "previous": "Previous",
     "next": "Next",
@@ -161,7 +165,121 @@
     "context": "Context",
     "enter_context": "Enter context",
     "generate": "Generate",
-    "enabled": "Enabled"
+    "enabled": "Enabled",
+    "explanation": "Explanation",
+    "generate_explanation": "Generate explanation",
+    "products": "Products",
+    "solutions": "Solutions",
+    "pricing": "Pricing",
+    "about": "About",
+    "contact": "Contact",
+    "ai-assistant": "AI Assistant",
+    "lms": "LMS",
+    "calendar": "Calendar",
+    "documents": "Documents",
+    "drive": "Drive",
+    "crm": "CRM",
+    "inventory": "Inventory",
+    "finance": "Finance",
+    "mail": "Mail",
+    "tasks": "Tasks",
+    "workflows": "Workflows",
+    "education": "Education",
+    "restaurants": "Restaurants",
+    "pharmacies": "Pharmacies",
+    "agencies": "Agencies",
+    "realestate": "Real Estate",
+    "blog": "Blog",
+    "blog-description": "Read our latest articles and updates.",
+    "documentation-description": "Find detailed documentation and guides.",
+    "education-description": "Solutions tailored for educational institutions.",
+    "retail-description": "Solutions tailored for retail businesses.",
+    "hospitality-description": "Solutions tailored for hospitality businesses.",
+    "construction-description": "Solutions tailored for construction businesses.",
+    "restaurants-description": "Manage your restaurant operations efficiently.",
+    "manufacturing-description": "Solutions tailored for manufacturing businesses.",
+    "pharmacies-description": "Streamline pharmacy management and services.",
+    "realestate-description": "Optimize your real estate business operations.",
+    "meet-together-description": "Schedule meetings effortlessly across time zones and teams.",
+    "ai-assistant-description": "Leverage AI to automate tasks and enhance productivity.",
+    "lms-description": "Deliver and track educational content effectively.",
+    "calendar-description": "Comprehensive calendar and event management system.",
+    "documents-description": "AI-powered document management and collaboration.",
+    "drive-description": "Secure cloud storage with seamless file sharing.",
+    "crm-description": "Build and maintain valuable customer relationships.",
+    "inventory-description": "Streamline inventory control and stock management.",
+    "branding-description": "Get Tuturuuu's branding assets and guidelines.",
+    "github-description": "View our open-source projects on GitHub.",
+    "finance-description": "Track finances and manage transactions efficiently.",
+    "mail-description": "Powerful email and communication management.",
+    "tasks-description": "Organize and track projects with clarity.",
+    "workflows-description": "Automate and optimize your business processes.",
+    "scroll_to_explore": "Scroll to explore",
+    "features": "Features",
+    "learn_more": "Learn more",
+    "pricing_hook": "Simple, transparent pricing",
+    "usage_based_pricing": "Usage-Based Pricing",
+    "usage_based_pricing_description": "Pay only for what you use. All plans include core features with different usage limits.",
+    "faq": "Frequently Asked Questions",
+    "unlink": "Unlink",
+    "explore": "Explore",
+    "actions": "Actions",
+    "clear_all": "Clear All",
+    "clear_all_title": "Clear All Content",
+    "clear_all_description": "Are you sure you want to clear all content? This action cannot be undone.",
+    "clearing": "Clearing",
+    "retail": "Retail",
+    "manufacturing": "Manufacturing",
+    "hospitality": "Hospitality",
+    "construction": "Construction",
+    "changelog": "Changelog",
+    "changelog-description": "Stay up to date with our latest product updates and improvements.",
+    "about-description": "Learn more about Tuturuuu and our mission.",
+    "careers-description": "Join our team and help us build the future of Tuturuuu.",
+    "contributors": "Contributors",
+    "contributors-description": "Meet the people who make Tuturuuu possible.",
+    "security": "Security",
+    "security-description": "Learn about our security practices and commitments.",
+    "pitch-description": "Tuturuuu's business plan pitch deck.",
+    "product-updates": "Product Updates",
+    "product-updates-title": "Product Updates",
+    "product-updates-description": "Stay up to date with the latest features, improvements, and fixes in our product journey.",
+    "new-features": "New Features",
+    "improvements": "Improvements",
+    "bug-fixes": "Bug Fixes",
+    "stay-updated": "Stay in the Loop",
+    "changelog-subscribe-description": "Subscribe to our newsletter to get notified about new updates and features as they roll out.",
+    "enter-email": "Enter your email",
+    "subscribe": "Subscribe",
+    "view-full-documentation": "View full documentation",
+    "company": "Company",
+    "pitch": "Pitch Deck",
+    "careers": "Careers",
+    "not_whitelisted": "Not whitelisted",
+    "email_added": "Email added",
+    "error_adding_email": "Error adding email",
+    "history": "History",
+    "public_document": "Public document",
+    "private_document": "Private document",
+    "last_saved": "Last saved: {time}",
+    "unsaved_changes": "You have unsaved changes",
+    "error_saving": "Error saving changes",
+    "save_failed": "Failed to save changes",
+    "retry_save": "Retry saving",
+    "auto_save_enabled": "Auto-save enabled",
+    "save_status": "Save status",
+    "document_status": "Document status",
+    "updating": "Updating...",
+    "name_updated": "Name updated successfully",
+    "error_updating_name": "Error updating name",
+    "visibility_updated": "Visibility updated successfully",
+    "error_updating_visibility": "Error updating visibility",
+    "error_deleting": "Error deleting document",
+    "domain_added": "Domain added",
+    "error_adding_domain": "Failed to add domain",
+    "rewise-description": "Access a wide-range of enterprise AI-powered tools.",
+    "nova-description": "Prompt engineering playground for everyone.",
+    "waitlist": "Waitlist"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -188,8 +306,8 @@
     "next-year": "Next year"
   },
   "home": {
-    "headline-p1": "Take control of your workflow,",
-    "headline-p2": "supercharged by AI",
+    "headline": "Your intelligent shortcut",
+    "subheadline": "Take control of workflows, supercharged by AI",
     "get-started": "Get Started",
     "features-lead": "What can you do with NCT Hub?",
     "features-1-title": "Powered by AI",
@@ -203,7 +321,8 @@
     "features-5-title": "Robust finance tracker",
     "features-5-subtitle": "Track your finances, and keep your team in the loop, so you can focus on what matters.",
     "features-6-title": "Open-source",
-    "features-6-subtitle": "NCT Hub is open-source, so you can contribute to the project, and make it better for everyone."
+    "features-6-subtitle": "NCT Hub is open-source, so you can contribute to the project, and make it better for everyone.",
+    "join-waitlist": "Join waitlist"
   },
   "branding": {
     "branding": "Branding",
@@ -288,7 +407,10 @@
     "delete_plan_warning": "This action cannot be undone. The plan and all related information will be permanently deleted from NCT Hub.",
     "select_users_to_filter": "Select users to filter",
     "show_qr_code": "Show QR Code",
-    "qr_code_description": "Scan this QR code to quickly access the meet together plan details."
+    "qr_code_description": "Scan this QR code to quickly access the meet together plan details.",
+    "save_credentials": "Save credentials for this plan",
+    "save_credentials_desc": "Automatically log in when you return to this plan",
+    "logged_in_as": "Logged in as"
   },
   "invite": {
     "invited-to": "You have been invited to join",
@@ -324,23 +446,42 @@
     "resetting": "Resetting"
   },
   "login": {
-    "email_placeholder": "username@example.com",
-    "email_description": "Enter your email address to get started with NCT Hub.",
-    "otp_code": "Verification code",
-    "otp_description": "Enter the verification code sent to your email address.",
+    "welcome": "Welcome Back",
+    "email": "Email",
+    "email_placeholder": "Enter your email",
+    "email_description": "We'll send a verification code to your email",
+    "otp_code": "Verification Code",
+    "otp_description": "Enter the code sent to your email",
+    "verify": "Verify",
+    "continue": "Continue with Email",
+    "success": "Success",
+    "otp_sent": "Verification code sent to your email",
+    "failed": "Failed",
+    "failed_to_send": "Failed to send verification code",
+    "failed_to_verify": "Failed to verify code",
+    "invalid_verification_code": "Invalid verification code",
+    "continue_with_google": "Continue with Google",
+    "continue_with_github": "Continue with GitHub",
     "open_inbucket": "Open Inbucket",
     "open_gmail": "Open Gmail",
     "open_outlook": "Open Outlook",
-    "success": "Success!",
-    "failed": "Failed!",
-    "otp_sent": "We've sent a verification code to your email address.",
-    "otp_verified": "Your email address has been verified.",
-    "failed_to_send": "Failed to send verification code.",
-    "failed_to_verify": "Failed to verify your email address.",
-    "invalid_verification_code": "Invalid verification code.",
-    "resend": "Resend",
-    "processing": "Processing...",
-    "continue": "Continue"
+    "processing": "Processing",
+    "resend": "Resend code",
+    "or_continue_with": "Or continue with",
+    "or": "or",
+    "passwordless": "Passwordless",
+    "with_password": "Password",
+    "password": "Password",
+    "password_placeholder": "Enter your password",
+    "sign_in": "Sign In",
+    "verification_code": "Verification Code",
+    "check_email": "Enter the 6-digit code sent to your email",
+    "invalid_credentials": "Invalid email or password",
+    "forgot_password": "Forgot your password?",
+    "password_min_length": "Password must be at least 8 characters",
+    "powered-by": "Tuturuuu powers the authentication system behind {domain}.",
+    "choose_sign_in_method": "Choose your preferred sign-in method",
+    "sign_in_to_your_account": "Sign in to your account to continue"
   },
   "signup": {
     "get-started": "Get started",
@@ -407,7 +548,19 @@
     "slides": "Slides",
     "mail": "Mail",
     "tasks": "Tasks",
-    "education": "Education"
+    "education": "Education",
+    "models": "Models",
+    "datasets": "Datasets",
+    "pipelines": "Pipelines",
+    "cron": "Cron Jobs",
+    "workouts": "Workouts",
+    "readings": "Readings",
+    "diet_and_nutrition": "Diet & Nutrition",
+    "progress": "Progress",
+    "metrics": "Metrics",
+    "crawlers": "Crawlers",
+    "queues": "Queues",
+    "time_tracker": "Time tracker"
   },
   "team-tabs": {
     "overview": "Overview",
@@ -504,8 +657,10 @@
   "user-data-table": {
     "id": "ID",
     "avatar_url": "Avatar",
+    "name": "Name",
     "full_name": "Full Name",
     "display_name": "Display Name",
+    "description": "Description",
     "email": "Email",
     "phone": "Phone",
     "gender": "Gender",
@@ -541,7 +696,11 @@
     "applying": "Applying...",
     "selected": "Selected",
     "linked_products": "Linked products",
-    "remove-from-group": "Remove from group"
+    "remove-from-group": "Remove from group",
+    "url": "URL",
+    "columns": "Columns",
+    "rows": "Rows",
+    "type": "Type"
   },
   "email-data-table": {
     "id": "ID",
@@ -573,6 +732,14 @@
     "is_public": "Public",
     "is_published": "Published",
     "modules": "Modules",
+    "created_at": "Created At"
+  },
+  "quiz-set-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "linked_modules": "Linked Modules",
+    "is_public": "Public",
+    "is_published": "Published",
     "created_at": "Created At"
   },
   "quiz-data-table": {
@@ -741,6 +908,35 @@
     "user_count": "User count",
     "created_at": "Created at"
   },
+  "cron-job-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "description": "Description",
+    "schedule": "Schedule",
+    "status": "Status",
+    "last_run": "Last run",
+    "next_run": "Next run",
+    "inactive": "Inactive",
+    "active": "Active",
+    "running": "Running",
+    "failed": "Failed",
+    "created_at": "Created at"
+  },
+  "cron-execution-data-table": {
+    "id": "ID",
+    "job": "Job",
+    "status": "Status",
+    "started_at": "Started at",
+    "finished_at": "Finished at",
+    "created_at": "Created at"
+  },
+  "crawled-url-data-table": {
+    "id": "ID",
+    "url": "URL",
+    "html": "HTML",
+    "markdown": "Markdown",
+    "created_at": "Created at"
+  },
   "ws-home": {
     "home": "Home",
     "description_p1": "A quick summary of the",
@@ -833,7 +1029,9 @@
     "create_key": "Create API Key",
     "edit_key": "Edit API Key",
     "add_new_workspace_key": "Add a new API key for this workspace.",
-    "edit_existing_workspace_key": "Edit an existing API key for this workspace."
+    "edit_existing_workspace_key": "Edit an existing API key for this workspace.",
+    "no_api_keys_found": "No API keys found",
+    "select_api_key": "Select an API key"
   },
   "ws-reports": {
     "report": "Report",
@@ -1312,7 +1510,10 @@
     "current": "Current",
     "day": "Day",
     "4-days": "4 Days",
-    "week": "Week"
+    "week": "Week",
+    "month": "Month",
+    "view": "View",
+    "this-month": "This month"
   },
   "documents": {
     "documents": "Documents",
@@ -1381,7 +1582,9 @@
     "discounts": "Discounts",
     "rounding": "Rounding",
     "print": "Print",
-    "download_image": "Download image"
+    "download_image": "Download image",
+    "add_promotion": "Add promotion",
+    "files": "Files"
   },
   "ai_chat": {
     "welcome_to": "Welcome to",
@@ -1396,6 +1599,8 @@
     "example_4_prompt": "Summarize the following article for a 2nd grader: \n\n",
     "example_5": "Draft an email",
     "example_5_prompt": "Draft an email to my boss about the following: \n\n",
+    "example_6": "Generate a poem",
+    "example_6_prompt": "Generate a poem about the following: \n\n",
     "prompt": "Enter a prompt to start chatting with NCT Hub AI.",
     "prompt_placeholder": "Type your prompt here...",
     "chats": "Chats",
@@ -1451,7 +1656,11 @@
     "multiple_choice": "Multiple choice",
     "paragraph_answers": "Paragraph answers",
     "ai_models": "AI Models",
-    "quizzes": "Quizzes"
+    "quizzes": "Quizzes",
+    "chatbots": "Chatbots",
+    "my_chatbots": "My Chatbots",
+    "my_chatbots_description": "Manage your custom chatbots with your own prompts and responses.",
+    "new_chatbot": "New chatbot"
   },
   "crud-ops": {
     "ops": "Operations",
@@ -1496,7 +1705,9 @@
     "new_avatar": "New avatar",
     "upload_avatar": "Upload avatar",
     "remove_avatar": "Remove avatar",
-    "save_avatar": "Save avatar"
+    "save_avatar": "Save avatar",
+    "reset-password": "Reset password",
+    "view-full-settings": "View full settings"
   },
   "settings-appearance": {
     "appearance": "Appearance",
@@ -1521,7 +1732,11 @@
     "prompts": "Prompts",
     "workflows": "Workflows",
     "pipelines": "Pipelines",
-    "pipeline": "Pipeline"
+    "pipeline": "Pipeline",
+    "executions": "Executions",
+    "jobs": "Jobs",
+    "cron_jobs": "Jobs",
+    "uncrawled": "Uncrawled"
   },
   "workspace-settings-layout": {
     "workspace": "Workspace",
@@ -1564,7 +1779,10 @@
     "create": "Create invoice",
     "create_description": "Create a new invoice",
     "edit": "Edit invoice",
-    "edit_description": "Edit an existing invoice"
+    "edit_description": "Edit an existing invoice",
+    "new_invoice": "New invoice",
+    "standard": "Standard invoice",
+    "subscription": "Subscription invoice"
   },
   "ws-inventory-products": {
     "plural": "Products",
@@ -1672,7 +1890,9 @@
     "courses": "Courses",
     "materials": "Learning Materials",
     "quizzes": "Quizzes",
-    "flashcards": "Flashcards"
+    "flashcards": "Flashcards",
+    "quiz-sets": "Quiz Sets",
+    "attempts": "Quiz Attempts"
   },
   "ws-courses": {
     "plural": "Courses",
@@ -1739,5 +1959,1103 @@
     "module_content": "Module Content",
     "no_youtube_links": "No YouTube links yet.",
     "resource_preview_unavailable": "Resource preview is unavailable"
-  }
+  },
+  "ws-ai-whitelist-emails": {
+    "plural": "Whitelisted emails",
+    "singular": "Whitelisted email",
+    "description": "Whitelisted emails are used to allow specific email addresses to access AI features.",
+    "create": "Create whitelisted email",
+    "create_description": "Create a new whitelisted email"
+  },
+  "ws-ai-chatbots": {
+    "plural": "Chatbots",
+    "singular": "Chatbot",
+    "description": "View custom chatbots created by the community.",
+    "create": "Create chatbot",
+    "create_description": "Create a new chatbot"
+  },
+  "ws-quiz-sets": {
+    "plural": "Quiz Sets",
+    "singular": "Quiz Set",
+    "description": "Quiz sets are used to group quizzes together for learning purposes.",
+    "create": "Create quiz set",
+    "create_description": "Create a new quiz set",
+    "name": "Set name",
+    "edit": "Edit set",
+    "link-quizzes": "Link Quizzes",
+    "link-modules": "Link modules"
+  },
+  "slogan": {
+    "title": "Ready to get started?",
+    "description": "Join the waitlist to be among the first to experience our intelligent business management platform when it launches.",
+    "join_waitlist": "Join waitlist"
+  },
+  "contact": {
+    "title": "Contact us",
+    "description": "Have questions or need assistance? We're here to help. Choose your preferred way to reach us.",
+    "get_in_touch": "Get in Touch",
+    "founder_contact": "Founder Contact",
+    "founder_description": "Founder & CEO",
+    "on_github": "on GitHub",
+    "send_us_a_message": "Send us a Message",
+    "form": {
+      "name_label": "Name",
+      "name_placeholder": "Your name",
+      "subject_label": "Subject",
+      "subject_placeholder": "How can we help?",
+      "message_label": "Message",
+      "message_placeholder": "Your message...",
+      "submit_button": "Send Message",
+      "sent_message": "Thank you for contacting us! We'll get back to you as soon as possible."
+    }
+  },
+  "marketing": {
+    "solutions": {
+      "education": {
+        "education_solutions": "Education Solutions",
+        "title": "Transform Education with AI",
+        "description": "Empower educators and students with intelligent tools for personalized learning, seamless collaboration, and enhanced educational outcomes.",
+        "trusted_section_title": "Trusted by Educational Institutions",
+        "trusted_section_description": "Our platform is designed to meet the highest standards of security and privacy, ensuring a safe learning environment for students of all ages.",
+        "features_title": "Powerful Educational Tools",
+        "features": {
+          "smart_learning_management": "Smart Learning Management",
+          "smart_learning_management_desc": "AI-powered LMS that adapts to each student's learning style and pace.",
+          "interactive_classrooms": "Interactive Classrooms",
+          "interactive_classrooms_desc": "Engage students with real-time collaboration and virtual classroom tools.",
+          "progress_tracking": "Progress Tracking",
+          "progress_tracking_desc": "Comprehensive analytics to monitor student performance and engagement.",
+          "course_creation": "Course Creation",
+          "course_creation_desc": "Easy-to-use tools for creating and managing educational content.",
+          "virtual_classrooms": "Virtual Classrooms",
+          "virtual_classrooms_desc": "Seamless video conferencing integration for remote learning.",
+          "ai assessment": "AI Assessment",
+          "ai assessment_desc": "Automated grading and personalized feedback powered by AI."
+        },
+        "use_cases_title": "Solutions For Every Level",
+        "use_cases": {
+          "K_12_education": "K-12 Education",
+          "K_12_education_desc": "Comprehensive tools for primary and secondary education management.",
+          "K_12_education_item1": "Interactive lessons",
+          "K_12_education_item2": "Parent communication",
+          "K_12_education_item3": "Homework management",
+          "K_12_education_item4": "Progress reports",
+          "higher_education": "Higher Education",
+          "higher_education_desc": "Advanced features for universities and colleges.",
+          "higher_education_item1": "Course management",
+          "higher_education_item2": "Research collaboration",
+          "higher_education_item3": "Student analytics",
+          "higher_education_item4": "Resource sharing",
+          "professional_training": "Professional Training",
+          "professional_training_desc": "Corporate training and professional development solutions.",
+          "professional_training_item1": "Skill assessments",
+          "professional_training_item2": "Certification programs",
+          "professional_training_item3": "Employee onboarding",
+          "professional_training_item4": "Performance tracking"
+        },
+        "bento_grid_title": "Learning Excellence",
+        "bento_grid_subtitle": "Comprehensive Library",
+        "bento_grid_description": "Access thousands of curated educational resources, textbooks, and multimedia content.",
+        "bento_grid_features": {
+          "global_reach": "Global Reach",
+          "global_reach_desc": "Connect with learners worldwide",
+          "gamification": "Gamification",
+          "gamification_desc": "Earn badges and certificates",
+          "smart_network": "Smart Network",
+          "smart_network_desc": "AI-powered learning paths",
+          "custom_dashboard": "Custom Dashboard",
+          "custom_dashboard_desc": "Personalized learning space"
+        },
+        "timeline_title": "Implementation Journey",
+        "timeline_steps": {
+          "step1": "Platform Setup",
+          "week1": "Week 1",
+          "step2": "Staff Training",
+          "week2": "Week 2",
+          "step3": "Data Migration",
+          "week3": "Week 3",
+          "step4": "Full Deployment",
+          "week4": "Week 4"
+        },
+        "faq": {
+          "question1": "How does the AI-powered learning system work?",
+          "answer1": "Our AI system analyzes student performance, learning patterns, and engagement levels to create personalized learning paths. It adapts in real-time to provide optimal content delivery and support.",
+          "question2": "What security measures are in place?",
+          "answer2": "We implement enterprise-grade encryption, regular security audits, and comply with FERPA and GDPR requirements to ensure student data protection.",
+          "question3": "Can it integrate with existing systems?",
+          "answer3": "Yes, our platform offers robust API integration capabilities and supports common education technology standards for seamless integration with existing systems.",
+          "question4": "What kind of support do you offer?",
+          "answer4": "We provide 24/7 technical support, dedicated customer success managers, and comprehensive onboarding assistance. Our team also offers regular training sessions and educational webinars.",
+          "question5": "How customizable is the platform?",
+          "answer5": "The platform is highly customizable with white-labeling options, custom branding, configurable workflows, and API integrations. You can tailor the learning experience to match your institution's needs.",
+          "question6": "What are the hardware requirements?",
+          "answer6": "Our cloud-based platform works on any modern web browser. For optimal video conferencing, we recommend a stable internet connection and updated devices with camera and microphone capabilities.",
+          "question7": "How do you handle data backup?",
+          "answer7": "We maintain automated daily backups with 30-day retention, geo-redundant storage, and disaster recovery protocols. Your data is always safe and accessible."
+        }
+      }
+    }
+  },
+  "ws-models": {
+    "plural": "Models",
+    "singular": "Model",
+    "create": "Create model",
+    "create_description": "Create a new model",
+    "description": "Models are trained AI models that can be used for different tasks."
+  },
+  "ws-datasets": {
+    "plural": "Datasets",
+    "singular": "Dataset",
+    "description": "Datasets are used to train AI models.",
+    "create": "Create dataset",
+    "create_description": "Create a dataset",
+    "total_columns": "Total Columns",
+    "total_rows": "Total Rows",
+    "last_updated": "Last Updated",
+    "add_row": "Add Row",
+    "edit_row": "Edit Row",
+    "delete_row": "Delete Row",
+    "confirm_delete_row": "Are you sure you want to delete this row? This action cannot be undone.",
+    "no_data": "No data available",
+    "columns_description": "Manage the columns in your dataset, including their names, descriptions, and aliases."
+  },
+  "ws-cron": {
+    "description": "Cron jobs are used to schedule tasks to run at specific times."
+  },
+  "ws-cron-jobs": {
+    "plural": "Cron Jobs",
+    "singular": "Cron Job",
+    "create": "Create job",
+    "create_description": "Create a new job",
+    "description": "Cron jobs are used to schedule tasks to run at specific times.",
+    "edit": "Edit job",
+    "edit_description": "Edit an existing job"
+  },
+  "ws-cron-executions": {
+    "plural": "Cron Executions",
+    "singular": "Cron Execution",
+    "description": "Cron executions are used to view the history of cron jobs."
+  },
+  "landing": {
+    "headline": "Your productivity suite",
+    "subheadline": "All in one place, supercharged by AI.",
+    "features": {
+      "title": "Features",
+      "subtitle": "Discover powerful features designed to enhance your productivity and streamline your workflow.",
+      "ai_powered": {
+        "title": "Powered by AI",
+        "description": "Brainstorm and organize your ideas at the speed of thought, with our smart AI-powered tools."
+      },
+      "collaboration": {
+        "title": "Team Collaboration",
+        "description": "Seamless communication and collaboration features for your entire team."
+      },
+      "task_management": {
+        "title": "Task Management",
+        "description": "Create tasks, assign them to your team, and track their progress, all in one place."
+      },
+      "document_management": {
+        "title": "Document Management",
+        "description": "Write and maintain your documents with ease, with an intuitive and powerful document editor."
+      },
+      "finance_tracking": {
+        "title": "Finance Tracking",
+        "description": "Track your finances, and keep your team in the loop, so you can focus on what matters."
+      },
+      "open_source": {
+        "title": "Open Source",
+        "description": "Tuturuuu is open-source, so you can contribute to the project, and make it better for everyone."
+      },
+      "calendar": {
+        "description": "AI-powered scheduling that learns your preferences and optimizes your calendar automatically.",
+        "details": {
+          "1": "Intelligent scheduling based on priorities and deadlines",
+          "2": "Focus time protection during your peak productivity hours",
+          "3": "Automatic rescheduling when conflicts arise",
+          "4": "Team availability matching for optimal meeting times",
+          "5": "Natural language input for quick event creation"
+        }
+      },
+      "tasks": {
+        "description": "Seamlessly integrated task management that prioritizes your work and schedules it intelligently.",
+        "details": {
+          "1": "Automatic task prioritization based on deadlines and importance",
+          "2": "Workload balancing to prevent overcommitment",
+          "3": "Smart scheduling of tasks in your calendar",
+          "4": "Progress tracking and completion statistics",
+          "5": "Team task assignment and collaboration"
+        }
+      },
+      "meetings": {
+        "description": "Integrated video conferencing with AI-powered features to make your meetings more productive.",
+        "details": {
+          "1": "One-click meeting creation from calendar events",
+          "2": "AI-generated meeting notes and action items",
+          "3": "Real-time transcription and translation",
+          "4": "Smart follow-ups and task creation",
+          "5": "Meeting analytics and insights"
+        }
+      },
+      "chat": {
+        "description": "Built-in team chat that integrates seamlessly with your calendar, tasks, and meetings.",
+        "details": {
+          "1": "Real-time messaging with team members",
+          "2": "Direct integration with calendar events and tasks",
+          "3": "File sharing and collaboration",
+          "4": "AI-powered chat summaries and highlights",
+          "5": "Smart notifications and reminders"
+        }
+      },
+      "mail": {
+        "description": "Intelligent email management that integrates with your calendar and tasks for seamless productivity.",
+        "details": {
+          "1": "AI-powered email categorization and prioritization",
+          "2": "Smart replies and follow-up suggestions",
+          "3": "Automatic task creation from emails",
+          "4": "Meeting scheduling directly from emails",
+          "5": "Email analytics and insights"
+        }
+      }
+    },
+    "products": {
+      "title": "Products",
+      "subtitle": "Explore our suite of powerful products designed to help you work smarter, not harder.",
+      "ai_assistant": {
+        "title": "AI Assistant",
+        "description": "Smart automation and intelligent insights powered by advanced AI."
+      },
+      "meet_together": {
+        "title": "Meet Together",
+        "description": "Virtual meetings, team collaboration, and project management in one place."
+      },
+      "calendar": {
+        "title": "Calendar",
+        "description": "Smart scheduling and time management tools."
+      },
+      "documents": {
+        "title": "Documents",
+        "description": "Centralized document storage, sharing, and collaboration."
+      },
+      "drive": {
+        "title": "Drive",
+        "description": "Secure cloud storage for all your business files and data."
+      },
+      "crm": {
+        "title": "CRM",
+        "description": "Build and maintain valuable customer relationships."
+      },
+      "finance": {
+        "title": "Finance",
+        "description": "Comprehensive financial management and reporting."
+      },
+      "inventory": {
+        "title": "Inventory",
+        "description": "Real-time inventory tracking and management."
+      },
+      "tasks": {
+        "title": "Tasks",
+        "description": "Streamlined task tracking and team coordination."
+      },
+      "workflows": {
+        "title": "Workflows",
+        "description": "Automated business processes and workflows."
+      }
+    },
+    "solutions": {
+      "title": "For Every Industry",
+      "subtitle": "Tailored solutions for every industry, from small businesses to large enterprises.",
+      "industries": {
+        "manufacturing": "Manufacturing",
+        "healthcare": "Healthcare",
+        "education": "Education",
+        "retail": "Retail",
+        "real_estate": "Real Estate",
+        "hospitality": "Hospitality",
+        "construction": "Construction",
+        "pharmacies": "Pharmacies"
+      }
+    },
+    "benefits": {
+      "title": "Benefits",
+      "subtitle": "Experience the advantages of an all-in-one platform designed for modern businesses.",
+      "for_businesses": {
+        "title": "For Businesses",
+        "items": [
+          "Reduced operational costs",
+          "Improved efficiency and productivity",
+          "Better decision-making with AI insights",
+          "Enhanced team collaboration",
+          "Streamlined workflows",
+          "Scalable solutions for growth"
+        ]
+      },
+      "for_teams": {
+        "title": "For Teams",
+        "items": [
+          "Seamless communication",
+          "Real-time collaboration",
+          "Automated task management",
+          "Centralized information access",
+          "Integrated tools and features",
+          "Enhanced productivity"
+        ]
+      }
+    },
+    "how_it_works": {
+      "title": "How It Works",
+      "subtitle": "Get started with Tuturuuu in just a few simple steps",
+      "steps": {
+        "step1": {
+          "title": "Sign Up",
+          "description": "Create your account in seconds and get started with a free trial"
+        },
+        "step2": {
+          "title": "Set Up Your Workspace",
+          "description": "Customize your workspace and invite your team members"
+        },
+        "step3": {
+          "title": "Start Collaborating",
+          "description": "Begin using our powerful tools to boost your productivity"
+        },
+        "step4": {
+          "title": "Scale & Grow",
+          "description": "Expand your usage as your business grows with our flexible platform"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "What Our Users Say",
+      "subtitle": "Join thousands of satisfied users who trust Tuturuuu",
+      "items": [
+        {
+          "quote": "Tuturuuu has transformed how we work. The AI features are incredible!",
+          "author": "Sarah Chen",
+          "role": "Product Manager",
+          "company": "TechCorp"
+        },
+        {
+          "quote": "The best all-in-one solution we've found for our team's needs.",
+          "author": "Michael Rodriguez",
+          "role": "CEO",
+          "company": "StartupX"
+        },
+        {
+          "quote": "Intuitive interface and powerful features. Highly recommended!",
+          "author": "Emily Johnson",
+          "role": "Team Lead",
+          "company": "DesignPro"
+        }
+      ]
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "subtitle": "Choose the plan that's right for you",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "save_percent": "Save 20%",
+      "plans": {
+        "free": {
+          "title": "Free",
+          "description": "Perfect for individuals and small teams",
+          "price": "$0",
+          "period": "/month",
+          "features": [
+            "Up to 3 team members",
+            "Basic AI features",
+            "2GB storage",
+            "Community support"
+          ]
+        },
+        "pro": {
+          "title": "Pro",
+          "description": "Great for growing teams",
+          "price": "$12",
+          "period": "/user/month",
+          "features": [
+            "Unlimited team members",
+            "Advanced AI features",
+            "20GB storage per user",
+            "Priority support",
+            "Advanced analytics",
+            "Custom integrations"
+          ]
+        },
+        "enterprise": {
+          "title": "Enterprise",
+          "description": "For large organizations",
+          "price": "Custom",
+          "period": "",
+          "features": [
+            "Everything in Pro",
+            "Unlimited storage",
+            "24/7 dedicated support",
+            "Custom AI models",
+            "Advanced security",
+            "SLA guarantee"
+          ]
+        }
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Find answers to common questions about Tuturuuu",
+      "items": [
+        {
+          "question": "What is Tuturuuu?",
+          "answer": "Tuturuuu is an all-in-one workspace platform that combines AI-powered productivity tools, team collaboration features, and business management solutions."
+        },
+        {
+          "question": "How does the pricing work?",
+          "answer": "We offer flexible pricing plans starting from free. Our Pro plan is priced per user, and Enterprise plans are customized to your needs."
+        },
+        {
+          "question": "Can I try before I buy?",
+          "answer": "Yes! You can start with our free plan or request a demo of our Pro features."
+        },
+        {
+          "question": "How secure is my data?",
+          "answer": "We use enterprise-grade encryption and follow industry best practices to ensure your data is always secure."
+        },
+        {
+          "question": "Do you offer customer support?",
+          "answer": "Yes, we provide customer support through various channels depending on your plan, from community support to 24/7 dedicated assistance."
+        }
+      ]
+    },
+    "ai_revolution": {
+      "title": "AI Revolution",
+      "subtitle": "Experience the future of work with AI that understands, adapts, and grows with you",
+      "items": [
+        {
+          "title": "Think Faster",
+          "description": "AI-powered insights and automation help you make decisions 10x faster"
+        },
+        {
+          "title": "Work Smarter",
+          "description": "Let AI handle repetitive tasks while you focus on what matters most"
+        },
+        {
+          "title": "Grow Bigger",
+          "description": "Scale your operations effortlessly with AI that learns and adapts"
+        },
+        {
+          "title": "Stay Ahead",
+          "description": "Always be at the cutting edge with continuously evolving AI capabilities"
+        }
+      ]
+    },
+    "universal_value": {
+      "title": "For Everyone, Everywhere",
+      "subtitle": "From solo entrepreneurs to global enterprises, Tuturuuu adapts to your needs",
+      "categories": {
+        "business_size": {
+          "title": "Any Size",
+          "items": [
+            "Solopreneurs & Freelancers",
+            "Small & Medium Businesses",
+            "Large Enterprises",
+            "Global Organizations"
+          ]
+        },
+        "industries": {
+          "title": "Any Industry",
+          "items": [
+            "Technology & Innovation",
+            "Healthcare & Wellness",
+            "Education & Learning",
+            "Retail & E-commerce",
+            "Manufacturing & Production",
+            "Services & Consulting",
+            "Creative & Entertainment",
+            "Non-profit & Social Impact"
+          ]
+        },
+        "use_cases": {
+          "title": "Any Goal",
+          "items": [
+            "Streamline Operations",
+            "Boost Productivity",
+            "Enhance Collaboration",
+            "Drive Innovation",
+            "Improve Customer Experience",
+            "Scale Globally",
+            "Reduce Costs",
+            "Achieve Sustainability"
+          ]
+        }
+      }
+    },
+    "ai_features": {
+      "title": "AI at Its Core",
+      "subtitle": "Every feature is enhanced by cutting-edge artificial intelligence",
+      "features": [
+        {
+          "title": "Smart Automation",
+          "description": "Automate complex workflows with AI that learns your preferences"
+        },
+        {
+          "title": "Intelligent Insights",
+          "description": "Get actionable recommendations based on your data and industry trends"
+        },
+        {
+          "title": "Natural Collaboration",
+          "description": "Work with AI that understands context and communicates naturally"
+        },
+        {
+          "title": "Predictive Analytics",
+          "description": "Anticipate challenges and opportunities with AI-powered forecasting"
+        },
+        {
+          "title": "Adaptive Learning",
+          "description": "AI that continuously improves based on your team's usage patterns"
+        },
+        {
+          "title": "Global Intelligence",
+          "description": "Access insights from worldwide data while maintaining privacy"
+        }
+      ]
+    },
+    "success_metrics": {
+      "title": "Real Impact",
+      "subtitle": "Join thousands of organizations achieving remarkable results",
+      "metrics": [
+        {
+          "value": "10x",
+          "label": "Faster Decision Making"
+        },
+        {
+          "value": "80%",
+          "label": "Time Saved on Routine Tasks"
+        },
+        {
+          "value": "50%",
+          "label": "Reduction in Operating Costs"
+        },
+        {
+          "value": "3x",
+          "label": "Increase in Team Productivity"
+        }
+      ]
+    },
+    "transformation": {
+      "title": "Transform Your Work",
+      "subtitle": "Experience the power of AI-driven transformation",
+      "steps": [
+        {
+          "title": "Start Instantly",
+          "description": "Get up and running in minutes with intuitive onboarding"
+        },
+        {
+          "title": "Scale Effortlessly",
+          "description": "Grow from one to thousands of users without friction"
+        },
+        {
+          "title": "Evolve Continuously",
+          "description": "Stay ahead with AI that learns and improves every day"
+        }
+      ]
+    },
+    "title_p1": "Your Complete",
+    "title_p2": "Productivity Suite",
+    "description": "Tuturuuu unifies your calendar, tasks, meetings, chat, and email in one intelligent workspace powered by AI.",
+    "cta": "Get Early Access",
+    "calendar": "Calendar",
+    "tasks": "Tasks",
+    "meetings": "Meetings",
+    "chat": "Chat",
+    "email": "Email",
+    "tuturuuu_workspace": "Tuturuuu Workspace",
+    "today": "Today",
+    "month": "Month",
+    "team_sync": "Team sync",
+    "team_sync_time": "10:00 - 11:00 AM • All team members available",
+    "quarterly_report": "Quarterly Report",
+    "task": "Task",
+    "quarterly_report_time": "Due in 3 days • 4 hours estimated • Medium priority",
+    "client_proposal": "Client Proposal",
+    "client_proposal_time": "Due tomorrow • 2 hours estimated • Auto-scheduled",
+    "my_tasks": "My Tasks",
+    "add_task": "Add task",
+    "filter": "Filter",
+    "finalize_q2_marketing_strategy": "Finalize Q2 marketing strategy",
+    "3-hours": "3 hours",
+    "high_priority": "High priority",
+    "review_product_design_mockups": "Review product design mockups",
+    "2-hours": "2 hours",
+    "medium_priority": "Medium priority",
+    "prepare_for_team_meeting": "Prepare for team meeting",
+    "1-hour": "1 hour",
+    "low_priority": "Low priority",
+    "ai_suggestion": "AI Suggestion",
+    "ai_suggestion_description": "Schedule \"Finalize Q2 marketing strategy\" for tomorrow morning when your focus is highest.",
+    "upcoming_meetings": "Upcoming Meetings",
+    "new_meeting": "New meeting",
+    "today_at_10_am": "Today, 10:00 AM",
+    "4-participants": "4 participants",
+    "join_tuturuuu": "Join with Tuturuuu",
+    "view_details": "View details",
+    "client_presentation": "Client Presentation",
+    "tomorrow_at_2_pm": "Tomorrow, 02:00 PM",
+    "2-participants": "2 participants",
+    "prepare": "Prepare",
+    "tuturuuu_features": "Tuturuuu Features",
+    "tuturuuu_features_description": "AI-generated meeting notes, real-time transcription, and smart follow-ups.",
+    "team_chat": "Team Chat",
+    "new_chat": "New chat",
+    "marketing_project": "Marketing Project",
+    "mp": "MP",
+    "5-members": "5 members",
+    "3-online": "3 online",
+    "alex": "Alex",
+    "alex-initials": "A",
+    "has_everyone_reviewed_the_latest_campaign_mockups": "Has everyone reviewed the latest campaign mockups?",
+    "10_15_am": "10:15 AM",
+    "you": "You",
+    "yes_ive_added_my_comments_in_the_shared_document": "Yes, I've added my comments in the shared document.",
+    "10_17_am": "10:17 AM",
+    "you-initials": "Y",
+    "ben": "Ben",
+    "ben-initials": "B",
+    "ill_finish_my_review_by_eod_need_to_coordinate_with_the_design_team_first": "I'll finish my review by EOD. Need to coordinate with the design team first.",
+    "10_20_am": "10:20 AM",
+    "type_a_message": "Type a message...",
+    "smart_mail": "Smart Mail",
+    "compose": "Compose",
+    "ac-initials": "AC",
+    "alex_chen": "Alex Chen",
+    "10_30_am": "10:30 AM",
+    "project_update_q2_marketing_campaign": "Project Update: Q2 Marketing Campaign",
+    "hi_team_i_wanted_to_share_the_latest_updates_on_our_q2_marketing_campaign_weve_made_significant_progress": "Hi team, I wanted to share the latest updates on our Q2 marketing campaign. We've made significant progress...",
+    "st-initials": "ST",
+    "sarah_thompson": "Sarah Thompson",
+    "yesterday": "Yesterday",
+    "client_feedback_on_proposal": "Client feedback on proposal",
+    "the_client_has_reviewed_our_proposal_and_has_some_feedback_overall_theyre_impressed_with_our_approach": "The client has reviewed our proposal and has some feedback. Overall, they're impressed with our approach...",
+    "search_emails": "Search emails...",
+    "jd-initials": "JD",
+    "john_doe": "John Doe",
+    "may_12": "May 12",
+    "meeting_follow_up_action_items": "Meeting follow-up: Action items",
+    "following_our_meeting_yesterday_ive_compiled_a_list_of_action_items_for_each_team_member": "Following our meeting yesterday, I've compiled a list of action items for each team member...",
+    "smart_mail_features_description": "AI-powered email categorization, smart replies, and follow-up reminders.",
+    "smart_mail_features": "Smart Mail Features",
+    "stats": {
+      "the": "The",
+      "impact": "Impact",
+      "real_results_from_real_users_who_have_transformed_their_productivity": "Real results from real users who have transformed their productivity.",
+      "hours_saved_weekly": "Hours Saved Weekly",
+      "our_users_report_saving_over_10_hours_every_week_on_scheduling_and_task_management": "Our users report saving over 10 hours every week on scheduling and task management",
+      "reduction_in_scheduling_time": "Reduction in Scheduling Time",
+      "tuturuuu_reduces_the_time_spent_on_scheduling_by_85_compared_to_manual_methods": "Tuturuuu reduces the time spent on scheduling by 85% compared to manual methods",
+      "user_satisfaction": "User Satisfaction",
+      "94_of_our_users_report_feeling_less_stressed_and_more_in_control_of_their_time": "94% of our users report feeling less stressed and more in control of their time",
+      "productivity_increase": "Productivity Increase",
+      "users_report_completing_3x_more_meaningful_work_after_switching_to_tuturuuu": "Users report completing 3x more meaningful work after switching to Tuturuuu"
+    },
+    "one_platform_complete_productivity": "One Platform, Complete Productivity.",
+    "tuturuuu_unifies_all_your_productivity_tools_in_one_intelligent_workspace": "Tuturuuu unifies all your productivity tools in one intelligent workspace.",
+    "week": "Week",
+    "tomorrow": "Tomorrow",
+    "due": "Due",
+    "live": "Live",
+    "inbox": "Inbox",
+    "3-new": "3 new",
+    "may_10": "May 10",
+    "seamless_integration": "Seamless Integration",
+    "tuturuuu_brings_all_your_productivity_tools_together_in_one_unified_workspace": "Tuturuuu brings all your productivity tools together in one unified workspace",
+    "everything_works_together": "Everything Works Together",
+    "no_more_switching_between_apps_or_losing_context": "No more switching between apps or losing context. Tuturuuu integrates your calendar, tasks, meetings, chat, and email in one intelligent workspace.",
+    "unified_workspace": "Unified Workspace",
+    "calendar_tasks": "Calendar + Tasks",
+    "tasks_automatically_appear_in_your_calendar_scheduled_at_the_optimal_time_based_on_priority_and_deadline": "Tasks automatically appear in your calendar, scheduled at the optimal time based on priority and deadline.",
+    "tuturuuu_meetings_integrate_with_chat_for_pre_meeting_discussions_and_post_meeting_follow_ups": "Tuturuuu meetings integrate with chat for pre-meeting discussions and post-meeting follow-ups.",
+    "meetings_chat": "Meetings + Chat",
+    "email_calendar": "Email + Calendar",
+    "emails_can_be_converted_to_calendar_events_or_tasks_with_a_single_click": "Emails can be converted to calendar events or tasks with a single click.",
+    "create_and_assign_tasks_directly_from_chat_conversations_keeping_everything_in_context": "Create and assign tasks directly from chat conversations, keeping everything in context.",
+    "chat_tasks": "Chat + Tasks",
+    "finalize_report": "Finalize report",
+    "review_design": "Review design",
+    "latest_updates_on_project": "Latest updates on project...",
+    "2_new_messages_from_clients": "2 new messages from clients...",
+    "strategic_advantages": "Strategic Advantages",
+    "why_tuturuuu_is_a_game_changer_for_your_productivity": "Why Tuturuuu is a game-changer for your productivity",
+    "stop_switching_between_apps_and_losing_context_tuturuuu_brings_your_calendar_tasks_meetings_chat_and_email_into_one_intelligent_workspace": "Stop switching between apps and losing context. Tuturuuu brings your calendar, tasks, meetings, chat, and email into one intelligent workspace.",
+    "strategic_impact": "Strategic Impact:",
+    "reduce_context_switching_by_70": "Reduce context switching by 70%",
+    "save_5_hours_weekly_on_app_switching": "Save 5+ hours weekly on app switching",
+    "maintain_complete_workflow_visibility": "Maintain complete workflow visibility",
+    "tuturuuu_s_advanced_ai_understands_your_priorities_deadlines_and_preferences_to_optimize_your_schedule_automatically": "Tuturuuu's advanced AI understands your priorities, deadlines, and preferences to optimize your schedule automatically.",
+    "ai_powered_intelligence": "AI-Powered Intelligence",
+    "reduce_scheduling_time_by_85": "Reduce scheduling time by 85%",
+    "ensure_high_priority_work_gets_done": "Ensure high-priority work gets done",
+    "prevent_burnout_through_workload_balancing": "Prevent burnout through workload balancing",
+    "join_thousands_of_professionals_who_have_reclaimed_their_time_and_reduced_scheduling_stress_with_tuturuuu": "Join thousands of professionals who have reclaimed their time and reduced scheduling stress with Tuturuuu.",
+    "ready_to_transform_your_calendar_experience": "Ready to Transform Your Calendar Experience?",
+    "get_early_access": "Get Early Access",
+    "limited_spots_available_for_our_q3_2025_early_access_program": "Limited spots available for our Q3 2025 early access program.",
+    "tuturuuu_automatically_blocks_out_time_for_deep_work_based_on_your_productivity_patterns_ensuring_you_have_uninterrupted_time_for_meaningful_work": "Tuturuuu automatically blocks out time for deep work based on your productivity patterns, ensuring you have uninterrupted time for meaningful work.",
+    "focus_time_protection": "Focus Time Protection",
+    "gain_10_hours_of_deep_work_weekly": "Gain 10+ hours of deep work weekly",
+    "increase_quality_of_work_output": "Increase quality of work output",
+    "reduce_stress_from_constant_interruptions": "Reduce stress from constant interruptions",
+    "tuturuuu_meetings_go_beyond_video_conferencing_with_ai_generated_notes_automatic_task_creation_and_smart_follow_ups": "Tuturuuu meetings go beyond video conferencing with AI-generated notes, automatic task creation, and smart follow-ups.",
+    "enhanced_meetings": "Enhanced Meetings",
+    "eliminate_manual_note_taking": "Eliminate manual note-taking",
+    "ensure_100_follow_through_on_action_items": "Ensure 100% follow-through on action items",
+    "reduce_meeting_time_by_30": "Reduce meeting time by 30%",
+    "productive_communication": "Productive Communication",
+    "tuturuuu_s_chat_and_email_systems_are_designed_for_productivity_with_task_creation_meeting_scheduling_and_ai_powered_summaries": "Tuturuuu's chat and email systems are designed for productivity, with task creation, meeting scheduling, and AI-powered summaries.",
+    "reduce_email_processing_time_by_60": "Reduce email processing time by 60%",
+    "never_miss_important_messages_or_action_items": "Never miss important messages or action items",
+    "streamline_team_communication_and_collaboration": "Streamline team communication and collaboration",
+    "tuturuuu_learns_from_your_habits_and_preferences_over_time_getting_smarter_and_more_personalized_to_make_you_increasingly_productive": "Tuturuuu learns from your habits and preferences over time, getting smarter and more personalized to make you increasingly productive.",
+    "continuous_improvement": "Continuous Improvement",
+    "productivity_increases_month_over_month": "Productivity increases month over month",
+    "personalized_experience_based_on_your_work_style": "Personalized experience based on your work style",
+    "ongoing_roi_as_the_system_gets_smarter": "Ongoing ROI as the system gets smarter",
+    "reclaim_your_time_for_what_matters": "Reclaim Your Time for What Matters",
+    "reclaim_your_time_for_what_matters_description": "Tuturuuu doesn't just manage your calendar—it gives you back time for meaningful work and life.",
+    "time_reclaimed_dashboard": "Time Reclaimed Dashboard",
+    "meaningful_work_time": "Meaningful Work Time",
+    "current": "Current",
+    "from_last_month": "from last month",
+    "task_completion_rate": "Task Completion Rate",
+    "score": "Score",
+    "outstanding": "Outstanding",
+    "time_reclaimed": "Time Reclaimed",
+    "hours": "hours",
+    "this_week": "This week",
+    "workload_balance": "Workload Balance",
+    "optimal": "Optimal",
+    "deadline_success": "Deadline Success",
+    "reduce_time_spent_on_scheduling_by_85": "Reduce time spent on scheduling by 85%",
+    "never_miss_a_deadline_again": "Never miss a deadline again",
+    "balance_workload_to_prevent_burnout": "Balance workload to prevent burnout",
+    "gain_10_hours_of_meaningful_work_time_weekly": "Gain 10+ hours of meaningful work time weekly",
+    "eliminate_the_stress_of_manual_prioritization": "Eliminate the stress of manual prioritization",
+    "ensure_team_alignment_without_endless_emails": "Ensure team alignment without endless emails",
+    "make_time_for_what_truly_matters_to_you": "Make time for what truly matters to you",
+    "simple_transparent_pricing": "Simple, Transparent Pricing",
+    "choose_the_plan_that_works_best_for_you_and_your_team": "Choose the plan that works best for you and your team.",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "most_popular": "Most Popular",
+    "custom": "Custom",
+    "savings_annually": "savings annually",
+    "features_include": "Features include",
+    "year": "Year",
+    "free": "Free",
+    "perfect_for_individuals_just_getting_started_with_ai_scheduling": "Perfect for individuals just getting started with AI scheduling.",
+    "get_started_free": "Get Started Free",
+    "pro": "Pro",
+    "advanced_features_for_professionals_who_value_their_time": "Advanced features for professionals who value their time.",
+    "coming_soon": "Coming soon",
+    "enterprise": "Enterprise",
+    "powerful_tools_for_teams_to_coordinate_and_optimize_schedules": "Powerful tools for teams to coordinate and optimize schedules.",
+    "email_notifications": "Email notifications",
+    "basic_ai_scheduling": "Basic AI scheduling",
+    "calendar_integration": "Calendar integration",
+    "3_meetings_per_day": "3 meetings per day",
+    "team_availability_view": "Team availability view",
+    "advanced_ai_features": "Advanced AI features",
+    "unlimited_meetings": "Unlimited meetings",
+    "priority_support": "Priority support",
+    "everything_in_pro": "Everything in Pro",
+    "team_calendar_management": "Team calendar management",
+    "admin_controls": "Admin controls",
+    "analytics_dashboard": "Analytics dashboard",
+    "api_access": "API access",
+    "custom_integrations": "Custom integrations",
+    "dedicated_support": "Dedicated support",
+    "sso_advanced_security": "SSO & advanced security",
+    "sla_guarantees": "SLA guarantees",
+    "who_benefits_from_tuturuuu": "Who Benefits from Tuturuuu?",
+    "tuturuuu_helps_people_from_all_walks_of_life_reclaim_their_time_and_reduce_scheduling_stress": "Tuturuuu helps people from all walks of life reclaim their time and reduce scheduling stress",
+    "pain_points": "Pain points",
+    "our_solution": "Our solution",
+    "balance_client_meetings_project_deadlines_and_personal_commitments_without_the_stress_of_manual_scheduling": "Balance client meetings, project deadlines, and personal commitments without the stress of manual scheduling.",
+    "busy_professionals": "Busy Professionals",
+    "no_time_for_deep_work": "No time for deep work",
+    "missing_deadlines": "Missing deadlines",
+    "constantly_overbooked": "Constantly overbooked",
+    "tuturuuu_automatically_balances_your_workload_protects_focus_time_and_ensures_you_never_miss_a_deadline_again": "Tuturuuu automatically balances your workload, protects focus time, and ensures you never miss a deadline again.",
+    "coordinate_team_schedules_optimize_meeting_times_and_ensure_everyone_has_balanced_workloads": "Coordinate team schedules, optimize meeting times, and ensure everyone has balanced workloads.",
+    "team_leaders": "Team Leaders",
+    "uneven_workload_distribution": "Uneven workload distribution",
+    "team_burnout": "Team burnout",
+    "difficult_to_find_meeting_times": "Difficult to find meeting times",
+    "tuturuuu_analyzes_team_availability_suggests_optimal_meeting_slots_and_helps_distribute_work_evenly_across_your_team": "Tuturuuu analyzes team availability, suggests optimal meeting slots, and helps distribute work evenly across your team.",
+    "manage_classes_study_sessions_assignments_and_social_activities_with_intelligent_scheduling": "Manage classes, study sessions, assignments, and social activities with intelligent scheduling.",
+    "students": "Students",
+    "poor_work_life_balance": "Poor work-life balance",
+    "missed_assignments": "Missed assignments",
+    "last_minute_cramming": "Last-minute cramming",
+    "tuturuuu_helps_you_plan_ahead_for_assignments_allocates_proper_study_time_and_ensures_you_maintain_a_healthy_balance": "Tuturuuu helps you plan ahead for assignments, allocates proper study time, and ensures you maintain a healthy balance.",
+    "juggle_multiple_clients_and_projects_while_maintaining_control_of_your_schedule_and_work_life_balance": "Juggle multiple clients and projects while maintaining control of your schedule and work-life balance.",
+    "freelancers": "Freelancers",
+    "tuturuuu_helps_you_manage_multiple_clients_balance_your_workload_and_ensure_you_meet_all_deadlines_without_overcommitting": "Tuturuuu helps you manage multiple clients, balance your workload, and ensure you meet all deadlines without overcommitting.",
+    "inconsistent_workload": "Inconsistent workload",
+    "difficulty_tracking_multiple_projects": "Difficulty tracking multiple projects",
+    "client_deadline_conflicts": "Client deadline conflicts",
+    "balance_family_responsibilities_work_commitments_and_personal_time_with_intelligent_scheduling": "Balance family responsibilities, work commitments, and personal time with intelligent scheduling.",
+    "parents": "Parents",
+    "no_personal_time": "No personal time",
+    "constant_overwhelm": "Constant overwhelm",
+    "missed_family_events": "Missed family events",
+    "tuturuuu_helps_you_prioritize_family_time_while_ensuring_work_commitments_are_met_giving_you_back_control_of_your_life": "Tuturuuu helps you prioritize family time while ensuring work commitments are met, giving you back control of your life.",
+    "before_and_after_tuturuuu": "Before & After Tuturuuu",
+    "see_the_transformation_in_your_calendar_and_life_when_you_switch_to_ai_powered_scheduling": "See the transformation in your calendar and life when you switch to AI-powered scheduling",
+    "split_view": "Split View",
+    "before": "Before",
+    "after": "After",
+    "traditional_calendar": "Traditional Calendar",
+    "chaotic": "Chaotic",
+    "manually_scheduling_everything_takes_hours_each_week": "Manually scheduling everything takes hours each week",
+    "constant_context_switching_between_tasks": "Constant context switching between tasks",
+    "important_tasks_get_buried_under_urgent_but_less_important_ones": "Important tasks get buried under urgent but less important ones",
+    "no_protection_for_focus_time_or_deep_work": "No protection for focus time or deep work",
+    "constantly_feeling_overwhelmed_and_behind": "Constantly feeling overwhelmed and behind",
+    "8_meetings_overbooked": "8 meetings (overbooked!)",
+    "3_scheduling_conflicts": "3 scheduling conflicts",
+    "0_protected_focus_time": "0 protected focus time",
+    "tuturuuu_ai_calendar": "Tuturuuu AI Calendar",
+    "optimized": "Optimized",
+    "ai_automatically_schedules_tasks_based_on_priority_and_deadline": "AI automatically schedules tasks based on priority and deadline",
+    "similar_tasks_are_grouped_to_minimize_context_switching": "Similar tasks are grouped to minimize context switching",
+    "important_tasks_are_prioritized_over_urgent_but_less_important_ones": "Important tasks are prioritized over urgent but less important ones",
+    "focus_time_is_protected_and_scheduled_during_your_peak_productivity_hours": "Focus time is protected and scheduled during your peak productivity hours",
+    "feeling_in_control_and_accomplishing_more_meaningful_work": "Feeling in control and accomplishing more meaningful work",
+    "4_optimized_meetings": "4 optimized meetings",
+    "4_protected_focus_blocks": "4 protected focus blocks",
+    "4_prioritized_tasks": "4 prioritized tasks",
+    "time_spent_on_manual_scheduling": "Time spent on manual scheduling",
+    "hours_of_deep_work_gained_weekly": "Hours of deep work gained weekly",
+    "users_report_reduced_stress": "Users report reduced stress",
+    "competitive_advantage": "Competitive Advantage",
+    "why_choose_tuturuuu": "Why Choose Tuturuuu?",
+    "see_how_tuturuuu_compares_to_traditional_productivity_tools_and_why_its_the_smarter_choice": "See how Tuturuuu compares to traditional productivity tools and why it's the smarter choice",
+    "discover_the_key_differences": "Discover the key differences",
+    "vs": "vs",
+    "feature": "Feature",
+    "basic_scheduling": "Basic scheduling",
+    "calendar_sharing": "Calendar sharing",
+    "ai_powered_scheduling": "AI-powered scheduling",
+    "workload_balancing": "Workload balancing",
+    "task_integration": "Task integration",
+    "team_availability_matching": "Team availability matching",
+    "google_calendar_description": "Google Calendar is great for basic scheduling, but lacks the AI-powered features that make Tuturuuu truly intelligent. Tuturuuu automatically optimizes your schedule based on priorities, deadlines, and workload.",
+    "show_less": "Show less",
+    "show_all_features": "Show all features",
+    "ready_to_upgrade_your_workflow": "Ready to upgrade your workflow?",
+    "get_started": "Get Started",
+    "calendar_comparison": "Calendar Comparison",
+    "team_meeting": "Team meeting",
+    "10_00_am_11_00_am": "10:00 AM - 11:00 AM",
+    "client_call": "Client Call",
+    "1_00_pm_2_00_pm": "1:00 PM - 2:00 PM",
+    "3_00_pm_4_00_pm": "3:00 PM - 4:00 PM",
+    "project_review": "Project Review",
+    "no_focus_time_protection": "No focus time protection",
+    "focus_time": "Focus Time",
+    "9_00_am_11_00_am": "9:00 AM - 11:00 AM",
+    "11_30_am_12_30_pm": "11:30 AM - 12:30 PM",
+    "2_00_pm_3_00_pm": "2:00 PM - 3:00 PM",
+    "ai_optimized_for_focus_time": "AI optimized for focus time",
+    "tuturuuu_advantages": "Tuturuuu Advantages:",
+    "automatically_protects_focus_time_for_deep_work_based_on_your_preferences": "Automatically protects focus time for deep work based on your preferences",
+    "balances_workload_to_prevent_burnout_and_overcommitment": "Balances workload to prevent burnout and overcommitment",
+    "intelligently_schedules_meetings_when_team_energy_is_highest_for_more_productive_collaboration": "Intelligently schedules meetings when team energy is highest for more productive collaboration",
+    "integrates_tasks_directly_into_your_calendar_with_smart_prioritization": "Integrates tasks directly into your calendar with smart prioritization",
+    "meeting_comparison": "Meeting Comparison",
+    "video_conference": "Video Conference",
+    "basic_video_conferencing": "Basic video conferencing",
+    "screen_sharing": "Screen sharing",
+    "no_ai_meeting_notes": "No AI meeting notes",
+    "no_automatic_task_creation": "No automatic task creation",
+    "ai_enhanced_video_conference": "AI-Enhanced Video Conference",
+    "advanced_video_conferencing": "Advanced video conferencing",
+    "ai_generated_meeting_notes": "AI-generated meeting notes",
+    "automatic_task_creation": "Automatic task creation",
+    "smart_follow_ups": "Smart follow-ups",
+    "ai_automatically_generates_meeting_notes_and_action_items": "AI automatically generates meeting notes and action items",
+    "creates_tasks_directly_from_meeting_discussions": "Creates tasks directly from meeting discussions",
+    "sends_smart_follow_ups_to_ensure_tasks_are_completed": "Sends smart follow-ups to ensure tasks are completed",
+    "provides_meeting_analytics_to_improve_productivity": "Provides meeting analytics to improve productivity",
+    "video_conferencing": "Video conferencing",
+    "meeting_analytics": "Meeting analytics",
+    "google_meet_description": "Google Meet provides basic video conferencing, but Tuturuuu meetings go further with AI-powered features like automatic note-taking, task creation from meetings, and smart follow-ups to ensure nothing falls through the cracks.",
+    "real_time_messaging": "Real-time messaging",
+    "file_sharing": "File sharing",
+    "group_chats": "Group chats",
+    "ai_chat_summaries": "AI chat summaries",
+    "task_creation_from_chat": "Task creation from chat",
+    "meeting_scheduling": "Meeting scheduling",
+    "messenger_description": "Messenger is great for casual chats, but Tuturuuu's chat system is designed for productivity. Create tasks directly from conversations, schedule meetings with a click, and get AI-generated summaries of important discussions.",
+    "chatgpt_description": "ChatGPT provides general AI assistance, but Tuturuuu's AI is specifically designed for productivity. It understands your calendar, tasks, and workflow to provide contextual assistance that makes you more productive.",
+    "gmail_description": "Gmail handles your emails, but Tuturuuu's smart mail system intelligently prioritizes messages, creates tasks from emails, and ensures important communications never fall through the cracks.",
+    "natural_language_understanding": "Natural language understanding",
+    "ai_assistance": "AI assistance",
+    "task_management": "Task management",
+    "email_integration": "Email integration",
+    "basic_categorization": "Basic categorization",
+    "email_management": "Email management",
+    "ai_powered_prioritization": "AI-powered prioritization",
+    "task_creation_from_emails": "Task creation from emails",
+    "product_comparison": "Product comparison",
+    "can_everyone_review_the_design_mockups": "Can everyone review the design mockups?",
+    "ill_take_a_look_this_afternoon": "I'll take a look this afternoon",
+    "basic_messaging": "Basic messaging",
+    "no_task_creation": "No task creation",
+    "no_calendar_integration": "No calendar integration",
+    "task_created": "Task Created",
+    "review_design_mockups_due_today": "Review design mockups due today",
+    "advanced_messaging": "Advanced messaging",
+    "create_tasks_directly_from_chat_conversations": "Create tasks directly from chat conversations",
+    "schedule_meetings_with_team_members_in_one_click": "Schedule meetings with team members in one click",
+    "ai_generates_summaries_of_important_discussions": "AI generates summaries of important discussions",
+    "seamless_integration_with_calendar_and_tasks": "Seamless integration with calendar and tasks",
+    "schedule_a_meeting_with_the_marketing_team_next_tuesday": "Schedule a meeting with the marketing team next Tuesday",
+    "user": "User",
+    "i_can_help_you_draft_a_message_to_schedule_that_meeting_but_i_cant_directly_access_your_calendar_or_send_invites": "I can help you draft a message to schedule that meeting, but I can't directly access your calendar or send invites.",
+    "general_ai_assistance": "General AI assistance",
+    "no_calendar_access": "No calendar access",
+    "no_task_management": "No task management",
+    "ive_scheduled_a_meeting_with_the_marketing_team_for_next_tuesday_at_2pm_when_everyone_is_available_ive_sent_calendar_invites_to_all_team_members": "I've scheduled a meeting with the marketing team for next Tuesday at 2pm, when everyone is available. I've sent calendar invites to all team members.",
+    "productivity_focused_ai": "Productivity-focused AI",
+    "full_calendar_integration": "Full calendar integration",
+    "complete_task_management": "Complete task management",
+    "ai_specifically_designed_for_productivity_and_time_management": "AI specifically designed for productivity and time management",
+    "direct_access_to_your_calendar_tasks_and_meetings": "Direct access to your calendar, tasks, and meetings",
+    "understands_your_work_context_and_preferences": "Understands your work context and preferences",
+    "takes_actions_on_your_behalf_to_save_you_time": "Takes actions on your behalf to save you time",
+    "hi_would_you_be_available_for_a_meeting_next_week_to_discuss": "Hi, would you be available for a meeting next week to discuss...",
+    "client_meeting_request": "Client Meeting Request",
+    "here_s_the_latest_update_on_the_project_we_need_to_finalize": "Here's the latest update on the project. We need to finalize...",
+    "project_update": "Project Update",
+    "basic_email_management": "Basic email management",
+    "limited_calendar_integration": "Limited calendar integration",
+    "meeting_scheduled": "Meeting scheduled",
+    "tuesday_2pm": "Tuesday, 2pm",
+    "finalize_project_details": "Finalize project details",
+    "smart_email_management": "Smart email management",
+    "seamless_calendar_integration": "Seamless calendar integration",
+    "ai_automatically_identifies_action_items_in_emails": "AI automatically identifies action items in emails",
+    "creates_tasks_and_calendar_events_directly_from_emails": "Creates tasks and calendar events directly from emails",
+    "smart_follow_up_reminders_for_important_emails": "Smart follow-up reminders for important emails",
+    "prioritizes_emails_based_on_urgency_and_importance": "Prioritizes emails based on urgency and importance"
+  },
+  "ai-whitelist": {
+    "add_email": "Add email",
+    "add_domain": "Add domain"
+  },
+  "ws-ai-whitelist-domains": {
+    "plural": "Whitelisted domains",
+    "singular": "Whitelisted domain",
+    "description": "Whitelisted domains are used to allow specific domains to access AI features.",
+    "create": "Create whitelisted domain",
+    "create_description": "Create a whitelisted domain"
+  },
+  "ws-crawlers": {
+    "plural": "Crawlers",
+    "singular": "Crawler",
+    "description": "Crawlers are used to scrape data from websites.",
+    "create": "Create crawler",
+    "create_description": "Create a new crawler",
+    "uncrawled": "Uncrawled",
+    "domains": "Domains",
+    "connections": "Connections",
+    "crawled": "Crawled"
+  },
+  "ws-pipelines": {
+    "plural": "Pipelines",
+    "singular": "Pipeline",
+    "description": "Pipelines are used to run programmable workflows.",
+    "create": "Create pipeline",
+    "create_description": "Create a new pipeline"
+  },
+  "ws-queues": {
+    "plural": "Queues",
+    "singular": "Queue",
+    "description": "Queues are used to manage tasks and jobs.",
+    "create": "Create queue",
+    "create_description": "Create a new queue"
+  },
+  "aurora": {
+    "statistical_models": "Statistical models",
+    "ml_models": "Machine learning models",
+    "last_updated": "Last updated",
+    "current_price": "Current price",
+    "forecast_range": "Forecast range",
+    "high": "High",
+    "low": "Low",
+    "average": "Average",
+    "trend": "Trend",
+    "volatility": "Price volatility",
+    "90_confidence_high": "90% Confidence (High)",
+    "90_confidence_lo": "90% Confidence (Low)",
+    "ml_price_prediction": "ML Model Price Prediction",
+    "slope": "slope",
+    "prediction_insights": "Prediction insights",
+    "relative": "relative",
+    "strong": "Strong",
+    "moderate": "Moderate",
+    "weak": "Weak",
+    "model_comparison": "Model comparison",
+    "select_date": "Select date",
+    "model_correlation": "Model correlation",
+    "no_data": "No data.",
+    "model_performance": "Model Performance",
+    "stable": "Stable",
+    "improving": "Improving",
+    "declining": "Declining",
+    "best_performing": "Best performing",
+    "average_performance": "Average performance",
+    "worst_performing": "Worst performing",
+    "scaled_model": "(Scaled)",
+    "weighted_score": "Weighted Score",
+    "turning_point_accuracy": "Turning Point Accuracy",
+    "directional_accuracy": "Directional Accuracy",
+    "accuracy": "Accuracy",
+    "consistency": "Consistency",
+    "overall": "Overall"
+  },
+  "aurora_select_model": "Select model",
+  "workflow": {
+    "how_tuturuuu_works": "How Tuturuuu Works",
+    "our_intelligent_workflow_makes_productivity_effortless": "Our intelligent workflow makes productivity effortless",
+    "create_tasks_naturally_description": "Type or speak in natural language to create tasks. Tuturuuu's AI understands context, deadlines, and priorities.",
+    "create_tasks_naturally": "Create Tasks Naturally",
+    "natural_language_input": "Natural Language Input",
+    "schedule_a_meeting_with_the_marketing_team_next_tuesday_at_10am_high_priority": "\"Schedule a meeting with the marketing team next Tuesday at 10am, high priority\"",
+    "task_created_and_scheduled": "Task created and scheduled",
+    "ai_analyzes_optimizes": "AI Analyzes & Optimizes",
+    "ai_analyzes_optimizes_description": "Our AI analyzes your tasks, priorities, deadlines, and team availability to create the optimal schedule.",
+    "ai_analysis": "AI Analysis",
+    "priority_analysis": "Priority analysis",
+    "high_priority": "High priority",
+    "all_available": "All Available",
+    "team_availability": "Team Availability",
+    "tuesday_10_00_am": "Tuesday, 10:00 AM",
+    "optimal_time_slot": "Optimal Time Slot",
+    "everything_in_one_place": "Everything in One Place",
+    "everything_in_one_place_description": "Calendar events, tasks, meetings, chat, and email all work together in a unified workspace.",
+    "unified_workspace": "Unified Workspace",
+    "calendar": "Calendar",
+    "tasks": "Tasks",
+    "meetings": "Meetings",
+    "chat": "Chat",
+    "email": "Email",
+    "continuous_improvement": "Continuous Improvement",
+    "continuous_improvement_description": "Tuturuuu learns from your habits and preferences to get better over time, making you more productive every day.",
+    "learning_adaptation": "Learning & Adaptation",
+    "productivity_pattern": "Productivity Pattern",
+    "morning_focus": "Morning Focus",
+    "meeting_preference": "Meeting Preference",
+    "afternoons": "Afternoons",
+    "task_completion_rate": "Task Completion Rate",
+    "next_step": "Next step",
+    "start_over": "Start over"
+  },
+  "benefits:": "Benefits:"
 }

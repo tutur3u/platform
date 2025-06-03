@@ -1,0 +1,102 @@
+---
+title: 'Use Few-Shot Examples Effectively'
+description: 'Explore zero-shot vs few-shot prompting, and how to use examples to teach the model desired output patterns and styles.'
+---
+
+You can guide the model by including examples in your prompt that demonstrate the ideal response. The model learns from these examples by recognizing patterns and structures, then applies that understanding to generate its own output. Prompts with a few examples are known as few-shot prompts, while those with none are called zero-shot prompts. Few-shot prompts are particularly useful for shaping the tone, format, scope, and overall structure of the model’s replies. Using clear, diverse examples helps the model stay focused and deliver more accurate results.
+
+It’s generally best to include a few examples in your prompt. Without them, the model’s responses may be less precise. In fact, if your examples are well-chosen and illustrative, you may not even need additional instructions at all.
+
+## Zero-shot vs few-shot prompts
+
+The zero-shot prompt below instructs the model to select the most suitable explanation.
+
+**Example Prompt:**
+
+```prompt
+Select the most accurate explanation for the following question:
+
+Question: What causes earthquakes?
+Option 1: Earthquakes occur when tectonic plates shift suddenly along fault lines, releasing energy in the form of seismic waves.
+Option 2: Earthquakes happen due to strong winds and storms shaking the ground.
+Your Answer:
+```
+
+**Response:**
+
+```response
+Option 1 is the most accurate explanation.
+```
+
+If your goal is to get brief responses from the model, you can add examples in your prompt that highlight concise answers.
+
+In the next prompt, two sample explanations are given, showing a clear preference for shorter responses. As a result, the model is influenced by these examples and selects the more concise explanation (Explanation 2), unlike the earlier case where it chose the longer one (Explanation 1).
+
+**Example Prompt:**
+
+```prompt
+Below are some examples showing a question, explanation, and answer format:
+
+Question: Why do leaves change color in the fall?
+Explanation1: Leaves change color due to a combination of factors like temperature, light, and the reduction of chlorophyll production, which causes other pigments like carotenoids and anthocyanins to become more visible.
+Explanation2: Because chlorophyll fades, other colors in the leaves show through.
+Answer: Explanation2
+
+Question: Why do tides occur?
+Explanation1: Tides are caused primarily by the gravitational pull of the moon and the sun on Earth’s oceans.
+Explanation2: The moon’s gravity pulls ocean water, causing tides.
+Answer: Explanation2
+
+Now, using the same format and logic, answer the following:
+
+Question: Why do we see lightning before we hear thunder?
+Explanation1: Lightning travels at the speed of light, which is much faster than the speed of sound. That’s why we see the flash before we hear the thunderclap, even though they happen at the same time.
+Explanation2: Light moves faster than sound, so we see it first.
+Answer:
+```
+
+**Response:**
+
+```response
+Answer: Explanation2
+```
+
+## Determine the Right Number of Examples
+
+To get the best outcome, try different numbers of examples in your prompt. Models like Gemini can usually recognize patterns with just a few examples, but you might need to test how many are needed to achieve the result you want. Be cautious though—adding too many can cause the model to mimic the examples too closely instead of generalizing properly.
+
+**Use examples to show patterns instead of antipatterns:**
+
+It’s more effective to include examples that demonstrate the kind of response you want, rather than showing what not to do. Highlighting good examples helps the model follow the intended pattern more accurately.
+
+**🚫 Negative pattern:**
+
+```prompt
+Don’t start formal emails too casually:
+Hey there!
+Just checking in on that report.
+Let me know, okay?
+```
+
+**✅ Positive pattern:**
+
+```prompt
+Begin formal emails with a professional greeting:
+Dear Team,
+I’m writing to follow up on the report.
+Please let me know your updates by Friday.
+```
+
+## Keep Formatting Consistent Across Examples
+
+To ensure the model produces the desired output, your few-shot examples should all follow the same structure and formatting. Since the purpose of few-shot prompting is to guide the model's response format, it’s important to maintain uniformity in elements like XML tags, line breaks, whitespace, and separators between examples. Inconsistencies might lead to unpredictable results.
+
+**📝 Summary:**
+
+Use prompt-response examples to teach the model how to respond.
+
+Focus on showing clear examples of what you want, not what to avoid.
+
+Test different numbers of examples to see what works best—too few may not help, while too many could limit the model’s flexibility.
+
+Always keep the formatting consistent across all examples to guide the model accurately.

@@ -1,12 +1,11 @@
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-import type { UseChatHelpers } from '@tuturuuu/ai/types';
+import { type UseChatHelpers } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
-  ArrowDownWideNarrow,
   Bolt,
   File,
   FileText,
@@ -15,12 +14,8 @@ import {
   ImageIcon,
   Languages,
   Lock,
-  NotebookPen,
-  NotebookTabs,
   Paperclip,
-  PencilLine,
   RefreshCw,
-  SquareStack,
   X,
 } from '@tuturuuu/ui/icons';
 import {
@@ -191,13 +186,13 @@ export function PromptForm({
   //   };
   // }, [microphoneState, connectionState]);
 
-  const [responseTypes, setResponseTypes] = useState<{
-    summary?: boolean;
-    notes?: boolean;
-    multiChoiceQuiz?: boolean;
-    paragraphQuiz?: boolean;
-    flashcards?: boolean;
-  }>({});
+  // const [responseTypes, setResponseTypes] = useState<{
+  //   summary?: boolean;
+  //   notes?: boolean;
+  //   multiChoiceQuiz?: boolean;
+  //   paragraphQuiz?: boolean;
+  //   flashcards?: boolean;
+  // }>({});
 
   const [element, setElement] = useState<HTMLElement | null>(null);
 
@@ -229,7 +224,8 @@ export function PromptForm({
         className="w-full"
       >
         <div className="mb-2 flex items-center justify-between gap-2">
-          <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
+          <div />
+          {/* <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
             <Button
               size="xs"
               type="button"
@@ -335,7 +331,7 @@ export function PromptForm({
               <NotebookTabs className="mr-1 h-4 w-4" />
               {t('ai_chat.flashcards')}
             </Button>
-          </div>
+          </div> */}
 
           <div className="flex items-center">
             <Tooltip>
@@ -598,6 +594,7 @@ export function PromptForm({
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={URL.createObjectURL(f.rawFile)}
                               alt={f.rawFile.name}
@@ -682,7 +679,7 @@ export function PromptForm({
             placeholder={`${t('ai_chat.send_message')}.`}
             spellCheck={false}
             maxRows={7}
-            className="placeholder-foreground/50 scrollbar-none w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
+            className="scrollbar-none placeholder-foreground/50 focus-within:outline-hidden w-full resize-none bg-transparent py-2 sm:text-sm"
           />
         </div>
       </form>
