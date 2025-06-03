@@ -715,7 +715,7 @@ export type Database = {
           completion_id?: string;
           completion_status?: boolean;
           created_at?: string | null;
-          module_id?: string;
+          module_id: string;
           user_id?: string | null;
         };
         Update: {
@@ -7404,26 +7404,6 @@ export type Database = {
         Args: { ws_id: string; start_date?: string; end_date?: string };
         Returns: number;
       };
-      gtrgm_compress: {
-        Args: { '': unknown };
-        Returns: unknown;
-      };
-      gtrgm_decompress: {
-        Args: { '': unknown };
-        Returns: unknown;
-      };
-      gtrgm_in: {
-        Args: { '': unknown };
-        Returns: unknown;
-      };
-      gtrgm_options: {
-        Args: { '': unknown };
-        Returns: undefined;
-      };
-      gtrgm_out: {
-        Args: { '': unknown };
-        Returns: unknown;
-      };
       has_other_owner: {
         Args: { _ws_id: string; _user_id: string };
         Returns: boolean;
@@ -7538,18 +7518,6 @@ export type Database = {
           avatar_url: string;
           relevance: number;
         }[];
-      };
-      set_limit: {
-        Args: { '': number };
-        Returns: number;
-      };
-      show_limit: {
-        Args: Record<PropertyKey, never>;
-        Returns: number;
-      };
-      show_trgm: {
-        Args: { '': string };
-        Returns: string[];
       };
       transactions_have_same_abs_amount: {
         Args: { transaction_id_1: string; transaction_id_2: string };
