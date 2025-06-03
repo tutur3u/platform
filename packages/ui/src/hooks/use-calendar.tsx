@@ -45,8 +45,6 @@ const CalendarContext = createContext<{
   getCurrentEvents: (date?: Date) => CalendarEvent[];
   getUpcomingEvent: () => CalendarEvent | undefined;
   getEvents: () => CalendarEvent[];
-  allDayEvents: CalendarEvent[];
-  eventsWithoutAllDays: CalendarEvent[];
   getEventLevel: (eventId: string) => number;
   addEvent: (
     event: Omit<CalendarEvent, 'id'>
@@ -88,8 +86,6 @@ const CalendarContext = createContext<{
   getCurrentEvents: () => [],
   getUpcomingEvent: () => undefined,
   getEvents: () => [],
-  allDayEvents: [],
-  eventsWithoutAllDays: [],
   getEventLevel: () => 0,
   addEvent: () => Promise.resolve({} as CalendarEvent),
   addEmptyEvent: () => ({}) as CalendarEvent,
@@ -348,26 +344,6 @@ export const CalendarProvider = ({
   const events = useMemo(() => {
     return (data?.data ?? []) as CalendarEvent[];
   }, [data, removeDuplicateEvents]);
-
-  const eventsWithoutAllDays = useMemo(() => {
-    return events.filter((event) => {
-      const start = dayjs(event.start_at);
-      const end = dayjs(event.end_at);
-
-      const duration = Math.abs(end.diff(start, 'seconds'));
-      return duration % (24 * 60 * 60) !== 0;
-    });
-  }, [events]);
-
-  const allDayEvents = useMemo(() => {
-    return events.filter((event) => {
-      const start = dayjs(event.start_at);
-      const end = dayjs(event.end_at);
-
-      const duration = Math.abs(end.diff(start, 'seconds'));
-      return duration % (24 * 60 * 60) === 0;
-    });
-  }, [events]);
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
@@ -1552,9 +1528,6 @@ export const CalendarProvider = ({
     getUpcomingEvent,
     getEvents,
     getEventLevel,
-
-    eventsWithoutAllDays,
-    allDayEvents,
 
     addEvent,
     addEmptyEvent,
