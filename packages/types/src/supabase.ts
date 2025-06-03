@@ -701,6 +701,62 @@ export type Database = {
           },
         ];
       };
+      course_module_completion_status: {
+        Row: {
+          completed_at: string | null;
+          completion_id: string;
+          completion_status: boolean;
+          created_at: string | null;
+          module_id: string;
+          user_id: string | null;
+        };
+        Insert: {
+          completed_at?: string | null;
+          completion_id?: string;
+          completion_status?: boolean;
+          created_at?: string | null;
+          module_id: string;
+          user_id?: string | null;
+        };
+        Update: {
+          completed_at?: string | null;
+          completion_id?: string;
+          completion_status?: boolean;
+          created_at?: string | null;
+          module_id?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_module_completion_status_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_completion_status_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'course_module_completion_status_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'course_module_completion_status_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       course_module_flashcards: {
         Row: {
           created_at: string;
@@ -3531,6 +3587,178 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      time_tracking_categories: {
+        Row: {
+          color: string | null;
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          name: string;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          name: string;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_categories_color_fkey';
+            columns: ['color'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_colors';
+            referencedColumns: ['value'];
+          },
+          {
+            foreignKeyName: 'time_tracking_categories_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      time_tracking_goals: {
+        Row: {
+          category_id: string | null;
+          created_at: string | null;
+          daily_goal_minutes: number;
+          id: string;
+          is_active: boolean | null;
+          updated_at: string | null;
+          user_id: string;
+          weekly_goal_minutes: number | null;
+          ws_id: string;
+        };
+        Insert: {
+          category_id?: string | null;
+          created_at?: string | null;
+          daily_goal_minutes?: number;
+          id?: string;
+          is_active?: boolean | null;
+          updated_at?: string | null;
+          user_id: string;
+          weekly_goal_minutes?: number | null;
+          ws_id: string;
+        };
+        Update: {
+          category_id?: string | null;
+          created_at?: string | null;
+          daily_goal_minutes?: number;
+          id?: string;
+          is_active?: boolean | null;
+          updated_at?: string | null;
+          user_id?: string;
+          weekly_goal_minutes?: number | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_goals_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_goals_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      time_tracking_sessions: {
+        Row: {
+          category_id: string | null;
+          created_at: string | null;
+          description: string | null;
+          duration_seconds: number | null;
+          end_time: string | null;
+          id: string;
+          is_running: boolean | null;
+          productivity_score: number | null;
+          start_time: string;
+          tags: string[] | null;
+          task_id: string | null;
+          title: string;
+          updated_at: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          category_id?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          duration_seconds?: number | null;
+          end_time?: string | null;
+          id?: string;
+          is_running?: boolean | null;
+          productivity_score?: number | null;
+          start_time: string;
+          tags?: string[] | null;
+          task_id?: string | null;
+          title: string;
+          updated_at?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          category_id?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          duration_seconds?: number | null;
+          end_time?: string | null;
+          id?: string;
+          is_running?: boolean | null;
+          productivity_score?: number | null;
+          start_time?: string;
+          tags?: string[] | null;
+          task_id?: string | null;
+          title?: string;
+          updated_at?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_sessions_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -6554,6 +6782,64 @@ export type Database = {
         };
         Relationships: [];
       };
+      time_tracking_session_analytics: {
+        Row: {
+          category_color: string | null;
+          category_id: string | null;
+          category_name: string | null;
+          created_at: string | null;
+          day_of_week: number | null;
+          description: string | null;
+          duration_seconds: number | null;
+          end_time: string | null;
+          id: string | null;
+          is_running: boolean | null;
+          productivity_score: number | null;
+          session_date: string | null;
+          session_length_category: string | null;
+          session_month: string | null;
+          session_week: string | null;
+          start_hour: number | null;
+          start_time: string | null;
+          tags: string[] | null;
+          task_id: string | null;
+          task_name: string | null;
+          title: string | null;
+          updated_at: string | null;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_categories_color_fkey';
+            columns: ['category_color'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_colors';
+            referencedColumns: ['value'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_groups_with_tags: {
         Row: {
           archived: boolean | null;
@@ -6792,6 +7078,10 @@ export type Database = {
       };
     };
     Functions: {
+      calculate_productivity_score: {
+        Args: { duration_seconds: number; category_color: string };
+        Returns: number;
+      };
       cleanup_expired_cross_app_tokens: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
@@ -6972,6 +7262,26 @@ export type Database = {
           active_count: number;
           completed_count: number;
           latest_session_date: string;
+        }[];
+      };
+      get_session_templates: {
+        Args: {
+          workspace_id: string;
+          user_id_param: string;
+          limit_count?: number;
+        };
+        Returns: {
+          title: string;
+          description: string;
+          category_id: string;
+          task_id: string;
+          tags: string[];
+          category_name: string;
+          category_color: string;
+          task_name: string;
+          usage_count: number;
+          avg_duration: number;
+          last_used: string;
         }[];
       };
       get_submission_statistics: {
