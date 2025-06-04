@@ -2897,7 +2897,9 @@
     "display-name-min-error": "Tên hiển thị phải ít nhất {min} kí tự",
     "display-name-max-error": "Tên hiển thị phải ít hơn {max} kí tự",
     "email-invalid": "Email không hợp lệ",
-    "view-full-settings": "Xem cài đặt đầy đủ"
+    "view-full-settings": "Xem cài đặt đầy đủ",
+    "full-name": "Họ và tên",
+    "full-name-description": "Tên đầy đủ của bạn sẽ được sử dụng để hiển thị trên chứng chỉ"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
