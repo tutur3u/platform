@@ -35,6 +35,9 @@ const CalendarSyncContext = createContext<{
     }) => void
   ) => Promise<void>;
 
+  // Events-related operations
+  events: CalendarEvent[];
+
   // Show data from database to Tuturuuu
   eventsWithoutAllDays: CalendarEvent[];
   allDayEvents: CalendarEvent[];
@@ -49,6 +52,9 @@ const CalendarSyncContext = createContext<{
   currentView: 'day',
   setCurrentView: () => {},
   syncToTuturuuu: async () => {},
+
+  // Events-related operations
+  events: [],
 
   // Show data from database to Tuturuuu
   eventsWithoutAllDays: [],
@@ -587,6 +593,9 @@ export const CalendarSyncProvider = ({
     setCurrentView,
     syncToTuturuuu,
     syncToGoogle,
+
+    // Events-related operations
+    events,
 
     // Show data from database to Tuturuuu
     eventsWithoutAllDays,

@@ -1,3 +1,4 @@
+import { useCalendarSync } from './use-calendar-sync';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { Workspace } from '@tuturuuu/types/db';
@@ -237,113 +238,7 @@ export const CalendarProvider = ({
     return (await response.json()) as { data: CalendarEvent[]; count: number };
   };
 
-  // Function to detect and remove duplicate events
-  const removeDuplicateEvents = useCallback(
-    async (eventsData: CalendarEvent[]) => {
-      if (!ws?.id || !eventsData || eventsData.length === 0) return eventsData;
-
-      // Group events by their signature
-      const eventGroups = new Map<string, CalendarEvent[]>();
-
-      eventsData.forEach((event) => {
-        const signature = createEventSignature(event);
-        if (!eventGroups.has(signature)) {
-          eventGroups.set(signature, []);
-        }
-        eventGroups.get(signature)!.push(event);
-      });
-
-      // Find duplicates that need to be removed
-      const eventsToDelete: string[] = [];
-      let deletionPerformed = false;
-
-      eventGroups.forEach((eventGroup, signature) => {
-        if (eventGroup.length > 1) {
-          console.log(
-            `Found ${eventGroup.length} duplicates with signature "${signature}"`
-          );
-
-          // Sort by creation time if available, otherwise by ID
-          // Keep the first/oldest event, delete the rest
-          const sortedEvents = [...eventGroup].sort((a, b) => {
-            // If we have created_at field, use it (check with optional chaining)
-            const aCreatedAt = (a as any)?.created_at;
-            const bCreatedAt = (b as any)?.created_at;
-            if (aCreatedAt && bCreatedAt) {
-              return (
-                new Date(aCreatedAt).getTime() - new Date(bCreatedAt).getTime()
-              );
-            }
-            // Otherwise sort by ID which is often sequential
-            return a.id.localeCompare(b.id);
-          });
-
-          // Keep the first event (oldest), mark the rest for deletion
-          const eventsToRemove = sortedEvents.slice(1);
-          eventsToRemove.forEach((event) => {
-            eventsToDelete.push(event.id);
-          });
-        }
-      });
-
-      // Delete duplicate events if any were found
-      if (eventsToDelete.length > 0) {
-        try {
-          const supabase = createClient();
-          // Delete in batches of 10 to avoid request size limitations
-          const batchSize = 10;
-          for (let i = 0; i < eventsToDelete.length; i += batchSize) {
-            const batch = eventsToDelete.slice(i, i + batchSize);
-            const { error } = await supabase
-              .from('workspace_calendar_events')
-              .delete()
-              .in('id', batch);
-
-            if (error) {
-              console.error('Error deleting duplicate events:', error);
-            } else {
-              deletionPerformed = true;
-              console.log(
-                `Successfully deleted ${batch.length} duplicate events`
-              );
-            }
-          }
-
-          // If events were deleted, refresh to get updated data
-          if (deletionPerformed) {
-            queryClient.invalidateQueries({
-              queryKey: ['calendarEvents', ws?.id],
-            });
-          }
-        } catch (err) {
-          console.error('Failed to delete duplicate events:', err);
-        }
-      }
-
-      // Return the filtered list without duplicates
-      return eventsData.filter((event) => !eventsToDelete.includes(event.id));
-    },
-    [ws?.id, queryClient]
-  );
-
-  // Use React Query to fetch and cache the events
-  const { data } = useQuery({
-    queryKey: [
-      'calendarEvents',
-      ws?.id,
-      startOfRange.toISOString(),
-      endOfRange.toISOString(),
-    ],
-    queryFn: fetchCalendarEvents,
-    enabled: !!ws?.id,
-    staleTime: 1000 * 30,
-    refetchInterval: 1000 * 30,
-  });
-
-  // Process events to remove duplicates, then memoize the result
-  const events = useMemo(() => {
-    return (data?.data ?? []) as CalendarEvent[];
-  }, [data, removeDuplicateEvents]);
+  const { events } = useCalendarSync();
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
