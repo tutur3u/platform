@@ -337,8 +337,8 @@ importers:
         specifier: 15.4.0-canary.63
         version: 15.4.0-canary.63
       '@next/eslint-plugin-next':
-        specifier: 15.4.0-canary.63
-        version: 15.4.0-canary.63
+        specifier: 15.4.0-canary.65
+        version: 15.4.0-canary.65
       '@tanstack/eslint-plugin-query':
         specifier: ^5.78.0
         version: 5.78.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3)
@@ -527,8 +527,8 @@ importers:
         specifier: 15.4.0-canary.63
         version: 15.4.0-canary.63
       '@next/eslint-plugin-next':
-        specifier: 15.4.0-canary.63
-        version: 15.4.0-canary.63
+        specifier: 15.4.0-canary.65
+        version: 15.4.0-canary.65
       '@tanstack/eslint-plugin-query':
         specifier: ^5.78.0
         version: 5.78.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3)
@@ -781,8 +781,8 @@ importers:
         specifier: 15.4.0-canary.63
         version: 15.4.0-canary.63
       '@next/eslint-plugin-next':
-        specifier: 15.4.0-canary.63
-        version: 15.4.0-canary.63
+        specifier: 15.4.0-canary.65
+        version: 15.4.0-canary.65
       '@tanstack/eslint-plugin-query':
         specifier: ^5.78.0
         version: 5.78.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3)
@@ -1004,8 +1004,8 @@ importers:
         specifier: 15.4.0-canary.63
         version: 15.4.0-canary.63
       '@next/eslint-plugin-next':
-        specifier: 15.4.0-canary.63
-        version: 15.4.0-canary.63
+        specifier: 15.4.0-canary.65
+        version: 15.4.0-canary.65
       '@tanstack/eslint-plugin-query':
         specifier: ^5.78.0
         version: 5.78.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3)
@@ -1284,8 +1284,8 @@ importers:
         specifier: 15.4.0-canary.63
         version: 15.4.0-canary.63
       '@next/eslint-plugin-next':
-        specifier: 15.4.0-canary.63
-        version: 15.4.0-canary.63
+        specifier: 15.4.0-canary.65
+        version: 15.4.0-canary.65
       '@tanstack/eslint-plugin-query':
         specifier: ^5.78.0
         version: 5.78.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3)
@@ -3046,6 +3046,9 @@ packages:
 
   '@next/eslint-plugin-next@15.4.0-canary.63':
     resolution: {integrity: sha512-8ZcYnrksZQJXeeIKwROmGTEaeOYowqpKoP1RsOg308UR9fOGPhopbWL3pxdQO4usGYcLIMb2YF8lwpCeusgacQ==}
+
+  '@next/eslint-plugin-next@15.4.0-canary.65':
+    resolution: {integrity: sha512-VnprGkzFIFU/DQnKoPGDe5VqizHVf+2iqdHDWS8GVtRMNJKN41qvKSyd7frpd9lM8xnBFXtnvYGNw//cMjPhwg==}
 
   '@next/swc-darwin-arm64@15.3.3':
     resolution: {integrity: sha512-WRJERLuH+O3oYB4yZNVahSVFmtxRNjNF1I1c34tYMoJb0Pve+7/RaLAJJizyYiFhjYNGHRAE1Ri2Fd23zgDqhg==}
@@ -11124,6 +11127,10 @@ snapshots:
   '@next/env@15.4.0-canary.63': {}
 
   '@next/eslint-plugin-next@15.4.0-canary.63':
+    dependencies:
+      fast-glob: 3.3.1
+
+  '@next/eslint-plugin-next@15.4.0-canary.65':
     dependencies:
       fast-glob: 3.3.1
 
