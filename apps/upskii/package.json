@@ -79,7 +79,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.28.0",
-    "@next/bundle-analyzer": "15.4.0-canary.63",
+    "@next/bundle-analyzer": "15.4.0-canary.65",
     "@next/eslint-plugin-next": "15.4.0-canary.63",
     "@tanstack/eslint-plugin-query": "^5.78.0",
     "@tanstack/react-query-devtools": "^5.80.2",
