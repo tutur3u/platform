@@ -1,7 +1,7 @@
-import Certificate from '../certificate-page';
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import Certificate from '../certificate-page';
 
 export type CertificateProps = {
   certDetails: {
@@ -16,19 +16,38 @@ export type CertificateProps = {
 interface PageProps {
   params: Promise<{
     certificateId: string;
+    wsId: string;
   }>;
 }
 
 export default async function CertificatePage({ params }: PageProps) {
-  const { certificateId } = await params;
+  const { certificateId, wsId } = await params;
   const supabase = await createClient();
 
   // Get current user
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
   if (!user?.id) {
     redirect('/'); // Redirect to home if not authenticated
+  }
+
+
+  // Check if the certificate belongs to the workspace
+  const { data: certificate, error } = await supabase
+    .from('course_certificates')
+    .select('workspace_courses!course_certificates_course_id_fkey(ws_id)')
+    .eq('id', certificateId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching certificate:', error);
+    redirect('/');
+  }
+
+  if (certificate?.workspace_courses?.ws_id !== wsId) {
+    notFound();
   }
 
   try {
