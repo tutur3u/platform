@@ -1,7 +1,7 @@
+import Certificate from '../certificate-page';
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { notFound, redirect } from 'next/navigation';
-import Certificate from '../certificate-page';
 
 export type CertificateProps = {
   certDetails: {
@@ -32,7 +32,6 @@ export default async function CertificatePage({ params }: PageProps) {
   if (!user?.id) {
     redirect('/'); // Redirect to home if not authenticated
   }
-
 
   // Check if the certificate belongs to the workspace
   const { data: certificate, error } = await supabase
