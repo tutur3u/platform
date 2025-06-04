@@ -7,6 +7,11 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
+import { Button } from "@tuturuuu/ui/button"
+import Link from "next/link"
+import { BarChart3 } from "@tuturuuu/ui/icons"
+
+
 
 interface Props {
   children: ReactNode;
@@ -63,6 +68,14 @@ export default async function QuizSetDetailsLayout({
               />
             </div>
           </>
+        }
+        action={
+          <Button variant="outline" className="gap-2" asChild>
+            <Link href={`/${wsId}/quiz-sets/${setId}/statistics`}>
+              <BarChart3 className="h-4 w-4" />
+              {t("common.statistics")}
+            </Link>
+          </Button>
         }
       />
       <Separator className="my-4" />

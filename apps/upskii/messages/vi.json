@@ -42,7 +42,6 @@
     },
     "get-certificate": "Nhận chứng chỉ của bạn"
   },
->>>>>>> Stashed changes
   "score-calculator": {
     "test_formula": "(Số Bài Đạt / Tổng Số Bài Kiểm Tra) × 10 × Trọng Số",
     "criteria_formula": "(Tổng Điểm Tiêu Chí / (Tổng Số Tiêu Chí × 10)) × 10 × Trọng Số",

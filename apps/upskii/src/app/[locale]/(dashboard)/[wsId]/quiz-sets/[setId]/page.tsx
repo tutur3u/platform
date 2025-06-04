@@ -33,22 +33,14 @@ export default async function WorkspaceQuizzesPage({ params, searchParams }: Pro
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <FeatureSummary
-          pluralTitle={t("ws-quizzes.plural")}
-          singularTitle={t("ws-quizzes.singular")}
-          description={t("ws-quizzes.description")}
-          createTitle={t("ws-quizzes.create")}
-          createDescription={t("ws-quizzes.create_description")}
-          form={<QuizForm wsId={wsId} setId={setId} />}
-        />
-        <Button variant="outline" className="gap-2" asChild>
-          <Link href={`/${wsId}/quiz-sets/${setId}/statistics`}>
-            <BarChart3 className="h-4 w-4" />
-            {t("common.statistics")}
-          </Link>
-        </Button>
-      </div>
+      <FeatureSummary
+        pluralTitle={t("ws-quizzes.plural")}
+        singularTitle={t("ws-quizzes.singular")}
+        description={t("ws-quizzes.description")}
+        createTitle={t("ws-quizzes.create")}
+        createDescription={t("ws-quizzes.create_description")}
+        form={<QuizForm wsId={wsId} setId={setId} />}
+      />
       <Separator className="my-4" />
       <CustomDataTable
         data={data}
