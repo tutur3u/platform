@@ -378,7 +378,7 @@ export const CalendarContent = ({
   return (
     <div
       className={cn(
-        'grid h-[calc(100%-2rem-4px)] w-full',
+        'grid h-full w-full',
         view === 'month' ? 'grid-rows-[auto_1fr]' : 'grid-rows-[auto_auto_1fr]'
       )}
     >

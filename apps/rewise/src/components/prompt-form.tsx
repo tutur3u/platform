@@ -7,7 +7,6 @@ import { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   Bolt,
-  Cat,
   File,
   FileText,
   Globe,
@@ -15,9 +14,7 @@ import {
   ImageIcon,
   Languages,
   Lock,
-  Origami,
   Paperclip,
-  Rabbit,
   RefreshCw,
   Sparkles,
   X,
@@ -36,8 +33,6 @@ import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
 
-export type ResponseMode = 'short' | 'medium' | 'long';
-
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
   id: string | undefined;
@@ -54,9 +49,6 @@ export interface PromptProps
   setShowExtraOptions: React.Dispatch<React.SetStateAction<boolean>>;
   toggleChatFileUpload: () => void;
   toggleChatVisibility: () => void;
-  mode: ResponseMode;
-  // eslint-disable-next-line no-unused-vars
-  setMode: (mode: ResponseMode) => void;
   disabled?: boolean;
 }
 
@@ -76,8 +68,6 @@ export function PromptForm({
   setShowExtraOptions,
   toggleChatFileUpload,
   toggleChatVisibility,
-  mode,
-  setMode,
   disabled,
 }: PromptProps) {
   const t = useTranslations();
@@ -260,59 +250,6 @@ export function PromptForm({
                 {disabled || (
                   <Separator orientation="vertical" className="h-4" />
                 )}
-              </>
-            )}
-
-            {disabled || (
-              <>
-                <Button
-                  size="xs"
-                  type="button"
-                  variant={mode === 'short' ? undefined : 'secondary'}
-                  className={cn(
-                    'border text-xs',
-                    mode === 'short'
-                      ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
-                      : 'bg-background text-foreground/70 hover:bg-foreground/5'
-                  )}
-                  onClick={() => setMode('short')}
-                  disabled={disabled}
-                >
-                  <Rabbit className="mr-1 h-4 w-4" />
-                  {t('ai_chat.short_and_concise')}
-                </Button>
-                <Button
-                  size="xs"
-                  type="button"
-                  variant={mode === 'medium' ? undefined : 'secondary'}
-                  className={cn(
-                    'border text-xs',
-                    mode === 'medium'
-                      ? 'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                      : 'bg-background text-foreground/70 hover:bg-foreground/5'
-                  )}
-                  onClick={() => setMode('medium')}
-                  disabled={disabled}
-                >
-                  <Cat className="mr-1 h-4 w-4" />
-                  {t('ai_chat.medium_and_informative')}
-                </Button>
-                <Button
-                  size="xs"
-                  type="button"
-                  variant={mode === 'long' ? undefined : 'secondary'}
-                  className={cn(
-                    'border text-xs',
-                    mode === 'long'
-                      ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
-                      : 'bg-background text-foreground/70 hover:bg-foreground/5'
-                  )}
-                  onClick={() => setMode('long')}
-                  disabled={disabled}
-                >
-                  <Origami className="mr-1 h-4 w-4" />
-                  {t('ai_chat.long_and_detailed')}
-                </Button>
               </>
             )}
             {/* <Button

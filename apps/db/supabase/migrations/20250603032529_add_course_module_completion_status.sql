@@ -1,6 +1,6 @@
 create table "public"."course_module_completion_status" (
     "completion_id" uuid not null default gen_random_uuid(),
-    "module_id" uuid not null default gen_random_uuid(),
+    "module_id" uuid not null,
     "user_id" uuid default auth.uid(),
     "completed_at" timestamp with time zone,
     "created_at" timestamp with time zone default (now() AT TIME ZONE 'utc'::text),
@@ -68,4 +68,24 @@ grant truncate on table "public"."course_module_completion_status" to "service_r
 
 grant update on table "public"."course_module_completion_status" to "service_role";
 
+create policy "Enable users to view their own data only"
+on "public"."course_module_completion_status"
+as permissive
+for select
+to authenticated
+using ((( SELECT auth.uid() AS uid) = user_id));
 
+create policy "Enable insert for users based on user_id"
+on "public"."course_module_completion_status"
+as permissive
+for insert
+to authenticated
+with check ((( SELECT auth.uid() AS uid) = user_id));
+
+create policy "Enable update for users based on user_id"
+on "public"."course_module_completion_status"
+as permissive
+for update
+to authenticated
+using ((( SELECT auth.uid() AS uid) = user_id))
+with check ((( SELECT auth.uid() AS uid) = user_id));

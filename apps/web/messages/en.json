@@ -555,7 +555,8 @@
     "progress": "Progress",
     "metrics": "Metrics",
     "crawlers": "Crawlers",
-    "queues": "Queues"
+    "queues": "Queues",
+    "time_tracker": "Time tracker"
   },
   "team-tabs": {
     "overview": "Overview",

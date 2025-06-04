@@ -47,7 +47,7 @@ export function SubmissionCard({
   return (
     <Card
       key={submission.id}
-      className={`overflow-hidden transition-all duration-200 ${isCurrent ? 'border-primary/50 shadow-md' : 'border-muted-foreground/20'} ${showSkeleton ? 'opacity-90' : ''}`}
+      className={`overflow-hidden transition-all duration-200 ${showSkeleton ? 'opacity-90' : ''}`}
     >
       <CardHeader className="pb-3 pt-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

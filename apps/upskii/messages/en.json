@@ -1,4 +1,28 @@
 {
+  "home-hero": {
+    "welcome": "Welcome back, {username}!",
+    "badge": "Your AI-Enhanced Learning Experience",
+    "title": "Explore smart tools, interactive lessons, and seamless collaboration",
+    "cards": {
+      "courses": {
+        "title": "Courses",
+        "description": "Explore diverse subjects through structured lessons that build knowledge step-by-step."
+      },
+      "quizzes": {
+        "title": "Quizzes",
+        "description": "Strengthen what you’ve learned with interactive quizzes across various topics."
+      },
+      "challenges": {
+        "title": "Challenges",
+        "description": "Put your knowledge to the test with fun and creative real-world challenges."
+      },
+      "ai-chat": {
+        "title": "AI Chat",
+        "description": "Chat with AI for instant help, study tips, and personalized learning support."
+      }
+    },
+    "get-certificate": "Get Your Certificate"
+  },
   "score-calculator": {
     "title": "Score Calculator",
     "subtitle": "Calculate your submission score based on test results and criteria evaluation",
@@ -2871,8 +2895,16 @@
     "bio-max-length": "Bio must have at most {max} words.",
     "display-name-min-error": "Display name must be at least {min} character",
     "display-name-max-error": "Display name must be less than {max} characters",
+    "full-name-min-error": "Full name must be at least {min} character",
+    "full-name-max-error": "Full name must be less than {max} characters",
     "email-invalid": "Invalid email",
-    "view-full-settings": "View full settings"
+    "view-full-settings": "View full settings",
+    "full-name": "Full name",
+    "full-name-description": "Your full name will be used to display on certificates",
+    "profile-updated": "Profile Updated",
+    "full-name-updated": "Your full name has been successfully updated",
+    "error-occurred": "An error occurred",
+    "please-try-again": "Please try again"
   },
   "settings-appearance": {
     "appearance": "Appearance",

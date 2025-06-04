@@ -6,7 +6,7 @@ import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { Model, defaultModel, models } from '@tuturuuu/ai/models';
 import { useChat } from '@tuturuuu/ai/react';
-import { type Message, ResponseMode } from '@tuturuuu/ai/types';
+import { type Message } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { AIChat } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -47,7 +47,6 @@ const Chat = ({
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(inputModel);
-  const [mode, setMode] = useState<ResponseMode>('medium');
   const [currentUserId, setCurrentUserId] = useState<string>();
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
@@ -67,7 +66,6 @@ const Chat = ({
       body: {
         id: chat?.id,
         model: chat?.model || model?.value,
-        mode,
       },
       onResponse(response) {
         console.log('Response:', response);
@@ -369,8 +367,6 @@ const Chat = ({
         updateChat={updateChat}
         clearChat={clearChat}
         setCollapsed={setCollapsed}
-        mode={mode}
-        setMode={setMode}
         disabled={disabled}
         currentUserId={currentUserId}
         apiKey={initialApiKey ?? undefined}

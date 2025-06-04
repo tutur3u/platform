@@ -79,12 +79,12 @@ export function EmptyScreen({
   ];
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-4xl xl:max-w-6xl">
-      <div className="bg-background rounded-lg border p-4 md:p-8">
+    <div className="@lg:max-w-4xl @xl:max-w-6xl mx-auto flex max-w-2xl flex-col gap-4">
+      <div className="bg-background @md:p-8 rounded-lg border p-4">
         <div className="flex flex-col items-center justify-center text-center">
           <h1 className="mb-2 text-lg font-semibold">
             {t('welcome_to')}{' '}
-            <span className="from-dynamic-red via-dynamic-purple to-dynamic-sky bg-linear-to-r overflow-hidden bg-clip-text font-bold text-transparent">
+            <span className="bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky overflow-hidden bg-clip-text font-bold text-transparent">
               Rewise
             </span>
             .
@@ -93,7 +93,7 @@ export function EmptyScreen({
             {t('welcome_msg')}
           </p>
 
-          <div className="mt-4 grid w-full gap-2 md:grid-cols-2 xl:grid-cols-3">
+          <div className="@md:grid-cols-2 @xl:grid-cols-3 mt-4 grid w-full gap-2">
             {exampleMessages.map((message, index) => (
               <Button
                 key={index}
@@ -120,7 +120,7 @@ export function EmptyScreen({
               <h2 className="line-clamp-1 text-lg font-semibold">
                 {t('recent_conversations')}
               </h2>
-              <div className="mt-2 grid items-start gap-2 lg:grid-cols-2">
+              <div className="@lg:grid-cols-2 mt-2 grid items-start gap-2">
                 {chats.slice(0, 2).map((chat) => (
                   <div
                     key={chat.id}

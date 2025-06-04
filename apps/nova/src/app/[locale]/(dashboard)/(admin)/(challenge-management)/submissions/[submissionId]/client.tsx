@@ -5,18 +5,37 @@ import { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { ArrowLeft, BookOpen, Calendar, User } from '@tuturuuu/ui/icons';
+import {
+  ArrowLeft,
+  BookOpen,
+  Calendar,
+  RefreshCw,
+  User,
+} from '@tuturuuu/ui/icons';
+import { Progress } from '@tuturuuu/ui/progress';
+import { toast } from '@tuturuuu/ui/sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface SubmissionClientProps {
   submission: NovaSubmissionData;
+}
+
+interface ReEvaluationProgress {
+  step: string;
+  progress: number;
+  message: string;
+  data?: any;
 }
 
 export default function SubmissionClient({
   submission,
 }: SubmissionClientProps) {
   const router = useRouter();
+  const [isReEvaluating, setIsReEvaluating] = useState(false);
+  const [reEvaluationProgress, setReEvaluationProgress] =
+    useState<ReEvaluationProgress | null>(null);
 
   // Helper function to determine score color
   const getScoreColor = (score: number | null) => {
@@ -44,6 +63,78 @@ export default function SubmissionClient({
     return score !== null ? (score / 10) * 100 : 0;
   };
 
+  const handleReEvaluate = async () => {
+    if (isReEvaluating) return;
+
+    try {
+      setIsReEvaluating(true);
+      setReEvaluationProgress({
+        step: 'starting',
+        progress: 0,
+        message: 'Starting re-evaluation...',
+      });
+
+      const response = await fetch(
+        `/api/v1/submissions/${submission.id}/re-evaluate`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to start re-evaluation');
+      }
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              setReEvaluationProgress(data);
+
+              if (data.step === 'completed') {
+                toast.success('Re-evaluation completed successfully!');
+                // Refresh the page to show updated results
+                setTimeout(() => {
+                  router.refresh();
+                }, 1000);
+              } else if (data.step === 'error') {
+                toast.error(`Re-evaluation failed: ${data.message}`);
+              }
+            } catch (error) {
+              console.error('Error parsing SSE data:', error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error during re-evaluation:', error);
+      toast.error('Failed to re-evaluate submission');
+    } finally {
+      setIsReEvaluating(false);
+      setTimeout(() => {
+        setReEvaluationProgress(null);
+      }, 2000);
+    }
+  };
+
   return (
     <div className="container space-y-6 py-8">
       <div className="mb-6 flex items-center gap-4">
@@ -59,7 +150,47 @@ export default function SubmissionClient({
           <h1 className="text-3xl font-bold">Submission Details</h1>
           <p className="text-muted-foreground">ID: {submission.id}</p>
         </div>
+        <div className="ml-auto">
+          <Button
+            onClick={handleReEvaluate}
+            disabled={isReEvaluating}
+            variant="outline"
+            className="gap-2"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isReEvaluating ? 'animate-spin' : ''}`}
+            />
+            {isReEvaluating ? 'Re-evaluating...' : 'Re-evaluate'}
+          </Button>
+        </div>
       </div>
+
+      {/* Re-evaluation Progress */}
+      {reEvaluationProgress && (
+        <Card className="border-dynamic-blue/20 bg-dynamic-blue/10 border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-dynamic-blue">
+              Re-evaluation Progress
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-dynamic-blue">
+                  {reEvaluationProgress.message}
+                </span>
+                <span className="text-dynamic-blue">
+                  {Math.round(reEvaluationProgress.progress)}%
+                </span>
+              </div>
+              <Progress value={reEvaluationProgress.progress} className="h-2" />
+            </div>
+            <p className="text-dynamic-blue text-xs">
+              Current step: {reEvaluationProgress.step}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex flex-col gap-6">
         <Card>
