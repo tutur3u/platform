@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.6.1",
-    "@tanstack/react-query": "^5.79.2",
+    "@tanstack/react-query": "^5.80.2",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/eslint-config": "workspace:*",
@@ -23,13 +23,13 @@
     "@vercel/speed-insights": "^1.2.0",
     "dayjs": "^1.11.13",
     "negotiator": "^1.0.0",
-    "next": "15.4.0-canary.62",
+    "next": "15.4.0-canary.63",
     "next-intl": "^4.1.0",
     "next-themes": "^0.4.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwindcss": "^4.1.8",
-    "zod": "^3.25.49"
+    "zod": "^3.25.51"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -38,8 +38,9 @@
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
     "eslint": "^9.28.0",
-    "eslint-config-next": "15.4.0-canary.62",
+    "eslint-config-next": "15.4.0-canary.63",
     "postcss": "^8.5.4",
     "typescript": "^5.8.3"
-  }
+  },
+  "packageManager": "pnpm@10.11.1"
 }

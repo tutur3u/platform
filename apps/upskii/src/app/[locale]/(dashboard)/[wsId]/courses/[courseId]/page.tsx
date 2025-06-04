@@ -3,9 +3,12 @@ import CourseModuleForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import { Database } from '@tuturuuu/types/supabase';
+import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface SearchParams {
   q?: string;
@@ -23,6 +26,12 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
+type ModuleWithCompletion = WorkspaceCourseModule & {
+  is_completed: boolean;
+  ws_id: string;
+  href: string;
+};
+
 export default async function WorkspaceCoursesPage({
   params,
   searchParams,
@@ -36,7 +45,62 @@ export default async function WorkspaceCoursesPage({
     ...m,
     ws_id: wsId,
     href: `/${wsId}/courses/${courseId}/modules/${m.id}`,
-  }));
+  })) as ModuleWithCompletion[];
+
+  const allModulesCompleted =
+    modules.length > 0 && modules.every((module) => module.is_completed);
+
+  // Check for existing certificate
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let certificateId: string | null = null;
+  if (allModulesCompleted && user) {
+    try {
+      // First check if user already has a certificate for this course
+      const { data: existingCertificate, error: fetchError } = await supabase
+        .from('course_certificates')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('course_id', courseId)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        // PGRST116 is "no rows returned"
+        console.error('Error fetching certificate:', fetchError);
+        return;
+      }
+
+      if (existingCertificate) {
+        certificateId = existingCertificate.id;
+      } else {
+        // Generate new certificate
+        const { data: newCertificate, error: insertError } = await supabase
+          .from('course_certificates')
+          .insert({
+            completed_date: new Date().toISOString().split('T')[0] as string,
+            course_id: courseId as string,
+            user_id: user.id as string,
+          } satisfies Database['public']['Tables']['course_certificates']['Insert'])
+          .select('id')
+          .single();
+
+        if (insertError) {
+          console.error('Error generating certificate:', insertError);
+          return;
+        }
+
+        if (newCertificate) {
+          certificateId = newCertificate.id;
+        }
+      }
+    } catch (error) {
+      console.error('Unexpected error in certificate generation:', error);
+      return;
+    }
+  }
 
   return (
     <>
@@ -49,6 +113,23 @@ export default async function WorkspaceCoursesPage({
         form={<CourseModuleForm wsId={wsId} courseId={courseId} />}
       />
       <Separator className="my-4" />
+      {allModulesCompleted && certificateId ? (
+        <div className="mb-4">
+          <Link href={`/${wsId}/certificate/${certificateId}`}>
+            <Button variant="default" size="lg">
+              {t('certificates.download_button')}
+            </Button>
+          </Link>
+        </div>
+      ) : allModulesCompleted ? (
+        <div className="mb-4">
+          <Button variant="default" size="lg" disabled>
+            {t('certificates.download_button')}
+          </Button>
+        </div>
+      ) : (
+        <></>
+      )}
       <CustomDataTable
         data={modules}
         columnGenerator={getWorkspaceCourseModuleColumns}
