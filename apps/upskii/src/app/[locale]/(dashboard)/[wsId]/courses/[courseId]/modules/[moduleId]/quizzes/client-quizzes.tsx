@@ -1,6 +1,7 @@
 'use client';
 
 import QuizForm from '../../../../../quizzes/form';
+import { RenderedQuizzesSets } from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/page';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
@@ -14,46 +15,61 @@ import {
   AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import { Pencil, Trash, X } from '@tuturuuu/ui/icons';
+import { LucideBubbles, Pencil, Trash, X } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+interface QuizzesListProps {
+  quizzes: RenderedQuizzesSets['quizzes'] | QuizzesListType;
+  previewMode?: boolean;
+  editingQuizId: string | null;
+  setEditingQuizId: (id: string | null) => void;
+  wsId: string;
+  moduleId: string;
+  onDelete: (id: string) => void;
+  idx?: number;
+}
+
+type QuizzesListType = Array<
+  | {
+      created_at?: string;
+      id?: string;
+      question?: string;
+      ws_id?: string;
+      quiz_options?: (
+        | {
+            created_at?: string;
+            id?: string;
+            is_correct?: boolean;
+            explanation?: string | null;
+            points?: number | null;
+            quiz_id?: string;
+            value?: string;
+          }
+        | undefined
+      )[];
+    }
+  | undefined
+>;
+
 export default function ClientQuizzes({
   wsId,
   moduleId,
-  quizzes,
+  quizSets,
+  quizzes = [],
   previewMode = false,
 }: {
   wsId: string;
   moduleId: string;
-  quizzes: Array<
-    | {
-        created_at?: string;
-        id?: string;
-        question?: string;
-        ws_id?: string;
-        quiz_options?: (
-          | {
-              created_at?: string;
-              id?: string;
-              is_correct?: boolean;
-              explanation?: string | null;
-              points?: number | null;
-              quiz_id?: string;
-              value?: string;
-            }
-          | undefined
-        )[];
-      }
-    | undefined
-  >;
+  quizSets?: RenderedQuizzesSets[];
+  quizzes?: QuizzesListType;
   previewMode?: boolean;
 }) {
   const router = useRouter();
-  const t = useTranslations();
+
   const supabase = createClient();
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
 
@@ -71,9 +87,73 @@ export default function ClientQuizzes({
     router.refresh();
   };
 
+  if (quizSets) {
+    return (
+      <>
+        {quizSets.map((set, idx) => (
+          <div
+            key={set.setId}
+            className="col-span-full flex w-full flex-col gap-4"
+          >
+            <h3 className="text-lg font-bold">
+              <LucideBubbles className="inline mr-2 h-5 w-5" />
+              {set.setName}
+            </h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <QuizzesList
+                quizzes={set.quizzes}
+                previewMode={previewMode}
+                editingQuizId={editingQuizId}
+                setEditingQuizId={setEditingQuizId}
+                wsId={wsId}
+                moduleId={moduleId}
+                onDelete={onDelete}
+                idx={idx}
+              />
+              <Separator className="col-span-full my-2" />
+            </div>
+          </div>
+        ))}
+      </>
+    );
+  }
+  if (quizzes && quizzes.length > 0) {
+    return (
+      <QuizzesList
+        quizzes={quizzes}
+        previewMode={previewMode}
+        editingQuizId={editingQuizId}
+        setEditingQuizId={setEditingQuizId}
+        wsId={wsId}
+        moduleId={moduleId}
+        onDelete={onDelete}
+        idx={0}
+      />
+    );
+  }
+}
+
+const QuizzesList = ({
+  quizzes,
+  previewMode,
+  editingQuizId,
+  setEditingQuizId,
+  wsId,
+  moduleId,
+  onDelete,
+  idx = 0,
+}: QuizzesListProps) => {
+  const t = useTranslations();
+  if (!quizzes || quizzes.length === 0) {
+    return (
+      <div className="rounded-lg border p-4 shadow-md md:p-6">
+        <p className="text-muted-foreground">{t('ws-quizzes.no_quizzes')}</p>
+      </div>
+    );
+  }
   return (
     <>
-      {quizzes.map((quiz, idx) => (
+      {quizzes.map((quiz) => (
         <div
           key={quiz?.id || idx}
           className={cn(
@@ -187,4 +267,4 @@ export default function ClientQuizzes({
       ))}
     </>
   );
-}
+};
