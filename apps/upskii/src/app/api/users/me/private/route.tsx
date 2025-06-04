@@ -13,8 +13,6 @@ export async function PATCH(req: Request) {
 
     try {
         const payload = await req.json();
-        console.log('Update payload:', payload);
-        console.log('User ID:', user.id);
 
         const { data, error } = await supabase
             .from('user_private_details')
@@ -22,8 +20,6 @@ export async function PATCH(req: Request) {
             .eq('user_id', user.id)
             .select();
 
-        console.log('Supabase response data:', data);
-        console.log('Supabase response error:', error);
 
         if (error) {
             console.error('Supabase error details:', {
