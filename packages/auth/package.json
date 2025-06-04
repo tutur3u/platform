@@ -19,7 +19,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "15.4.0-canary.62",
+    "next": "15.4.0-canary.63",
     "react": "^19.1.0"
   },
   "devDependencies": {
