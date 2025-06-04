@@ -6,7 +6,6 @@ create table "public"."course_certificates" (
     "completed_date" date not null
 );
 
-
 alter table "public"."course_certificates" enable row level security;
 
 CREATE UNIQUE INDEX course_certificates_pkey ON public.course_certificates USING btree (id);
@@ -74,14 +73,12 @@ for delete
 to authenticated
 using ((( SELECT auth.uid() AS uid) = user_id));
 
-
 create policy "Enable insert for users based on user_id"
 on "public"."course_certificates"
 as permissive
 for insert
 to authenticated
 with check ((( SELECT auth.uid() AS uid) = user_id));
-
 
 create policy "Enable update for users based on user_id"
 on "public"."course_certificates"
@@ -91,7 +88,6 @@ to authenticated
 using ((( SELECT auth.uid() AS uid) = user_id))
 with check ((( SELECT auth.uid() AS uid) = user_id));
 
-
 create policy "Enable users to view their own data only"
 on "public"."course_certificates"
 as permissive
@@ -99,5 +95,4 @@ for select
 to authenticated
 using ((( SELECT auth.uid() AS uid) = user_id));
 
-
-
+alter table "public"."course_certificates" alter column "id" set default (('CERT-'::text || to_char(now(), 'YYYY-MM-DD-'::text)) || (gen_random_uuid())::text);
