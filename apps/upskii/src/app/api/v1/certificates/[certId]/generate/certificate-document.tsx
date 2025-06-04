@@ -10,6 +10,7 @@ import {
   View,
 } from '@react-pdf/renderer';
 
+// Register fonts
 Font.register({
   family: 'Roboto',
   fonts: [
@@ -20,8 +21,9 @@ Font.register({
   ],
 });
 
-// Create styles
+// Styles
 const styles = StyleSheet.create({
+  // Layout
   page: {
     backgroundColor: '#f8fafc',
     padding: '16pt',
@@ -45,6 +47,8 @@ const styles = StyleSheet.create({
     opacity: 0.12,
     zIndex: 0,
   },
+
+  // Header
   header: {
     display: 'flex',
     flexDirection: 'column',
@@ -63,6 +67,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#0a0a0a',
     width: '100%',
   },
+
+  // Body
   body: {
     display: 'flex',
     flexDirection: 'column',
@@ -97,6 +103,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Roboto',
   },
+
+  // Footer
   footer: {
     display: 'flex',
     flexDirection: 'row',
@@ -120,18 +128,44 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
     fontWeight: 'light',
   },
-  footerLabelRight: {
-    fontSize: 14,
-    color: '#4b5563',
-    fontFamily: 'Roboto',
-    fontWeight: 'light',
-  },
   footerValue: {
     fontSize: 14,
     fontWeight: 'bold',
     fontFamily: 'Courier',
   },
 });
+
+// Components
+const CertificateHeader = ({ title }: { title: string }) => (
+  <View style={styles.header}>
+    <Text style={styles.title}>{title}</Text>
+    <View style={styles.separator} />
+  </View>
+);
+
+const CertificateBody = ({ data }: { data: CertificateData }) => (
+  <View style={styles.body}>
+    <Text style={styles.subtitle}>{data.certifyText}</Text>
+    <Text style={styles.name}>{data.certData.studentName}</Text>
+    <Text style={styles.subtitle}>{data.completionText}</Text>
+    <Text style={styles.course}>{data.certData.courseName}</Text>
+    <Text style={styles.subtitle}>{data.offeredBy}</Text>
+    <Text style={styles.instructor}>{data.certData.courseLecturer}</Text>
+  </View>
+);
+
+const CertificateFooter = ({ data }: { data: CertificateData }) => (
+  <View style={styles.footer}>
+    <View style={styles.footerBlock}>
+      <Text style={styles.footerLabel}>{data.completionDateLabel}:</Text>
+      <Text style={styles.footerValue}>{data.certData.completionDate}</Text>
+    </View>
+    <View style={styles.footerBlockRight}>
+      <Text style={styles.footerLabel}>{data.certificateIdLabel}:</Text>
+      <Text style={styles.footerValue}>{data.certData.certificateId}</Text>
+    </View>
+  </View>
+);
 
 export const CertificateDocument: React.FC<{ data: CertificateData }> = ({
   data,
@@ -143,38 +177,9 @@ export const CertificateDocument: React.FC<{ data: CertificateData }> = ({
           src={`${BASE_URL}/media/logos/watermark.png`}
           style={styles.watermark}
         />
-
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{data.title}</Text>
-          <View style={styles.separator} />
-        </View>
-
-        {/* Certificate Body */}
-        <View style={styles.body}>
-          <Text style={styles.subtitle}>{data.certify_text}</Text>
-          <Text style={styles.name}>{data.certData.studentName}</Text>
-          <Text style={styles.subtitle}>{data.completion_text}</Text>
-          <Text style={styles.course}>{data.certData.courseName}</Text>
-          <Text style={styles.subtitle}>{data.offered_by}</Text>
-          <Text style={styles.instructor}>{data.certData.courseLecturer}</Text>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.footerBlock}>
-            <Text style={styles.footerLabel}>{data.completion_date}:</Text>
-            <Text style={styles.footerValue}>
-              {data.certData.completionDate}
-            </Text>
-          </View>
-          <View style={styles.footerBlockRight}>
-            <Text style={styles.footerLabelRight}>{data.certificate_id}:</Text>
-            <Text style={styles.footerValue}>
-              {data.certData.certificateId}
-            </Text>
-          </View>
-        </View>
+        <CertificateHeader title={data.title} />
+        <CertificateBody data={data} />
+        <CertificateFooter data={data} />
       </View>
     </Page>
   </Document>
