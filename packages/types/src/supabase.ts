@@ -715,7 +715,7 @@ export type Database = {
           completion_id?: string;
           completion_status?: boolean;
           created_at?: string | null;
-          module_id?: string;
+          module_id: string;
           user_id?: string | null;
         };
         Update: {

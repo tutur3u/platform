@@ -23,17 +23,16 @@ interface Props {
   disabled?: boolean;
 }
 
-export default function DisplayNameInput({
-  defaultValue = '',
-  disabled,
-}: Props) {
+export default function FullNameInput({ defaultValue = '', disabled }: Props) {
   const t = useTranslations('settings-account');
   const router = useRouter();
 
+  const [saving, setSaving] = useState(false);
+
   const minLength = 1;
   const maxLength = 50;
-  const minLengthError = t('display-name-min-error', { min: minLength });
-  const maxLengthError = t('display-name-max-error', { max: maxLength });
+  const minLengthError = t('full-name-min-error', { min: minLength });
+  const maxLengthError = t('full-name-max-error', { max: maxLength });
 
   const FormSchema = z.object({
     name: z
@@ -42,8 +41,6 @@ export default function DisplayNameInput({
       .max(50, { message: maxLengthError })
       .optional(),
   });
-
-  const [saving, setSaving] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -57,25 +54,33 @@ export default function DisplayNameInput({
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setSaving(true);
 
-    const res = await fetch('/api/users/me', {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ display_name: data.name }),
-    });
-
-    if (res.ok) {
-      toast({
-        title: 'Profile updated',
-        description: 'Your display name has been updated.',
+    try {
+      const res = await fetch('/api/users/me/private', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ full_name: data.name }),
       });
-
-      router.refresh();
-    } else {
+      if (res.ok) {
+        toast({
+          title: t('profile-updated'),
+          description: t('full-name-updated'),
+        });
+        router.refresh();
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        toast({
+          title: t('error-occurred'),
+          description: errorData.message || t('please-try-again'),
+        });
+      }
+    } catch (error) {
+      console.error('Network error:', error);
       toast({
-        title: 'An error occurred',
-        description: 'Please try again.',
+        title: t('error-occurred'),
+        description:
+          error instanceof Error ? error.message : t('please-try-again'),
       });
     }
 
@@ -93,8 +98,8 @@ export default function DisplayNameInput({
               <FormItem className="w-full">
                 <FormControl>
                   <Input
-                    id="display-name"
-                    placeholder={t('display-name')}
+                    id="full-name"
+                    placeholder={t('full-name')}
                     disabled={disabled}
                     {...field}
                   />
@@ -107,7 +112,6 @@ export default function DisplayNameInput({
           <Button
             type="submit"
             size="icon"
-            onClick={form.handleSubmit(onSubmit)}
             disabled={name === defaultValue || saving || disabled}
           >
             {saving ? (
