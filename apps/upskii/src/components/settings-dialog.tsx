@@ -53,8 +53,8 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
         <Suspense
           fallback={
             <SettingItemTab
-              title={t('settings-account.display-name')}
-              description={t('settings-account.display-name-description')}
+              title={t('settings-account.full-name')}
+              description={t('settings-account.full-name-description')}
             >
               <FullNameInput disabled />
             </SettingItemTab>

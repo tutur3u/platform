@@ -14,9 +14,25 @@ export async function PATCH(req: Request) {
     try {
         const payload = await req.json();
 
+        const allowedFields = ['full_name'];
+
+        const sanitizedPayload = Object.keys(payload)
+            .filter(key => allowedFields.includes(key))
+            .reduce((obj, key) => {
+                obj[key] = payload[key];
+                return obj;
+            }, {} as Record<string, any>);
+
+        if (Object.keys(sanitizedPayload).length === 0) {
+            return NextResponse.json(
+                { message: 'No valid fields to update' },
+                { status: 400 }
+            );
+        }
+
         const { data, error } = await supabase
             .from('user_private_details')
-            .update(payload)
+            .update(sanitizedPayload)
             .eq('user_id', user.id)
             .select();
 

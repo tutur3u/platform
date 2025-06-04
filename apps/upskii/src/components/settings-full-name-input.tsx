@@ -60,25 +60,32 @@ export default function FullNameInput({
     async function onSubmit(data: z.infer<typeof FormSchema>) {
         setSaving(true);
 
-        const res = await fetch('/api/users/me/private', {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ full_name: data.name }),
-        });
-
-        if (res.ok) {
-            toast({
-                title: 'Profile updated',
-                description: 'Your full name has been updated.',
+        try {
+            const res = await fetch('/api/users/me/private', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ full_name: data.name }),
             });
-
-            router.refresh();
-        } else {
+            if (res.ok) {
+                toast({
+                    title: t('profile-updated'),
+                    description: t('full-name-updated'),
+                });
+                router.refresh();
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                toast({
+                    title: t('error-occurred'),
+                    description: errorData.message || t('please-try-again'),
+                });
+            }
+        } catch (error) {
+            console.error('Network error:', error);
             toast({
-                title: 'An error occurred',
-                description: 'Please try again.',
+                title: t('error-occurred'),
+                description: error instanceof Error ? error.message : t('please-try-again'),
             });
         }
 
@@ -110,7 +117,6 @@ export default function FullNameInput({
                     <Button
                         type="submit"
                         size="icon"
-                        onClick={form.handleSubmit(onSubmit)}
                         disabled={name === defaultValue || saving || disabled}
                     >
                         {saving ? (

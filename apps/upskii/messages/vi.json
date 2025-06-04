@@ -2896,10 +2896,16 @@
     "bio-max-length": "Bio phải ít hơn {max} từ.",
     "display-name-min-error": "Tên hiển thị phải ít nhất {min} kí tự",
     "display-name-max-error": "Tên hiển thị phải ít hơn {max} kí tự",
+    "full-name-min-error": "Họ và tên phải ít nhất {min} kí tự",
+    "full-name-max-error": "Họ và tên phải ít hơn {max} kí tự",
     "email-invalid": "Email không hợp lệ",
     "view-full-settings": "Xem cài đặt đầy đủ",
     "full-name": "Họ và tên",
-    "full-name-description": "Tên đầy đủ của bạn sẽ được sử dụng để hiển thị trên chứng chỉ"
+    "full-name-description": "Tên đầy đủ của bạn sẽ được sử dụng để hiển thị trên chứng chỉ",
+    "profile-updated": "Cập nhật hồ sơ",
+    "full-name-updated": "Họ và tên của bạn đã được cập nhật thành công",
+    "error-occurred": "Đã có lỗi đã xảy ra",
+    "please-try-again": "Vui lòng thử lại sau"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
