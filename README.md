@@ -116,7 +116,7 @@ This turborepo has some additional tools already setup for you:
 To build all apps and packages, run the following command:
 
 ```bash
-bun build
+bun run build
 ```
 
 ### Develop

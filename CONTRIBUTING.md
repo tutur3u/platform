@@ -23,7 +23,7 @@ bun install
 3. Build the project to ensure your environment is set up properly. Run:
 
 ```bash
-bun build
+bun run build
 ```
 
 4. Add tests and documentation for your changes as appropriate. Make sure your code is clear, standards-compliant, secure, and bug-free.

@@ -52,4 +52,4 @@ jobs:
         run: bun install
 
       - name: Build apps/external
-        run: bun build --filter @tuturuuu/external
+        run: bun run build --filter @tuturuuu/external
