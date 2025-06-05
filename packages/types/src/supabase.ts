@@ -5456,23 +5456,146 @@ export type Database = {
           },
         ];
       };
+      workspace_quiz_attempt_answers: {
+        Row: {
+          attempt_id: string;
+          id: string;
+          is_correct: boolean;
+          quiz_id: string;
+          score_awarded: number;
+          selected_option_id: string;
+        };
+        Insert: {
+          attempt_id: string;
+          id?: string;
+          is_correct: boolean;
+          quiz_id: string;
+          score_awarded: number;
+          selected_option_id: string;
+        };
+        Update: {
+          attempt_id?: string;
+          id?: string;
+          is_correct?: boolean;
+          quiz_id?: string;
+          score_awarded?: number;
+          selected_option_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'wq_answer_attempt_fkey';
+            columns: ['attempt_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quiz_attempts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wq_answer_option_fkey';
+            columns: ['selected_option_id'];
+            isOneToOne: false;
+            referencedRelation: 'quiz_options';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wq_answer_quiz_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_quiz_attempts: {
+        Row: {
+          attempt_number: number;
+          completed_at: string | null;
+          id: string;
+          set_id: string;
+          started_at: string;
+          total_score: number | null;
+          user_id: string;
+        };
+        Insert: {
+          attempt_number: number;
+          completed_at?: string | null;
+          id?: string;
+          set_id: string;
+          started_at?: string;
+          total_score?: number | null;
+          user_id: string;
+        };
+        Update: {
+          attempt_number?: number;
+          completed_at?: string | null;
+          id?: string;
+          set_id?: string;
+          started_at?: string;
+          total_score?: number | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'wq_attempts_set_fkey';
+            columns: ['set_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quiz_sets';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wq_attempts_user_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'wq_attempts_user_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'wq_attempts_user_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_quiz_sets: {
         Row: {
+          allow_view_results: boolean;
+          attempt_limit: number | null;
           created_at: string;
           id: string;
           name: string;
+          release_at: string | null;
+          release_points_immediately: boolean;
+          time_limit_minutes: number | null;
           ws_id: string | null;
         };
         Insert: {
+          allow_view_results?: boolean;
+          attempt_limit?: number | null;
           created_at?: string;
           id?: string;
           name?: string;
+          release_at?: string | null;
+          release_points_immediately?: boolean;
+          time_limit_minutes?: number | null;
           ws_id?: string | null;
         };
         Update: {
+          allow_view_results?: boolean;
+          attempt_limit?: number | null;
           created_at?: string;
           id?: string;
           name?: string;
+          release_at?: string | null;
+          release_points_immediately?: boolean;
+          time_limit_minutes?: number | null;
           ws_id?: string | null;
         };
         Relationships: [
@@ -5490,18 +5613,21 @@ export type Database = {
           created_at: string;
           id: string;
           question: string;
+          score: number;
           ws_id: string;
         };
         Insert: {
           created_at?: string;
           id?: string;
           question: string;
+          score?: number;
           ws_id: string;
         };
         Update: {
           created_at?: string;
           id?: string;
           question?: string;
+          score?: number;
           ws_id?: string;
         };
         Relationships: [
@@ -7240,6 +7366,12 @@ export type Database = {
       show_trgm: {
         Args: { '': string };
         Returns: string[];
+      };
+      sum_quiz_scores: {
+        Args: { p_set_id: string };
+        Returns: {
+          sum: number;
+        }[];
       };
       transactions_have_same_abs_amount: {
         Args: { transaction_id_1: string; transaction_id_2: string };
