@@ -82,13 +82,13 @@ export default function ProblemCard({
       <CardHeader className="gap-2 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-primary/10 flex h-6 w-6 items-center justify-center rounded-full">
-              <CodeIcon className="text-primary h-4 w-4" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+              <CodeIcon className="h-4 w-4 text-primary" />
             </div>
             <CardTitle className="flex items-center gap-2">
               Problem {problemIndex + 1}
               {problem.title && (
-                <span className="text-muted-foreground text-sm font-normal">
+                <span className="text-sm font-normal text-muted-foreground">
                   {problem.title}
                 </span>
               )}
@@ -140,7 +140,7 @@ export default function ProblemCard({
             problemIndex={problemIndex}
           />
         ) : (
-          <div className="text-muted-foreground flex flex-col items-center justify-center py-6 text-center">
+          <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
             <CodeIcon className="mb-2 h-10 w-10 opacity-20" />
             <p className="text-sm font-medium">No submissions yet</p>
             <p className="text-xs">Try solving this problem to see results</p>

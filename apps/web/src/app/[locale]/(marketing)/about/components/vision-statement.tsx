@@ -36,7 +36,7 @@ export function VisionStatement() {
           }}
           className="absolute inset-0 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
         />
-        <div className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
       </div>
 
       <div className="relative">
@@ -57,20 +57,20 @@ export function VisionStatement() {
                 ease: 'easeInOut',
               },
             }}
-            className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+            className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
           >
-            <Quote className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
+            <Quote className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
         </motion.div>
 
         <motion.div
-          className="bg-foreground/5 group relative mx-auto max-w-4xl overflow-hidden rounded-2xl p-8 backdrop-blur-sm md:p-12"
+          className="group relative mx-auto max-w-4xl overflow-hidden rounded-2xl bg-foreground/5 p-8 backdrop-blur-sm md:p-12"
           whileHover={{ scale: 1.02 }}
         >
           <motion.div
             initial={{ opacity: 0 }}
             whileHover={{ opacity: 1 }}
-            className="bg-linear-to-br absolute inset-0 from-blue-500/10 via-cyan-500/5 to-transparent transition-opacity duration-300"
+            className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-cyan-500/5 to-transparent transition-opacity duration-300"
           />
           <motion.div
             animate={{
@@ -82,7 +82,7 @@ export function VisionStatement() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+            className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
           />
           <motion.div
             animate={{
@@ -94,19 +94,19 @@ export function VisionStatement() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="bg-linear-to-br absolute -bottom-8 -left-8 h-24 w-24 rounded-xl from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+            className="absolute -bottom-8 -left-8 h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
           />
 
           <blockquote className="pointer-events-none relative">
-            <div className="text-primary/20 absolute -left-4 -top-4">
+            <div className="absolute -top-4 -left-4 text-primary/20">
               <Quote className="h-8 w-8 rotate-180" />
             </div>
-            <div className="text-primary/20 absolute -bottom-4 -right-4">
+            <div className="absolute -right-4 -bottom-4 text-primary/20">
               <Quote className="h-8 w-8" />
             </div>
 
             <motion.p
-              className="text-foreground relative text-2xl font-medium italic leading-relaxed md:text-3xl"
+              className="relative text-2xl leading-relaxed font-medium text-foreground italic md:text-3xl"
               initial={{ y: 20, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
@@ -122,21 +122,21 @@ export function VisionStatement() {
             </motion.p>
 
             <motion.footer
-              className="text-foreground/60 mt-8 text-lg"
+              className="mt-8 text-lg text-foreground/60"
               initial={{ y: 20, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
             >
               <motion.span
-                className="from-primary bg-linear-to-r via-blue-500 to-cyan-500 bg-clip-text font-semibold text-transparent"
+                className="bg-linear-to-r from-primary via-blue-500 to-cyan-500 bg-clip-text font-semibold text-transparent"
                 whileHover={{ scale: 1.05 }}
               >
                 — Vo Hoang Phuc
               </motion.span>
               <br />
               <motion.span
-                className="text-foreground/40 text-sm"
+                className="text-sm text-foreground/40"
                 whileHover={{ scale: 1.05 }}
               >
                 Founder & CEO, Tuturuuu
@@ -148,7 +148,7 @@ export function VisionStatement() {
             initial={{ scaleX: 0 }}
             whileHover={{ scaleX: 1 }}
             transition={{ duration: 0.3 }}
-            className="from-primary/20 to-primary/5 bg-linear-to-r absolute bottom-0 left-0 right-0 h-1 origin-left"
+            className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-linear-to-r from-primary/20 to-primary/5"
           />
         </motion.div>
       </div>

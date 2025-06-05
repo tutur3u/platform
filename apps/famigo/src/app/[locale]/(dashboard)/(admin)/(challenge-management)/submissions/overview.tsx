@@ -33,13 +33,13 @@ export function SubmissionOverview({ stats }: SubmissionStatsProps) {
           <CardTitle className="text-sm font-medium">
             {t('total-submissions')}
           </CardTitle>
-          <Users className="text-muted-foreground h-4 w-4" />
+          <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
             {stats.totalCount.toLocaleString()}
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             {t('total-submissions-description')}
           </p>
         </CardContent>
@@ -50,13 +50,13 @@ export function SubmissionOverview({ stats }: SubmissionStatsProps) {
           <CardTitle className="text-sm font-medium">
             {t('unique-users')}
           </CardTitle>
-          <Users className="text-muted-foreground h-4 w-4" />
+          <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
             {stats.uniqueUsersCount.toLocaleString()}
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             {t('unique-users-description')}
           </p>
         </CardContent>
@@ -67,13 +67,13 @@ export function SubmissionOverview({ stats }: SubmissionStatsProps) {
           <CardTitle className="text-sm font-medium">
             {t('latest-submission')}
           </CardTitle>
-          <Clock className="text-muted-foreground h-4 w-4" />
+          <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-md font-bold">
             {formatDate(stats.latestSubmissionDate)}
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             {t('latest-submission-description')}
           </p>
         </CardContent>

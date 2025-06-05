@@ -44,7 +44,7 @@ export default function EnabledFilter({ currentEnabled }: EnabledFilterProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <Filter className="text-muted-foreground h-4 w-4" />
+      <Filter className="h-4 w-4 text-muted-foreground" />
       <span className="text-sm font-medium">Status:</span>
       <Select
         defaultValue={currentEnabled || 'all'}

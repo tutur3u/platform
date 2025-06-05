@@ -143,7 +143,7 @@ export function CalendarView({
       </div>
 
       <div className="flex-1 overflow-auto rounded-lg border">
-        <div className="bg-muted grid grid-cols-7 gap-px border-b">
+        <div className="grid grid-cols-7 gap-px border-b bg-muted">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
             <div
               key={day}
@@ -154,7 +154,7 @@ export function CalendarView({
           ))}
         </div>
 
-        <div className="bg-muted grid grid-cols-7 gap-px">
+        <div className="grid grid-cols-7 gap-px bg-muted">
           {calendar.map((date) => {
             const dayTasks = tasks.filter(
               (task) =>
@@ -166,7 +166,7 @@ export function CalendarView({
               <div
                 key={date.toString()}
                 className={cn(
-                  'bg-background min-h-[120px] p-2',
+                  'min-h-[120px] bg-background p-2',
                   !isSameMonth(date, selectedDate) &&
                     'bg-muted/50 text-muted-foreground'
                 )}
@@ -174,7 +174,7 @@ export function CalendarView({
                 <div className="flex items-center justify-between">
                   <span
                     className={cn('text-sm', {
-                      'text-primary font-bold': isToday(date),
+                      'font-bold text-primary': isToday(date),
                     })}
                   >
                     {format(date, 'd')}
@@ -213,11 +213,11 @@ export function CalendarView({
                         <div className="space-y-2">
                           <h4 className="font-medium">{task.name}</h4>
                           {task.description && (
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-sm text-muted-foreground">
                               {task.description}
                             </p>
                           )}
-                          <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
+                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                             {task.start_date && (
                               <span>
                                 Starts:{' '}

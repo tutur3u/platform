@@ -14,7 +14,7 @@ export default function RoleFormDisplaySection({ form }: SectionProps) {
 
   return (
     <>
-      <div className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
+      <div className="mb-2 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/10 p-2 text-center font-bold text-dynamic-blue">
         {form.watch('name') || '-'}
       </div>
       <FormField

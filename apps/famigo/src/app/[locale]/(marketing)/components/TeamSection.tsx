@@ -30,12 +30,12 @@ const TeamSection = () => {
   return (
     <section
       id="team"
-      className="bg-foreground/5 dark:bg-foreground/[0.02] relative w-full py-24"
+      className="relative w-full bg-foreground/5 py-24 dark:bg-foreground/[0.02]"
     >
       {/* Decorative background elements */}
       <div className="pointer-events-none absolute inset-0 bg-[url('/grid-pattern-light.svg')] bg-repeat opacity-5 dark:bg-[url('/grid-pattern-dark.svg')]"></div>
-      <div className="from-background bg-linear-to-b absolute left-0 top-0 h-40 w-full to-transparent"></div>
-      <div className="from-background bg-linear-to-t absolute bottom-0 left-0 h-40 w-full to-transparent"></div>
+      <div className="absolute top-0 left-0 h-40 w-full bg-linear-to-b from-background to-transparent"></div>
+      <div className="absolute bottom-0 left-0 h-40 w-full bg-linear-to-t from-background to-transparent"></div>
 
       <div className="mx-auto max-w-6xl px-4">
         <motion.div
@@ -50,7 +50,7 @@ const TeamSection = () => {
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">
             Vietnamese Researchers & Developers
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-2xl">
+          <p className="mx-auto max-w-2xl text-muted-foreground">
             Committed to strengthening family bonds through technology and
             cultural understanding.
           </p>

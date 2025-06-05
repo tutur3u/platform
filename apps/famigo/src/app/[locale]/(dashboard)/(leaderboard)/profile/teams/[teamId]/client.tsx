@@ -69,7 +69,7 @@ export default function TeamClient({
     return (
       <div className="container max-w-6xl py-16 text-center">
         <h2 className="text-2xl font-semibold">Team not found</h2>
-        <p className="text-muted-foreground mt-2">
+        <p className="mt-2 text-muted-foreground">
           The requested team could not be loaded.
         </p>
         <Button className="mt-4" asChild>
@@ -168,9 +168,9 @@ export default function TeamClient({
   };
 
   return (
-    <div className="container max-w-6xl pb-16 pt-8">
+    <div className="container max-w-6xl pt-8 pb-16">
       {/* Breadcrumb navigation */}
-      <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
+      <nav className="mb-8 flex items-center space-x-2 text-sm text-muted-foreground">
         <Link href="/home" className="hover:text-foreground">
           Home
         </Link>
@@ -179,7 +179,7 @@ export default function TeamClient({
           Teams
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <span className="text-foreground font-medium">{teamInfo?.name}</span>
+        <span className="font-medium text-foreground">{teamInfo?.name}</span>
       </nav>
 
       {/* Team Header */}
@@ -187,7 +187,7 @@ export default function TeamClient({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-card/50 mb-8 overflow-hidden rounded-xl border p-6 shadow-sm"
+        className="mb-8 overflow-hidden rounded-xl border bg-card/50 p-6 shadow-sm"
       >
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex flex-col items-center gap-4 sm:flex-row">
@@ -196,9 +196,9 @@ export default function TeamClient({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="from-primary/30 to-primary/10 bg-linear-to-br absolute -inset-0.5 rounded-full blur-md"
+                className="absolute -inset-0.5 rounded-full bg-linear-to-br from-primary/30 to-primary/10 blur-md"
               />
-              <Avatar className="border-background h-24 w-24 border-2 shadow-md">
+              <Avatar className="h-24 w-24 border-2 border-background shadow-md">
                 <AvatarImage src={undefined} />
                 <AvatarFallback className="text-xl">
                   {getInitials(teamInfo?.name || '')}
@@ -206,7 +206,7 @@ export default function TeamClient({
               </Avatar>
 
               {/* Dynamic rank badge */}
-              <div className="bg-linear-to-r absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full from-amber-500 to-yellow-400 text-xs font-bold text-white shadow-lg">
+              <div className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-amber-500 to-yellow-400 text-xs font-bold text-white shadow-lg">
                 #{teamData.rank || '?'}
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function TeamClient({
 
               {/* Display description if available */}
               {nova_infor.description && (
-                <p className="text-muted-foreground mt-2">
+                <p className="mt-2 text-muted-foreground">
                   {nova_infor.description}
                 </p>
               )}
@@ -284,7 +284,7 @@ export default function TeamClient({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="dark:via-background bg-linear-to-br rounded-xl border from-amber-50 via-white to-amber-50 p-6 shadow-sm dark:from-amber-950/20 dark:to-amber-950/20"
+            className="rounded-xl border bg-linear-to-br from-amber-50 via-white to-amber-50 p-6 shadow-sm dark:from-amber-950/20 dark:via-background dark:to-amber-950/20"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -292,7 +292,7 @@ export default function TeamClient({
                   <Award className="h-5 w-5 text-amber-500" />
                   Team Rank
                 </h3>
-                <p className="text-muted-foreground mt-1">
+                <p className="mt-1 text-muted-foreground">
                   {teamData.rank && teamData.rank <= 50
                     ? 'This team is currently in the top performers'
                     : 'This team is competing in the leaderboard'}
@@ -304,14 +304,14 @@ export default function TeamClient({
                   <div className="text-3xl font-bold text-amber-500">
                     #{teamData.rank || '?'}
                   </div>
-                  <div className="text-muted-foreground text-sm">Rank</div>
+                  <div className="text-sm text-muted-foreground">Rank</div>
                 </div>
 
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-500">
                     {teamData.total_score?.toFixed(1) || 0}
                   </div>
-                  <div className="text-muted-foreground text-sm">Points</div>
+                  <div className="text-sm text-muted-foreground">Points</div>
                 </div>
               </div>
             </div>
@@ -339,7 +339,7 @@ export default function TeamClient({
                   </CardHeader>
                   <CardContent>
                     {/* Score Distribution Visualization */}
-                    <div className="bg-card/50 mb-6 flex flex-col gap-2 rounded-lg border p-4">
+                    <div className="mb-6 flex flex-col gap-2 rounded-lg border bg-card/50 p-4">
                       <div className="text-base font-medium">
                         Score Distribution
                       </div>
@@ -363,7 +363,7 @@ export default function TeamClient({
                           return (
                             <motion.div
                               key={challenge.id}
-                              className={`bg-linear-to-r relative h-full ${colorClass}`}
+                              className={`relative h-full bg-linear-to-r ${colorClass}`}
                               initial={{ width: 0 }}
                               animate={{ width: `${percentage}%` }}
                               transition={{
@@ -405,7 +405,7 @@ export default function TeamClient({
 
                     {/* Challenge Details */}
                     <div className="space-y-6">
-                      <div className="text-muted-foreground flex justify-between border-b pb-2 text-sm font-medium">
+                      <div className="flex justify-between border-b pb-2 text-sm font-medium text-muted-foreground">
                         <span>Challenge</span>
                         <div className="flex gap-8">
                           <span>Score</span>
@@ -449,7 +449,7 @@ export default function TeamClient({
                             </div>
                             <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                               <motion.div
-                                className="bg-linear-to-r absolute left-0 h-full rounded-full from-blue-500 to-purple-500"
+                                className="absolute left-0 h-full rounded-full bg-linear-to-r from-blue-500 to-purple-500"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${percentage}%` }}
                                 transition={{
@@ -477,19 +477,19 @@ export default function TeamClient({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     Total Members
                   </span>
                   <span className="font-medium">{teamStats.totalMembers}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     Active Since
                   </span>
                   <span className="font-medium">{formattedActiveDate}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     Activity Status
                   </span>
                   <Badge
@@ -549,8 +549,8 @@ export default function TeamClient({
               <CardContent>
                 <div className="grid gap-6 sm:grid-cols-3">
                   {/* Average Member Score */}
-                  <div className="bg-card/50 flex flex-col rounded-lg border p-4">
-                    <span className="text-muted-foreground mb-1 text-xs font-medium">
+                  <div className="flex flex-col rounded-lg border bg-card/50 p-4">
+                    <span className="mb-1 text-xs font-medium text-muted-foreground">
                       Average Member Score
                     </span>
                     <div className="flex items-end gap-2">
@@ -558,7 +558,7 @@ export default function TeamClient({
                         {teamData.stats?.average_member_score?.toFixed(1) ||
                           '0'}
                       </span>
-                      <span className="text-muted-foreground text-sm">
+                      <span className="text-sm text-muted-foreground">
                         points
                       </span>
                     </div>
@@ -575,15 +575,15 @@ export default function TeamClient({
                   </div>
 
                   {/* Weekly Activity */}
-                  <div className="bg-card/50 flex flex-col rounded-lg border p-4">
-                    <span className="text-muted-foreground mb-1 text-xs font-medium">
+                  <div className="flex flex-col rounded-lg border bg-card/50 p-4">
+                    <span className="mb-1 text-xs font-medium text-muted-foreground">
                       Weekly Progress
                     </span>
                     <div className="flex items-end gap-2">
                       <span className="text-2xl font-bold text-green-600">
                         {teamData.stats?.weekly_progress?.toFixed(1) || '0'}
                       </span>
-                      <span className="text-muted-foreground text-sm">
+                      <span className="text-sm text-muted-foreground">
                         points this week
                       </span>
                     </div>
@@ -597,15 +597,15 @@ export default function TeamClient({
                           ? 'Active'
                           : 'Inactive'}
                       </Badge>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-xs text-muted-foreground">
                         Last 7 days
                       </span>
                     </div>
                   </div>
 
                   {/* Top Contributor */}
-                  <div className="bg-card/50 flex flex-col rounded-lg border p-4">
-                    <span className="text-muted-foreground mb-1 text-xs font-medium">
+                  <div className="flex flex-col rounded-lg border bg-card/50 p-4">
+                    <span className="mb-1 text-xs font-medium text-muted-foreground">
                       Top Contributor
                     </span>
                     {teamData.members?.length > 0 && (
@@ -631,11 +631,11 @@ export default function TeamClient({
                               1
                             ) || '0'}
                           </span>
-                          <span className="text-muted-foreground text-sm">
+                          <span className="text-sm text-muted-foreground">
                             points
                           </span>
                         </div>
-                        <div className="text-muted-foreground mt-1 text-xs">
+                        <div className="mt-1 text-xs text-muted-foreground">
                           {teamData?.members?.[0]?.contribution_percentage?.toFixed(
                             1
                           ) || '0'}
@@ -667,10 +667,10 @@ export default function TeamClient({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                     key={member.user_id}
-                    className="hover:bg-muted/50 group flex flex-col gap-4 rounded-lg border p-4 transition-all hover:shadow-md sm:flex-row sm:items-center"
+                    className="group flex flex-col gap-4 rounded-lg border p-4 transition-all hover:bg-muted/50 hover:shadow-md sm:flex-row sm:items-center"
                   >
                     <div className="flex items-center gap-4">
-                      <Avatar className="border-border h-12 w-12 border">
+                      <Avatar className="h-12 w-12 border border-border">
                         <AvatarImage src={member.avatar_url || ''} />
                         <AvatarFallback>
                           {getInitials(member.display_name)}
@@ -688,7 +688,7 @@ export default function TeamClient({
                             </Badge>
                           )}
                         </div>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                           Joined{' '}
                           {member.join_date
                             ? new Date(member.join_date).toLocaleDateString(
@@ -704,7 +704,7 @@ export default function TeamClient({
                       </div>
                     </div>
 
-                    <div className="mt-2 flex flex-col gap-4 sm:ml-auto sm:mt-0 sm:flex-row sm:items-center">
+                    <div className="mt-2 flex flex-col gap-4 sm:mt-0 sm:ml-auto sm:flex-row sm:items-center">
                       <div className="flex items-center gap-3">
                         <div className="rounded-md bg-blue-50 px-2.5 py-1 text-sm font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
                           {member.individual_score.toFixed(1)} pts
@@ -716,7 +716,7 @@ export default function TeamClient({
 
                       <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 sm:w-32 dark:bg-gray-800">
                         <motion.div
-                          className="bg-linear-to-r h-full from-blue-500 to-purple-500"
+                          className="h-full bg-linear-to-r from-blue-500 to-purple-500"
                           initial={{ width: 0 }}
                           animate={{
                             width: `${member.contribution_percentage}%`,
@@ -749,45 +749,45 @@ export default function TeamClient({
                 <div className="space-y-8">
                   {/* Performance Summary */}
                   <div className="grid gap-6 md:grid-cols-3">
-                    <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
-                      <div className="text-muted-foreground mb-1 text-sm">
+                    <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center shadow-sm">
+                      <div className="mb-1 text-sm text-muted-foreground">
                         Team Average
                       </div>
                       <div className="text-2xl font-bold text-blue-600">
                         {teamData.stats.average_member_score.toFixed(1)}
                       </div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="text-xs text-muted-foreground">
                         points per member
                       </div>
                     </div>
 
-                    <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
-                      <div className="text-muted-foreground mb-1 text-sm">
+                    <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center shadow-sm">
+                      <div className="mb-1 text-sm text-muted-foreground">
                         Weekly Activity
                       </div>
                       <div className="text-2xl font-bold text-green-600">
                         {teamData.stats.weekly_progress?.toFixed(1) || 0}
                       </div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="text-xs text-muted-foreground">
                         points this week
                       </div>
                     </div>
 
-                    <div className="bg-card flex flex-col items-center justify-center rounded-lg border p-4 text-center shadow-sm">
-                      <div className="text-muted-foreground mb-1 text-sm">
+                    <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center shadow-sm">
+                      <div className="mb-1 text-sm text-muted-foreground">
                         Top Member
                       </div>
                       <div className="text-2xl font-bold text-purple-600">
                         {teamData.members[0]?.individual_score.toFixed(1) || 0}
                       </div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="text-xs text-muted-foreground">
                         points by {teamData.members[0]?.display_name}
                       </div>
                     </div>
                   </div>
 
                   {/* Member Contribution Chart */}
-                  <div className="bg-card rounded-lg border p-6 shadow-sm">
+                  <div className="rounded-lg border bg-card p-6 shadow-sm">
                     <h3 className="mb-4 text-lg font-medium">
                       Member Contributions
                     </h3>
@@ -811,14 +811,14 @@ export default function TeamClient({
                                 {member.display_name}
                               </span>
                             </div>
-                            <span className="text-muted-foreground text-sm">
+                            <span className="text-sm text-muted-foreground">
                               {member.individual_score.toFixed(1)} pts (
                               {member.contribution_percentage}%)
                             </span>
                           </div>
                           <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                             <motion.div
-                              className="bg-linear-to-r h-full rounded-full from-blue-500 to-purple-500"
+                              className="h-full rounded-full bg-linear-to-r from-blue-500 to-purple-500"
                               initial={{ width: 0 }}
                               animate={{
                                 width: `${member.contribution_percentage}%`,
@@ -837,7 +837,7 @@ export default function TeamClient({
                   {/* Challenge Performance */}
                   {teamData.challenge_details &&
                     teamData.challenge_details.length > 0 && (
-                      <div className="bg-card rounded-lg border p-6 shadow-sm">
+                      <div className="rounded-lg border bg-card p-6 shadow-sm">
                         <h3 className="mb-4 text-lg font-medium">
                           Challenge Performance
                         </h3>
@@ -853,12 +853,12 @@ export default function TeamClient({
                                   duration: 0.3,
                                   delay: 0.05 * index,
                                 }}
-                                className="hover:bg-muted/50 flex flex-col rounded-lg border p-4 transition-colors"
+                                className="flex flex-col rounded-lg border p-4 transition-colors hover:bg-muted/50"
                               >
                                 <div className="text-md font-medium">
                                   {challenge.title}
                                 </div>
-                                <div className="text-muted-foreground mb-2 text-sm">
+                                <div className="mb-2 text-sm text-muted-foreground">
                                   {(
                                     (challenge.score /
                                       (teamData.total_score || 1)) *
@@ -876,7 +876,7 @@ export default function TeamClient({
                     )}
                 </div>
               ) : (
-                <div className="text-muted-foreground flex h-24 items-center justify-center">
+                <div className="flex h-24 items-center justify-center text-muted-foreground">
                   No recent activity data available
                 </div>
               )}

@@ -290,7 +290,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
           <TabsContent value="prompt" className="space-y-4">
             <div className="flex h-full flex-col">
               <div className="mb-2 flex items-center justify-between">
-                <div className="text-muted-foreground text-sm">
+                <div className="text-sm text-muted-foreground">
                   Characters: {prompt.length} / {problem.max_prompt_length}
                 </div>
                 {remainingAttempts !== null && (
@@ -373,9 +373,9 @@ export default function PromptForm({ problem, session, submissions }: Props) {
           <TabsContent value="submissions" className="space-y-4">
             {submissions && submissions.length == 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                 <h3 className="text-lg font-medium">No submissions yet</h3>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Your submission history will appear here after you submit your
                   first prompt.
                 </p>
@@ -409,11 +409,11 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                   <TabsContent value="current" className="space-y-4">
                     {currentSubmissions && currentSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                         <h3 className="text-lg font-medium">
                           No submissions in current session
                         </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Submit your first prompt to see results here.
                         </p>
                       </div>
@@ -441,11 +441,11 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                   <TabsContent value="past" className="space-y-4">
                     {pastSubmissions && pastSubmissions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                         <h3 className="text-lg font-medium">
                           No submissions from past sessions
                         </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Past session submissions will appear here.
                         </p>
                       </div>

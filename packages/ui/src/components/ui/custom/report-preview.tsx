@@ -25,9 +25,9 @@ export default function ReportPreview({
     <div className="overflow-x-auto xl:flex-none">
       <div
         id="printable-area"
-        className="dark:bg-foreground/10 h-fit w-full flex-none rounded-xl print:p-4"
+        className="h-fit w-full flex-none rounded-xl dark:bg-foreground/10 print:p-4"
       >
-        <div className="text-foreground h-full rounded-lg border p-4 md:p-12">
+        <div className="h-full rounded-lg border p-4 text-foreground md:p-12">
           <div className="flex flex-wrap items-center justify-between gap-8">
             {getConfig('BRAND_LOGO_URL') && (
               <img
@@ -51,7 +51,7 @@ export default function ReportPreview({
               )}
 
               {getConfig('BRAND_PHONE_NUMBER') && (
-                <div className="flex flex-wrap items-center justify-center gap-2 break-keep text-center text-sm font-semibold print:gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-2 text-center text-sm font-semibold break-keep print:gap-2">
                   {getConfig('BRAND_PHONE_NUMBER')}
                 </div>
               )}
@@ -64,7 +64,7 @@ export default function ReportPreview({
             <Separator className="my-4" />
           )}
 
-          <div className="text-foreground text-center text-lg font-bold uppercase">
+          <div className="text-center text-lg font-bold text-foreground uppercase">
             {getConfig('REPORT_TITLE_PREFIX')}{' '}
             {new Date().toLocaleDateString(lang, {
               month: 'long',
@@ -77,7 +77,7 @@ export default function ReportPreview({
           </div>
 
           {getConfig('REPORT_INTRO') && (
-            <div className="mt-2 whitespace-pre-wrap text-left text-sm">
+            <div className="mt-2 text-left text-sm whitespace-pre-wrap">
               {parseDynamicText(getConfig('REPORT_INTRO'))}
             </div>
           )}
@@ -85,14 +85,14 @@ export default function ReportPreview({
           {(!!getConfig('REPORT_CONTENT_TEXT') ||
             !!getConfig('REPORT_SCORE_TEXT') ||
             !!getConfig('REPORT_FEEDBACK_TEXT')) && (
-            <div className="border-foreground/50 my-4 flex flex-col justify-stretch rounded border-2 text-sm md:flex-row">
+            <div className="my-4 flex flex-col justify-stretch rounded border-2 border-foreground/50 text-sm md:flex-row">
               {getConfig('REPORT_CONTENT_TEXT') && (
                 <div className="md:flex-2">
-                  <div className="flex h-16 items-center justify-center whitespace-pre-wrap p-2 text-center text-sm font-bold">
+                  <div className="flex h-16 items-center justify-center p-2 text-center text-sm font-bold whitespace-pre-wrap">
                     {getConfig('REPORT_CONTENT_TEXT')}
                   </div>
                   <div
-                    className={`border-foreground/50 min-h-24 text-ellipsis whitespace-pre-line break-words border-t-2 p-2 font-semibold ${
+                    className={`min-h-24 border-t-2 border-foreground/50 p-2 font-semibold break-words text-ellipsis whitespace-pre-line ${
                       !data?.content ? 'text-center underline' : 'text-left'
                     }`}
                   >
@@ -105,15 +105,15 @@ export default function ReportPreview({
 
               {getConfig('REPORT_CONTENT_TEXT') &&
                 getConfig('REPORT_SCORE_TEXT') && (
-                  <div className="bg-foreground/50 h-[2px] min-h-full w-auto shrink-0 md:h-auto md:w-[2px]" />
+                  <div className="h-[2px] min-h-full w-auto shrink-0 bg-foreground/50 md:h-auto md:w-[2px]" />
                 )}
 
               {getConfig('REPORT_SCORE_TEXT') && (
-                <div className="border-foreground/50 flex-1">
-                  <div className="flex h-16 flex-col items-center justify-center whitespace-pre-wrap p-2 text-sm font-bold">
+                <div className="flex-1 border-foreground/50">
+                  <div className="flex h-16 flex-col items-center justify-center p-2 text-sm font-bold whitespace-pre-wrap">
                     {getConfig('REPORT_SCORE_TEXT')}
                   </div>
-                  <div className="border-foreground/50 flex min-h-24 justify-center text-ellipsis whitespace-pre-line break-words border-t-2 p-2 text-center">
+                  <div className="flex min-h-24 justify-center border-t-2 border-foreground/50 p-2 text-center break-words text-ellipsis whitespace-pre-line">
                     <span
                       className={
                         data?.score
@@ -130,16 +130,16 @@ export default function ReportPreview({
               {(getConfig('REPORT_SCORE_TEXT') ||
                 getConfig('REPORT_CONTENT_TEXT')) &&
                 getConfig('REPORT_FEEDBACK_TEXT') && (
-                  <div className="bg-foreground/50 h-[2px] min-h-full w-auto shrink-0 md:h-auto md:w-[2px]" />
+                  <div className="h-[2px] min-h-full w-auto shrink-0 bg-foreground/50 md:h-auto md:w-[2px]" />
                 )}
 
               {getConfig('REPORT_FEEDBACK_TEXT') && (
                 <div className="flex-2">
-                  <div className="flex h-16 items-center justify-center whitespace-pre-wrap p-2 text-sm font-bold">
+                  <div className="flex h-16 items-center justify-center p-2 text-sm font-bold whitespace-pre-wrap">
                     {getConfig('REPORT_FEEDBACK_TEXT')}
                   </div>
                   <div
-                    className={`border-foreground/50 min-h-24 text-ellipsis whitespace-pre-line break-words border-t-2 p-2 font-semibold ${
+                    className={`min-h-24 border-t-2 border-foreground/50 p-2 font-semibold break-words text-ellipsis whitespace-pre-line ${
                       !data?.feedback ? 'text-center underline' : 'text-left'
                     }`}
                   >

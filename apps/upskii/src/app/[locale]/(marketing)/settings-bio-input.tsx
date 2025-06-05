@@ -95,7 +95,7 @@ export default function BioInput({ defaultValue = '', disabled }: Props) {
             control={form.control}
             name="bio"
             render={({ field }) => (
-              <FormItem className="w-full md:min-w-max md:max-w-lg">
+              <FormItem className="w-full md:max-w-lg md:min-w-max">
                 <FormControl>
                   <Textarea
                     className="field-sizing-fixed resize-none"
