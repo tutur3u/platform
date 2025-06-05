@@ -28,6 +28,14 @@ export type CertificateDetails = {
   certificateId: string;
 };
 
+export type CertificateListItem = {
+  id: string;
+  courseName: string;
+  completionDate: string;
+  workspaceName: string;
+  wsId: string;
+};
+
 export async function getCertificateDetails(
   certificateId: string,
   userId: string
@@ -74,4 +82,55 @@ export async function getCertificateDetails(
     completionDate: certificate.completed_date,
     certificateId: certificate.id,
   };
+}
+
+export async function getAllCertificatesForUser(userId: string, wsId: string): Promise<CertificateListItem[]> {
+  const supabase = await createClient();
+
+  const { data: certificates, error } = (await supabase
+    .from('course_certificates')
+    .select(
+      `
+      id,
+      completed_date,
+      workspace_courses!course_certificates_course_id_fkey (
+        name,
+        ws_id,
+        workspaces!workspace_courses_ws_id_fkey (
+          name
+        )
+      )
+    `
+    )
+    .eq('user_id', userId)
+    .eq('workspace_courses.ws_id', wsId)
+    .order('completed_date', { ascending: false })) as {
+      data: (Database['public']['Tables']['course_certificates']['Row'] & {
+        workspace_courses: Pick<
+          Database['public']['Tables']['workspace_courses']['Row'],
+          'name' | 'ws_id'
+        > & {
+          workspaces: Pick<
+            Database['public']['Tables']['workspaces']['Row'],
+            'name'
+          >;
+        };
+      })[] | null; 
+      error: any 
+    };
+
+  if (error) {
+    throw new Error('Failed to fetch certificates');
+  }
+
+  if (!certificates) {
+    return [];
+  }
+  return certificates.map(certificate => ({
+    id: certificate.id,
+    courseName: certificate.workspace_courses.name,
+    completionDate: certificate.completed_date,
+    workspaceName: certificate.workspace_courses.workspaces.name || 'Unknown Workspace',
+    wsId: certificate.workspace_courses.ws_id,
+  }));
 }
