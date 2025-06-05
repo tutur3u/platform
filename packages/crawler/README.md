@@ -9,7 +9,7 @@ npm install @tuturuuu/crawler
 # or
 yarn add @tuturuuu/crawler
 # or
-pnpm add @tuturuuu/crawler
+bun add @tuturuuu/crawler
 ```
 
 ## Features
@@ -23,10 +23,10 @@ pnpm add @tuturuuu/crawler
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Run tests
-pnpm test
+bun test
 ```
 
 ## License

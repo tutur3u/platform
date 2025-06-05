@@ -4,27 +4,27 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 7806 --turbopack",
-    "devx": "cd ../db && pnpm supabase stop && pnpm i && pnpm supabase start && cd ../upskii && next dev -p 7806 --turbopack",
+    "devx": "cd ../db && bun supabase stop && bun i && bun supabase start && cd ../upskii && next dev -p 7806 --turbopack",
     "bdevx": "cd ../db && bun supabase stop && bun i && bun supabase start && cd ../upskii && next dev -p 7806 --turbopack",
-    "devrs": "cd ../db && pnpm supabase stop --no-backup && pnpm i && pnpm supabase start && pnpm supabase db reset && cd ../upskii && next dev -p 7806 --turbopack",
+    "devrs": "cd ../db && bun supabase stop --no-backup && bun i && bun supabase start && bun supabase db reset && cd ../upskii && next dev -p 7806 --turbopack",
     "bdevrs": "cd ../db && bun supabase stop --no-backup && bun i && bun supabase start && bun supabase db reset && cd ../upskii && next dev -p 7806 --turbopack",
     "build": "next build",
     "start": "next start",
     "preview": "next build && cd ../upskii && next start -p 7806 --turbopack",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "stop": "cd ../db && pnpm supabase stop",
-    "sb:status": "cd ../db && pnpm supabase status",
-    "sb:start": "cd ../db && pnpm supabase start",
-    "sb:stop": "cd ../db && pnpm supabase stop",
-    "sb:sync": "cd ../db && pnpm supabase db pull",
-    "sb:reset": "cd ../db && pnpm supabase db reset",
-    "sb:diff": "cd ../db && pnpm supabase db diff -f new_migration",
-    "sb:new": "cd ../db && pnpm supabase migration new new_migration",
-    "sb:up": "cd ../db && pnpm supabase migration up",
-    "sb:typegen": "cd ../db && pnpm supabase gen types typescript --local --schema public > src/types/supabase.ts && prettier --write src/types/supabase.ts",
-    "ui:add": "pnpm dlx shadcn-ui@latest add",
-    "ui:diff": "pnpm dlx shadcn-ui@latest diff"
+    "stop": "cd ../db && bun supabase stop",
+    "sb:status": "cd ../db && bun supabase status",
+    "sb:start": "cd ../db && bun supabase start",
+    "sb:stop": "cd ../db && bun supabase stop",
+    "sb:sync": "cd ../db && bun supabase db pull",
+    "sb:reset": "cd ../db && bun supabase db reset",
+    "sb:diff": "cd ../db && bun supabase db diff -f new_migration",
+    "sb:new": "cd ../db && bun supabase migration new new_migration",
+    "sb:up": "cd ../db && bun supabase migration up",
+    "sb:typegen": "cd ../db && bun supabase gen types typescript --local --schema public > src/types/supabase.ts && prettier --write src/types/supabase.ts",
+    "ui:add": "bunx shadcn-ui@latest add",
+    "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -108,5 +108,5 @@
   "overrides": {
     "react-is": "^19.1.0"
   },
-  "packageManager": "pnpm@10.11.1"
+  "packageManager": "bun@1.2.15"
 }
