@@ -84,7 +84,10 @@ export async function getCertificateDetails(
   };
 }
 
-export async function getAllCertificatesForUser(userId: string, wsId: string): Promise<CertificateListItem[]> {
+export async function getAllCertificatesForUser(
+  userId: string,
+  wsId: string
+): Promise<CertificateListItem[]> {
   const supabase = await createClient();
 
   const { data: certificates, error } = (await supabase
@@ -105,19 +108,21 @@ export async function getAllCertificatesForUser(userId: string, wsId: string): P
     .eq('user_id', userId)
     .eq('workspace_courses.ws_id', wsId)
     .order('completed_date', { ascending: false })) as {
-      data: (Database['public']['Tables']['course_certificates']['Row'] & {
-        workspace_courses: Pick<
-          Database['public']['Tables']['workspace_courses']['Row'],
-          'name' | 'ws_id'
-        > & {
-          workspaces: Pick<
-            Database['public']['Tables']['workspaces']['Row'],
-            'name'
-          >;
-        };
-      })[] | null; 
-      error: any 
-    };
+    data:
+      | (Database['public']['Tables']['course_certificates']['Row'] & {
+          workspace_courses: Pick<
+            Database['public']['Tables']['workspace_courses']['Row'],
+            'name' | 'ws_id'
+          > & {
+            workspaces: Pick<
+              Database['public']['Tables']['workspaces']['Row'],
+              'name'
+            >;
+          };
+        })[]
+      | null;
+    error: any;
+  };
 
   if (error) {
     throw new Error('Failed to fetch certificates');
@@ -126,11 +131,12 @@ export async function getAllCertificatesForUser(userId: string, wsId: string): P
   if (!certificates) {
     return [];
   }
-  return certificates.map(certificate => ({
+  return certificates.map((certificate) => ({
     id: certificate.id,
     courseName: certificate.workspace_courses.name,
     completionDate: certificate.completed_date,
-    workspaceName: certificate.workspace_courses.workspaces.name || 'Unknown Workspace',
+    workspaceName:
+      certificate.workspace_courses.workspaces.name || 'Unknown Workspace',
     wsId: certificate.workspace_courses.ws_id,
   }));
 }
