@@ -63,6 +63,22 @@ const CalendarSyncContext = createContext<{
   syncToGoogle: async () => {},
 });
 
+// Add a type for the cache
+type CalendarCache = {
+  [key: string]: {
+    dbEvents: WorkspaceCalendarEvent[];
+    googleEvents: WorkspaceCalendarEvent[];
+    lastUpdated: number;
+  };
+};
+
+// Helper type for cache updates
+type CacheUpdate = {
+  dbEvents?: WorkspaceCalendarEvent[];
+  googleEvents?: WorkspaceCalendarEvent[];
+  lastUpdated: number;
+};
+
 export const CalendarSyncProvider = ({
   children,
   wsId,
@@ -85,71 +101,142 @@ export const CalendarSyncProvider = ({
   const [currentView, setCurrentView] = useState<
     'day' | '4-day' | 'week' | 'month'
   >('day');
+  const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const prevGoogleDataRef = useRef<string>('');
   const prevDatesRef = useRef<string>('');
   const queryClient = useQueryClient();
 
-  // Fetch database events every 30 seconds
+  // Helper to generate cache key from dates
+  const getCacheKey = (dateRange: Date[]) => {
+    if (!dateRange || dateRange.length === 0) {
+      return '';
+    }
+    return `${dateRange[0]!.toISOString()}-${dateRange[dateRange.length - 1]!.toISOString()}`;
+  };
+
+  // Helper to check if cache is stale (older than 5 minutes)
+  const isCacheStale = (lastUpdated: number) => {
+    return Date.now() - lastUpdated > 5 * 60 * 1000;
+  };
+
+  // Helper to update cache safely
+  const updateCache = (cacheKey: string, update: CacheUpdate) => {
+    setCalendarCache((prev) => {
+      const existing = prev[cacheKey] || {
+        dbEvents: [],
+        googleEvents: [],
+        lastUpdated: 0,
+      };
+
+      return {
+        ...prev,
+        [cacheKey]: {
+          dbEvents: update.dbEvents || existing.dbEvents,
+          googleEvents: update.googleEvents || existing.googleEvents,
+          lastUpdated: update.lastUpdated,
+        },
+      };
+    });
+  };
+
+  // Fetch database events with caching
   const { data: fetchedData } = useQuery({
-    queryKey: ['databaseCalendarEvents', wsId],
-    enabled: !!wsId,
-    queryFn: () => fetchCalendarEvents(),
+    queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
+    enabled: !!wsId && dates.length > 0,
+    queryFn: async () => {
+      const cacheKey = getCacheKey(dates);
+      if (!cacheKey) return null;
+
+      const cachedData = calendarCache[cacheKey];
+
+      // If we have cached data and it's not stale, return it immediately
+      if (cachedData?.dbEvents && !isCacheStale(cachedData.lastUpdated)) {
+        setData(cachedData.dbEvents);
+        return cachedData.dbEvents;
+      }
+
+      // Otherwise fetch fresh data
+      const supabase = createClient();
+      const startDate = dayjs(dates[0]).startOf('day');
+      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
+
+      const { data: fetchedData, error: dbError } = await supabase
+        .from('workspace_calendar_events')
+        .select('*')
+        .eq('ws_id', wsId)
+        .gte('start_at', startDate.toISOString())
+        .lte('end_at', endDate.toISOString())
+        .order('start_at', { ascending: true });
+
+      if (dbError) {
+        console.error(dbError);
+        setError(dbError);
+        return null;
+      }
+
+      // Update cache with new data
+      updateCache(cacheKey, {
+        dbEvents: fetchedData,
+        lastUpdated: Date.now(),
+      });
+
+      setData(fetchedData);
+      return fetchedData;
+    },
     refetchInterval: 30000,
   });
 
-  const fetchCalendarEvents = async () => {
-    const supabase = createClient();
-    let startDate = dayjs(dates[0]).startOf('day');
-    let endDate = dayjs(dates[dates.length - 1]).endOf('day');
-
-    // Fetch from database
-    const { data: fetchedData, error: dbError } = await supabase
-      .from('workspace_calendar_events')
-      .select('*')
-      .eq('ws_id', wsId)
-      .gte('start_at', startDate.toISOString())
-      .lte('end_at', endDate.toISOString())
-      .order('start_at', { ascending: true });
-
-    if (dbError) {
-      console.error(dbError);
-      setError(dbError);
-      return;
-    }
-    return fetchedData;
-  };
-
-  // Fetch google events every 30 seconds
+  // Fetch google events with caching
   const { data: fetchedGoogleData } = useQuery({
-    queryKey: ['googleCalendarEvents', wsId],
-    enabled: !!wsId && experimentalGoogleToken?.ws_id === wsId,
-    queryFn: () => fetchGoogleCalendarEvents(),
+    queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
+    enabled:
+      !!wsId && experimentalGoogleToken?.ws_id === wsId && dates.length > 0,
+    queryFn: async () => {
+      const cacheKey = getCacheKey(dates);
+      if (!cacheKey) return null;
+
+      const cachedData = calendarCache[cacheKey];
+
+      // If we have cached data and it's not stale, return it immediately
+      if (cachedData?.googleEvents && !isCacheStale(cachedData.lastUpdated)) {
+        setGoogleData(cachedData.googleEvents);
+        return cachedData.googleEvents;
+      }
+
+      // Otherwise fetch fresh data
+      console.log('Fetching fresh google events');
+      const startDate = dayjs(dates[0]).startOf('day');
+      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
+
+      const response = await fetch(
+        `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+      );
+      const googleResponse = await response.json();
+
+      if (!response.ok) {
+        const errorMessage =
+          googleResponse.error +
+          '. ' +
+          googleResponse.googleError +
+          ': ' +
+          googleResponse.details?.reason;
+        console.error(errorMessage);
+        setError(new Error(errorMessage));
+        return null;
+      }
+
+      // Update cache with new data
+      updateCache(cacheKey, {
+        googleEvents: googleResponse.events,
+        lastUpdated: Date.now(),
+      });
+
+      setGoogleData(googleResponse.events);
+      setError(null);
+      return googleResponse.events;
+    },
     refetchInterval: 30000,
   });
-
-  const fetchGoogleCalendarEvents = async () => {
-    console.log('30 SECONDS fetch google events');
-    let startDate = dayjs(dates[0]).startOf('day');
-    let endDate = dayjs(dates[dates.length - 1]).endOf('day');
-    const response = await fetch(
-      `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
-    );
-    const googleResponse = await response.json();
-    if (!response.ok) {
-      const errorMessage =
-        googleResponse.error +
-        '. ' +
-        googleResponse.googleError +
-        ': ' +
-        googleResponse.details?.reason;
-      console.error(errorMessage);
-      setError(new Error(errorMessage));
-      return;
-    } else {
-      setError(null);
-    }
-    return googleResponse.events;
-  };
 
   // Helper to check if dates have actually changed
   const areDatesEqual = (newDates: Date[]) => {
@@ -408,6 +495,15 @@ export const CalendarSyncProvider = ({
         });
         await new Promise((resolve) => setTimeout(resolve, 1000)); // Longer delay at completion
       }
+
+      // After successful sync, update the cache
+      if (upsertData) {
+        const cacheKey = getCacheKey(dates);
+        updateCache(cacheKey, {
+          dbEvents: upsertData,
+          lastUpdated: Date.now(),
+        });
+      }
     },
     [wsId, dates]
   );
@@ -444,19 +540,14 @@ export const CalendarSyncProvider = ({
       return;
     }
 
-    const syncData = async () => {
-      const ggData = await fetchGoogleCalendarEvents();
-      if (ggData) {
-        const currentGoogleDataStr = JSON.stringify(ggData);
-
-        // Only sync if the data has changed for this view
-        console.log('useEffect 2');
-        syncToTuturuuu();
-        prevGoogleDataRef.current = currentGoogleDataStr;
-      }
-    };
-    syncData();
-  }, [dates]);
+    // Trigger a refetch of both database and google events
+    queryClient.invalidateQueries({
+      queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
+    });
+  }, [dates, queryClient, wsId, experimentalGoogleToken?.ws_id]);
 
   /*
   Show data from database to Tuturuuu
