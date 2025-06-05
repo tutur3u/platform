@@ -139,10 +139,10 @@ export default async function CertificatesPage({ params }: Props) {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <h3 className="text-lg font-semibold mb-2">
-            {t('certificates.error')}
+            {t('error')}
           </h3>
           <p className="text-muted-foreground">
-            {t('certificates.error_description')}
+            {t('error_description')}
           </p>
         </div>
       </div>

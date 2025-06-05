@@ -4123,6 +4123,9 @@
     "error": "Không thể tải chứng chỉ",
     "error_description": "Có lỗi xảy ra khi tải chứng chỉ của bạn. Vui lòng thử lại sau.",
     "page_title": "Chứng chỉ của tôi",
-    "page_description": "Xem và tải tất cả chứng chỉ của mình"
+    "page_description": "Xem và tải tất cả chứng chỉ của mình",
+    "empty_state_title": "Chưa có chứng chỉ",
+    "empty_state_description": "Hoàn thành các khóa học để giành chứng chỉ và thể hiện thành tích của bạn.",
+    "browse_courses": "Xem các khóa học"
   }
 }
