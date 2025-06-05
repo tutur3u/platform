@@ -1,4 +1,5 @@
 import { Button } from '@tuturuuu/ui/button';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import {
   Select,
   SelectContent,
@@ -7,11 +8,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import dayjs from 'dayjs';
-import {
-  Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function CalendarHeader({
   t,
@@ -61,6 +58,7 @@ export function CalendarHeader({
       return newDate;
     });
 
+  const { isLoading, isSyncing } = useCalendarSync();
   const selectToday = () => setDate(new Date());
   const isToday = () => dayjs(date).isSame(dayjs(), 'day');
   const isCurrentMonth = () =>
@@ -74,8 +72,11 @@ export function CalendarHeader({
         <CalendarIcon className="text-muted-foreground h-5 w-5" />
         <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       </div>
-
+      {/* Loading circle */}
       <div className="flex items-center gap-2">
+        {(isLoading || isSyncing) && (
+          <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+        )}
         <Button
           variant="outline"
           size="icon"
