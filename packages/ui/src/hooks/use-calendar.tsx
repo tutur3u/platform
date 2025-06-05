@@ -218,26 +218,6 @@ export const CalendarProvider = ({
   endOfRange.setDate(0); // Last day of that month
   endOfRange.setHours(23, 59, 59, 999);
 
-  // Define an async function to fetch the calendar events
-  const fetchCalendarEvents = async () => {
-    if (!ws?.id) return { data: [], count: 0 };
-
-    const dateRangeQuery = getDateRangeQuery({
-      startDate: startOfRange,
-      endDate: endOfRange,
-    });
-
-    const response = await fetch(
-      `/api/v1/workspaces/${ws.id}/calendar/events${dateRangeQuery}`
-    );
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch calendar events');
-    }
-
-    return (await response.json()) as { data: CalendarEvent[]; count: number };
-  };
-
   const { events } = useCalendarSync();
 
   // Invalidate and refetch events
