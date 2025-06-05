@@ -9,7 +9,7 @@ npm install @tuturuuu/ui
 # or
 yarn add @tuturuuu/ui
 # or
-pnpm add @tuturuuu/ui
+bun add @tuturuuu/ui
 ```
 
 ## Usage
@@ -38,7 +38,7 @@ export default function MyComponent() {
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 ```
 
 ## License

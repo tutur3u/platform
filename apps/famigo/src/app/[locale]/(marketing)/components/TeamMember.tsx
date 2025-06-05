@@ -79,19 +79,19 @@ const TeamMember = ({
       viewport={{ once: true }}
       whileHover={{ y: -5 }}
       transition={{ duration: 0.3 }}
-      className="border-foreground/10 bg-background/50 dark:border-foreground/5 dark:bg-background/20 rounded-xl border p-6 text-center backdrop-blur-sm"
+      className="rounded-xl border border-foreground/10 bg-background/50 p-6 text-center backdrop-blur-sm dark:border-foreground/5 dark:bg-background/20"
     >
       <div
-        className={`bg-linear-to-br mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full ${getGradientClasses()} shadow-md`}
+        className={`mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br ${getGradientClasses()} shadow-md`}
       >
         <div className={getIconColorClass()}>{icon}</div>
       </div>
       <h3 className="mb-1 text-xl font-bold">{name}</h3>
       <p className={`mb-3 text-sm ${getTextColorClass()}`}>{role}</p>
-      <p className="text-muted-foreground text-sm">{bio}</p>
+      <p className="text-sm text-muted-foreground">{bio}</p>
 
       {/* Add hover effect with a gradient line */}
-      <div className="via-foreground/20 bg-linear-to-r mx-auto mt-4 h-1 w-0 rounded-full from-transparent to-transparent transition-all duration-300 group-hover:w-full"></div>
+      <div className="mx-auto mt-4 h-1 w-0 rounded-full bg-linear-to-r from-transparent via-foreground/20 to-transparent transition-all duration-300 group-hover:w-full"></div>
     </motion.div>
   );
 };

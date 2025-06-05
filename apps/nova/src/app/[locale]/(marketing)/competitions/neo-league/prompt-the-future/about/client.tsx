@@ -240,7 +240,7 @@ export function AboutUsClient() {
         whileHover={{ y: -5, transition: { duration: 0.2 } }}
         className="group"
       >
-        <Card className="border-foreground/10 bg-foreground/5 group-hover:border-primary/30 group-hover:bg-foreground/10 group-hover:shadow-primary/5 h-full overflow-hidden text-center transition-all duration-300 group-hover:shadow-lg">
+        <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 text-center transition-all duration-300 group-hover:border-primary/30 group-hover:bg-foreground/10 group-hover:shadow-lg group-hover:shadow-primary/5">
           <div className="relative p-6">
             {/* Animated gradient border on hover */}
             <motion.div
@@ -255,7 +255,7 @@ export function AboutUsClient() {
             />
 
             <div className="mb-4 flex flex-col items-center justify-center gap-4">
-              <div className="border-primary/20 bg-foreground/10 relative h-32 w-32 overflow-hidden rounded-full border-2">
+              <div className="relative h-32 w-32 overflow-hidden rounded-full border-2 border-primary/20 bg-foreground/10">
                 <Image
                   src={member.image}
                   alt={name}
@@ -274,23 +274,23 @@ export function AboutUsClient() {
               </div>
               <div className="flex flex-col items-center justify-center gap-2 text-center">
                 <motion.h3
-                  className="group-hover:text-primary text-xl font-bold transition-colors duration-300"
+                  className="text-xl font-bold transition-colors duration-300 group-hover:text-primary"
                   whileHover={{ scale: 1.02 }}
                 >
                   {name}
                 </motion.h3>
-                <p className="text-primary text-balance text-sm">{role}</p>
+                <p className="text-sm text-balance text-primary">{role}</p>
                 {organization && (
                   <Badge
                     variant="outline"
-                    className="bg-primary/5 mt-1 text-xs"
+                    className="mt-1 bg-primary/5 text-xs"
                   >
                     {organization}
                   </Badge>
                 )}
               </div>
             </div>
-            <p className="text-muted-foreground mb-4 text-balance text-sm">
+            <p className="mb-4 text-sm text-balance text-muted-foreground">
               {bio}
             </p>
             {member.links && (
@@ -300,7 +300,7 @@ export function AboutUsClient() {
                     href={member.links.twitter}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-foreground/10 text-muted-foreground hover:bg-primary/20 hover:text-primary rounded-full p-2 transition-colors"
+                    className="rounded-full bg-foreground/10 p-2 text-muted-foreground transition-colors hover:bg-primary/20 hover:text-primary"
                   >
                     <motion.div
                       whileHover={{ rotate: 15, scale: 1.2 }}
@@ -315,7 +315,7 @@ export function AboutUsClient() {
                     href={member.links.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-foreground/10 text-muted-foreground hover:bg-primary/20 hover:text-primary rounded-full p-2 transition-colors"
+                    className="rounded-full bg-foreground/10 p-2 text-muted-foreground transition-colors hover:bg-primary/20 hover:text-primary"
                   >
                     <motion.div
                       whileHover={{ rotate: 15, scale: 1.2 }}
@@ -330,7 +330,7 @@ export function AboutUsClient() {
                     href={member.links.github}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-foreground/10 text-muted-foreground hover:bg-primary/20 hover:text-primary rounded-full p-2 transition-colors"
+                    className="rounded-full bg-foreground/10 p-2 text-muted-foreground transition-colors hover:bg-primary/20 hover:text-primary"
                   >
                     <motion.div
                       whileHover={{ rotate: 15, scale: 1.2 }}
@@ -345,7 +345,7 @@ export function AboutUsClient() {
                     href={member.links.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-foreground/10 text-muted-foreground hover:bg-primary/20 hover:text-primary rounded-full p-2 transition-colors"
+                    className="rounded-full bg-foreground/10 p-2 text-muted-foreground transition-colors hover:bg-primary/20 hover:text-primary"
                   >
                     <motion.div
                       whileHover={{ rotate: 15, scale: 1.2 }}
@@ -358,7 +358,7 @@ export function AboutUsClient() {
                 {member.links.email && (
                   <Link
                     href={`mailto:${member.links.email}`}
-                    className="bg-foreground/10 text-muted-foreground hover:bg-primary/20 hover:text-primary rounded-full p-2 transition-colors"
+                    className="rounded-full bg-foreground/10 p-2 text-muted-foreground transition-colors hover:bg-primary/20 hover:text-primary"
                   >
                     <motion.div
                       whileHover={{ rotate: 15, scale: 1.2 }}
@@ -416,7 +416,7 @@ export function AboutUsClient() {
       >
         <Card
           className={cn(
-            'border-foreground/10 bg-foreground/5 group-hover:border-primary/30 group-hover:bg-foreground/10 h-full overflow-hidden transition-all duration-300',
+            'h-full overflow-hidden border-foreground/10 bg-foreground/5 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-foreground/10',
             tierGlows[sponsor.tier]
           )}
         >
@@ -435,7 +435,7 @@ export function AboutUsClient() {
 
             <div
               className={cn(
-                'bg-linear-to-r absolute inset-x-0 top-0 h-1.5',
+                'absolute inset-x-0 top-0 h-1.5 bg-linear-to-r',
                 tierColors[sponsor.tier]
               )}
             />
@@ -456,7 +456,7 @@ export function AboutUsClient() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    'bg-linear-to-r mt-2 bg-clip-text text-transparent',
+                    'mt-2 bg-linear-to-r bg-clip-text text-transparent',
                     tierColors[sponsor.tier]
                   )}
                 >
@@ -476,12 +476,12 @@ export function AboutUsClient() {
                 </Badge>
               </div>
               <motion.h3
-                className="group-hover:text-primary mb-2 text-balance text-xl font-bold transition-colors duration-300"
+                className="mb-2 text-xl font-bold text-balance transition-colors duration-300 group-hover:text-primary"
                 whileHover={{ scale: 1.02 }}
               >
                 {name}
               </motion.h3>
-              <p className="text-muted-foreground mb-4 text-balance text-sm">
+              <p className="mb-4 text-sm text-balance text-muted-foreground">
                 {description}
               </p>
               {/* <Link
@@ -517,11 +517,11 @@ export function AboutUsClient() {
 
     return (
       <motion.div variants={itemVariants}>
-        <Card className="border-foreground/10 bg-foreground/5 hover:border-primary/30 hover:bg-foreground/10 hover:shadow-primary/5 h-full overflow-hidden transition-all duration-300 hover:shadow-md">
+        <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 transition-all duration-300 hover:border-primary/30 hover:bg-foreground/10 hover:shadow-md hover:shadow-primary/5">
           <div className="p-4">
             <div className="mb-2 flex flex-col items-center justify-center gap-3 text-center">
-              <h3 className="text-balance font-semibold">{name}</h3>
-              <p className="text-muted-foreground text-balance text-xs">
+              <h3 className="font-semibold text-balance">{name}</h3>
+              <p className="text-xs text-balance text-muted-foreground">
                 {contribution}
               </p>
             </div>
@@ -539,7 +539,7 @@ export function AboutUsClient() {
 
         {/* Enhanced animated background elements */}
         <motion.div
-          className="bg-primary/5 absolute left-10 top-20 h-64 w-64 rounded-full blur-3xl"
+          className="absolute top-20 left-10 h-64 w-64 rounded-full bg-primary/5 blur-3xl"
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3],
@@ -552,7 +552,7 @@ export function AboutUsClient() {
         />
 
         <motion.div
-          className="bg-primary/5 absolute bottom-20 right-10 h-64 w-64 rounded-full blur-3xl"
+          className="absolute right-10 bottom-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl"
           animate={{
             scale: [1, 1.3, 1],
             opacity: [0.2, 0.4, 0.2],
@@ -569,7 +569,7 @@ export function AboutUsClient() {
         {particlesData.map((particle, i) => (
           <motion.div
             key={i}
-            className="bg-primary/40 absolute h-1 w-1 rounded-full"
+            className="absolute h-1 w-1 rounded-full bg-primary/40"
             style={{
               top: particle.top,
               left: particle.left,
@@ -593,7 +593,7 @@ export function AboutUsClient() {
         {codeSnippetsData.map((snippet, i) => (
           <motion.div
             key={`code-${i}`}
-            className="text-primary/20 absolute font-mono text-xs"
+            className="absolute font-mono text-xs text-primary/20"
             style={{
               top: snippet.top,
               left: snippet.left,
@@ -622,7 +622,7 @@ export function AboutUsClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="text-foreground mb-6 text-balance text-center text-4xl font-bold tracking-tight md:text-6xl"
+            className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl"
           >
             {t('title')}
             <br />
@@ -638,7 +638,7 @@ export function AboutUsClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.8 }}
-            className="text-foreground/50 mb-8 max-w-2xl text-balance text-center text-lg"
+            className="mb-8 max-w-2xl text-center text-lg text-balance text-foreground/50"
           >
             {t('subtitle')}
           </motion.div>
@@ -669,7 +669,7 @@ export function AboutUsClient() {
               </div>
             </div>
 
-            <div className="text-primary text-2xl font-light">×</div>
+            <div className="text-2xl font-light text-primary">×</div>
 
             <div className="flex flex-col items-center">
               <div className="relative overflow-hidden">
@@ -694,7 +694,7 @@ export function AboutUsClient() {
       </section>
 
       {/* Neo League Introduction Section */}
-      <section className="bg-foreground/5 w-full py-16">
+      <section className="w-full bg-foreground/5 py-16">
         <div className="mx-auto max-w-6xl px-4">
           <motion.div
             initial={{ opacity: 0 }}
@@ -711,45 +711,45 @@ export function AboutUsClient() {
               <h2 className="mb-4 text-3xl font-bold">
                 {t('event-intro.event-title')}
               </h2>
-              <p className="text-muted-foreground mb-6 text-balance">
+              <p className="mb-6 text-balance text-muted-foreground">
                 {t('event-intro.event-description')}
               </p>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="bg-primary/10 mt-1 rounded-full p-1.5">
-                    <Target className="text-primary h-4 w-4" />
+                  <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                    <Target className="h-4 w-4 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-medium">
                       {t('event-intro.features.challengesTitle')}
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {t('event-intro.features.challengesDesc')}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="bg-primary/10 mt-1 rounded-full p-1.5">
-                    <GraduationCap className="text-primary h-4 w-4" />
+                  <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                    <GraduationCap className="h-4 w-4 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-medium">
                       {t('event-intro.features.skillsTitle')}
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {t('event-intro.features.skillsDesc')}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="bg-primary/10 mt-1 rounded-full p-1.5">
-                    <Users className="text-primary h-4 w-4" />
+                  <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                    <Users className="h-4 w-4 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-medium">
                       {t('event-intro.features.communityTitle')}
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {t('event-intro.features.communityDesc')}
                     </p>
                   </div>
@@ -762,10 +762,10 @@ export function AboutUsClient() {
               viewport={{ once: true }}
               className="relative"
             >
-              <div className="border-primary/20 bg-foreground/5 relative aspect-video overflow-hidden rounded-xl border">
+              <div className="relative aspect-video overflow-hidden rounded-xl border border-primary/20 bg-foreground/5">
                 {/* Animated gradient background */}
                 <motion.div
-                  className="from-primary/20 bg-linear-to-br absolute inset-0 via-purple-500/10 to-blue-500/5"
+                  className="absolute inset-0 bg-linear-to-br from-primary/20 via-purple-500/10 to-blue-500/5"
                   animate={{
                     background: [
                       'linear-gradient(to bottom right, rgba(var(--primary-rgb), 0.2), rgba(147, 51, 234, 0.1), rgba(59, 130, 246, 0.05))',
@@ -784,7 +784,7 @@ export function AboutUsClient() {
                 {floatingParticlesData.map((particle, i) => (
                   <motion.div
                     key={i}
-                    className="bg-primary/40 absolute h-1.5 w-1.5 rounded-full"
+                    className="absolute h-1.5 w-1.5 rounded-full bg-primary/40"
                     style={{
                       top: particle.top,
                       left: particle.left,
@@ -809,13 +809,13 @@ export function AboutUsClient() {
                     whileInView={{ scale: 1, opacity: 1 }}
                     viewport={{ once: true }}
                     transition={{ type: 'spring', stiffness: 100 }}
-                    className="from-primary/30 bg-linear-to-br mb-4 flex h-24 w-24 items-center justify-center rounded-full to-purple-500/20 backdrop-blur-sm"
+                    className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br from-primary/30 to-purple-500/20 backdrop-blur-sm"
                   >
-                    <RocketIcon className="text-primary h-10 w-10" />
+                    <RocketIcon className="h-10 w-10 text-primary" />
                   </motion.div>
 
                   <motion.h3
-                    className="from-primary bg-linear-to-r mb-2 via-purple-500 to-blue-500 bg-clip-text text-center text-2xl font-bold text-transparent"
+                    className="mb-2 bg-linear-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-center text-2xl font-bold text-transparent"
                     initial={{ y: 10, opacity: 0 }}
                     whileInView={{ y: 0, opacity: 1 }}
                     viewport={{ once: true }}
@@ -825,7 +825,7 @@ export function AboutUsClient() {
                   </motion.h3>
 
                   <motion.p
-                    className="text-muted-foreground text-center text-sm"
+                    className="text-center text-sm text-muted-foreground"
                     initial={{ y: 10, opacity: 0 }}
                     whileInView={{ y: 0, opacity: 1 }}
                     viewport={{ once: true }}
@@ -881,11 +881,11 @@ export function AboutUsClient() {
               </Badge>
               <h2 className="mb-6 text-4xl font-bold md:text-5xl">
                 {t('prompt-intro.title1')}
-                <span className="from-primary bg-linear-to-r to-purple-500 bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-primary to-purple-500 bg-clip-text text-transparent">
                   {t('prompt-intro.title2')}
                 </span>
               </h2>
-              <p className="text-muted-foreground mx-auto mb-12 max-w-3xl text-balance text-lg">
+              <p className="mx-auto mb-12 max-w-3xl text-lg text-balance text-muted-foreground">
                 {t('prompt-intro.description')}
               </p>
             </motion.div>
@@ -899,7 +899,7 @@ export function AboutUsClient() {
                 transition={{ delay: 0.1 }}
                 className="group"
               >
-                <Card className="border-foreground/10 bg-foreground/5 group-hover:border-primary/30 group-hover:bg-foreground/10 group-hover:shadow-primary/5 h-full overflow-hidden transition-all duration-300 group-hover:shadow-lg">
+                <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-foreground/10 group-hover:shadow-lg group-hover:shadow-primary/5">
                   <div className="relative p-6">
                     {/* 3D hover effect */}
                     <motion.div
@@ -933,7 +933,7 @@ export function AboutUsClient() {
 
                     <div className="relative mb-4 flex justify-center">
                       <motion.div
-                        className="bg-primary/10 rounded-full p-4"
+                        className="rounded-full bg-primary/10 p-4"
                         whileHover={{
                           boxShadow: '0 0 20px 0 rgba(var(--primary-rgb), 0.3)',
                           scale: 1.05,
@@ -943,17 +943,17 @@ export function AboutUsClient() {
                           animate={{ rotate: [0, 5, 0, -5, 0] }}
                           transition={{ duration: 5, repeat: Infinity }}
                         >
-                          <Code className="text-primary h-8 w-8" />
+                          <Code className="h-8 w-8 text-primary" />
                         </motion.div>
                       </motion.div>
                     </div>
                     <motion.h3
-                      className="from-primary bg-linear-to-r mb-2 to-purple-500 bg-clip-text text-center text-xl font-bold text-transparent"
+                      className="mb-2 bg-linear-to-r from-primary to-purple-500 bg-clip-text text-center text-xl font-bold text-transparent"
                       whileHover={{ scale: 1.02 }}
                     >
                       {t('prompt-intro.cards.language-title')}
                     </motion.h3>
-                    <p className="text-muted-foreground text-balance text-center">
+                    <p className="text-center text-balance text-muted-foreground">
                       {t('prompt-intro.cards.language-desc')}
                     </p>
                   </div>
@@ -967,7 +967,7 @@ export function AboutUsClient() {
                 transition={{ delay: 0.2 }}
                 className="group"
               >
-                <Card className="border-foreground/10 bg-foreground/5 group-hover:border-primary/30 group-hover:bg-foreground/10 group-hover:shadow-primary/5 h-full overflow-hidden transition-all duration-300 group-hover:shadow-lg">
+                <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-foreground/10 group-hover:shadow-lg group-hover:shadow-primary/5">
                   <div className="relative p-6">
                     {/* 3D hover effect */}
                     <motion.div
@@ -1001,7 +1001,7 @@ export function AboutUsClient() {
 
                     <div className="relative mb-4 flex justify-center">
                       <motion.div
-                        className="bg-primary/10 rounded-full p-4"
+                        className="rounded-full bg-primary/10 p-4"
                         whileHover={{
                           boxShadow: '0 0 20px 0 rgba(var(--primary-rgb), 0.3)',
                           scale: 1.05,
@@ -1011,17 +1011,17 @@ export function AboutUsClient() {
                           animate={{ scale: [1, 1.1, 1] }}
                           transition={{ duration: 3, repeat: Infinity }}
                         >
-                          <Target className="text-primary h-8 w-8" />
+                          <Target className="h-8 w-8 text-primary" />
                         </motion.div>
                       </motion.div>
                     </div>
                     <motion.h3
-                      className="bg-linear-to-r mb-2 from-purple-500 to-blue-500 bg-clip-text text-center text-xl font-bold text-transparent"
+                      className="mb-2 bg-linear-to-r from-purple-500 to-blue-500 bg-clip-text text-center text-xl font-bold text-transparent"
                       whileHover={{ scale: 1.02 }}
                     >
                       {t('prompt-intro.cards.creativity-title')}
                     </motion.h3>
-                    <p className="text-muted-foreground text-balance text-center">
+                    <p className="text-center text-balance text-muted-foreground">
                       {t('prompt-intro.cards.creativity-desc')}
                     </p>
                   </div>
@@ -1035,7 +1035,7 @@ export function AboutUsClient() {
                 transition={{ delay: 0.3 }}
                 className="group"
               >
-                <Card className="border-foreground/10 bg-foreground/5 group-hover:border-primary/30 group-hover:bg-foreground/10 group-hover:shadow-primary/5 h-full overflow-hidden transition-all duration-300 group-hover:shadow-lg">
+                <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-foreground/10 group-hover:shadow-lg group-hover:shadow-primary/5">
                   <div className="relative p-6">
                     {/* 3D hover effect */}
                     <motion.div
@@ -1069,7 +1069,7 @@ export function AboutUsClient() {
 
                     <div className="relative mb-4 flex justify-center">
                       <motion.div
-                        className="bg-primary/10 rounded-full p-4"
+                        className="rounded-full bg-primary/10 p-4"
                         whileHover={{
                           boxShadow: '0 0 20px 0 rgba(var(--primary-rgb), 0.3)',
                           scale: 1.05,
@@ -1086,17 +1086,17 @@ export function AboutUsClient() {
                           transition={{ duration: 2, repeat: Infinity }}
                           className="rounded-full"
                         >
-                          <RocketIcon className="text-primary h-8 w-8" />
+                          <RocketIcon className="h-8 w-8 text-primary" />
                         </motion.div>
                       </motion.div>
                     </div>
                     <motion.h3
-                      className="to-primary bg-linear-to-r mb-2 from-blue-500 bg-clip-text text-center text-xl font-bold text-transparent"
+                      className="mb-2 bg-linear-to-r from-blue-500 to-primary bg-clip-text text-center text-xl font-bold text-transparent"
                       whileHover={{ scale: 1.02 }}
                     >
                       {t('prompt-intro.cards.future-work-title')}
                     </motion.h3>
-                    <p className="text-muted-foreground text-balance text-center">
+                    <p className="text-center text-balance text-muted-foreground">
                       {t('prompt-intro.cards.future-work-desc')}
                     </p>
                   </div>
@@ -1119,48 +1119,48 @@ export function AboutUsClient() {
                 <h3 className="mb-4 text-3xl font-bold">
                   {t('prompt-impact.title')}
                 </h3>
-                <p className="text-muted-foreground mb-6 text-balance">
+                <p className="mb-6 text-balance text-muted-foreground">
                   {t('prompt-impact.description')}
                 </p>
 
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="bg-primary/10 mt-1 rounded-full p-1.5">
-                      <Users className="text-primary h-4 w-4" />
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <Users className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <h4 className="font-medium">
                         {t('prompt-impact.cards.democratize-title')}
                       </h4>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('prompt-impact.cards.democratize-desc')}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <div className="bg-primary/10 mt-1 rounded-full p-1.5">
-                      <Target className="text-primary h-4 w-4" />
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <Target className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <h4 className="font-medium">
                         {t('prompt-impact.cards.precision-title')}
                       </h4>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('prompt-impact.cards.precision-desc')}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <div className="bg-primary/10 mt-1 rounded-full p-1.5">
-                      <GraduationCap className="text-primary h-4 w-4" />
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <GraduationCap className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <h4 className="font-medium">
                         {t('prompt-impact.cards.skill-title')}
                       </h4>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('prompt-impact.cards.skill-desc')}
                       </p>
                     </div>
@@ -1174,13 +1174,13 @@ export function AboutUsClient() {
                 viewport={{ once: true }}
                 className="relative"
               >
-                <div className="border-primary/10 bg-foreground/5 relative aspect-square overflow-hidden rounded-2xl border">
-                  <div className="from-primary/10 bg-linear-to-br absolute inset-0 via-transparent to-transparent" />
+                <div className="relative aspect-square overflow-hidden rounded-2xl border border-primary/10 bg-foreground/5">
+                  <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-transparent" />
 
                   {/* Interactive prompt visualization */}
                   <div className="absolute inset-0 flex items-center justify-center p-8">
                     <motion.div
-                      className="border-primary/20 bg-background/80 w-full max-w-md rounded-lg border p-4 backdrop-blur-sm"
+                      className="w-full max-w-md rounded-lg border border-primary/20 bg-background/80 p-4 backdrop-blur-sm"
                       initial={{ y: 0 }}
                       animate={{ y: [-5, 5, -5] }}
                       transition={{
@@ -1193,12 +1193,12 @@ export function AboutUsClient() {
                         <div className="h-3 w-3 rounded-full bg-red-500" />
                         <div className="h-3 w-3 rounded-full bg-yellow-500" />
                         <div className="h-3 w-3 rounded-full bg-green-500" />
-                        <div className="text-muted-foreground ml-auto text-xs">
+                        <div className="ml-auto text-xs text-muted-foreground">
                           Tuturuuu AI
                         </div>
                       </div>
 
-                      <div className="bg-foreground/5 mb-4 rounded p-3 font-mono text-xs">
+                      <div className="mb-4 rounded bg-foreground/5 p-3 font-mono text-xs">
                         <motion.span
                           className="text-primary"
                           animate={{ opacity: [1, 0.5, 1] }}
@@ -1210,15 +1210,15 @@ export function AboutUsClient() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <div className="bg-primary/20 h-8 w-8 rounded-full" />
+                        <div className="h-8 w-8 rounded-full bg-primary/20" />
                         <div className="flex-1">
-                          <div className="bg-foreground/10 h-2 w-3/4 rounded" />
-                          <div className="bg-foreground/10 mt-1 h-2 w-1/2 rounded" />
+                          <div className="h-2 w-3/4 rounded bg-foreground/10" />
+                          <div className="mt-1 h-2 w-1/2 rounded bg-foreground/10" />
                         </div>
                       </div>
 
                       <motion.div
-                        className="bg-foreground/5 mt-3 h-24 rounded"
+                        className="mt-3 h-24 rounded bg-foreground/5"
                         animate={{
                           background: [
                             'rgba(var(--foreground-rgb), 0.05)',
@@ -1236,15 +1236,15 @@ export function AboutUsClient() {
                   variants={floatingVariants}
                   initial="initial"
                   animate="float"
-                  className="border-primary/20 bg-background/80 absolute -bottom-6 -right-6 rounded-lg border p-4 backdrop-blur-sm"
+                  className="absolute -right-6 -bottom-6 rounded-lg border border-primary/20 bg-background/80 p-4 backdrop-blur-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <Sparkles className="text-primary h-4 w-4" />
+                    <Sparkles className="h-4 w-4 text-primary" />
                     <p className="text-sm font-medium">
                       {t('prompt-impact.cards.democratize-title')}
                     </p>
                   </div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-xs text-muted-foreground">
                     {t('prompt-impact.cards.democratize-desc')}
                   </p>
                 </motion.div>
@@ -1253,7 +1253,7 @@ export function AboutUsClient() {
           </div>
 
           {/* Why Now & Why Us */}
-          <div className="border-primary/10 bg-foreground/5 mb-16 rounded-2xl border p-8">
+          <div className="mb-16 rounded-2xl border border-primary/10 bg-foreground/5 p-8">
             <div className="grid gap-8 md:grid-cols-2">
               <div>
                 <h3 className="mb-4 flex items-center gap-4 text-2xl font-bold">
@@ -1261,12 +1261,12 @@ export function AboutUsClient() {
                   {t('why-now-why-us.why-now.title')}
                 </h3>
 
-                <p className="text-muted-foreground mb-6 text-balance">
+                <p className="mb-6 text-balance text-muted-foreground">
                   {t('why-now-why-us.why-now.description')}
                 </p>
 
-                <div className="border-primary/10 relative h-40 overflow-hidden rounded-lg border">
-                  <div className="from-primary/10 bg-linear-to-r absolute inset-0 to-transparent" />
+                <div className="relative h-40 overflow-hidden rounded-lg border border-primary/10">
+                  <div className="absolute inset-0 bg-linear-to-r from-primary/10 to-transparent" />
                   <motion.div
                     className="absolute inset-0 flex items-center justify-center"
                     animate={{
@@ -1284,7 +1284,7 @@ export function AboutUsClient() {
                     >
                       <div className="text-center">
                         <h4 className="text-xl font-bold">2025</h4>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                           {t('why-now-why-us.why-now.tagline')}
                         </p>
                       </div>
@@ -1298,12 +1298,12 @@ export function AboutUsClient() {
                   <Users className="h-5 w-5" />
                   {t('why-now-why-us.why-us.title')}
                 </h3>
-                <p className="text-muted-foreground mb-6 text-balance">
+                <p className="mb-6 text-balance text-muted-foreground">
                   {t('why-now-why-us.why-us.description')}
                 </p>
 
-                <div className="border-primary/10 relative h-40 overflow-hidden rounded-lg border">
-                  <div className="to-primary/10 bg-linear-to-r absolute inset-0 from-transparent" />
+                <div className="relative h-40 overflow-hidden rounded-lg border border-primary/10">
+                  <div className="absolute inset-0 bg-linear-to-r from-transparent to-primary/10" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="grid grid-cols-2 gap-4">
                       <motion.div
@@ -1315,7 +1315,7 @@ export function AboutUsClient() {
                           ease: 'easeInOut',
                         }}
                       >
-                        <div className="border-primary/20 relative h-16 w-16 overflow-hidden rounded-full border-2">
+                        <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-primary/20">
                           <Image
                             src="/media/featured/competitions/neo-league/nct.jpg"
                             alt="RMIT SGS Neo Culture Tech"
@@ -1323,7 +1323,7 @@ export function AboutUsClient() {
                             className="object-contain"
                           />
                         </div>
-                        <p className="text-muted-foreground mt-2 text-xs">
+                        <p className="mt-2 text-xs text-muted-foreground">
                           {t('why-now-why-us.why-us.academic')}
                         </p>
                       </motion.div>
@@ -1337,7 +1337,7 @@ export function AboutUsClient() {
                           ease: 'easeInOut',
                         }}
                       >
-                        <div className="border-primary/20 relative h-16 w-16 overflow-hidden rounded-full border-2">
+                        <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-primary/20">
                           <Image
                             src="/media/logos/light.png"
                             alt="Tuturuuu"
@@ -1345,7 +1345,7 @@ export function AboutUsClient() {
                             className="object-contain"
                           />
                         </div>
-                        <p className="text-muted-foreground mt-2 text-xs">
+                        <p className="mt-2 text-xs text-muted-foreground">
                           {t('why-now-why-us.why-us.technical')}
                         </p>
                       </motion.div>
@@ -1386,7 +1386,7 @@ export function AboutUsClient() {
               <div className="mb-8">
                 <h2 className="mb-2 text-2xl font-bold">
                   <span className="flex items-center gap-2">
-                    <Users className="text-primary h-5 w-5" />
+                    <Users className="h-5 w-5 text-primary" />
                     {t('organizers.title')}
                   </span>
                 </h2>
@@ -1414,7 +1414,7 @@ export function AboutUsClient() {
               <div className="mb-8">
                 <h2 className="mb-2 text-2xl font-bold">
                   <span className="flex items-center gap-2">
-                    <Code className="text-primary h-5 w-5" />
+                    <Code className="h-5 w-5 text-primary" />
                     {t('platform-builder.title')}
                   </span>
                 </h2>
@@ -1442,7 +1442,7 @@ export function AboutUsClient() {
               <div className="mb-8">
                 <h2 className="mb-2 text-2xl font-bold">
                   <span className="flex items-center gap-2">
-                    <Building className="text-primary h-5 w-5" />
+                    <Building className="h-5 w-5 text-primary" />
                     {t('sponsors.title')}
                   </span>
                 </h2>
@@ -1482,7 +1482,7 @@ export function AboutUsClient() {
               <div className="mb-8">
                 <h2 className="mb-2 text-2xl font-bold">
                   <span className="flex items-center gap-2">
-                    <Heart className="text-primary h-5 w-5" />
+                    <Heart className="h-5 w-5 text-primary" />
                     {t('special-thanks.title')}
                   </span>
                 </h2>
@@ -1507,7 +1507,7 @@ export function AboutUsClient() {
               <div className="mt-12">
                 <Card className="border-foreground/10 bg-foreground/5 p-6">
                   <div className="flex flex-col items-center gap-4 text-center md:flex-row md:text-left">
-                    <div className="bg-primary/10 text-primary rounded-full p-3">
+                    <div className="rounded-full bg-primary/10 p-3 text-primary">
                       <HandHeart className="h-6 w-6" />
                     </div>
                     <div>
@@ -1534,7 +1534,7 @@ export function AboutUsClient() {
         {moreParticlesData.map((particle, i) => (
           <motion.div
             key={`particle-${i}`}
-            className="bg-primary/30 absolute h-1 w-1 rounded-full"
+            className="absolute h-1 w-1 rounded-full bg-primary/30"
             style={{
               top: particle.top,
               left: particle.left,
@@ -1566,7 +1566,7 @@ export function AboutUsClient() {
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: 'spring', stiffness: 300 }}
               >
-                <div className="border-primary/30 relative h-32 w-32 overflow-hidden rounded-xl border-2">
+                <div className="relative h-32 w-32 overflow-hidden rounded-xl border-2 border-primary/30">
                   <Image
                     src="/media/logos/nova-transparent.png"
                     alt="Tuturuuu"
@@ -1586,23 +1586,23 @@ export function AboutUsClient() {
                   />
                 </div>
                 <motion.div
-                  className="border-primary/20 bg-primary/10 absolute -bottom-3 -right-3 rounded-full border p-2 backdrop-blur-sm"
+                  className="absolute -right-3 -bottom-3 rounded-full border border-primary/20 bg-primary/10 p-2 backdrop-blur-sm"
                   animate={{ rotate: [0, 10, 0, -10, 0] }}
                   transition={{ duration: 5, repeat: Infinity }}
                 >
-                  <Code className="text-primary h-5 w-5" />
+                  <Code className="h-5 w-5 text-primary" />
                 </motion.div>
               </motion.div>
 
               <div>
                 <h2 className="mb-4 text-3xl font-bold">
                   {t('tech-sponsor.title')}
-                  <span className="from-primary bg-linear-to-r to-purple-500 bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-primary to-purple-500 bg-clip-text text-transparent">
                     Tuturuuu
                   </span>
                 </h2>
                 <motion.p
-                  className="text-muted-foreground mb-4"
+                  className="mb-4 text-muted-foreground"
                   initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -1622,14 +1622,14 @@ export function AboutUsClient() {
                     variants={itemVariants}
                     className="flex items-start gap-3"
                   >
-                    <div className="bg-primary/10 mt-1 rounded-full p-1.5">
-                      <Code className="text-primary h-4 w-4" />
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <Code className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <h3 className="font-medium">
                         {t('tech-sponsor.sections.infrastructure.title')}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('tech-sponsor.sections.infrastructure.description')}
                       </p>
                     </div>
@@ -1639,14 +1639,14 @@ export function AboutUsClient() {
                     variants={itemVariants}
                     className="flex items-start gap-3"
                   >
-                    <div className="bg-primary/10 mt-1 rounded-full p-1.5">
-                      <Target className="text-primary h-4 w-4" />
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <Target className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <h3 className="font-medium">
                         {t('tech-sponsor.sections.challenges.title')}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('tech-sponsor.sections.challenges.description')}
                       </p>
                     </div>
@@ -1656,14 +1656,14 @@ export function AboutUsClient() {
                     variants={itemVariants}
                     className="flex items-start gap-3"
                   >
-                    <div className="bg-primary/10 mt-1 rounded-full p-1.5">
-                      <GraduationCap className="text-primary h-4 w-4" />
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <GraduationCap className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <h3 className="font-medium">
                         {t('tech-sponsor.sections.resources.title')}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('tech-sponsor.sections.resources.description')}
                       </p>
                     </div>
@@ -1673,14 +1673,14 @@ export function AboutUsClient() {
                     variants={itemVariants}
                     className="flex items-start gap-3"
                   >
-                    <div className="bg-primary/10 mt-1 rounded-full p-1.5">
-                      <Users className="text-primary h-4 w-4" />
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <Users className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <h3 className="font-medium">
                         {t('tech-sponsor.sections.mentorship.title')}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('tech-sponsor.sections.mentorship.description')}
                       </p>
                     </div>
@@ -1688,14 +1688,14 @@ export function AboutUsClient() {
                 </motion.div>
 
                 <motion.div
-                  className="border-primary/10 text-muted-foreground mt-6 border-t pt-4 text-sm"
+                  className="mt-6 border-t border-primary/10 pt-4 text-sm text-muted-foreground"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.6 }}
                 >
                   <p className="italic">{t('tech-sponsor.quote.text')}</p>
-                  <p className="text-foreground mt-2 font-medium">
+                  <p className="mt-2 font-medium text-foreground">
                     — {t('tech-sponsor.quote.author')}
                   </p>
                 </motion.div>

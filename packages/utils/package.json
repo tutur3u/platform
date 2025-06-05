@@ -10,12 +10,12 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "pnpm@10.11.1",
+  "packageManager": "bun@1.2.15",
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "clsx": "^2.1.1",
     "eslint": "^9.28.0",
-    "next": "15.4.0-canary.67",
+    "next": "15.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwind-merge": "^3.3.0",

@@ -99,7 +99,7 @@ export function ConfigurationPanel({
                   className="w-20"
                 />
               </div>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-muted-foreground">
                 Set between 2-100 horses
               </p>
             </div>
@@ -197,8 +197,8 @@ export function ConfigurationPanel({
                 onValueChange={(value) => setAnimationSpeed(value[0] ?? 1000)}
               />
               <div className="flex justify-between">
-                <span className="text-muted-foreground text-xs">Fast</span>
-                <span className="text-muted-foreground text-xs">Slow</span>
+                <span className="text-xs text-muted-foreground">Fast</span>
+                <span className="text-xs text-muted-foreground">Slow</span>
               </div>
             </div>
 

@@ -9,7 +9,7 @@ npm install --dev @tuturuuu/eslint-config
 # or
 yarn add --dev @tuturuuu/eslint-config
 # or
-pnpm add -D @tuturuuu/eslint-config
+bun add -D @tuturuuu/eslint-config
 ```
 
 ## Usage

@@ -159,7 +159,7 @@ export default function SessionClient({ session }: SessionClientProps) {
                     {session.user.displayName}
                   </h3>
                   {session.user.email && (
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {session.user.email}
                     </p>
                   )}
@@ -169,7 +169,7 @@ export default function SessionClient({ session }: SessionClientProps) {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-sm text-muted-foreground">
                       User ID:
                     </span>
                     <span className="font-mono text-xs">{session.user.id}</span>
@@ -297,7 +297,7 @@ export default function SessionClient({ session }: SessionClientProps) {
                   <h3 className="mt-4 text-lg font-medium">
                     No submissions found
                   </h3>
-                  <p className="text-muted-foreground mt-2 text-sm">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     There are no submissions recorded during this session.
                   </p>
                 </div>

@@ -1,5 +1,5 @@
 {
   "agentCanUpdateSnapshot": true,
-  "install": "pnpm i",
-  "start": "pnpm devx"
+  "install": "bun i",
+  "start": "bun devx"
 }

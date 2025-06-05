@@ -24,7 +24,7 @@ export function PriorityDistribution({ tasks }: PriorityDistributionProps) {
           return (
             <div
               key={priority}
-              className="bg-muted/50 hover:bg-muted/80 group relative rounded-lg border p-2 text-center transition-colors"
+              className="group relative rounded-lg border bg-muted/50 p-2 text-center transition-colors hover:bg-muted/80"
             >
               <div
                 className={cn(
@@ -39,7 +39,7 @@ export function PriorityDistribution({ tasks }: PriorityDistributionProps) {
                 {priority.toUpperCase()}
               </div>
               <div className="text-2xl font-bold">{count}</div>
-              <div className="text-muted-foreground text-xs">{percentage}%</div>
+              <div className="text-xs text-muted-foreground">{percentage}%</div>
             </div>
           );
         })}

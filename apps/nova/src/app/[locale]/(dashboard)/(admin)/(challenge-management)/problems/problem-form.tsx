@@ -356,7 +356,7 @@ export default function ProblemForm({
                           control={form.control}
                           name={`testCases.${index}.hidden`}
                           render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormItem className="flex flex-row items-start space-y-0 space-x-3">
                               <FormControl>
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
@@ -373,7 +373,7 @@ export default function ProblemForm({
                       </div>
                     ))
                   ) : (
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       No test cases added yet.
                     </p>
                   )}

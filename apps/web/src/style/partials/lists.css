@@ -18,7 +18,7 @@
     }
 
     p {
-      @apply mb-1 mt-0;
+      @apply mt-0 mb-1;
     }
   }
 
@@ -38,7 +38,7 @@
       @apply flex;
 
       > label {
-        @apply mr-2 mt-1 flex-auto shrink-0 grow-0 select-none;
+        @apply mt-1 mr-2 flex-auto shrink-0 grow-0 select-none;
       }
 
       > div {
