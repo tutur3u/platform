@@ -56,7 +56,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
           <>
             <h1 className="flex w-full items-center justify-between gap-2 text-2xl font-bold">
               <div className="flex items-center gap-2">
-                <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
+                <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-lg text-dynamic-purple max-md:hidden">
                   <Box className="h-6 w-6" />
                   {t('ws-course-modules.singular')}
                 </div>
@@ -66,14 +66,14 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               </div>
               {/* Currently the not completed text is only displayed for testing purposes, I plan to only display the completed icon when the module is completed */}
               {completionStatus ? (
-                <div className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green flex items-center gap-2 rounded-lg border px-2 py-1 text-base">
+                <div className="flex items-center gap-2 rounded-lg border border-dynamic-green/20 bg-dynamic-green/10 px-2 py-1 text-base text-dynamic-green">
                   <CheckCircle className="h-5 w-5 text-green-500" />
                   <span className="text-green-500">
                     {t('common.completed')}
                   </span>
                 </div>
               ) : (
-                <div className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red flex items-center gap-2 rounded-lg border px-2 py-1 text-sm sm:text-base">
+                <div className="flex items-center gap-2 rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 px-2 py-1 text-sm text-dynamic-red sm:text-base">
                   <XIcon className="h-5 w-5 text-red-500" />
                   <span className="text-red-500">
                     {t('common.not_completed')}

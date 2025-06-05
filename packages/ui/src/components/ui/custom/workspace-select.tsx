@@ -180,7 +180,7 @@ export function WorkspaceSelect({
   return (
     <>
       {hideLeading || (
-        <div className="rotate-30 bg-foreground/20 mx-2 h-4 w-px flex-none" />
+        <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
       )}
       <Dialog
         open={showNewWorkspaceDialog}
@@ -201,7 +201,7 @@ export function WorkspaceSelect({
               aria-label="Select a workspace"
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full whitespace-normal text-start'
+                'w-full text-start whitespace-normal'
               )}
               disabled={!workspaces || workspaces.length === 0}
             >

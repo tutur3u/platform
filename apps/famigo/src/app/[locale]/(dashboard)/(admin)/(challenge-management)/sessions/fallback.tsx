@@ -35,7 +35,7 @@ export default function SessionsListFallback() {
               <div className="text-2xl font-bold">
                 <Skeleton className="h-8 w-20" />
               </div>
-              <div className="text-muted-foreground mt-1 text-xs">
+              <div className="mt-1 text-xs text-muted-foreground">
                 <Skeleton className="h-3 w-32" />
               </div>
             </CardContent>
@@ -49,7 +49,7 @@ export default function SessionsListFallback() {
           <div className="flex flex-1 items-center space-x-2">
             <Skeleton className="h-10 w-64" />
           </div>
-          <div className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
+          <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
             <Skeleton className="h-10 w-40" />
             <Skeleton className="h-10 w-40" />
             <Skeleton className="h-10 w-24" />

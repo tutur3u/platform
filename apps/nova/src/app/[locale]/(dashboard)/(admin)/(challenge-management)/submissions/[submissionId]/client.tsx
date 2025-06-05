@@ -167,7 +167,7 @@ export default function SubmissionClient({
 
       {/* Re-evaluation Progress */}
       {reEvaluationProgress && (
-        <Card className="border-dynamic-blue/20 bg-dynamic-blue/10 border">
+        <Card className="border border-dynamic-blue/20 bg-dynamic-blue/10">
           <CardHeader className="pb-3">
             <CardTitle className="text-dynamic-blue">
               Re-evaluation Progress
@@ -185,7 +185,7 @@ export default function SubmissionClient({
               </div>
               <Progress value={reEvaluationProgress.progress} className="h-2" />
             </div>
-            <p className="text-dynamic-blue text-xs">
+            <p className="text-xs text-dynamic-blue">
               Current step: {reEvaluationProgress.step}
             </p>
           </CardContent>
@@ -200,9 +200,9 @@ export default function SubmissionClient({
           <CardContent className="flex flex-col gap-4 md:flex-row">
             <div className="w-full space-y-4">
               <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">User</p>
+                <p className="text-sm text-muted-foreground">User</p>
                 <div className="flex gap-2">
-                  <User className="text-primary/70 h-4 w-4" />
+                  <User className="h-4 w-4 text-primary/70" />
                   <span className="font-medium">
                     {submission.user.display_name || 'Anonymous'}
                   </span>
@@ -210,9 +210,9 @@ export default function SubmissionClient({
               </div>
 
               <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Problem</p>
+                <p className="text-sm text-muted-foreground">Problem</p>
                 <div className="flex items-center gap-2">
-                  <BookOpen className="text-primary/70 h-4 w-4" />
+                  <BookOpen className="h-4 w-4 text-primary/70" />
                   <Link
                     href={`/problems/${submission.problem.id}`}
                     className="font-medium hover:underline"
@@ -224,9 +224,9 @@ export default function SubmissionClient({
 
               {submission.created_at && (
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Submitted</p>
+                  <p className="text-sm text-muted-foreground">Submitted</p>
                   <div className="flex items-center gap-2">
-                    <Calendar className="text-primary/70 h-4 w-4" />
+                    <Calendar className="h-4 w-4 text-primary/70" />
                     <span className="font-medium">
                       {new Date(submission.created_at).toLocaleString()}
                     </span>
@@ -238,10 +238,10 @@ export default function SubmissionClient({
             <div className="w-full">
               {/* Total Score - Highlighted */}
               <div className="mb-8 flex flex-col items-center justify-center">
-                <p className="text-muted-foreground mb-2 text-sm font-medium">
+                <p className="mb-2 text-sm font-medium text-muted-foreground">
                   Total Score
                 </p>
-                <div className="border-muted relative flex h-32 w-32 items-center justify-center rounded-full border-8">
+                <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-8 border-muted">
                   <div
                     className={`absolute inset-0 rounded-full ${getScoreColor(submission.total_score)}`}
                     style={{
@@ -258,7 +258,7 @@ export default function SubmissionClient({
 
               {/* Test Case and Criteria Scores */}
               <div className="space-y-4">
-                <div className="bg-muted/50 space-y-3 rounded-lg p-4">
+                <div className="space-y-3 rounded-lg bg-muted/50 p-4">
                   <div className="flex items-center justify-between">
                     <p className="font-medium">Test Case Score</p>
                     <Badge
@@ -270,7 +270,7 @@ export default function SubmissionClient({
                   </div>
                 </div>
 
-                <div className="bg-muted/50 space-y-3 rounded-lg p-4">
+                <div className="space-y-3 rounded-lg bg-muted/50 p-4">
                   <div className="flex items-center justify-between">
                     <p className="font-medium">Criteria Score</p>
                     <Badge
