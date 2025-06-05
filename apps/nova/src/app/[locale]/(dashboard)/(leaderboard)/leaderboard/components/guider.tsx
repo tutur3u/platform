@@ -10,7 +10,7 @@ export default function Guider() {
         <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
           {t('tutorials.title')}
         </h3>
-        <ul className="text-muted-foreground space-y-3 text-sm dark:text-slate-400">
+        <ul className="space-y-3 text-sm text-muted-foreground dark:text-slate-400">
           <li className="flex items-start gap-2">
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
               1

@@ -49,7 +49,7 @@ export function SubmissionCard({
       key={submission.id}
       className={`overflow-hidden transition-all duration-200 ${showSkeleton ? 'opacity-90' : ''}`}
     >
-      <CardHeader className="pb-3 pt-4">
+      <CardHeader className="pt-4 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {submission.created_at && (
@@ -114,10 +114,10 @@ export function SubmissionCard({
       >
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <FileCode className="text-primary/70 h-4 w-4" />
-            <h3 className="text-foreground text-sm font-medium">Prompt</h3>
+            <FileCode className="h-4 w-4 text-primary/70" />
+            <h3 className="text-sm font-medium text-foreground">Prompt</h3>
           </div>
-          <div className="bg-muted/50 whitespace-pre-line rounded-md border p-3 text-sm">
+          <div className="rounded-md border bg-muted/50 p-3 text-sm whitespace-pre-line">
             {submission.prompt ||
               (showSkeleton && <Skeleton className="h-16 w-full" />)}
           </div>

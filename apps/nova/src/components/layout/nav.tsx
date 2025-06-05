@@ -63,7 +63,7 @@ export function Nav({
                       </TooltipTrigger>
                       <TooltipContent
                         side="right"
-                        className="bg-background text-foreground flex items-center gap-4 border"
+                        className="flex items-center gap-4 border bg-background text-foreground"
                       >
                         {item.name}
                       </TooltipContent>
@@ -105,7 +105,7 @@ export function Nav({
                         </TooltipTrigger>
                         <TooltipContent
                           side="right"
-                          className="bg-background text-foreground flex items-center gap-4 border"
+                          className="flex items-center gap-4 border bg-background text-foreground"
                         >
                           {subItem.name}
                         </TooltipContent>
@@ -150,7 +150,7 @@ export function Nav({
                 </TooltipTrigger>
                 <TooltipContent
                   side="right"
-                  className="bg-background text-foreground flex items-center gap-4 border"
+                  className="flex items-center gap-4 border bg-background text-foreground"
                 >
                   {item.name}
                 </TooltipContent>

@@ -419,7 +419,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
               {t('login.welcome')}
             </h2>
           )}
-          <p className="text-muted-foreground text-balance text-sm">
+          <p className="text-sm text-balance text-muted-foreground">
             {t('login.choose_sign_in_method')}
           </p>
         </div>
@@ -464,9 +464,9 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                       </FormLabel>
                       <FormControl>
                         <div className="group relative">
-                          <Mail className="text-muted-foreground group-focus-within:text-primary absolute left-3 top-1/2 size-4 -translate-y-1/2 transition-colors" />
+                          <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                           <Input
-                            className="focus:border-primary/50 focus:ring-primary/20 h-12 bg-white/50 pl-10 transition-all duration-200 focus:ring-2 dark:border-gray-700/50 dark:bg-gray-800/50"
+                            className="h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
                             placeholder={t('login.email_placeholder')}
                             {...field}
                             disabled={otpSent || loading}
@@ -500,14 +500,14 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                                   <InputOTPSlot
                                     key={i}
                                     index={i}
-                                    className="focus:border-primary focus:ring-primary/20 h-12 w-full rounded-lg border bg-white/50 text-lg font-semibold transition-all duration-200 focus:ring-2 dark:border-gray-700/50 dark:bg-gray-800/50"
+                                    className="h-12 w-full rounded-lg border bg-white/50 text-lg font-semibold transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
                                   />
                                 )
                               )}
                             </InputOTPGroup>
                           </InputOTP>
                         </FormControl>
-                        <FormDescription className="text-muted-foreground text-center text-sm">
+                        <FormDescription className="text-center text-sm text-muted-foreground">
                           {t('login.check_email')}
                         </FormDescription>
                         <FormMessage />
@@ -573,9 +573,9 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                       </FormLabel>
                       <FormControl>
                         <div className="group relative">
-                          <Mail className="text-muted-foreground group-focus-within:text-primary absolute left-3 top-1/2 size-4 -translate-y-1/2 transition-colors" />
+                          <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                           <Input
-                            className="focus:border-primary/50 focus:ring-primary/20 h-12 bg-white/50 pl-10 transition-all duration-200 focus:ring-2 dark:border-gray-700/50 dark:bg-gray-800/50"
+                            className="h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
                             placeholder={t('login.email_placeholder')}
                             {...field}
                             disabled={loading}
@@ -597,9 +597,9 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                       </FormLabel>
                       <FormControl>
                         <div className="group relative">
-                          <Lock className="text-muted-foreground group-focus-within:text-primary absolute left-3 top-1/2 size-4 -translate-y-1/2 transition-colors" />
+                          <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                           <Input
-                            className="focus:border-primary/50 focus:ring-primary/20 h-12 bg-white/50 pl-10 pr-12 transition-all duration-200 focus:ring-2 dark:border-gray-700/50 dark:bg-gray-800/50"
+                            className="h-12 bg-white/50 pr-12 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
                             type={showPassword ? 'text' : 'password'}
                             placeholder={t('login.password_placeholder')}
                             {...field}
@@ -607,7 +607,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                           />
                           <button
                             type="button"
-                            className="text-muted-foreground hover:text-primary absolute right-3 top-1/2 -translate-y-1/2 transition-colors duration-200"
+                            className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors duration-200 hover:text-primary"
                             onClick={() => setShowPassword(!showPassword)}
                           >
                             {showPassword ? (
@@ -643,7 +643,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                   <Button
                     type="button"
                     variant="link"
-                    className="text-primary hover:text-primary/80 text-sm transition-colors duration-200"
+                    className="text-sm text-primary transition-colors duration-200 hover:text-primary/80"
                     onClick={() => {
                       setLoginMethod('passwordless');
                       passwordForm.reset();
@@ -662,7 +662,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
             <div className="relative my-6">
               <Separator className="bg-gray-200/50 dark:bg-gray-700/50" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-muted-foreground rounded-full border bg-white/80 px-3 py-1 text-xs font-medium backdrop-blur-sm dark:border-gray-700/50 dark:bg-gray-900/80">
+                <span className="rounded-full border bg-white/80 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur-sm dark:border-gray-700/50 dark:bg-gray-900/80">
                   {t('login.or')}
                 </span>
               </div>

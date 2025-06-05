@@ -38,7 +38,7 @@ export function SubmissionStatistics({
           <CardTitle className="text-sm font-medium">
             Total Submissions
           </CardTitle>
-          <Users className="text-muted-foreground h-4 w-4" />
+          <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           {statsLoading ? (
@@ -52,7 +52,7 @@ export function SubmissionStatistics({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-          <Calendar className="text-muted-foreground h-4 w-4" />
+          <Calendar className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           {statsLoading ? (
@@ -62,14 +62,14 @@ export function SubmissionStatistics({
               {stats ? stats.averageScore.toFixed(1) : '0.0'}
             </div>
           )}
-          <p className="text-muted-foreground text-xs">Out of 10.0 points</p>
+          <p className="text-xs text-muted-foreground">Out of 10.0 points</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Highest Score</CardTitle>
-          <Calendar className="text-muted-foreground h-4 w-4" />
+          <Calendar className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           {statsLoading ? (
@@ -79,14 +79,14 @@ export function SubmissionStatistics({
               {stats ? stats.highestScore.toFixed(1) : '0.0'}
             </div>
           )}
-          <p className="text-muted-foreground text-xs">Out of 10.0 points</p>
+          <p className="text-xs text-muted-foreground">Out of 10.0 points</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Last Submission</CardTitle>
-          <Clock className="text-muted-foreground h-4 w-4" />
+          <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           {statsLoading ? (

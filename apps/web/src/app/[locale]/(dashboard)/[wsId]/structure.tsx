@@ -148,7 +148,7 @@ export function Structure({
 
       <Suspense
         fallback={
-          <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
+          <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
         }
       >
         <WorkspaceSelect
@@ -237,8 +237,8 @@ export function Structure({
           />
         </Link>
       </div>
-      <div className="rotate-30 bg-foreground/20 mx-2 h-4 w-px flex-none" />
-      <div className="flex items-center gap-2 break-all text-lg font-semibold">
+      <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
+      <div className="flex items-center gap-2 text-lg font-semibold break-all">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}

@@ -27,7 +27,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
       <FeatureSummary
         title={
           <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-            <div className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
+            <div className="flex items-center gap-2 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/10 px-2 text-lg text-dynamic-blue max-md:hidden">
               <GraduationCap className="h-6 w-6" />
               {t('ws-courses.singular')}
             </div>

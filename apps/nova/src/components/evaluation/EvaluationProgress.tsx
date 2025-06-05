@@ -52,7 +52,7 @@ export function EvaluationProgress({
           <h3 className="text-sm font-medium">
             {isComplete ? 'Evaluation Complete' : 'Evaluating Prompt...'}
           </h3>
-          <span className="text-muted-foreground text-sm">
+          <span className="text-sm text-muted-foreground">
             {Math.round(overall_progress)}%
           </span>
         </div>
@@ -115,7 +115,7 @@ export function EvaluationProgress({
                   </Badge>
                 </div>
 
-                <p className="text-muted-foreground mb-2 text-sm">
+                <p className="mb-2 text-sm text-muted-foreground">
                   {stage.description}
                 </p>
 
@@ -129,7 +129,7 @@ export function EvaluationProgress({
 
                 {stage.status === 'active' && stage.progress !== undefined && (
                   <div className="space-y-1">
-                    <div className="text-muted-foreground flex justify-between text-xs">
+                    <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Progress</span>
                       <span>{Math.round(stage.progress)}%</span>
                     </div>

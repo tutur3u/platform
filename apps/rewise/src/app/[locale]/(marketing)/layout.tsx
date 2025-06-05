@@ -51,7 +51,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
 
   return (
-    <div className="from-dynamic-light-red/10 via-dynamic-light-pink/5 to-dynamic-light-blue/10 bg-linear-to-br flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto">
+    <div className="flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto bg-linear-to-br from-dynamic-light-red/10 via-dynamic-light-pink/5 to-dynamic-light-blue/10">
       {/* <div className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue absolute -z-20 h-full w-full bg-linear-to-r" /> */}
       <Structure
         locale={locale}
@@ -63,7 +63,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         actions={
           <Suspense
             fallback={
-              <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+              <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
             }
           >
             <NavbarActions />
@@ -72,7 +72,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         userPopover={
           <Suspense
             fallback={
-              <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
             <UserNav hideMetadata />

@@ -273,20 +273,20 @@ export default function TeamDetailsClient({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-lg border p-3">
-                  <div className="text-muted-foreground text-sm font-medium">
+                  <div className="text-sm font-medium text-muted-foreground">
                     {t('common.members')}
                   </div>
                   <div className="flex items-center">
-                    <UsersRound className="text-muted-foreground mr-2 h-4 w-4" />
+                    <UsersRound className="mr-2 h-4 w-4 text-muted-foreground" />
                     <span className="text-2xl font-bold">{members.length}</span>
                   </div>
                 </div>
                 <div className="rounded-lg border p-3">
-                  <div className="text-muted-foreground text-sm font-medium">
+                  <div className="text-sm font-medium text-muted-foreground">
                     {t('teams.invitations')}
                   </div>
                   <div className="flex items-center">
-                    <Mail className="text-muted-foreground mr-2 h-4 w-4" />
+                    <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
                     <span className="text-2xl font-bold">
                       {invitations.length}
                     </span>
@@ -317,7 +317,7 @@ export default function TeamDetailsClient({
                     <FormItem>
                       <FormControl>
                         <div className="relative">
-                          <Mail className="text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4" />
+                          <Mail className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
                           <Input
                             {...field}
                             placeholder={t('teams.email')}
@@ -385,8 +385,8 @@ export default function TeamDetailsClient({
             <CardContent>
               {members.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <UserPlus className="text-muted-foreground h-12 w-12" />
-                  <p className="text-muted-foreground mt-4">
+                  <UserPlus className="h-12 w-12 text-muted-foreground" />
+                  <p className="mt-4 text-muted-foreground">
                     {t('teams.no_members')}
                   </p>
                 </div>
@@ -407,7 +407,7 @@ export default function TeamDetailsClient({
                           <div className="font-medium">
                             {member.display_name}
                           </div>
-                          <div className="text-muted-foreground text-sm">
+                          <div className="text-sm text-muted-foreground">
                             {member.email}
                           </div>
                         </div>
@@ -475,8 +475,8 @@ export default function TeamDetailsClient({
             <CardContent>
               {invitations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Mail className="text-muted-foreground h-12 w-12" />
-                  <p className="text-muted-foreground mt-4">
+                  <Mail className="h-12 w-12 text-muted-foreground" />
+                  <p className="mt-4 text-muted-foreground">
                     {t('teams.no_invitations')}
                   </p>
                 </div>
@@ -489,7 +489,7 @@ export default function TeamDetailsClient({
                     >
                       <div>
                         <div className="font-medium">{invitation.email}</div>
-                        <div className="text-muted-foreground text-sm">
+                        <div className="text-sm text-muted-foreground">
                           {t('teams.invited')}{' '}
                           {moment(invitation.created_at).format('MMM DD, YYYY')}
                         </div>
