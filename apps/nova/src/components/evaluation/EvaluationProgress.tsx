@@ -2,8 +2,8 @@
 
 import { Badge } from '@tuturuuu/ui/badge';
 import { AlertCircle, CheckCircle, Clock } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/ui/lib/utils';
 import { Progress } from '@tuturuuu/ui/progress';
+import { cn } from '@tuturuuu/utils/format';
 
 interface EvaluationStage {
   id: string;
