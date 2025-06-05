@@ -137,7 +137,11 @@ export async function POST(
 
   try {
     // Parse request data
-    const { prompt, sessionId, stream = false } = (await req.json()) as {
+    const {
+      prompt,
+      sessionId,
+      stream = false,
+    } = (await req.json()) as {
       id?: string;
       model?: string;
       prompt?: string;
@@ -220,7 +224,6 @@ export async function POST(
       problemId,
       sbAdmin,
     });
-
   } catch (error: any) {
     console.error('🚨 Server error:', error);
     return NextResponse.json(
@@ -246,15 +249,20 @@ async function streamEvaluation({
 }) {
   // Create a custom streaming response that performs actual evaluation
   const encoder = new TextEncoder();
-  
+
   const stream = new ReadableStream({
     async start(controller) {
       const sbAdmin = await createAdminClient();
       let submissionId: string | null = null;
-      
+
       try {
         // Send initial progress
-        const sendProgress = (stage: string, progress: number, message: string, data?: any) => {
+        const sendProgress = (
+          stage: string,
+          progress: number,
+          message: string,
+          data?: any
+        ) => {
           const progressData = {
             stage,
             progress,
@@ -262,20 +270,23 @@ async function streamEvaluation({
             current_step: message,
             ...data,
           };
-          controller.enqueue(encoder.encode(`0:${JSON.stringify(progressData)}\n`));
+          controller.enqueue(
+            encoder.encode(`0:${JSON.stringify(progressData)}\n`)
+          );
         };
 
         // Stage 1: Plagiarism Check (0-20%)
         sendProgress('plagiarism', 5, 'Starting plagiarism detection...');
-        
+
         const plagiarismResults = await checkPlagiarism(problem, prompt);
-        
+
         sendProgress('plagiarism', 20, 'Plagiarism check completed', {
           plagiarism_check: plagiarismResults,
         });
 
         // Fetch test cases and challenge criteria
-        const { testCases, challengeCriteria } = await fetchTestCasesAndCriteria(problem);
+        const { testCases, challengeCriteria } =
+          await fetchTestCasesAndCriteria(problem);
 
         // Build evaluation context
         const ctx = buildEvaluationContext(
@@ -288,7 +299,7 @@ async function streamEvaluation({
 
         // Stage 2: Criteria Evaluation (20-60%)
         sendProgress('criteria', 25, 'Starting criteria evaluation...');
-        
+
         let evaluation: CombinedEvaluation = {
           criteriaEvaluation: [],
           overallAssessment: 'No evaluation performed (no criteria available)',
@@ -297,18 +308,26 @@ async function streamEvaluation({
         };
 
         if (challengeCriteria && challengeCriteria.length > 0) {
-          sendProgress('criteria', 30, `Evaluating against ${challengeCriteria.length} criteria...`);
+          sendProgress(
+            'criteria',
+            30,
+            `Evaluating against ${challengeCriteria.length} criteria...`
+          );
           evaluation = await performCriteriaEvaluation(ctx);
           sendProgress('criteria', 60, 'Criteria evaluation completed', {
             criteria_evaluation: evaluation,
           });
         } else {
-          sendProgress('criteria', 60, 'No criteria found, skipping evaluation');
+          sendProgress(
+            'criteria',
+            60,
+            'No criteria found, skipping evaluation'
+          );
         }
 
         // Stage 3: Create submission record
         sendProgress('saving', 65, 'Creating submission record...');
-        
+
         const submission = await createSubmissionRecord(
           prompt,
           problemId,
@@ -327,19 +346,25 @@ async function streamEvaluation({
         });
 
         // Stage 4: Test Case Evaluation (70-85%)
-        let testCaseInserts: Array<NovaSubmissionTestCase & {
-          confidence?: number;
-          reasoning?: string;
-        }> = [];
+        let testCaseInserts: Array<
+          NovaSubmissionTestCase & {
+            confidence?: number;
+            reasoning?: string;
+          }
+        > = [];
 
         if (testCases && testCases.length > 0) {
-          sendProgress('test_cases', 75, `Running ${testCases.length} test cases...`);
-          
+          sendProgress(
+            'test_cases',
+            75,
+            `Running ${testCases.length} test cases...`
+          );
+
           const testCaseEvaluation = await performTestCaseEvaluation(ctx);
           evaluation.testCaseEvaluation = testCaseEvaluation;
 
           sendProgress('test_cases', 80, 'Processing test case results...');
-          
+
           testCaseInserts = await processTestCaseResults(
             testCaseEvaluation,
             testCases,
@@ -349,18 +374,26 @@ async function streamEvaluation({
           );
 
           await saveTestCaseResults(testCaseInserts);
-          
+
           sendProgress('test_cases', 85, 'Test case evaluation completed', {
             test_case_evaluation: testCaseEvaluation,
           });
         } else {
-          sendProgress('test_cases', 85, 'No test cases found, skipping evaluation');
+          sendProgress(
+            'test_cases',
+            85,
+            'No test cases found, skipping evaluation'
+          );
         }
 
         // Stage 5: Save criteria results (85-95%)
         sendProgress('saving', 90, 'Saving evaluation results...');
-        
-        if (challengeCriteria && challengeCriteria.length > 0 && evaluation.criteriaEvaluation) {
+
+        if (
+          challengeCriteria &&
+          challengeCriteria.length > 0 &&
+          evaluation.criteriaEvaluation
+        ) {
           const criteriaInserts = processCriteriaEvaluations(
             evaluation.criteriaEvaluation,
             challengeCriteria,
@@ -378,14 +411,16 @@ async function streamEvaluation({
           matchedTestCases: testCaseInserts.filter((tc) => tc.matched).length,
           totalTestCases: testCaseInserts.length,
         });
-
       } catch (error: any) {
         console.error('Streaming evaluation error:', error);
-        
+
         // Clean up submission if created
         if (submissionId) {
           try {
-            await sbAdmin.from('nova_submissions').delete().eq('id', submissionId);
+            await sbAdmin
+              .from('nova_submissions')
+              .delete()
+              .eq('id', submissionId);
           } catch (deleteError) {
             console.error('Failed to delete submission:', deleteError);
           }
