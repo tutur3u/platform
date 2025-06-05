@@ -1,4 +1,3 @@
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
 'use client';
 
 import QuizStatusSidebar, {
@@ -11,13 +10,6 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────────
 
@@ -255,7 +247,7 @@ export default function TakeQuiz({
 
   // ─── HANDLE SUBMISSION ────────────────────────────────────────────────────────
 
-  const handleSubmit = async (auto: boolean = false) => {
+  const handleSubmit = async (_auto: boolean = false) => {
     if (!quizMeta) return;
 
     // // If not auto‐submit, require all questions answered

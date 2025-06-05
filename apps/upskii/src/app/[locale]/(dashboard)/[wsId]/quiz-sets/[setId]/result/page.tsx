@@ -1,4 +1,3 @@
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/results/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
