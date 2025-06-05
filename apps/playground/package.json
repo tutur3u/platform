@@ -17,7 +17,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.13",
-    "next": "15.4.0-canary.63",
+    "next": "15.4.0-canary.67",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwindcss": "^4.1.8"
@@ -26,9 +26,9 @@
     "@eslint/eslintrc": "^3.3.1",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.6",
-    "@types/react-dom": "^19.1.5",
+    "@types/react-dom": "^19.1.6",
     "eslint": "^9.28.0",
-    "eslint-config-next": "15.4.0-canary.63",
+    "eslint-config-next": "15.4.0-canary.67",
     "postcss": "^8.5.4",
     "typescript": "^5.8.3"
   },

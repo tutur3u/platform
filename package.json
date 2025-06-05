@@ -51,7 +51,7 @@
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "^3.2.1",
+    "@vitest/coverage-v8": "^3.2.2",
     "eslint": "^9.28.0",
     "prettier": "^3.5.3",
     "prettier-eslint": "^16.4.2",
@@ -59,7 +59,7 @@
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
-    "vitest": "^3.2.1"
+    "vitest": "^3.2.2"
   },
   "engines": {
     "node": ">=20"
