@@ -78,7 +78,7 @@ jobs:
 
       - name: Publish package to JSR
         working-directory: packages/ai
-        run: bun dlx jsr publish
+        run: bunx jsr publish
 
   publish-gpr:
     needs: [build]
