@@ -196,28 +196,6 @@ export const CalendarProvider = ({
     []
   );
 
-  const getDateRangeQuery = ({
-    startDate,
-    endDate,
-  }: {
-    startDate: Date;
-    endDate: Date;
-  }) => {
-    return `?start_at=${startDate.toISOString()}&end_at=${endDate.toISOString()}`;
-  };
-
-  // Extended date range to fetch events for a wider range
-  // This ensures we get events that might start before the current month but extend into it
-  const startOfRange = new Date();
-  startOfRange.setDate(1); // First day of current month
-  startOfRange.setMonth(startOfRange.getMonth() - 1); // Go back one month
-  startOfRange.setHours(0, 0, 0, 0);
-
-  const endOfRange = new Date();
-  endOfRange.setMonth(endOfRange.getMonth() + 2); // Go forward two months
-  endOfRange.setDate(0); // Last day of that month
-  endOfRange.setHours(23, 59, 59, 999);
-
   const { events } = useCalendarSync();
 
   // Invalidate and refetch events
