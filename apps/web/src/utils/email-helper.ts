@@ -43,7 +43,7 @@ export const suggestEmails = (text: string): string[] => {
     `${handle}@gmail.com`,
     `${handle}@yahoo.com`,
     `${handle}@outlook.com`,
-    `${handle}@rmit.edu.vn`,
+    `${handle}@tuturuuu.com`,
   ];
 
   return suggestions;
