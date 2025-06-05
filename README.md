@@ -34,7 +34,9 @@ Tuturuuu services include:
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v22+)
-- [bun](https://bun.sh/) (v1.2+)
+- [bun](https://bun.sh/) (v1.2+) - Install with:
+  - **macOS/Linux**: `curl -fsSL https://bun.sh/install | bash`
+  - **Windows**: `powershell -c "irm bun.sh/install.ps1 | iex"`
 - [Docker](https://www.docker.com/) (latest)
 
 ## Getting Started
