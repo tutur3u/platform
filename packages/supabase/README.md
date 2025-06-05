@@ -19,7 +19,7 @@ bun add @tuturuuu/supabase
 bun install
 
 # Run tests
-bun test
+bun run test
 ```
 
 ## License

@@ -52,7 +52,7 @@ jobs:
 
       - name: Run tests
         working-directory: packages/types
-        run: bun test
+        run: bun run test
 
   publish-jsr:
     needs: [build]

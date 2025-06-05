@@ -26,7 +26,7 @@ bun add @tuturuuu/crawler
 bun install
 
 # Run tests
-bun test
+bun run test
 ```
 
 ## License

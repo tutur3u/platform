@@ -19,7 +19,7 @@ bun add @tuturuuu/ai
 bun install
 
 # Run tests
-bun test
+bun run test
 ```
 
 ## License

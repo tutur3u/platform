@@ -199,7 +199,7 @@ There are 5 seed accounts that are already set up for local development:
 To run all tests, run the following command:
 
 ```bash
-bun test
+bun run test
 ```
 
 > Note: Tests are still a work in progress. We're currently working on adding tests to all packages to ensure the best quality possible.
