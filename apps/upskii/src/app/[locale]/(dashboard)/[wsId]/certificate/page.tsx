@@ -75,11 +75,11 @@ export default async function CertificatesPage({
         {certificates.length === 0 ? (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
-              <Award className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+              <Award className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <h3 className="mb-2 text-lg font-semibold">
                 {t('empty_state_title')}
               </h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="mb-4 text-muted-foreground">
                 {t('empty_state_description')}
               </p>
               <Button asChild>
@@ -93,7 +93,7 @@ export default async function CertificatesPage({
               {certificates.map((certificate) => (
                 <Card
                   key={certificate.id}
-                  className="hover:border-primary/20 group transition-all hover:shadow-md"
+                  className="group transition-all hover:border-primary/20 hover:shadow-md"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
@@ -113,7 +113,7 @@ export default async function CertificatesPage({
                   </CardHeader>
 
                   <CardContent className="pt-0">
-                    <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
                       <span>
                         {t('completion_date')}{' '}
@@ -122,7 +122,7 @@ export default async function CertificatesPage({
                         )}
                       </span>
                     </div>
-                    <div className="text-muted-foreground mt-3 font-mono text-xs">
+                    <div className="mt-3 font-mono text-xs text-muted-foreground">
                       {t('certificate_id')}: {certificate.id}
                     </div>
                   </CardContent>
