@@ -31,23 +31,22 @@ export default function Navbar({
   );
 
   return (
-    <div className="fixed top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border/40">
-    <div className="container flex items-center justify-between h-16">
-      <SharedNavbar
-    logo="/media/logos/nova-transparent.png"
-    title={<LogoTitle text="Upskii" />}
-    navigationMenu={<MainNavigationMenu />}
-    actions={
-      <>
-        {renderServerMenu()}
-        {renderNavbarActions()}
-      </>
-    }
-    separator={<NavbarSeparator />}
-    onlyOnMobile={onlyOnMobile}
-  />
+    <div className="bg-background/80 border-border/40 fixed top-0 z-50 w-full border-b backdrop-blur-md">
+      <div className="container flex h-16 items-center justify-between">
+        <SharedNavbar
+          logo="/media/logos/nova-transparent.png"
+          title={<LogoTitle text="Upskii" />}
+          navigationMenu={<MainNavigationMenu />}
+          actions={
+            <>
+              {renderServerMenu()}
+              {renderNavbarActions()}
+            </>
+          }
+          separator={<NavbarSeparator />}
+          onlyOnMobile={onlyOnMobile}
+        />
       </div>
     </div>
- 
   );
 }
