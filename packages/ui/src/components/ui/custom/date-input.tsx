@@ -238,7 +238,7 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange, onSubmit }) => {
         onChange={handleInputChange('day')}
         onKeyDown={handleKeyDown('day')}
         onBlur={handleBlur('day')}
-        className="outline-hidden w-7 border-none bg-transparent p-0 text-center"
+        className="w-7 border-none bg-transparent p-0 text-center outline-hidden"
         placeholder="D"
         autoFocus={false}
       />
@@ -252,7 +252,7 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange, onSubmit }) => {
         onChange={handleInputChange('month')}
         onKeyDown={handleKeyDown('month')}
         onBlur={handleBlur('month')}
-        className="outline-hidden w-6 border-none bg-transparent p-0 text-center"
+        className="w-6 border-none bg-transparent p-0 text-center outline-hidden"
         placeholder="M"
         autoFocus={false}
       />
@@ -266,7 +266,7 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange, onSubmit }) => {
         onChange={handleInputChange('year')}
         onKeyDown={handleKeyDown('year')}
         onBlur={handleBlur('year')}
-        className="outline-hidden w-12 border-none bg-transparent p-0 text-center"
+        className="w-12 border-none bg-transparent p-0 text-center outline-hidden"
         placeholder="YYYY"
         autoFocus={false}
       />

@@ -182,8 +182,8 @@ export default function LearnPage() {
   };
 
   return (
-    <div className="container relative mx-auto space-y-16 p-6">
-      <div className="from-background to-background/50 bg-linear-to-b absolute inset-0" />
+    <div className="relative container mx-auto space-y-16 p-6">
+      <div className="absolute inset-0 bg-linear-to-b from-background to-background/50" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -197,7 +197,7 @@ export default function LearnPage() {
         <h1 className="text-4xl font-bold tracking-tight">
           {t('learning-subtitle')}
         </h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl">
+        <p className="mx-auto max-w-2xl text-muted-foreground">
           Follow our comprehensive curriculum to become an expert in crafting
           effective AI prompts
         </p>
@@ -212,17 +212,17 @@ export default function LearnPage() {
         {lessonContents.map((module, moduleIndex) => (
           <motion.div
             key={module.id}
-            className="bg-card group relative rounded-xl border p-6 shadow-sm transition-shadow hover:shadow-md"
+            className="group relative rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
             whileHover={{ y: -2 }}
           >
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="bg-primary/10 text-primary rounded-lg p-2">
+                <div className="rounded-lg bg-primary/10 p-2 text-primary">
                   {module.icon}
                 </div>
                 <div>
                   <h2 className="text-2xl font-semibold">{module.title}</h2>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     {module.description}
                   </p>
                 </div>
@@ -236,13 +236,13 @@ export default function LearnPage() {
               {module.sections.map((section, index) => (
                 <motion.div
                   key={index}
-                  className="bg-card/50 hover:bg-card group relative overflow-hidden rounded-lg border p-4 transition-colors"
+                  className="group relative overflow-hidden rounded-lg border bg-card/50 p-4 transition-colors hover:bg-card"
                   whileHover={{ scale: 1.01 }}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1">
                       <h3 className="font-medium">{section.title}</h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {section.content}
                       </p>
                     </div>

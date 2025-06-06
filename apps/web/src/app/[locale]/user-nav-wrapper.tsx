@@ -9,7 +9,7 @@ export function UserNavWrapper({
   return (
     <Suspense
       fallback={
-        <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+        <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
       }
     >
       <UserNav hideMetadata={hideMetadata} />

@@ -123,7 +123,7 @@ export const secretColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="line-clamp-1 break-all font-semibold">
+        <div className="line-clamp-1 font-semibold break-all">
           {row.getValue('name') || '-'}
         </div>
       ),

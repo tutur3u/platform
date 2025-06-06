@@ -17,13 +17,13 @@ We welcome pull requests to address issues in our codebase or add useful feature
 2. Install all dependencies by running:
 
 ```bash
-pnpm install
+bun install
 ```
 
 3. Build the project to ensure your environment is set up properly. Run:
 
 ```bash
-pnpm build
+bun run build
 ```
 
 4. Add tests and documentation for your changes as appropriate. Make sure your code is clear, standards-compliant, secure, and bug-free.
@@ -53,20 +53,20 @@ Thank you again for your interest in contributing to Tuturuuu! Together we can b
 
 To setup Tuturuuu locally, you'll need:
 
-- pnpm installed (our package manager of choice)
+- bun installed (our package manager of choice)
 - A database (we recommend PostgreSQL)
 
 Then, follow these steps:
 
 1. Clone this repository
 
-2. Install dependencies: `pnpm install`
+2. Install dependencies: `bun install`
 
 3. Create a `.env` file with your database URL and other secrets (ask a maintainer for an example)
 
-4. Start local supabase development: `pnpm supabase start`
+4. Start local supabase development: `bun supabase start`
 
-5. Start the Next.js dev server: `pnpm dev`
+5. Start the Next.js dev server: `bun dev`
 
 6. Your Web Application will be running on <http://localhost:7803> and the dashboard on <http://localhost:8003>
 

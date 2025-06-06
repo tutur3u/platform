@@ -116,7 +116,7 @@ export default function BugBountyPage() {
   }, [controls]);
 
   return (
-    <main className="container relative space-y-24 py-16 md:py-24">
+    <main className="relative container space-y-24 py-16 md:py-24">
       {/* Confetti Celebration */}
       {isConfettiActive && (
         <Confetti
@@ -130,8 +130,8 @@ export default function BugBountyPage() {
 
       {/* Enhanced Background Effects */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="bg-size-[24px_24px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)]" />
-        <div className="bg-size-[120px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: [0.1, 0.15, 0.1] }}
@@ -165,7 +165,7 @@ export default function BugBountyPage() {
           </Badge>
         </motion.div>
 
-        <h1 className="text-foreground mb-6 text-balance text-4xl font-bold md:text-5xl lg:text-6xl">
+        <h1 className="mb-6 text-4xl font-bold text-balance text-foreground md:text-5xl lg:text-6xl">
           <span className="relative inline-block">
             <motion.span
               animate={{
@@ -177,18 +177,18 @@ export default function BugBountyPage() {
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="from-primary/40 bg-linear-to-r absolute -inset-1 -z-10 rounded-lg via-purple-500/40 to-pink-500/40 blur-lg"
+              className="absolute -inset-1 -z-10 rounded-lg bg-linear-to-r from-primary/40 via-purple-500/40 to-pink-500/40 blur-lg"
             />
             Thank You
           </span>{' '}
           for Your{' '}
-          <span className="from-primary bg-linear-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
             Security Contribution
           </span>
         </h1>
 
         <motion.p
-          className="text-foreground/80 mx-auto max-w-2xl text-balance text-lg md:text-xl"
+          className="mx-auto max-w-2xl text-lg text-balance text-foreground/80 md:text-xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
@@ -206,11 +206,11 @@ export default function BugBountyPage() {
         viewport={{ once: true }}
         className="relative"
       >
-        <Card className="border-primary/10 group relative overflow-hidden">
+        <Card className="group relative overflow-hidden border-primary/10">
           <div className="absolute inset-0">
-            <div className="from-primary/10 bg-linear-to-br absolute inset-0 via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <motion.div
-              className="bg-size-[20px_20px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)]"
+              className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[20px_20px]"
               animate={{
                 backgroundPosition: ['0% 0%', '100% 100%'],
               }}
@@ -231,14 +231,14 @@ export default function BugBountyPage() {
                 animate={controls}
                 className="relative"
               >
-                <div className="from-primary/20 bg-linear-to-r absolute -inset-3 rounded-full via-purple-500/20 to-pink-500/20 blur-md" />
-                <div className="from-primary bg-linear-to-br relative flex h-24 w-24 items-center justify-center rounded-full via-purple-500/80 to-pink-500/80">
+                <div className="absolute -inset-3 rounded-full bg-linear-to-r from-primary/20 via-purple-500/20 to-pink-500/20 blur-md" />
+                <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br from-primary via-purple-500/80 to-pink-500/80">
                   <Trophy className="h-10 w-10 text-white" />
                 </div>
               </motion.div>
 
               <div className="text-center">
-                <h2 className="text-foreground mb-2 text-3xl font-bold">
+                <h2 className="mb-2 text-3xl font-bold text-foreground">
                   Nguyen Nghia Hiep (vapour)
                 </h2>
                 <p className="text-muted-foreground">
@@ -246,8 +246,8 @@ export default function BugBountyPage() {
                 </p>
               </div>
 
-              <motion.div className="bg-primary/10 mt-4 flex items-center gap-2 rounded-full px-6 py-2">
-                <Star className="text-primary h-4 w-4" />
+              <motion.div className="mt-4 flex items-center gap-2 rounded-full bg-primary/10 px-6 py-2">
+                <Star className="h-4 w-4 text-primary" />
                 <span>Top Contributor</span>
               </motion.div>
             </div>
@@ -257,7 +257,7 @@ export default function BugBountyPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
-              className="mx-auto mb-8 max-w-2xl text-balance text-center"
+              className="mx-auto mb-8 max-w-2xl text-center text-balance"
             >
               <p className="text-foreground/80 italic">
                 "Thank you for your valuable contribution to making Tuturuuu's
@@ -281,7 +281,7 @@ export default function BugBountyPage() {
             Security Report
           </Badge>
           <h2 className="mb-4 text-3xl font-bold">Vulnerability Discovery</h2>
-          <p className="text-muted-foreground mx-auto max-w-2xl">
+          <p className="mx-auto max-w-2xl text-muted-foreground">
             This report has helped us identify a security vulnerability,
             allowing us to plan appropriate mitigations.
           </p>
@@ -293,11 +293,11 @@ export default function BugBountyPage() {
           transition={{ delay: 0.2 }}
           className="group"
         >
-          <Card className="border-primary/10 bg-foreground/5 relative overflow-hidden backdrop-blur-sm">
+          <Card className="relative overflow-hidden border-primary/10 bg-foreground/5 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0 }}
               whileHover={{ opacity: 1 }}
-              className="bg-linear-to-br absolute inset-0 from-purple-500/10 via-pink-500/5 to-transparent"
+              className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent"
             />
             <div className="relative p-8 md:p-10">
               <div className="mb-8 flex flex-wrap items-center gap-4">
@@ -322,35 +322,35 @@ export default function BugBountyPage() {
                   <FileText className="mr-2 h-4 w-4" />
                   CWE: {bugReport.cwe}
                 </Badge>
-                <div className="bg-foreground/5 text-muted-foreground flex items-center gap-2 rounded-full px-4 py-2 text-sm">
+                <div className="flex items-center gap-2 rounded-full bg-foreground/5 px-4 py-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   {bugReport.dateSubmitted}
                 </div>
               </div>
 
-              <h3 className="text-foreground mb-6 text-lg font-bold md:text-2xl">
+              <h3 className="mb-6 text-lg font-bold text-foreground md:text-2xl">
                 {bugReport.title}
               </h3>
 
-              <div className="bg-foreground/5 mb-6 flex flex-col items-center gap-2 rounded-lg px-4 py-3 text-sm md:flex-row">
-                <Users className="text-primary h-5 w-5" />
+              <div className="mb-6 flex flex-col items-center gap-2 rounded-lg bg-foreground/5 px-4 py-3 text-sm md:flex-row">
+                <Users className="h-5 w-5 text-primary" />
                 <span className="text-muted-foreground">Reported by:</span>
                 <span className="font-medium">{bugReport.reporter}</span>
               </div>
 
               <div className="mb-8 space-y-6">
-                <div className="border-primary/10 bg-background/50 rounded-lg border p-6">
+                <div className="rounded-lg border border-primary/10 bg-background/50 p-6">
                   <h4 className="mb-3 flex items-center gap-2 font-semibold">
-                    <Bug className="text-primary h-5 w-5" />
+                    <Bug className="h-5 w-5 text-primary" />
                     Description
                   </h4>
                   <p className="text-foreground/80">{bugReport.description}</p>
                 </div>
 
                 {bugReport.impact && (
-                  <div className="border-primary/10 bg-background/50 rounded-lg border p-6">
+                  <div className="rounded-lg border border-primary/10 bg-background/50 p-6">
                     <h4 className="mb-3 flex items-center gap-2 font-semibold">
-                      <AlertTriangle className="text-primary h-5 w-5" />
+                      <AlertTriangle className="h-5 w-5 text-primary" />
                       Impact
                     </h4>
                     <p className="text-foreground/80">{bugReport.impact}</p>
@@ -358,9 +358,9 @@ export default function BugBountyPage() {
                 )}
 
                 {bugReport.remediation && (
-                  <div className="border-primary/10 bg-background/50 rounded-lg border p-6">
+                  <div className="rounded-lg border border-primary/10 bg-background/50 p-6">
                     <h4 className="mb-3 flex items-center gap-2 font-semibold">
-                      <ShieldCheck className="text-primary h-5 w-5" />
+                      <ShieldCheck className="h-5 w-5 text-primary" />
                       Recommended Remediation
                     </h4>
                     <p className="text-foreground/80">
@@ -370,9 +370,9 @@ export default function BugBountyPage() {
                 )}
 
                 {bugReport.patchPlan && (
-                  <div className="border-primary/10 bg-background/50 rounded-lg border p-6">
+                  <div className="rounded-lg border border-primary/10 bg-background/50 p-6">
                     <h4 className="mb-3 flex items-center gap-2 font-semibold">
-                      <Upload className="text-primary h-5 w-5" />
+                      <Upload className="h-5 w-5 text-primary" />
                       Future Patching Plan
                     </h4>
                     <p className="text-foreground/80">{bugReport.patchPlan}</p>
@@ -383,9 +383,9 @@ export default function BugBountyPage() {
               <div className="mt-8 flex justify-center">
                 <motion.div
                   whileTap={{ scale: 0.95 }}
-                  className="bg-primary/10 inline-flex items-center gap-2 rounded-full px-6 py-3"
+                  className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-6 py-3"
                 >
-                  <Clock className="text-primary h-5 w-5" />
+                  <Clock className="h-5 w-5 text-primary" />
                   <span>Scheduled for Future Release</span>
                 </motion.div>
               </div>
@@ -401,11 +401,11 @@ export default function BugBountyPage() {
         viewport={{ once: true }}
         className="relative"
       >
-        <Card className="border-primary/10 group relative overflow-hidden">
+        <Card className="group relative overflow-hidden border-primary/10">
           <div className="absolute inset-0">
-            <div className="from-primary/10 bg-linear-to-br absolute inset-0 via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <motion.div
-              className="bg-size-[20px_20px] absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)]"
+              className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[20px_20px]"
               animate={{
                 backgroundPosition: ['0% 0%', '100% 100%'],
               }}
@@ -423,18 +423,18 @@ export default function BugBountyPage() {
               <motion.div
                 initial={{ scale: 0.95 }}
                 whileHover={{ scale: 1 }}
-                className="bg-primary/10 group-hover:bg-primary/20 relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl transition-colors duration-300 md:mx-0"
+                className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 transition-colors duration-300 group-hover:bg-primary/20 md:mx-0"
               >
-                <Bug className="text-primary relative h-10 w-10" />
+                <Bug className="relative h-10 w-10 text-primary" />
               </motion.div>
 
               <div className="space-y-4 text-center md:text-left">
-                <h2 className="text-foreground text-3xl font-bold">
-                  <span className="from-primary bg-linear-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                <h2 className="text-3xl font-bold text-foreground">
+                  <span className="bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
                     Join Our Bug Bounty Program
                   </span>
                 </h2>
-                <p className="text-foreground/80 mx-auto max-w-2xl text-lg">
+                <p className="mx-auto max-w-2xl text-lg text-foreground/80">
                   Help us identify security vulnerabilities and get recognized
                   for your contributions. We value ethical security research.
                 </p>
@@ -443,9 +443,9 @@ export default function BugBountyPage() {
               <div className="flex flex-wrap justify-center gap-4 md:justify-start">
                 <motion.a
                   href="mailto:security@tuturuuu.com"
-                  className="bg-foreground text-background hover:bg-foreground/90 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
+                  className="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-foreground px-8 py-4 font-semibold text-background transition-all duration-300 hover:bg-foreground/90"
                 >
-                  <div className="from-primary/20 to-primary/0 bg-linear-to-r absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <Mail className="relative h-5 w-5" />
                   <span className="relative">Contact Security Team</span>
                 </motion.a>
@@ -454,9 +454,9 @@ export default function BugBountyPage() {
                   href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/main/SECURITY.md`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-foreground/10 hover:bg-foreground/20 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
+                  className="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-foreground/10 px-8 py-4 font-semibold transition-all duration-300 hover:bg-foreground/20"
                 >
-                  <div className="from-primary/10 to-primary/0 bg-linear-to-r absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="absolute inset-0 bg-linear-to-r from-primary/10 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <GithubIcon className="relative h-5 w-5" />
                   <span className="relative">Security Policy</span>
                 </motion.a>
@@ -464,43 +464,43 @@ export default function BugBountyPage() {
             </div>
 
             <div className="relative">
-              <div className="bg-foreground/5 relative overflow-hidden rounded-2xl p-6 backdrop-blur-sm md:p-8">
+              <div className="relative overflow-hidden rounded-2xl bg-foreground/5 p-6 backdrop-blur-sm md:p-8">
                 <div className="space-y-6">
-                  <h3 className="text-foreground text-xl font-bold">
+                  <h3 className="text-xl font-bold text-foreground">
                     Program Benefits
                   </h3>
                   <div className="space-y-4">
-                    <div className="border-primary/10 bg-background/50 flex items-center gap-3 rounded-lg border p-4">
-                      <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
-                        <Trophy className="text-primary h-5 w-5" />
+                    <div className="flex items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        <Trophy className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <h4 className="font-semibold">Recognition</h4>
-                        <p className="text-foreground/60 text-sm">
+                        <p className="text-sm text-foreground/60">
                           Get your name listed on our Bug Bounty Hall of Fame
                         </p>
                       </div>
                     </div>
 
-                    <div className="border-primary/10 bg-background/50 flex items-center gap-3 rounded-lg border p-4">
-                      <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
-                        <MessageSquare className="text-primary h-5 w-5" />
+                    <div className="flex items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        <MessageSquare className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <h4 className="font-semibold">Direct Communication</h4>
-                        <p className="text-foreground/60 text-sm">
+                        <p className="text-sm text-foreground/60">
                           Work directly with our security team
                         </p>
                       </div>
                     </div>
 
-                    <div className="border-primary/10 bg-background/50 flex items-center gap-3 rounded-lg border p-4">
-                      <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
-                        <Globe2 className="text-primary h-5 w-5" />
+                    <div className="flex items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        <Globe2 className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <h4 className="font-semibold">Global Impact</h4>
-                        <p className="text-foreground/60 text-sm">
+                        <p className="text-sm text-foreground/60">
                           Help protect Tuturuuu users around the world
                         </p>
                       </div>
@@ -529,14 +529,14 @@ export default function BugBountyPage() {
             Found a vulnerability?
           </h2>
         </motion.div>
-        <p className="text-muted-foreground mb-8">
+        <p className="mb-8 text-muted-foreground">
           Report it responsibly and join our list of security contributors.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <motion.a
             href="mailto:security@tuturuuu.com"
             whileTap={{ scale: 0.95 }}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-8 py-3 font-medium"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground hover:bg-primary/90"
           >
             <Mail className="h-4 w-4" />
             Report a Vulnerability
@@ -544,7 +544,7 @@ export default function BugBountyPage() {
           <Link href="/security">
             <motion.button
               whileTap={{ scale: 0.95 }}
-              className="border-foreground/10 hover:bg-foreground/5 inline-flex items-center gap-2 rounded-lg border px-8 py-3 font-medium"
+              className="inline-flex items-center gap-2 rounded-lg border border-foreground/10 px-8 py-3 font-medium hover:bg-foreground/5"
             >
               <Shield className="h-4 w-4" />
               Security Page

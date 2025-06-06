@@ -12,7 +12,7 @@ export function StatsSection() {
 
   const stats = [
     {
-      icon: <Clock className="text-dynamic-purple h-8 w-8" />,
+      icon: <Clock className="h-8 w-8 text-dynamic-purple" />,
       value: '10+',
       label: t('stats.hours_saved_weekly'),
       text: 'text-dynamic-purple',
@@ -22,7 +22,7 @@ export function StatsSection() {
       ),
     },
     {
-      icon: <Calendar className="text-dynamic-blue h-8 w-8" />,
+      icon: <Calendar className="h-8 w-8 text-dynamic-blue" />,
       value: '85%',
       label: t('stats.reduction_in_scheduling_time'),
       text: 'text-dynamic-blue',
@@ -32,7 +32,7 @@ export function StatsSection() {
       ),
     },
     {
-      icon: <Users className="text-dynamic-green h-8 w-8" />,
+      icon: <Users className="h-8 w-8 text-dynamic-green" />,
       value: '94%',
       label: t('stats.user_satisfaction'),
       text: 'text-dynamic-green',
@@ -42,7 +42,7 @@ export function StatsSection() {
       ),
     },
     {
-      icon: <Zap className="text-dynamic-orange h-8 w-8" />,
+      icon: <Zap className="h-8 w-8 text-dynamic-orange" />,
       value: '3x',
       label: t('stats.productivity_increase'),
       text: 'text-dynamic-orange',
@@ -88,13 +88,13 @@ export function StatsSection() {
         <h2 className="stats-title mb-4 text-3xl font-bold md:text-4xl">
           <span>
             {t('stats.the')}{' '}
-            <span className="from-dynamic-light-indigo via-dynamic-light-orange to-dynamic-light-green bg-gradient-to-r from-10% via-30% to-90% bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-dynamic-light-indigo from-10% via-dynamic-light-orange via-30% to-dynamic-light-green to-90% bg-clip-text text-transparent">
               Tuturuuu
             </span>{' '}
             {t('stats.impact')}
           </span>
         </h2>
-        <p className="stats-title text-muted-foreground mx-auto max-w-3xl text-xl">
+        <p className="stats-title mx-auto max-w-3xl text-xl text-muted-foreground">
           {t(
             'stats.real_results_from_real_users_who_have_transformed_their_productivity'
           )}
@@ -106,7 +106,7 @@ export function StatsSection() {
           <div
             key={index}
             className={cn(
-              'stat-item bg-foreground/10 rounded-xl border p-6 transition-shadow duration-300',
+              'stat-item rounded-xl border bg-foreground/10 p-6 transition-shadow duration-300',
               stat.bg
             )}
           >
@@ -117,12 +117,12 @@ export function StatsSection() {
             >
               {stat.icon}
             </div>
-            <div className="text-balance text-center">
+            <div className="text-center text-balance">
               <div className={cn('mb-2 text-4xl font-bold', stat.text)}>
                 {stat.value}
               </div>
               <h3 className="mb-2 text-lg font-semibold">{stat.label}</h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 {stat.description}
               </p>
             </div>

@@ -4,7 +4,6 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_CALENDAR_PROJECT_ID }}
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-  ENABLE_EXPERIMENTAL_COREPACK: 1
 on:
   push:
     branches-ignore:
@@ -44,24 +43,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-      - name: Setup pnpm
+      - name: Setup bun
         if: steps.check_commits.outputs.skip_build != 'true'
-        uses: pnpm/action-setup@v4
+        uses: oven-sh/setup-bun@v2
 
       - name: Use Node.js 22
         if: steps.check_commits.outputs.skip_build != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
 
       - name: Install dependencies
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: pnpm install
+        run: bun install
 
       - name: Install Vercel CLI
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: pnpm install --global vercel@latest
+        run: bun install --global vercel@latest
 
       - name: Pull Vercel Environment Information
         if: steps.check_commits.outputs.skip_build != 'true'

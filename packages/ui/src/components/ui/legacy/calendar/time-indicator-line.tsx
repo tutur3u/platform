@@ -52,7 +52,7 @@ export const TimeIndicatorLine = ({
       }}
     >
       {/* Left dot */}
-      <div className="absolute -left-[4px] -top-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" />
+      <div className="absolute -top-[4px] -left-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" />
 
       {/* Right dot */}
       {/* <div className="absolute -top-[4px] -right-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" /> */}

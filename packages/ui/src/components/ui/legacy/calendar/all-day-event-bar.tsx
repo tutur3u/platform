@@ -81,8 +81,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   return (
     <div className="flex">
       {/* Label column */}
-      <div className="bg-muted/30 flex w-16 items-center justify-center border-b border-l p-2 font-medium">
-        <Calendar className="text-muted-foreground h-4 w-4" />
+      <div className="flex w-16 items-center justify-center border-b border-l bg-muted/30 p-2 font-medium">
+        <Calendar className="h-4 w-4 text-muted-foreground" />
       </div>
 
       {/* All-day event columns */}
@@ -117,7 +117,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           return (
             <div
               key={`all-day-${dateKey}`}
-              className="hover:bg-muted/20 group mr-px flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r"
+              className="group mr-px flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r hover:bg-muted/20"
             >
               {visibleEvents.map((event) => {
                 const { bg, border, text } = getEventStyles(
@@ -152,7 +152,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
               {hiddenCount > 0 && (
                 <div
-                  className="text-muted-foreground hover:bg-muted/40 flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium transition-colors"
+                  className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                   onClick={() => toggleDateExpansion(dateKey)}
                 >
                   <ChevronDown className="mr-1 h-3 w-3" />
@@ -164,7 +164,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 !shouldShowAll &&
                 dateEvents.length > MAX_EVENTS_DISPLAY && (
                   <div
-                    className="text-muted-foreground hover:bg-muted/40 flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium transition-colors"
+                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                     onClick={() => toggleDateExpansion(dateKey)}
                   >
                     <ChevronUp className="mr-1 h-3 w-3" />

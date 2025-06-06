@@ -40,29 +40,38 @@
 :root {
   --background: hsl(20, 60%, 98%);
   --foreground: hsl(0 0% 3.9%);
+
   --card: hsl(20, 60%, 98%);
   --card-foreground: hsl(0 0% 3.9%);
+
   --popover: hsl(20, 60%, 98%);
   --popover-foreground: hsl(0 0% 3.9%);
+
   --primary: hsl(0 0% 9%);
   --primary-foreground: hsl(0 0% 98%);
+
   --secondary: hsl(0 0% 96.1%);
   --secondary-foreground: hsl(0 0% 9%);
+
   --muted: hsl(0 0% 96.1%);
   --muted-foreground: hsl(0 0% 45.1%);
+
   --accent: hsl(0 0% 96.1%);
   --accent-foreground: hsl(0 0% 9%);
+
   --destructive: hsl(0 84.2% 60.2%);
   --destructive-foreground: hsl(0 0% 98%);
+
   --border: hsl(0 0% 89.8%);
   --input: hsl(0 0% 89.8%);
   --ring: hsl(0 0% 3.9%);
+
   --chart-1: hsl(12 76% 61%);
   --chart-2: hsl(173 58% 39%);
   --chart-3: hsl(197 37% 24%);
   --chart-4: hsl(43 74% 66%);
   --chart-5: hsl(27 87% 67%);
-  --radius: 0.5rem;
+
   --sidebar-background: hsl(0 0% 98%);
   --sidebar-foreground: hsl(240 5.3% 26.1%);
   --sidebar-primary: hsl(240 5.9% 10%);
@@ -71,6 +80,8 @@
   --sidebar-accent-foreground: hsl(240 5.9% 10%);
   --sidebar-border: hsl(220 13% 91%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
+
+  --radius: 0.5rem;
 
   /* Custom colors */
   --lime: hsl(90 40% 30%);
@@ -99,18 +110,7 @@
   --light-cyan: hsl(180 45% 60%);
   --light-gray: hsl(0 0% 60%);
 
-  /* Dynamic colors for calendar events */
-  --dynamic-blue: hsl(220 70% 50%);
-  --dynamic-red: hsl(0 70% 50%);
-  --dynamic-green: hsl(140 70% 50%);
-  --dynamic-yellow: hsl(40 70% 50%);
-  --dynamic-purple: hsl(270 70% 50%);
-  --dynamic-pink: hsl(330 70% 50%);
-  --dynamic-orange: hsl(25 70% 50%);
-  --dynamic-indigo: hsl(250 70% 50%);
-  --dynamic-cyan: hsl(180 70% 50%);
-  --dynamic-gray: hsl(0 0% 50%);
-
+  /* Colors for calendar events */
   --calendar-bg-blue: hsl(220 64% 95%);
   --calendar-bg-red: hsl(0 64% 95%);
   --calendar-bg-green: hsl(140 64% 95%);
@@ -126,28 +126,38 @@
 .dark {
   --background: hsl(0 0% 3.9%);
   --foreground: hsl(0 0% 98%);
+
   --card: hsl(0 0% 3.9%);
   --card-foreground: hsl(0 0% 98%);
+
   --popover: hsl(0 0% 3.9%);
   --popover-foreground: hsl(0 0% 98%);
+
   --primary: hsl(0 0% 98%);
   --primary-foreground: hsl(0 0% 9%);
+
   --secondary: hsl(0 0% 14.9%);
   --secondary-foreground: hsl(0 0% 98%);
+
   --muted: hsl(0 0% 14.9%);
   --muted-foreground: hsl(0 0% 63.9%);
+
   --accent: hsl(0 0% 14.9%);
   --accent-foreground: hsl(0 0% 98%);
+
   --destructive: hsl(0 62.8% 30.6%);
   --destructive-foreground: hsl(0 0% 98%);
+
   --border: hsl(0 0% 14.9%);
   --input: hsl(0 0% 14.9%);
   --ring: hsl(0 0% 83.1%);
+
   --chart-1: hsl(220 70% 50%);
   --chart-2: hsl(160 60% 45%);
   --chart-3: hsl(30 80% 55%);
   --chart-4: hsl(280 65% 60%);
   --chart-5: hsl(340 75% 55%);
+
   --sidebar-background: hsl(0 0% 3.9%);
   --sidebar-foreground: hsl(0 0% 98%);
   --sidebar-primary: hsl(0 0% 98%);
@@ -156,6 +166,8 @@
   --sidebar-accent-foreground: hsl(0 0% 98%);
   --sidebar-border: hsl(0 0% 14.9%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
+
+  --radius: 0.5rem;
 
   /* Custom colors */
   --lime: hsl(90 50% 70%);
@@ -180,18 +192,7 @@
   --light-cyan: hsl(180 60% 75%);
   --light-gray: hsl(0 0% 80%);
 
-  /* Dynamic colors for calendar events in dark mode */
-  --dynamic-blue: hsl(220 70% 60%);
-  --dynamic-red: hsl(0 70% 60%);
-  --dynamic-green: hsl(140 70% 60%);
-  --dynamic-yellow: hsl(40 70% 60%);
-  --dynamic-purple: hsl(270 70% 60%);
-  --dynamic-pink: hsl(330 70% 60%);
-  --dynamic-orange: hsl(25 70% 60%);
-  --dynamic-indigo: hsl(250 70% 60%);
-  --dynamic-cyan: hsl(180 70% 60%);
-  --dynamic-gray: hsl(0 0% 60%);
-
+  /* Colors for calendar events */
   --calendar-bg-blue: hsl(220 14% 11%);
   --calendar-bg-red: hsl(0 14% 11%);
   --calendar-bg-green: hsl(140 14% 11%);
