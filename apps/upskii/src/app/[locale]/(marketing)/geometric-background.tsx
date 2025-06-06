@@ -1,26 +1,24 @@
-"use client"
+'use client';
 
-import { useTheme } from "next-themes"
-import { useEffect, useState } from "react"
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
 export function GeometricBackground() {
-  const { theme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   if (!mounted) {
-    return null
+    return null;
   }
 
-  
-
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
       <svg
-        className="absolute inset-0 w-full h-full"
+        className="absolute inset-0 h-full w-full"
         viewBox="0 0 1200 800"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -35,14 +33,14 @@ export function GeometricBackground() {
 
         <path
           d="M-50 200C250 100 450 300 650 200C850 100 1050 300 1350 200"
-          stroke="rgb(196 181 253 / 0.25)" 
+          stroke="rgb(196 181 253 / 0.25)"
           strokeWidth="1.5"
           fill="none"
         />
 
         <path
           d="M-150 600C150 500 350 700 550 600C750 500 950 700 1250 600"
-          stroke="rgb(147 197 253 / 0.2)" 
+          stroke="rgb(147 197 253 / 0.2)"
           strokeWidth="1.5"
           fill="none"
         />
@@ -57,8 +55,8 @@ export function GeometricBackground() {
 
         <path
           d="M800 150C900 100 1000 200 1100 150C1200 100 1300 200 1400 150L1400 250C1300 300 1200 200 1100 250C1000 300 900 200 800 250Z"
-          fill="rgb(196 181 253 / 0.05)" 
-          stroke="rgb(196 181 253 / 0.2)" 
+          fill="rgb(196 181 253 / 0.05)"
+          stroke="rgb(196 181 253 / 0.2)"
           strokeWidth="1"
         />
 
@@ -77,7 +75,7 @@ export function GeometricBackground() {
           cy="80"
           r="12"
           fill="none"
-          stroke= "rgb(196 181 253 / 0.3)" 
+          stroke="rgb(196 181 253 / 0.3)"
           strokeWidth="1.5"
         />
 
@@ -86,7 +84,7 @@ export function GeometricBackground() {
           cy="120"
           r="15"
           fill="none"
-          stroke="rgb(147 197 253 / 0.35)" 
+          stroke="rgb(147 197 253 / 0.35)"
           strokeWidth="2"
         />
 
@@ -99,14 +97,14 @@ export function GeometricBackground() {
           strokeWidth="1.5"
         />
 
-        <circle cx="80" cy="350" r="4" fill= "rgb(147 197 253 / 0.3)" />
+        <circle cx="80" cy="350" r="4" fill="rgb(147 197 253 / 0.3)" />
 
         <circle
           cx="200"
           cy="650"
           r="25"
           fill="none"
-          stroke= "rgb(147 197 253 / 0.25)" 
+          stroke="rgb(147 197 253 / 0.25)"
           strokeWidth="2"
         />
 
@@ -115,7 +113,7 @@ export function GeometricBackground() {
           cy="550"
           r="18"
           fill="none"
-          stroke="rgb(196 181 253 / 0.3)" 
+          stroke="rgb(196 181 253 / 0.3)"
           strokeWidth="1.5"
         />
 
@@ -124,7 +122,7 @@ export function GeometricBackground() {
           cy="650"
           r="10"
           fill="none"
-          stroke= "rgb(147 197 253 / 0.35)" 
+          stroke="rgb(147 197 253 / 0.35)"
           strokeWidth="2"
         />
 
@@ -140,14 +138,14 @@ export function GeometricBackground() {
         {/* Additional flowing curves */}
         <path
           d="M600 100C700 150 800 50 900 100C1000 150 1100 50 1200 100"
-          stroke= "rgb(147 197 253 / 0.2)" 
+          stroke="rgb(147 197 253 / 0.2)"
           strokeWidth="1"
           fill="none"
         />
 
         <path
           d="M100 500C200 550 300 450 400 500C500 550 600 450 700 500"
-          stroke="rgb(196 181 253 / 0.2)" 
+          stroke="rgb(196 181 253 / 0.2)"
           strokeWidth="1"
           fill="none"
         />
@@ -155,7 +153,7 @@ export function GeometricBackground() {
         {/* Subtle gradient overlay circles */}
         <defs>
           <radialGradient id="circleGradient" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor= "rgb(147 197 253 / 0.1)" />
+            <stop offset="0%" stopColor="rgb(147 197 253 / 0.1)" />
             <stop offset="100%" stopColor="transparent" />
           </radialGradient>
         </defs>
@@ -165,5 +163,5 @@ export function GeometricBackground() {
         <circle cx="300" cy="600" r="50" fill="url(#circleGradient)" />
       </svg>
     </div>
-  )
+  );
 }
