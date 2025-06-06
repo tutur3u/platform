@@ -1,5 +1,3 @@
-import { DownloadButtonPDF } from './[certificateId]/download-button-pdf';
-import { CertificatePagination } from './certificate-pagination';
 import { getAllCertificatesForUser } from '@/lib/certificate-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -19,6 +17,8 @@ import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { DownloadButtonPDF } from './[certificateId]/download-button-pdf';
+import { CertificatePagination } from './certificate-pagination';
 
 interface SearchParams {
   page?: string;
@@ -107,7 +107,7 @@ export default async function CertificatesPage({
                       </div>
                       <Badge variant="outline" className="shrink-0">
                         <Award className="mr-1 h-3 w-3" />
-                        Certified
+                        {t('certified')}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -116,7 +116,7 @@ export default async function CertificatesPage({
                     <div className="text-muted-foreground flex items-center gap-2 text-sm">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        Completed{' '}
+                        {t('completion_date')} {' '}
                         {moment(certificate.completionDate).format(
                           'MMM D, YYYY'
                         )}

@@ -4118,7 +4118,8 @@
     "error_loading": "Error loading certificates. Please try again.",
     "completed_on": "Completed on",
     "error": "Unable to Load Certificates",
-    "error_description": "There was an error loading your certificates. Please try again later."
+    "error_description": "There was an error loading your certificates. Please try again later.",
+    "certified": "Certified"
   },
   "sidebar": {
     "home": "Home",

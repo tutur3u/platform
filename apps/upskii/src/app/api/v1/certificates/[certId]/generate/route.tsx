@@ -21,9 +21,10 @@ export async function POST(
     } = await req.json();
     const { certId } = await params;
 
-    if (!certId) {
-      return new Response('Certificate ID is required', { status: 400 });
+    if (!certId || !wsId) {
+      return new Response('Certificate ID and Workspace ID are required', { status: 400 });
     }
+
 
     // Get the authenticated user
     const supabase = await createClient();
