@@ -2,6 +2,7 @@ import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
@@ -18,6 +19,59 @@ const authMiddleware = createCentralizedAuthMiddleware({
   skipApiRoutes: true,
 });
 
+async function getUserDefaultWorkspace() {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data: userData, error: userError } = await supabase
+      .from('user_private_details')
+      .select('default_workspace_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (userError || !userData) return null;
+
+    const defaultWorkspaceId = userData.default_workspace_id;
+
+    // If user has a default workspace set, validate it exists and user has access
+    if (defaultWorkspaceId) {
+      const { data: workspace, error } = await supabase
+        .from('workspaces')
+        .select('id, name, workspace_members!inner(role)')
+        .eq('id', defaultWorkspaceId)
+        .eq('workspace_members.user_id', user.id)
+        .single();
+
+      if (!error && workspace) {
+        return workspace;
+      }
+    }
+
+    // If no default workspace or invalid, get the first available workspace
+    const { data: workspaces, error } = await supabase
+      .from('workspaces')
+      .select('id, name, workspace_members!inner(role)')
+      .eq('workspace_members.user_id', user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !workspaces) {
+      return null;
+    }
+
+    return workspaces;
+  } catch (error) {
+    console.error('Error getting user default workspace:', error);
+    return null;
+  }
+}
+
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   // First handle authentication with the centralized middleware
   const authRes = await authMiddleware(req);
@@ -30,6 +84,48 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   // Skip locale handling for API routes
   if (req.nextUrl.pathname.startsWith('/api')) {
     return authRes;
+  }
+
+  // Handle /home path - redirect to root without workspace redirect
+  const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
+  const isHomePath =
+    req.nextUrl.pathname === '/home' ||
+    (pathSegments.length === 2 &&
+      supportedLocales.includes(pathSegments[0] as Locale) &&
+      pathSegments[1] === 'home');
+
+  if (isHomePath) {
+    const redirectUrl = new URL('/', req.nextUrl);
+    redirectUrl.searchParams.set('no-redirect', '1');
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Handle authenticated users accessing the root path or root with locale
+  // Skip workspace redirect if no-redirect parameter is present (from /home redirect)
+  const isRootPath = req.nextUrl.pathname === '/';
+  const isLocaleRootPath =
+    pathSegments.length === 1 &&
+    supportedLocales.includes(pathSegments[0] as Locale);
+  const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
+
+  if ((isRootPath || isLocaleRootPath) && !skipWorkspaceRedirect) {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const defaultWorkspace = await getUserDefaultWorkspace();
+
+        if (defaultWorkspace) {
+          const redirectUrl = new URL(`/${defaultWorkspace.id}`, req.nextUrl);
+          return NextResponse.redirect(redirectUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling root path redirect:', error);
+    }
   }
 
   // Continue with locale handling

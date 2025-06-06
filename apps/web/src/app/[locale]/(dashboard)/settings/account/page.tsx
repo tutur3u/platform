@@ -1,6 +1,7 @@
 import UserAvatar from '../../../settings-avatar';
 import DisplayNameInput from '../../../settings-display-name-input';
 import EmailInput from '../../../settings-email-input';
+import DefaultWorkspaceSetting from './default-workspace-setting';
 import ResetPasswordForm from './reset-password-form';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -76,6 +77,23 @@ export default async function AccountSettingsPage() {
           <EmailInput oldEmail={user!?.email} newEmail={user!?.new_email} />
         </SettingItemTab>
       </Suspense>
+
+      <Separator className="my-4" />
+
+      <SettingItemTab
+        title={t('settings-account.default-workspace')}
+        description={t('settings-account.default-workspace-description')}
+      >
+        <Suspense
+          fallback={
+            <div className="h-10 w-full animate-pulse rounded bg-muted" />
+          }
+        >
+          <DefaultWorkspaceSetting
+            defaultWorkspaceId={user?.default_workspace_id}
+          />
+        </Suspense>
+      </SettingItemTab>
 
       {user && (
         <>

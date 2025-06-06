@@ -1698,7 +1698,9 @@
     "remove_avatar": "Remove avatar",
     "save_avatar": "Save avatar",
     "reset-password": "Reset password",
-    "view-full-settings": "View full settings"
+    "view-full-settings": "View full settings",
+    "default-workspace": "Default workspace",
+    "default-workspace-description": "Choose which workspace to redirect to when you visit the homepage. If no default is set, you'll be redirected to your first available workspace."
   },
   "settings-appearance": {
     "appearance": "Appearance",
