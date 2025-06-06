@@ -38,7 +38,7 @@ export async function CourseSection({
   return (
     <AccordionItem
       value={title}
-      className="border-foreground/10 bg-foreground/5 rounded-lg border px-4"
+      className="rounded-lg border border-foreground/10 bg-foreground/5 px-4"
     >
       <AccordionTrigger className="items-center">
         {href ? (

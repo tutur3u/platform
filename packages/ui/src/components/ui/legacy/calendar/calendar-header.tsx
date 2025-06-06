@@ -69,13 +69,13 @@ export function CalendarHeader({
   return (
     <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
-        <CalendarIcon className="text-muted-foreground h-5 w-5" />
+        <CalendarIcon className="h-5 w-5 text-muted-foreground" />
         <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       </div>
       {/* Loading circle */}
       <div className="flex items-center gap-2">
         {(isLoading || isSyncing) && (
-          <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         )}
         <Button
           variant="outline"

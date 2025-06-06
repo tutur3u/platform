@@ -28,12 +28,12 @@ export default async function NotificationPopover() {
     title: `${t('workspace-invite')}`,
     description: (
       <div>
-        <span className="text-foreground/80 font-semibold">
+        <span className="font-semibold text-foreground/80">
           {dayjs(invite.created_at).fromNow()}
         </span>
         {' • '}
         {t('invited-to')}{' '}
-        <span className="text-primary/80 font-semibold underline">
+        <span className="font-semibold text-primary/80 underline">
           {invite.name}
         </span>
         .
@@ -66,7 +66,7 @@ export default async function NotificationPopover() {
         >
           <Bell className="h-6 w-6" />
           {notifications.length > 0 && (
-            <div className="bg-foreground text-foreground group-hover:text-background absolute right-2 top-1 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full p-1 text-center text-xs font-semibold transition-all group-hover:-right-1 group-hover:-top-2 group-hover:h-4 group-hover:w-auto">
+            <div className="absolute top-1 right-2 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full bg-foreground p-1 text-center text-xs font-semibold text-foreground transition-all group-hover:-top-2 group-hover:-right-1 group-hover:h-4 group-hover:w-auto group-hover:text-background">
               <div className="relative opacity-0 group-hover:opacity-100">
                 {notifications.length}
               </div>
@@ -75,7 +75,7 @@ export default async function NotificationPopover() {
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="lg:px-4.5 w-11/12 px-2 py-3.5 shadow-xl md:w-80 md:px-3 md:py-4 lg:w-96"
+        className="w-11/12 px-2 py-3.5 shadow-xl md:w-80 md:px-3 md:py-4 lg:w-96 lg:px-4.5"
         align="start"
       >
         <div className="px-4 py-2 text-xl font-semibold md:text-lg md:font-bold lg:text-xl">
@@ -96,12 +96,12 @@ export default async function NotificationPopover() {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className="bg-foreground/5 md:py-4.5 mb-5 rounded-lg border px-3 py-4 last:mb-0 md:mb-4 md:px-3.5"
+                className="mb-5 rounded-lg border bg-foreground/5 px-3 py-4 last:mb-0 md:mb-4 md:px-3.5 md:py-4.5"
               >
-                <div className="text-base font-medium leading-none">
+                <div className="text-base leading-none font-medium">
                   {notification.title}
                 </div>
-                <div className="text-foreground/80 mb-2.5 mt-1 text-sm md:mb-3">
+                <div className="mt-1 mb-2.5 text-sm text-foreground/80 md:mb-3">
                   {notification.description}
                 </div>
 
@@ -110,7 +110,7 @@ export default async function NotificationPopover() {
             ))
           ) : (
             <div className="flex min-h-16 flex-col items-center justify-center">
-              <div className="text-foreground/80 text-xs">
+              <div className="text-xs text-foreground/80">
                 {noNotifications}
               </div>
             </div>

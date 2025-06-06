@@ -1,4 +1,28 @@
 {
+  "home-hero": {
+    "welcome": "Xin chào, {username}!",
+    "badge": "Trải nghiệm học tập nâng cao với AI",
+    "title": "Khám phá các công cụ hiện đại, bài học sinh động và cộng tác dễ dàng",
+    "cards": {
+      "courses": {
+        "title": "Khóa học",
+        "description": "Khám phá các chủ đề khác nhau qua các bài học được thiết kế từng bước rõ ràng."
+      },
+      "quizzes": {
+        "title": "Trắc nghiệm",
+        "description": "Củng cố kiến thức qua các bài trắc nghiệm tương tác trên nhiều chủ đề."
+      },
+      "challenges": {
+        "title": "Thử thách",
+        "description": "Vận dụng kiến thức với các thử thách thực tế sáng tạo và thú vị."
+      },
+      "ai-chat": {
+        "title": "Trò chuyện với AI",
+        "description": "Trò chuyện cùng AI để nhận hỗ trợ học tập và lời khuyên hữu ích."
+      }
+    },
+    "get-certificate": "Nhận chứng chỉ của bạn"
+  },
   "score-calculator": {
     "test_formula": "(Số Bài Đạt / Tổng Số Bài Kiểm Tra) × 10 × Trọng Số",
     "criteria_formula": "(Tổng Điểm Tiêu Chí / (Tổng Số Tiêu Chí × 10)) × 10 × Trọng Số",
@@ -570,7 +594,8 @@
     "example_content": "Nội dung mẫu",
     "whats_the_title": "Tiêu đề là gì?",
     "write_something": "Hãy viết gì đó...",
-    "error_saving_content": "Lỗi khi lưu nội dung của bạn"
+    "error_saving_content": "Lỗi khi lưu nội dung của bạn",
+    "not_completed": "Chưa hoàn thành"
   },
   "contact": {
     "title": "Liên hệ với chúng tôi",
@@ -596,6 +621,7 @@
     "name": "Tên",
     "is_public": "Công khai",
     "is_published": "Đã xuất bản",
+    "is_completed": "Đã hoàn thành",
     "modules": "Mô-đun",
     "created_at": "Ngày tạo"
   },
@@ -2870,8 +2896,16 @@
     "bio-max-length": "Bio phải ít hơn {max} từ.",
     "display-name-min-error": "Tên hiển thị phải ít nhất {min} kí tự",
     "display-name-max-error": "Tên hiển thị phải ít hơn {max} kí tự",
+    "full-name-min-error": "Họ và tên phải ít nhất {min} kí tự",
+    "full-name-max-error": "Họ và tên phải ít hơn {max} kí tự",
     "email-invalid": "Email không hợp lệ",
-    "view-full-settings": "Xem cài đặt đầy đủ"
+    "view-full-settings": "Xem cài đặt đầy đủ",
+    "full-name": "Họ và tên",
+    "full-name-description": "Tên đầy đủ của bạn sẽ được sử dụng để hiển thị trên chứng chỉ",
+    "profile-updated": "Cập nhật hồ sơ",
+    "full-name-updated": "Họ và tên của bạn đã được cập nhật thành công",
+    "error-occurred": "Đã có lỗi đã xảy ra",
+    "please-try-again": "Vui lòng thử lại sau"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",

@@ -228,11 +228,11 @@ export default function SideBySideDiff({
   return (
     <div className={cn('max-h-80 overflow-auto rounded-md border', className)}>
       {/* Headers */}
-      <div className="bg-muted/30 grid grid-cols-2 border-b">
-        <div className="text-muted-foreground border-r px-4 py-2 text-xs font-medium">
+      <div className="grid grid-cols-2 border-b bg-muted/30">
+        <div className="border-r px-4 py-2 text-xs font-medium text-muted-foreground">
           {leftTitle}
         </div>
-        <div className="text-muted-foreground px-4 py-2 text-xs font-medium">
+        <div className="px-4 py-2 text-xs font-medium text-muted-foreground">
           {rightTitle}
         </div>
       </div>
@@ -247,7 +247,7 @@ export default function SideBySideDiff({
                 <div
                   key={`left-content-${index}`}
                   className={cn(
-                    'min-h-[24px] whitespace-pre-wrap break-all px-2 py-1 leading-snug',
+                    'min-h-[24px] px-2 py-1 leading-snug break-all whitespace-pre-wrap',
                     line.type === 'removed' &&
                       'border-l-2 border-red-500 bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300',
                     line.type === 'modified' &&
@@ -269,7 +269,7 @@ export default function SideBySideDiff({
                 <div
                   key={`right-content-${index}`}
                   className={cn(
-                    'min-h-[24px] whitespace-pre-wrap break-all px-2 py-1 leading-snug',
+                    'min-h-[24px] px-2 py-1 leading-snug break-all whitespace-pre-wrap',
                     line.type === 'added' &&
                       'border-l-2 border-green-500 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300',
                     line.type === 'modified' &&

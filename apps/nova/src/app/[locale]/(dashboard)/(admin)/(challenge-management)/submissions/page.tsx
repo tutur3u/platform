@@ -22,7 +22,7 @@ export default async function Page({
     <div className="container mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground mt-2">{t('description')}</p>
+        <p className="mt-2 text-muted-foreground">{t('description')}</p>
       </div>
 
       <Suspense fallback={<SubmissionsListFallback />}>

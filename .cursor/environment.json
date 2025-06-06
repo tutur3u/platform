@@ -1,0 +1,5 @@
+{
+  "agentCanUpdateSnapshot": true,
+  "install": "bun i",
+  "start": "bun devx"
+}
