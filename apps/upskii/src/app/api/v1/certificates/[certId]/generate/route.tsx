@@ -22,9 +22,10 @@ export async function POST(
     const { certId } = await params;
 
     if (!certId || !wsId) {
-      return new Response('Certificate ID and Workspace ID are required', { status: 400 });
+      return new Response('Certificate ID and Workspace ID are required', {
+        status: 400,
+      });
     }
-
 
     // Get the authenticated user
     const supabase = await createClient();
