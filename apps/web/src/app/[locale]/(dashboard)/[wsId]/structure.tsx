@@ -132,7 +132,7 @@ export function Structure({
   const sidebarHeader = (
     <>
       {isCollapsed || (
-        <Link href="/" className="flex flex-none items-center gap-2">
+        <Link href="/home" className="flex flex-none items-center gap-2">
           <div className="flex-none">
             <Image
               src="/media/logos/transparent.png"
@@ -227,7 +227,7 @@ export function Structure({
   const mobileHeader = (
     <>
       <div className="flex flex-none items-center gap-2">
-        <Link href="/" className="flex flex-none items-center gap-2">
+        <Link href="/home" className="flex flex-none items-center gap-2">
           <Image
             src="/media/logos/transparent.png"
             className="h-8 w-8"
