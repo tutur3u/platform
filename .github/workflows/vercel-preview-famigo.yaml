@@ -49,11 +49,11 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true'
         uses: oven-sh/setup-bun@v2
 
-      - name: Use Node.js 22
+      - name: Use Node.js 24
         if: steps.check_commits.outputs.skip_build != 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install dependencies
         if: steps.check_commits.outputs.skip_build != 'true'

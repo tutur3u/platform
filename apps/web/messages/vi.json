@@ -1713,7 +1713,9 @@
     "remove_avatar": "Xóa hình đại diện",
     "save_avatar": "Lưu hình đại diện",
     "full-settings": "Xem tất cả cài đặt",
-    "view-full-settings": "Xem tất cả cài đặt"
+    "view-full-settings": "Xem tất cả cài đặt",
+    "default-workspace": "Không gian làm việc mặc định",
+    "default-workspace-description": "Chọn không gian làm việc nào để chuyển hướng đến khi bạn truy cập trang chủ. \nNếu không có mặc định được đặt, bạn sẽ được chuyển hướng đến không gian làm việc có sẵn đầu tiên của bạn."
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
