@@ -1,17 +1,15 @@
 import LinkButton from '@/app/[locale]/(dashboard)/_components/link-button';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type WorkspaceQuizSet } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Box, Eye, Paperclip } from '@tuturuuu/ui/icons';
+import { BarChart3 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
-import { Button } from "@tuturuuu/ui/button"
-import Link from "next/link"
-import { BarChart3 } from "@tuturuuu/ui/icons"
-
-
 
 interface Props {
   children: ReactNode;
@@ -73,7 +71,7 @@ export default async function QuizSetDetailsLayout({
           <Button variant="outline" className="gap-2" asChild>
             <Link href={`/${wsId}/quiz-sets/${setId}/statistics`}>
               <BarChart3 className="h-4 w-4" />
-              {t("common.statistics")}
+              {t('common.statistics')}
             </Link>
           </Button>
         }
