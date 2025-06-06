@@ -23,7 +23,7 @@ export async function PATCH(req: NextRequest) {
     if (!workspaceId || workspaceId === '') {
       const { error } = await supabase
         .from('user_private_details')
-        .update({ default_workspace_id: null } as any)
+        .update({ default_workspace_id: null })
         .eq('user_id', user.id);
 
       if (error) {

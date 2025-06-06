@@ -3,6 +3,7 @@ import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
@@ -18,59 +19,6 @@ const authMiddleware = createCentralizedAuthMiddleware({
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
 });
-
-async function getUserDefaultWorkspace() {
-  try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return null;
-
-    const { data: userData, error: userError } = await supabase
-      .from('user_private_details')
-      .select('default_workspace_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (userError || !userData) return null;
-
-    const defaultWorkspaceId = userData.default_workspace_id;
-
-    // If user has a default workspace set, validate it exists and user has access
-    if (defaultWorkspaceId) {
-      const { data: workspace, error } = await supabase
-        .from('workspaces')
-        .select('id, name, workspace_members!inner(role)')
-        .eq('id', defaultWorkspaceId)
-        .eq('workspace_members.user_id', user.id)
-        .single();
-
-      if (!error && workspace) {
-        return workspace;
-      }
-    }
-
-    // If no default workspace or invalid, get the first available workspace
-    const { data: workspaces, error } = await supabase
-      .from('workspaces')
-      .select('id, name, workspace_members!inner(role)')
-      .eq('workspace_members.user_id', user.id)
-      .limit(1)
-      .maybeSingle();
-
-    if (error || !workspaces) {
-      return null;
-    }
-
-    return workspaces;
-  } catch (error) {
-    console.error('Error getting user default workspace:', error);
-    return null;
-  }
-}
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   // First handle authentication with the centralized middleware

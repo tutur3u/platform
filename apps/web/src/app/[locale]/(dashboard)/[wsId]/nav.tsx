@@ -25,6 +25,8 @@ interface NavProps {
   onClick?: () => void;
 }
 
+const HIDE_EXPERIMENTAL_STATUS = true;
+
 export function Nav({
   wsId,
   currentUser,
@@ -178,7 +180,7 @@ export function Nav({
                           .replace('SHIFT', '⇧')
                           .replace(/\+/g, '')
                       : link.trailing ||
-                        (link.experimental && (
+                        (!HIDE_EXPERIMENTAL_STATUS && link.experimental && (
                           <div className="flex items-center gap-1">
                             {link.experimental === 'alpha' ? (
                               <DraftingCompass className="h-2 w-2 flex-none" />
@@ -224,7 +226,7 @@ export function Nav({
               </div>
               {((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
                 link.trailing ||
-                link.experimental) && (
+                (!HIDE_EXPERIMENTAL_STATUS && link.experimental)) && (
                 <span
                   className={cn(
                     'text-muted-foreground',
@@ -243,7 +245,7 @@ export function Nav({
                         .replace('SHIFT', '⇧')
                         .replace(/\+/g, '')
                     : link.trailing ||
-                      (link.experimental && (
+                      (!HIDE_EXPERIMENTAL_STATUS && link.experimental && (
                         <div className="flex items-center gap-1">
                           {link.experimental === 'alpha' ? (
                             <DraftingCompass className="h-2 w-2 flex-none" />

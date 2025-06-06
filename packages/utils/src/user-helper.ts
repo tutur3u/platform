@@ -37,38 +37,57 @@ export async function getCurrentUser(noRedirect?: boolean) {
   return { ...rest, ...user_private_details } as WorkspaceUser;
 }
 
-export async function getUserDefaultWorkspace(noRedirect?: boolean) {
-  const user = await getCurrentUser(noRedirect);
-  if (!user) return null;
+export async function getUserDefaultWorkspace() {
+  try {
+    const supabase = await createClient();
 
-  const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  // If user has a default workspace set, validate it exists and user has access
-  if (user.default_workspace_id) {
-    const { data: workspace, error } = await supabase
-      .from('workspaces')
-      .select('id, name, workspace_members!inner(role)')
-      .eq('id', user.default_workspace_id)
-      .eq('workspace_members.user_id', user.id)
+    if (!user) return null;
+
+    const { data: userData, error: userError } = await supabase
+      .from('user_private_details')
+      .select('default_workspace_id')
+      .eq('user_id', user.id)
       .single();
 
-    if (!error && workspace) {
-      return workspace;
+    if (userError || !userData) return null;
+
+    const defaultWorkspaceId = userData.default_workspace_id;
+
+    // If user has a default workspace set, validate it exists and user has access
+    if (defaultWorkspaceId) {
+      const { data: workspace, error } = await supabase
+        .from('workspaces')
+        .select('id, name, workspace_members!inner(role)')
+        .eq('id', defaultWorkspaceId)
+        .eq('workspace_members.user_id', user.id)
+        .single();
+
+      if (!error && workspace) {
+        return workspace;
+      }
     }
-  }
 
-  // If no default workspace or invalid, get the first available workspace
-  const { data: workspaces, error } = await supabase
-    .from('workspaces')
-    .select('id, name, workspace_members!inner(role)')
-    .eq('workspace_members.user_id', user.id)
-    .limit(1);
+    // If no default workspace or invalid, get the first available workspace
+    const { data: workspaces, error } = await supabase
+      .from('workspaces')
+      .select('id, name, workspace_members!inner(role)')
+      .eq('workspace_members.user_id', user.id)
+      .limit(1)
+      .maybeSingle();
 
-  if (error || !workspaces || workspaces.length === 0) {
+    if (error || !workspaces) {
+      return null;
+    }
+
+    return workspaces;
+  } catch (error) {
+    console.error('Error getting user default workspace:', error);
     return null;
   }
-
-  return workspaces[0];
 }
 
 export async function updateUserDefaultWorkspace(workspaceId: string) {
