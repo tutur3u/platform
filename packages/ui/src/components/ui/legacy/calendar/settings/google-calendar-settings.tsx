@@ -82,12 +82,10 @@ export function GoogleCalendarSettings({
     changesMade: false,
   });
   const { toast } = useToast();
-  const { syncGoogleCalendarNow, getEvents } = useCalendar();
+  const { syncGoogleCalendarNow, getGoogleEvents } = useCalendar();
 
   // Show connected events count
-  const connectedEventsCount = getEvents().filter(
-    (e) => e.google_event_id
-  ).length;
+  const connectedEventsCount = getGoogleEvents().length;
 
   const handleGoogleAuth = async () => {
     if (!wsId) {

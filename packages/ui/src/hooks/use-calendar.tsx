@@ -46,6 +46,7 @@ const CalendarContext = createContext<{
   getCurrentEvents: (date?: Date) => CalendarEvent[];
   getUpcomingEvent: () => CalendarEvent | undefined;
   getEvents: () => CalendarEvent[];
+  getGoogleEvents: () => CalendarEvent[];
   getEventLevel: (eventId: string) => number;
   addEvent: (
     event: Omit<CalendarEvent, 'id'>
@@ -87,6 +88,7 @@ const CalendarContext = createContext<{
   getCurrentEvents: () => [],
   getUpcomingEvent: () => undefined,
   getEvents: () => [],
+  getGoogleEvents: () => [],
   getEventLevel: () => 0,
   addEvent: () => Promise.resolve({} as CalendarEvent),
   addEmptyEvent: () => ({}) as CalendarEvent,
@@ -765,6 +767,8 @@ export const CalendarProvider = ({
 
   const googleEvents = useMemo(() => googleData?.events || [], [googleData]);
 
+  const getGoogleEvents = useCallback(() => googleEvents, [googleEvents]);
+
   // Function to synchronize local events with Google Calendar
   const syncEvents = useCallback(
     async (
@@ -1369,6 +1373,7 @@ export const CalendarProvider = ({
     getCurrentEvents,
     getUpcomingEvent,
     getEvents,
+    getGoogleEvents,
     getEventLevel,
 
     addEvent,

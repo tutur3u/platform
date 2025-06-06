@@ -7575,7 +7575,6 @@ export type Database = {
           email: string;
           new_email: string;
           birthday: string;
-          full_name: string;
           team_name: string[];
         }[];
       };
