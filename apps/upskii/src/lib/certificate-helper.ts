@@ -151,7 +151,8 @@ export async function getAllCertificatesForUser(
     id: certificate.id,
     courseName: certificate.workspace_courses.name,
     completionDate: certificate.completed_date,
-    workspaceName: certificate.workspace_courses.workspaces.name || 'Unknown Workspace',
+    workspaceName:
+      certificate.workspace_courses.workspaces.name || 'Unknown Workspace',
     wsId: certificate.workspace_courses.ws_id,
   }));
 
