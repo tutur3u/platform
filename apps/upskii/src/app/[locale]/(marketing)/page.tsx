@@ -206,17 +206,21 @@ export default function MarketingPage() {
 
         {/* Content sections with geometric background */}
         <div className="relative w-full">
-        
           <GeometricBackground />
 
           {/* Key Features Section */}
           <section id="features" className="relative w-full py-24">
             <div className="mx-auto max-w-6xl px-4">
               <div className="mb-16 text-center">
-                <Badge variant="outline" className="mb-4">
+                <Badge
+                  variant="outline"
+                  className="mb-4 border-primary/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-primary backdrop-blur-sm"
+                >
                   {t("key-features.badge")}
                 </Badge>
-                <h2 className="mb-4 text-3xl font-bold md:text-4xl">{t("key-features.title")}</h2>
+                <h2 className="mb-4 text-3xl font-bold md:text-4xl bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                  {t("key-features.title")}
+                </h2>
                 <p className="text-muted-foreground">{t("key-features.description")}</p>
               </div>
 
@@ -227,36 +231,42 @@ export default function MarketingPage() {
                     title: t("key-features.feature-1.title"),
                     description: t("key-features.feature-1.description"),
                     gradient: "from-blue-500/20 via-primary/20 to-indigo-500/20",
+                    iconGradient: "from-blue-500 to-indigo-600",
                   },
                   {
                     icon: <Brain className="h-6 w-6" />,
                     title: t("key-features.feature-2.title"),
                     description: t("key-features.feature-2.description"),
                     gradient: "from-purple-500/20 via-primary/20 to-blue-500/20",
+                    iconGradient: "from-purple-500 to-blue-600",
                   },
                   {
                     icon: <MessageSquare className="h-6 w-6" />,
                     title: t("key-features.feature-3.title"),
                     description: t("key-features.feature-3.description"),
                     gradient: "from-emerald-500/20 via-primary/20 to-teal-500/20",
+                    iconGradient: "from-emerald-500 to-teal-600",
                   },
                   {
                     icon: <BookOpen className="h-6 w-6" />,
                     title: t("key-features.feature-4.title"),
                     description: t("key-features.feature-4.description"),
                     gradient: "from-amber-500/20 via-primary/20 to-orange-500/20",
+                    iconGradient: "from-amber-500 to-orange-600",
                   },
                   {
                     icon: <Users className="h-6 w-6" />,
                     title: t("key-features.feature-5.title"),
                     description: t("key-features.feature-5.description"),
                     gradient: "from-pink-500/20 via-primary/20 to-rose-500/20",
+                    iconGradient: "from-pink-500 to-rose-600",
                   },
                   {
                     icon: <School className="h-6 w-6" />,
                     title: t("key-features.feature-6.title"),
                     description: t("key-features.feature-6.description"),
                     gradient: "from-cyan-500/20 via-primary/20 to-sky-500/20",
+                    iconGradient: "from-cyan-500 to-sky-600",
                   },
                 ].map((feature, index) => (
                   <motion.div
@@ -268,10 +278,14 @@ export default function MarketingPage() {
                     whileHover={{ scale: 1.02 }}
                     className="group"
                   >
-                    <Card className="border-primary/10 bg-background/80 backdrop-blur-sm relative h-full overflow-hidden">
+                    <Card className="border-primary/20 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-950/30 dark:to-purple-950/30 relative h-full overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300">
                       <div className="relative z-10 flex h-full flex-col space-y-4 p-6">
                         <div className="flex items-center gap-4">
-                          <div className="bg-primary/10 text-primary rounded-full p-3">{feature.icon}</div>
+                          <div
+                            className={`bg-gradient-to-r ${feature.iconGradient} text-white rounded-full p-3 shadow-lg`}
+                          >
+                            {feature.icon}
+                          </div>
                         </div>
                         <h3 className="text-xl font-bold">{feature.title}</h3>
                         <p className="text-muted-foreground">{feature.description}</p>
@@ -279,7 +293,7 @@ export default function MarketingPage() {
 
                       {/* Animated gradient background */}
                       <motion.div
-                        className={`bg-linear-to-br absolute inset-0 -z-10 ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100`}
+                        className={`bg-gradient-to-br absolute inset-0 -z-10 ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100`}
                         animate={{
                           scale: [1, 1.2, 1],
                           rotate: [0, 5, 0],
@@ -299,8 +313,8 @@ export default function MarketingPage() {
 
           {/* For Teachers Section */}
           <section id="for-teachers" className="relative w-full py-24">
-            <div className="bg-primary/5 absolute inset-0" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
+            <div className="bg-gradient-to-r from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10 absolute inset-0" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(59,130,246,0.1),transparent)] dark:bg-[radial-gradient(circle_500px_at_50%_50%,rgba(147,51,234,0.15),transparent)]" />
 
             <div className="relative mx-auto max-w-6xl px-4">
               <div className="grid gap-12 md:grid-cols-2 md:items-center">
@@ -310,8 +324,15 @@ export default function MarketingPage() {
                   viewport={{ once: true }}
                   className="space-y-6"
                 >
-                  <Badge variant="outline">{t("for-teachers.badge")}</Badge>
-                  <h2 className="text-3xl font-bold md:text-4xl">{t("for-teachers.title")}</h2>
+                  <Badge
+                    variant="outline"
+                    className="border-blue-300 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 text-blue-600 dark:text-blue-400 backdrop-blur-sm"
+                  >
+                    {t("for-teachers.badge")}
+                  </Badge>
+                  <h2 className="text-3xl font-bold md:text-4xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                    {t("for-teachers.title")}
+                  </h2>
                   <p className="text-foreground/60">{t("for-teachers.description")}</p>
                   <div className="space-y-4">
                     {[
@@ -329,7 +350,7 @@ export default function MarketingPage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-center gap-2"
                       >
-                        <div className="bg-primary/10 text-primary rounded-full p-1">
+                        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full p-1 shadow-sm">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{item}</span>
@@ -339,7 +360,7 @@ export default function MarketingPage() {
 
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Link href="/guide#for-teachers">
-                      <Button className="mt-4">
+                      <Button className="mt-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg">
                         <span className="relative z-10 flex items-center gap-2">
                           {t("for-teachers.button")}
                           <RocketIcon className="h-4 w-4" />
@@ -355,8 +376,8 @@ export default function MarketingPage() {
                   viewport={{ once: true }}
                   className="relative"
                 >
-                  <div className="bg-background/30 relative aspect-video rounded-xl border backdrop-blur-sm">
-                    <div className="bg-linear-to-br from-primary/10 absolute inset-0 rounded-xl via-transparent to-transparent" />
+                  <div className="bg-gradient-to-br from-white/80 to-blue-50/80 dark:from-gray-900/80 dark:to-blue-950/80 relative aspect-video rounded-xl border border-blue-200/50 dark:border-blue-800/50 backdrop-blur-sm shadow-lg shadow-blue-500/10">
+                    <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 absolute inset-0 rounded-xl" />
                     <div className="relative p-8">
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -387,9 +408,11 @@ export default function MarketingPage() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
-                            className="bg-background/10 flex items-start gap-4 rounded-lg border p-4 backdrop-blur-sm"
+                            className="bg-gradient-to-r from-white/80 to-blue-50/80 dark:from-gray-800/80 dark:to-blue-900/80 flex items-start gap-4 rounded-lg border border-blue-200/30 dark:border-blue-800/30 p-4 backdrop-blur-sm"
                           >
-                            <div className="bg-foreground/10 text-primary rounded-full p-2">{item.icon}</div>
+                            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full p-2 shadow-sm">
+                              {item.icon}
+                            </div>
                             <div>
                               <h3 className="font-semibold">{item.title}</h3>
                               <p className="text-muted-foreground text-sm">{item.description}</p>
@@ -414,8 +437,15 @@ export default function MarketingPage() {
                   viewport={{ once: true }}
                   className="order-1 space-y-6 md:order-2"
                 >
-                  <Badge variant="outline">{t("for-students.badge")}</Badge>
-                  <h2 className="text-3xl font-bold md:text-4xl">{t("for-students.title")}</h2>
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-300 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 backdrop-blur-sm"
+                  >
+                    {t("for-students.badge")}
+                  </Badge>
+                  <h2 className="text-3xl font-bold md:text-4xl bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+                    {t("for-students.title")}
+                  </h2>
                   <p className="text-foreground/60">{t("for-students.description")}</p>
                   <div className="space-y-4">
                     {[
@@ -433,7 +463,7 @@ export default function MarketingPage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-center gap-2"
                       >
-                        <div className="bg-primary/10 text-primary rounded-full p-1">
+                        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full p-1 shadow-sm">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{item}</span>
@@ -443,7 +473,7 @@ export default function MarketingPage() {
 
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Link href="/guide#for-students">
-                      <Button className="mt-4">
+                      <Button className="mt-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg">
                         <span className="relative z-10 flex items-center gap-2">
                           {t("for-students.button")}
                           <ArrowRight className="h-4 w-4" />
@@ -459,10 +489,12 @@ export default function MarketingPage() {
                   viewport={{ once: true }}
                   className="relative order-2 md:order-1"
                 >
-                  <Card className="border-foreground/10 bg-background/80 backdrop-blur-sm overflow-hidden">
+                  <Card className="border-emerald-200/50 dark:border-emerald-800/50 bg-gradient-to-br from-white/80 to-emerald-50/80 dark:from-gray-900/80 dark:to-emerald-950/80 overflow-hidden backdrop-blur-sm shadow-lg shadow-emerald-500/10">
                     <div className="space-y-4 p-6">
-                      <h3 className="text-xl font-bold">{t("for-students.course-categories.title")}</h3>
-                      <Separator className="bg-foreground/10" />
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+                        {t("for-students.course-categories.title")}
+                      </h3>
+                      <Separator className="bg-gradient-to-r from-emerald-200 to-teal-200 dark:from-emerald-800 dark:to-teal-800" />
                       <div className="grid grid-cols-2 gap-3">
                         {[
                           t("for-students.course-categories.category-1"),
@@ -478,13 +510,13 @@ export default function MarketingPage() {
                             whileInView={{ opacity: 1, scale: 1 }}
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.05 }}
-                            className="bg-foreground/10 hover:border-primary/20 rounded-lg border border-transparent p-3 text-sm transition-colors"
+                            className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/50 hover:border-emerald-300 dark:hover:border-emerald-700 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50 p-3 text-sm transition-colors"
                           >
                             {category}
                           </motion.div>
                         ))}
                       </div>
-                      <Separator className="bg-foreground/10" />
+                      <Separator className="bg-gradient-to-r from-emerald-200 to-teal-200 dark:from-emerald-800 dark:to-teal-800" />
                       <p className="text-muted-foreground text-sm">{t("for-students.course-categories.footer")}</p>
                     </div>
                   </Card>
@@ -500,8 +532,8 @@ export default function MarketingPage() {
 
           {/* Multilingual Support Section */}
           <section className="relative w-full py-24">
-            <div className="bg-primary/5 absolute inset-0" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
+            <div className="bg-gradient-to-r from-purple-500/5 to-pink-500/5 dark:from-purple-500/10 dark:to-pink-500/10 absolute inset-0" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(168,85,247,0.1),transparent)] dark:bg-[radial-gradient(circle_500px_at_50%_50%,rgba(236,72,153,0.15),transparent)]" />
 
             <div className="relative mx-auto max-w-6xl px-4">
               <div className="grid gap-12 md:grid-cols-2 md:items-center">
@@ -511,8 +543,15 @@ export default function MarketingPage() {
                   viewport={{ once: true }}
                   className="space-y-6"
                 >
-                  <Badge variant="outline">{t("multilingual-support.badge")}</Badge>
-                  <h2 className="text-3xl font-bold md:text-4xl">{t("multilingual-support.title")}</h2>
+                  <Badge
+                    variant="outline"
+                    className="border-purple-300 bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-600 dark:text-purple-400 backdrop-blur-sm"
+                  >
+                    {t("multilingual-support.badge")}
+                  </Badge>
+                  <h2 className="text-3xl font-bold md:text-4xl bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                    {t("multilingual-support.title")}
+                  </h2>
                   <p className="text-foreground/60">{t("multilingual-support.description")}</p>
                   <div className="space-y-4">
                     {[
@@ -529,7 +568,7 @@ export default function MarketingPage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-center gap-2"
                       >
-                        <div className="bg-primary/10 text-primary rounded-full p-1">
+                        <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-full p-1 shadow-sm">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{item}</span>
@@ -545,22 +584,30 @@ export default function MarketingPage() {
                   className="relative"
                 >
                   <div className="grid grid-cols-2 gap-4">
-                    <Card className="border-foreground/10 bg-background/80 backdrop-blur-sm p-6">
+                    <Card className="border-purple-200/50 dark:border-purple-800/50 bg-gradient-to-br from-white/80 to-purple-50/80 dark:from-gray-900/80 dark:to-purple-950/80 p-6 backdrop-blur-sm shadow-lg shadow-purple-500/10">
                       <div className="flex flex-col items-center text-center">
-                        <h3 className="mb-2 text-xl font-bold">English</h3>
+                        <h3 className="mb-2 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                          English
+                        </h3>
                         <p className="text-muted-foreground mb-4 text-sm">
                           Access our full platform and all courses in English
                         </p>
-                        <div className="text-4xl font-bold">EN</div>
+                        <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                          EN
+                        </div>
                       </div>
                     </Card>
-                    <Card className="border-foreground/10 bg-background/80 backdrop-blur-sm p-6">
+                    <Card className="border-pink-200/50 dark:border-pink-800/50 bg-gradient-to-br from-white/80 to-pink-50/80 dark:from-gray-900/80 dark:to-pink-950/80 p-6 backdrop-blur-sm shadow-lg shadow-pink-500/10">
                       <div className="flex flex-col items-center text-center">
-                        <h3 className="mb-2 text-xl font-bold">Tiếng Việt</h3>
+                        <h3 className="mb-2 text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                          Tiếng Việt
+                        </h3>
                         <p className="text-muted-foreground mb-4 text-sm">
                           Truy cập nền tảng và các khóa học bằng tiếng Việt
                         </p>
-                        <div className="text-4xl font-bold">VI</div>
+                        <div className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                          VI
+                        </div>
                       </div>
                     </Card>
                   </div>
@@ -571,17 +618,23 @@ export default function MarketingPage() {
 
           {/* Enhanced CTA Section */}
           <section className="relative w-full py-24">
+            <div className="bg-gradient-to-r from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10 absolute inset-0" />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               className="relative mx-auto max-w-4xl px-4 text-center"
             >
-              <Badge variant="outline" className="mb-4">
+              <Badge
+                variant="outline"
+                className="mb-4 border-primary/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-primary backdrop-blur-sm"
+              >
                 <Sparkles className="mr-2 h-4 w-4" />
                 {t("cta-section.badge")}
               </Badge>
-              <h2 className="mb-4 text-4xl font-bold md:text-5xl">{t("cta-section.title")}</h2>
+              <h2 className="mb-4 text-4xl font-bold md:text-5xl bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                {t("cta-section.title")}
+              </h2>
               <p className="text-muted-foreground mb-8">{t("cta-section.description")}</p>
               <motion.div
                 className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
@@ -596,7 +649,10 @@ export default function MarketingPage() {
                   disabled={!wsId && wsId !== null}
                 />
                 <Link href="/about">
-                  <Button variant="outline" className="group">
+                  <Button
+                    variant="outline"
+                    className="group border-primary/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-primary hover:from-blue-500/20 hover:to-purple-500/20 backdrop-blur-sm"
+                  >
                     {t("cta-section.button")}
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
