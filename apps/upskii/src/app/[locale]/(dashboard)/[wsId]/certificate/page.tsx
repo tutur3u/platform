@@ -45,26 +45,22 @@ export default async function CertificatesPage({ params }: Props) {
       <>
         <FeatureSummary
           pluralTitle={t('page_title')}
-          description={
-            t('page_description')
-          }
+          description={t('page_description')}
         />
         <Separator className="my-4" />
 
         {certificates.length === 0 ? (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
-              <Award className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
+              <Award className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+              <h3 className="mb-2 text-lg font-semibold">
                 {t('empty_state_title')}
               </h3>
               <p className="text-muted-foreground mb-4">
                 {t('empty_state_description')}
               </p>
               <Button asChild>
-                <Link href={`/${wsId}/courses`}>
-                  {t('browse_courses')}
-                </Link>
+                <Link href={`/${wsId}/courses`}>{t('browse_courses')}</Link>
               </Button>
             </div>
           </div>
@@ -73,11 +69,11 @@ export default async function CertificatesPage({ params }: Props) {
             {certificates.map((certificate) => (
               <Card
                 key={certificate.id}
-                className="group transition-all hover:shadow-md hover:border-primary/20"
+                className="hover:border-primary/20 group transition-all hover:shadow-md"
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0 flex-1">
                       <CardTitle className="line-clamp-2 text-base">
                         {certificate.courseName}
                       </CardTitle>
@@ -93,18 +89,19 @@ export default async function CertificatesPage({ params }: Props) {
                 </CardHeader>
 
                 <CardContent className="pt-0">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4" />
                     <span>
-                      Completed {moment(certificate.completionDate).format('MMM D, YYYY')}
+                      Completed{' '}
+                      {moment(certificate.completionDate).format('MMM D, YYYY')}
                     </span>
                   </div>
-                  <div className="mt-3 text-xs text-muted-foreground font-mono">
+                  <div className="text-muted-foreground mt-3 font-mono text-xs">
                     {t('certificate_id')}: {certificate.id}
                   </div>
                 </CardContent>
 
-                <CardFooter className="pt-3 gap-2">
+                <CardFooter className="gap-2 pt-3">
                   <Button
                     asChild
                     variant="outline"
@@ -116,11 +113,7 @@ export default async function CertificatesPage({ params }: Props) {
                       View
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    size="sm"
-                    className="flex-1"
-                  >
+                  <Button asChild size="sm" className="flex-1">
                     <Link href={`/${wsId}/certificate/${certificate.id}`}>
                       <Download className="mr-1 h-3 w-3" />
                       Download
@@ -138,12 +131,8 @@ export default async function CertificatesPage({ params }: Props) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-2">
-            {t('error')}
-          </h3>
-          <p className="text-muted-foreground">
-            {t('error_description')}
-          </p>
+          <h3 className="mb-2 text-lg font-semibold">{t('error')}</h3>
+          <p className="text-muted-foreground">{t('error_description')}</p>
         </div>
       </div>
     );
