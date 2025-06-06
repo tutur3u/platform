@@ -2,9 +2,9 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
-import { FlaskConical, Loader2 } from 'lucide-react';
+import { FlaskConical, Loader2 } from '@tuturuuu/ui/icons';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
-import { toast } from 'sonner';
 
 interface TestEventGeneratorButtonProps {
   wsId: string;

@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { Loader2, Sparkles } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -19,10 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Loader2, Sparkles } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { toast } from 'sonner';
 
 interface AutoScheduleComprehensiveDialogProps {
   wsId: string;

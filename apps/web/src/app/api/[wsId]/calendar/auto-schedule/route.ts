@@ -4,13 +4,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { wsId: string } }
+  { params }: { params: Promise<{ wsId: string }> }
 ) {
   const requestId = Math.random().toString(36).substring(7);
   console.log(`[AUTO-SCHEDULE-STREAM-${requestId}] Starting POST request`);
 
   try {
-    const { wsId } = params;
+    const { wsId } = await params;
     console.log(`[AUTO-SCHEDULE-STREAM-${requestId}] Workspace ID: ${wsId}`);
 
     // Check permissions
