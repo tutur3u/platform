@@ -111,16 +111,16 @@ export function AlgorithmInsights({
                 <Badge variant="outline" className="capitalize">
                   {currentRace.raceType} Race
                 </Badge>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   {Math.round(getPhaseEffectiveness() * 100)}% Effective
                 </span>
               </div>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-xs text-muted-foreground">
                 {currentRace.raceDescription}
               </div>
             </div>
           ) : (
-            <div className="text-muted-foreground mt-3 text-xs">
+            <div className="mt-3 text-xs text-muted-foreground">
               No race in progress
             </div>
           )}
@@ -135,7 +135,7 @@ export function AlgorithmInsights({
         </div>
         {nextPositionPredictions.length > 0 && (
           <div className="mt-3">
-            <div className="text-muted-foreground mb-2 text-xs">
+            <div className="mb-2 text-xs text-muted-foreground">
               Top candidates for next positions:
             </div>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -163,7 +163,7 @@ export function AlgorithmInsights({
                         <div className="truncate text-xs font-medium">
                           Horse #{horse.id}
                         </div>
-                        <div className="text-muted-foreground text-[10px]">
+                        <div className="text-[10px] text-muted-foreground">
                           Confidence Score: {score}
                         </div>
                       </div>
@@ -183,18 +183,18 @@ export function AlgorithmInsights({
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
-            <div className="text-muted-foreground mb-1 text-xs">
+            <div className="mb-1 text-xs text-muted-foreground">
               Known Relationships
             </div>
             <div className="text-2xl font-bold text-green-500">
               {totalRelationships}
-              <span className="text-muted-foreground ml-1 text-xs">
+              <span className="ml-1 text-xs text-muted-foreground">
                 of {maxPossibleRelationships}
               </span>
             </div>
           </div>
           <div>
-            <div className="text-muted-foreground mb-1 text-xs">
+            <div className="mb-1 text-xs text-muted-foreground">
               Average Relations per Horse
             </div>
             <div className="text-2xl font-bold text-blue-500">

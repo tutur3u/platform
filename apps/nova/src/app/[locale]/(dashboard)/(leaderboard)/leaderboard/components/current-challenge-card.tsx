@@ -42,16 +42,16 @@ export function CurrentChallengeCard() {
       transition={{ duration: 0.5 }}
       className={`relative overflow-hidden rounded-lg border ${
         isCurrentChallengeSelected
-          ? 'bg-linear-to-br border-purple-400/40 from-purple-50/90 via-indigo-50/50 to-blue-50/70 dark:border-purple-500/30 dark:from-purple-950/30 dark:via-indigo-950/20 dark:to-blue-950/10'
-          : 'bg-card border-slate-200 dark:border-slate-800'
+          ? 'border-purple-400/40 bg-linear-to-br from-purple-50/90 via-indigo-50/50 to-blue-50/70 dark:border-purple-500/30 dark:from-purple-950/30 dark:via-indigo-950/20 dark:to-blue-950/10'
+          : 'border-slate-200 bg-card dark:border-slate-800'
       } p-4 shadow-sm`}
     >
       {isCurrentChallengeSelected ? (
         <>
-          <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
+          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
           <div className="absolute -bottom-12 -left-12 h-36 w-36 rounded-full bg-indigo-300/15 blur-3xl" />
           <motion.div
-            className="absolute right-0 top-0 h-16 w-16 -translate-y-1/2 translate-x-1/2 rounded-full bg-indigo-400/20 blur-xl"
+            className="absolute top-0 right-0 h-16 w-16 translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-400/20 blur-xl"
             animate={{
               scale: [1, 1.2, 1],
               opacity: [0.5, 0.8, 0.5],
@@ -59,7 +59,7 @@ export function CurrentChallengeCard() {
             transition={{ duration: 3, repeat: Infinity }}
           />
           <motion.div
-            className="absolute right-2 top-2 h-2 w-2 rounded-full bg-purple-500"
+            className="absolute top-2 right-2 h-2 w-2 rounded-full bg-purple-500"
             initial={{ scale: 0.8, opacity: 0.6 }}
             animate={{
               scale: [0.8, 1.4, 0.8],
@@ -68,7 +68,7 @@ export function CurrentChallengeCard() {
             transition={{ duration: 2, repeat: Infinity }}
           />
           <motion.div
-            className="absolute bottom-3 right-3 text-purple-400/20 dark:text-purple-500/10"
+            className="absolute right-3 bottom-3 text-purple-400/20 dark:text-purple-500/10"
             initial={{ rotate: -10, scale: 0.9 }}
             animate={{
               rotate: [-10, 5, -10],
@@ -78,14 +78,14 @@ export function CurrentChallengeCard() {
           >
             <Trophy className="h-16 w-16" />
           </motion.div>
-          <div className="absolute left-1/4 top-0 h-1 w-1 rounded-full bg-purple-400/60" />
-          <div className="absolute left-1/3 top-5 h-1.5 w-1.5 rounded-full bg-indigo-400/60" />
-          <div className="left-1/5 absolute bottom-6 h-1 w-1 rounded-full bg-blue-400/60" />
+          <div className="absolute top-0 left-1/4 h-1 w-1 rounded-full bg-purple-400/60" />
+          <div className="absolute top-5 left-1/3 h-1.5 w-1.5 rounded-full bg-indigo-400/60" />
+          <div className="absolute bottom-6 left-1/5 h-1 w-1 rounded-full bg-blue-400/60" />
         </>
       ) : (
         <>
-          <div className="bg-linear-to-br absolute -right-12 -top-12 h-32 w-32 rounded-full from-slate-500/5 to-blue-500/5 blur-2xl" />
-          <div className="bg-linear-to-tr absolute -bottom-12 -left-12 h-32 w-32 rounded-full from-slate-500/5 to-blue-500/5 blur-2xl" />
+          <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-linear-to-br from-slate-500/5 to-blue-500/5 blur-2xl" />
+          <div className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-linear-to-tr from-slate-500/5 to-blue-500/5 blur-2xl" />
         </>
       )}
 
@@ -161,7 +161,7 @@ export function CurrentChallengeCard() {
               </Button>
             ) : null}
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {isCurrentChallengeSelected
               ? t('current-challenge-description')
               : t('description')}

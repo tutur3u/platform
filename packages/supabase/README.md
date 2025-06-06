@@ -9,17 +9,17 @@ npm install @tuturuuu/supabase
 # or
 yarn add @tuturuuu/supabase
 # or
-pnpm add @tuturuuu/supabase
+bun add @tuturuuu/supabase
 ```
 
 ## Development
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Run tests
-pnpm test
+bun run test
 ```
 
 ## License

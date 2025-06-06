@@ -390,7 +390,7 @@ export function SessionTable({
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (
-                          <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                             {(
                               session.user?.display_name ||
                               generateFunName({
@@ -414,7 +414,7 @@ export function SessionTable({
                       <TableCell
                         onClick={() => router.push(`/sessions/${session.id}`)}
                       >
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-sm text-muted-foreground">
                           {session.user?.email || 'No email available'}
                         </span>
                       </TableCell>

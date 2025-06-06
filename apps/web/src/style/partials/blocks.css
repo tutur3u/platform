@@ -26,7 +26,7 @@
 
   /* Columns */
   [data-type='columns'] {
-    @apply mb-12 mt-14 grid gap-4;
+    @apply mt-14 mb-12 grid gap-4;
 
     &.layout-sidebar-left {
       grid-template-columns: 40fr 60fr;

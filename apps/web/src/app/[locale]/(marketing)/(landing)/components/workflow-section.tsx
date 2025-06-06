@@ -35,10 +35,10 @@ export function WorkflowSection() {
       icon: <MessageSquare className="h-6 w-6 text-white" />,
       color: 'bg-purple-500',
       image: (
-        <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-md">
+        <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
           <div className="mb-3 flex items-center gap-2">
-            <div className="border-dynamic-light-purple/30 bg-calendar-bg-purple flex h-8 w-8 items-center justify-center rounded-full border">
-              <MessageSquare className="text-dynamic-purple h-4 w-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-purple/30 bg-calendar-bg-purple">
+              <MessageSquare className="h-4 w-4 text-dynamic-purple" />
             </div>
             <div>
               <h4 className="text-sm font-medium">
@@ -46,16 +46,16 @@ export function WorkflowSection() {
               </h4>
             </div>
           </div>
-          <div className="border-dynamic-light-purple/30 bg-calendar-bg-purple rounded-lg border p-3 text-sm">
+          <div className="rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-3 text-sm">
             {t(
               'schedule_a_meeting_with_the_marketing_team_next_tuesday_at_10am_high_priority'
             )}
           </div>
           <div className="mt-3 flex items-center gap-2">
-            <div className="border-dynamic-light-green/30 bg-calendar-bg-green flex h-6 w-6 items-center justify-center rounded-full border">
-              <Check className="text-dynamic-green h-3 w-3" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
+              <Check className="h-3 w-3 text-dynamic-green" />
             </div>
-            <span className="text-dynamic-green text-xs">
+            <span className="text-xs text-dynamic-green">
               {t('task_created_and_scheduled')}
             </span>
           </div>
@@ -69,42 +69,42 @@ export function WorkflowSection() {
       icon: <Brain className="h-6 w-6 text-white" />,
       color: 'bg-blue-500',
       image: (
-        <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-md">
+        <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
           <div className="mb-3 flex items-center gap-2">
-            <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue flex h-8 w-8 items-center justify-center rounded-full border">
-              <Brain className="text-dynamic-blue h-4 w-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-blue/30 bg-calendar-bg-blue">
+              <Brain className="h-4 w-4 text-dynamic-blue" />
             </div>
             <div>
               <h4 className="text-sm font-medium">{t('ai_analysis')}</h4>
             </div>
           </div>
           <div className="space-y-2">
-            <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue rounded-lg border p-2">
+            <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
               <div className="flex items-center justify-between">
-                <span className="text-dynamic-blue text-xs font-medium">
+                <span className="text-xs font-medium text-dynamic-blue">
                   {t('priority_analysis')}
                 </span>
-                <span className="bg-calendar-bg-red text-dynamic-red rounded px-1.5 text-xs">
+                <span className="rounded bg-calendar-bg-red px-1.5 text-xs text-dynamic-red">
                   {t('high_priority')}
                 </span>
               </div>
             </div>
-            <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue rounded-lg border p-2">
+            <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
               <div className="flex items-center justify-between">
-                <span className="text-dynamic-blue text-xs font-medium">
+                <span className="text-xs font-medium text-dynamic-blue">
                   {t('team_availability')}
                 </span>
-                <span className="bg-calendar-bg-green text-dynamic-green rounded px-1.5 text-xs">
+                <span className="rounded bg-calendar-bg-green px-1.5 text-xs text-dynamic-green">
                   {t('all_available')}
                 </span>
               </div>
             </div>
-            <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue rounded-lg border p-2">
+            <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
               <div className="flex items-center justify-between">
-                <span className="text-dynamic-blue text-xs font-medium">
+                <span className="text-xs font-medium text-dynamic-blue">
                   {t('optimal_time_slot')}
                 </span>
-                <span className="text-dynamic-blue text-xs">
+                <span className="text-xs text-dynamic-blue">
                   {t('tuesday_10_00_am')}
                 </span>
               </div>
@@ -120,40 +120,40 @@ export function WorkflowSection() {
       icon: <Calendar className="h-6 w-6 text-white" />,
       color: 'bg-green-500',
       image: (
-        <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-md">
+        <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
           <div className="mb-3 flex items-center gap-2">
-            <div className="border-dynamic-light-green/30 bg-calendar-bg-green flex h-8 w-8 items-center justify-center rounded-full border">
-              <Calendar className="text-dynamic-green h-4 w-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
+              <Calendar className="h-4 w-4 text-dynamic-green" />
             </div>
             <div>
               <h4 className="text-sm font-medium">{t('unified_workspace')}</h4>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="border-dynamic-light-purple/30 bg-calendar-bg-purple flex items-center gap-1 rounded-lg border p-2">
-              <Calendar className="text-dynamic-purple h-3 w-3" />
-              <span className="text-dynamic-purple text-xs">
+            <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-2">
+              <Calendar className="h-3 w-3 text-dynamic-purple" />
+              <span className="text-xs text-dynamic-purple">
                 {t('calendar')}
               </span>
             </div>
-            <div className="border-dynamic-light-blue/30 bg-calendar-bg-blue flex items-center gap-1 rounded-lg border p-2">
-              <Check className="text-dynamic-blue h-3 w-3" />
-              <span className="text-dynamic-blue text-xs">{t('tasks')}</span>
+            <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
+              <Check className="h-3 w-3 text-dynamic-blue" />
+              <span className="text-xs text-dynamic-blue">{t('tasks')}</span>
             </div>
-            <div className="border-dynamic-light-green/30 bg-calendar-bg-green flex items-center gap-1 rounded-lg border p-2">
-              <Video className="text-dynamic-green h-3 w-3" />
-              <span className="text-dynamic-green text-xs">
+            <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-2">
+              <Video className="h-3 w-3 text-dynamic-green" />
+              <span className="text-xs text-dynamic-green">
                 {t('meetings')}
               </span>
             </div>
-            <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange flex items-center gap-1 rounded-lg border p-2">
-              <MessageSquare className="text-dynamic-orange h-3 w-3" />
-              <span className="text-dynamic-orange text-xs">{t('chat')}</span>
+            <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
+              <MessageSquare className="h-3 w-3 text-dynamic-orange" />
+              <span className="text-xs text-dynamic-orange">{t('chat')}</span>
             </div>
           </div>
-          <div className="border-dynamic-light-red/30 bg-calendar-bg-red mt-2 flex items-center gap-1 rounded-lg border p-2">
-            <Mail className="text-dynamic-red h-3 w-3" />
-            <span className="text-dynamic-red text-xs">{t('email')}</span>
+          <div className="mt-2 flex items-center gap-1 rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-2">
+            <Mail className="h-3 w-3 text-dynamic-red" />
+            <span className="text-xs text-dynamic-red">{t('email')}</span>
           </div>
         </div>
       ),
@@ -165,10 +165,10 @@ export function WorkflowSection() {
       icon: <Clock className="h-6 w-6 text-white" />,
       color: 'bg-amber-500',
       image: (
-        <div className="dark:bg-foreground/5 rounded-lg border bg-white p-4 shadow-md">
+        <div className="rounded-lg border bg-white p-4 shadow-md dark:bg-foreground/5">
           <div className="mb-3 flex items-center gap-2">
-            <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange flex h-8 w-8 items-center justify-center rounded-full border">
-              <Clock className="text-dynamic-orange h-4 w-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-orange/30 bg-calendar-bg-orange">
+              <Clock className="h-4 w-4 text-dynamic-orange" />
             </div>
             <div>
               <h4 className="text-sm font-medium">
@@ -177,32 +177,32 @@ export function WorkflowSection() {
             </div>
           </div>
           <div className="space-y-2">
-            <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange rounded-lg border p-2">
+            <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
               <div className="flex items-center justify-between">
-                <span className="text-dynamic-orange text-xs font-medium">
+                <span className="text-xs font-medium text-dynamic-orange">
                   {t('productivity_pattern')}
                 </span>
-                <span className="text-dynamic-orange text-xs">
+                <span className="text-xs text-dynamic-orange">
                   {t('morning_focus')}
                 </span>
               </div>
             </div>
-            <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange rounded-lg border p-2">
+            <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
               <div className="flex items-center justify-between">
-                <span className="text-dynamic-orange text-xs font-medium">
+                <span className="text-xs font-medium text-dynamic-orange">
                   {t('meeting_preference')}
                 </span>
-                <span className="text-dynamic-orange text-xs">
+                <span className="text-xs text-dynamic-orange">
                   {t('afternoons')}
                 </span>
               </div>
             </div>
-            <div className="border-dynamic-light-orange/30 bg-calendar-bg-orange rounded-lg border p-2">
+            <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
               <div className="flex items-center justify-between">
-                <span className="text-dynamic-orange text-xs font-medium">
+                <span className="text-xs font-medium text-dynamic-orange">
                   {t('task_completion_rate')}
                 </span>
-                <span className="bg-calendar-bg-green text-dynamic-green rounded px-1.5 text-xs">
+                <span className="rounded bg-calendar-bg-green px-1.5 text-xs text-dynamic-green">
                   92%
                 </span>
               </div>
@@ -283,15 +283,15 @@ export function WorkflowSection() {
     <section
       id="workflow"
       ref={sectionRef}
-      className="container px-0 pb-20 pt-40"
+      className="container px-0 pt-40 pb-20"
     >
       <div className="mb-16 text-center">
         <h2 className="workflow-title mb-4 text-3xl font-bold md:text-4xl">
-          <span className="from-dynamic-purple to-dynamic-blue bg-gradient-to-r bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
             {t('how_tuturuuu_works')}
           </span>
         </h2>
-        <p className="workflow-title text-muted-foreground mx-auto max-w-3xl text-xl">
+        <p className="workflow-title mx-auto max-w-3xl text-xl text-muted-foreground">
           {t('our_intelligent_workflow_makes_productivity_effortless')}
         </p>
       </div>
@@ -334,7 +334,7 @@ export function WorkflowSection() {
             {currentStep.icon}
           </div>
           <h3 className="mb-3 text-2xl font-bold">{currentStep.title}</h3>
-          <p className="text-muted-foreground mb-6 text-lg">
+          <p className="mb-6 text-lg text-muted-foreground">
             {currentStep.description}
           </p>
 

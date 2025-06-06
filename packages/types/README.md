@@ -9,7 +9,7 @@ npm install @tuturuuu/types
 # or
 yarn add @tuturuuu/types
 # or
-pnpm add @tuturuuu/types
+bun add @tuturuuu/types
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ Some key type categories:
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 ```
 
 ## License
