@@ -1,12 +1,9 @@
 import { CustomDataTable } from "@/components/custom-data-table"
 import { createClient } from "@tuturuuu/supabase/next/server"
 import type { WorkspaceQuiz } from "@tuturuuu/types/db"
-import { Button } from "@tuturuuu/ui/button"
 import FeatureSummary from "@tuturuuu/ui/custom/feature-summary"
-import { BarChart3 } from "@tuturuuu/ui/icons"
 import { Separator } from "@tuturuuu/ui/separator"
 import { getTranslations } from "next-intl/server"
-import Link from "next/link"
 import { getWorkspaceQuizColumns } from "./columns"
 import QuizForm from "./form"
 interface SearchParams {
