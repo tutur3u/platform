@@ -334,7 +334,7 @@ const Chat = ({
         ) : disableScrollToTop && disableScrollToBottom ? (
           <h1 className="mb-2 flex h-full w-full items-center justify-center text-center text-lg font-semibold">
             {t('welcome_to')}{' '}
-            <span className="bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky overflow-hidden bg-clip-text font-bold text-transparent">
+            <span className="overflow-hidden bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky bg-clip-text font-bold text-transparent">
               Rewise
             </span>
             .

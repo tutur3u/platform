@@ -308,7 +308,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
           ([group, tzList], idx, arr) =>
             tzList.length > 0 && (
               <div key={group} data-region-group className="py-1">
-                <div className="text-muted-foreground bg-muted rounded-t-md px-2 py-1.5 text-xs font-semibold">
+                <div className="rounded-t-md bg-muted px-2 py-1.5 text-xs font-semibold text-muted-foreground">
                   {group}
                 </div>
                 {tzList
@@ -325,7 +325,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                         key={tz.value}
                         role="option"
                         aria-selected={isSelected}
-                        className={`flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-accent text-accent-foreground font-semibold' : ''} ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'} ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                        className={`flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-accent font-semibold text-accent-foreground' : ''} ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'} ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                         onClick={() =>
                           !isDisabled && onSelect && onSelect(tz.value)
                         }
@@ -346,13 +346,13 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                           {tz.label}
                         </span>
                         {isSelected && (
-                          <Check className="text-primary ml-2 h-4 w-4" />
+                          <Check className="ml-2 h-4 w-4 text-primary" />
                         )}
                       </button>
                     );
                   })}
                 {idx < arr.length - 1 && (
-                  <div className="bg-border mx-2 my-2 h-px" />
+                  <div className="mx-2 my-2 h-px bg-border" />
                 )}
               </div>
             )
@@ -384,17 +384,17 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
             </Button>
           </PopoverTrigger>
           <PopoverContent
-            className="bg-popover min-w-(--radix-popover-trigger-width) pointer-events-auto rounded-lg border p-0 shadow-lg"
+            className="pointer-events-auto min-w-(--radix-popover-trigger-width) rounded-lg border bg-popover p-0 shadow-lg"
             align="start"
             role="listbox"
             tabIndex={0}
             style={{ touchAction: 'pan-y' }}
           >
-            <div className="bg-background sticky top-0 z-10 flex flex-col gap-2 rounded-t-lg border-b p-2">
+            <div className="sticky top-0 z-10 flex flex-col gap-2 rounded-t-lg border-b bg-background p-2">
               <input
                 type="text"
                 placeholder="Search timezone..."
-                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
@@ -407,7 +407,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                     type="button"
                     size="xs"
                     variant="ghost"
-                    className="border-border rounded border px-2 py-1 text-xs"
+                    className="rounded border border-border px-2 py-1 text-xs"
                     onClick={() => handleJumpToRegionGroup(region)}
                   >
                     {region}
@@ -428,7 +428,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
             >
               {recentTimezones.length > 0 && !searchQuery && (
                 <div className="py-1">
-                  <div className="text-muted-foreground bg-muted rounded-t-md px-2 py-1.5 text-xs font-semibold">
+                  <div className="rounded-t-md bg-muted px-2 py-1.5 text-xs font-semibold text-muted-foreground">
                     Recent Timezones
                   </div>
                   {recentTimezones.map((tz, idx) => {
@@ -441,7 +441,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                         key={tz}
                         role="option"
                         aria-selected={isSelected}
-                        className={`flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-accent text-accent-foreground font-semibold' : ''} ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'} ${tz === value.secondaryTimezone ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                        className={`flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-accent font-semibold text-accent-foreground' : ''} ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'} ${tz === value.secondaryTimezone ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                         onClick={() =>
                           tz !== value.secondaryTimezone &&
                           handleTimezoneChange(tz)
@@ -459,12 +459,12 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                           {timezone.label}
                         </span>
                         {isSelected && (
-                          <Check className="text-primary ml-2 h-4 w-4" />
+                          <Check className="ml-2 h-4 w-4 text-primary" />
                         )}
                       </button>
                     );
                   })}
-                  <div className="bg-border mx-2 my-2 h-px" />
+                  <div className="mx-2 my-2 h-px bg-border" />
                 </div>
               )}
               {Object.entries(filteredTimezones).map(
@@ -472,7 +472,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                   tzList.length > 0 &&
                   group !== 'Auto & UTC' && (
                     <div key={group} data-region-group className="py-1">
-                      <div className="text-muted-foreground bg-muted rounded-t-md px-2 py-1.5 text-xs font-semibold">
+                      <div className="rounded-t-md bg-muted px-2 py-1.5 text-xs font-semibold text-muted-foreground">
                         {group}
                       </div>
                       {tzList.map((tz, idx) => {
@@ -486,7 +486,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                             key={tz.value}
                             role="option"
                             aria-selected={isSelected}
-                            className={`flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-accent text-accent-foreground font-semibold' : ''} ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'} ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                            className={`flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-accent font-semibold text-accent-foreground' : ''} ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'} ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                             onClick={() =>
                               !isDisabled && handleTimezoneChange(tz.value)
                             }
@@ -497,7 +497,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                               {tz.label}
                             </span>
                             {isSelected && (
-                              <Check className="text-primary ml-2 h-4 w-4" />
+                              <Check className="ml-2 h-4 w-4 text-primary" />
                             )}
                           </button>
                         );
@@ -537,17 +537,17 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               </Button>
             </PopoverTrigger>
             <PopoverContent
-              className="bg-popover min-w-(--radix-popover-trigger-width) pointer-events-auto rounded-lg border p-0 shadow-lg"
+              className="pointer-events-auto min-w-(--radix-popover-trigger-width) rounded-lg border bg-popover p-0 shadow-lg"
               align="start"
               role="listbox"
               tabIndex={0}
               style={{ touchAction: 'pan-y' }}
             >
-              <div className="bg-background sticky top-0 z-10 rounded-t-lg border-b p-2">
+              <div className="sticky top-0 z-10 rounded-t-lg border-b bg-background p-2">
                 <input
                   type="text"
                   placeholder="Search timezone..."
-                  className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   value={secondarySearchQuery}
                   onChange={(e) => setSecondarySearchQuery(e.target.value)}
                   autoFocus

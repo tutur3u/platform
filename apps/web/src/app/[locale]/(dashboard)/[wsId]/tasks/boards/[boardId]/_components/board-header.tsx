@@ -66,7 +66,7 @@ export function BoardHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="bg-background flex items-center rounded-lg border p-1">
+        <div className="flex items-center rounded-lg border bg-background p-1">
           <Button
             variant="ghost"
             size="sm"

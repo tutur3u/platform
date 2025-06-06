@@ -9,7 +9,7 @@ npm install @ncthub/types
 # or
 yarn add @ncthub/types
 # or
-pnpm add @ncthub/types
+bun add @ncthub/types
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ Some key type categories:
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 ```
 
 ## License

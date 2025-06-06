@@ -9,17 +9,17 @@ npm install @ncthub/supabase
 # or
 yarn add @ncthub/supabase
 # or
-pnpm add @ncthub/supabase
+bun add @ncthub/supabase
 ```
 
 ## Development
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Run tests
-pnpm test
+bun run test
 ```
 
 ## License

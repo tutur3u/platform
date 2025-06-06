@@ -54,7 +54,7 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
                   {metrics.processedArticles} processed
                 </Badge>
               </div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 {(
                   (metrics.processedArticles /
                     Math.max(metrics.totalArticles, 1)) *
@@ -77,7 +77,7 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
                   {metrics.failedRequests} failed
                 </Badge>
               </div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 {metrics.averageRequestTime.toFixed(0)}ms average
               </div>
             </div>
@@ -93,7 +93,7 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
                   {metrics.estimatedTimeLeft} left
                 </Badge>
               </div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 Started {formatTime(metrics.startTime)}
               </div>
             </div>

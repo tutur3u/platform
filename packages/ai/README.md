@@ -9,17 +9,17 @@ npm install @ncthub/ai
 # or
 yarn add @ncthub/ai
 # or
-pnpm add @ncthub/ai
+bun add @ncthub/ai
 ```
 
 ## Development
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Run tests
-pnpm test
+bun run test
 ```
 
 ## License

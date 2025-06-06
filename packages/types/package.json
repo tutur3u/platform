@@ -8,12 +8,12 @@
   "scripts": {
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.11.1",
+  "packageManager": "bun@1.2.15",
   "dependencies": {
     "eslint": "^9.28.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.49"
+    "zod": "^3.25.51"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

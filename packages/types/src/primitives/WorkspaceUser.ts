@@ -18,6 +18,7 @@ export interface WorkspaceUser {
   warehouse_id?: string;
   note?: string;
   ws_id?: string;
+  default_workspace_id?: string;
   linked_users?: {
     id: string;
     display_name: string;

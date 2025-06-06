@@ -292,8 +292,8 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
     return (
       <div className="flex items-center justify-center py-24">
         <div className="text-center">
-          <div className="border-primary mx-auto h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"></div>
-          <p className="text-muted-foreground mt-4 animate-pulse text-sm">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+          <p className="mt-4 animate-pulse text-sm text-muted-foreground">
             Loading time tracker...
           </p>
         </div>
@@ -302,7 +302,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
   }
 
   return (
-    <div className="animate-in fade-in-50 space-y-6 duration-500">
+    <div className="space-y-6 duration-500 animate-in fade-in-50">
       {/* Header with User Selector */}
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
@@ -313,7 +313,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
               : 'Track and manage your time across projects'}
           </p>
           {lastRefresh && (
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Last updated: {lastRefresh.toLocaleTimeString()}
             </p>
           )}
@@ -343,7 +343,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
       {error && (
         <Alert
           variant="destructive"
-          className="animate-in slide-in-from-top duration-300"
+          className="duration-300 animate-in slide-in-from-top"
         >
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
@@ -362,10 +362,10 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-card space-y-4 rounded-lg border p-6 text-center shadow-lg">
-            <div className="border-primary mx-auto h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"></div>
-            <p className="text-muted-foreground text-sm">Loading data...</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="space-y-4 rounded-lg border bg-card p-6 text-center shadow-lg">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+            <p className="text-sm text-muted-foreground">Loading data...</p>
           </div>
         </div>
       )}
@@ -407,7 +407,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
             className={cn(
               'group cursor-pointer border-0 bg-gradient-to-br transition-all duration-300 hover:scale-105 hover:shadow-lg',
               stat.bg,
-              'animate-in slide-in-from-bottom duration-500'
+              'duration-500 animate-in slide-in-from-bottom'
             )}
             style={{ animationDelay: `${index * 100}ms` }}
           >
@@ -421,7 +421,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
                   <stat.icon className={cn('h-6 w-6', stat.color)} />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
+                  <p className="text-sm font-medium text-muted-foreground">
                     {stat.label}
                   </p>
                   <p className="text-2xl font-bold transition-all group-hover:scale-105">
@@ -442,14 +442,14 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
       >
         <TabsList
           className={cn(
-            'bg-muted/30 grid w-full backdrop-blur-sm',
+            'grid w-full bg-muted/30 backdrop-blur-sm',
             isViewingOtherUser ? 'grid-cols-3' : 'grid-cols-4'
           )}
         >
           {!isViewingOtherUser && (
             <TabsTrigger
               value="timer"
-              className="data-[state=active]:bg-background flex items-center gap-2 transition-all data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
             >
               <Timer className="h-4 w-4" />
               <span className="hidden sm:inline">Timer</span>
@@ -457,21 +457,21 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
           )}
           <TabsTrigger
             value="history"
-            className="data-[state=active]:bg-background flex items-center gap-2 transition-all data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">History</span>
           </TabsTrigger>
           <TabsTrigger
             value="categories"
-            className="data-[state=active]:bg-background flex items-center gap-2 transition-all data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Categories</span>
           </TabsTrigger>
           <TabsTrigger
             value="goals"
-            className="data-[state=active]:bg-background flex items-center gap-2 transition-all data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
             <TrendingUp className="h-4 w-4" />
             <span className="hidden sm:inline">Goals</span>
@@ -481,7 +481,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
         {!isViewingOtherUser && (
           <TabsContent
             value="timer"
-            className="animate-in fade-in-50 space-y-6 duration-300"
+            className="space-y-6 duration-300 animate-in fade-in-50"
           >
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2">
@@ -515,7 +515,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
                         <div
                           key={session.id}
                           className={cn(
-                            'animate-in slide-in-from-right hover:bg-accent/50 flex items-center justify-between rounded-lg border p-3 transition-all duration-300 hover:shadow-sm'
+                            'flex items-center justify-between rounded-lg border p-3 transition-all duration-300 animate-in slide-in-from-right hover:bg-accent/50 hover:shadow-sm'
                           )}
                           style={{ animationDelay: `${index * 50}ms` }}
                         >
@@ -523,10 +523,10 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
                             <p className="truncate text-sm font-medium">
                               {session.title}
                             </p>
-                            <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
+                            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                               {session.category && (
                                 <span className="inline-flex items-center gap-1">
-                                  <div className="bg-primary h-2 w-2 rounded-full"></div>
+                                  <div className="h-2 w-2 rounded-full bg-primary"></div>
                                   {session.category.name}
                                 </span>
                               )}
@@ -549,8 +549,8 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
                       ))}
                       {recentSessions.length === 0 && (
                         <div className="py-8 text-center">
-                          <Clock className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-                          <p className="text-muted-foreground text-sm">
+                          <Clock className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
                             No sessions yet. Start your first timer!
                           </p>
                         </div>
@@ -565,10 +565,10 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
 
         <TabsContent
           value="history"
-          className="animate-in fade-in-50 duration-300"
+          className="duration-300 animate-in fade-in-50"
         >
           {isViewingOtherUser && (
-            <div className="animate-in slide-in-from-top mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800 dark:bg-blue-950/30">
+            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
               <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                 <Calendar className="h-4 w-4" />
                 You're viewing another user's session history. You can see their
@@ -590,10 +590,10 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
 
         <TabsContent
           value="categories"
-          className="animate-in fade-in-50 duration-300"
+          className="duration-300 animate-in fade-in-50"
         >
           {isViewingOtherUser && (
-            <div className="animate-in slide-in-from-top mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800 dark:bg-blue-950/30">
+            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
               <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                 <Settings className="h-4 w-4" />
                 You're viewing another user's categories. You can see their
@@ -612,10 +612,10 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
 
         <TabsContent
           value="goals"
-          className="animate-in fade-in-50 duration-300"
+          className="duration-300 animate-in fade-in-50"
         >
           {isViewingOtherUser && (
-            <div className="animate-in slide-in-from-top mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800 dark:bg-blue-950/30">
+            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
               <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                 <TrendingUp className="h-4 w-4" />
                 You're viewing another user's goals. You can see their progress

@@ -288,7 +288,7 @@ export function DateTimePicker({
 
         {showTimeSelect && (
           <div className="flex items-center gap-2">
-            <Clock className="text-muted-foreground h-4 w-4" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
 
             {isManualTimeEntry ? (
               <div className="flex items-center gap-1">
@@ -342,7 +342,7 @@ export function DateTimePicker({
                   </SelectContent>
                 </Select>
                 {noValidTimes && (
-                  <div className="text-destructive mt-1 text-xs">
+                  <div className="mt-1 text-xs text-destructive">
                     No valid end times available. Please select an earlier start
                     time or check your time selection.
                   </div>

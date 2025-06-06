@@ -118,7 +118,7 @@ export function Combobox({
               onValueChange={(value: string) => setQuery(value)}
             />
             <CommandEmpty className="flex flex-col items-center justify-center p-1">
-              <div className="text-muted-foreground p-8 text-sm">
+              <div className="p-8 text-sm text-muted-foreground">
                 {t('common.empty')}
               </div>
               {query && (

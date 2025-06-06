@@ -181,7 +181,7 @@ export function GoalsInput({
     <Card className="border-2">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="text-primary h-5 w-5" />
+          <Sparkles className="h-5 w-5 text-primary" />
           Plan Configuration
         </CardTitle>
         <CardDescription>
@@ -247,7 +247,7 @@ export function GoalsInput({
             <div className="grid gap-6">
               <div className="mb-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <GraduationCap className="text-primary h-5 w-5" />
+                  <GraduationCap className="h-5 w-5 text-primary" />
                   <h3 className="font-medium">Learning Profile</h3>
                 </div>
                 <Separator />
@@ -274,7 +274,7 @@ export function GoalsInput({
                           <SelectItem key={level.value} value={level.value}>
                             <div className="flex flex-col items-start justify-start gap-1">
                               <span>{level.label}</span>
-                              <span className="text-muted-foreground text-xs">
+                              <span className="text-xs text-muted-foreground">
                                 {level.description}
                               </span>
                             </div>
@@ -308,7 +308,7 @@ export function GoalsInput({
                           <SelectItem key={style.value} value={style.value}>
                             <div className="flex flex-col items-start justify-start gap-1">
                               <span>{style.label}</span>
-                              <span className="text-muted-foreground text-xs">
+                              <span className="text-xs text-muted-foreground">
                                 {style.description}
                               </span>
                             </div>
@@ -322,7 +322,7 @@ export function GoalsInput({
 
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Clock className="text-primary h-5 w-5" />
+                  <Clock className="h-5 w-5 text-primary" />
                   <h3 className="font-medium">Time Commitment</h3>
                 </div>
                 <Separator />
@@ -417,7 +417,7 @@ export function GoalsInput({
                       />
                       <label
                         htmlFor="weekdays"
-                        className="text-sm font-medium leading-none"
+                        className="text-sm leading-none font-medium"
                       >
                         Weekdays
                       </label>
@@ -445,7 +445,7 @@ export function GoalsInput({
                       />
                       <label
                         htmlFor="weekends"
-                        className="text-sm font-medium leading-none"
+                        className="text-sm leading-none font-medium"
                       >
                         Weekends
                       </label>
@@ -487,7 +487,7 @@ export function GoalsInput({
 
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Brain className="text-primary h-5 w-5" />
+                  <Brain className="h-5 w-5 text-primary" />
                   <h3 className="font-medium">Skills & Focus Areas</h3>
                 </div>
                 <Separator />
@@ -507,7 +507,7 @@ export function GoalsInput({
                       }
                       maxTags={5}
                     />
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       Add up to 5 specific areas you want to focus on
                     </p>
                   </div>
@@ -527,7 +527,7 @@ export function GoalsInput({
                       }
                       maxTags={10}
                     />
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       List skills you already have that are relevant to your
                       goals
                     </p>
@@ -548,7 +548,7 @@ export function GoalsInput({
                       }
                       maxTags={5}
                     />
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       Add any prerequisites or dependencies for your goals
                     </p>
                   </div>
@@ -566,7 +566,7 @@ export function GoalsInput({
 
         <Button
           type="button"
-          className="from-primary to-primary/90 hover:from-primary/90 hover:to-primary bg-linear-to-r mt-6 w-full"
+          className="mt-6 w-full bg-linear-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
           onClick={handleSubmit}
           disabled={isLoading}
         >

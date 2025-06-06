@@ -143,7 +143,7 @@ export function UserSelector({
               </div>
             ) : error ? (
               <div className="py-6 text-center">
-                <p className="text-destructive text-sm">{error}</p>
+                <p className="text-sm text-destructive">{error}</p>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -155,7 +155,7 @@ export function UserSelector({
               </div>
             ) : (
               <div className="py-6 text-center">
-                <p className="text-muted-foreground text-sm">No users found.</p>
+                <p className="text-sm text-muted-foreground">No users found.</p>
               </div>
             )}
           </CommandEmpty>
@@ -178,7 +178,7 @@ export function UserSelector({
                 </Avatar>
                 <div className="flex flex-col">
                   <span className="font-medium">My Time</span>
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-xs text-muted-foreground">
                     View your own time tracking
                   </span>
                 </div>
@@ -202,7 +202,7 @@ export function UserSelector({
             {otherUsers.length > 0 && (
               <>
                 <div className="px-2 py-1.5">
-                  <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                     Team Members ({otherUsers.length})
                   </p>
                 </div>
@@ -228,7 +228,7 @@ export function UserSelector({
                           {getUserDisplayName(user)}
                         </span>
                         {user.email && (
-                          <span className="text-muted-foreground text-xs">
+                          <span className="text-xs text-muted-foreground">
                             {user.email}
                           </span>
                         )}
@@ -256,8 +256,8 @@ export function UserSelector({
 
             {!isLoading && !error && otherUsers.length === 0 && (
               <div className="py-6 text-center">
-                <Users className="text-muted-foreground/50 mx-auto mb-2 h-8 w-8" />
-                <p className="text-muted-foreground text-sm">
+                <Users className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+                <p className="text-sm text-muted-foreground">
                   You're the only member in this workspace
                 </p>
               </div>

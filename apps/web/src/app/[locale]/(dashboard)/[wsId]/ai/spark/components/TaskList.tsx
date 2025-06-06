@@ -52,11 +52,11 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
       <CardContent>
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-8">
-            <CalendarDays className="text-muted-foreground h-12 w-12" />
-            <p className="text-muted-foreground text-center">
+            <CalendarDays className="h-12 w-12 text-muted-foreground" />
+            <p className="text-center text-muted-foreground">
               No tasks planned for this month
             </p>
-            <p className="text-muted-foreground text-center text-sm">
+            <p className="text-center text-sm text-muted-foreground">
               Select a different month to view tasks
             </p>
           </div>
@@ -68,9 +68,9 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
                   <AccordionItem
                     key={priority}
                     value={priority}
-                    className="data-[state=open]:bg-muted/50 border-none"
+                    className="border-none data-[state=open]:bg-muted/50"
                   >
-                    <AccordionTrigger className="hover:bg-muted/50 rounded-lg border px-4 py-2 hover:no-underline data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                    <AccordionTrigger className="rounded-lg border px-4 py-2 hover:bg-muted/50 hover:no-underline data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
                       <div className="flex items-center gap-2">
                         <div
                           className={cn(
@@ -90,20 +90,20 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
                         </Badge>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="rounded-b-lg border border-t-0 px-4 pb-4 pt-2">
+                    <AccordionContent className="rounded-b-lg border border-t-0 px-4 pt-2 pb-4">
                       <div className="grid gap-2">
                         {tasks.map((task, idx) => (
                           <div
                             key={idx}
-                            className="bg-card hover:border-primary/50 group relative rounded-lg border p-4 transition-all hover:shadow-sm"
+                            className="group relative rounded-lg border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-sm"
                           >
                             <div className="space-y-2">
                               <div className="flex items-start justify-between gap-4">
                                 <div className="space-y-1">
-                                  <h5 className="font-medium leading-none">
+                                  <h5 className="leading-none font-medium">
                                     {task.title}
                                   </h5>
-                                  <p className="text-muted-foreground text-sm">
+                                  <p className="text-sm text-muted-foreground">
                                     {task.description}
                                   </p>
                                   <div className="flex items-center gap-2 pt-2">

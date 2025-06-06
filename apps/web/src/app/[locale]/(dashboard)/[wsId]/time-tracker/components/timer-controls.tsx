@@ -268,14 +268,14 @@ export function TimerControls({
           <Timer className="h-5 w-5" />
           Time Tracker
         </CardTitle>
-        <div className="text-muted-foreground space-y-1 text-sm">
+        <div className="space-y-1 text-sm text-muted-foreground">
           <span>Track your time with detailed analytics</span>
           <div className="flex flex-wrap gap-2 text-xs">
-            <span className="bg-muted rounded px-1.5 py-0.5">
+            <span className="rounded bg-muted px-1.5 py-0.5">
               ⌘/Ctrl + Enter
             </span>
             to start/stop
-            <span className="bg-muted rounded px-1.5 py-0.5">⌘/Ctrl + P</span>
+            <span className="rounded bg-muted px-1.5 py-0.5">⌘/Ctrl + P</span>
             to pause
           </div>
         </div>
@@ -300,7 +300,7 @@ export function TimerControls({
             <div className="text-left">
               <h3 className="text-lg font-medium">{currentSession.title}</h3>
               {currentSession.description && (
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {currentSession.description}
                 </p>
               )}
@@ -346,9 +346,9 @@ export function TimerControls({
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="border-muted-foreground/25 rounded-lg border-2 border-dashed p-6 text-center">
-              <Clock className="text-muted-foreground mx-auto mb-3 h-12 w-12" />
-              <p className="text-muted-foreground text-base">
+            <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
+              <Clock className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
+              <p className="text-base text-muted-foreground">
                 Ready to start tracking time
               </p>
             </div>
@@ -442,7 +442,7 @@ export function TimerControls({
               {/* Quick Start Templates */}
               {templates.length > 0 && (
                 <div className="space-y-3">
-                  <Label className="text-muted-foreground text-sm">
+                  <Label className="text-sm text-muted-foreground">
                     Quick Start:
                   </Label>
                   <div className="space-y-2">
@@ -471,12 +471,12 @@ export function TimerControls({
 
       {/* Completion Celebration */}
       {justCompleted && (
-        <div className="animate-in fade-in absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-black/20 backdrop-blur-sm duration-300">
-          <div className="bg-background animate-in zoom-in rounded-lg border p-6 shadow-xl duration-300">
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-black/20 backdrop-blur-sm duration-300 animate-in fade-in">
+          <div className="rounded-lg border bg-background p-6 shadow-xl duration-300 animate-in zoom-in">
             <div className="text-center">
               <CheckCircle className="mx-auto mb-4 h-12 w-12 animate-pulse text-green-500" />
               <h3 className="mb-2 text-lg font-semibold">Session Completed!</h3>
-              <p className="text-muted-foreground mb-1">
+              <p className="mb-1 text-muted-foreground">
                 {justCompleted.title}
               </p>
               <p className="text-sm font-medium text-green-600">

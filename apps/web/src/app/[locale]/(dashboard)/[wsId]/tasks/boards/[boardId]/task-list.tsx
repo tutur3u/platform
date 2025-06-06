@@ -69,7 +69,7 @@ export function BoardColumn({
       className={cn(
         'group flex h-full w-[350px] flex-col rounded-lg transition-colors',
         'touch-none select-none',
-        isDragging && 'rotate-2 scale-[1.02] opacity-90 shadow-lg',
+        isDragging && 'scale-[1.02] rotate-2 opacity-90 shadow-lg',
         isOverlay && 'shadow-lg'
       )}
     >

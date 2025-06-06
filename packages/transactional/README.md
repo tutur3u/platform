@@ -15,13 +15,13 @@ to yourself for testing purposes.
 First, install the dependencies:
 
 ```sh
-pnpm install
+bun install
 ```
 
 Then, you can run the react.email developmenet server by running:
 
 ```sh
-pnpm dev
+bun dev
 ```
 
 Open [localhost:3001](http://localhost:3001) with your browser to see the result.

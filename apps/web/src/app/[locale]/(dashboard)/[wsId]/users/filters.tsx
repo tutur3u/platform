@@ -185,7 +185,7 @@ export function Filter({
                 <Separator orientation="vertical" className="mx-1 h-4" />
                 <Badge
                   variant="secondary"
-                  className="bg-background/80 text-foreground hover:bg-background/80 rounded-sm px-1 font-normal lg:hidden"
+                  className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80 lg:hidden"
                 >
                   {selectedSize}
                 </Badge>
@@ -193,7 +193,7 @@ export function Filter({
                   {(multiple && selectedSize > 2) || alwaysShowNumber ? (
                     <Badge
                       variant="secondary"
-                      className="bg-background/80 text-foreground hover:bg-background/80 rounded-sm px-1 font-normal"
+                      className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80"
                     >
                       {selectedSize} {t('selected')}
                     </Badge>
@@ -205,7 +205,7 @@ export function Filter({
                         <Badge
                           variant="secondary"
                           key={option.value}
-                          className="bg-background/80 text-foreground hover:bg-background/80 rounded-sm px-1 font-normal"
+                          className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80"
                         >
                           {option.label}
                         </Badge>
@@ -261,7 +261,7 @@ export function Filter({
                       >
                         <div
                           className={cn(
-                            'border-primary flex h-4 w-4 items-center justify-center border',
+                            'flex h-4 w-4 items-center justify-center border border-primary',
                             multiple ? 'rounded-sm' : 'rounded-full',
                             isSelected || option.checked
                               ? 'bg-primary text-primary-foreground'

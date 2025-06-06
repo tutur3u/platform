@@ -4,7 +4,7 @@ export function LoadingIndicator({ className }: { className?: string }) {
   return (
     <div className="inline-flex items-center rounded-md border border-transparent text-base">
       <svg
-        className={cn('text-foreground animate-spin', className || 'h-4')}
+        className={cn('animate-spin text-foreground', className || 'h-4')}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"

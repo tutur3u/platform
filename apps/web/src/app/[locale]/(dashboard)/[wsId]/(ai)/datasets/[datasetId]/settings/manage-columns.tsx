@@ -167,15 +167,15 @@ export function ManageColumns({ wsId, datasetId }: Props) {
         {isLoading ? (
           <div className="flex h-64 flex-col items-center justify-center gap-2">
             <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="text-muted-foreground text-sm">Loading columns...</p>
+            <p className="text-sm text-muted-foreground">Loading columns...</p>
           </div>
         ) : columns.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-4">
-            <div className="bg-muted/50 flex h-16 w-16 items-center justify-center rounded-full">
-              <Plus className="text-muted-foreground h-8 w-8" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
+              <Plus className="h-8 w-8 text-muted-foreground" />
             </div>
             <div className="text-center">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 No columns found in this dataset
               </p>
               <Button
@@ -244,14 +244,14 @@ export function ManageColumns({ wsId, datasetId }: Props) {
                   variant="outline"
                   className={cn(
                     'group flex h-auto flex-col items-center justify-center gap-2 p-8',
-                    'hover:border-foreground/20 border-dashed'
+                    'border-dashed hover:border-foreground/20'
                   )}
                   onClick={() => setIsAddingColumn(true)}
                 >
-                  <div className="bg-muted/50 group-hover:bg-muted flex h-10 w-10 items-center justify-center rounded-full transition-colors">
-                    <Plus className="text-muted-foreground h-5 w-5" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 transition-colors group-hover:bg-muted">
+                    <Plus className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     Add Column
                   </span>
                 </Button>

@@ -295,7 +295,7 @@ function SettingsDialogContent({
             onClick={handleSave}
             disabled={!hasChanges}
             className={cn(
-              hasChanges && 'bg-primary/90 hover:bg-primary animate-pulse'
+              hasChanges && 'animate-pulse bg-primary/90 hover:bg-primary'
             )}
           >
             Save Changes

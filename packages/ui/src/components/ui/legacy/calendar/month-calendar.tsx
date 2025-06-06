@@ -189,7 +189,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
   };
 
   return (
-    <div className="bg-background flex-1 overflow-auto rounded-md border shadow-sm">
+    <div className="flex-1 overflow-auto rounded-md border bg-background shadow-sm">
       <div className="grid grid-cols-7 divide-x divide-y border-b text-center">
         {weekdayLabels.map((day) => (
           <div
@@ -238,7 +238,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                   className={cn(
                     'flex h-7 w-7 items-center justify-center text-sm',
                     isTodayDate &&
-                      'bg-primary text-primary-foreground rounded-full font-medium',
+                      'rounded-full bg-primary font-medium text-primary-foreground',
                     !isCurrentMonth && 'text-muted-foreground',
                     isHidden && 'text-muted-foreground/50'
                   )}
@@ -251,7 +251,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        'hover:bg-primary/10 h-6 w-6 opacity-0 hover:opacity-100 focus:opacity-100 group-hover:opacity-100',
+                        'h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:opacity-100 focus:opacity-100',
                         isHidden && 'opacity-0 group-hover:opacity-50'
                       )}
                       onClick={() => handleAddEvent(day)}
@@ -288,15 +288,15 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                         className="w-80"
                       >
                         <div className="space-y-2">
-                          <h4 className="line-clamp-2 break-words font-medium">
+                          <h4 className="line-clamp-2 font-medium break-words">
                             {event.title || 'Untitled event'}
                           </h4>
                           {event.description && (
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-sm text-muted-foreground">
                               {event.description}
                             </p>
                           )}
-                          <div className="text-muted-foreground flex items-center text-xs">
+                          <div className="flex items-center text-xs text-muted-foreground">
                             <Clock className="mr-1 h-3 w-3" />
                             <span>{formatEventTime(event)}</span>
                           </div>
@@ -307,7 +307,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                 })}
 
                 {events.length > 3 && (
-                  <button className="bg-muted text-muted-foreground hover:bg-muted/80 w-full rounded-sm px-1 py-0.5 text-xs font-medium">
+                  <button className="w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80">
                     +{events.length - 3} more
                   </button>
                 )}

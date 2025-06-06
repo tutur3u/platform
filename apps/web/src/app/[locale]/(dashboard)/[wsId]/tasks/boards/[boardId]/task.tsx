@@ -162,7 +162,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
         'group relative flex flex-col gap-3 rounded-lg border p-3 text-left text-sm transition-all',
         'hover:border-primary/20 hover:shadow-md',
         'touch-none select-none',
-        isDragging && 'bg-background z-50 scale-[1.02] opacity-90 shadow-lg',
+        isDragging && 'z-50 scale-[1.02] bg-background opacity-90 shadow-lg',
         isOverlay && 'shadow-lg',
         task.archived && 'bg-muted/50',
         isOverdue && !task.archived && 'border-destructive/50'
@@ -173,7 +173,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
           {...attributes}
           {...listeners}
           className={cn(
-            'text-muted-foreground mt-0.5 h-4 w-4 shrink-0 cursor-grab opacity-50 transition-all',
+            'mt-0.5 h-4 w-4 shrink-0 cursor-grab text-muted-foreground opacity-50 transition-all',
             'group-hover:opacity-100',
             isDragging && 'opacity-100',
             isOverlay && 'cursor-grabbing'
@@ -194,7 +194,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
               <div className="flex items-start justify-between gap-2">
                 <p
                   className={cn(
-                    'line-clamp-2 flex-1 font-medium leading-tight',
+                    'line-clamp-2 flex-1 leading-tight font-medium',
                     task.archived && 'text-muted-foreground line-through'
                   )}
                 >
@@ -255,7 +255,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
                 )}
               </div>
               {task.description && (
-                <p className="text-muted-foreground line-clamp-2 text-xs leading-normal">
+                <p className="line-clamp-2 text-xs leading-normal text-muted-foreground">
                   {task.description}
                 </p>
               )}
@@ -272,7 +272,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
               </Badge>
             )}
             {startDate && (
-              <div className="text-muted-foreground flex items-center gap-1">
+              <div className="flex items-center gap-1 text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 Starts {formatDistanceToNow(startDate, { addSuffix: true })}
               </div>
@@ -282,7 +282,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
                 className={cn(
                   'flex items-center gap-1',
                   isOverdue && !task.archived
-                    ? 'text-destructive font-medium'
+                    ? 'font-medium text-destructive'
                     : 'text-muted-foreground'
                 )}
               >
@@ -291,7 +291,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
               </div>
             )}
             {isOverdue && !task.archived && (
-              <div className="text-destructive flex items-center gap-1 font-medium">
+              <div className="flex items-center gap-1 font-medium text-destructive">
                 <AlertCircle className="h-3 w-3" />
                 Overdue
               </div>
@@ -321,7 +321,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
         />
       )}
 
-      <div className="text-muted-foreground/50 text-[10px]">
+      <div className="text-[10px] text-muted-foreground/50">
         Created {formatDistanceToNow(createdAt, { addSuffix: true })}
       </div>
     </Card>

@@ -9,7 +9,7 @@ npm install @ncthub/ui
 # or
 yarn add @ncthub/ui
 # or
-pnpm add @ncthub/ui
+bun add @ncthub/ui
 ```
 
 ## Usage
@@ -38,7 +38,7 @@ export default function MyComponent() {
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 ```
 
 ## License

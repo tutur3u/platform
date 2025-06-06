@@ -9,12 +9,11 @@ This repository is a monorepo for all of NCT Hub's services, powered by Turborep
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) (v20+)
-- [pnpm](https://pnpm.io) (v9+)
+- [Node.js](https://nodejs.org/) (v22+)
+- [bun](https://bun.sh/) (v1.2+) - Install with:
+  - **macOS/Linux**: `curl -fsSL https://bun.sh/install | bash`
+  - **Windows**: `powershell -c "irm bun.sh/install.ps1 | iex"`
 - [Docker](https://www.docker.com/) (latest)
-
-> [!NOTE]  
-> Check out why we recommend using pnpm instead of npm by checking out their [motivation](https://pnpm.io/motivation) and [feature comparison](https://pnpm.io/feature-comparison).
 
 ## Getting Started
 
@@ -32,13 +31,13 @@ This repository is a monorepo for all of NCT Hub's services, powered by Turborep
 3. **Install dependencies:**
 
    ```bash
-   pnpm i
+   bun i
    ```
 
 4. **Start the Supabase local development environment:**
 
    ```bash
-   pnpm sb:start
+   bun sb:start
    ```
 
    This will provide the necessary URLs and keys for local development.
@@ -49,10 +48,10 @@ This repository is a monorepo for all of NCT Hub's services, powered by Turborep
 
 6. **Start the desired application(s):**
 
-   Use the appropriate pnpm scripts to start the applications.
+   Use the appropriate bun scripts to start the applications.
 
    ```bash
-   pnpm dev
+   bun dev
    ```
 
 ## Development Tools
@@ -88,7 +87,7 @@ This turborepo has some additional tools already setup for you:
 To build all apps and packages, run the following command:
 
 ```bash
-pnpm build
+bun run build
 ```
 
 ### Develop
@@ -96,21 +95,21 @@ pnpm build
 To develop all apps and packages (without requiring a local setup), run the following command:
 
 ```bash
-pnpm dev
+bun dev
 ```
 
 To stop development apps and packages that are running on your local machine, run the following command:
 
 ```bash
-pnpm stop
+bun stop
 ```
 
 #### Supabase
 
 To start a local supabase instance (database), run the following command:
 
-```bash pnpm
-pnpm sb:start
+```bash
+bun sb:start
 ```
 
 > [!NOTE]
@@ -129,7 +128,7 @@ pnpm sb:start
 To stop the local supabase instance, run the following command:
 
 ```bash
-pnpm sb:stop
+bun sb:stop
 ```
 
 #### Better Development Experience
@@ -137,7 +136,7 @@ pnpm sb:stop
 In case you want to run all local development servers, run the following command:
 
 ```bash
-pnpm devx
+bun devx
 ```
 
 Running `devx` will:
@@ -147,14 +146,14 @@ Running `devx` will:
 3. Start a new supabase instance (using backed up data)
 4. Start all Next.js apps in development mode
 
-If you want to have the same procedure without the backup, you can run `pnpm devrs` instead. This will:
+If you want to have the same procedure without the backup, you can run `bun devrs` instead. This will:
 
 1. Stop the currently running supabase instance (if there is any)
 2. Install all dependencies
 3. Start a new supabase instance (with clean data from seed.sql)
 4. Start all Next.js apps in development mode
 
-> In case you don't want to run a local supabase instance, you can run `pnpm dev` instead.
+> In case you don't want to run a local supabase instance, you can run `bun dev` instead.
 
 #### Local development
 
@@ -171,7 +170,7 @@ There are 5 seed accounts that are already set up for local development:
 To run all tests, run the following command:
 
 ```bash
-pnpm test
+bun run test
 ```
 
 > Note: Tests are still a work in progress. We're currently working on adding tests to all packages to ensure the best quality possible.
@@ -187,13 +186,13 @@ We welcome contributions! Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) f
 Common issues and their solutions:
 
 1. **Supabase connection issues**: Ensure Docker is running and you've correctly set the Supabase URLs and keys in your `.env.local` files.
-2. **Build errors**: Make sure you're using the correct Node.js version (v20+) and have run `pnpm i` to install all dependencies.
+2. **Build errors**: Make sure you're using the correct Node.js version (v20+) and have run `bun i` to install all dependencies.
 
 ### Performance Optimization
 
 To improve build and development performance:
 
-- Use `pnpm` for faster package installation and better disk space usage.
+- Use `bun` for faster package installation, better disk space usage, and significantly improved startup times (4x faster than Node.js). See [Bun's design goals](https://bun.sh/docs#design-goals) for more details.
 - Leverage Turborepo's caching capabilities by utilizing remote caching.
 
 ### Learning Resources

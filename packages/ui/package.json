@@ -6,10 +6,10 @@
     "access": "public"
   },
   "scripts": {
-    "ui": "pnpm dlx shadcn-ui@latest",
+    "ui": "bunx shadcn-ui@latest",
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.11.1",
+  "packageManager": "bun@1.2.15",
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-accordion": "^1.2.11",
@@ -40,13 +40,13 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tanstack/react-table": "^8.21.3",
-    "@tiptap/core": "^2.12.0",
-    "@tiptap/extension-highlight": "^2.12.0",
-    "@tiptap/extension-placeholder": "^2.12.0",
-    "@tiptap/extension-text-align": "^2.12.0",
-    "@tiptap/pm": "^2.12.0",
-    "@tiptap/react": "^2.12.0",
-    "@tiptap/starter-kit": "^2.12.0",
+    "@tiptap/core": "^2.13.0",
+    "@tiptap/extension-highlight": "^2.13.0",
+    "@tiptap/extension-placeholder": "^2.13.0",
+    "@tiptap/extension-text-align": "^2.13.0",
+    "@tiptap/pm": "^2.13.0",
+    "@tiptap/react": "^2.13.0",
+    "@tiptap/starter-kit": "^2.13.0",
     "@ncthub/ai": "workspace:*",
     "@ncthub/supabase": "workspace:*",
     "@ncthub/utils": "workspace:*",
@@ -62,7 +62,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.511.0",
     "moment": "^2.30.1",
-    "next": "15.4.0-canary.62",
+    "next": "15.3.3",
     "next-themes": "^0.4.6",
     "react": "^19.1.0",
     "react-colorful": "^5.6.1",
@@ -79,7 +79,7 @@
     "tailwind-scrollbar": "^4.0.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
-    "zod": "^3.25.49"
+    "zod": "^3.25.51"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

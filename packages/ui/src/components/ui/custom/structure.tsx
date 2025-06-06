@@ -99,14 +99,14 @@ export function Structure({
             }}
             className={cn(
               isCollapsed
-                ? 'md:bg-background/70 hidden min-w-[50px] md:flex'
-                : 'bg-background/70 md:bg-background absolute inset-0 z-40 flex md:static',
+                ? 'hidden min-w-[50px] md:flex md:bg-background/70'
+                : 'absolute inset-0 z-40 flex bg-background/70 md:static md:bg-background',
               'flex-col overflow-hidden backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
             <div
               className={cn(
-                'border-foreground/10 items-center border-b p-2 md:flex md:h-16 md:p-0',
+                'items-center border-b border-foreground/10 p-2 md:flex md:h-16 md:p-0',
                 isCollapsed ? 'justify-center' : 'max-sm:py-1'
               )}
             >
@@ -139,7 +139,7 @@ export function Structure({
             <div className="scrollbar-none flex flex-1 flex-col gap-4 overflow-auto">
               {sidebarContent}
             </div>
-            <div className="border-foreground/10 border-t p-2">
+            <div className="border-t border-foreground/10 p-2">
               {isCollapsed ? userPopover : actions}
             </div>
           </ResizablePanel>

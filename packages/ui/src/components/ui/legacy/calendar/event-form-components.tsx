@@ -69,7 +69,7 @@ export const FormSection = ({
   className?: string;
 }) => (
   <div className={cn('space-y-3', className)}>
-    <h3 className="text-muted-foreground text-sm font-medium">{title}</h3>
+    <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
     <div className="space-y-4">{children}</div>
   </div>
 );
@@ -95,7 +95,7 @@ export const EventTitleInput = ({
       placeholder="Add title"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="bg-muted/50 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+      className="border-none bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0"
       disabled={disabled}
       onFocus={(e) => e.target.select()}
       onKeyDown={(e) => {
@@ -277,7 +277,7 @@ export const EventDescriptionInput = ({
   return (
     <div className="space-y-2" ref={containerRef}>
       <Label className="flex items-center gap-2 text-sm font-medium">
-        <MessageSquare className="text-muted-foreground h-3.5 w-3.5" />
+        <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
         Description
       </Label>
       <div className="relative">
@@ -287,7 +287,7 @@ export const EventDescriptionInput = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder="Add event details..."
           className={cn(
-            'overflow-wrap-anywhere resize-none whitespace-pre-wrap break-words transition-all duration-200',
+            'overflow-wrap-anywhere resize-none break-words whitespace-pre-wrap transition-all duration-200',
             isExpanded ? 'h-auto' : 'overflow-y-auto',
             'scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent'
           )}
@@ -320,13 +320,13 @@ export const EventDescriptionInput = ({
                 handleToggleExpand();
               }
             }}
-            className="hover:bg-border/50 absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize rounded-b-md transition-colors"
+            className="absolute right-0 bottom-0 left-0 h-4 cursor-ns-resize rounded-b-md transition-colors hover:bg-border/50"
           />
         )}
       </div>
       <div className="mt-1 flex min-h-[20px] items-center justify-between">
         {wordCount > 0 && (
-          <span className="text-muted-foreground text-xs">
+          <span className="text-xs text-muted-foreground">
             {wordCount} {wordCount === 1 ? 'word' : 'words'}
           </span>
         )}
@@ -335,7 +335,7 @@ export const EventDescriptionInput = ({
             type="button"
             data-show-toggle
             onClick={handleToggleExpand}
-            className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
+            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
             disabled={disabled}
           >
             {isExpanded ? 'Show less' : 'Show more'}
@@ -375,7 +375,7 @@ export const EventLocationInput = ({
         htmlFor="location"
         className="flex items-center gap-2 text-sm font-medium"
       >
-        <MapPin className="text-muted-foreground h-3.5 w-3.5" />
+        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
         Location
       </Label>
       <div className="relative">
@@ -384,14 +384,14 @@ export const EventLocationInput = ({
           placeholder="Add location"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="bg-muted/50 border-none pr-10 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="border-none bg-muted/50 pr-10 focus-visible:ring-0 focus-visible:ring-offset-0"
           disabled={disabled}
         />
         {value && (
           <button
             type="button"
             onClick={openGoogleMaps}
-            className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
+            className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             title="Open in Google Maps"
           >
             <MapPin className="h-4 w-4" />
@@ -399,7 +399,7 @@ export const EventLocationInput = ({
         )}
       </div>
       {value && (
-        <div className="text-muted-foreground flex items-center text-xs">
+        <div className="flex items-center text-xs text-muted-foreground">
           <span>Click the map icon to view in Google Maps</span>
         </div>
       )}
@@ -433,7 +433,7 @@ export const EventDateTimePicker = ({
 }) => (
   <div className="space-y-2">
     <Label className="flex items-center gap-2 text-sm font-medium">
-      {icon || <Clock className="text-muted-foreground h-3.5 w-3.5" />}
+      {icon || <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
       {label}
     </Label>
     <div className={cn(disabled ? 'pointer-events-none opacity-50' : '')}>
@@ -473,7 +473,7 @@ export const EventColorPicker = ({
             size="md"
             showTooltips={true}
           />
-          <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <div className={cn('h-3 w-3 rounded-full', text)} />
             <span>
               {COLOR_OPTIONS.find((c) => c.value === value)?.name || 'Blue'}
@@ -529,7 +529,7 @@ export const EventPriorityPicker = ({
           disabled={disabled}
           className="w-full"
         />
-        <div className="text-muted-foreground flex justify-between text-xs">
+        <div className="flex justify-between text-xs text-muted-foreground">
           {priorityOptions.map((option) => (
             <div
               key={option.value}
@@ -570,7 +570,7 @@ export const EventToggleSwitch = ({
         {label}
       </Label>
       {description && (
-        <p className="text-muted-foreground text-xs">{description}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
       )}
     </div>
     <Switch

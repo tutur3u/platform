@@ -550,13 +550,13 @@ export function TimeRangePicker({
                 {safeTimeRanges[key]?.timeBlocks?.map((block, blockIndex) => (
                   <div
                     key={blockIndex}
-                    className="hover:bg-muted/30 border-muted bg-muted/10 flex items-center gap-2 rounded-md border p-3 shadow-sm transition-colors"
+                    className="flex items-center gap-2 rounded-md border border-muted bg-muted/10 p-3 shadow-sm transition-colors hover:bg-muted/30"
                   >
                     <div className="grid flex-1 grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label
                           htmlFor={`${key}-start-${blockIndex}`}
-                          className="text-muted-foreground text-xs"
+                          className="text-xs text-muted-foreground"
                         >
                           Start
                         </Label>
@@ -586,8 +586,8 @@ export function TimeRangePicker({
                             compact && 'h-7 text-xs',
                             'bg-background text-foreground',
                             'appearance-none',
-                            'border-muted border',
-                            'focus:ring-primary focus:outline-none focus:ring-2'
+                            'border border-muted',
+                            'focus:ring-2 focus:ring-primary focus:outline-none'
                           )}
                           autoComplete="off"
                           spellCheck={false}
@@ -597,7 +597,7 @@ export function TimeRangePicker({
                       <div className="space-y-1">
                         <Label
                           htmlFor={`${key}-end-${blockIndex}`}
-                          className="text-muted-foreground text-xs"
+                          className="text-xs text-muted-foreground"
                         >
                           End
                         </Label>
@@ -628,8 +628,8 @@ export function TimeRangePicker({
                             compact && 'h-7 text-xs',
                             'bg-background text-foreground',
                             'appearance-none',
-                            'border-muted border',
-                            'focus:ring-primary focus:outline-none focus:ring-2'
+                            'border border-muted',
+                            'focus:ring-2 focus:ring-primary focus:outline-none'
                           )}
                           autoComplete="off"
                           spellCheck={false}

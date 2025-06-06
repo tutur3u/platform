@@ -13,7 +13,7 @@ export const CalendarColumn = ({ date, last }: CalendarColumnProps) => {
   return (
     <div
       className={cn(
-        'border-border/30 relative grid border border-r',
+        'relative grid border border-r border-border/30',
         last && 'border-r-border'
       )}
       style={{

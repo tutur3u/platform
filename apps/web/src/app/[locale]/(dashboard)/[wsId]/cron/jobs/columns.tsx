@@ -41,7 +41,7 @@ function renderStatus(
   switch (status) {
     case 'active':
       return (
-        <div className="text-dynamic-green flex items-center gap-1">
+        <div className="flex items-center gap-1 text-dynamic-green">
           <CheckCircle className="h-5 w-5" />
           <span>{t('cron-job-data-table.active')}</span>
         </div>
@@ -49,7 +49,7 @@ function renderStatus(
 
     case 'inactive':
       return (
-        <div className="text-dynamic-red flex items-center gap-1">
+        <div className="flex items-center gap-1 text-dynamic-red">
           <PowerOff className="h-5 w-5" />
           <span>{t('cron-job-data-table.inactive')}</span>
         </div>
@@ -57,7 +57,7 @@ function renderStatus(
 
     case 'running':
       return (
-        <div className="text-dynamic-blue flex items-center gap-1">
+        <div className="flex items-center gap-1 text-dynamic-blue">
           <Clock className="h-5 w-5" />
           <span>{t('cron-job-data-table.running')}</span>
         </div>
@@ -65,7 +65,7 @@ function renderStatus(
 
     case 'failed':
       return (
-        <div className="text-dynamic-red flex items-center gap-1">
+        <div className="flex items-center gap-1 text-dynamic-red">
           <XCircle className="h-5 w-5" />
           <span>{t('cron-job-data-table.failed')}</span>
         </div>
@@ -127,7 +127,7 @@ export const getColumns = (
         <div className="flex min-w-32 flex-col">
           <span>{schedule || '-'}</span>
           {schedule && (
-            <span className="text-muted-foreground text-xs">
+            <span className="text-xs text-muted-foreground">
               {cronstrue.toString(schedule)}
             </span>
           )}

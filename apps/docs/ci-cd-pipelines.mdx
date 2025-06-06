@@ -289,7 +289,7 @@ jobs:
       # Setup steps
       - name: Publish package to JSR
         working-directory: packages/types
-        run: pnpm dlx jsr publish
+        run: bunx jsr publish
 
   publish-npm:
     needs: [build]
@@ -301,7 +301,7 @@ jobs:
       # Setup steps
       - name: Publish package
         working-directory: packages/types
-        run: pnpm publish
+        run: bun publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 ```
@@ -356,7 +356,7 @@ jobs:
     steps:
       # Setup steps
       - name: Test
-        run: pnpm test
+        run: bun run test
 ```
 
 This workflow runs on every push to main and on all pull requests, ensuring our tests pass.
@@ -388,11 +388,11 @@ jobs:
       # Setup steps
       - name: Check Prettier formatting
         id: check-format
-        run: pnpm format:check || echo "format_failed=true" >> $GITHUB_OUTPUT
+        run: bun format:check || echo "format_failed=true" >> $GITHUB_OUTPUT
 
       - name: Apply Prettier fixes
         if: steps.check-format.outputs.format_failed == 'true'
-        run: pnpm format
+        run: bun format
 
       - name: Check for changes
         if: steps.check-format.outputs.format_failed == 'true'
@@ -493,14 +493,13 @@ Most workflows use caching to speed up builds:
     restore-keys: |
       ${{ runner.os }}-turbo-
 
-- name: Setup pnpm
-  uses: pnpm/action-setup@v4
+- name: Setup bun
+  uses: oven-sh/setup-bun@v2
 
-- name: Use Node.js 22
+- name: Use Node.js 24
   uses: actions/setup-node@v4
   with:
-    node-version: 22
-    cache: 'pnpm'
+    node-version: 24
 ```
 
 ### 3. PR-based Publishing
@@ -636,4 +635,4 @@ When creating a new workflow, use this checklist:
 - [Vercel CLI Documentation](https://vercel.com/docs/cli)
 - [Supabase CLI Documentation](https://supabase.com/docs/guides/cli)
 - [Turborepo Documentation](https://turbo.build/repo/docs/ci)
-- [pnpm Workspace Documentation](https://pnpm.io/workspaces)
+- [bun Workspace Documentation](https://bun.sh/docs/install/workspaces)

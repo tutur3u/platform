@@ -251,7 +251,7 @@ export function SessionHistory({
             </CardTitle>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search sessions..."
                   value={searchQuery}
@@ -323,13 +323,13 @@ export function SessionHistory({
         <CardContent>
           {filteredSessions.length === 0 ? (
             <div className="py-12 text-center">
-              <Clock className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-              <p className="text-muted-foreground text-lg">
+              <Clock className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <p className="text-lg text-muted-foreground">
                 {sessions.length === 0
                   ? 'No time sessions yet'
                   : 'No sessions match your filters'}
               </p>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {sessions.length === 0
                   ? 'Start tracking time to see your sessions here'
                   : 'Try adjusting your search or filters'}
@@ -340,7 +340,7 @@ export function SessionHistory({
               {filteredSessions.map((session) => (
                 <div
                   key={session.id}
-                  className="hover:bg-accent/50 group relative rounded-lg border p-4 transition-all hover:shadow-sm"
+                  className="group relative rounded-lg border p-4 transition-all hover:bg-accent/50 hover:shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
@@ -348,7 +348,7 @@ export function SessionHistory({
                         {session.title}
                       </h4>
                       {session.description && (
-                        <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">
+                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                           {session.description}
                         </p>
                       )}
@@ -368,7 +368,7 @@ export function SessionHistory({
                             {session.task.name}
                           </Badge>
                         )}
-                        <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
                           <span>
                             {new Date(session.start_time).toLocaleDateString()}{' '}
@@ -387,7 +387,7 @@ export function SessionHistory({
                             : '-'}
                         </p>
                         {session.end_time && (
-                          <p className="text-muted-foreground text-xs">
+                          <p className="text-xs text-muted-foreground">
                             Ended at{' '}
                             {new Date(session.end_time).toLocaleTimeString()}
                           </p>

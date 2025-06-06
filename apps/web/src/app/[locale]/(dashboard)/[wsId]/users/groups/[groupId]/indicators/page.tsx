@@ -142,14 +142,14 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
             <div className="grid border-r last:border-r-0">
               <button
                 key={indicator.id}
-                className="hover:bg-dynamic-purple/10 hover:text-dynamic-purple w-32 px-4 py-2 font-semibold"
+                className="w-32 px-4 py-2 font-semibold hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
               >
                 <span className="line-clamp-1 break-all">{indicator.name}</span>
               </button>
               {users.map((user) => (
                 <button
                   key={user.id}
-                  className="hover:bg-dynamic-blue/10 hover:text-dynamic-blue w-32 border-t px-4 py-2"
+                  className="w-32 border-t px-4 py-2 hover:bg-dynamic-blue/10 hover:text-dynamic-blue"
                 >
                   {indicators.find(
                     (i) =>
