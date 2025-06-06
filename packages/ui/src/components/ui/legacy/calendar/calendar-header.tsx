@@ -75,7 +75,7 @@ export function CalendarHeader({
       {/* Loading circle */}
       <div className="flex items-center gap-2">
         {(isLoading || isSyncing) && (
-          <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         )}
         <Button
           variant="outline"
