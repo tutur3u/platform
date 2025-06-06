@@ -222,7 +222,7 @@ async function getQuizSetStatistics(setId: string): Promise<QuizStats[]> {
 
       // Get quiz attempts and scores
       const { data: attempts } = await supabase
-        .from("workspace_quiz_attempts")
+        .from("workspace_quiz_attempts" as any)
         .select("user_id, score, created_at")
         .eq("quiz_id", quiz.id)
 
