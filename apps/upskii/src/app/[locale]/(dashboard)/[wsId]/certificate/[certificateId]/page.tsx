@@ -1,7 +1,7 @@
-import Certificate from '../certificate-page';
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import Certificate from '../certificate-page';
 
 export type CertificateProps = {
   certDetails: {
@@ -11,16 +11,18 @@ export type CertificateProps = {
     completionDate: string;
     certificateId: string;
   };
+  wsId: string;
 };
 
 interface PageProps {
   params: Promise<{
     certificateId: string;
+    wsId: string;
   }>;
 }
 
 export default async function CertificatePage({ params }: PageProps) {
-  const { certificateId } = await params;
+  const { certificateId, wsId } = await params;
   const supabase = await createClient();
 
   // Get current user
@@ -32,15 +34,14 @@ export default async function CertificatePage({ params }: PageProps) {
   }
 
   try {
-    // This will throw an error if the user is not the owner
-    const certDetails = await getCertificateDetails(certificateId, user.id);
+    const certDetails = await getCertificateDetails(certificateId, user.id, wsId);
     return (
-      <div>
-        <Certificate certDetails={certDetails} />
-      </div>
+      <>
+        <Certificate certDetails={certDetails} wsId={wsId} />
+      </>
     );
   } catch (error) {
-    // If there's any error (including unauthorized access), redirect to home
-    redirect('/');
+    console.error('Error fetching certificate details:', error);
+    notFound();
   }
 }
