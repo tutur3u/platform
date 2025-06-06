@@ -31,18 +31,23 @@ export default function Navbar({
   );
 
   return (
-    <SharedNavbar
-      logo="/media/logos/nova-transparent.png"
-      title={<LogoTitle text="Upskii" />}
-      navigationMenu={<MainNavigationMenu />}
-      actions={
-        <>
-          {renderServerMenu()}
-          {renderNavbarActions()}
-        </>
-      }
-      separator={<NavbarSeparator />}
-      onlyOnMobile={onlyOnMobile}
-    />
+    <div className="fixed top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border/40">
+    <div className="container flex items-center justify-between h-16">
+      <SharedNavbar
+    logo="/media/logos/nova-transparent.png"
+    title={<LogoTitle text="Upskii" />}
+    navigationMenu={<MainNavigationMenu />}
+    actions={
+      <>
+        {renderServerMenu()}
+        {renderNavbarActions()}
+      </>
+    }
+    separator={<NavbarSeparator />}
+    onlyOnMobile={onlyOnMobile}
+  />
+      </div>
+    </div>
+ 
   );
 }
