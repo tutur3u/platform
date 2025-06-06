@@ -35,13 +35,13 @@ export default function SidebarButton({
   const buttonContent = (
     <div
       onClick={disabled ? undefined : onClick}
-      className={`flex select-none items-center gap-2 rounded p-2 ${
+      className={`flex items-center gap-2 rounded p-2 select-none ${
         left ? 'justify-start' : 'justify-center'
       } ${
         disabled
           ? 'cursor-not-allowed text-zinc-600'
           : isActive
-            ? 'border-border cursor-pointer bg-zinc-500/10 text-zinc-900 dark:border-zinc-300/10 dark:bg-zinc-500/10 dark:text-zinc-100'
+            ? 'cursor-pointer border-border bg-zinc-500/10 text-zinc-900 dark:border-zinc-300/10 dark:bg-zinc-500/10 dark:text-zinc-100'
             : 'cursor-pointer border-transparent text-zinc-700 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 dark:text-zinc-300 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100'
       } ${classNames?.root}`}
     >

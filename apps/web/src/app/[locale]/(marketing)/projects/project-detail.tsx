@@ -22,7 +22,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
       onClick={onClose}
     >
       <motion.div
-        className="bg-background relative mx-auto h-fit max-h-[90%] w-[98%] max-w-3xl overflow-y-auto rounded-lg p-6 pb-10 text-center md:w-[90%]"
+        className="relative mx-auto h-fit max-h-[90%] w-[98%] max-w-3xl overflow-y-auto rounded-lg bg-background p-6 pb-10 text-center md:w-[90%]"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
@@ -30,7 +30,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <p
-          className="absolute right-4 top-2 cursor-pointer text-2xl"
+          className="absolute top-2 right-4 cursor-pointer text-2xl"
           onClick={onClose}
         >
           x
@@ -63,7 +63,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                   'linear-gradient(180deg, rgba(244,183,26,0.7) 0%, rgba(135,213,128,0.6) 50%, rgba(26,244,230,0.5) 100%)',
               }}
             >
-              <p className="whitespace-nowrap text-xs md:text-sm">{tech}</p>
+              <p className="text-xs whitespace-nowrap md:text-sm">{tech}</p>
             </div>
           ))}
         </div>

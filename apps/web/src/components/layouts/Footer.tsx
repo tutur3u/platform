@@ -8,7 +8,7 @@ export default async function Footer() {
 
   return (
     <div className="w-full px-0 text-center md:px-4 lg:px-10">
-      <Separator className="bg-foreground/5 mb-5 mt-8" />
+      <Separator className="mt-8 mb-5 bg-foreground/5" />
       <p className="mb-8 text-2xl font-bold md:text-3xl">
         Want to join with us?
       </p>
@@ -137,7 +137,7 @@ export default async function Footer() {
         <div className="text-center opacity-80">{t('common.copyright')}</div>
         <Link
           href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
-          className="text-brand-light-red font-semibold underline"
+          className="font-semibold text-brand-light-red underline"
         >
           neoculturetechclub.sgs@rmit.edu.vn
         </Link>

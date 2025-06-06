@@ -166,7 +166,7 @@ function FruitPlaceholder({
       {fruit?.type === 'rainbow' && (
         <LoaderPinwheel
           className={cn(
-            'text-foreground/70 pointer-events-none absolute h-5 w-5 animate-spin md:h-6 md:w-6',
+            'pointer-events-none absolute h-5 w-5 animate-spin text-foreground/70 md:h-6 md:w-6',
             iconClassName
           )}
         />

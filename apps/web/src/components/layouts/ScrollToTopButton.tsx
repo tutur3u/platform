@@ -9,7 +9,7 @@ interface Props {
 const ScrollToTopButton = ({ elementId, prevScrollPos }: Props) => {
   return (
     <Button
-      className={`fixed bottom-16 right-4 z-50 rounded-full border border-blue-300/50 bg-[#f4f9ff] md:bottom-4 md:right-8 dark:border-blue-300/20 dark:bg-[#2b3542] ${
+      className={`fixed right-4 bottom-16 z-50 rounded-full border border-blue-300/50 bg-[#f4f9ff] md:right-8 md:bottom-4 dark:border-blue-300/20 dark:bg-[#2b3542] ${
         prevScrollPos <= 100 ? 'hidden' : ''
       }`}
       size="lg"
