@@ -1,17 +1,17 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Button } from '@tuturuuu/ui/button';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Check, Loader2 } from '@tuturuuu/ui/icons';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Button } from '@ncthub/ui/button';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Check, Loader2 } from '@ncthub/ui/icons';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
+} from '@ncthub/ui/select';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

@@ -1,5 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { updateUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
+import { createClient } from '@ncthub/supabase/next/server';
+import { updateUserDefaultWorkspace } from '@ncthub/utils/user-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(req: NextRequest) {

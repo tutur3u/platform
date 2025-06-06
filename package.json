@@ -2,8 +2,8 @@
   "name": "hub",
   "private": true,
   "scripts": {
-    "build": "set NODE_OPTIONS=--max-old-space-size=4096 && turbo run build",
-    "buildx": "bun i && bun i && turbo test lint build",
+    "build": "turbo run build",
+    "buildx": "bun i && turbo test lint build",
     "dev": "turbo run dev --parallel",
     "devx": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev --parallel",
     "devx:web": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev -F @ncthub/web",
