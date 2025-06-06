@@ -22,6 +22,7 @@ export function CalendarHeader({
   offset,
   availableViews,
   onViewChange,
+  extras,
 }: {
   t: any;
   locale: string;
@@ -31,6 +32,7 @@ export function CalendarHeader({
   offset: number;
   availableViews: { value: string; label: string; disabled?: boolean }[];
   onViewChange: (view: 'day' | '4-days' | 'week' | 'month') => void;
+  extras?: React.ReactNode;
 }) {
   const views = availableViews.filter((view) => view?.disabled !== true);
 
@@ -130,6 +132,8 @@ export function CalendarHeader({
             </SelectContent>
           </Select>
         )}
+
+        {extras}
       </div>
     </div>
   );

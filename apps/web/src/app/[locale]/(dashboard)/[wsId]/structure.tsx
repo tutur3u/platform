@@ -6,24 +6,9 @@ import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
 import { Workspace } from '@tuturuuu/types/db';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import {
-  Breadcrumb,
-  BreadcrumbEllipsis,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from '@tuturuuu/ui/breadcrumb';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -46,7 +31,6 @@ interface MailProps {
 
 export function Structure({
   wsId,
-  workspace,
   defaultLayout = [20, 80],
   defaultCollapsed = false,
   navCollapsedSize,
@@ -170,59 +154,61 @@ export function Structure({
     />
   );
 
-  const header = (
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink href={pathname === `/${wsId}` ? '#' : `/${wsId}`}>
-            {workspace?.name || t('common.unnamed-workspace')}
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1">
-              <BreadcrumbEllipsis className="h-4 w-4" />
-              <span className="sr-only">Toggle menu</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {links.map((link, index) =>
-                link ? (
-                  <Link
-                    key={index}
-                    href={link.href === pathname ? '#' : link.href}
-                    className={cn(
-                      link.disabled || link.href === pathname
-                        ? 'pointer-events-none'
-                        : ''
-                    )}
-                  >
-                    <DropdownMenuItem
-                      className="flex items-center gap-2"
-                      disabled={link.disabled || link.href === pathname}
-                    >
-                      {link.icon}
-                      {link.title}
-                    </DropdownMenuItem>
-                  </Link>
-                ) : null
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbLink
-            href={currentLink?.href === pathname ? '#' : currentLink?.href}
-            className="flex items-center gap-2"
-          >
-            {currentLink?.icon}
-            {currentLink?.title}
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
-  );
+  // const header = (
+  //   <Breadcrumb>
+  //     <BreadcrumbList>
+  //       <BreadcrumbItem>
+  //         <BreadcrumbLink href={pathname === `/${wsId}` ? '#' : `/${wsId}`}>
+  //           {workspace?.name || t('common.unnamed-workspace')}
+  //         </BreadcrumbLink>
+  //       </BreadcrumbItem>
+  //       <BreadcrumbSeparator />
+  //       <BreadcrumbItem>
+  //         <DropdownMenu>
+  //           <DropdownMenuTrigger className="flex items-center gap-1">
+  //             <BreadcrumbEllipsis className="h-4 w-4" />
+  //             <span className="sr-only">Toggle menu</span>
+  //           </DropdownMenuTrigger>
+  //           <DropdownMenuContent align="start">
+  //             {links.map((link, index) =>
+  //               link ? (
+  //                 <Link
+  //                   key={index}
+  //                   href={link.href === pathname ? '#' : link.href}
+  //                   className={cn(
+  //                     link.disabled || link.href === pathname
+  //                       ? 'pointer-events-none'
+  //                       : ''
+  //                   )}
+  //                 >
+  //                   <DropdownMenuItem
+  //                     className="flex items-center gap-2"
+  //                     disabled={link.disabled || link.href === pathname}
+  //                   >
+  //                     {link.icon}
+  //                     {link.title}
+  //                   </DropdownMenuItem>
+  //                 </Link>
+  //               ) : null
+  //             )}
+  //           </DropdownMenuContent>
+  //         </DropdownMenu>
+  //       </BreadcrumbItem>
+  //       <BreadcrumbSeparator />
+  //       <BreadcrumbItem>
+  //         <BreadcrumbLink
+  //           href={currentLink?.href === pathname ? '#' : currentLink?.href}
+  //           className="flex items-center gap-2"
+  //         >
+  //           {currentLink?.icon}
+  //           {currentLink?.title}
+  //         </BreadcrumbLink>
+  //       </BreadcrumbItem>
+  //     </BreadcrumbList>
+  //   </Breadcrumb>
+  // );
+
+  const header = null;
 
   const mobileHeader = (
     <>
