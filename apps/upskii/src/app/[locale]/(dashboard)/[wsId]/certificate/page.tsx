@@ -61,22 +61,26 @@ export default async function CertificatesPage({ params, searchParams }: Props) 
       <>
         <FeatureSummary
           pluralTitle={t('page_title')}
-          description={t('page_description')}
+          description={
+            t('page_description')
+          }
         />
         <Separator className="my-4" />
 
         {certificates.length === 0 ? (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
-              <Award className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-              <h3 className="mb-2 text-lg font-semibold">
+              <Award className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
                 {t('empty_state_title')}
               </h3>
               <p className="text-muted-foreground mb-4">
                 {t('empty_state_description')}
               </p>
               <Button asChild>
-                <Link href={`/${wsId}/courses`}>{t('browse_courses')}</Link>
+                <Link href={`/${wsId}/courses`}>
+                  {t('browse_courses')}
+                </Link>
               </Button>
             </div>
           </div>) : (
@@ -103,66 +107,52 @@ export default async function CertificatesPage({ params, searchParams }: Props) 
                       </Badge>
                     </div>
                   </CardHeader>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {certificates.map((certificate) => (
-              <Card
-                key={certificate.id}
-                className="hover:border-primary/20 group transition-all hover:shadow-md"
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="line-clamp-2 text-base">
-                        {certificate.courseName}
-                      </CardTitle>
-                      <CardDescription className="mt-1">
-                        {certificate.workspaceName}
-                      </CardDescription>
+
+                  <CardContent className="pt-0">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>
+                        Completed {moment(certificate.completionDate).format('MMM D, YYYY')}
+                      </span>
                     </div>
-                    <Badge variant="outline" className="shrink-0">
-                      <Award className="mr-1 h-3 w-3" />
-                      Certified
-                    </Badge>
-                  </div>
-                </CardHeader>
+                    <div className="mt-3 text-xs text-muted-foreground font-mono">
+                      {t('certificate_id')}: {certificate.id}
+                    </div>
+                  </CardContent>
 
-                <CardContent className="pt-0">
-                  <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4" />
-                    <span>
-                      Completed{' '}
-                      {moment(certificate.completionDate).format('MMM D, YYYY')}
-                    </span>
-                  </div>
-                  <div className="text-muted-foreground mt-3 font-mono text-xs">
-                    {t('certificate_id')}: {certificate.id}
-                  </div>
-                </CardContent>
+                  <CardFooter className="pt-3 gap-2">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className='flex-1'
+                    >
+                      <Link href={`/${wsId}/certificate/${certificate.id}`}>
+                        <Eye className="mr-1 h-3 w-3" />
+                        View
+                      </Link>
+                    </Button>
+                    <DownloadButtonPDF
+                      certificateId={certificate.id}
+                      wsId={wsId}
+                      className='flex-1'
+                      variant='default'
+                    />
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
 
-                <CardFooter className="gap-2 pt-3">
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                  >
-                    <Link href={`/${wsId}/certificate/${certificate.id}`}>
-                      <Eye className="mr-1 h-3 w-3" />
-                      View
-                    </Link>
-                  </Button>
-                  <Button asChild size="sm" className="flex-1">
-                    <Link href={`/${wsId}/certificate/${certificate.id}`}>
-                      <Download className="mr-1 h-3 w-3" />
-                      Download
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+            {/* Pagination */}
+            <div className="mt-8">
+              <CertificatePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalCount={totalCount}
+                pageSize={currentPageSize}
+                wsId={wsId}
+              />
+            </div>
+          </>
         )}
       </>
     );
@@ -171,8 +161,12 @@ export default async function CertificatesPage({ params, searchParams }: Props) 
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
-          <h3 className="mb-2 text-lg font-semibold">{t('error')}</h3>
-          <p className="text-muted-foreground">{t('error_description')}</p>
+          <h3 className="text-lg font-semibold mb-2">
+            {t('error')}
+          </h3>
+          <p className="text-muted-foreground">
+            {t('error_description')}
+          </p>
         </div>
       </div>
     );
