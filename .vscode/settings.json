@@ -48,5 +48,6 @@
   "codeQL.githubDatabase.download": "never",
   "IDX.aI.enableInlineCompletion": true,
   "IDX.aI.enableCodebaseIndexing": true,
-  "i18n-ally.sourceLanguage": "en"
+  "i18n-ally.sourceLanguage": "en",
+  "typescript.experimental.useTsgo": false
 }
