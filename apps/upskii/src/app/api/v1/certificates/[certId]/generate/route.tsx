@@ -1,9 +1,10 @@
-import { CertificateDocument } from './certificate-document';
-import { CertificateData } from './types';
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { renderToStream } from '@react-pdf/renderer';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getTranslations } from 'next-intl/server';
 import { NextRequest } from 'next/server';
+import { CertificateDocument } from './certificate-document';
+import { CertificateData } from './types';
 
 export async function POST(
   req: NextRequest,
@@ -11,12 +12,7 @@ export async function POST(
 ) {
   try {
     const {
-      title,
-      certifyText,
-      completionText,
-      offeredBy,
-      completionDateLabel,
-      certificateIdLabel,
+      locale = 'en',
       wsId,
     } = await req.json();
     const { certId } = await params;
@@ -26,6 +22,8 @@ export async function POST(
         status: 400,
       });
     }
+
+    const t = await getTranslations({locale, namespace: 'certificates'});
 
     // Get the authenticated user
     const supabase = await createClient();
@@ -41,12 +39,12 @@ export async function POST(
 
     const data: CertificateData = {
       certData,
-      title,
-      certifyText,
-      completionText,
-      offeredBy,
-      completionDateLabel,
-      certificateIdLabel,
+      title : t('title'),
+      certifyText: t('certify_text'),
+      completionText: t('completion_text'),
+      offeredBy: t('offered_by'),
+      completionDateLabel: t('completion_date'),
+      certificateIdLabel: t('certificate_id'),
     };
 
     const stream = await renderToStream(<CertificateDocument data={data} />);

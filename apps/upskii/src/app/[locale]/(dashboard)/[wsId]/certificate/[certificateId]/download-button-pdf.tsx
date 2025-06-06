@@ -3,7 +3,7 @@
 import { BASE_URL } from '@/constants/common';
 import { Button } from '@tuturuuu/ui/button';
 import { FileText } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 
 export function DownloadButtonPDF({
@@ -18,6 +18,7 @@ export function DownloadButtonPDF({
   variant?: 'default' | 'outline' | 'ghost' | 'link' | 'destructive';
 }) {
   const t = useTranslations('certificates');
+  const locale = useLocale();
 
   const handleDownload = useCallback(async () => {
     try {
@@ -29,13 +30,7 @@ export function DownloadButtonPDF({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            certID: certificateId,
-            title: t('title'),
-            certifyText: t('certify_text'),
-            completionText: t('completion_text'),
-            offeredBy: t('offered_by'),
-            completionDateLabel: t('completion_date'),
-            certificateIdLabel: t('certificate_id'),
+            locale: locale,
             wsId: wsId,
           }),
         }
