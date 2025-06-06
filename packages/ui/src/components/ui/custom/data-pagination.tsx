@@ -1,18 +1,18 @@
 import {
-    Pagination,
-    PaginationContent,
-    PaginationEllipsis,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
 } from '../pagination';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '../select';
 
 interface DataPaginationProps {
@@ -44,10 +44,10 @@ export function DataPagination({
   const startItem = (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalCount);
 
-//   // If there are no items or only one page, don't show pagination
-//   if (totalCount === 0 || totalPages <= 1) {
-//     return null;
-//   }
+  //   // If there are no items or only one page, don't show pagination
+  //   if (totalCount === 0 || totalPages <= 1) {
+  //     return null;
+  //   }
 
   return (
     <div className="flex flex-col gap-4">
@@ -78,17 +78,17 @@ export function DataPagination({
       <Pagination>
         <PaginationContent>
           <PaginationItem>
-            <PaginationPrevious 
+            <PaginationPrevious
               onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
               className={`${currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}
             />
           </PaginationItem>
-          
+
           {/* First page */}
           {currentPage > 2 && (
             <>
               <PaginationItem>
-                <PaginationLink 
+                <PaginationLink
                   onClick={() => onPageChange(1)}
                   isActive={false}
                   className="cursor-pointer"
@@ -103,11 +103,11 @@ export function DataPagination({
               )}
             </>
           )}
-          
+
           {/* Previous page */}
           {currentPage > 1 && (
             <PaginationItem>
-              <PaginationLink 
+              <PaginationLink
                 onClick={() => onPageChange(currentPage - 1)}
                 isActive={false}
                 className="cursor-pointer"
@@ -116,18 +116,16 @@ export function DataPagination({
               </PaginationLink>
             </PaginationItem>
           )}
-          
+
           {/* Current page */}
           <PaginationItem>
-            <PaginationLink isActive={true}>
-              {currentPage}
-            </PaginationLink>
+            <PaginationLink isActive={true}>{currentPage}</PaginationLink>
           </PaginationItem>
-          
+
           {/* Next page */}
           {currentPage < totalPages && (
             <PaginationItem>
-              <PaginationLink 
+              <PaginationLink
                 onClick={() => onPageChange(currentPage + 1)}
                 isActive={false}
                 className="cursor-pointer"
@@ -136,7 +134,7 @@ export function DataPagination({
               </PaginationLink>
             </PaginationItem>
           )}
-          
+
           {/* Last page */}
           {currentPage < totalPages - 1 && (
             <>
@@ -146,7 +144,7 @@ export function DataPagination({
                 </PaginationItem>
               )}
               <PaginationItem>
-                <PaginationLink 
+                <PaginationLink
                   onClick={() => onPageChange(totalPages)}
                   isActive={false}
                   className="cursor-pointer"
@@ -156,10 +154,12 @@ export function DataPagination({
               </PaginationItem>
             </>
           )}
-          
+
           <PaginationItem>
-            <PaginationNext 
-              onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+            <PaginationNext
+              onClick={() =>
+                currentPage < totalPages && onPageChange(currentPage + 1)
+              }
               className={`${currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}
             />
           </PaginationItem>
@@ -168,7 +168,7 @@ export function DataPagination({
 
       {/* Item Count Display */}
       {showItemCount && totalCount > 0 && (
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-muted-foreground text-center text-sm">
           Showing {startItem} to {endItem} of {totalCount} {itemName}
         </div>
       )}

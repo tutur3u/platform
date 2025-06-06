@@ -1,13 +1,13 @@
 'use client';
 
+import { DownloadButtonPDF } from './[certificateId]/download-button-pdf';
+import { CertificateProps } from './[certificateId]/page';
 import { Button } from '@tuturuuu/ui/button';
 import { ImageIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import html2canvas from 'html2canvas';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
-import { DownloadButtonPDF } from './[certificateId]/download-button-pdf';
-import { CertificateProps } from './[certificateId]/page';
 
 export default function Certificate({ certDetails, wsId }: CertificateProps) {
   const t = useTranslations('certificates');
@@ -33,10 +33,12 @@ export default function Certificate({ certDetails, wsId }: CertificateProps) {
         scale: 2,
         logging: false,
         onclone: (clonedDoc: Document) => {
-          Array.from(clonedDoc.getElementsByTagName('link')).forEach((link: HTMLLinkElement) => {
-            link.removeAttribute('integrity');
-            link.removeAttribute('crossorigin');
-          });
+          Array.from(clonedDoc.getElementsByTagName('link')).forEach(
+            (link: HTMLLinkElement) => {
+              link.removeAttribute('integrity');
+              link.removeAttribute('crossorigin');
+            }
+          );
         },
       });
 
@@ -167,7 +169,11 @@ export default function Certificate({ certDetails, wsId }: CertificateProps) {
             <ImageIcon className="mr-1 h-4 w-4" />
             {t('download_button')} (PNG)
           </Button>
-          <DownloadButtonPDF certificateId={certificateId} wsId={wsId} variant='default' />
+          <DownloadButtonPDF
+            certificateId={certificateId}
+            wsId={wsId}
+            variant="default"
+          />
         </div>
       </div>
     </div>

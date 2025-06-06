@@ -1,7 +1,7 @@
+import Certificate from '../certificate-page';
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { notFound, redirect } from 'next/navigation';
-import Certificate from '../certificate-page';
 
 export type CertificateProps = {
   certDetails: {
@@ -34,7 +34,11 @@ export default async function CertificatePage({ params }: PageProps) {
   }
 
   try {
-    const certDetails = await getCertificateDetails(certificateId, user.id, wsId);
+    const certDetails = await getCertificateDetails(
+      certificateId,
+      user.id,
+      wsId
+    );
     return (
       <>
         <Certificate certDetails={certDetails} wsId={wsId} />
