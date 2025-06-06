@@ -497,6 +497,20 @@ export const CalendarSyncProvider = ({
 
         setData(upsertData);
 
+        // After successful sync, update the cache
+        if (upsertData) {
+          const cacheKey = getCacheKey(dates);
+          updateCache(cacheKey, {
+            dbEvents: upsertData,
+            lastUpdated: Date.now(),
+          });
+
+          // Trigger an immediate refetch of database events
+          queryClient.invalidateQueries({
+            queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
+          });
+        }
+
         if (progressCallback) {
           progressCallback({
             phase: 'complete',
@@ -506,20 +520,11 @@ export const CalendarSyncProvider = ({
           });
           await new Promise((resolve) => setTimeout(resolve, 1000)); // Longer delay at completion
         }
-
-        // After successful sync, update the cache
-        if (upsertData) {
-          const cacheKey = getCacheKey(dates);
-          updateCache(cacheKey, {
-            dbEvents: upsertData,
-            lastUpdated: Date.now(),
-          });
-        }
       } finally {
         setIsSyncing(false);
       }
     },
-    [wsId, dates]
+    [wsId, dates, queryClient]
   );
 
   // Sync to Tuturuuu database when google data changes for current view
@@ -663,10 +668,16 @@ export const CalendarSyncProvider = ({
 
   // Process events to remove duplicates, then memoize the result
   const events = useMemo(() => {
-    return (fetchedData ?? []) as CalendarEvent[];
+    // If we have fetched data, process it immediately
+    if (fetchedData) {
+      return fetchedData as CalendarEvent[];
+    }
+    // If we're still loading, return empty array
+    return [];
   }, [fetchedData, removeDuplicateEvents]);
 
   const eventsWithoutAllDays = useMemo(() => {
+    // Process events immediately when they change
     return events.filter((event) => {
       const start = dayjs(event.start_at);
       const end = dayjs(event.end_at);
@@ -677,6 +688,7 @@ export const CalendarSyncProvider = ({
   }, [events]);
 
   const allDayEvents = useMemo(() => {
+    // Process events immediately when they change
     return events.filter((event) => {
       const start = dayjs(event.start_at);
       const end = dayjs(event.end_at);
@@ -685,6 +697,23 @@ export const CalendarSyncProvider = ({
       return duration % (24 * 60 * 60) === 0;
     });
   }, [events]);
+
+  // Add a ref to track if we've processed the initial data
+  const hasProcessedInitialData = useRef(false);
+
+  // Effect to process initial data
+  useEffect(() => {
+    if (fetchedData && !hasProcessedInitialData.current) {
+      hasProcessedInitialData.current = true;
+      // Force a re-render by updating the data state
+      setData(fetchedData);
+    }
+  }, [fetchedData]);
+
+  // Effect to reset the processed flag when dates change
+  useEffect(() => {
+    hasProcessedInitialData.current = false;
+  }, [dates]);
 
   const syncToGoogle = async () => {};
 
