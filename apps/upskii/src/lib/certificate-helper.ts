@@ -87,7 +87,7 @@ export async function getCertificateDetails(
 }
 
 export async function getAllCertificatesForUser(
-  userId: string, 
+  userId: string,
   wsId: string,
   options?: {
     page?: number;
@@ -110,7 +110,7 @@ export async function getAllCertificatesForUser(
         )
       )
     `,
-    { count: 'exact' }
+      { count: 'exact' }
     )
     .eq('user_id', userId)
     .eq('workspace_courses.ws_id', wsId)
@@ -123,18 +123,24 @@ export async function getAllCertificatesForUser(
     queryBuilder = queryBuilder.range(start, end);
   }
 
-  const { data: certificates, error, count } = (await queryBuilder) as {
-    data: (Database['public']['Tables']['course_certificates']['Row'] & {
-      workspace_courses: Pick<
-        Database['public']['Tables']['workspace_courses']['Row'],
-        'name' | 'ws_id'
-      > & {
-        workspaces: Pick<
-          Database['public']['Tables']['workspaces']['Row'],
-          'name'
-        >;
-      };
-    })[] | null; 
+  const {
+    data: certificates,
+    error,
+    count,
+  } = (await queryBuilder) as {
+    data:
+      | (Database['public']['Tables']['course_certificates']['Row'] & {
+          workspace_courses: Pick<
+            Database['public']['Tables']['workspace_courses']['Row'],
+            'name' | 'ws_id'
+          > & {
+            workspaces: Pick<
+              Database['public']['Tables']['workspaces']['Row'],
+              'name'
+            >;
+          };
+        })[]
+      | null;
     error: any;
     count: number | null;
   };
@@ -147,19 +153,17 @@ export async function getAllCertificatesForUser(
     return { certificates: [], totalCount: 0 };
   }
 
-  const certificateList = certificates.map(certificate => ({
+  const certificateList = certificates.map((certificate) => ({
     id: certificate.id,
     courseName: certificate.workspace_courses.name,
     completionDate: certificate.completed_date,
-    workspaceName: certificate.workspace_courses.workspaces.name || 'Unknown Workspace',
+    workspaceName:
+      certificate.workspace_courses.workspaces.name || 'Unknown Workspace',
     wsId: certificate.workspace_courses.ws_id,
   }));
 
   return {
     certificates: certificateList,
-    totalCount: count || 0
+    totalCount: count || 0,
   };
 }
-
-
-

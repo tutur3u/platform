@@ -22,18 +22,24 @@ export function CertificatePagination({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const handlePageChange = useCallback((page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('page', page.toString());
-    router.push(`/${wsId}/certificate?${params.toString()}`);
-  }, [router, searchParams, wsId]);
+  const handlePageChange = useCallback(
+    (page: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('page', page.toString());
+      router.push(`/${wsId}/certificate?${params.toString()}`);
+    },
+    [router, searchParams, wsId]
+  );
 
-  const handlePageSizeChange = useCallback((newPageSize: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('pageSize', newPageSize.toString());
-    params.set('page', '1'); // Reset to first page when changing page size
-    router.push(`/${wsId}/certificate?${params.toString()}`);
-  }, [router, searchParams, wsId]);
+  const handlePageSizeChange = useCallback(
+    (newPageSize: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('pageSize', newPageSize.toString());
+      params.set('page', '1'); // Reset to first page when changing page size
+      router.push(`/${wsId}/certificate?${params.toString()}`);
+    },
+    [router, searchParams, wsId]
+  );
 
   return (
     <DataPagination
