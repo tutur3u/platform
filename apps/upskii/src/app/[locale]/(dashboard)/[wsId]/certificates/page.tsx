@@ -129,7 +129,7 @@ export default async function CertificatesPage({
 
                   <CardFooter className="gap-2 pt-3">
                     <Button asChild variant="outline" className="flex-1">
-                      <Link href={`/${wsId}/certificate/${certificate.id}`}>
+                      <Link href={`/${wsId}/certificates/${certificate.id}`}>
                         <Eye className="mr-1 h-3 w-3" />
                         View
                       </Link>

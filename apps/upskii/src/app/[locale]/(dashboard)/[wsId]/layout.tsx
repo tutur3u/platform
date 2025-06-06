@@ -169,7 +169,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     },
     {
       title: t('sidebar.certificates'),
-      href: `/${wsId}/certificate`,
+      href: `/${wsId}/certificates`,
       icon: <Award className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'Q',
