@@ -116,6 +116,7 @@
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
+    "./hooks/use-calendar-sync": "./src/hooks/use-calendar-sync.tsx",
     "./resolvers": "./src/resolvers.ts",
     "./gsap": "./src/gsap.ts",
     "./tiptap": {
