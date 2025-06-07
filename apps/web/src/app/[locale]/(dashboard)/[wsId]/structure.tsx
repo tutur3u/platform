@@ -61,12 +61,79 @@ export function Structure({
     history: (NavLink | null)[][];
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
-  }>({
-    currentLinks: links,
-    history: [],
-    titleHistory: [],
-    direction: 'forward',
+  }>(() => {
+    for (const link of links) {
+      if (link?.children) {
+        const isActive = link.children.some(
+          (child) =>
+            child?.href &&
+            (pathname.startsWith(child.href) ||
+              child.aliases?.some((alias) => pathname.startsWith(alias)))
+        );
+        if (isActive) {
+          return {
+            currentLinks: link.children,
+            history: [links],
+            titleHistory: [link.title],
+            direction: 'forward' as const,
+          };
+        }
+      }
+    }
+    return {
+      currentLinks: links,
+      history: [],
+      titleHistory: [],
+      direction: 'forward' as const,
+    };
   });
+
+  useEffect(() => {
+    setNavState((prevState) => {
+      // Find if any submenu should be active for the current path.
+      for (const link of links) {
+        if (link?.children) {
+          const isActive = link.children.some(
+            (child) =>
+              child?.href &&
+              (pathname.startsWith(child.href) ||
+                child.aliases?.some((alias) => pathname.startsWith(alias)))
+          );
+
+          if (isActive) {
+            // If the active submenu is not the one currently displayed, switch to it.
+            if (
+              prevState.titleHistory[prevState.titleHistory.length - 1] !==
+              link.title
+            ) {
+              return {
+                currentLinks: link.children,
+                history: [links],
+                titleHistory: [link.title],
+                direction: 'forward',
+              };
+            }
+            // It's the correct submenu, do nothing to the state.
+            return prevState;
+          }
+        }
+      }
+
+      // If we are in a submenu, but no submenu link is active for the current path,
+      // it means we navigated to a top-level page. Go back to the main menu.
+      if (prevState.history.length > 0) {
+        return {
+          currentLinks: links,
+          history: [],
+          titleHistory: [],
+          direction: 'backward',
+        };
+      }
+
+      // We are at the top level and no submenu is active, do nothing.
+      return prevState;
+    });
+  }, [pathname, links]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
