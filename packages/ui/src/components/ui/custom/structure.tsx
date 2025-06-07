@@ -66,7 +66,7 @@ export function Structure({
       <TooltipProvider delayDuration={0}>
         {!isCollapsed && (
           <div
-            className="fixed inset-0 z-40 bg-black/20 md:hidden"
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-lg md:hidden"
             onClick={() => setIsCollapsed(true)}
           />
         )}

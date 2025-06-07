@@ -31,7 +31,7 @@ export default async function CalendarPage({ params }: PageProps) {
   if (!workspace) return null;
 
   return (
-    <div className="flex h-[calc(100vh-2rem)]">
+    <div className="flex h-[calc(100vh-4.75rem)] md:h-[calc(100vh-2rem)]">
       <div className="flex-1">
         <CalendarClientPage
           experimentalGoogleToken={googleToken || undefined}

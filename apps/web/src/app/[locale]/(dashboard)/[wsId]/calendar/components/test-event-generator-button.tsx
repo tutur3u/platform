@@ -68,6 +68,7 @@ export default function TestEventGeneratorButton({
       disabled={isLoading}
       variant="outline"
       size="sm"
+      className="w-full md:w-fit"
     >
       {isLoading ? (
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
