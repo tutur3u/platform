@@ -1,14 +1,15 @@
 'use client';
 
+import { DownloadButtonPDF } from './[certificateId]/download-button-pdf';
 import { CertificateProps } from './[certificateId]/page';
 import { Button } from '@tuturuuu/ui/button';
-import { FileText, ImageIcon } from '@tuturuuu/ui/icons';
+import { ImageIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import html2canvas from 'html2canvas';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 
-export default function Certificate({ certDetails }: CertificateProps) {
+export default function Certificate({ certDetails, wsId }: CertificateProps) {
   const t = useTranslations('certificates');
   const {
     courseName,
@@ -18,68 +19,36 @@ export default function Certificate({ certDetails }: CertificateProps) {
     courseLecturer,
   } = certDetails;
 
-  const handlePDF = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `/api/v1/certificates/${certificateId}/generate`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            certID: certificateId,
-            title: String(t('title')),
-            certifyText: String(t('certify_text')),
-            completionText: String(t('completion_text')),
-            offeredBy: String(t('offered_by')),
-            completionDateLabel: String(t('completion_date')),
-            certificateIdLabel: String(t('certificate_id')),
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(`Server error: ${res.status} ${res.statusText}`);
-      }
-
-      const blob = new Blob([await res.arrayBuffer()], {
-        type: 'application/pdf',
-      });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${certificateId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url); // Clean up the URL object
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-    }
-  }, [certificateId]);
-
-  const handlePNG = useCallback(() => {
+  const handlePNG = useCallback(async () => {
     const element = document.getElementById('certificate-area');
-    if (element) {
-      html2canvas(element, {
+    if (!element) {
+      throw new Error('Certificate element not found');
+    }
+
+    try {
+      const canvas = await html2canvas(element, {
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
         scale: 2,
         logging: false,
-        onclone: (clonedDoc) => {
-          Array.from(clonedDoc.getElementsByTagName('link')).forEach((link) => {
-            link.removeAttribute('integrity');
-            link.removeAttribute('crossorigin');
-          });
+        onclone: (clonedDoc: Document) => {
+          Array.from(clonedDoc.getElementsByTagName('link')).forEach(
+            (link: HTMLLinkElement) => {
+              link.removeAttribute('integrity');
+              link.removeAttribute('crossorigin');
+            }
+          );
         },
-      }).then((canvas) => {
-        const link = document.createElement('a');
-        link.download = `certificate-${certificateId}-${studentName}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
-        link.click();
       });
+
+      const link = document.createElement('a');
+      link.download = `certificate-${certificateId}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+    } catch (error) {
+      console.error('Error generating PNG:', error);
+      throw error;
     }
   }, [certificateId]);
 
@@ -200,10 +169,11 @@ export default function Certificate({ certDetails }: CertificateProps) {
             <ImageIcon className="mr-1 h-4 w-4" />
             {t('download_button')} (PNG)
           </Button>
-          <Button onClick={handlePDF}>
-            <FileText className="mr-2 h-4 w-4" />
-            {t('download_button')} (PDF)
-          </Button>
+          <DownloadButtonPDF
+            certificateId={certificateId}
+            wsId={wsId}
+            variant="default"
+          />
         </div>
       </div>
     </div>

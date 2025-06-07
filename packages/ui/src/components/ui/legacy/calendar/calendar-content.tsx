@@ -27,6 +27,7 @@ export const CalendarContent = ({
   experimentalGoogleToken,
   onSaveSettings,
   externalState,
+  extras,
 }: {
   t: any;
   locale: string;
@@ -45,6 +46,7 @@ export const CalendarContent = ({
     >;
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
+  extras?: React.ReactNode;
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendar();
@@ -401,6 +403,7 @@ export const CalendarContent = ({
             else if (newView === 'week') enableWeekView();
             else if (newView === 'month') enableMonthView();
           }}
+          extras={extras}
         />
       )}
 

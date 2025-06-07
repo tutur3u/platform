@@ -109,7 +109,7 @@ export default function TasksSidebarContent({
   hasAiChatAccess = true,
 }: TasksSidebarContentProps) {
   const router = useRouter();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [activeTab, setActiveTab] = useState('tasks');
   const [openAccordions, setOpenAccordions] = useState<string[]>([]);
 

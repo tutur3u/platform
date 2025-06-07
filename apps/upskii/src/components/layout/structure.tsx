@@ -24,19 +24,16 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
-import { debounce } from 'lodash';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, Suspense, useCallback, useEffect, useState } from 'react';
+import { ReactNode, Suspense, useState } from 'react';
 
 interface MailProps {
   wsId: string;
   workspace: Workspace | null;
-  defaultLayout?: number[];
-  defaultCollapsed: boolean;
-  navCollapsedSize: number;
+  defaultCollapsed?: boolean;
   user: WorkspaceUser | null;
   links: (NavLink | null)[];
   actions: ReactNode;
@@ -47,9 +44,7 @@ interface MailProps {
 export function Structure({
   wsId,
   workspace,
-  defaultLayout = [20, 80],
   defaultCollapsed = false,
-  navCollapsedSize,
   user,
   links,
   actions,
@@ -59,42 +54,6 @@ export function Structure({
   const t = useTranslations();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-
-  // Add debounced function for saving sidebar sizes
-  const debouncedSaveSizes = useCallback(
-    debounce(async (sizes: { sidebar: number; main: number }) => {
-      await fetch('/api/v1/infrastructure/sidebar/sizes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(sizes),
-      });
-    }, 500),
-    []
-  );
-
-  // Add debounced function for saving sidebar collapsed state
-  const debouncedSaveCollapsed = useCallback(
-    debounce(async (collapsed: boolean) => {
-      await fetch('/api/v1/infrastructure/sidebar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ collapsed }),
-      });
-    }, 500),
-    []
-  );
-
-  // Cleanup debounced functions on unmount
-  useEffect(() => {
-    return () => {
-      debouncedSaveSizes.cancel();
-      debouncedSaveCollapsed.cancel();
-    };
-  }, [debouncedSaveSizes, debouncedSaveCollapsed]);
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
@@ -249,12 +208,8 @@ export function Structure({
 
   return (
     <BaseStructure
-      defaultLayout={defaultLayout}
-      navCollapsedSize={navCollapsedSize}
       isCollapsed={isCollapsed}
       setIsCollapsed={setIsCollapsed}
-      debouncedSaveSizes={debouncedSaveSizes}
-      debouncedSaveCollapsed={debouncedSaveCollapsed}
       header={header}
       mobileHeader={mobileHeader}
       sidebarHeader={sidebarHeader}

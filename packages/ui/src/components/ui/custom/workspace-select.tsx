@@ -180,7 +180,7 @@ export function WorkspaceSelect({
   return (
     <>
       {hideLeading || (
-        <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
+        <div className="mx-1 h-4 w-px flex-none rotate-30 bg-foreground/20" />
       )}
       <Dialog
         open={showNewWorkspaceDialog}
@@ -195,6 +195,7 @@ export function WorkspaceSelect({
             disabled={!workspaces || workspaces.length === 0}
           >
             <Button
+              size="xs"
               variant="outline"
               role="combobox"
               aria-expanded={open}

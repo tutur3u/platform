@@ -18,6 +18,7 @@ export const SmartCalendar = ({
   experimentalGoogleToken,
   onSaveSettings,
   externalState,
+  extras,
 }: {
   t: any;
   locale: string;
@@ -38,6 +39,7 @@ export const SmartCalendar = ({
     >;
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
+  extras?: React.ReactNode;
 }) => {
   return (
     <CalendarProvider
@@ -57,6 +59,7 @@ export const SmartCalendar = ({
         experimentalGoogleToken={experimentalGoogleToken}
         onSaveSettings={onSaveSettings}
         externalState={externalState}
+        extras={extras}
       />
     </CalendarProvider>
   );

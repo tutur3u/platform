@@ -8,11 +8,13 @@ import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCateg
 import { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Dialog, DialogContent } from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -352,6 +354,33 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
           </Popover>
 
           <div className="h-2" />
+
+          <FormField
+            control={form.control}
+            name="report_opt_in"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center space-x-2">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel>
+                    {t('transaction-data-table.report_opt_in')}
+                  </FormLabel>
+                </div>
+                <FormDescription>
+                  {t('transaction-data-table.report_opt_in_description')}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="h-0" />
+          <Separator />
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading

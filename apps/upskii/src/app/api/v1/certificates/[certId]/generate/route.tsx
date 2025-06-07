@@ -3,6 +3,7 @@ import { CertificateData } from './types';
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { renderToStream } from '@react-pdf/renderer';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getTranslations } from 'next-intl/server';
 import { NextRequest } from 'next/server';
 
 export async function POST(
@@ -10,19 +11,16 @@ export async function POST(
   { params }: { params: Promise<{ certId: string }> }
 ) {
   try {
-    const {
-      title,
-      certifyText,
-      completionText,
-      offeredBy,
-      completionDateLabel,
-      certificateIdLabel,
-    } = await req.json();
+    const { locale = 'en', wsId } = await req.json();
     const { certId } = await params;
 
-    if (!certId) {
-      return new Response('Certificate ID is required', { status: 400 });
+    if (!certId || !wsId) {
+      return new Response('Certificate ID and Workspace ID are required', {
+        status: 400,
+      });
     }
+
+    const t = await getTranslations({ locale, namespace: 'certificates' });
 
     // Get the authenticated user
     const supabase = await createClient();
@@ -34,16 +32,16 @@ export async function POST(
     }
 
     // Get certificate data directly using our helper
-    const certData = await getCertificateDetails(certId, user.id);
+    const certData = await getCertificateDetails(certId, user.id, wsId);
 
     const data: CertificateData = {
       certData,
-      title,
-      certifyText,
-      completionText,
-      offeredBy,
-      completionDateLabel,
-      certificateIdLabel,
+      title: t('title'),
+      certifyText: t('certify_text'),
+      completionText: t('completion_text'),
+      offeredBy: t('offered_by'),
+      completionDateLabel: t('completion_date'),
+      certificateIdLabel: t('certificate_id'),
     };
 
     const stream = await renderToStream(<CertificateDocument data={data} />);

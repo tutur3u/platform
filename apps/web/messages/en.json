@@ -42,6 +42,10 @@
     "system": "System",
     "language": "Language",
     "settings": "Settings",
+    "sidebar": "Sidebar",
+    "expanded": "Expanded",
+    "collapsed": "Collapsed",
+    "expand_on_hover": "Expand on Hover",
     "invite_users": "Invite Users",
     "logout": "Logout",
     "delete": "Delete",
@@ -277,7 +281,10 @@
     "error_adding_domain": "Failed to add domain",
     "rewise-description": "Access a wide-range of enterprise AI-powered tools.",
     "nova-description": "Prompt engineering playground for everyone.",
-    "waitlist": "Waitlist"
+    "waitlist": "Waitlist",
+    "sign_in_with_google": "Sign in with Google",
+    "sign_in_with_microsoft": "Sign in with Microsoft",
+    "sign_in_with_github": "Sign in with Github"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -556,7 +563,14 @@
     "metrics": "Metrics",
     "crawlers": "Crawlers",
     "queues": "Queues",
-    "time_tracker": "Time tracker"
+    "time_tracker": "Time tracker",
+    "productivity": "Productivity",
+    "whiteboards": "Whiteboards",
+    "ai_tools": "AI Tools",
+    "spark": "Spark",
+    "media": "Media",
+    "ai_lab": "AI Lab",
+    "management": "Management"
   },
   "team-tabs": {
     "overview": "Overview",
@@ -822,6 +836,7 @@
     "amount": "Amount",
     "description": "Description",
     "report_opt_in": "Show in reports",
+    "report_opt_in_description": "If unchecked, this transaction will not be included in any financial reports.",
     "taken_at": "Taken at",
     "created_at": "Created at",
     "income": "Income",
@@ -1698,7 +1713,9 @@
     "remove_avatar": "Remove avatar",
     "save_avatar": "Save avatar",
     "reset-password": "Reset password",
-    "view-full-settings": "View full settings"
+    "view-full-settings": "View full settings",
+    "default-workspace": "Default workspace",
+    "default-workspace-description": "Choose which workspace to redirect to when you visit the homepage. If no default is set, you'll be redirected to your first available workspace."
   },
   "settings-appearance": {
     "appearance": "Appearance",

@@ -10,18 +10,23 @@ export interface NavLink {
   title: string;
   trailing?: string;
   icon?: ReactNode;
-  href: string;
+  href?: string;
   newTab?: boolean;
   matchExact?: boolean;
-  aliases?: string[];
+  label?: string;
+  external?: boolean;
   disabled?: boolean;
-  disableOnProduction?: boolean;
+  disabledRoles?: string[];
+  isBack?: boolean;
+  onClick?: () => void;
+  children?: NavLink[];
+  aliases?: string[];
   requireRootMember?: boolean;
   requireRootWorkspace?: boolean;
+  disableOnProduction?: boolean;
   allowedRoles?: string[];
-  disabledRoles?: string[];
+  experimental?: 'alpha' | 'beta' | 'new';
   shortcut?: string;
-  experimental?: 'alpha' | 'beta';
 }
 
 interface Props {
@@ -105,9 +110,11 @@ export function Navigation({
         const isActive =
           links
             .map((href) =>
-              matchExact
-                ? pathname === href
-                : (pathname?.startsWith(href) ?? false)
+              href
+                ? matchExact
+                  ? pathname === href
+                  : (pathname?.startsWith(href) ?? false)
+                : false
             )
             .filter(Boolean).length > 0;
 
@@ -142,7 +149,7 @@ export function Navigation({
               setUrlToLoad(link.href);
               if (isActive) scrollActiveLinksIntoView();
             }}
-            href={link.href}
+            href={link.href ?? '#'}
           >
             {link.title}
           </Link>
