@@ -10,6 +10,7 @@ import MeetTogetherMenuItem from './meet-together-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
+import { useSidebar } from '@/context/sidebar-context';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -26,7 +27,17 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
+import {
+  Check,
+  Globe,
+  Palette,
+  PanelLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings,
+  SquareMousePointer,
+  User,
+} from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
@@ -44,6 +55,7 @@ export default function UserNavClient({
 }) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
+  const { behavior, handleBehaviorChange } = useSidebar();
 
   return (
     <>
@@ -113,6 +125,46 @@ export default function UserNavClient({
           <MeetTogetherMenuItem />
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <PanelLeft className="h-4 w-4" />
+                <span className="text-foreground">{t('common.sidebar')}</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent sideOffset={4}>
+                  <DropdownMenuItem
+                    onClick={() => handleBehaviorChange('expanded')}
+                    disabled={behavior === 'expanded'}
+                  >
+                    <PanelLeftOpen className="h-4 w-4" />
+                    <span>{t('common.expanded')}</span>
+                    {behavior === 'expanded' && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleBehaviorChange('collapsed')}
+                    disabled={behavior === 'collapsed'}
+                  >
+                    <PanelLeftClose className="h-4 w-4" />
+                    <span>{t('common.collapsed')}</span>
+                    {behavior === 'collapsed' && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleBehaviorChange('hover')}
+                    disabled={behavior === 'hover'}
+                  >
+                    <SquareMousePointer className="h-4 w-4" />
+                    <span>{t('common.expand_on_hover')}</span>
+                    {behavior === 'hover' && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <Palette className="h-4 w-4 text-muted-foreground" />
