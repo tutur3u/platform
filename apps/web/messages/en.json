@@ -836,6 +836,7 @@
     "amount": "Amount",
     "description": "Description",
     "report_opt_in": "Show in reports",
+    "report_opt_in_description": "If unchecked, this transaction will not be included in any financial reports.",
     "taken_at": "Taken at",
     "created_at": "Created at",
     "income": "Income",

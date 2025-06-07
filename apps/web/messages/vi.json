@@ -847,6 +847,7 @@
     "amount": "Số tiền",
     "description": "Mô tả",
     "report_opt_in": "Hiển thị trong báo cáo",
+    "report_opt_in_description": "Nếu không được chọn, giao dịch này sẽ không được bao gồm trong bất kỳ báo cáo tài chính nào.",
     "taken_at": "Thực hiện lúc",
     "created_at": "Tạo lúc",
     "income": "Thu nhập",
