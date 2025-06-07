@@ -1,10 +1,7 @@
 'use client';
 
-import type {
-  TimeTrackingCategory,
-  TimeTrackingSession,
-  WorkspaceTask,
-} from '@tuturuuu/types/db';
+import type { SessionWithRelations } from '../time-tracker-content';
+import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,11 +65,6 @@ import { type FC, useMemo, useState } from 'react';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isoWeek);
-
-interface SessionWithRelations extends TimeTrackingSession {
-  category?: TimeTrackingCategory;
-  task?: WorkspaceTask;
-}
 
 interface SessionHistoryProps {
   wsId: string;

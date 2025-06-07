@@ -1,6 +1,5 @@
-import { BoardSummary } from './_components/board-summary';
-import { BoardViews } from './_components/board-views';
-import { getTaskBoard } from '@/lib/task-helper';
+import { BoardClient } from './_components/board-client';
+import { getTaskBoard, getTaskLists, getTasks } from '@/lib/task-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
 
@@ -15,18 +14,16 @@ export default async function TaskBoardPage({ params }: Props) {
   const { wsId, boardId } = await params;
   const supabase = await createClient();
 
-  try {
-    const board = await getTaskBoard(supabase, boardId);
-    if (!board || board.ws_id !== wsId) notFound();
+  const board = await getTaskBoard(supabase, boardId);
+  const tasks = await getTasks(supabase, boardId);
+  const lists = await getTaskLists(supabase, boardId);
+  if (!board || board.ws_id !== wsId) notFound();
 
-    return (
-      <div className="flex h-[calc(100vh-4rem)] flex-col">
-        <BoardViews boardId={boardId} boardName={board.name} />
-        <BoardSummary boardId={boardId} />
-      </div>
-    );
-    // eslint-disable-next-line no-unused-vars
-  } catch (error) {
-    notFound();
-  }
+  return (
+    <BoardClient
+      initialBoard={board}
+      initialTasks={tasks}
+      initialLists={lists}
+    />
+  );
 }

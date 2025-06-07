@@ -48,28 +48,28 @@ interface TimerStats {
 }
 
 // Unified SessionWithRelations type that matches both TimerControls and SessionHistory expectations
-interface SessionWithRelations extends TimeTrackingSession {
-  category?: TimeTrackingCategory;
-  task?: WorkspaceTask;
+export interface SessionWithRelations extends TimeTrackingSession {
+  category: TimeTrackingCategory | null;
+  task: WorkspaceTask | null;
 }
 
 // Unified TimeTrackingGoal type that matches GoalManager expectations
-interface TimeTrackingGoal {
+export interface TimeTrackingGoal {
   id: string;
   ws_id: string;
   user_id: string;
-  category_id?: string;
+  category_id: string | null;
   daily_goal_minutes: number;
-  weekly_goal_minutes?: number;
-  is_active: boolean;
-  category?: TimeTrackingCategory;
+  weekly_goal_minutes: number | null;
+  is_active: boolean | null;
+  category: TimeTrackingCategory | null;
 }
 
 export interface TimeTrackerData {
   categories: TimeTrackingCategory[];
   runningSession: SessionWithRelations | null;
-  recentSessions: SessionWithRelations[];
-  goals: TimeTrackingGoal[];
+  recentSessions: SessionWithRelations[] | null;
+  goals: TimeTrackingGoal[] | null;
   tasks: Partial<WorkspaceTask>[];
   stats: TimerStats;
 }
