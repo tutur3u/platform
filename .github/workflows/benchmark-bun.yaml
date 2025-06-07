@@ -55,6 +55,15 @@ jobs:
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Distribute .env file
+        run: |
+          for d in apps/*; do
+            if [ -d "$d" ]; then
+              cp .vercel/.env.preview.local "$d/.env.local"
+            fi
+          done
+        shell: bash
+
       - name: Get Bun version
         id: bun-version
         run: echo "version=$(bun --version)" >> $GITHUB_OUTPUT
