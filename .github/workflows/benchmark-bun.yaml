@@ -15,7 +15,7 @@ on:
         required: false
         default: '22,24'
   push:
-    branches: ['main']
+    branches: ['main', 'chore/add-bun-benchmarks']
     paths:
       - 'package.json'
       - 'bun.lock'
