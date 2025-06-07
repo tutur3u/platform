@@ -45,11 +45,12 @@ export function UserSelector({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async ({ wsId }: { wsId: string }) => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await apiCall(`/api/v1/workspaces/${wsId}/members`);
+      console.log('response', response);
       setUsers(Array.isArray(response) ? response : response.data || []);
     } catch (error) {
       console.error('Error fetching workspace users:', error);
@@ -60,7 +61,7 @@ export function UserSelector({
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers({ wsId });
   }, [wsId]);
 
   const selectedUser = selectedUserId
@@ -147,7 +148,7 @@ export function UserSelector({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={fetchUsers}
+                  onClick={() => fetchUsers({ wsId })}
                   className="mt-2"
                 >
                   Try Again
