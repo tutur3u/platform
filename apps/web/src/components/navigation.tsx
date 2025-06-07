@@ -13,15 +13,20 @@ export interface NavLink {
   href: string;
   newTab?: boolean;
   matchExact?: boolean;
-  aliases?: string[];
+  label?: string;
+  external?: boolean;
   disabled?: boolean;
-  disableOnProduction?: boolean;
+  disabledRoles?: string[];
+  isBack?: boolean;
+  onClick?: () => void;
+  children?: NavLink[];
+  aliases?: string[];
   requireRootMember?: boolean;
   requireRootWorkspace?: boolean;
+  disableOnProduction?: boolean;
   allowedRoles?: string[];
-  disabledRoles?: string[];
+  experimental?: 'alpha' | 'beta' | 'new';
   shortcut?: string;
-  experimental?: 'alpha' | 'beta';
 }
 
 interface Props {
