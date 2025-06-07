@@ -43,6 +43,7 @@
     "ui:diff": "bun --filter ui ui:diff"
   },
   "dependencies": {
+    "cookies-next": "^6.0.0",
     "react-scan": "^0.3.4"
   },
   "devDependencies": {

@@ -278,7 +278,11 @@
     "error_adding_domain": "Không thể thêm miền",
     "rewise-description": "Truy cập một loạt các công cụ hỗ trợ AI dành cho doanh nghiệp.",
     "nova-description": "Sân chơi prompt engineering cho mọi người.",
-    "waitlist": "Danh sách chờ"
+    "waitlist": "Danh sách chờ",
+    "expand_on_hover": "Mở rộng khi di chuột",
+    "collapsed": "Thu nhỏ",
+    "expanded": "Mở rộng",
+    "sidebar": "Thanh bên"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

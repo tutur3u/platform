@@ -62,9 +62,9 @@ export function ThemeDropdownItems() {
         disabled={primaryTheme === 'light'}
       >
         {primaryTheme === 'light' ? (
-          <Check className="mr-2 h-4 w-4" />
+          <Check className="h-4 w-4" />
         ) : (
-          <Sun className="mr-2 h-4 w-4" />
+          <Sun className="h-4 w-4" />
         )}
 
         {t('light')}
@@ -76,9 +76,9 @@ export function ThemeDropdownItems() {
         disabled={primaryTheme === 'dark'}
       >
         {primaryTheme === 'dark' ? (
-          <Check className="mr-2 h-4 w-4" />
+          <Check className="h-4 w-4" />
         ) : (
-          <Moon className="mr-2 h-4 w-4" />
+          <Moon className="h-4 w-4" />
         )}
 
         {t('dark')}
@@ -92,9 +92,9 @@ export function ThemeDropdownItems() {
         disabled={!secondaryTheme}
       >
         {!secondaryTheme ? (
-          <Check className="mr-2 h-4 w-4" />
+          <Check className="h-4 w-4" />
         ) : (
-          <Sparkles className="mr-2 h-4 w-4" />
+          <Sparkles className="h-4 w-4" />
         )}
         {t('standard')}
       </DropdownMenuItem>
@@ -105,9 +105,9 @@ export function ThemeDropdownItems() {
         disabled={secondaryTheme === 'pink'}
       >
         {secondaryTheme === 'pink' ? (
-          <Check className="mr-2 h-4 w-4" />
+          <Check className="h-4 w-4" />
         ) : (
-          <Heart className="mr-2 h-4 w-4" />
+          <Heart className="h-4 w-4" />
         )}
         {t('pink')}
       </DropdownMenuItem>
@@ -118,9 +118,9 @@ export function ThemeDropdownItems() {
         disabled={secondaryTheme === 'purple'}
       >
         {secondaryTheme === 'purple' ? (
-          <Check className="mr-2 h-4 w-4" />
+          <Check className="h-4 w-4" />
         ) : (
-          <Ghost className="mr-2 h-4 w-4" />
+          <Ghost className="h-4 w-4" />
         )}
         {t('purple')}
       </DropdownMenuItem>
@@ -131,9 +131,9 @@ export function ThemeDropdownItems() {
         disabled={secondaryTheme === 'yellow'}
       >
         {secondaryTheme === 'yellow' ? (
-          <Check className="mr-2 h-4 w-4" />
+          <Check className="h-4 w-4" />
         ) : (
-          <Crown className="mr-2 h-4 w-4" />
+          <Crown className="h-4 w-4" />
         )}
         {t('yellow')}
       </DropdownMenuItem>
@@ -144,9 +144,9 @@ export function ThemeDropdownItems() {
         disabled={secondaryTheme === 'orange'}
       >
         {secondaryTheme === 'orange' ? (
-          <Check className="mr-2 h-4 w-4" />
+          <Check className="h-4 w-4" />
         ) : (
-          <Carrot className="mr-2 h-4 w-4" />
+          <Carrot className="h-4 w-4" />
         )}
         {t('orange')}
       </DropdownMenuItem>
@@ -157,9 +157,9 @@ export function ThemeDropdownItems() {
         disabled={secondaryTheme === 'green'}
       >
         {secondaryTheme === 'green' ? (
-          <Check className="mr-2 h-4 w-4" />
+          <Check className="h-4 w-4" />
         ) : (
-          <Trees className="mr-2 h-4 w-4" />
+          <Trees className="h-4 w-4" />
         )}
         {t('green')}
       </DropdownMenuItem>
@@ -170,9 +170,9 @@ export function ThemeDropdownItems() {
         disabled={secondaryTheme === 'blue'}
       >
         {secondaryTheme === 'blue' ? (
-          <Check className="mr-2 h-4 w-4" />
+          <Check className="h-4 w-4" />
         ) : (
-          <Waves className="mr-2 h-4 w-4" />
+          <Waves className="h-4 w-4" />
         )}
         {t('blue')}
       </DropdownMenuItem> */}
@@ -185,9 +185,9 @@ export function ThemeDropdownItems() {
         disabled={isSystem}
       >
         {isSystem ? (
-          <Check className="mr-2 h-4 w-4" />
+          <Check className="h-4 w-4" />
         ) : (
-          <Monitor className="mr-2 h-4 w-4" />
+          <Monitor className="h-4 w-4" />
         )}
 
         {t('system')}
