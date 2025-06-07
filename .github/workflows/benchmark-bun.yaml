@@ -32,6 +32,16 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [22, 24]
 
+    env:
+      # Configure production Supabase client
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      # Configure infrastructure
+      PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
+      NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
