@@ -48,6 +48,7 @@ export default function CalendarClientPage({
           ? experimentalGoogleToken
           : null
       }
+      extras={extras}
     />
   );
 }
