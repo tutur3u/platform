@@ -563,7 +563,14 @@
     "metrics": "Metrics",
     "crawlers": "Crawlers",
     "queues": "Queues",
-    "time_tracker": "Time tracker"
+    "time_tracker": "Time tracker",
+    "productivity": "Productivity",
+    "whiteboards": "Whiteboards",
+    "ai_tools": "AI Tools",
+    "spark": "Spark",
+    "media": "Media",
+    "ai_lab": "AI Lab",
+    "management": "Management"
   },
   "team-tabs": {
     "overview": "Overview",

@@ -110,16 +110,31 @@ export function Structure({
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
-  const getFilteredLinks = (linksToFilter: (NavLink | null)[]) =>
-    linksToFilter.filter((link) => {
-      if (!link || link?.disabled) return null;
-      if (link?.disableOnProduction && PROD_MODE) return null;
-      if (link?.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
-        return null;
-      if (link?.requireRootWorkspace && !isRootWorkspace) return null;
-      if (link?.allowedRoles && link.allowedRoles.length > 0) return null;
-      return link;
-    });
+  const getFilteredLinks = (
+    linksToFilter: (NavLink | null)[] | undefined
+  ): NavLink[] =>
+    (linksToFilter || [])
+      .map((link) => {
+        if (!link) return null;
+
+        if (link.disabled) return null;
+        if (link.disableOnProduction && PROD_MODE) return null;
+        if (link.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
+          return null;
+        if (link.requireRootWorkspace && !isRootWorkspace) return null;
+        if (link.allowedRoles && link.allowedRoles.length > 0) return null;
+
+        if (link.children) {
+          const filteredChildren = getFilteredLinks(link.children);
+          if (filteredChildren.length === 0) {
+            return null;
+          }
+          return { ...link, children: filteredChildren };
+        }
+
+        return link;
+      })
+      .filter((link): link is NavLink => link !== null);
 
   const backButton: NavLink = {
     title: t('common.back'),
@@ -136,7 +151,6 @@ export function Structure({
       ? [backButton, ...filteredCurrentLinks]
       : filteredCurrentLinks
   )
-    .filter((link): link is NavLink => link !== null)
     .filter(
       (link) =>
         link.href &&

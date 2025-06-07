@@ -574,7 +574,14 @@
     "metrics": "Chỉ số",
     "crawlers": "Công cụ cào dữ liệu",
     "queues": "Hàng chờ",
-    "time_tracker": "Trình theo dõi thời gian"
+    "time_tracker": "Trình theo dõi thời gian",
+    "productivity": "Năng suất",
+    "whiteboards": "Bảng trắng",
+    "ai_tools": "Công cụ AI",
+    "spark": "Spark",
+    "media": "Phương tiện truyền thông",
+    "ai_lab": "Phòng thí nghiệm AI",
+    "management": "Quản lý tài nguyên"
   },
   "team-tabs": {
     "overview": "Tổng quan",

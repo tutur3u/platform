@@ -31,7 +31,7 @@ export function NavLink({
 
   const content = (
     <>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {icon}
         <span className={cn('truncate', isCollapsed && 'hidden')}>{title}</span>
       </div>
@@ -43,7 +43,7 @@ export function NavLink({
 
   const commonProps = {
     className: cn(
-      'flex items-center justify-between rounded-md p-2 text-sm font-semibold hover:bg-accent hover:text-accent-foreground',
+      'flex cursor-pointer items-center justify-between rounded-md p-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
       isCollapsed && 'justify-center',
       isActive && 'bg-accent text-accent-foreground',
       link.isBack && 'mb-2 cursor-pointer'

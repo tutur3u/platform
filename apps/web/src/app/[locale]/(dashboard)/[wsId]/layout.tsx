@@ -18,6 +18,7 @@ import {
   Archive,
   Banknote,
   Box,
+  BriefcaseBusiness,
   Calendar,
   ChartArea,
   CircleCheck,
@@ -76,7 +77,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     },
     null,
     {
-      title: 'AI Tools',
+      title: t('sidebar_tabs.ai_tools'),
       icon: <Sparkles className="h-5 w-5" />,
       children: [
         {
@@ -96,7 +97,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'beta',
         },
         {
-          title: 'Spark',
+          title: t('sidebar_tabs.spark'),
           href: `/${wsId}/ai/spark`,
           icon: <Sparkles className="h-5 w-5" />,
           disabled:
@@ -111,158 +112,10 @@ export default async function Layout({ children, params }: LayoutProps) {
           shortcut: 'T',
           experimental: 'alpha',
         },
-        {
-          title: 'TLDraw',
-          href: `/${wsId}/tldraw`,
-          icon: <PencilLine className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_TASKS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_projects'),
-          shortcut: 'T',
-          experimental: 'alpha',
-        },
       ],
     },
     {
-      title: 'Workspace',
-      icon: <CircleCheck className="h-5 w-5" />,
-      children: [
-        {
-          title: t('sidebar_tabs.calendar'),
-          href: `/${wsId}/calendar`,
-          icon: <Calendar className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
-          shortcut: 'C',
-          experimental: 'alpha',
-        },
-        {
-          title: t('sidebar_tabs.tasks'),
-          href: `/${wsId}/tasks/boards`,
-          icon: <CircleCheck className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_TASKS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_projects'),
-          shortcut: 'T',
-          experimental: 'beta',
-        },
-        {
-          title: t('sidebar_tabs.time_tracker'),
-          href: `/${wsId}/time-tracker`,
-          icon: <ClockFading className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_TASKS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_projects'),
-          shortcut: 'T',
-          experimental: 'beta',
-        },
-      ],
-    },
-    {
-      title: 'Content & Media',
-      icon: <FileText className="h-5 w-5" />,
-      children: [
-        {
-          title: t('sidebar_tabs.documents'),
-          href: `/${wsId}/documents`,
-          icon: <FileText className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_DOCS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_documents'),
-          shortcut: 'O',
-          experimental: 'beta',
-        },
-        {
-          title: t('sidebar_tabs.drive'),
-          href: `/${wsId}/drive`,
-          icon: <HardDrive className="h-5 w-5" />,
-          disabled:
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_DRIVE',
-              value: 'true',
-            })) || withoutPermission('manage_drive'),
-          shortcut: 'R',
-          experimental: 'beta',
-        },
-        {
-          title: t('sidebar_tabs.slides'),
-          href: `/${wsId}/slides`,
-          icon: <Presentation className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_SLIDES',
-              value: 'true',
-            })),
-          shortcut: 'S',
-          experimental: 'alpha',
-        },
-        {
-          title: t('sidebar_tabs.education'),
-          href: `/${wsId}/education`,
-          icon: <GraduationCap className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_EDUCATION',
-              value: 'true',
-            })) ||
-            withoutPermission('ai_lab'),
-          shortcut: 'A',
-          experimental: 'beta',
-        },
-        {
-          title: t('sidebar_tabs.mail'),
-          href:
-            wsId === ROOT_WORKSPACE_ID
-              ? `/${wsId}/mail`
-              : `/${wsId}/mail/posts`,
-          icon: <Mail className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_EMAIL_SENDING',
-              value: 'true',
-            })) ||
-            withoutPermission('send_user_group_post_emails'),
-          shortcut: 'M',
-          experimental: 'beta',
-        },
-      ],
-    },
-    {
-      title: 'AI Laboratory',
+      title: t('sidebar_tabs.ai_lab'),
       icon: <Box className="h-5 w-5" />,
       children: [
         {
@@ -346,7 +199,155 @@ export default async function Layout({ children, params }: LayoutProps) {
       ],
     },
     {
-      title: 'Management',
+      title: t('sidebar_tabs.productivity'),
+      icon: <BriefcaseBusiness className="h-5 w-5" />,
+      children: [
+        {
+          title: t('sidebar_tabs.calendar'),
+          href: `/${wsId}/calendar`,
+          icon: <Calendar className="h-5 w-5" />,
+          disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
+          shortcut: 'C',
+          experimental: 'alpha',
+        },
+        {
+          title: t('sidebar_tabs.tasks'),
+          href: `/${wsId}/tasks/boards`,
+          icon: <CircleCheck className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_TASKS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_projects'),
+          shortcut: 'T',
+          experimental: 'beta',
+        },
+        {
+          title: t('sidebar_tabs.mail'),
+          href:
+            wsId === ROOT_WORKSPACE_ID
+              ? `/${wsId}/mail`
+              : `/${wsId}/mail/posts`,
+          icon: <Mail className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_EMAIL_SENDING',
+              value: 'true',
+            })) ||
+            withoutPermission('send_user_group_post_emails'),
+          shortcut: 'M',
+          experimental: 'beta',
+        },
+        {
+          title: t('sidebar_tabs.whiteboards'),
+          href: `/${wsId}/whiteboards`,
+          icon: <PencilLine className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_TASKS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_projects'),
+          shortcut: 'T',
+          experimental: 'alpha',
+        },
+        {
+          title: t('sidebar_tabs.time_tracker'),
+          href: `/${wsId}/time-tracker`,
+          icon: <ClockFading className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_TASKS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_projects'),
+          shortcut: 'T',
+          experimental: 'beta',
+        },
+      ],
+    },
+    {
+      title: t('sidebar_tabs.media'),
+      icon: <FileText className="h-5 w-5" />,
+      children: [
+        {
+          title: t('sidebar_tabs.documents'),
+          href: `/${wsId}/documents`,
+          icon: <FileText className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_DOCS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_documents'),
+          shortcut: 'O',
+          experimental: 'beta',
+        },
+        {
+          title: t('sidebar_tabs.drive'),
+          href: `/${wsId}/drive`,
+          icon: <HardDrive className="h-5 w-5" />,
+          disabled:
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_DRIVE',
+              value: 'true',
+            })) || withoutPermission('manage_drive'),
+          shortcut: 'R',
+          experimental: 'beta',
+        },
+        {
+          title: t('sidebar_tabs.slides'),
+          href: `/${wsId}/slides`,
+          icon: <Presentation className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_SLIDES',
+              value: 'true',
+            })),
+          shortcut: 'S',
+          experimental: 'alpha',
+        },
+        {
+          title: t('sidebar_tabs.education'),
+          href: `/${wsId}/education`,
+          icon: <GraduationCap className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_EDUCATION',
+              value: 'true',
+            })) ||
+            withoutPermission('ai_lab'),
+          shortcut: 'A',
+          experimental: 'beta',
+        },
+      ],
+    },
+    {
+      title: t('sidebar_tabs.management'),
       icon: <Users className="h-5 w-5" />,
       children: [
         {
