@@ -4,7 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import Link from 'next/link';
 
 interface CourseCardViewProps {
-  courses: (WorkspaceCourse & { ws_id: string; href: string; modules: number })[];
+  courses: (WorkspaceCourse & {
+    ws_id: string;
+    href: string;
+    modules: number;
+  })[];
 }
 
 export function CourseCardView({ courses }: CourseCardViewProps) {
