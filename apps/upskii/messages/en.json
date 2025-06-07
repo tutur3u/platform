@@ -4134,5 +4134,7 @@
     "ai_teach_studio": "AI Teaching Studio",
     "users": "Users",
     "teams": "Teams"
-  }
+  },
+  "no-courses-found": "No courses found",
+  "no-description-provided": "No description provided"
 }

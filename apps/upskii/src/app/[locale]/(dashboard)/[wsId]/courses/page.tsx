@@ -34,7 +34,7 @@ export default async function WorkspaceCoursesPage({
   const t = await getTranslations();
   const { wsId } = await params;
   const searchParamsResolved = await searchParams;
-  const { page = '1', pageSize = '12' } = searchParamsResolved;
+  const { page = '1', pageSize = '10' } = searchParamsResolved;
 
   const { data, count } = await getData(wsId, searchParamsResolved);
   const currentView = searchParamsResolved.view || 'card';

@@ -4128,5 +4128,7 @@
     "empty_state_description": "Hoàn thành các khóa học để giành chứng chỉ và thể hiện thành tích của bạn.",
     "browse_courses": "Xem các khóa học",
     "certified": "Được chứng nhận"
-  }
+  },
+  "no-courses-found": "Chưa có khóa học nào",
+  "no-description-provided": "Không có mô tả"
 }
