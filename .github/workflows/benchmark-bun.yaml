@@ -1,4 +1,7 @@
 name: Benchmark Bun Performance
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
 
 on:
   schedule:
@@ -32,20 +35,6 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [22, 24]
 
-    env:
-      # Configure production Supabase client
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-
-      # Configure infrastructure
-      PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
-      NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
-
-      # Configure Google Vertex AI
-      GOOGLE_VERTEX_PROJECT: ${{ secrets.GOOGLE_VERTEX_PROJECT }}
-      GOOGLE_VERTEX_LOCATION: ${{ secrets.GOOGLE_VERTEX_LOCATION }}
-
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -59,6 +48,12 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+
+      - name: Install Vercel CLI
+        run: bun install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Get Bun version
         id: bun-version
