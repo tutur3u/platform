@@ -138,12 +138,14 @@ export function Structure({
           <main
             id="main-content"
             className={cn(
-              'relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pt-20 transition-all duration-300 ease-in-out md:pt-4',
-              isCollapsed ? 'md:pl-20' : 'md:pl-76'
+              'relative flex h-full min-h-screen flex-col overflow-y-auto transition-all duration-300 ease-in-out',
+              isCollapsed ? 'md:pl-16' : 'md:pl-72'
             )}
           >
             {header && <div className="mb-4 hidden md:block">{header}</div>}
-            {children}
+            <div className="relative h-full w-full p-4 pt-20 pl-8 md:pt-4">
+              {children}
+            </div>
           </main>
         </div>
       </TooltipProvider>
