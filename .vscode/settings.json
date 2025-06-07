@@ -49,5 +49,6 @@
   "IDX.aI.enableInlineCompletion": true,
   "IDX.aI.enableCodebaseIndexing": true,
   "i18n-ally.sourceLanguage": "en",
-  "typescript.experimental.useTsgo": false
+  "typescript.experimental.useTsgo": false,
+  "cSpell.words": ["tuturuuu"]
 }
