@@ -3522,7 +3522,10 @@
     "edit": "Chỉnh sửa khóa học",
     "name": "Tên khóa học",
     "edit_description": "Chỉnh sửa khóa học hiện có",
-    "delete_confirm_title": "Xác nhận xoá \"{name}\""
+    "delete_confirm_title": "Xác nhận xoá \"{name}\"",
+    "course_description": "Mô tả khóa học",
+    "card_view": "Dạng thẻ",
+    "table_view": "Dạng bảng"
   },
   "ws-crawlers": {
     "plural": "Công cụ cào dữ liệu",

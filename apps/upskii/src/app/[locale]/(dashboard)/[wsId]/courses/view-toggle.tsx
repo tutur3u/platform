@@ -7,7 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Grid3X3, Table } from 'lucide-react';
+import { Grid3X3, Table } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 
@@ -16,6 +17,7 @@ interface ViewToggleProps {
 }
 
 export function ViewToggle({ currentView }: ViewToggleProps) {
+  const t = useTranslations('ws-courses');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -35,12 +37,12 @@ export function ViewToggle({ currentView }: ViewToggleProps) {
           {currentView === 'card' ? (
             <>
               <Grid3X3 className="mr-2 h-4 w-4" />
-              Card View
+              {t('card_view')}
             </>
           ) : (
             <>
               <Table className="mr-2 h-4 w-4" />
-              Table View
+              {t('table_view')}
             </>
           )}
         </Button>
@@ -48,11 +50,11 @@ export function ViewToggle({ currentView }: ViewToggleProps) {
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => handleViewChange('card')}>
           <Grid3X3 className="mr-2 h-4 w-4" />
-          Card View
+          {t('card_view')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleViewChange('table')}>
           <Table className="mr-2 h-4 w-4" />
-          Table View
+          {t('table_view')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

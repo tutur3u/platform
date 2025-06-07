@@ -3522,7 +3522,9 @@
     "edit": "Edit course",
     "name": "Course name",
     "edit_description": "Edit an existing course",
-    "delete_confirm_title": "Deleting \"{name}\""
+    "delete_confirm_title": "Deleting \"{name}\"",
+    "card_view": "Card View",
+    "table_view": "Table View"
   },
   "ws-crawlers": {
     "plural": "Crawlers",
