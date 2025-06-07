@@ -1,0 +1,283 @@
+name: Benchmark Bun Performance
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Platforms to benchmark (comma-separated: ubuntu-latest, windows-latest, macos-latest)'
+        required: false
+        default: 'ubuntu-latest,windows-latest,macos-latest'
+      node_versions:
+        description: 'Node.js versions to test (comma-separated: 22, 24)'
+        required: false
+        default: '22,24'
+  push:
+    branches: ['main']
+    paths:
+      - 'package.json'
+      - 'bun.lock'
+      - '.github/workflows/benchmark-bun.yaml'
+
+jobs:
+  benchmark:
+    name: Benchmark Bun (${{ matrix.os }}, Node ${{ matrix.node-version }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [22, 24]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Get Bun version
+        id: bun-version
+        run: echo "version=$(bun --version)" >> $GITHUB_OUTPUT
+
+      - name: Get Node version
+        id: node-version
+        run: echo "version=$(node --version)" >> $GITHUB_OUTPUT
+
+      - name: Clean workspace
+        run: |
+          rm -rf node_modules || true
+          rm -rf .turbo || true
+        shell: bash
+
+      - name: Benchmark bun install (cold)
+        id: benchmark-install-cold
+        run: |
+          echo "Starting cold install benchmark..."
+          START_TIME=$(date +%s%3N)
+          bun install --no-cache
+          END_TIME=$(date +%s%3N)
+          DURATION=$((END_TIME - START_TIME))
+          echo "duration_ms=$DURATION" >> $GITHUB_OUTPUT
+          echo "Cold install took: ${DURATION}ms"
+        shell: bash
+
+      - name: Clean node_modules for warm install test
+        run: rm -rf node_modules
+        shell: bash
+
+      - name: Benchmark bun install (warm)
+        id: benchmark-install-warm
+        run: |
+          echo "Starting warm install benchmark..."
+          START_TIME=$(date +%s%3N)
+          bun install
+          END_TIME=$(date +%s%3N)
+          DURATION=$((END_TIME - START_TIME))
+          echo "duration_ms=$DURATION" >> $GITHUB_OUTPUT
+          echo "Warm install took: ${DURATION}ms"
+        shell: bash
+
+      - name: Benchmark bun build (first run)
+        id: benchmark-build-first
+        run: |
+          echo "Starting first build benchmark..."
+          START_TIME=$(date +%s%3N)
+          bun run build
+          END_TIME=$(date +%s%3N)
+          DURATION=$((END_TIME - START_TIME))
+          echo "duration_ms=$DURATION" >> $GITHUB_OUTPUT
+          echo "First build took: ${DURATION}ms"
+        shell: bash
+
+      - name: Clean turbo cache
+        run: rm -rf .turbo
+        shell: bash
+
+      - name: Benchmark bun build (clean)
+        id: benchmark-build-clean
+        run: |
+          echo "Starting clean build benchmark..."
+          START_TIME=$(date +%s%3N)
+          bun run build
+          END_TIME=$(date +%s%3N)
+          DURATION=$((END_TIME - START_TIME))
+          echo "duration_ms=$DURATION" >> $GITHUB_OUTPUT
+          echo "Clean build took: ${DURATION}ms"
+        shell: bash
+
+      - name: Benchmark bun build (cached)
+        id: benchmark-build-cached
+        run: |
+          echo "Starting cached build benchmark..."
+          START_TIME=$(date +%s%3N)
+          bun run build
+          END_TIME=$(date +%s%3N)
+          DURATION=$((END_TIME - START_TIME))
+          echo "duration_ms=$DURATION" >> $GITHUB_OUTPUT
+          echo "Cached build took: ${DURATION}ms"
+        shell: bash
+
+      - name: System Information
+        id: system-info
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            CPU_INFO=$(wmic cpu get name /value | grep "Name=" | cut -d'=' -f2 | tr -d '\r')
+            MEMORY_INFO=$(wmic computersystem get TotalPhysicalMemory /value | grep "TotalPhysicalMemory=" | cut -d'=' -f2 | tr -d '\r')
+            MEMORY_GB=$((MEMORY_INFO / 1024 / 1024 / 1024))
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            CPU_INFO=$(sysctl -n machdep.cpu.brand_string)
+            MEMORY_INFO=$(sysctl -n hw.memsize)
+            MEMORY_GB=$((MEMORY_INFO / 1024 / 1024 / 1024))
+          else
+            CPU_INFO=$(lscpu | grep "Model name" | cut -d':' -f2 | xargs)
+            MEMORY_INFO=$(free -b | grep "Mem:" | awk '{print $2}')
+            MEMORY_GB=$((MEMORY_INFO / 1024 / 1024 / 1024))
+          fi
+          echo "cpu=$CPU_INFO" >> $GITHUB_OUTPUT
+          echo "memory_gb=$MEMORY_GB" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Create benchmark results
+        run: |
+          mkdir -p benchmark-results
+          cat > benchmark-results/results.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "platform": "${{ matrix.os }}",
+            "runner_os": "${{ runner.os }}",
+            "node_version": "${{ steps.node-version.outputs.version }}",
+            "bun_version": "${{ steps.bun-version.outputs.version }}",
+            "system": {
+              "cpu": "${{ steps.system-info.outputs.cpu }}",
+              "memory_gb": ${{ steps.system-info.outputs.memory_gb }}
+            },
+            "benchmarks": {
+              "install_cold_ms": ${{ steps.benchmark-install-cold.outputs.duration_ms }},
+              "install_warm_ms": ${{ steps.benchmark-install-warm.outputs.duration_ms }},
+              "build_first_ms": ${{ steps.benchmark-build-first.outputs.duration_ms }},
+              "build_clean_ms": ${{ steps.benchmark-build-clean.outputs.duration_ms }},
+              "build_cached_ms": ${{ steps.benchmark-build-cached.outputs.duration_ms }}
+            }
+          }
+          EOF
+        shell: bash
+
+      - name: Display benchmark summary
+        run: |
+          echo "## 🚀 Benchmark Results Summary"
+          echo ""
+          echo "**Platform:** ${{ matrix.os }} (${{ runner.os }})"
+          echo "**Node.js:** ${{ steps.node-version.outputs.version }}"
+          echo "**Bun:** ${{ steps.bun-version.outputs.version }}"
+          echo "**CPU:** ${{ steps.system-info.outputs.cpu }}"
+          echo "**Memory:** ${{ steps.system-info.outputs.memory_gb }}GB"
+          echo ""
+          echo "### Install Performance"
+          echo "- Cold install: ${{ steps.benchmark-install-cold.outputs.duration_ms }}ms"
+          echo "- Warm install: ${{ steps.benchmark-install-warm.outputs.duration_ms }}ms"
+          echo ""
+          echo "### Build Performance"
+          echo "- First build: ${{ steps.benchmark-build-first.outputs.duration_ms }}ms"
+          echo "- Clean build: ${{ steps.benchmark-build-clean.outputs.duration_ms }}ms"
+          echo "- Cached build: ${{ steps.benchmark-build-cached.outputs.duration_ms }}ms"
+        shell: bash
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ matrix.os }}-node${{ matrix.node-version }}
+          path: benchmark-results/
+          retention-days: 30
+
+  aggregate-results:
+    name: Aggregate Benchmark Results
+    needs: benchmark
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download all benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results/
+
+      - name: Aggregate and display results
+        run: |
+          echo "# 📊 Complete Benchmark Results" > benchmark-summary.md
+          echo "" >> benchmark-summary.md
+          echo "Generated on: $(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)" >> benchmark-summary.md
+          echo "" >> benchmark-summary.md
+          
+          # Create summary table
+          echo "## Summary Table" >> benchmark-summary.md
+          echo "" >> benchmark-summary.md
+          echo "| Platform | Node | Bun | Cold Install (ms) | Warm Install (ms) | First Build (ms) | Clean Build (ms) | Cached Build (ms) |" >> benchmark-summary.md
+          echo "|----------|------|-----|-------------------|-------------------|------------------|------------------|-------------------|" >> benchmark-summary.md
+          
+          # Process each result file
+          for result_dir in all-results/*/; do
+            if [ -f "$result_dir/results.json" ]; then
+              platform=$(jq -r '.platform' "$result_dir/results.json")
+              node_ver=$(jq -r '.node_version' "$result_dir/results.json")
+              bun_ver=$(jq -r '.bun_version' "$result_dir/results.json")
+              install_cold=$(jq -r '.benchmarks.install_cold_ms' "$result_dir/results.json")
+              install_warm=$(jq -r '.benchmarks.install_warm_ms' "$result_dir/results.json")
+              build_first=$(jq -r '.benchmarks.build_first_ms' "$result_dir/results.json")
+              build_clean=$(jq -r '.benchmarks.build_clean_ms' "$result_dir/results.json")
+              build_cached=$(jq -r '.benchmarks.build_cached_ms' "$result_dir/results.json")
+              
+              echo "| $platform | $node_ver | $bun_ver | $install_cold | $install_warm | $build_first | $build_clean | $build_cached |" >> benchmark-summary.md
+            fi
+          done
+          
+          echo "" >> benchmark-summary.md
+          echo "## Detailed Results" >> benchmark-summary.md
+          echo "" >> benchmark-summary.md
+          
+          # Add detailed results for each platform
+          for result_dir in all-results/*/; do
+            if [ -f "$result_dir/results.json" ]; then
+              echo "### $(basename "$result_dir")" >> benchmark-summary.md
+              echo "" >> benchmark-summary.md
+              echo '```json' >> benchmark-summary.md
+              cat "$result_dir/results.json" | jq . >> benchmark-summary.md
+              echo '```' >> benchmark-summary.md
+              echo "" >> benchmark-summary.md
+            fi
+          done
+          
+          # Display the summary
+          cat benchmark-summary.md
+
+      - name: Upload aggregated results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-summary
+          path: benchmark-summary.md
+          retention-days: 90
+
+      - name: Comment benchmark results (on PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('benchmark-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            }); 
