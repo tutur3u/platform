@@ -450,7 +450,12 @@ export default function TimeTrackerContent({
   }
 
   return (
-    <div className="space-y-6 duration-500 animate-in fade-in-50">
+    <div
+      className={cn(
+        'space-y-6 duration-500 animate-in fade-in-50',
+        isLoading && 'opacity-50'
+      )}
+    >
       {/* Header with User Selector */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex-1 space-y-1">
@@ -528,16 +533,6 @@ export default function TimeTrackerContent({
         </Alert>
       )}
 
-      {/* Loading Indicator - Less intrusive */}
-      {isLoading && (
-        <div className="rounded-lg border bg-muted/30 p-4">
-          <div className="flex items-center gap-3">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-            <p className="text-sm text-muted-foreground">Loading data...</p>
-          </div>
-        </div>
-      )}
-
       {/* Stats Overview with improved responsive design */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {statsCards.map((stat, index) => (
@@ -584,7 +579,7 @@ export default function TimeTrackerContent({
         <TabsList
           className={cn(
             'grid w-full bg-muted/30 backdrop-blur-sm',
-            isViewingOtherUser ? 'grid-cols-3' : 'grid-cols-4'
+            isViewingOtherUser ? 'grid-cols-2' : 'grid-cols-4'
           )}
         >
           {!isViewingOtherUser && (
@@ -603,13 +598,15 @@ export default function TimeTrackerContent({
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">History</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="categories"
-            className="flex items-center gap-2 text-xs transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
-          >
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Categories</span>
-          </TabsTrigger>
+          {!isViewingOtherUser && (
+            <TabsTrigger
+              value="categories"
+              className="flex items-center gap-2 text-xs transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Categories</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger
             value="goals"
             className="flex items-center gap-2 text-xs transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
