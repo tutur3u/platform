@@ -3,11 +3,7 @@ import { Structure } from '@/components/layout/structure';
 import NavbarActions from '@/components/navbar-actions';
 import type { NavLink } from '@/components/navigation';
 import { UserNav } from '@/components/user-nav';
-import {
-  MAIN_CONTENT_SIZE_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-  SIDEBAR_SIZE_COOKIE_NAME,
-} from '@/constants/common';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import {
   getPermissions,
   getWorkspace,
@@ -272,15 +268,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
-  const sidebarSize = (await cookies()).get(SIDEBAR_SIZE_COOKIE_NAME);
-  const mainSize = (await cookies()).get(MAIN_CONTENT_SIZE_COOKIE_NAME);
-
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
-
-  const defaultLayout =
-    sidebarSize !== undefined && mainSize !== undefined
-      ? [JSON.parse(sidebarSize.value), JSON.parse(mainSize.value)]
-      : undefined;
 
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
 
@@ -297,9 +285,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       wsId={wsId}
       user={user}
       workspace={workspace}
-      defaultLayout={defaultLayout}
       defaultCollapsed={defaultCollapsed}
-      navCollapsedSize={4}
       links={navLinks}
       actions={
         <Suspense

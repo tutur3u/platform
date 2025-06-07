@@ -28,9 +28,7 @@ import { ReactNode, useState } from 'react';
 
 interface MailProps {
   locale: string;
-  defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
-  navCollapsedSize: number;
   user: WorkspaceUser | null;
   links: NavLink[];
   actions: ReactNode;
@@ -40,9 +38,7 @@ interface MailProps {
 
 export function Structure({
   locale,
-  defaultLayout = [20, 80],
   defaultCollapsed = false,
-  navCollapsedSize,
   user,
   links,
   actions,
@@ -85,21 +81,6 @@ export function Structure({
       showDisabled: true,
     },
   ];
-
-  // Save sidebar sizes to cookie
-  const debouncedSaveSizes = (sizes: { sidebar: number; main: number }) => {
-    document.cookie = `react-resizable-panels:layout:rewise=${JSON.stringify([
-      sizes.sidebar,
-      sizes.main,
-    ])}`;
-  };
-
-  // Save sidebar collapsed state to cookie
-  const debouncedSaveCollapsed = (collapsed: boolean) => {
-    document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-      collapsed
-    )}`;
-  };
 
   const sidebarHeader = (
     <Link href="/new" className="flex w-full items-center gap-2">
@@ -206,12 +187,8 @@ export function Structure({
 
   return (
     <BaseStructure
-      defaultLayout={defaultLayout}
-      navCollapsedSize={navCollapsedSize}
       isCollapsed={isCollapsed}
       setIsCollapsed={setIsCollapsed}
-      debouncedSaveSizes={debouncedSaveSizes}
-      debouncedSaveCollapsed={debouncedSaveCollapsed}
       mobileHeader={mobileHeader}
       sidebarHeader={sidebarHeader}
       sidebarContent={sidebarContent}

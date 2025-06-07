@@ -44,10 +44,8 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const cookies = await c();
 
-  const layout = cookies.get('react-resizable-panels:layout:rewise');
   const collapsed = cookies.get('react-resizable-panels:collapsed');
 
-  const defaultLayout = layout ? JSON.parse(layout.value) : undefined;
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
 
   return (
@@ -56,9 +54,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       <Structure
         locale={locale}
         user={user}
-        defaultLayout={defaultLayout}
         defaultCollapsed={defaultCollapsed}
-        navCollapsedSize={4}
         links={navLinks}
         actions={
           <Suspense
