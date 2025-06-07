@@ -1,5 +1,8 @@
+import { CourseCardView } from './card-view';
 import { getWorkspaceCourseColumns } from './columns';
+import { CoursePagination } from './course-pagination';
 import CourseForm from './form';
+import { ViewToggle } from './view-toggle';
 //import { mockData } from './mock/mock-courses';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -14,6 +17,7 @@ interface SearchParams {
   pageSize?: string;
   includedTags?: string | string[];
   excludedTags?: string | string[];
+  view?: 'card' | 'table';
 }
 
 interface Props {
@@ -29,8 +33,14 @@ export default async function WorkspaceCoursesPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId } = await params;
+  const searchParamsResolved = await searchParams;
+  const { page = '1', pageSize = '12' } = searchParamsResolved;
 
-  const { data, count } = await getData(wsId, await searchParams);
+  const { data, count } = await getData(wsId, searchParamsResolved);
+  const currentView = searchParamsResolved.view || 'card';
+  const currentPage = parseInt(page);
+  const currentPageSize = parseInt(pageSize);
+  const totalPages = Math.ceil(count / currentPageSize);
 
   const courses = data.map((c) => ({
     ...c,
@@ -50,16 +60,36 @@ export default async function WorkspaceCoursesPage({
           form={<CourseForm wsId={wsId} />}
         />
         <Separator className="my-4" />
-        <CustomDataTable
-          data={courses}
-          columnGenerator={getWorkspaceCourseColumns}
-          namespace="course-data-table"
-          count={count}
-          defaultVisibility={{
-            id: false,
-            created_at: false,
-          }}
-        />
+
+        <div className="mb-4 flex justify-end">
+          <ViewToggle currentView={currentView} />
+        </div>
+
+        {currentView === 'card' ? (
+          <>
+            <CourseCardView courses={courses} />
+            <div className="mt-8">
+              <CoursePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalCount={count}
+                pageSize={currentPageSize}
+                wsId={wsId}
+              />
+            </div>
+          </>
+        ) : (
+          <CustomDataTable
+            data={courses}
+            columnGenerator={getWorkspaceCourseColumns}
+            namespace="course-data-table"
+            count={count}
+            defaultVisibility={{
+              id: false,
+              created_at: false,
+            }}
+          />
+        )}
       </div>
     </>
   );
@@ -126,5 +156,5 @@ async function getData(
       modules: workspace_course_modules?.[0]?.count || 0,
     })),
     count,
-  } as { data: WorkspaceCourse[]; count: number };
+  } as { data: (WorkspaceCourse & { modules: number })[]; count: number };
 }
