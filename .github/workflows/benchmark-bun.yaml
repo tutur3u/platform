@@ -205,7 +205,7 @@ jobs:
     needs: benchmark
     runs-on: ubuntu-latest
     if: always()
-    
+
     steps:
       - name: Download all benchmark results
         uses: actions/download-artifact@v4
@@ -218,13 +218,13 @@ jobs:
           echo "" >> benchmark-summary.md
           echo "Generated on: $(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)" >> benchmark-summary.md
           echo "" >> benchmark-summary.md
-          
+
           # Create summary table
           echo "## Summary Table" >> benchmark-summary.md
           echo "" >> benchmark-summary.md
           echo "| Platform | Node | Bun | Cold Install (ms) | Warm Install (ms) | First Build (ms) | Clean Build (ms) | Cached Build (ms) |" >> benchmark-summary.md
           echo "|----------|------|-----|-------------------|-------------------|------------------|------------------|-------------------|" >> benchmark-summary.md
-          
+
           # Process each result file
           for result_dir in all-results/*/; do
             if [ -f "$result_dir/results.json" ]; then
@@ -240,11 +240,11 @@ jobs:
               echo "| $platform | $node_ver | $bun_ver | $install_cold | $install_warm | $build_first | $build_clean | $build_cached |" >> benchmark-summary.md
             fi
           done
-          
+
           echo "" >> benchmark-summary.md
           echo "## Detailed Results" >> benchmark-summary.md
           echo "" >> benchmark-summary.md
-          
+
           # Add detailed results for each platform
           for result_dir in all-results/*/; do
             if [ -f "$result_dir/results.json" ]; then
@@ -256,7 +256,7 @@ jobs:
               echo "" >> benchmark-summary.md
             fi
           done
-          
+
           # Display the summary
           cat benchmark-summary.md
 
@@ -274,10 +274,10 @@ jobs:
           script: |
             const fs = require('fs');
             const summary = fs.readFileSync('benchmark-summary.md', 'utf8');
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: summary
-            }); 
+            });
