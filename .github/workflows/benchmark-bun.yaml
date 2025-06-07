@@ -42,6 +42,10 @@ jobs:
       PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
       NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
 
+      # Configure Google Vertex AI
+      GOOGLE_VERTEX_PROJECT: ${{ secrets.GOOGLE_VERTEX_PROJECT }}
+      GOOGLE_VERTEX_LOCATION: ${{ secrets.GOOGLE_VERTEX_LOCATION }}
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
