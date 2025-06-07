@@ -198,14 +198,7 @@ export const CalendarProvider = ({
     []
   );
 
-  const { events } = useCalendarSync();
-
-  // Invalidate and refetch events
-  const refresh = useCallback(() => {
-    queryClient.invalidateQueries({
-      queryKey: ['calendarEvents', ws?.id],
-    });
-  }, [queryClient, ws?.id]);
+  const { events, refresh } = useCalendarSync();
 
   // Modal state
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
@@ -333,6 +326,8 @@ export const CalendarProvider = ({
   const addEvent = useCallback(
     async (event: Omit<CalendarEvent, 'id'>) => {
       if (!ws) throw new Error('No workspace selected');
+
+      console.log('Adding event:', event);
 
       try {
         const supabase = createClient();

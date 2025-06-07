@@ -41,6 +41,7 @@ const CalendarSyncContext = createContext<{
   // Show data from database to Tuturuuu
   eventsWithoutAllDays: CalendarEvent[];
   allDayEvents: CalendarEvent[];
+  refresh: () => void;
 
   syncToGoogle: () => Promise<void>;
 
@@ -63,7 +64,9 @@ const CalendarSyncContext = createContext<{
   // Show data from database to Tuturuuu
   eventsWithoutAllDays: [],
   allDayEvents: [],
+  refresh: () => {},
 
+  // Sync to Google
   syncToGoogle: async () => {},
 
   // Loading states
@@ -77,6 +80,7 @@ type CalendarCache = {
     dbEvents: WorkspaceCalendarEvent[];
     googleEvents: WorkspaceCalendarEvent[];
     lastUpdated: number;
+    isForced: boolean;
   };
 };
 
@@ -85,6 +89,7 @@ type CacheUpdate = {
   dbEvents?: WorkspaceCalendarEvent[];
   googleEvents?: WorkspaceCalendarEvent[];
   lastUpdated: number;
+  isForced?: boolean;
 };
 
 export const CalendarSyncProvider = ({
@@ -135,6 +140,7 @@ export const CalendarSyncProvider = ({
         dbEvents: [],
         googleEvents: [],
         lastUpdated: 0,
+        isForced: false,
       };
 
       return {
@@ -143,6 +149,7 @@ export const CalendarSyncProvider = ({
           dbEvents: update.dbEvents || existing.dbEvents,
           googleEvents: update.googleEvents || existing.googleEvents,
           lastUpdated: update.lastUpdated,
+          isForced: update.isForced || existing.isForced,
         },
       };
     });
@@ -159,9 +166,19 @@ export const CalendarSyncProvider = ({
       const cachedData = calendarCache[cacheKey];
 
       // If we have cached data and it's not stale, return it immediately
-      if (cachedData?.dbEvents && !isCacheStale(cachedData.lastUpdated)) {
+      if (
+        cachedData?.dbEvents &&
+        !isCacheStale(cachedData.lastUpdated) &&
+        !cachedData.isForced
+      ) {
         setData(cachedData.dbEvents);
         return cachedData.dbEvents;
+      }
+
+      console.log('Yay: Pass stale check');
+
+      if (cachedData) {
+        cachedData.isForced = false;
       }
 
       // Otherwise fetch fresh data
@@ -378,7 +395,8 @@ export const CalendarSyncProvider = ({
 
         // Filter data not in googleEventIds
         const dataToDelete = dbData?.filter(
-          (e: WorkspaceCalendarEvent) => !googleEventIds.has(e.google_event_id)
+          (e: WorkspaceCalendarEvent) =>
+            e.google_event_id && !googleEventIds.has(e.google_event_id)
         );
         console.log('dataToDelete', dataToDelete);
         // Delete dataToDelete
@@ -676,6 +694,23 @@ export const CalendarSyncProvider = ({
     return [];
   }, [fetchedData, removeDuplicateEvents]);
 
+  // Invalidate and refetch events
+  const refresh = useCallback(() => {
+    console.log('Refreshing events');
+    const cacheKey = getCacheKey(dates);
+    if (!cacheKey) return null;
+
+    const cacheData = calendarCache[cacheKey];
+
+    if (cacheData) {
+      cacheData.isForced = true;
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
+    });
+  }, [queryClient, wsId, calendarCache, dates]);
+
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
@@ -734,6 +769,7 @@ export const CalendarSyncProvider = ({
     // Show data from database to Tuturuuu
     eventsWithoutAllDays,
     allDayEvents,
+    refresh,
 
     // Loading states
     isLoading: isDatabaseLoading || isGoogleLoading,
