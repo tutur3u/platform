@@ -29,7 +29,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.823.0",
+    "@aws-sdk/client-ses": "^3.826.0",
     "@deepgram/sdk": "^4.2.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -93,7 +93,7 @@
     "use-debounce": "^10.0.4",
     "uuid": "^11.1.0",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
-    "zod": "^3.25.51"
+    "zod": "^3.25.56"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -109,8 +109,8 @@
     "@types/eslint": "^9.6.1",
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.17",
-    "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.15.29",
+    "@types/negotiator": "^0.6.4",
+    "@types/node": "^22.15.30",
     "@types/papaparse": "^5.3.16",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.6",

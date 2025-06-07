@@ -13,20 +13,20 @@
   "packageManager": "bun@1.2.15",
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.49.10",
+    "@supabase/supabase-js": "^2.50.0",
     "@tuturuuu/types": "workspace:*",
     "eslint": "^9.28.0",
     "next": "15.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.51"
+    "zod": "^3.25.56"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.28.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^22.15.29",
+    "@types/node": "^22.15.30",
     "@types/react": "^19.1.6",
     "@typescript-eslint/eslint-plugin": "^8.33.1",
     "@typescript-eslint/parser": "^8.33.1",
