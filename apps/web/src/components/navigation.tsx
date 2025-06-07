@@ -10,7 +10,7 @@ export interface NavLink {
   title: string;
   trailing?: string;
   icon?: ReactNode;
-  href: string;
+  href?: string;
   newTab?: boolean;
   matchExact?: boolean;
   label?: string;
@@ -110,9 +110,11 @@ export function Navigation({
         const isActive =
           links
             .map((href) =>
-              matchExact
-                ? pathname === href
-                : (pathname?.startsWith(href) ?? false)
+              href
+                ? matchExact
+                  ? pathname === href
+                  : (pathname?.startsWith(href) ?? false)
+                : false
             )
             .filter(Boolean).length > 0;
 
@@ -147,7 +149,7 @@ export function Navigation({
               setUrlToLoad(link.href);
               if (isActive) scrollActiveLinksIntoView();
             }}
-            href={link.href}
+            href={link.href ?? '#'}
           >
             {link.title}
           </Link>
