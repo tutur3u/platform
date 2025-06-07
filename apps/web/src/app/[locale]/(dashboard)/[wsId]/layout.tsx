@@ -409,7 +409,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     rawBehavior
   )
     ? rawBehavior
-    : 'expanded';
+    : 'hover';
 
   let defaultCollapsed;
   if (sidebarBehavior === 'collapsed') {

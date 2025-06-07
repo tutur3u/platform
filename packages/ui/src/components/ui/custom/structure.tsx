@@ -147,7 +147,7 @@ export function Structure({
             )}
           >
             {header && <div className="mb-4 hidden md:block">{header}</div>}
-            <div className="relative h-full w-full p-4 pt-20 pl-8 md:pt-4">
+            <div className="relative h-full w-full p-2 pt-17 pl-2 md:p-4 md:pt-4 md:pl-8">
               {children}
             </div>
           </main>

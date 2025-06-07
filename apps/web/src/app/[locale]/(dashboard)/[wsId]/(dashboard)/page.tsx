@@ -1,12 +1,7 @@
 import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
-import AdvancedAnalytics from './advanced-analytics';
-import AuroraActions from './aurora-actions';
 import { InventoryCategoryStatistics } from './categories/inventory';
 import { UsersCategoryStatistics } from './categories/users';
-import CommodityComparison from './commodity-comparison';
-import Dashboard from './dashboard';
 import FinanceStatistics from './finance';
-import PricePredictionChart from './price-prediction-chart';
 import {
   BatchesStatistics,
   InventoryProductsStatistics,
@@ -22,16 +17,11 @@ import {
   WarehousesStatistics,
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
-import {
-  getPermissions,
-  getWorkspace,
-  verifySecret,
-} from '@/lib/workspace-helper';
+import { getWorkspace, verifySecret } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -50,12 +40,7 @@ export default async function WorkspaceHomePage({
   const t = await getTranslations();
   const { wsId } = await params;
 
-  const user = await getCurrentSupabaseUser();
   const workspace = await getWorkspace(wsId);
-
-  const { containsPermission } = await getPermissions({
-    wsId,
-  });
 
   const forecast = await getForecast();
   const mlMetrics = await getMLMetrics();
@@ -93,7 +78,7 @@ export default async function WorkspaceHomePage({
         }
       />
 
-      {(await verifySecret({
+      {/* {(await verifySecret({
         forceAdmin: true,
         wsId,
         name: 'ENABLE_AI',
@@ -116,7 +101,7 @@ export default async function WorkspaceHomePage({
               />
             </div>
           </>
-        )}
+        )} */}
 
       {ENABLE_AI_ONLY || (
         <>

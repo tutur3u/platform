@@ -127,7 +127,7 @@ export default function UserNavClient({
           <DropdownMenuGroup>
             {sidebar && (
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger className="hidden md:flex">
                   <PanelLeft className="h-4 w-4" />
                   <span className="text-foreground">{t('common.sidebar')}</span>
                 </DropdownMenuSubTrigger>
