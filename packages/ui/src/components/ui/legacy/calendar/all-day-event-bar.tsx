@@ -92,7 +92,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         className={cn('grid flex-1 border-b border-l')}
         style={{
           gridTemplateColumns: `repeat(${visibleDates.length}, minmax(0, 1fr))`,
-          minWidth: `${visibleDates.length * 120}px`, // Match column width
+          minWidth: `${visibleDates.length * 100}px`, // Match column width
         }}
       >
         {visibleDates.map((date) => {
@@ -119,7 +119,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           return (
             <div
               key={`all-day-${dateKey}`}
-              className="group mr-px flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r hover:bg-muted/20"
+              className="group mr-1 -ml-1 flex h-full flex-col justify-start gap-1 overflow-y-auto p-1 transition-colors last:mr-0 last:border-r hover:bg-muted/20"
             >
               {visibleEvents.map((event) => {
                 const { bg, border, text } = getEventStyles(
