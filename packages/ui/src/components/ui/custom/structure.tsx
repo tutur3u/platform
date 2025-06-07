@@ -10,6 +10,7 @@ interface StructureProps {
   isCollapsed: boolean;
   // eslint-disable-next-line no-unused-vars
   setIsCollapsed: (isCollapsed: boolean) => void;
+  hideSizeToggle?: boolean;
   header?: ReactNode;
   mobileHeader?: ReactNode;
   sidebarHeader?: ReactNode;
@@ -24,6 +25,7 @@ interface StructureProps {
 export function Structure({
   isCollapsed,
   setIsCollapsed,
+  hideSizeToggle = false,
   header,
   mobileHeader,
   sidebarHeader,
@@ -122,18 +124,20 @@ export function Structure({
               {isCollapsed ? userPopover : actions}
             </div>
 
-            <Button
-              size="icon"
-              variant="outline"
-              className="absolute top-1/2 -right-4 z-10 hidden h-auto w-auto -translate-y-1/2 rounded-full border-2 bg-background p-1.5 hover:bg-accent md:block"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-            >
-              {isCollapsed ? (
-                <ChevronsRight className="h-4 w-4" />
-              ) : (
-                <ChevronsLeft className="h-4 w-4" />
-              )}
-            </Button>
+            {!hideSizeToggle && (
+              <Button
+                size="icon"
+                variant="outline"
+                className="absolute top-1/2 -right-4 z-10 hidden h-auto w-auto -translate-y-1/2 rounded-full border-2 bg-background p-1.5 hover:bg-accent md:block"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+              >
+                {isCollapsed ? (
+                  <ChevronsRight className="h-4 w-4" />
+                ) : (
+                  <ChevronsLeft className="h-4 w-4" />
+                )}
+              </Button>
+            )}
           </aside>
           <main
             id="main-content"

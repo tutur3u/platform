@@ -360,6 +360,7 @@ export function Structure({
       children={children}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      hideSizeToggle={behavior === 'hover'}
     />
   );
 }

@@ -19,7 +19,7 @@ interface SidebarContextProps {
   handleBehaviorChange: (newBehavior: SidebarBehavior) => void;
 }
 
-const SidebarContext = createContext<SidebarContextProps | undefined>(
+export const SidebarContext = createContext<SidebarContextProps | undefined>(
   undefined
 );
 
