@@ -1,6 +1,6 @@
 // File: app/api/quiz-sets/[setId]/take/route.ts
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 type RawRow = {
   quiz_id: string;
@@ -31,14 +31,16 @@ export async function GET(
   // 2) Fetch quiz-set metadata
   const { data: setRow, error: setErr } = await supabase
     .from('workspace_quiz_sets')
-    .select(`
+    .select(
+      `
       id,
       name,
       attempt_limit,
       time_limit_minutes,
       due_date,
       release_points_immediately
-    `)
+    `
+    )
     .eq('id', setId)
     .maybeSingle();
 
@@ -70,15 +72,15 @@ export async function GET(
     .eq('set_id', setId);
 
   if (attErr) {
-    return NextResponse.json({ error: 'Error counting attempts' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error counting attempts' },
+      { status: 500 }
+    );
   }
   const attemptsCount = prevAttempts?.length ?? 0;
 
   // 5) If limit reached, block
-  if (
-    attempt_limit !== null &&
-    attemptsCount >= attempt_limit
-  ) {
+  if (attempt_limit !== null && attemptsCount >= attempt_limit) {
     return NextResponse.json(
       {
         error: 'Maximum attempts reached',
@@ -104,7 +106,8 @@ export async function GET(
   // 7) Otherwise, return questions for taking
   const { data: rawData, error: quizErr } = await supabase
     .from('quiz_set_quizzes')
-    .select(`
+    .select(
+      `
       quiz_id,
       workspace_quizzes (
         question,
@@ -114,11 +117,15 @@ export async function GET(
           value
         )
       )
-    `)
+    `
+    )
     .eq('set_id', setId);
 
   if (quizErr) {
-    return NextResponse.json({ error: 'Error fetching questions' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error fetching questions' },
+      { status: 500 }
+    );
   }
 
   const questions = (rawData as RawRow[]).map((row) => ({

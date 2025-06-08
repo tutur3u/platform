@@ -1,12 +1,14 @@
 // File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/results/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Button } from '@tuturuuu/ui/button';
+import { useEffect, useState } from 'react';
 
-/** 
+// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/results/page.tsx
+
+/**
  * Client-side types matching AttemptDTO defined in the /results route.
  */
 type AttemptAnswer = {
@@ -49,10 +51,9 @@ export default function ViewResults({
     async function fetchResults() {
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/quiz-sets/${setId}/results`
-        );
-        const json: { attempts?: AttemptDTO[]; error?: string } = await res.json();
+        const res = await fetch(`/api/quiz-sets/${setId}/results`);
+        const json: { attempts?: AttemptDTO[]; error?: string } =
+          await res.json();
 
         if (!res.ok) {
           setErrorMsg(json.error || 'Error loading results');
@@ -70,7 +71,9 @@ export default function ViewResults({
   }, [wsId, setId]);
 
   if (loading) {
-    return <p className="p-4">{t('ws-quizzes.loading') || 'Loading results...'}</p>;
+    return (
+      <p className="p-4">{t('ws-quizzes.loading') || 'Loading results...'}</p>
+    );
   }
   if (errorMsg) {
     return (
@@ -104,44 +107,60 @@ export default function ViewResults({
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-6 space-y-8">
+    <div className="mx-auto max-w-4xl space-y-8 p-6">
       <h1 className="text-3xl font-bold">
         {t('ws-quizzes.past_attempts') || 'Past Attempts'}
       </h1>
 
       {attempts.map((att) => (
-        <div key={att.attemptId} className="border p-4 rounded shadow-sm">
-          <div className="flex justify-between items-center mb-2">
+        <div key={att.attemptId} className="rounded border p-4 shadow-sm">
+          <div className="mb-2 flex items-center justify-between">
             <h2 className="text-xl font-semibold">
               {t('ws-quizzes.attempt')} #{att.attemptNumber}
             </h2>
             <p className="text-sm text-gray-600">
-              {t('ws-quizzes.scored') || 'Scored'}: {att.totalScore} / {att.maxPossibleScore}
+              {t('ws-quizzes.scored') || 'Scored'}: {att.totalScore} /{' '}
+              {att.maxPossibleScore}
             </p>
           </div>
-          <p className="text-sm text-gray-500 mb-4">
-            {t('ws-quizzes.started_at') || 'Started at'}: {new Date(att.startedAt).toLocaleString()}
+          <p className="mb-4 text-sm text-gray-500">
+            {t('ws-quizzes.started_at') || 'Started at'}:{' '}
+            {new Date(att.startedAt).toLocaleString()}
             {att.completedAt && (
               <>
                 {' | '}
-                {t('ws-quizzes.completed_at') || 'Completed at'}: {new Date(att.completedAt).toLocaleString()}
+                {t('ws-quizzes.completed_at') || 'Completed at'}:{' '}
+                {new Date(att.completedAt).toLocaleString()}
               </>
             )}
           </p>
 
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border px-2 py-1 text-left">{t('ws-quizzes.#') || '#'}</th>
-                <th className="border px-2 py-1 text-left">{t('ws-quizzes.question') || 'Question'}</th>
-                <th className="border px-2 py-1 text-left">{t('ws-quizzes.your_answer') || 'Your Answer'}</th>
-                <th className="border px-2 py-1 text-left">{t('ws-quizzes.correct_answer') || 'Correct Answer'}</th>
-                <th className="border px-2 py-1 text-left">{t('ws-quizzes.points') || 'Points'}</th>
+                <th className="border px-2 py-1 text-left">
+                  {t('ws-quizzes.#') || '#'}
+                </th>
+                <th className="border px-2 py-1 text-left">
+                  {t('ws-quizzes.question') || 'Question'}
+                </th>
+                <th className="border px-2 py-1 text-left">
+                  {t('ws-quizzes.your_answer') || 'Your Answer'}
+                </th>
+                <th className="border px-2 py-1 text-left">
+                  {t('ws-quizzes.correct_answer') || 'Correct Answer'}
+                </th>
+                <th className="border px-2 py-1 text-left">
+                  {t('ws-quizzes.points') || 'Points'}
+                </th>
               </tr>
             </thead>
             <tbody>
               {att.answers.map((ans, idx) => (
-                <tr key={ans.quizId} className={ans.isCorrect ? '' : 'bg-red-50'}>
+                <tr
+                  key={ans.quizId}
+                  className={ans.isCorrect ? '' : 'bg-red-50'}
+                >
                   <td className="border px-2 py-1">{idx + 1}</td>
                   <td className="border px-2 py-1">{ans.question}</td>
                   <td className="border px-2 py-1">
