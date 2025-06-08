@@ -1727,7 +1727,15 @@
     "full-settings": "Xem tất cả cài đặt",
     "view-full-settings": "Xem tất cả cài đặt",
     "default-workspace": "Không gian làm việc mặc định",
-    "default-workspace-description": "Chọn không gian làm việc nào để chuyển hướng đến khi bạn truy cập trang chủ. \nNếu không có mặc định được đặt, bạn sẽ được chuyển hướng đến không gian làm việc có sẵn đầu tiên của bạn."
+    "default-workspace-description": "Chọn không gian làm việc nào để chuyển hướng đến khi bạn truy cập trang chủ. \nNếu không có mặc định được đặt, bạn sẽ được chuyển hướng đến không gian làm việc có sẵn đầu tiên của bạn.",
+    "full-name": "Họ và tên",
+    "full-name-description": "Tên đầy đủ của bạn sẽ được sử dụng để hiển thị trên chứng chỉ",
+    "full-name-min-error": "Họ và tên phải ít nhất {min} kí tự",
+    "full-name-max-error": "Họ và tên phải ít hơn {max} kí tự",
+    "full-name-updated": "Họ và tên của bạn đã được cập nhật thành công",
+    "profile-updated": "Cập nhật hồ sơ",
+    "error-occurred": "Đã có lỗi đã xảy ra",
+    "please-try-again": "Vui lòng thử lại"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",

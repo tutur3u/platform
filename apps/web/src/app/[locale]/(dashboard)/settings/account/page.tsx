@@ -1,6 +1,7 @@
 import UserAvatar from '../../../settings-avatar';
 import DisplayNameInput from '../../../settings-display-name-input';
 import EmailInput from '../../../settings-email-input';
+import FullNameInput from '../../../settings-full-name-input';
 import DefaultWorkspaceSetting from './default-workspace-setting';
 import ResetPasswordForm from './reset-password-form';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
@@ -39,6 +40,24 @@ export default async function AccountSettingsPage() {
           description={t('settings-account.display-name-description')}
         >
           <DisplayNameInput defaultValue={user?.display_name} />
+        </SettingItemTab>
+      </Suspense>
+
+      <Suspense
+        fallback={
+          <SettingItemTab
+            title={t('settings-account.full-name')}
+            description={t('settings-account.full-name-description')}
+          >
+            <FullNameInput disabled />
+          </SettingItemTab>
+        }
+      >
+        <SettingItemTab
+          title={t('settings-account.full-name')}
+          description={t('settings-account.full-name-description')}
+        >
+          <FullNameInput defaultValue={user?.full_name} />
         </SettingItemTab>
       </Suspense>
 
