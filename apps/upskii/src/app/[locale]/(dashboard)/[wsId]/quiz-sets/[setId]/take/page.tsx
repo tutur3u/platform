@@ -14,16 +14,6 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
 type TakeResponse = {
   setId: string;
   setName: string;
@@ -42,17 +32,17 @@ type SubmitResult = {
   maxPossibleScore: number;
 };
 
-export default function TakeQuiz({
+export default async function TakeQuiz({
   params,
 }: {
-  params: {
+  params: Promise<{
     wsId: string;
     courseId: string;
     moduleId: string;
     setId: string;
-  };
+  }>;
 }) {
-  const { wsId, courseId, moduleId, setId } = params;
+  const { wsId, courseId, moduleId, setId } = await params;
   const t = useTranslations();
   const router = useRouter();
 

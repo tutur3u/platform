@@ -1,6 +1,6 @@
 // File: app/api/quiz-sets/[setId]/results/route.ts
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 type AttemptAnswer = {
   quizId: string;
@@ -21,10 +21,10 @@ type AttemptDTO = {
 };
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { setId: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ setId: string }> }
 ) {
-  const { setId } = params;
+  const { setId } = await params;
   const supabase = await createClient();
 
   // 1) Auth
@@ -48,13 +48,17 @@ export async function GET(
     return NextResponse.json({ error: 'Quiz set not found' }, { status: 404 });
   }
   if (!setRow.allow_view_results) {
-    return NextResponse.json({ error: 'Viewing results is disabled' }, { status: 403 });
+    return NextResponse.json(
+      { error: 'Viewing results is disabled' },
+      { status: 403 }
+    );
   }
 
   // 3) Fetch question info (correct answers + weight)
   const { data: questionsRaw, error: qErr } = await supabase
     .from('quiz_set_quizzes')
-    .select(`
+    .select(
+      `
       quiz_id,
       workspace_quizzes (
         question,
@@ -63,12 +67,16 @@ export async function GET(
       quiz_options!inner (
         value
       )
-    `)
+    `
+    )
     .eq('set_id', setId)
     .eq('quiz_options.is_correct', true);
 
   if (qErr) {
-    return NextResponse.json({ error: 'Error fetching questions' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error fetching questions' },
+      { status: 500 }
+    );
   }
 
   const questionInfo = (questionsRaw || []).map((row: any) => ({
@@ -82,19 +90,24 @@ export async function GET(
   // 4) Fetch all attempts by user
   const { data: attemptsData, error: attemptsErr } = await supabase
     .from('workspace_quiz_attempts')
-    .select(`
+    .select(
+      `
       id,
       attempt_number,
       total_score,
       started_at,
       completed_at
-    `)
+    `
+    )
     .eq('user_id', userId)
     .eq('set_id', setId)
     .order('attempt_number', { ascending: false });
 
   if (attemptsErr) {
-    return NextResponse.json({ error: 'Error fetching attempts' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error fetching attempts' },
+      { status: 500 }
+    );
   }
   const attempts = attemptsData || [];
   if (!attempts.length) {
@@ -107,16 +120,21 @@ export async function GET(
   for (const att of attempts) {
     const { data: answerRows, error: ansErr } = await supabase
       .from('workspace_quiz_attempt_answers')
-      .select(`
+      .select(
+        `
         quiz_id,
         selected_option_id,
         is_correct,
         score_awarded
-      `)
+      `
+      )
       .eq('attempt_id', att.id);
 
     if (ansErr) {
-      return NextResponse.json({ error: 'Error fetching attempt answers' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Error fetching attempt answers' },
+        { status: 500 }
+      );
     }
 
     const aMap = new Map(answerRows!.map((a: any) => [a.quiz_id, a]));
