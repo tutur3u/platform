@@ -131,9 +131,46 @@ export const CalendarSyncProvider = ({
     return `${dateRange[0]!.toISOString()}-${dateRange[dateRange.length - 1]!.toISOString()}`;
   };
 
-  // Helper to check if cache is stale (older than 5 minutes)
-  const isCacheStale = (lastUpdated: number) => {
-    return Date.now() - lastUpdated > 5 * 60 * 1000;
+  // Helper to check if a date range includes today (current week issue)
+  const includesCurrentWeek = (dateRange: Date[]) => {
+    if (!dateRange || dateRange.length === 0) return false;
+    const today = new Date();
+    const startOfToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const endOfToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      23,
+      59,
+      59
+    );
+
+    const firstDate = dateRange[0];
+    const lastDate = dateRange[dateRange.length - 1];
+    if (!firstDate || !lastDate) return false;
+
+    const rangeStart = new Date(firstDate);
+    const rangeEnd = new Date(lastDate);
+
+    return rangeStart <= endOfToday && rangeEnd >= startOfToday;
+  };
+
+  // Enhanced cache staleness check - shorter staleness for current week
+  const isCacheStaleEnhanced = (lastUpdated: number, dateRange: Date[]) => {
+    const isCurrentWeek = includesCurrentWeek(dateRange);
+    // Use 2 minutes for current week, 5 minutes for other weeks
+    const staleTime = isCurrentWeek ? 2 * 60 * 1000 : 5 * 60 * 1000;
+    const isStale = Date.now() - lastUpdated > staleTime;
+
+    if (isCurrentWeek && isStale) {
+      console.log('Current week cache is stale, forcing fresh fetch');
+    }
+
+    return isStale;
   };
 
   // Helper to update cache safely
@@ -173,7 +210,7 @@ export const CalendarSyncProvider = ({
       if (
         cachedData?.dbEvents &&
         cachedData.dbEvents.length > 0 &&
-        !isCacheStale(cachedData.lastUpdated) &&
+        !isCacheStaleEnhanced(cachedData.lastUpdated, dates) &&
         !cachedData.isForced
       ) {
         setData(cachedData.dbEvents);
@@ -230,7 +267,7 @@ export const CalendarSyncProvider = ({
       if (
         cachedData?.googleEvents &&
         cachedData.googleEvents.length > 0 &&
-        !isCacheStale(cachedData.lastUpdated)
+        !isCacheStaleEnhanced(cachedData.lastUpdated, dates)
       ) {
         setGoogleData(cachedData.googleEvents);
         return cachedData.googleEvents;
@@ -508,8 +545,8 @@ export const CalendarSyncProvider = ({
         const { data: upsertData, error: upsertError } = await supabase
           .from('workspace_calendar_events')
           .upsert(eventsToUpsert, {
-            onConflict: 'id',
-            ignoreDuplicates: false,
+            onConflict: 'google_event_id',
+            ignoreDuplicates: true,
           })
           .select();
 
@@ -589,9 +626,18 @@ export const CalendarSyncProvider = ({
     console.log('useEffect 2');
     const cacheKey = getCacheKey(dates);
     const cacheData = calendarCache[cacheKey];
+
+    // For current week, always force a fresh fetch to ensure sync is up to date
+    const isCurrentWeek = includesCurrentWeek(dates);
+
     if (cacheData) {
       cacheData.isForced = true;
+      // For current week, also reset the cache timestamp to force refresh
+      if (isCurrentWeek) {
+        cacheData.lastUpdated = 0;
+      }
     }
+
     // Trigger a refetch of both database and google events
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
@@ -599,7 +645,14 @@ export const CalendarSyncProvider = ({
     queryClient.invalidateQueries({
       queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
     });
-  }, [dates, queryClient, wsId, experimentalGoogleToken?.ws_id, calendarCache]);
+  }, [
+    dates,
+    queryClient,
+    wsId,
+    experimentalGoogleToken?.ws_id,
+    calendarCache,
+    includesCurrentWeek,
+  ]);
 
   /*
   Show data from database to Tuturuuu

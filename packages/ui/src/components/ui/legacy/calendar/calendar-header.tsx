@@ -91,53 +91,52 @@ export function CalendarHeader({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
-          disabled={isToday() || isCurrentMonth()}
-        >
-          {view === 'day'
-            ? t('today')
-            : view === 'week'
-              ? t('this-week')
-              : view === 'month'
-                ? t('this-month')
-                : t('current')}
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={handleNext}
-          aria-label="Next period"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-
-        {views.length > 1 && (
-          <div className="w-full flex-1 md:w-auto">
-            <Select
-              value={view}
-              onValueChange={(value) =>
-                onViewChange(value as 'day' | '4-days' | 'week' | 'month')
-              }
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
+              disabled={isToday() || isCurrentMonth()}
             >
-              <SelectTrigger className="h-8 w-full">
-                <SelectValue placeholder={t('view')} />
-              </SelectTrigger>
-              <SelectContent>
-                {views.map((view) => (
-                  <SelectItem key={view.value} value={view.value}>
-                    {view.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {view === 'day'
+                ? t('today')
+                : view === 'week'
+                  ? t('this-week')
+                  : view === 'month'
+                    ? t('this-month')
+                    : t('current')}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={handleNext}
+              aria-label="Next period"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-        )}
+          {views.length > 1 && (
+            <div className="w-full flex-1 md:w-auto">
+              <Select
+                value={view}
+                onValueChange={(value) =>
+                  onViewChange(value as 'day' | '4-days' | 'week' | 'month')
+                }
+              >
+                <SelectTrigger className="h-8 w-full">
+                  <SelectValue placeholder={t('view')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {views.map((view) => (
+                    <SelectItem key={view.value} value={view.value}>
+                      {view.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
         {extras}
       </div>
     </div>
