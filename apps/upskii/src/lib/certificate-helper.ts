@@ -155,11 +155,11 @@ export async function getAllCertificatesForUser(
 
   const certificateList = certificates.map((certificate) => ({
     id: certificate.id,
-    courseName: certificate.workspace_courses.name,
+    courseName: certificate.workspace_courses?.name || 'Unknown Course',
     completionDate: certificate.completed_date,
     workspaceName:
-      certificate.workspace_courses.workspaces.name || 'Unknown Workspace',
-    wsId: certificate.workspace_courses.ws_id,
+      certificate.workspace_courses?.workspaces?.name || 'Unknown Workspace',
+    wsId: certificate.workspace_courses?.ws_id || '',
   }));
 
   return {
