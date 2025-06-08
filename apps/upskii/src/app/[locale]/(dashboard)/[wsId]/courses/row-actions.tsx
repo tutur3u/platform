@@ -1,9 +1,9 @@
 'use client';
 
-import WorkspaceCourseForm from './form';
 import { Row } from '@tanstack/react-table';
 import { WorkspaceCourse } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
+import { CourseForm } from '@tuturuuu/ui/custom/education/course-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
@@ -102,7 +102,7 @@ export function WorkspaceCourseRowActions({
         editDescription={t('ws-courses.edit_description')}
         setOpen={setShowEditDialog}
         form={
-          <WorkspaceCourseForm
+          <CourseForm
             wsId={data.ws_id}
             data={{ ...data, description: data.description ?? '' }}
           />

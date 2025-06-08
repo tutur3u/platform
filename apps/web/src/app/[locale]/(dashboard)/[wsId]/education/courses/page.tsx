@@ -1,5 +1,5 @@
 import { getWorkspaceCourseColumns } from './columns';
-import CourseForm from './form';
+import { CourseForm } from '@tuturuuu/ui/custom/education/course-form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourse } from '@tuturuuu/types/db';

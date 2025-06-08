@@ -1910,7 +1910,8 @@
     "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
     "edit": "Edit course",
     "name": "Course name",
-    "edit_description": "Edit an existing course"
+    "edit_description": "Edit an existing course",
+    "course_description": "Course description"
   },
   "ws-course-modules": {
     "plural": "Course Modules",

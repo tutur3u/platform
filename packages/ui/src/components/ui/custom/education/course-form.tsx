@@ -20,7 +20,7 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  data?: WorkspaceCourse;
+  data?: WorkspaceCourse & { description?: string }; // Add description property
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
@@ -28,9 +28,10 @@ interface Props {
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
+  description: z.string().optional(),
 });
 
-export default function CourseForm({ wsId, data, onFinish }: Props) {
+export function CourseForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations('ws-courses');
   const router = useRouter();
 
@@ -39,6 +40,7 @@ export default function CourseForm({ wsId, data, onFinish }: Props) {
     values: {
       id: data?.id,
       name: data?.name || '',
+      description: data?.description || '',
     },
   });
 
@@ -84,14 +86,33 @@ export default function CourseForm({ wsId, data, onFinish }: Props) {
         <FormField
           control={form.control}
           name="name"
+          rules={{ required: true }}
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('name')}</FormLabel>
-              <FormControl>
-                <Input placeholder={t('name')} autoComplete="off" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+            <>
+              <FormItem>
+                <FormLabel>{t('name')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('name')}
+                    autoComplete="off"
+                    required
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+
+              <FormItem>
+                <FormLabel>{t('course_description')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('course_description')}
+                    autoComplete="off"
+                    {...form.register('description')}
+                  />
+                </FormControl>
+              </FormItem>
+            </>
           )}
         />
 

@@ -1,7 +1,7 @@
 import { CourseCardView } from './card-view';
 import { getWorkspaceCourseColumns } from './columns';
 import { CoursePagination } from './course-pagination';
-import CourseForm from './form';
+import { CourseForm } from '@tuturuuu/ui/custom/education/course-form';
 import { ViewToggle } from './view-toggle';
 //import { mockData } from './mock/mock-courses';
 import { CustomDataTable } from '@/components/custom-data-table';
