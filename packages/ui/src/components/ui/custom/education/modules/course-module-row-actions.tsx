@@ -1,9 +1,9 @@
 'use client';
 
 import { Row } from '@tanstack/react-table';
-import { WorkspaceCourse } from '@tuturuuu/types/db';
+import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import { CourseForm } from '@tuturuuu/ui/custom/education/courses/course-form';
+import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
@@ -18,21 +18,26 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface WorkspaceCourseRowActionsProps {
-  row: Row<WorkspaceCourse>;
+interface WorkspaceCourseModuleRowActionsProps {
+  wsId: string;
+  courseId: string;
+  row: Row<WorkspaceCourseModule>;
 }
 
-export function WorkspaceCourseRowActions({
+export function WorkspaceCourseModuleRowActions({
+  wsId,
+  courseId,
   row,
-}: WorkspaceCourseRowActionsProps) {
+}: WorkspaceCourseModuleRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
   const data = row.original;
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const deleteWorkspaceCourse = async () => {
+  const deleteWorkspaceCourseModule = async () => {
     const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/courses/${data.id}`,
+      `/api/v1/workspaces/${wsId}/course-modules/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -51,7 +56,7 @@ export function WorkspaceCourseRowActions({
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  if (!data.id || !data.ws_id) return null;
+  if (!data.id || !wsId) return null;
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -79,7 +84,7 @@ export function WorkspaceCourseRowActions({
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteWorkspaceCourse}>
+          <DropdownMenuItem onClick={() => setShowDeleteDialog(true)}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -88,14 +93,30 @@ export function WorkspaceCourseRowActions({
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('ws-flashcards.edit')}
-        editDescription={t('ws-flashcards.edit_description')}
+        title={t('ws-course-modules.edit')}
+        editDescription={t('ws-course-modules.edit_description')}
         setOpen={setShowEditDialog}
+        form={<CourseModuleForm wsId={wsId} courseId={courseId} data={data} />}
+      />
+
+      <ModifiableDialogTrigger
+        data={data}
+        open={showDeleteDialog}
+        title={t('ws-courses.delete_confirm_title', { name: data.name })}
+        editDescription={t('common.confirm_delete_description')}
+        setOpen={setShowDeleteDialog}
         form={
-          <CourseForm
-            wsId={data.ws_id}
-            data={{ ...data, description: data.description ?? '' }}
-          />
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button variant="destructive" onClick={deleteWorkspaceCourseModule}>
+              {t('common.delete')}
+            </Button>
+          </div>
         }
       />
     </div>

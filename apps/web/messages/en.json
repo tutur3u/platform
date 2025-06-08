@@ -1916,7 +1916,8 @@
     "table_view": "Table view",
     "no_courses_found": "No courses found",
     "no_courses_found_description": "No courses found in your workspace. Create a new course to get started.",
-    "no_description_provided": "No description provided"
+    "no_description_provided": "No description provided",
+    "delete_confirm_title": "Deleting \"{name}\""
   },
   "ws-course-modules": {
     "plural": "Course Modules",
@@ -3072,5 +3073,4 @@
     "start_over": "Start over"
   },
   "benefits:": "Benefits:"
-
 }
