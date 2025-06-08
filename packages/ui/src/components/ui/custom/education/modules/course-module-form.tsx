@@ -31,12 +31,7 @@ const FormSchema = z.object({
   name: z.string().min(1),
 });
 
-export function CourseModuleForm({
-  wsId,
-  courseId,
-  data,
-  onFinish,
-}: Props) {
+export function CourseModuleForm({ wsId, courseId, data, onFinish }: Props) {
   const t = useTranslations('ws-course-modules');
   const router = useRouter();
 
