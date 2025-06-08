@@ -4,8 +4,16 @@ import EmailInput from '../../../settings-email-input';
 import FullNameInput from '../../../settings-full-name-input';
 import DefaultWorkspaceSetting from './default-workspace-setting';
 import ResetPasswordForm from './reset-password-form';
-import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Badge } from '@tuturuuu/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
+import { Building, Mail, Settings, Shield, User } from '@tuturuuu/ui/icons';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
@@ -15,124 +23,241 @@ export default async function AccountSettingsPage() {
   const user = await getCurrentUser();
 
   return (
-    <div className="grid gap-1 md:max-w-lg md:min-w-max">
-      <SettingItemTab
-        title={t('settings-account.avatar')}
-        description={t('settings-account.avatar-description')}
-      >
-        {user && <UserAvatar user={user} />}
-      </SettingItemTab>
+    <div className="container mx-auto space-y-8 p-6">
+      {/* Page Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t('settings-account.account')}
+        </h1>
+        <p className="text-muted-foreground">
+          {t('settings-account.page-description')}
+        </p>
+      </div>
 
-      <Separator className="my-4" />
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Profile Section */}
+        <div className="space-y-6 lg:col-span-2">
+          {/* Profile Information Card */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
+                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">
+                    {t('settings-account.profile-information')}
+                  </CardTitle>
+                  <CardDescription>
+                    {t('settings-account.profile-information-description')}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              {/* Avatar Section */}
+              <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-6">
+                <div className="relative">
+                  {user && <UserAvatar user={user} />}
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <h3 className="text-lg font-semibold">
+                    {user?.display_name ||
+                      user?.full_name ||
+                      t('settings-account.anonymous-user')}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t('settings-account.avatar-description')}
+                  </p>
+                </div>
+              </div>
 
-      <Suspense
-        fallback={
-          <SettingItemTab
-            title={t('settings-account.display-name')}
-            description={t('settings-account.display-name-description')}
-          >
-            <DisplayNameInput disabled />
-          </SettingItemTab>
-        }
-      >
-        <SettingItemTab
-          title={t('settings-account.display-name')}
-          description={t('settings-account.display-name-description')}
-        >
-          <DisplayNameInput defaultValue={user?.display_name} />
-        </SettingItemTab>
-      </Suspense>
+              {/* Name Fields */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    {t('settings-account.display-name')}
+                  </label>
+                  <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+                    <DisplayNameInput defaultValue={user?.display_name} />
+                  </Suspense>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings-account.display-name-description')}
+                  </p>
+                </div>
 
-      <Suspense
-        fallback={
-          <SettingItemTab
-            title={t('settings-account.full-name')}
-            description={t('settings-account.full-name-description')}
-          >
-            <FullNameInput disabled />
-          </SettingItemTab>
-        }
-      >
-        <SettingItemTab
-          title={t('settings-account.full-name')}
-          description={t('settings-account.full-name-description')}
-        >
-          <FullNameInput defaultValue={user?.full_name} />
-        </SettingItemTab>
-      </Suspense>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    {t('settings-account.full-name')}
+                  </label>
+                  <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+                    <FullNameInput defaultValue={user?.full_name} />
+                  </Suspense>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings-account.full-name-description')}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* <SettingItemTab title="Handle" description={handleDescription}>
-        <Input
-          placeholder="tuturuuu"
-          // replace all characters that are not a-z, 0-9, underscore(_), or dash(-) with empty string
-          value={handle.replace(/[^a-z0-9_-]/gi, '').toLowerCase()}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-            const handle = event.currentTarget.value.replace(
-              /[^a-z0-9_-]/gi,
-              ''
-            );
+          {/* Contact Information Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-green-100 p-2 dark:bg-green-900/30">
+                  <Mail className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <CardTitle>
+                    {t('settings-account.contact-information')}
+                  </CardTitle>
+                  <CardDescription>
+                    {t('settings-account.contact-information-description')}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  {t('settings-account.email-address')}
+                </label>
+                <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+                  <EmailInput
+                    oldEmail={user?.email}
+                    newEmail={user?.new_email}
+                  />
+                </Suspense>
+                <p className="text-xs text-muted-foreground">
+                  {t('settings-account.email-description')}
+                </p>
+                {user?.new_email && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {t('settings-account.pending-verification')}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {t('settings-account.check-email-verify', {
+                        email: user.new_email,
+                      })}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-            // Limit to 20 characters
-            if (handle.length > 20) return;
-            setUsername(handle.toLowerCase());
-          }}
-        />
-      </SettingItemTab> */}
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Workspace Settings Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30">
+                  <Building className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">
+                    {t('settings-account.workspace')}
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    {t('settings-account.workspace-settings-description')}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  {t('settings-account.default-workspace')}
+                </label>
+                <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+                  <DefaultWorkspaceSetting
+                    defaultWorkspaceId={user?.default_workspace_id}
+                  />
+                </Suspense>
+                <p className="text-xs text-muted-foreground">
+                  {t('settings-account.default-workspace-description')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-      <Suspense
-        fallback={
-          <SettingItemTab
-            title="Email"
-            description={t('settings-account.email-description')}
-          >
-            <EmailInput disabled />
-          </SettingItemTab>
-        }
-      >
-        <SettingItemTab
-          title="Email"
-          description={t('settings-account.email-description')}
-        >
-          <EmailInput oldEmail={user!?.email} newEmail={user!?.new_email} />
-        </SettingItemTab>
-      </Suspense>
+          {/* Account Status Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-emerald-100 p-2 dark:bg-emerald-900/30">
+                  <Settings className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">
+                    {t('settings-account.account-status')}
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    {t('settings-account.account-status-description')}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {t('settings-account.status')}
+                </span>
+                <Badge
+                  variant="default"
+                  className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                >
+                  {t('settings-account.active')}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {t('settings-account.email-verified')}
+                </span>
+                <Badge>{t('settings-account.verified')}</Badge>
+              </div>
+              {user?.created_at && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    {t('settings-account.member-since')}
+                  </span>
+                  <span className="text-sm font-medium">
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-      <Separator className="my-4" />
-
-      <SettingItemTab
-        title={t('settings-account.default-workspace')}
-        description={t('settings-account.default-workspace-description')}
-      >
-        <Suspense
-          fallback={
-            <div className="h-10 w-full animate-pulse rounded bg-muted" />
-          }
-        >
-          <DefaultWorkspaceSetting
-            defaultWorkspaceId={user?.default_workspace_id}
-          />
-        </Suspense>
-      </SettingItemTab>
-
+      {/* Security Section */}
       {user && (
-        <>
-          <Separator className="my-4" />
-          <ResetPasswordForm user={user} />
-        </>
+        <Card className="border-orange-200 dark:border-orange-800">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-orange-100 p-2 dark:bg-orange-900/30">
+                <Shield className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">
+                  {t('settings-account.security-settings')}
+                </CardTitle>
+                <CardDescription>
+                  {t('settings-account.security-settings-description')}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <ResetPasswordForm user={user} />
+          </CardContent>
+        </Card>
       )}
-
-      {/* <Separator className="my-2" />
-
-      <SettingItemTab
-        title={deleteAccountLabel}
-        description={deleteAccountDescription}
-      >
-        <Button
-          className="flex w-full cursor-pointer items-center justify-center rounded border border-red-500/20 bg-red-500/10 p-2 font-semibold text-red-600 transition duration-300 hover:border-red-500/30 hover:bg-red-500/20 dark:border-red-300/20 dark:bg-red-300/10 dark:text-red-300 dark:hover:border-red-300/30 dark:hover:bg-red-300/20"
-        >
-          {deleteAccountLabel}
-        </Button>
-      </SettingItemTab> */}
     </div>
   );
 }

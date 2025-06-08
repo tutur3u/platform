@@ -176,12 +176,6 @@ export default function DefaultWorkspaceSetting({
           )}
         </Button>
       )}
-
-      {!hasChanged && selectedWorkspace !== 'none' && (
-        <div className="py-2 text-center text-xs text-muted-foreground">
-          This workspace is already set as your default
-        </div>
-      )}
     </div>
   );
 }
