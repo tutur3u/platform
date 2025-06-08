@@ -1,10 +1,10 @@
-import LinkButton from '../../link-button';
 import ModuleToggles from './toggles';
 import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   BookText,
@@ -41,7 +41,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
 
   const data = await getData(courseId, moduleId);
   const resources = await getResources({
-    path: `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`,
+    path: `${commonHref}/resources/`,
   });
   const completionStatus = await getCompletionStatus(moduleId);
 
