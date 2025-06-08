@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -27,7 +27,7 @@ import { useState } from 'react';
 import * as z from 'zod';
 
 interface AvatarProps {
-  user: User & UserPrivateDetails;
+  user: WorkspaceUser;
 }
 
 const FormSchema = z.object({

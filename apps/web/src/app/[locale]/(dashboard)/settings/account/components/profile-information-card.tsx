@@ -2,7 +2,7 @@ import UserAvatar from '../../../../settings-avatar';
 import DisplayNameInput from '../../../../settings-display-name-input';
 import FullNameInput from '../../../../settings-full-name-input';
 import AccountStatusSection from './account-status-section';
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,
   CardContent,
@@ -17,7 +17,7 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 interface ProfileInformationCardProps {
-  user: (User & UserPrivateDetails) | null;
+  user: WorkspaceUser | null;
 }
 
 export default async function ProfileInformationCard({

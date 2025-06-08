@@ -1,7 +1,7 @@
 'use client';
 
 import { DEV_MODE, PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { User } from '@tuturuuu/types/primitives/User';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
@@ -32,7 +32,7 @@ export interface NavLink {
 interface Props {
   currentWsId?: string;
   currentRole?: string;
-  currentUser?: User | null;
+  currentUser?: WorkspaceUser | null;
   navLinks: NavLink[];
 }
 
