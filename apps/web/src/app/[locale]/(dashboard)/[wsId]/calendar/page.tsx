@@ -1,7 +1,9 @@
 import CalendarClientPage from './client';
 import TasksSidebar from './components/tasks-sidebar';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { redirect } from 'next/navigation';
 
 interface PageProps {
@@ -28,17 +30,23 @@ export default async function CalendarPage({ params }: PageProps) {
     .maybeSingle();
 
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
-  if (!workspace) return null;
+  if (!workspace?.id) return null;
 
   return (
-    <div className="flex h-[calc(100vh-4.75rem)] md:h-[calc(100vh-2rem)]">
-      <div className="flex-1">
+    <CalendarSyncProvider
+      wsId={workspace.id}
+      experimentalGoogleToken={googleToken}
+      useQuery={useQuery}
+      useQueryClient={useQueryClient}
+    >
+      {/* {DEV_MODE && <CalendarActiveSyncDebugger />} */}
+      <div className="flex h-[calc(100%-2rem-4px)]">
         <CalendarClientPage
-          experimentalGoogleToken={googleToken || undefined}
+          experimentalGoogleToken={googleToken}
           workspace={workspace}
         />
+        <TasksSidebar wsId={wsId} locale={locale} />
       </div>
-      <TasksSidebar wsId={wsId} locale={locale} />
-    </div>
+    </CalendarSyncProvider>
   );
 }

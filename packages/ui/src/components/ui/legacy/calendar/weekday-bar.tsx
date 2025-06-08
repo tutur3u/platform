@@ -1,5 +1,6 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { AllDayEventBar } from './all-day-event-bar';
+import { MIN_COLUMN_WIDTH } from './config';
 import { DayTitle } from './day-title';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -44,7 +45,7 @@ export const WeekdayBar = ({
           className={cn('grid flex-1 rounded-tr-lg border-t border-r')}
           style={{
             gridTemplateColumns: `repeat(${visibleDates.length}, minmax(0, 1fr))`,
-            minWidth: `${visibleDates.length * 120}px`, // Match column width
+            minWidth: `${visibleDates.length * MIN_COLUMN_WIDTH}px`, // Match column width
           }}
         >
           {visibleDates.map((weekday) => {
