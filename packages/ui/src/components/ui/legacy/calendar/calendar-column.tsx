@@ -1,5 +1,5 @@
 import { CalendarCell } from './calendar-cell';
-import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
+import { DAY_HEIGHT, HOUR_HEIGHT, MIN_COLUMN_WIDTH } from './config';
 import { cn } from '@tuturuuu/utils/format';
 
 interface CalendarColumnProps {
@@ -18,7 +18,7 @@ export const CalendarColumn = ({ date, last }: CalendarColumnProps) => {
       )}
       style={{
         gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)`,
-        minWidth: '120px',
+        minWidth: `${MIN_COLUMN_WIDTH}px`,
         height: `${DAY_HEIGHT}px`, // 24 hours * 80px = 1920px
       }}
       data-column-date={date}

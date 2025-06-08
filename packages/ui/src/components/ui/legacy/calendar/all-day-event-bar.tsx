@@ -1,4 +1,5 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
+import { MIN_COLUMN_WIDTH } from './config';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
@@ -92,7 +93,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         className={cn('grid flex-1 border-b border-l')}
         style={{
           gridTemplateColumns: `repeat(${visibleDates.length}, minmax(0, 1fr))`,
-          minWidth: `${visibleDates.length * 100}px`, // Match column width
+          minWidth: `${visibleDates.length * MIN_COLUMN_WIDTH}px`, // Match column width
         }}
       >
         {visibleDates.map((date) => {
