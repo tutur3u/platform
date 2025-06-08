@@ -106,7 +106,7 @@ export function WorkspaceSelect({
 
       const { id } = await res.json();
 
-      router.push(`/${id}`);
+      router.push(`/${id}/home`);
       router.refresh();
 
       setShowNewWorkspaceDialog(false);
