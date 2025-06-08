@@ -2,20 +2,20 @@ import { Button } from '@tuturuuu/ui/button';
 import React from 'react';
 
 export default function BeforeTakeQuizSection({
-    t,
-    quizMeta,
-    dueDateStr,
-    onClickStart,
-    }: {
-    t: (key: string, options?: Record<string, any>) => string;
-    quizMeta: {
-        setName: string;
-        attemptsSoFar: number;
-        attemptLimit: number | null;
-        timeLimitMinutes: number | null;
-    };
-    dueDateStr?: string | null;
-    onClickStart: () => void;
+  t,
+  quizMeta,
+  dueDateStr,
+  onClickStart,
+}: {
+  t: (key: string, options?: Record<string, any>) => string;
+  quizMeta: {
+    setName: string;
+    attemptsSoFar: number;
+    attemptLimit: number | null;
+    timeLimitMinutes: number | null;
+  };
+  dueDateStr?: string | null;
+  onClickStart: () => void;
 }) {
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center space-y-4 p-6">
