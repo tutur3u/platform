@@ -9,6 +9,7 @@ import { useChat } from '@tuturuuu/ai/react';
 import { type Message } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { AIChat } from '@tuturuuu/types/db';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -25,6 +26,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   noEmptyPage?: boolean;
   disabled?: boolean;
   initialApiKey?: string | null;
+  user: WorkspaceUser;
 }
 
 const Chat = ({
@@ -38,6 +40,7 @@ const Chat = ({
   noEmptyPage,
   disabled,
   initialApiKey,
+  user,
 }: ChatProps) => {
   const t = useTranslations();
 
@@ -45,9 +48,10 @@ const Chat = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const currentUserId = user.id;
+
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(inputModel);
-  const [currentUserId, setCurrentUserId] = useState<string>();
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
@@ -84,18 +88,6 @@ const Chat = ({
         });
       },
     });
-
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) setCurrentUserId(user.id);
-    };
-
-    getCurrentUser();
-  }, []);
 
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | undefined>(
