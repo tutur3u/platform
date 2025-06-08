@@ -176,6 +176,7 @@ export function TaskBoardForm({ wsId, data, onFinish }: Props) {
                           placeholder="Enter board name..."
                           autoComplete="off"
                           className="text-sm sm:text-base"
+                          autoFocus
                           {...field}
                         />
                       </FormControl>

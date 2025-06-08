@@ -115,7 +115,7 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
       setIsLoading(true);
       const supabase = createClient();
       await supabase.from('workspace_boards').delete().eq('id', board.id);
-      router.push('../');
+      router.push(`/${board.ws_id}/tasks/boards`);
     } catch (error) {
       console.error('Failed to delete board:', error);
     } finally {

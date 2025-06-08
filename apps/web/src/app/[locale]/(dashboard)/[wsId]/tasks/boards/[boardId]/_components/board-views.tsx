@@ -20,7 +20,7 @@ interface Props {
 }
 
 export function BoardViews({ board }: Props) {
-  const [currentView, setCurrentView] = useState<ViewType>('status-grouped');
+  const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const queryClient = useQueryClient();
 
   const handleUpdate = async () => {
