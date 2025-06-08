@@ -98,6 +98,7 @@ export function Structure({
           t={t}
           hideLeading={isCollapsed}
           localUseQuery={useQuery}
+          customRedirectSuffix={`home`}
         />
       </Suspense>
     </>
