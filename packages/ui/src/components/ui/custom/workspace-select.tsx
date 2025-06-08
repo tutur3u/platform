@@ -58,10 +58,12 @@ export function WorkspaceSelect({
   t,
   localUseQuery,
   hideLeading,
+  customRedirectSuffix,
 }: {
   t: any;
   localUseQuery: any;
   hideLeading?: boolean;
+  customRedirectSuffix?: string;
 }) {
   const router = useRouter();
   const params = useParams();
@@ -106,7 +108,9 @@ export function WorkspaceSelect({
 
       const { id } = await res.json();
 
-      router.push(`/${id}/home`);
+      customRedirectSuffix
+        ? router.push(`/${id}/${customRedirectSuffix}`)
+        : router.push(`/${id}`);
       router.refresh();
 
       setShowNewWorkspaceDialog(false);
