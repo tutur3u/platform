@@ -7179,6 +7179,8 @@ export type Database = {
               p_user_id: string;
               p_session_data?: Json;
               p_expiry_seconds?: number;
+              p_target_app: string;
+              p_origin_app: string;
             };
         Returns: string;
       };
@@ -7553,8 +7555,6 @@ export type Database = {
           email: string;
           new_email: string;
           birthday: string;
-          team_name: string[];
-
           display_name: string;
           id: string;
           deleted: boolean;
