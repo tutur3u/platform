@@ -96,8 +96,11 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
   // Calculate stats
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Use ISO week (Monday-based) for consistency with frontend
   const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay());
+  const dayOfWeek = today.getDay();
+  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0, Sunday = 6
+  startOfWeek.setDate(today.getDate() - daysToSubtract);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   let todayTime = 0;
@@ -126,21 +129,65 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     }
   }
 
-  // Calculate streak
+  // Calculate streak - count consecutive days with activity
   let streak = 0;
   if (activityDays.size > 0) {
     let currentDate = new Date(today);
-    while (activityDays.has(currentDate.toDateString())) {
-      streak++;
+
+    // If today has activity, start counting from today
+    if (activityDays.has(currentDate.toDateString())) {
+      while (activityDays.has(currentDate.toDateString())) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      }
+    } else {
+      // If today has no activity, check yesterday and count backwards
       currentDate.setDate(currentDate.getDate() - 1);
+      while (activityDays.has(currentDate.toDateString())) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      }
     }
   }
+
+  // Calculate daily activity for the past year (for heatmap)
+  const dailyActivityMap = new Map<
+    string,
+    { duration: number; sessions: number }
+  >();
+
+  if (allSessions) {
+    allSessions.forEach((session) => {
+      if (!session.duration_seconds) return;
+
+      const dateStr = new Date(session.start_time).toISOString().split('T')[0];
+      if (!dateStr) return;
+
+      const existing = dailyActivityMap.get(dateStr) || {
+        duration: 0,
+        sessions: 0,
+      };
+      dailyActivityMap.set(dateStr, {
+        duration: existing.duration + session.duration_seconds,
+        sessions: existing.sessions + 1,
+      });
+    });
+  }
+
+  const dailyActivity = Array.from(dailyActivityMap.entries()).map(
+    ([date, data]) => ({
+      date,
+      duration: data.duration,
+      sessions: data.sessions,
+    })
+  );
 
   const stats = {
     todayTime,
     weekTime,
     monthTime,
     streak,
+    dailyActivity,
   };
 
   return {
