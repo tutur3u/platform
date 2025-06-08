@@ -34,6 +34,16 @@ export default function MarketingPage() {
 
   useEffect(() => {
     async function fetchWsId() {
+      const response = await fetch('/api/v1/users/me/default-workspace');
+      if (response.ok) {
+        const defaultWs = await response.json();
+        if (defaultWs?.id) {
+          setWsId(defaultWs.id);
+          return;
+        }
+      }
+
+      // Fallback to first workspace if no default workspace
       const workspaces = await getWorkspaces();
       setWsId(workspaces?.[0]?.id || null);
     }
