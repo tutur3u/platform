@@ -1,9 +1,9 @@
 'use client';
 
-import WorkspaceCourseModuleForm from './form';
 import { Row } from '@tanstack/react-table';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
+import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
@@ -95,13 +95,7 @@ export function WorkspaceCourseModuleRowActions({
         title={t('ws-flashcards.edit')}
         editDescription={t('ws-flashcards.edit_description')}
         setOpen={setShowEditDialog}
-        form={
-          <WorkspaceCourseModuleForm
-            wsId={wsId}
-            courseId={courseId}
-            data={data}
-          />
-        }
+        form={<CourseModuleForm wsId={wsId} courseId={courseId} data={data} />}
       />
     </div>
   );

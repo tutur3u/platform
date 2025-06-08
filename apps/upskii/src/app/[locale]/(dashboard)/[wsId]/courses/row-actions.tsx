@@ -3,7 +3,7 @@
 import { Row } from '@tanstack/react-table';
 import { WorkspaceCourse } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import { CourseForm } from '@tuturuuu/ui/custom/education/course-form';
+import { CourseForm } from '@tuturuuu/ui/custom/education/courses/course-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,

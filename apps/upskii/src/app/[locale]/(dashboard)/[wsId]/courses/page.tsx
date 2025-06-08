@@ -1,11 +1,11 @@
-import { CourseCardView } from '@tuturuuu/ui/custom/education/course-card-view';
 import { getWorkspaceCourseColumns } from './columns';
 import { CoursePagination } from './course-pagination';
 //import { mockData } from './mock/mock-courses';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourse } from '@tuturuuu/types/db';
-import { CourseForm } from '@tuturuuu/ui/custom/education/course-form';
+import { CourseForm } from '@tuturuuu/ui/custom/education/courses/course-form';
+import { CourseCardView } from '@tuturuuu/ui/custom/education/courses/course-card-view';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ViewToggle } from '@tuturuuu/ui/custom/view-toggle';
 import { Separator } from '@tuturuuu/ui/separator';

@@ -1,6 +1,6 @@
 'use client';
 
-import WorkspaceCourseModuleForm from './form';
+
 import { Row } from '@tanstack/react-table';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -17,6 +17,7 @@ import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
 
 interface WorkspaceCourseModuleRowActionsProps {
   wsId: string;
@@ -97,7 +98,7 @@ export function WorkspaceCourseModuleRowActions({
         editDescription={t('ws-course-modules.edit_description')}
         setOpen={setShowEditDialog}
         form={
-          <WorkspaceCourseModuleForm
+          <CourseModuleForm
             wsId={wsId}
             courseId={courseId}
             data={data}

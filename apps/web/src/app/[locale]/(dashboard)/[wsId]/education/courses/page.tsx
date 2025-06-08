@@ -3,9 +3,9 @@ import { getWorkspaceCourseColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourse } from '@tuturuuu/types/db';
-import { CourseCardView } from '@tuturuuu/ui/custom/education/course-card-view';
-import { CourseForm } from '@tuturuuu/ui/custom/education/course-form';
-import { CoursePagination } from '@tuturuuu/ui/custom/education/course-pagination';
+import { CourseCardView } from '@tuturuuu/ui/custom/education/courses/course-card-view';
+import { CourseForm } from '@tuturuuu/ui/custom/education/courses/course-form';
+import { CoursePagination } from '@tuturuuu/ui/custom/education/courses/course-pagination';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ViewToggle } from '@tuturuuu/ui/custom/view-toggle';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -45,7 +45,7 @@ export default async function WorkspaceCoursesPage({
   const courses = data.map((c) => ({
     ...c,
     ws_id: wsId,
-    href: `/${wsId}/courses/${c.id}`,
+    href: `/${wsId}/education/courses/${c.id}`,
   }));
 
   return (
