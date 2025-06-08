@@ -160,6 +160,7 @@ export const CalendarSyncProvider = ({
     queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
     enabled: !!wsId && dates.length > 0,
     queryFn: async () => {
+      console.log('30s: Fetching database events');
       const cacheKey = getCacheKey(dates);
       if (!cacheKey) return null;
 
@@ -168,14 +169,13 @@ export const CalendarSyncProvider = ({
       // If we have cached data and it's not stale, return it immediately
       if (
         cachedData?.dbEvents &&
+        cachedData.dbEvents.length > 0 &&
         !isCacheStale(cachedData.lastUpdated) &&
         !cachedData.isForced
       ) {
         setData(cachedData.dbEvents);
         return cachedData.dbEvents;
       }
-
-      console.log('Yay: Pass stale check');
 
       if (cachedData) {
         cachedData.isForced = false;
@@ -224,7 +224,11 @@ export const CalendarSyncProvider = ({
       const cachedData = calendarCache[cacheKey];
 
       // If we have cached data and it's not stale, return it immediately
-      if (cachedData?.googleEvents && !isCacheStale(cachedData.lastUpdated)) {
+      if (
+        cachedData?.googleEvents &&
+        cachedData.googleEvents.length > 0 &&
+        !isCacheStale(cachedData.lastUpdated)
+      ) {
         setGoogleData(cachedData.googleEvents);
         return cachedData.googleEvents;
       }
@@ -511,6 +515,7 @@ export const CalendarSyncProvider = ({
           return;
         } else {
           setError(null);
+          console.log('Upsert status: Finished');
         }
 
         setData(upsertData);
@@ -577,6 +582,12 @@ export const CalendarSyncProvider = ({
       return;
     }
 
+    console.log('useEffect 2');
+    const cacheKey = getCacheKey(dates);
+    const cacheData = calendarCache[cacheKey];
+    if (cacheData) {
+      cacheData.isForced = true;
+    }
     // Trigger a refetch of both database and google events
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
@@ -584,7 +595,7 @@ export const CalendarSyncProvider = ({
     queryClient.invalidateQueries({
       queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
     });
-  }, [dates, queryClient, wsId, experimentalGoogleToken?.ws_id]);
+  }, [dates, queryClient, wsId, experimentalGoogleToken?.ws_id, calendarCache]);
 
   /*
   Show data from database to Tuturuuu

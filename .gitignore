@@ -16,6 +16,7 @@ build
 dist
 .swc/
 .vercel
+.zshrc
 
 # misc
 .DS_Store
