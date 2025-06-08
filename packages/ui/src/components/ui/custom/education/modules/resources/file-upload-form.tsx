@@ -1,6 +1,5 @@
 'use client';
 
-import { joinPath } from '@tuturuuu/utils/path-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
@@ -18,6 +17,7 @@ import { Check, Trash } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { joinPath } from '@tuturuuu/utils/path-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
