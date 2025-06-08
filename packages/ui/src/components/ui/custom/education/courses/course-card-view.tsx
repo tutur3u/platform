@@ -25,7 +25,7 @@ export function CourseCardView({ courses }: CourseCardViewProps) {
           <BookOpen className="h-8 w-8 text-purple-600" />
         </div>
         <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
-          {t('no-courses-found')}
+          {t('ws-courses.no_courses_found')}
         </p>
       </div>
     );
