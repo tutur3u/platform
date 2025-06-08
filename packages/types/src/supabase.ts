@@ -5569,9 +5569,9 @@ export type Database = {
           allow_view_results: boolean;
           attempt_limit: number | null;
           created_at: string;
+          due_date: string;
           id: string;
           name: string;
-          release_at: string | null;
           release_points_immediately: boolean;
           time_limit_minutes: number | null;
           ws_id: string | null;
@@ -5580,9 +5580,9 @@ export type Database = {
           allow_view_results?: boolean;
           attempt_limit?: number | null;
           created_at?: string;
+          due_date?: string;
           id?: string;
           name?: string;
-          release_at?: string | null;
           release_points_immediately?: boolean;
           time_limit_minutes?: number | null;
           ws_id?: string | null;
@@ -5591,9 +5591,9 @@ export type Database = {
           allow_view_results?: boolean;
           attempt_limit?: number | null;
           created_at?: string;
+          due_date?: string;
           id?: string;
           name?: string;
-          release_at?: string | null;
           release_points_immediately?: boolean;
           time_limit_minutes?: number | null;
           ws_id?: string | null;

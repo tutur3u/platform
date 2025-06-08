@@ -3811,7 +3811,9 @@
     "time_remaining": "Time Remaining",
     "points": "Points",
     "submitting": "Submitting...",
-    "submit": "Submit"
+    "submit": "Submit",
+    "due_on": "Due on",
+    "quiz_past_due": "This quiz is past its due date."
   },
   "ws-reports": {
     "report": "Report",

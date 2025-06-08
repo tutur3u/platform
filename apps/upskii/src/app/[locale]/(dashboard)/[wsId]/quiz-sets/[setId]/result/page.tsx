@@ -1,3 +1,4 @@
+// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/results/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -5,15 +6,17 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Button } from '@tuturuuu/ui/button';
 
+/** 
+ * Client-side types matching AttemptDTO defined in the /results route.
+ */
 type AttemptAnswer = {
   quizId: string;
   question: string;
-  selectedOption: string | null; // now can be null
+  selectedOption: string | null;
   correctOption: string;
   isCorrect: boolean;
   scoreAwarded: number;
 };
-
 type AttemptDTO = {
   attemptId: string;
   attemptNumber: number;
@@ -47,10 +50,9 @@ export default function ViewResults({
       setLoading(true);
       try {
         const res = await fetch(
-          `/api/v1/workspaces/${wsId}/quiz-sets/${setId}/results`
+          `/api/quiz-sets/${setId}/results`
         );
-        const json: { attempts?: AttemptDTO[]; error?: string } =
-          await res.json();
+        const json: { attempts?: AttemptDTO[]; error?: string } = await res.json();
 
         if (!res.ok) {
           setErrorMsg(json.error || 'Error loading results');
@@ -68,11 +70,7 @@ export default function ViewResults({
   }, [wsId, setId]);
 
   if (loading) {
-    return (
-      <p className="p-4">
-        {t('ws-quizzes.loading') || 'Loading results...'}
-      </p>
-    );
+    return <p className="p-4">{t('ws-quizzes.loading') || 'Loading results...'}</p>;
   }
   if (errorMsg) {
     return (
@@ -118,18 +116,15 @@ export default function ViewResults({
               {t('ws-quizzes.attempt')} #{att.attemptNumber}
             </h2>
             <p className="text-sm text-gray-600">
-              {t('ws-quizzes.scored') || 'Scored'}:{' '}
-              {att.totalScore} / {att.maxPossibleScore}
+              {t('ws-quizzes.scored') || 'Scored'}: {att.totalScore} / {att.maxPossibleScore}
             </p>
           </div>
           <p className="text-sm text-gray-500 mb-4">
-            {t('ws-quizzes.started_at') || 'Started at'}:{' '}
-            {new Date(att.startedAt).toLocaleString()}
+            {t('ws-quizzes.started_at') || 'Started at'}: {new Date(att.startedAt).toLocaleString()}
             {att.completedAt && (
               <>
                 {' | '}
-                {t('ws-quizzes.completed_at') || 'Completed at'}:{' '}
-                {new Date(att.completedAt).toLocaleString()}
+                {t('ws-quizzes.completed_at') || 'Completed at'}: {new Date(att.completedAt).toLocaleString()}
               </>
             )}
           </p>
@@ -137,29 +132,16 @@ export default function ViewResults({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border px-2 py-1 text-left">
-                  {t('ws-quizzes.#') || '#'}
-                </th>
-                <th className="border px-2 py-1 text-left">
-                  {t('ws-quizzes.question') || 'Question'}
-                </th>
-                <th className="border px-2 py-1 text-left">
-                  {t('ws-quizzes.your_answer') || 'Your Answer'}
-                </th>
-                <th className="border px-2 py-1 text-left">
-                  {t('ws-quizzes.correct_answer') || 'Correct Answer'}
-                </th>
-                <th className="border px-2 py-1 text-left">
-                  {t('ws-quizzes.points') || 'Points'}
-                </th>
+                <th className="border px-2 py-1 text-left">{t('ws-quizzes.#') || '#'}</th>
+                <th className="border px-2 py-1 text-left">{t('ws-quizzes.question') || 'Question'}</th>
+                <th className="border px-2 py-1 text-left">{t('ws-quizzes.your_answer') || 'Your Answer'}</th>
+                <th className="border px-2 py-1 text-left">{t('ws-quizzes.correct_answer') || 'Correct Answer'}</th>
+                <th className="border px-2 py-1 text-left">{t('ws-quizzes.points') || 'Points'}</th>
               </tr>
             </thead>
             <tbody>
               {att.answers.map((ans, idx) => (
-                <tr
-                  key={ans.quizId}
-                  className={ans.isCorrect ? '' : 'bg-red-50'}
-                >
+                <tr key={ans.quizId} className={ans.isCorrect ? '' : 'bg-red-50'}>
                   <td className="border px-2 py-1">{idx + 1}</td>
                   <td className="border px-2 py-1">{ans.question}</td>
                   <td className="border px-2 py-1">
@@ -168,9 +150,7 @@ export default function ViewResults({
                       : ans.selectedOption}
                   </td>
                   <td className="border px-2 py-1">{ans.correctOption}</td>
-                  <td className="border px-2 py-1">
-                    {ans.scoreAwarded}
-                  </td>
+                  <td className="border px-2 py-1">{ans.scoreAwarded}</td>
                 </tr>
               ))}
             </tbody>
@@ -181,7 +161,6 @@ export default function ViewResults({
       <Button
         className="mt-4 bg-blue-600 text-white hover:bg-blue-700"
         onClick={() => {
-          // Navigate back to the quiz‐set overview
           router.push(
             `/dashboard/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes`
           );

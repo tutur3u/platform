@@ -1,8 +1,12 @@
+// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
 'use client';
 
+import BeforeTakeQuizSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/before-take-quiz-section';
+import PastDueSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/past-due-section';
 import QuizStatusSidebar, {
   Question,
 } from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/quiz-status-sidebar';
+import ShowResultSummarySection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/show-result-summary-section';
 import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/time-elapsed-status';
 import { Button } from '@tuturuuu/ui/button';
 import { ListCheck } from '@tuturuuu/ui/icons';
@@ -10,8 +14,15 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
 
-// ─── TYPES ─────────────────────────────────────────────────────────────────────
+// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
+
+// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
+
+// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
+
+// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
 
 type TakeResponse = {
   setId: string;
@@ -21,6 +32,7 @@ type TakeResponse = {
   attemptsSoFar: number;
   allowViewResults: boolean;
   questions: Question[];
+  dueDate: string | null;
 };
 
 type SubmitResult = {
@@ -29,8 +41,6 @@ type SubmitResult = {
   totalScore: number;
   maxPossibleScore: number;
 };
-
-// ─── COMPONENT ─────────────────────────────────────────────────────────────────
 
 export default function TakeQuiz({
   params,
@@ -47,59 +57,42 @@ export default function TakeQuiz({
   const router = useRouter();
 
   // ─── STATE ───────────────────────────────────────────────────────────────────
-  // Sidebar visibility (mobile only)
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
-  // Metadata loading / error
   const [loadingMeta, setLoadingMeta] = useState(true);
   const [metaError, setMetaError] = useState<string | null>(null);
-
-  // Fetched quiz metadata (including questions, time limit, attempt counts, allowViewResults)
   const [quizMeta, setQuizMeta] = useState<TakeResponse | null>(null);
 
-  // Whether the student has clicked “Take Quiz” or resumed from localStorage
   const [hasStarted, setHasStarted] = useState(false);
+  const [isPastDue, setIsPastDue] = useState(false);
+  const [dueDateStr, setDueDateStr] = useState<string | null>(null);
 
-  // Time state: if timeLimitMinutes != null, this is “seconds left” (countdown).
-  // If timeLimitMinutes == null, this is “seconds elapsed” (count-up).
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Selected answers (quizId → selectedOptionId)
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<string, string>
   >({});
 
-  // Submission state
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // ─── HELPERS ─────────────────────────────────────────────────────────────────
-
   const STORAGE_KEY = `quiz_start_${setId}`;
-
-  // totalSeconds: if timeLimitMinutes is null → null, else minutes*60
   const totalSeconds = quizMeta?.timeLimitMinutes
     ? quizMeta.timeLimitMinutes * 60
     : null;
 
-  // Remove stored start time when done
   const clearStartTimestamp = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // ignore
-    }
+    } catch {}
   };
 
-  // Elapsed seconds since a given timestamp
-  const computeElapsedSeconds = (startTs: number) => {
-    const now = Date.now();
-    return Math.floor((now - startTs) / 1000);
-  };
+  const computeElapsedSeconds = (startTs: number) =>
+    Math.floor((Date.now() - startTs) / 1000);
 
-  // Build submission payload (possibly empty array if unanswered)
   const buildSubmissionPayload = () => ({
     answers: Object.entries(selectedAnswers).map(([quizId, optionId]) => ({
       quizId,
@@ -107,8 +100,7 @@ export default function TakeQuiz({
     })),
   });
 
-  // ─── FETCH METADATA ON MOUNT ─────────────────────────────────────────────────
-
+  // ─── FETCH METADATA ────────────────────────────────────────────────────────────
   useEffect(() => {
     async function fetchMeta() {
       setLoadingMeta(true);
@@ -119,150 +111,97 @@ export default function TakeQuiz({
         const json: TakeResponse | { error: string } = await res.json();
 
         if (!res.ok) {
-          setMetaError(
-            (json as any).error || 'Unknown error loading quiz metadata'
-          );
+          setMetaError((json as any).error || 'Unknown error');
           setLoadingMeta(false);
           return;
         }
 
         setQuizMeta(json as TakeResponse);
+        if ('dueDate' in json && json.dueDate) {
+          setDueDateStr(json.dueDate);
+          if (new Date(json.dueDate) < new Date()) {
+            setIsPastDue(true);
+          }
+        }
 
-        // Check localStorage for a prior start timestamp
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored && totalSeconds !== undefined) {
+        if (stored) {
           const startTs = parseInt(stored, 10);
           if (!isNaN(startTs)) {
             if (totalSeconds !== null) {
-              // countdown scenario
-              const elapsed = computeElapsedSeconds(startTs);
-              if (elapsed >= totalSeconds) {
-                // expired already → auto‐submit
-                setHasStarted(true);
-                setTimeLeft(0);
-              } else {
-                setHasStarted(true);
-                setTimeLeft(totalSeconds - elapsed);
-              }
-            } else {
-              // no‐limit scenario → count up from elapsed
               const elapsed = computeElapsedSeconds(startTs);
               setHasStarted(true);
-              setTimeLeft(elapsed);
+              setTimeLeft(elapsed >= totalSeconds ? 0 : totalSeconds - elapsed);
+            } else {
+              setHasStarted(true);
+              setTimeLeft(computeElapsedSeconds(startTs));
             }
           }
         }
       } catch {
-        setMetaError('Network error loading quiz metadata');
+        setMetaError('Network error');
       } finally {
         setLoadingMeta(false);
       }
     }
-
     fetchMeta();
-
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
-    // Note: totalSeconds is derived from quizMeta, so on first mount it's undefined; we only want this effect once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setId]);
 
-  // ─── START/RESUME TIMER ONCE `hasStarted` CHANGES ─────────────────────────────
-
+  // ─── TIMER LOGIC ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!hasStarted || quizMeta === null) return;
+    if (!hasStarted || !quizMeta) return;
 
-    // If countdown ended immediately (timeLeft===0), do auto‐submit:
     if (totalSeconds !== null && timeLeft === 0) {
-      handleSubmit(true);
+      handleSubmit();
       return;
     }
 
-    // Clear any previous interval
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+    timerRef.current && clearInterval(timerRef.current);
 
-    // If there is a countdown (totalSeconds != null), decrement timeLeft.
     if (totalSeconds !== null) {
       timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev === null) return null;
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            return 0;
-          }
-          return prev - 1;
-        });
+        setTimeLeft((prev) =>
+          prev === null
+            ? null
+            : prev <= 1
+              ? (clearInterval(timerRef.current!), 0)
+              : prev - 1
+        );
       }, 1000);
     } else {
-      // No time limit: run a count‐up timer (increment timeLeft each second)
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => (prev === null ? 1 : prev + 1));
       }, 1000);
     }
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => void clearInterval(timerRef.current!);
   }, [hasStarted, quizMeta]);
 
-  // ─── AUTO‐SUBMIT ON TIMEOUT ───────────────────────────────────────────────────
-
   useEffect(() => {
-    // Only relevant if it's a countdown
     if (hasStarted && totalSeconds !== null && timeLeft === 0) {
-      handleSubmit(true);
+      handleSubmit();
     }
   }, [timeLeft, hasStarted, totalSeconds]);
 
-  // ─── HANDLE “TAKE QUIZ” BUTTON CLICK ──────────────────────────────────────────
-
+  // ─── EVENT HANDLERS ─────────────────────────────────────────────────────────
   const onClickStart = () => {
     if (!quizMeta) return;
-
-    if (totalSeconds !== null) {
-      // Countdown case: save start timestamp
-      const now = Date.now();
-      try {
-        localStorage.setItem(STORAGE_KEY, now.toString());
-      } catch {
-        // ignore
-      }
-      setHasStarted(true);
-      setTimeLeft(totalSeconds);
-    } else {
-      // No time limit: count from zero
-      const now = Date.now();
-      try {
-        localStorage.setItem(STORAGE_KEY, now.toString());
-      } catch {
-        // ignore
-      }
-      setHasStarted(true);
-      setTimeLeft(0);
-    }
+    const nowMs = Date.now();
+    try {
+      localStorage.setItem(STORAGE_KEY, nowMs.toString());
+    } catch {}
+    setHasStarted(true);
+    setTimeLeft(totalSeconds ?? 0);
   };
 
-  // ─── HANDLE SUBMISSION ────────────────────────────────────────────────────────
-
-  const handleSubmit = async (_auto: boolean = false) => {
+  async function handleSubmit() {
     if (!quizMeta) return;
-
-    // // If not auto‐submit, require all questions answered
-    // if (!auto) {
-    //   const unanswered = quizMeta.questions.filter(
-    //     (q) => !selectedAnswers[q.quizId]
-    //   );
-    //   if (unanswered.length > 0) {
-    //     alert(
-    //       t('ws-quizzes.please_answer_all') || 'Please answer all questions.'
-    //     );
-    //     return;
-    //   }
-    // }
-
     setSubmitting(true);
     setSubmitError(null);
 
@@ -279,27 +218,21 @@ export default function TakeQuiz({
 
       if (!res.ok) {
         setSubmitError((json as any).error || 'Submission failed.');
-        setSubmitting(false);
-        return;
+        return setSubmitting(false);
       }
 
-      // Success: clear timer, localStorage, and show results
       clearStartTimestamp();
       setSubmitResult(json as SubmitResult);
-      setSubmitting(false);
     } catch {
       setSubmitError('Network error submitting.');
+    } finally {
       setSubmitting(false);
     }
-  };
+  }
 
-  // ─── RENDER LOGIC ─────────────────────────────────────────────────────────────
-
-  // 1) Loading or metadata error
+  // ─── RENDER ───────────────────────────────────────────────────────────────────
   if (loadingMeta) {
-    return (
-      <p className="p-4">{t('ws-quizzes.loading') || 'Loading quiz...'}</p>
-    );
+    return <p className="p-4">{t('ws-quizzes.loading') || 'Loading...'}</p>;
   }
   if (metaError) {
     return <p className="p-4 text-red-600">{metaError}</p>;
@@ -308,124 +241,141 @@ export default function TakeQuiz({
     return null;
   }
 
-  const { setName, attemptLimit, attemptsSoFar, allowViewResults, questions } =
-    quizMeta;
+  // Past due?
+  if (isPastDue) {
+    return (
+      <PastDueSection
+        t={t}
+        quizMeta={quizMeta}
+        dueDateStr={dueDateStr}
+        wsId={wsId}
+        courseId={courseId}
+        moduleId={moduleId}
+        setId={setId}
+        router={router}
+      />
+    );
+  }
 
-  // 2) If the student has already submitted, show results screen
+  // After submit: show result summary
   if (submitResult) {
     return (
-      <div className="mx-auto max-w-md space-y-4 p-4">
-        <h2 className="text-2xl font-bold">
-          {t('ws-quizzes.results') || 'Results'}
-        </h2>
-        <p>
-          {t('ws-quizzes.attempt')} #{submitResult.attemptNumber}{' '}
-          {t('ws-quizzes.of')} {attemptLimit ?? t('ws-quizzes.unlimited')}
-        </p>
-        <p>
-          {t('ws-quizzes.score')}: {submitResult.totalScore} /{' '}
-          {submitResult.maxPossibleScore}
+      <ShowResultSummarySection
+        t={t}
+        submitResult={submitResult}
+        quizMeta={{
+          attemptLimit: quizMeta.attemptLimit,
+          setName: quizMeta.setName,
+          attemptsSoFar: quizMeta.attemptsSoFar,
+          timeLimitMinutes: quizMeta.timeLimitMinutes,
+        }}
+        wsId={wsId}
+        courseId={courseId}
+        moduleId={moduleId}
+        router={router}
+      />
+    );
+  }
+
+  // ─── NEW: Immediate‐release case ─────────────────────────────────────────────
+  if (!hasStarted && quizMeta.allowViewResults && quizMeta.attemptsSoFar > 0) {
+    return (
+      <div className="mx-auto max-w-lg p-6 text-center">
+        <h1 className="text-3xl font-bold">{quizMeta.setName}</h1>
+        <p className="mt-4 text-lg">
+          {t('ws-quizzes.results_available') ||
+            'Your previous attempt(s) have been scored.'}
         </p>
         <Button
-          className="mt-2 bg-blue-600 text-white hover:bg-blue-700"
-          onClick={() => {
-            // Navigate back to the quiz‐set overview:
+          className="mt-6 bg-green-600 text-white hover:bg-green-700"
+          onClick={() =>
             router.push(
-              `/dashboard/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes`
-            );
-          }}
+              `/dashboard/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes/${setId}/results`
+            )
+          }
         >
-          {t('ws-quizzes.done') || 'Done'}
+          {t('ws-quizzes.view_results') || 'View Results'}
         </Button>
+        {dueDateStr && (
+          <p className="mt-2 text-sm text-gray-500">
+            {t('ws-quizzes.due_on') || 'Due on'}:{' '}
+            {new Date(dueDateStr).toLocaleString()}
+          </p>
+        )}
       </div>
     );
   }
 
-  // 3) If the student has NOT started yet…
-  if (!hasStarted) {
-    // If attempt limit is reached, show “View Results” (if allowed) or “No attempts left”
-    if (attemptLimit !== null && attemptsSoFar >= attemptLimit) {
-      return (
-        <div className="mx-auto flex max-w-lg flex-col items-center space-y-4 p-6">
-          <h1 className="text-3xl font-bold">{setName}</h1>
-          <p className="text-lg">
-            {t('ws-quizzes.attempts') || 'Attempts'}: {attemptsSoFar} /{' '}
-            {attemptLimit}
-          </p>
-          {allowViewResults ? (
-            <Button
-              className="bg-green-600 text-white hover:bg-green-700"
-              onClick={() => {
-                router.push(
-                  `/dashboard/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes/${setId}/results`
-                );
-              }}
-            >
-              {t('ws-quizzes.view_results') || 'View Results'}
-            </Button>
-          ) : (
-            <p className="text-red-600">
-              {t('ws-quizzes.no_attempts_left') || 'You have no attempts left.'}
-            </p>
-          )}
-        </div>
-      );
-    }
-
-    // Otherwise, show “Take Quiz” button + attempt/time-limit info
+  // ─── “Not started yet”: no attempts left? ────────────────────────────────────
+  if (
+    !hasStarted &&
+    quizMeta.attemptLimit !== null &&
+    quizMeta.attemptsSoFar >= quizMeta.attemptLimit
+  ) {
     return (
       <div className="mx-auto flex max-w-lg flex-col items-center space-y-4 p-6">
-        <h1 className="text-3xl font-bold">{setName}</h1>
-
-        {attemptLimit !== null ? (
-          <p className="text-lg">
-            {t('ws-quizzes.attempts') || 'Attempts'}: {attemptsSoFar} /{' '}
-            {attemptLimit}
-          </p>
-        ) : (
-          <p className="text-lg">
-            {t('ws-quizzes.attempts') || 'Attempts'}: {attemptsSoFar} /{' '}
-            {t('ws-quizzes.unlimited')}
+        <h1 className="text-3xl font-bold">{quizMeta.setName}</h1>
+        {dueDateStr && (
+          <p className="text-base text-gray-600">
+            {t('ws-quizzes.due_on') || 'Due on'}:{' '}
+            {new Date(dueDateStr).toLocaleString()}
           </p>
         )}
-
-        {quizMeta.timeLimitMinutes !== null ? (
-          <p className="text-base">
-            {t('ws-quizzes.time_limit') || 'Time Limit'}:{' '}
-            {quizMeta.timeLimitMinutes} {t('ws-quizzes.minutes') || 'minutes'}
-          </p>
+        <p className="text-lg">
+          {t('ws-quizzes.attempts') || 'Attempts'}: {quizMeta.attemptsSoFar} /{' '}
+          {quizMeta.attemptLimit}
+        </p>
+        {quizMeta.allowViewResults ? (
+          <Button
+            className="bg-green-600 text-white hover:bg-green-700"
+            onClick={() =>
+              router.push(
+                `/dashboard/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes/${setId}/results`
+              )
+            }
+          >
+            {t('ws-quizzes.view_results') || 'View Results'}
+          </Button>
         ) : (
-          <p className="text-base">
-            {t('ws-quizzes.no_time_limit') || 'No time limit'}
+          <p className="text-red-600">
+            {t('ws-quizzes.no_attempts_left') || 'You have no attempts left.'}
           </p>
         )}
-
-        <Button
-          className="bg-dynamic-purple/20 border border-dynamic-purple text-white hover:bg-dynamic-purple/40"
-          onClick={onClickStart}
-        >
-          {t('ws-quizzes.take_quiz') || 'Take Quiz'}
-        </Button>
       </div>
     );
   }
 
-  // 4) Once hasStarted = true, show timer, sidebar, and question form
+  // ─── “Take Quiz” button ──────────────────────────────────────────────────────
+  if (!hasStarted) {
+    return (
+      <BeforeTakeQuizSection
+        t={t}
+        quizMeta={{
+          setName: quizMeta.setName,
+          attemptsSoFar: quizMeta.attemptsSoFar,
+          attemptLimit: quizMeta.attemptLimit,
+          timeLimitMinutes: quizMeta.timeLimitMinutes,
+        }}
+        dueDateStr={dueDateStr}
+        onClickStart={onClickStart}
+      />
+    );
+  }
 
+  // ─── QUIZ FORM ───────────────────────────────────────────────────────────────
   const isCountdown = totalSeconds !== null;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col p-0 lg:flex-row lg:gap-6 lg:p-6">
-      {/* ── STICKY HEADER ON MOBILE ───────────────────────────────── */}
-      <div className="bg-card/90 backdrop-blur-xs sticky top-0 z-10 mb-2 space-y-2 shadow rounded-md lg:hidden">
+      <div className="bg-card/90 backdrop-blur-xs sticky top-0 z-10 mb-2 space-y-2 rounded-md shadow lg:hidden">
         <div className="flex gap-2">
           <button
             className="group"
-            onClick={() => setSidebarVisible((prev) => !prev)}
+            onClick={() => setSidebarVisible(!sidebarVisible)}
           >
             <ListCheck
-              className="text-dynamic-purple group-hover:text-dynamic-purple/70 transition-colors duration-200"
               size={32}
+              className="text-dynamic-purple group-hover:text-dynamic-purple/70 transition-colors duration-200"
             />
           </button>
           <TimeElapsedStatus
@@ -435,27 +385,27 @@ export default function TakeQuiz({
           />
         </div>
         <div className="absolute left-0 right-0 top-16">
-          {sidebarVisible && (
+          {sidebarVisible && quizMeta && (
             <QuizStatusSidebar
-              questions={questions}
+              questions={quizMeta.questions}
               selectedAnswers={selectedAnswers}
               t={t}
             />
           )}
         </div>
       </div>
-      {/* ── MAIN CONTENT: Timer + Questions Form ───────────────────────────────── */}
+
       <main className="order-2 w-full grow space-y-4 p-0.5 md:p-2 lg:order-1 lg:w-3/4 lg:p-0">
-        <h1 className="text-3xl font-bold">{setName}</h1>
+        <h1 className="text-3xl font-bold">{quizMeta.setName}</h1>
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleSubmit(false);
+            handleSubmit();
           }}
           className="space-y-8"
         >
-          {questions.map((q, idx) => (
-            <div key={q.quizId} id={`question-${idx}`} className="space-y-2">
+          {quizMeta.questions.map((q, idx) => (
+            <div key={q.quizId} className="space-y-2" id={`question-${idx}`}>
               <div>
                 <span className="font-semibold">
                   {idx + 1}. {q.question}{' '}
@@ -497,7 +447,7 @@ export default function TakeQuiz({
             <Button
               type="submit"
               disabled={submitting || (isCountdown && timeLeft === 0)}
-              className={`rounded px-6 py-5 md:py-4 lg:py-2 text-white w-full lg:w-fit ${
+              className={`w-full rounded px-6 py-5 text-white md:py-4 lg:w-fit lg:py-2 ${
                 submitting || (isCountdown && timeLeft === 0)
                   ? 'cursor-not-allowed bg-gray-400'
                   : 'bg-dynamic-purple/20 hover:bg-dynamic-purple/40 border-dynamic-purple border'
@@ -512,17 +462,14 @@ export default function TakeQuiz({
       </main>
 
       <aside className="relative order-1 hidden w-full lg:order-2 lg:block lg:w-5/12">
-        {/* For Desktop */}
         <div className="sticky top-4 space-y-2">
-          {/* ── MAIN CONTENT: Timer ───────────────────────────────── */}
           <TimeElapsedStatus
             timeLeft={timeLeft}
             isCountdown={isCountdown}
             t={t}
           />
-          {/* ── SIDEBAR: Question Status ─────────────────────────────────────────────── */}
           <QuizStatusSidebar
-            questions={questions}
+            questions={quizMeta.questions}
             selectedAnswers={selectedAnswers}
             t={t}
           />

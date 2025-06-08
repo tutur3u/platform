@@ -3811,7 +3811,9 @@
     "time_remaining": "Thời gian còn lại",
     "points": "Điểm",
     "submitting": "Đang gửi...",
-    "submit": "Nộp bài"
+    "submit": "Nộp bài",
+    "due_on": "Hạn nộp",
+    "quiz_past_due": "Bài kiểm tra đã quá hạn"
   },
   "ws-reports": {
     "report": "Báo cáo",
