@@ -1,5 +1,6 @@
 'use client';
 
+import type { TimeTrackingGoal } from '../time-tracker-content';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -55,17 +56,6 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 
-interface TimeTrackingGoal {
-  id: string;
-  ws_id: string;
-  user_id: string;
-  category_id?: string;
-  daily_goal_minutes: number;
-  weekly_goal_minutes?: number;
-  is_active: boolean;
-  category?: TimeTrackingCategory;
-}
-
 interface TimerStats {
   todayTime: number;
   weekTime: number;
@@ -80,7 +70,7 @@ interface TimerStats {
 
 interface GoalManagerProps {
   wsId: string;
-  goals: TimeTrackingGoal[];
+  goals: TimeTrackingGoal[] | null;
   categories: TimeTrackingCategory[];
   timerStats: TimerStats;
   onGoalsUpdate: () => void;
@@ -133,7 +123,7 @@ export function GoalManager({
     setCategoryId(goal.category_id || 'general');
     setDailyGoalMinutes(goal.daily_goal_minutes);
     setWeeklyGoalMinutes(goal.weekly_goal_minutes || 2400);
-    setIsActive(goal.is_active);
+    setIsActive(goal.is_active || true);
     setIsEditDialogOpen(true);
   };
 
@@ -273,7 +263,7 @@ export function GoalManager({
     }
   };
 
-  const activeGoals = goals.filter((goal) => goal.is_active);
+  const activeGoals = goals?.filter((goal) => goal.is_active);
 
   return (
     <>
@@ -299,7 +289,7 @@ export function GoalManager({
                     {formatDuration(timerStats.todayTime)}
                   </span>
                 </div>
-                {activeGoals.length > 0 ? (
+                {activeGoals && activeGoals.length > 0 ? (
                   <div className="space-y-2">
                     {activeGoals.map((goal) => {
                       const goalTodayTime = getTimeForGoal(goal, 'today');
@@ -357,7 +347,7 @@ export function GoalManager({
                     {formatDuration(timerStats.weekTime)}
                   </span>
                 </div>
-                {activeGoals.length > 0 ? (
+                {activeGoals && activeGoals.length > 0 ? (
                   <div className="space-y-2">
                     {activeGoals
                       .filter((goal) => goal.weekly_goal_minutes)
@@ -433,7 +423,7 @@ export function GoalManager({
             </div>
           </CardHeader>
           <CardContent>
-            {goals.length === 0 ? (
+            {goals && goals.length === 0 ? (
               <div className="py-12 text-center">
                 <div className="relative mx-auto mb-4 h-16 w-16">
                   <Goal className="h-16 w-16 text-muted-foreground/50" />
@@ -466,172 +456,180 @@ export function GoalManager({
               </div>
             ) : (
               <div className="space-y-4">
-                {goals.map((goal) => {
-                  const goalTodayTime = getTimeForGoal(goal, 'today');
-                  const goalWeekTime = getTimeForGoal(goal, 'week');
+                {goals &&
+                  goals.map((goal) => {
+                    const goalTodayTime = getTimeForGoal(goal, 'today');
+                    const goalWeekTime = getTimeForGoal(goal, 'week');
 
-                  const dailyProgress = calculateProgress(
-                    goalTodayTime,
-                    goal.daily_goal_minutes
-                  );
-                  const weeklyProgress = goal.weekly_goal_minutes
-                    ? calculateProgress(goalWeekTime, goal.weekly_goal_minutes)
-                    : null;
+                    const dailyProgress = calculateProgress(
+                      goalTodayTime,
+                      goal.daily_goal_minutes
+                    );
+                    const weeklyProgress = goal.weekly_goal_minutes
+                      ? calculateProgress(
+                          goalWeekTime,
+                          goal.weekly_goal_minutes
+                        )
+                      : null;
 
-                  return (
-                    <Card
-                      key={goal.id}
-                      className="group relative border-l-4 transition-all hover:shadow-lg"
-                      style={{
-                        borderLeftColor: goal.category
-                          ? `rgb(${
-                              goal.category.color === 'RED'
-                                ? '239 68 68'
-                                : goal.category.color === 'BLUE'
-                                  ? '59 130 246'
-                                  : goal.category.color === 'GREEN'
-                                    ? '34 197 94'
-                                    : goal.category.color === 'YELLOW'
-                                      ? '234 179 8'
-                                      : goal.category.color === 'ORANGE'
-                                        ? '249 115 22'
-                                        : goal.category.color === 'PURPLE'
-                                          ? '168 85 247'
-                                          : goal.category.color === 'PINK'
-                                            ? '236 72 153'
-                                            : goal.category.color === 'INDIGO'
-                                              ? '99 102 241'
-                                              : goal.category.color === 'CYAN'
-                                                ? '6 182 212'
-                                                : '107 114 128' // GRAY
-                            })`
-                          : 'rgb(99 102 241)', // Indigo for general goals
-                      }}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 space-y-3">
-                            <div className="flex items-center gap-3">
-                              {goal.category ? (
-                                <div
-                                  className={cn(
-                                    'h-4 w-4 rounded-full',
-                                    getCategoryColor(
-                                      goal.category.color || 'BLUE'
-                                    )
-                                  )}
-                                />
-                              ) : (
-                                <div className="h-4 w-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
-                              )}
-                              <h3 className="font-medium">
-                                {goal.category?.name || 'General'} Goal
-                              </h3>
-                              {!goal.category && (
-                                <Badge variant="outline" className="text-xs">
-                                  All Categories
-                                </Badge>
-                              )}
-                              <div className="flex items-center gap-2">
-                                {goal.is_active ? (
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                                  >
-                                    <CheckCircle className="mr-1 h-3 w-3" />
-                                    Active
-                                  </Badge>
+                    return (
+                      <Card
+                        key={goal.id}
+                        className="group relative border-l-4 transition-all hover:shadow-lg"
+                        style={{
+                          borderLeftColor: goal.category
+                            ? `rgb(${
+                                goal.category.color === 'RED'
+                                  ? '239 68 68'
+                                  : goal.category.color === 'BLUE'
+                                    ? '59 130 246'
+                                    : goal.category.color === 'GREEN'
+                                      ? '34 197 94'
+                                      : goal.category.color === 'YELLOW'
+                                        ? '234 179 8'
+                                        : goal.category.color === 'ORANGE'
+                                          ? '249 115 22'
+                                          : goal.category.color === 'PURPLE'
+                                            ? '168 85 247'
+                                            : goal.category.color === 'PINK'
+                                              ? '236 72 153'
+                                              : goal.category.color === 'INDIGO'
+                                                ? '99 102 241'
+                                                : goal.category.color === 'CYAN'
+                                                  ? '6 182 212'
+                                                  : '107 114 128' // GRAY
+                              })`
+                            : 'rgb(99 102 241)', // Indigo for general goals
+                        }}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 space-y-3">
+                              <div className="flex items-center gap-3">
+                                {goal.category ? (
+                                  <div
+                                    className={cn(
+                                      'h-4 w-4 rounded-full',
+                                      getCategoryColor(
+                                        goal.category.color || 'BLUE'
+                                      )
+                                    )}
+                                  />
                                 ) : (
-                                  <Badge variant="outline">Inactive</Badge>
+                                  <div className="h-4 w-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
+                                )}
+                                <h3 className="font-medium">
+                                  {goal.category?.name || 'General'} Goal
+                                </h3>
+                                {!goal.category && (
+                                  <Badge variant="outline" className="text-xs">
+                                    All Categories
+                                  </Badge>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  {goal.is_active ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                                    >
+                                      <CheckCircle className="mr-1 h-3 w-3" />
+                                      Active
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline">Inactive</Badge>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                {/* Daily Goal */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      Daily Goal
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                      {Math.round(dailyProgress)}%
+                                    </span>
+                                  </div>
+                                  <Progress
+                                    value={dailyProgress}
+                                    className="h-2"
+                                  />
+                                  <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>{formatDuration(goalTodayTime)}</span>
+                                    <span>
+                                      {formatMinutes(goal.daily_goal_minutes)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Weekly Goal */}
+                                {goal.weekly_goal_minutes && (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between text-sm">
+                                      <span className="flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" />
+                                        Weekly Goal
+                                      </span>
+                                      <span className="text-muted-foreground">
+                                        {Math.round(weeklyProgress || 0)}%
+                                      </span>
+                                    </div>
+                                    <Progress
+                                      value={weeklyProgress || 0}
+                                      className="h-2"
+                                    />
+                                    <div className="flex justify-between text-xs text-muted-foreground">
+                                      <span>
+                                        {formatDuration(goalWeekTime)}
+                                      </span>
+                                      <span>
+                                        {formatMinutes(
+                                          goal.weekly_goal_minutes
+                                        )}
+                                      </span>
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                              {/* Daily Goal */}
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    Daily Goal
-                                  </span>
-                                  <span className="text-muted-foreground">
-                                    {Math.round(dailyProgress)}%
-                                  </span>
-                                </div>
-                                <Progress
-                                  value={dailyProgress}
-                                  className="h-2"
-                                />
-                                <div className="flex justify-between text-xs text-muted-foreground">
-                                  <span>{formatDuration(goalTodayTime)}</span>
-                                  <span>
-                                    {formatMinutes(goal.daily_goal_minutes)}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Weekly Goal */}
-                              {goal.weekly_goal_minutes && (
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between text-sm">
-                                    <span className="flex items-center gap-1">
-                                      <Calendar className="h-3 w-3" />
-                                      Weekly Goal
-                                    </span>
-                                    <span className="text-muted-foreground">
-                                      {Math.round(weeklyProgress || 0)}%
-                                    </span>
-                                  </div>
-                                  <Progress
-                                    value={weeklyProgress || 0}
-                                    className="h-2"
-                                  />
-                                  <div className="flex justify-between text-xs text-muted-foreground">
-                                    <span>{formatDuration(goalWeekTime)}</span>
-                                    <span>
-                                      {formatMinutes(goal.weekly_goal_minutes)}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
+                            {!readOnly && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => openEditDialog(goal)}
+                                  >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit Goal
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => setGoalToDelete(goal)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete Goal
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
-
-                          {!readOnly && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => openEditDialog(goal)}
-                                >
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit Goal
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => setGoalToDelete(goal)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete Goal
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
               </div>
             )}
           </CardContent>

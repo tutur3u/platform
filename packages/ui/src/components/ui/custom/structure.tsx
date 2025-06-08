@@ -66,7 +66,7 @@ export function Structure({
       <TooltipProvider delayDuration={0}>
         {!isCollapsed && (
           <div
-            className="fixed inset-0 z-40 bg-black/20 md:hidden"
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-lg md:hidden"
             onClick={() => setIsCollapsed(true)}
           />
         )}
@@ -147,7 +147,7 @@ export function Structure({
             )}
           >
             {header && <div className="mb-4 hidden md:block">{header}</div>}
-            <div className="relative h-full w-full p-2 pt-17 pl-2 md:p-4 md:pt-4 md:pl-8">
+            <div className="relative h-full w-full p-2 pt-17 pl-2 md:p-4 md:pt-4">
               {children}
             </div>
           </main>

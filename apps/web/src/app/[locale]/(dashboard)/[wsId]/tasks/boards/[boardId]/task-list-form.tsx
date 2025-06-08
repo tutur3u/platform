@@ -30,7 +30,7 @@ export function TaskListForm({ boardId, onListCreated }: Props) {
     return (
       <Button
         variant="outline"
-        className="flex h-full w-[350px] items-center gap-2 border-dashed"
+        className="flex h-3/4 w-[350px] items-center gap-2 border-dashed"
         onClick={() => setIsAdding(true)}
       >
         <Plus className="h-4 w-4" />
