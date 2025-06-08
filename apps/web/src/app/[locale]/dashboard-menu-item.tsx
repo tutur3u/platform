@@ -13,18 +13,18 @@ import Link from 'next/link';
 export default function DashboardMenuItem() {
   const t = useTranslations('common');
 
-  const workspacesQuery = useQuery({
-    queryKey: ['workspaces'],
-    queryFn: fetchWorkspaces,
+  const defaultWorkspaceQuery = useQuery({
+    queryKey: ['default-workspace'],
+    queryFn: fetchDefaultWorkspace,
   });
 
-  const workspaces = workspacesQuery.data;
+  const defaultWorkspace = defaultWorkspaceQuery.data;
 
   return (
     <>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <Link href={`/${workspaces?.[0]?.id || 'onboarding'}`}>
+        <Link href={`/${defaultWorkspace?.id || 'onboarding'}`}>
           <DropdownMenuItem className="cursor-pointer">
             <ActivitySquare className="mr-2 h-4 w-4" />
             <span>{t('dashboard')}</span>
@@ -46,22 +46,47 @@ export default function DashboardMenuItem() {
   );
 }
 
-async function fetchWorkspaces() {
+async function fetchDefaultWorkspace() {
   const supabase = createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return [];
+  if (!user) return null;
 
-  const { data: workspaces, error: error } = await supabase
+  // First try to get the user's default workspace
+  const { data: userData, error: userError } = await supabase
+    .from('user_private_details')
+    .select('default_workspace_id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!userError && userData?.default_workspace_id) {
+    // Validate the default workspace exists and user has access
+    const { data: workspace, error } = await supabase
+      .from('workspaces')
+      .select('id, name, workspace_members!inner(role)')
+      .eq('id', userData.default_workspace_id)
+      .eq('workspace_members.user_id', user.id)
+      .single();
+
+    if (!error && workspace) {
+      return workspace;
+    }
+  }
+
+  // If no default workspace or invalid, get the first available workspace
+  const { data: workspaces, error } = await supabase
     .from('workspaces')
-    .select(
-      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
-    )
-    .eq('workspace_members.user_id', user.id);
+    .select('id, name, workspace_members!inner(role)')
+    .eq('workspace_members.user_id', user.id)
+    .limit(1)
+    .maybeSingle();
 
-  if (error) return [];
+  if (error || !workspaces) {
+    return null;
+  }
+
   return workspaces;
 }

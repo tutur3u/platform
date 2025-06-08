@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -16,7 +16,7 @@ import {
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Loader2, Settings, UserIcon } from '@tuturuuu/ui/icons';
+import { Loader2, UserIcon } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { getInitials } from '@tuturuuu/utils/name-helper';
@@ -27,7 +27,7 @@ import { useState } from 'react';
 import * as z from 'zod';
 
 interface AvatarProps {
-  user: WorkspaceUser;
+  user: User & UserPrivateDetails;
 }
 
 const FormSchema = z.object({
@@ -110,7 +110,7 @@ export default function UserAvatar({ user }: AvatarProps) {
 
       const filePath = `${generateRandomUUID()}`;
 
-      const { data: _, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, compressedFile);
 
@@ -226,12 +226,6 @@ export default function UserAvatar({ user }: AvatarProps) {
                   )}
                 </AvatarFallback>
               </Avatar>
-              <Button
-                size="icon"
-                className="absolute right-0 bottom-0 rounded-full backdrop-blur-lg"
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
             </div>
           </div>
         </DialogTrigger>
