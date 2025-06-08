@@ -1,4 +1,5 @@
 import { Button } from '@tuturuuu/ui/button';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import {
   Select,
   SelectContent,
@@ -7,11 +8,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import dayjs from 'dayjs';
-import {
-  Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function CalendarHeader({
   t,
@@ -64,6 +61,7 @@ export function CalendarHeader({
       return newDate;
     });
 
+  const { isLoading, isSyncing } = useCalendarSync();
   const selectToday = () => setDate(new Date());
   const isToday = () => dayjs(date).isSame(dayjs(), 'day');
   const isCurrentMonth = () =>
@@ -77,9 +75,12 @@ export function CalendarHeader({
         <CalendarIcon className="h-5 w-5 text-muted-foreground" />
         <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       </div>
-
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <div className="flex items-center gap-2">
+          {/* Loading circle */}
+          {(isLoading || isSyncing) && (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          )}
           <div className="flex flex-none items-center justify-center gap-2 md:justify-start">
             <Button
               variant="outline"
@@ -90,7 +91,6 @@ export function CalendarHeader({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-
             <Button
               variant="outline"
               size="sm"
@@ -105,7 +105,6 @@ export function CalendarHeader({
                     ? t('this-month')
                     : t('current')}
             </Button>
-
             <Button
               variant="outline"
               size="icon"
@@ -116,7 +115,6 @@ export function CalendarHeader({
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-
           {views.length > 1 && (
             <div className="w-full flex-1 md:w-auto">
               <Select
