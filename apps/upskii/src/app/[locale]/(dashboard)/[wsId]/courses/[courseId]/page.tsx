@@ -115,7 +115,7 @@ export default async function WorkspaceCoursesPage({
       <Separator className="my-4" />
       {allModulesCompleted && certificateId ? (
         <div className="mb-4">
-          <Link href={`/${wsId}/certificate/${certificateId}`}>
+          <Link href={`/${wsId}/certificates/${certificateId}`}>
             <Button variant="default" size="lg">
               {t('certificates.download_button')}
             </Button>

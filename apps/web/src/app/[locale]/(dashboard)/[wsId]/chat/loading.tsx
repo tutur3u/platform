@@ -1,8 +1,8 @@
 export default function Loading() {
   return (
-    <div className="mx-auto grid w-full max-w-2xl gap-4 pt-10 lg:max-w-4xl xl:max-w-6xl">
-      <div className="h-64 animate-pulse rounded-lg border bg-foreground/5 p-4 md:p-8" />
-      <div className="h-64 animate-pulse rounded-lg border bg-foreground/5 p-4 md:p-8" />
+    <div className="flex h-full w-full flex-col gap-4 p-4">
+      <div className="h-10 w-48 animate-pulse rounded-lg bg-foreground/5" />
+      <div className="h-full w-full animate-pulse rounded-lg bg-foreground/5" />
     </div>
   );
 }

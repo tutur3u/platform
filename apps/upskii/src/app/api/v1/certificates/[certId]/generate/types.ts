@@ -1,4 +1,4 @@
-import { CertificateProps } from '@/app/[locale]/(dashboard)/[wsId]/certificate/[certificateId]/page';
+import { CertificateProps } from '@/app/[locale]/(dashboard)/[wsId]/certificates/[certificateId]/page';
 
 export interface CertificateData {
   certData: CertificateProps['certDetails'];

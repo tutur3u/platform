@@ -7,12 +7,11 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from '../command';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
-import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
 import { cn } from '@tuturuuu/utils/format';
-import { CommandList } from 'cmdk';
 import { Check, ChevronsUpDown, Plus } from 'lucide-react';
 import * as React from 'react';
 
@@ -67,6 +66,19 @@ export function Combobox({
       onChange?.(options?.[0]?.value ?? '');
   }, [onChange, selected, options]);
 
+  const selectedLabel =
+    mode === 'single'
+      ? options.find((option) => option.value === selected)?.label
+      : mode === 'multiple' && Array.isArray(selected)
+        ? selected
+            .map(
+              (selectedValue) =>
+                options.find((option) => option.value === selectedValue)?.label
+            )
+            .filter(Boolean)
+            .join(', ')
+        : undefined;
+
   return (
     <div className={cn('block', className)}>
       <Popover open={open} onOpenChange={setOpen}>
@@ -78,37 +90,18 @@ export function Combobox({
             aria-expanded={open}
             className={cn(
               'w-full justify-between',
-              !selected && !selected.length && 'text-muted-foreground'
+              !selectedLabel && 'text-muted-foreground'
             )}
             disabled={disabled}
           >
-            {label ??
-              (selected && selected.length > 0 ? (
-                <div className="relative mr-auto flex grow flex-wrap items-center overflow-hidden">
-                  <span>
-                    {mode === 'multiple' && Array.isArray(selected)
-                      ? selected
-                          .map(
-                            (selectedValue: string) =>
-                              options.find(
-                                (item) => item.value === selectedValue
-                              )?.label
-                          )
-                          .join(', ')
-                      : mode === 'single' &&
-                        options.find((item) => item.value === selected)?.label}
-                  </span>
-                </div>
-              ) : (
-                (placeholder ?? 'Select Item')
-              ))}
+            {label ?? selectedLabel ?? placeholder ?? 'Select Item'}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-72 max-w-sm p-0">
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
           <Command
             filter={(value, search) => {
-              if (value.includes(search)) return 1;
+              if (value.toLowerCase().includes(search.toLowerCase())) return 1;
               return 0;
             }}
           >
@@ -121,7 +114,7 @@ export function Combobox({
               <div className="p-8 text-sm text-muted-foreground">
                 {t('common.empty')}
               </div>
-              {query && (
+              {onCreate && (
                 <>
                   <Separator />
                   <Button
@@ -130,6 +123,7 @@ export function Combobox({
                     onClick={() => {
                       if (onCreate) {
                         onCreate(query);
+                        setOpen(false);
                         setQuery('');
                       }
                     }}
@@ -146,49 +140,44 @@ export function Combobox({
                 </>
               )}
             </CommandEmpty>
-            <ScrollArea>
-              <div className="max-h-80">
-                <CommandList>
-                  <CommandGroup>
-                    {options.map((option) => (
-                      <CommandItem
-                        key={option.label}
-                        value={option.label}
-                        onSelect={() => {
-                          if (onChange) {
-                            if (
-                              mode === 'multiple' &&
-                              Array.isArray(selected)
-                            ) {
-                              onChange(
-                                selected.includes(option.value)
-                                  ? selected.filter(
-                                      (item) => item !== option.value
-                                    )
-                                  : [...selected, option.value]
-                              );
-                            } else {
-                              onChange(option.value);
-                            }
-                          }
-                          setOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
+            <CommandList>
+              <CommandGroup>
+                {options.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.label}
+                    onSelect={() => {
+                      if (onChange) {
+                        if (mode === 'multiple' && Array.isArray(selected)) {
+                          onChange(
                             selected.includes(option.value)
-                              ? 'opacity-100'
-                              : 'opacity-0'
-                          )}
-                        />
-                        {option.label}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </div>
-            </ScrollArea>
+                              ? selected.filter((item) => item !== option.value)
+                              : [...selected, option.value]
+                          );
+                        } else {
+                          onChange(option.value);
+                        }
+                      }
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        (
+                          mode === 'multiple' && Array.isArray(selected)
+                            ? selected.includes(option.value)
+                            : selected === option.value
+                        )
+                          ? 'opacity-100'
+                          : 'opacity-0'
+                      )}
+                    />
+                    {option.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
           </Command>
         </PopoverContent>
       </Popover>

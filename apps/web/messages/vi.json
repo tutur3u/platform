@@ -278,7 +278,11 @@
     "error_adding_domain": "Không thể thêm miền",
     "rewise-description": "Truy cập một loạt các công cụ hỗ trợ AI dành cho doanh nghiệp.",
     "nova-description": "Sân chơi prompt engineering cho mọi người.",
-    "waitlist": "Danh sách chờ"
+    "waitlist": "Danh sách chờ",
+    "expand_on_hover": "Mở rộng khi di chuột",
+    "collapsed": "Thu nhỏ",
+    "expanded": "Mở rộng",
+    "sidebar": "Thanh bên"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -570,7 +574,14 @@
     "metrics": "Chỉ số",
     "crawlers": "Công cụ cào dữ liệu",
     "queues": "Hàng chờ",
-    "time_tracker": "Trình theo dõi thời gian"
+    "time_tracker": "Trình theo dõi thời gian",
+    "productivity": "Năng suất",
+    "whiteboards": "Bảng trắng",
+    "ai_tools": "Công cụ AI",
+    "spark": "Spark",
+    "media": "Phương tiện truyền thông",
+    "ai_lab": "Phòng thí nghiệm AI",
+    "management": "Quản lý tài nguyên"
   },
   "team-tabs": {
     "overview": "Tổng quan",
@@ -836,6 +847,7 @@
     "amount": "Số tiền",
     "description": "Mô tả",
     "report_opt_in": "Hiển thị trong báo cáo",
+    "report_opt_in_description": "Nếu không được chọn, giao dịch này sẽ không được bao gồm trong bất kỳ báo cáo tài chính nào.",
     "taken_at": "Thực hiện lúc",
     "created_at": "Tạo lúc",
     "income": "Thu nhập",
@@ -1713,7 +1725,9 @@
     "remove_avatar": "Xóa hình đại diện",
     "save_avatar": "Lưu hình đại diện",
     "full-settings": "Xem tất cả cài đặt",
-    "view-full-settings": "Xem tất cả cài đặt"
+    "view-full-settings": "Xem tất cả cài đặt",
+    "default-workspace": "Không gian làm việc mặc định",
+    "default-workspace-description": "Chọn không gian làm việc nào để chuyển hướng đến khi bạn truy cập trang chủ. \nNếu không có mặc định được đặt, bạn sẽ được chuyển hướng đến không gian làm việc có sẵn đầu tiên của bạn."
   },
   "settings-appearance": {
     "appearance": "Hiển thị",

@@ -14,7 +14,7 @@
     "react-email": "^4.0.16"
   },
   "devDependencies": {
-    "@types/node": "^22.15.29",
+    "@types/node": "^22.15.30",
     "@types/react": "^19.1.6"
   }
 }
