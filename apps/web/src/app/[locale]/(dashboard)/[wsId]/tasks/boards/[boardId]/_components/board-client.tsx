@@ -1,6 +1,5 @@
 'use client';
 
-import { BoardSummary } from './board-summary';
 import { BoardViews } from './board-views';
 import { getTaskBoard, getTaskLists, getTasks } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
@@ -60,7 +59,6 @@ export function BoardClient({
 
   return (
     <div className="flex flex-col">
-      <BoardSummary board={board} />
       <BoardViews board={{ ...board, tasks, lists }} />
     </div>
   );

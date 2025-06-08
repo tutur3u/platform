@@ -134,7 +134,7 @@ export function BoardSummary({ board }: Props) {
 
   return (
     <div className="mb-2 border-b pb-4">
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {/* Progress Card */}
         <div className="space-y-3 rounded-xl border border-blue-200/30 bg-gradient-to-br from-blue-50 to-indigo-50 p-5 shadow-lg transition-all duration-300 hover:shadow-xl dark:border-blue-800/30 dark:from-blue-950/20 dark:to-indigo-950/20">
           <div className="flex items-center gap-2">

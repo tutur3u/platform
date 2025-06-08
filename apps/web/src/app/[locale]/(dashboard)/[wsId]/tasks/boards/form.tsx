@@ -1,6 +1,12 @@
 'use client';
 
+import {
+  useCreateBoardWithTemplate,
+  useStatusTemplates,
+} from '@/lib/task-helper';
+import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -12,8 +18,15 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Crown, FileText, TrendingUp, Users } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
+import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import * as z from 'zod';
@@ -21,87 +34,400 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   data?: TaskBoard;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
+  template_id: z.string().optional(),
 });
+
+const templateIcons = {
+  'Basic Kanban': Crown,
+  'Software Development': Users,
+  'Content Creation': FileText,
+  'Sales Pipeline': TrendingUp,
+};
+
+// Dynamic color mappings for template previews
+const colorClasses: Record<SupportedColor, string> = {
+  GRAY: 'bg-dynamic-gray/30 border-dynamic-gray/50',
+  RED: 'bg-dynamic-red/30 border-dynamic-red/50',
+  BLUE: 'bg-dynamic-blue/30 border-dynamic-blue/50',
+  GREEN: 'bg-dynamic-green/30 border-dynamic-green/50',
+  YELLOW: 'bg-dynamic-yellow/30 border-dynamic-yellow/50',
+  ORANGE: 'bg-dynamic-orange/30 border-dynamic-orange/50',
+  PURPLE: 'bg-dynamic-purple/30 border-dynamic-purple/50',
+  PINK: 'bg-dynamic-pink/30 border-dynamic-pink/50',
+  INDIGO: 'bg-dynamic-indigo/30 border-dynamic-indigo/50',
+  CYAN: 'bg-dynamic-cyan/30 border-dynamic-cyan/50',
+};
 
 export function TaskBoardForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations();
   const router = useRouter();
 
+  const { data: templates, isLoading: templatesLoading } = useStatusTemplates();
+  const createBoardMutation = useCreateBoardWithTemplate(wsId);
+
   const form = useForm({
     resolver: zodResolver(FormSchema),
-    values: {
+    defaultValues: {
       id: data?.id,
       name: data?.name || '',
+      template_id: '',
     },
   });
 
   const isDirty = form.formState.isDirty;
   const isValid = form.formState.isValid;
-  const isSubmitting = form.formState.isSubmitting;
+  const isSubmitting =
+    form.formState.isSubmitting || createBoardMutation.isPending;
 
   const disabled = !isDirty || !isValid || isSubmitting;
 
-  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+  const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
     try {
-      const res = await fetch(
-        data.id
-          ? `/api/v1/workspaces/${wsId}/task-boards/${data.id}`
-          : `/api/v1/workspaces/${wsId}/task-boards`,
-        {
-          method: data.id ? 'PUT' : 'POST',
-          body: JSON.stringify(data),
-        }
-      );
+      if (formData.id) {
+        // Update existing board (legacy API call)
+        const res = await fetch(
+          `/api/v1/workspaces/${wsId}/task-boards/${formData.id}`,
+          {
+            method: 'PUT',
+            body: JSON.stringify({ name: formData.name }),
+          }
+        );
 
-      if (res.ok) {
-        onFinish?.(data);
-        router.refresh();
+        if (res.ok) {
+          onFinish?.(formData);
+          router.refresh();
+        } else {
+          const errorData = await res.json();
+          toast({
+            title: 'Failed to edit task board',
+            description: errorData.message,
+            variant: 'destructive',
+          });
+        }
       } else {
-        const data = await res.json();
-        toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} task board`,
-          description: data.message,
+        // Create new board with template
+        await createBoardMutation.mutateAsync({
+          name: formData.name,
+          templateId: formData.template_id || undefined,
         });
+        onFinish?.(formData);
+        router.refresh();
+        form.reset();
       }
     } catch (error) {
+      console.error('Error submitting form:', error);
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} task board`,
+        title: `Failed to ${formData.id ? 'edit' : 'create'} task board`,
         description: error instanceof Error ? error.message : String(error),
+        variant: 'destructive',
       });
     }
   };
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('ws-task-boards.name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('ws-task-boards.name')}
-                  autoComplete="off"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+  const selectedTemplate = templates?.find(
+    (t) => t.id === form.watch('template_id')
+  );
 
-        <Button type="submit" className="w-full" disabled={disabled}>
-          {!!data?.id ? t('common.edit') : t('common.create')}
+  const isEditMode = !!data?.id;
+
+  return (
+    <div className="@container flex h-full max-h-[min(85vh,800px)] flex-col overflow-hidden">
+      {/* Header */}
+      <div className="flex-shrink-0 border-b bg-background px-4 py-4 sm:px-6 sm:py-6">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold sm:text-xl">
+            {isEditMode ? 'Edit Task Board' : 'Create New Task Board'}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+            {isEditMode
+              ? 'Update your task board name'
+              : 'Choose a template and create your project board'}
+          </p>
+        </div>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="min-h-0 flex-1">
+        <ScrollArea className="h-full">
+          <div className="px-4 py-4 sm:px-6 sm:py-6">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
+                {/* Board Name Input */}
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium sm:text-base">
+                        {t('ws-task-boards.name')}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter board name..."
+                          autoComplete="off"
+                          className="text-sm sm:text-base"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Template Selection (only for new boards) */}
+                {!isEditMode && (
+                  <>
+                    <Separator className="my-6" />
+
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="text-center">
+                        <Label className="text-sm font-medium sm:text-base">
+                          Choose a Workflow Template
+                        </Label>
+                        <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+                          Select a pre-configured template to get started
+                          quickly, or create a blank board
+                        </p>
+                      </div>
+
+                      {templatesLoading ? (
+                        <div className="grid grid-cols-1 gap-4 @md:grid-cols-2">
+                          {[1, 2, 3, 4].map((i) => (
+                            <Skeleton key={i} className="h-20 w-full sm:h-24" />
+                          ))}
+                        </div>
+                      ) : (
+                        <FormField
+                          control={form.control}
+                          name="template_id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <RadioGroup
+                                  onValueChange={field.onChange}
+                                  value={field.value}
+                                  className="grid grid-cols-1 gap-4 @md:grid-cols-2"
+                                >
+                                  {/* Blank Template Option */}
+                                  <div className="col-span-full">
+                                    <Label
+                                      htmlFor="blank"
+                                      className={cn(
+                                        'flex cursor-pointer items-start space-x-3 rounded-lg border-2 p-3 transition-all duration-200 sm:space-x-4 sm:p-4',
+                                        field.value === '' || !field.value
+                                          ? 'border-primary bg-primary/5 ring-2 ring-primary/10'
+                                          : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                                      )}
+                                    >
+                                      <RadioGroupItem
+                                        value=""
+                                        id="blank"
+                                        className="mt-0.5 sm:mt-1"
+                                      />
+                                      <Crown className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
+                                      <div className="min-w-0 flex-1 space-y-1 sm:space-y-2">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <span className="text-sm font-medium sm:text-base">
+                                            Blank Board
+                                          </span>
+                                          <Badge
+                                            variant="outline"
+                                            className="text-xs"
+                                          >
+                                            Custom
+                                          </Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground sm:text-sm">
+                                          Start with a clean slate and create
+                                          your own workflow
+                                        </p>
+                                        <div className="flex flex-wrap gap-1 sm:gap-2">
+                                          <Badge
+                                            variant="outline"
+                                            className="text-xs"
+                                          >
+                                            Basic setup
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                    </Label>
+                                  </div>
+
+                                  {/* Template Options */}
+                                  {templates?.map((template) => {
+                                    const Icon =
+                                      templateIcons[
+                                        template.name as keyof typeof templateIcons
+                                      ] || Crown;
+                                    const isSelected =
+                                      field.value === template.id;
+
+                                    return (
+                                      <div key={template.id} className="h-full">
+                                        <Label
+                                          htmlFor={template.id}
+                                          className={cn(
+                                            'flex h-full cursor-pointer items-start space-x-3 rounded-lg border-2 p-3 transition-all duration-200 sm:space-x-4 sm:p-4',
+                                            isSelected
+                                              ? 'border-primary bg-primary/5 ring-2 ring-primary/10'
+                                              : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                                          )}
+                                        >
+                                          <RadioGroupItem
+                                            value={template.id}
+                                            id={template.id}
+                                            className="mt-0.5 sm:mt-1"
+                                          />
+                                          <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
+                                          <div className="min-w-0 flex-1 space-y-1 sm:space-y-2">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                              <span className="text-sm font-medium sm:text-base">
+                                                {template.name}
+                                              </span>
+                                              {template.is_default && (
+                                                <Badge
+                                                  variant="secondary"
+                                                  className="text-xs"
+                                                >
+                                                  Recommended
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            {template.description && (
+                                              <p className="text-xs text-muted-foreground sm:text-sm">
+                                                {template.description}
+                                              </p>
+                                            )}
+                                            <div className="flex flex-wrap gap-1 sm:gap-2">
+                                              {template.statuses
+                                                .slice(0, 4)
+                                                .map((status) => (
+                                                  <Badge
+                                                    key={`${status.status}-${status.name}`}
+                                                    variant="outline"
+                                                    className="text-xs"
+                                                  >
+                                                    {status.name}
+                                                  </Badge>
+                                                ))}
+                                              {template.statuses.length > 4 && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="text-xs text-muted-foreground"
+                                                >
+                                                  +
+                                                  {template.statuses.length - 4}{' '}
+                                                  more
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </Label>
+                                      </div>
+                                    );
+                                  })}
+                                </RadioGroup>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+
+                      {/* Template Preview */}
+                      {selectedTemplate && (
+                        <div className="rounded-xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-primary/5 to-muted/30 p-4 sm:p-6">
+                          <div className="mb-3 flex items-center gap-2 sm:mb-4">
+                            <span className="text-base sm:text-lg">✨</span>
+                            <h4 className="text-sm font-medium sm:text-base">
+                              Template Preview
+                            </h4>
+                          </div>
+                          <p className="mb-3 text-xs text-muted-foreground sm:mb-4 sm:text-sm">
+                            This template will create{' '}
+                            <strong>{selectedTemplate.statuses.length}</strong>{' '}
+                            lists to organize your workflow:
+                          </p>
+                          <div className="grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2">
+                            {selectedTemplate.statuses.map((status, index) => {
+                              const colorClass =
+                                colorClasses[status.color] || colorClasses.GRAY;
+                              return (
+                                <div
+                                  key={`${status.status}-${status.name}`}
+                                  className={cn(
+                                    'flex items-center gap-2 rounded-lg border p-2 text-xs backdrop-blur-sm transition-all duration-200 sm:gap-3 sm:p-3 sm:text-sm',
+                                    colorClass,
+                                    'hover:scale-[1.02]'
+                                  )}
+                                >
+                                  <div
+                                    className={cn(
+                                      'h-2.5 w-2.5 flex-shrink-0 rounded-full border sm:h-3 sm:w-3',
+                                      colorClass
+                                    )}
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <span className="truncate font-medium">
+                                      {status.name}
+                                    </span>
+                                    {status.status === 'closed' && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="ml-1 text-xs sm:ml-2"
+                                      >
+                                        Single List
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">
+                                    #{index + 1}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </form>
+            </Form>
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Fixed Footer */}
+      <div className="flex-shrink-0 border-t bg-background/95 p-4 backdrop-blur-sm sm:p-6">
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={disabled}
+          onClick={form.handleSubmit(onSubmit)}
+          size="lg"
+        >
+          {isSubmitting && (
+            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+          )}
+          {isEditMode ? t('common.edit') : t('common.create')}
         </Button>
-      </form>
-    </Form>
+        {!isEditMode && (
+          <p className="mt-2 text-center text-xs text-muted-foreground sm:text-sm">
+            You can customize lists and colors after creating the board
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

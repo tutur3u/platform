@@ -53,6 +53,8 @@ interface Props {
 }
 
 export function TaskActions({ taskId, boardId, onUpdate }: Props) {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   // Fetch the latest task data using React Query
   const { data: task, isLoading: isTaskLoading } = useQuery({
     queryKey: ['task', taskId],
@@ -93,7 +95,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
 
       return transformedTask;
     },
-    enabled: !!taskId && !!open, // Only fetch when modal is open
+    enabled: !!taskId && isEditDialogOpen, // Only fetch when modal is open
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: false,
   });
@@ -106,7 +108,6 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [newPriority, setNewPriority] = useState<string>('0');
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
