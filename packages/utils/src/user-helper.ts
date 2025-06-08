@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { notFound, redirect } from 'next/navigation';
 
 export async function getCurrentSupabaseUser() {
@@ -34,7 +35,9 @@ export async function getCurrentUser(noRedirect?: boolean) {
 
   if (error) notFound();
   const { user_private_details, ...rest } = data;
-  return { ...rest, ...user_private_details } as User & UserPrivateDetails;
+  return { ...rest, ...user_private_details } as
+    | (User & UserPrivateDetails)
+    | WorkspaceUser;
 }
 
 export async function getUserDefaultWorkspace() {

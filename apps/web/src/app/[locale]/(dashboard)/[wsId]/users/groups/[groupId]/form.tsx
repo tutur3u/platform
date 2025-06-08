@@ -92,7 +92,7 @@ export default function GroupMemberForm({
           icon={<User className="mr-2 h-4 w-4" />}
           options={users.map((user) => ({
             label: user.display_name || user.full_name || 'No name',
-            description: user.email,
+            description: user.email || undefined,
             icon: (
               <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">
                 <AvatarImage

@@ -1,5 +1,5 @@
 import DefaultWorkspaceSetting from '../default-workspace-setting';
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,
   CardContent,
@@ -13,7 +13,7 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 interface WorkspaceSettingsCardProps {
-  user: (User & UserPrivateDetails) | null;
+  user: WorkspaceUser | null;
 }
 
 export default async function WorkspaceSettingsCard({

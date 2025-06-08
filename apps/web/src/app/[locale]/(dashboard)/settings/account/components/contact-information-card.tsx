@@ -1,5 +1,5 @@
 import EmailInput from '../../../../settings-email-input';
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -14,7 +14,7 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 interface ContactInformationCardProps {
-  user: (User & UserPrivateDetails) | null;
+  user: WorkspaceUser | null;
 }
 
 export default async function ContactInformationCard({

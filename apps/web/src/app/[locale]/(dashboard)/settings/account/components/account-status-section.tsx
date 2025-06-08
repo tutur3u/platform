@@ -1,10 +1,10 @@
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Settings } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 interface AccountStatusSectionProps {
-  user: (User & UserPrivateDetails) | null;
+  user: WorkspaceUser | null;
 }
 
 export default async function AccountStatusSection({

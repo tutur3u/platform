@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
@@ -45,7 +45,7 @@ const formSchema = z
 export default function ResetPasswordForm({
   user,
 }: {
-  user: (User & UserPrivateDetails) | null;
+  user: WorkspaceUser | null;
 }) {
   const t = useTranslations();
   const router = useRouter();

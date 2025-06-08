@@ -1,5 +1,5 @@
 import ResetPasswordForm from '../reset-password-form';
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,
   CardContent,
@@ -11,7 +11,7 @@ import { Shield } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 interface SecuritySettingsCardProps {
-  user: (User & UserPrivateDetails) | null;
+  user: WorkspaceUser | null;
 }
 
 export default async function SecuritySettingsCard({
