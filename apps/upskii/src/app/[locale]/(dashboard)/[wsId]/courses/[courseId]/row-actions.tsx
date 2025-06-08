@@ -1,9 +1,9 @@
 'use client';
 
-
 import { Row } from '@tanstack/react-table';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
+import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
@@ -17,7 +17,6 @@ import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
 
 interface WorkspaceCourseModuleRowActionsProps {
   wsId: string;
@@ -97,13 +96,7 @@ export function WorkspaceCourseModuleRowActions({
         title={t('ws-course-modules.edit')}
         editDescription={t('ws-course-modules.edit_description')}
         setOpen={setShowEditDialog}
-        form={
-          <CourseModuleForm
-            wsId={wsId}
-            courseId={courseId}
-            data={data}
-          />
-        }
+        form={<CourseModuleForm wsId={wsId} courseId={courseId} data={data} />}
       />
 
       <ModifiableDialogTrigger
