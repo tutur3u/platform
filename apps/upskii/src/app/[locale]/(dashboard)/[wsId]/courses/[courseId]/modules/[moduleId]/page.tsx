@@ -1,4 +1,3 @@
-import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
 import FileDisplay from './resources/file-display';
@@ -10,6 +9,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Accordion } from '@tuturuuu/ui/accordion';
+import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
 import {
   BookText,
   Goal,

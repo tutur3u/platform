@@ -20,10 +20,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
 
   return (
     <>
-      <CourseHeader
-        data={data}
-        href={`/${wsId}/courses/${courseId}`}
-      />
+      <CourseHeader data={data} href={`/${wsId}/courses/${courseId}`} />
       <Separator className="my-4" />
       {children}
     </>
