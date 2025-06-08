@@ -1,4 +1,4 @@
-import { Button } from "@tuturuuu/ui/button";
+import { Button } from '@tuturuuu/ui/button';
 
 export default function ShowResultSummarySection({
   t,

@@ -299,7 +299,6 @@ const getQuizzes = async (moduleId: string) => {
   return Array.from(grouped.values());
 };
 
-
 async function getResources({ path }: { path: string }) {
   const supabase = await createDynamicClient();
 
