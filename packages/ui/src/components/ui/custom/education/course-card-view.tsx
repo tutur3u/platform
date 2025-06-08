@@ -75,7 +75,7 @@ export function CourseCardView({ courses }: CourseCardViewProps) {
 
               <CardContent className="relative flex min-h-[140px] flex-1 flex-col">
                 <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                  {course.description || t('no-description-provided')}
+                  {course.description || t('ws-courses.no_description_provided')}
                 </p>
 
                 <div className="mt-auto space-y-3">

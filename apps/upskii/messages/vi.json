@@ -3525,7 +3525,9 @@
     "delete_confirm_title": "Xác nhận xoá \"{name}\"",
     "course_description": "Mô tả khóa học",
     "card_view": "Dạng thẻ",
-    "table_view": "Dạng bảng"
+    "table_view": "Dạng bảng",
+    "no_courses_found": "Chưa có khóa học nào",
+    "no_description_provided": "Không có mô tả"
   },
   "ws-crawlers": {
     "plural": "Công cụ cào dữ liệu",
@@ -4131,7 +4133,5 @@
     "empty_state_description": "Hoàn thành các khóa học để giành chứng chỉ và thể hiện thành tích của bạn.",
     "browse_courses": "Xem các khóa học",
     "certified": "Được chứng nhận"
-  },
-  "no-courses-found": "Chưa có khóa học nào",
-  "no-description-provided": "Không có mô tả"
+  }
 }
