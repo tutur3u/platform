@@ -1,4 +1,4 @@
-import { CourseSection } from '../../section';
+import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
 import FileDisplay from './resources/file-display';
