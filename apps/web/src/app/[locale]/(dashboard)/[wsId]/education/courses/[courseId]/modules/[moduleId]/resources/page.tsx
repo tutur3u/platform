@@ -1,7 +1,7 @@
 import { createDynamicClient } from '@tuturuuu/supabase/next/server';
 import { DeleteResourceButton } from '@tuturuuu/ui/custom/education/modules/resources/delete-resource';
-import { StorageObjectForm } from '@tuturuuu/ui/custom/education/modules/resources/file-upload-form';
 import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
+import { StorageObjectForm } from '@tuturuuu/ui/custom/education/modules/resources/file-upload-form';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Paperclip } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
