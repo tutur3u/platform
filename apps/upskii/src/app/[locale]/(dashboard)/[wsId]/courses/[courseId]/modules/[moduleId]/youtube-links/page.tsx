@@ -1,8 +1,8 @@
 import { extractYoutubeId } from '@/utils/url-helper';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import DeleteLinkButton from '@tuturuuu/ui/custom/education/modules/youtube/delete-link-button';
 import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
 import YouTubeLinkForm from '@tuturuuu/ui/custom/education/modules/youtube/form';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Youtube } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
