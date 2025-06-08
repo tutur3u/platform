@@ -158,7 +158,7 @@ export function ListView({
   }
 
   return (
-    <div className="flex h-full flex-col gap-4 p-4">
+    <div className="flex h-full flex-col gap-4">
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -356,30 +356,12 @@ export function ListView({
       {selectedTaskId && (
         <TaskActions
           taskId={selectedTaskId}
-          taskName={tasks.find((t) => t.id === selectedTaskId)?.name || ''}
-          taskDescription={
-            tasks.find((t) => t.id === selectedTaskId)?.description || null
-          }
-          startDate={
-            tasks.find((t) => t.id === selectedTaskId)?.start_date || null
-          }
-          endDate={tasks.find((t) => t.id === selectedTaskId)?.end_date || null}
-          priority={
-            tasks.find((t) => t.id === selectedTaskId)?.priority || null
-          }
-          archived={
-            tasks.find((t) => t.id === selectedTaskId)?.archived || false
-          }
-          assignees={
-            tasks.find((t) => t.id === selectedTaskId)?.assignees || []
-          }
+          boardId={boardId}
           onUpdate={() => {
             setSelectedTaskId(null);
             const supabase = createClient();
             getTasks(supabase, boardId).then(setTasks);
           }}
-          open={true}
-          onOpenChange={(open) => !open && setSelectedTaskId(null)}
         />
       )}
     </div>

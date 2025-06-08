@@ -22,15 +22,17 @@ import {
   Settings,
   Timer,
   TrendingUp,
+  WifiOff,
   Zap,
 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface TimeTrackerContentProps {
   wsId: string;
+  initialData: TimeTrackerData;
 }
 
 interface TimerStats {
@@ -45,62 +47,121 @@ interface TimerStats {
   };
 }
 
-interface SessionWithRelations extends TimeTrackingSession {
-  category?: TimeTrackingCategory;
-  task?: WorkspaceTask;
+// Unified SessionWithRelations type that matches both TimerControls and SessionHistory expectations
+export interface SessionWithRelations extends TimeTrackingSession {
+  category: TimeTrackingCategory | null;
+  task: WorkspaceTask | null;
 }
 
-interface TimeTrackingGoal {
+// Unified TimeTrackingGoal type that matches GoalManager expectations
+export interface TimeTrackingGoal {
   id: string;
   ws_id: string;
   user_id: string;
-  category_id?: string;
+  category_id: string | null;
   daily_goal_minutes: number;
-  weekly_goal_minutes?: number;
-  is_active: boolean;
-  category?: TimeTrackingCategory;
+  weekly_goal_minutes: number | null;
+  is_active: boolean | null;
+  category: TimeTrackingCategory | null;
 }
 
-export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
+export interface TimeTrackerData {
+  categories: TimeTrackingCategory[];
+  runningSession: SessionWithRelations | null;
+  recentSessions: SessionWithRelations[] | null;
+  goals: TimeTrackingGoal[] | null;
+  tasks: Partial<WorkspaceTask>[];
+  stats: TimerStats;
+}
+
+export default function TimeTrackerContent({
+  wsId,
+  initialData,
+}: TimeTrackerContentProps) {
   const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
   const [activeTab, setActiveTab] = useState('timer');
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null); // null means "my time"
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [currentSession, setCurrentSession] =
-    useState<SessionWithRelations | null>(null);
-  const [categories, setCategories] = useState<TimeTrackingCategory[]>([]);
-  const [goals, setGoals] = useState<TimeTrackingGoal[]>([]);
-  const [recentSessions, setRecentSessions] = useState<SessionWithRelations[]>(
-    []
+    useState<SessionWithRelations | null>(initialData.runningSession);
+  const [categories, setCategories] = useState<TimeTrackingCategory[]>(
+    initialData.categories || []
   );
-  const [timerStats, setTimerStats] = useState<TimerStats>({
-    todayTime: 0,
-    weekTime: 0,
-    monthTime: 0,
-    streak: 0,
-  });
+  const [goals, setGoals] = useState<TimeTrackingGoal[]>(
+    initialData.goals || []
+  );
+  const [recentSessions, setRecentSessions] = useState<SessionWithRelations[]>(
+    initialData.recentSessions || []
+  );
+  const [timerStats, setTimerStats] = useState<TimerStats>(initialData.stats);
 
   // Timer state (only for current user)
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [tasks, setTasks] = useState<Partial<WorkspaceTask>[]>([]);
+  const [elapsedTime, setElapsedTime] = useState(() => {
+    if (!initialData.runningSession) return 0;
+    const elapsed = Math.floor(
+      (new Date().getTime() -
+        new Date(initialData.runningSession.start_time).getTime()) /
+        1000
+    );
+    return Math.max(0, elapsed); // Ensure non-negative
+  });
+  const [isRunning, setIsRunning] = useState(!!initialData.runningSession);
+  const [tasks, setTasks] = useState<Partial<WorkspaceTask>[]>(
+    initialData.tasks || []
+  );
 
   // Enhanced loading and error states
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Refs for cleanup
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
+  const isMountedRef = useRef(true);
 
   // Whether we're viewing another user's data
   const isViewingOtherUser = selectedUserId !== null;
 
-  // API call helper with enhanced error handling
+  // Memoized formatters
+  const formatTime = useCallback((seconds: number): string => {
+    const safeSeconds = Math.max(0, Math.floor(seconds));
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const secs = safeSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  const formatDuration = useCallback((seconds: number): string => {
+    const safeSeconds = Math.max(0, Math.floor(seconds));
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  }, []);
+
+  // API call helper with enhanced error handling and retry logic
   const apiCall = useCallback(
     async (url: string, options: RequestInit = {}) => {
+      const controller = new AbortController();
+
       try {
         const response = await fetch(url, {
           headers: {
             'Content-Type': 'application/json',
             ...options.headers,
           },
+          signal: controller.signal,
           ...options,
         });
 
@@ -111,8 +172,20 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
           throw new Error(error.error || `HTTP ${response.status}`);
         }
 
+        setIsOffline(false);
+        setRetryCount(0);
         return response.json();
       } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          throw err;
+        }
+
+        const isNetworkError =
+          err instanceof TypeError && err.message.includes('fetch');
+        if (isNetworkError) {
+          setIsOffline(true);
+        }
+
         const message = err instanceof Error ? err.message : 'Network error';
         console.error('API call failed:', message);
         throw new Error(message);
@@ -121,12 +194,12 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
     []
   );
 
-  // Fetch all data with enhanced error handling
+  // Fetch all data with enhanced error handling and exponential backoff
   const fetchData = useCallback(
-    async (showLoading = true) => {
-      if (!currentUserId) return;
+    async (showLoading = true, isRetry = false) => {
+      if (!currentUserId || !isMountedRef.current) return;
 
-      if (showLoading) setIsLoading(true);
+      if (showLoading && !isRetry) setIsLoading(true);
       setError(null);
 
       try {
@@ -137,7 +210,6 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
 
         const promises = [
           apiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`),
-          // Only fetch running session for current user (others can't have running sessions shown to us)
           !isViewingOtherUser
             ? apiCall(
                 `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
@@ -164,6 +236,8 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
           tasksRes,
         ] = await Promise.all(promises);
 
+        if (!isMountedRef.current) return;
+
         setCategories(categoriesRes.categories || []);
         setRecentSessions(recentRes.sessions || []);
         setTimerStats(
@@ -182,10 +256,13 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
           if (runningRes.session) {
             setCurrentSession(runningRes.session);
             setIsRunning(true);
-            const elapsed = Math.floor(
-              (new Date().getTime() -
-                new Date(runningRes.session.start_time).getTime()) /
-                1000
+            const elapsed = Math.max(
+              0,
+              Math.floor(
+                (new Date().getTime() -
+                  new Date(runningRes.session.start_time).getTime()) /
+                  1000
+              )
             );
             setElapsedTime(elapsed);
           } else {
@@ -201,58 +278,117 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
         }
 
         setLastRefresh(new Date());
+        setRetryCount(0);
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+
         const message =
           error instanceof Error ? error.message : 'Failed to load data';
         console.error('Error fetching time tracking data:', error);
-        setError(message);
-        toast.error(`Failed to load time tracking data: ${message}`);
+
+        if (isMountedRef.current) {
+          setError(message);
+          setRetryCount((prev) => prev + 1);
+
+          if (!isRetry) {
+            toast.error(`Failed to load time tracking data: ${message}`);
+          }
+        }
       } finally {
-        if (showLoading) setIsLoading(false);
+        if (showLoading && isMountedRef.current) {
+          setIsLoading(false);
+        }
       }
     },
     [wsId, apiCall, currentUserId, selectedUserId, isViewingOtherUser]
   );
 
-  // Auto-refresh data every 30 seconds when not in background
+  // Auto-refresh with exponential backoff and visibility check
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        fetchData(false); // Silent refresh
+    const refreshInterval = Math.min(30000 * Math.pow(2, retryCount), 300000); // Max 5 minutes
+
+    refreshIntervalRef.current = setInterval(() => {
+      if (document.visibilityState === 'visible' && !isLoading) {
+        fetchData(false, retryCount > 0); // Silent refresh
       }
-    }, 30000);
+    }, refreshInterval);
 
-    return () => clearInterval(interval);
-  }, [fetchData]);
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [fetchData, isLoading, retryCount]);
 
-  // Timer effect
+  // Timer effect with better cleanup
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-
-    if (isRunning && currentSession) {
-      interval = setInterval(() => {
-        const elapsed = Math.floor(
-          (new Date().getTime() -
-            new Date(currentSession.start_time).getTime()) /
-            1000
-        );
-        setElapsedTime(elapsed);
+    if (isRunning && currentSession && !isViewingOtherUser) {
+      timerIntervalRef.current = setInterval(() => {
+        if (isMountedRef.current) {
+          const elapsed = Math.max(
+            0,
+            Math.floor(
+              (new Date().getTime() -
+                new Date(currentSession.start_time).getTime()) /
+                1000
+            )
+          );
+          setElapsedTime(elapsed);
+        }
       }, 1000);
     }
 
-    return () => clearInterval(interval);
-  }, [isRunning, currentSession]);
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [isRunning, currentSession, isViewingOtherUser]);
 
-  // Load data on mount and when user changes
+  // Load data on mount and when dependencies change
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Online/offline detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      if (retryCount > 0) {
+        fetchData(false, true);
+      }
+    };
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [fetchData, retryCount]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Handle user selection change
   const handleUserChange = useCallback(
     (userId: string | null) => {
       setSelectedUserId(userId);
-      // If switching to timer tab and viewing another user, switch to history
       if (userId !== null && activeTab === 'timer') {
         setActiveTab('history');
       }
@@ -260,40 +396,52 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
     [activeTab]
   );
 
-  // Retry function for error recovery
+  // Retry function with exponential backoff
   const handleRetry = useCallback(() => {
-    fetchData();
+    fetchData(true, true);
   }, [fetchData]);
 
-  // Format time display
-  const formatTime = useCallback((seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }, []);
-
-  // Format duration for display
-  const formatDuration = useCallback((seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  }, []);
+  // Memoized stats cards
+  const statsCards = useMemo(
+    () => [
+      {
+        icon: Calendar,
+        label: 'Today',
+        value: formatDuration(timerStats.todayTime),
+        color: 'text-blue-500',
+        bg: 'from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20',
+      },
+      {
+        icon: TrendingUp,
+        label: 'This Week',
+        value: formatDuration(timerStats.weekTime),
+        color: 'text-green-500',
+        bg: 'from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20',
+      },
+      {
+        icon: Zap,
+        label: 'This Month',
+        value: formatDuration(timerStats.monthTime),
+        color: 'text-purple-500',
+        bg: 'from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20',
+      },
+      {
+        icon: Clock,
+        label: 'Streak',
+        value: `${timerStats.streak} days`,
+        color: 'text-orange-500',
+        bg: 'from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20',
+      },
+    ],
+    [timerStats, formatDuration]
+  );
 
   if (isLoadingUser || !currentUserId) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="text-center">
+        <div className="space-y-4 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-          <p className="mt-4 animate-pulse text-sm text-muted-foreground">
+          <p className="animate-pulse text-sm text-muted-foreground">
             Loading time tracker...
           </p>
         </div>
@@ -302,12 +450,19 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
   }
 
   return (
-    <div className="space-y-6 duration-500 animate-in fade-in-50">
+    <div
+      className={cn(
+        'space-y-6 duration-500 animate-in fade-in-50',
+        isLoading && 'opacity-50'
+      )}
+    >
       {/* Header with User Selector */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Time Tracker</h1>
-          <p className="text-muted-foreground">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex-1 space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            Time Tracker
+          </h1>
+          <p className="text-sm text-muted-foreground sm:text-base">
             {isViewingOtherUser
               ? "Viewing another user's time tracking data"
               : 'Track and manage your time across projects'}
@@ -315,19 +470,25 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
           {lastRefresh && (
             <p className="text-xs text-muted-foreground">
               Last updated: {lastRefresh.toLocaleTimeString()}
+              {isOffline && (
+                <span className="ml-2 inline-flex items-center gap-1 text-amber-600">
+                  <WifiOff className="h-3 w-3" />
+                  Offline
+                </span>
+              )}
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-shrink-0 items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchData()}
+            onClick={() => fetchData(true, false)}
             disabled={isLoading}
             className="gap-2"
           >
             <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
           <UserSelector
             wsId={wsId}
@@ -339,69 +500,42 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
         </div>
       </div>
 
-      {/* Error Alert */}
+      {/* Error Alert with better UX */}
       {error && (
         <Alert
-          variant="destructive"
+          variant={isOffline ? 'default' : 'destructive'}
           className="duration-300 animate-in slide-in-from-top"
         >
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
-            <span>{error}</span>
+            <div className="flex-1">
+              <span>
+                {isOffline
+                  ? 'You are offline. Some features may not work.'
+                  : error}
+              </span>
+              {retryCount > 0 && (
+                <p className="mt-1 text-xs opacity-75">
+                  Retried {retryCount} time{retryCount > 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
             <Button
               variant="outline"
               size="sm"
               onClick={handleRetry}
-              className="ml-4"
+              disabled={isLoading}
+              className="ml-4 flex-shrink-0"
             >
-              Try Again
+              {isLoading ? 'Retrying...' : 'Try Again'}
             </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="space-y-4 rounded-lg border bg-card p-6 text-center shadow-lg">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-            <p className="text-sm text-muted-foreground">Loading data...</p>
-          </div>
-        </div>
-      )}
-
-      {/* Stats Overview with improved animations */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          {
-            icon: Calendar,
-            label: 'Today',
-            value: formatDuration(timerStats.todayTime),
-            color: 'text-blue-500',
-            bg: 'from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20',
-          },
-          {
-            icon: TrendingUp,
-            label: 'This Week',
-            value: formatDuration(timerStats.weekTime),
-            color: 'text-green-500',
-            bg: 'from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20',
-          },
-          {
-            icon: Zap,
-            label: 'This Month',
-            value: formatDuration(timerStats.monthTime),
-            color: 'text-purple-500',
-            bg: 'from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20',
-          },
-          {
-            icon: Clock,
-            label: 'Streak',
-            value: `${timerStats.streak} days`,
-            color: 'text-orange-500',
-            bg: 'from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20',
-          },
-        ].map((stat, index) => (
+      {/* Stats Overview with improved responsive design */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {statsCards.map((stat, index) => (
           <Card
             key={stat.label}
             className={cn(
@@ -411,20 +545,22 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
             )}
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-4">
                 <div
                   className={cn(
-                    'rounded-full bg-white p-3 shadow-sm transition-transform group-hover:scale-110 dark:bg-gray-800'
+                    'rounded-full bg-white p-2 shadow-sm transition-transform group-hover:scale-110 sm:p-3 dark:bg-gray-800'
                   )}
                 >
-                  <stat.icon className={cn('h-6 w-6', stat.color)} />
+                  <stat.icon
+                    className={cn('h-4 w-4 sm:h-6 sm:w-6', stat.color)}
+                  />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-muted-foreground sm:text-sm">
                     {stat.label}
                   </p>
-                  <p className="text-2xl font-bold transition-all group-hover:scale-105">
+                  <p className="truncate text-lg font-bold transition-all group-hover:scale-105 sm:text-2xl">
                     {stat.value}
                   </p>
                 </div>
@@ -434,7 +570,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
         ))}
       </div>
 
-      {/* Main Content Tabs with improved styling */}
+      {/* Main Content Tabs with improved mobile design */}
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
@@ -443,13 +579,13 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
         <TabsList
           className={cn(
             'grid w-full bg-muted/30 backdrop-blur-sm',
-            isViewingOtherUser ? 'grid-cols-3' : 'grid-cols-4'
+            isViewingOtherUser ? 'grid-cols-2' : 'grid-cols-4'
           )}
         >
           {!isViewingOtherUser && (
             <TabsTrigger
               value="timer"
-              className="flex items-center gap-2 transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 text-xs transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
             >
               <Timer className="h-4 w-4" />
               <span className="hidden sm:inline">Timer</span>
@@ -457,21 +593,23 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
           )}
           <TabsTrigger
             value="history"
-            className="flex items-center gap-2 transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 text-xs transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
           >
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">History</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="categories"
-            className="flex items-center gap-2 transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Categories</span>
-          </TabsTrigger>
+          {!isViewingOtherUser && (
+            <TabsTrigger
+              value="categories"
+              className="flex items-center gap-2 text-xs transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Categories</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger
             value="goals"
-            className="flex items-center gap-2 transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 text-xs transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
           >
             <TrendingUp className="h-4 w-4" />
             <span className="hidden sm:inline">Goals</span>
@@ -495,7 +633,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
                   setIsRunning={setIsRunning}
                   categories={categories}
                   tasks={tasks}
-                  onSessionUpdate={fetchData}
+                  onSessionUpdate={() => fetchData(false)}
                   formatTime={formatTime}
                   formatDuration={formatDuration}
                   apiCall={apiCall}
@@ -581,7 +719,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
             sessions={recentSessions}
             categories={categories}
             tasks={tasks}
-            onSessionUpdate={fetchData}
+            onSessionUpdate={() => fetchData(false)}
             readOnly={isViewingOtherUser}
             formatDuration={formatDuration}
             apiCall={apiCall}
@@ -604,7 +742,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
           <CategoryManager
             wsId={wsId}
             categories={categories}
-            onCategoriesUpdate={fetchData}
+            onCategoriesUpdate={() => fetchData(false)}
             readOnly={isViewingOtherUser}
             apiCall={apiCall}
           />
@@ -628,7 +766,7 @@ export default function TimeTrackerContent({ wsId }: TimeTrackerContentProps) {
             goals={goals}
             categories={categories}
             timerStats={timerStats}
-            onGoalsUpdate={fetchData}
+            onGoalsUpdate={() => fetchData(false)}
             readOnly={isViewingOtherUser}
             formatDuration={formatDuration}
             apiCall={apiCall}

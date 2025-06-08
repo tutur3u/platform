@@ -67,7 +67,7 @@ export function BoardColumn({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group flex h-full w-[350px] flex-col rounded-lg transition-colors',
+        'group flex h-3/4 w-[350px] flex-col rounded-lg transition-colors',
         'touch-none select-none',
         isDragging && 'scale-[1.02] rotate-2 opacity-90 shadow-lg',
         isOverlay && 'shadow-lg'
@@ -123,8 +123,6 @@ export function BoardColumn({
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full w-full gap-4 overflow-x-auto p-4">
-      {children}
-    </div>
+    <div className="flex h-full w-full gap-4 overflow-x-auto">{children}</div>
   );
 }

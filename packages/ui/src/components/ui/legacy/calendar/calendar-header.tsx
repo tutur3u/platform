@@ -28,6 +28,7 @@ export function CalendarHeader({
   view: 'day' | '4-days' | 'week' | 'month';
   offset: number;
   availableViews: { value: string; label: string; disabled?: boolean }[];
+  // eslint-disable-next-line no-unused-vars
   onViewChange: (view: 'day' | '4-days' | 'week' | 'month') => void;
   extras?: React.ReactNode;
 }) {
@@ -103,7 +104,6 @@ export function CalendarHeader({
                 ? t('this-month')
                 : t('current')}
         </Button>
-
         <Button
           variant="outline"
           size="icon"
@@ -115,25 +115,27 @@ export function CalendarHeader({
         </Button>
 
         {views.length > 1 && (
-          <Select
-            value={view}
-            onValueChange={(value) =>
-              onViewChange(value as 'day' | '4-days' | 'week' | 'month')
-            }
-          >
-            <SelectTrigger className="h-8 w-[120px]">
-              <SelectValue placeholder={t('view')} />
-            </SelectTrigger>
-            <SelectContent>
-              {views.map((view) => (
-                <SelectItem key={view.value} value={view.value}>
-                  {view.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="w-full flex-1 md:w-auto">
+            <Select
+              value={view}
+              onValueChange={(value) =>
+                onViewChange(value as 'day' | '4-days' | 'week' | 'month')
+              }
+            >
+              <SelectTrigger className="h-8 w-full">
+                <SelectValue placeholder={t('view')} />
+              </SelectTrigger>
+              <SelectContent>
+                {views.map((view) => (
+                  <SelectItem key={view.value} value={view.value}>
+                    {view.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
-
+        </div>
         {extras}
       </div>
     </div>

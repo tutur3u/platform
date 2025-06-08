@@ -199,7 +199,7 @@ export default function TasksSidebarContent({
 
   if (isCollapsed) {
     return (
-      <div className="ml-2 flex h-full flex-col items-center rounded-lg border border-border bg-background/50 p-2 shadow-sm backdrop-blur-sm">
+      <div className="ml-2 hidden h-full flex-col items-center rounded-lg border border-border bg-background/50 p-2 shadow-sm backdrop-blur-sm xl:flex">
         <Button
           variant="ghost"
           size="icon"

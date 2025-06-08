@@ -40,7 +40,7 @@ export default async function CalendarPage({ params }: PageProps) {
       useQueryClient={useQueryClient}
     >
       {/* {DEV_MODE && <CalendarActiveSyncDebugger />} */}
-      <div className="flex h-[calc(100%-2rem-4px)]">
+      <div className="flex h-[calc(100%-2rem-4px)] md:h-[calc(100vh-2rem)]">
         <CalendarClientPage
           experimentalGoogleToken={googleToken}
           workspace={workspace}
