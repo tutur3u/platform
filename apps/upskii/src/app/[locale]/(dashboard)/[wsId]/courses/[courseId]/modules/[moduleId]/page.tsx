@@ -1,8 +1,6 @@
-import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
 import FileDisplay from './resources/file-display';
-import { YoutubeEmbed } from './youtube-links/embed';
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
@@ -10,6 +8,8 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Accordion } from '@tuturuuu/ui/accordion';
+import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
+import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
 import {
   BookText,
   Goal,

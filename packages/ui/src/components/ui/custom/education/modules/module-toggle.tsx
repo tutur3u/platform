@@ -5,7 +5,7 @@ import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-export default function ModuleToggles({
+export function ModuleToggles({
   courseId,
   moduleId,
   //   isPublic: initialIsPublic,

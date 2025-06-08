@@ -1,10 +1,10 @@
-import ModuleToggles from './toggles';
 import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
+import { ModuleToggles } from '@tuturuuu/ui/custom/education/modules/module-toggle';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   BookText,
