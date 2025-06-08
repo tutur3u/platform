@@ -162,7 +162,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
             </div>
           ) : undefined
         }
-      /> */}
+      />
       <CourseSection
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/flashcards`}
         title={t('ws-flashcards.plural')}
