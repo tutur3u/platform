@@ -96,7 +96,7 @@ export default function ClientQuizzes({
             className="col-span-full flex w-full flex-col gap-4"
           >
             <h3 className="text-lg font-bold">
-              <LucideBubbles className="inline mr-2 h-5 w-5" />
+              <LucideBubbles className="mr-2 inline h-5 w-5" />
               {set.setName}
             </h3>
             <div className="grid gap-4 md:grid-cols-2">

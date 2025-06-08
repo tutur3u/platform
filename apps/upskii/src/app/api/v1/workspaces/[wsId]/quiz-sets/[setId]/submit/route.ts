@@ -1,6 +1,6 @@
 // File: app/api/quiz-sets/[setId]/submit/route.ts
-import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 type SubmissionBody = {
   answers: Array<{
@@ -57,7 +57,10 @@ export async function POST(
     .eq('set_id', setId);
 
   if (attErr) {
-    return NextResponse.json({ error: 'Error counting attempts' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error counting attempts' },
+      { status: 500 }
+    );
   }
   const attemptsCount = prevAttempts?.length || 0;
 
@@ -77,7 +80,10 @@ export async function POST(
     attempt_limit !== undefined &&
     attemptsCount >= attempt_limit
   ) {
-    return NextResponse.json({ error: 'Maximum attempts reached' }, { status: 403 });
+    return NextResponse.json(
+      { error: 'Maximum attempts reached' },
+      { status: 403 }
+    );
   }
 
   // 5) We will create a new attempt row with attempt_number = attemptsCount + 1
@@ -87,7 +93,8 @@ export async function POST(
   //    Notice we nest `quiz_options` under `workspace_quizzes`:
   const { data: correctRaw, error: corrErr } = await supabase
     .from('quiz_set_quizzes')
-    .select(`
+    .select(
+      `
       quiz_id,
       workspace_quizzes (
         score,
@@ -96,11 +103,15 @@ export async function POST(
           is_correct
         )
       )
-    `)
+    `
+    )
     .eq('set_id', setId);
 
   if (corrErr) {
-    return NextResponse.json({ error: 'Error fetching correct answers' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error fetching correct answers' },
+      { status: 500 }
+    );
   }
 
   // 7) Tell TypeScript: "Trust me—this matches RawRow[]"
@@ -163,7 +174,10 @@ export async function POST(
     .single();
 
   if (insErr || !insertedAttempt) {
-    return NextResponse.json({ error: 'Error inserting attempt' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error inserting attempt' },
+      { status: 500 }
+    );
   }
   const attemptId = insertedAttempt.id;
 
@@ -181,7 +195,10 @@ export async function POST(
     );
 
   if (ansErr) {
-    return NextResponse.json({ error: 'Error inserting answers' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error inserting answers' },
+      { status: 500 }
+    );
   }
 
   // 11) Mark the attempt’s completed_at timestamp
