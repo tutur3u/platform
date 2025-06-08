@@ -7564,6 +7564,7 @@ export type Database = {
           created_at: string;
           user_id: string;
           enabled: boolean;
+          team_name: string[];
         }[];
       };
       search_users_by_name: {
