@@ -7,7 +7,6 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
-  CalendarDays,
   LayoutGrid,
   List,
   MoreHorizontal,
@@ -23,9 +22,9 @@ import { useState } from 'react';
 interface Props {
   boardId: string;
   boardName: string;
-  viewType: 'kanban' | 'list' | 'calendar';
+  viewType: 'kanban' | 'list';
   // eslint-disable-next-line no-unused-vars
-  onViewChange: (view: 'kanban' | 'list' | 'calendar') => void;
+  onViewChange: (view: 'kanban' | 'list') => void;
 }
 
 export function BoardHeader({
@@ -51,7 +50,7 @@ export function BoardHeader({
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 border-b px-4 py-2">
+    <div className="flex items-center justify-between gap-4 py-2">
       <div className="flex items-center gap-2">
         <h1 className="text-xl font-semibold">{boardName}</h1>
         <Button
@@ -66,7 +65,7 @@ export function BoardHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="flex items-center rounded-lg border bg-background p-1">
+        <div className="flex items-center gap-1 rounded-lg border bg-background p-1">
           <Button
             variant="ghost"
             size="sm"
@@ -84,15 +83,6 @@ export function BoardHeader({
           >
             <List className="h-4 w-4" />
             List
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn('gap-2', viewType === 'calendar' && 'bg-secondary')}
-            onClick={() => onViewChange('calendar')}
-          >
-            <CalendarDays className="h-4 w-4" />
-            Calendar
           </Button>
         </div>
 

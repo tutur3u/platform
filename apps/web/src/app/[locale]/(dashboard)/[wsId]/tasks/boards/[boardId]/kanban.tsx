@@ -6,7 +6,7 @@ import type { Column } from './task-list';
 import { BoardColumn, BoardContainer } from './task-list';
 import { TaskListForm } from './task-list-form';
 import { hasDraggableData } from './utils';
-import { getTaskLists, moveTask } from '@/lib/task-helper';
+import { getTaskLists, useMoveTask } from '@/lib/task-helper';
 import {
   DndContext,
   type DragEndEvent,
@@ -38,6 +38,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
+  const moveTaskMutation = useMoveTask(boardId);
 
   const handleTaskCreated = () => {
     // Invalidate the tasks query to trigger a refetch
@@ -226,23 +227,10 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
           }
         );
 
-        const supabase = createClient();
-        const updatedTask = await moveTask(
-          supabase,
-          activeTask.id,
-          targetListId
-        );
-
-        // Update the cache with the server response
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (oldData: TaskType[] | undefined) => {
-            if (!oldData) return oldData;
-            return oldData.map((t) =>
-              t.id === updatedTask.id ? updatedTask : t
-            );
-          }
-        );
+        moveTaskMutation.mutate({
+          taskId: activeTask.id,
+          newListId: targetListId,
+        });
       } catch (error) {
         // Revert the optimistic update by invalidating the query
         queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
@@ -258,7 +246,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   }
 
   return (
-    <div className="h-full p-4">
+    <div className="h-full">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -268,7 +256,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       >
         <BoardContainer>
           <SortableContext items={columnsId}>
-            <div className="flex gap-3">
+            <div className="flex h-full gap-3">
               {columns.map((column) => (
                 <BoardColumn
                   key={column.id}

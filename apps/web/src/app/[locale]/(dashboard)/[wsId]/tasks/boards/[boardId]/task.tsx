@@ -1,13 +1,10 @@
 import { AssigneeSelect } from './_components/assignee-select';
 import { TaskActions } from './task-actions';
-import { updateTask } from '@/lib/task-helper';
+import { useUpdateTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Task as TaskType } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
@@ -16,12 +13,15 @@ import {
   Clock,
   Flag,
   GripVertical,
-  Loader2,
-  Pencil,
+  Sparkles,
 } from '@tuturuuu/ui/icons';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { formatDistanceToNow } from 'date-fns';
+import {
+  formatDistanceToNow,
+  isToday,
+  isTomorrow,
+  isYesterday,
+} from 'date-fns';
 import { useState } from 'react';
 
 export interface Task extends TaskType {}
@@ -35,8 +35,8 @@ interface Props {
 
 export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
   const [isLoading, setIsLoading] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
+  const [isHovered, setIsHovered] = useState(false);
+  const updateTaskMutation = useUpdateTask(boardId);
   const {
     setNodeRef,
     attributes,
@@ -61,269 +61,238 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
     height: 'var(--task-height)',
   };
 
-  const isOverdue = task.end_date && new Date(task.end_date) < new Date();
+  const now = new Date();
+  const isOverdue = task.end_date && new Date(task.end_date) < now;
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
   const createdAt = new Date(task.created_at);
 
+  // Enhanced date formatting
+  const formatSmartDate = (date: Date) => {
+    if (isToday(date)) return 'Today';
+    if (isTomorrow(date)) return 'Tomorrow';
+    if (isYesterday(date)) return 'Yesterday';
+    return formatDistanceToNow(date, { addSuffix: true });
+  };
+
   async function handleArchiveToggle() {
     if (!onUpdate) return;
 
-    try {
-      setIsLoading(true);
-      const newArchiveState = !task.archived;
-
-      // Optimistically update the task in the cache
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldData: Task[] | undefined) => {
-          if (!oldData) return oldData;
-          return oldData.map((t) =>
-            t.id === task.id ? { ...t, archived: newArchiveState } : t
-          );
-        }
-      );
-
-      const supabase = createClient();
-      const updatedTask = await updateTask(supabase, task.id, {
-        archived: newArchiveState,
-      });
-
-      // Update the cache with the server response
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldData: Task[] | undefined) => {
-          if (!oldData) return oldData;
-          return oldData.map((t) =>
-            t.id === updatedTask.id ? updatedTask : t
-          );
-        }
-      );
-
-      onUpdate();
-    } catch (error) {
-      // Revert the optimistic update by invalidating the query
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      console.error('Failed to update task archive status:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    setIsLoading(true);
+    updateTaskMutation.mutate(
+      { taskId: task.id, updates: { archived: !task.archived } },
+      {
+        onSettled: () => {
+          setIsLoading(false);
+          onUpdate();
+        },
+      }
+    );
   }
 
-  async function handleQuickPriorityChange(priority: number | null) {
-    if (!onUpdate) return;
-
-    try {
-      setIsLoading(true);
-      const newPriority = priority || undefined;
-
-      // Optimistically update the task in the cache
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldData: Task[] | undefined) => {
-          if (!oldData) return oldData;
-          return oldData.map((t) =>
-            t.id === task.id ? { ...t, priority: newPriority } : t
-          );
-        }
-      );
-
-      const supabase = createClient();
-      const updatedTask = await updateTask(supabase, task.id, {
-        priority: priority || null,
-      });
-
-      // Update the cache with the server response
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldData: Task[] | undefined) => {
-          if (!oldData) return oldData;
-          return oldData.map((t) =>
-            t.id === updatedTask.id ? updatedTask : t
-          );
-        }
-      );
-
-      onUpdate();
-    } catch (error) {
-      // Revert the optimistic update by invalidating the query
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      console.error('Failed to update task priority:', error);
-    } finally {
-      setIsLoading(false);
+  const getPriorityBorderColor = () => {
+    if (!task.priority) return '';
+    switch (task.priority) {
+      case 1:
+        return 'border-l-red-500 dark:border-l-red-400';
+      case 2:
+        return 'border-l-yellow-500 dark:border-l-yellow-400';
+      case 3:
+        return 'border-l-green-500 dark:border-l-green-400';
+      default:
+        return 'border-l-blue-500 dark:border-l-blue-400';
     }
-  }
+  };
+
+  const getPriorityGlow = () => {
+    if (!isHovered || !task.priority) return '';
+    switch (task.priority) {
+      case 1:
+        return 'shadow-red-500/20 dark:shadow-red-400/20';
+      case 2:
+        return 'shadow-yellow-500/20 dark:shadow-yellow-400/20';
+      case 3:
+        return 'shadow-green-500/20 dark:shadow-green-400/20';
+      default:
+        return 'shadow-blue-500/20 dark:shadow-blue-400/20';
+    }
+  };
 
   return (
     <Card
       ref={setNodeRef}
       style={style}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        'group relative flex flex-col gap-3 rounded-lg border p-3 text-left text-sm transition-all',
-        'hover:border-primary/20 hover:shadow-md',
-        'touch-none select-none',
-        isDragging && 'z-50 scale-[1.02] bg-background opacity-90 shadow-lg',
-        isOverlay && 'shadow-lg',
-        task.archived && 'bg-muted/50',
-        isOverdue && !task.archived && 'border-destructive/50'
+        'group relative overflow-hidden rounded-xl border-l-4 transition-all duration-300 ease-out',
+        'hover:-translate-y-0.5 hover:shadow-lg',
+        'cursor-pointer touch-none select-none',
+        // Priority-based left border
+        task.priority
+          ? getPriorityBorderColor()
+          : 'border-l-gray-200 dark:border-l-gray-700',
+        // Priority-based glow effect
+        isHovered && task.priority && `shadow-lg ${getPriorityGlow()}`,
+        // Dragging state
+        isDragging &&
+          'z-50 scale-105 bg-background shadow-2xl ring-2 ring-primary/20',
+        isOverlay && 'shadow-2xl ring-2 ring-primary/20',
+        // Archive state
+        task.archived && 'bg-gray-50/80 opacity-75 dark:bg-gray-900/50',
+        // Overdue state
+        isOverdue &&
+          !task.archived &&
+          'border-red-200 bg-red-50/30 dark:border-red-800 dark:bg-red-950/20',
+        // Hover state
+        !isDragging &&
+          'hover:border-primary/30 hover:bg-gradient-to-br hover:from-white hover:to-gray-50/50 dark:hover:from-gray-950 dark:hover:to-gray-900/50'
       )}
     >
-      <div className="flex items-start gap-3">
-        <div
-          {...attributes}
-          {...listeners}
-          className={cn(
-            'mt-0.5 h-4 w-4 shrink-0 cursor-grab text-muted-foreground opacity-50 transition-all',
-            'group-hover:opacity-100',
-            isDragging && 'opacity-100',
-            isOverlay && 'cursor-grabbing'
-          )}
-        >
-          <GripVertical className="h-4 w-4" />
+      {/* Overdue indicator */}
+      {isOverdue && !task.archived && (
+        <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-l-[20px] border-t-red-500 border-l-transparent">
+          <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3 text-white" />
         </div>
+      )}
 
-        <div className="flex-1 space-y-3">
-          <div className="flex items-start gap-3">
-            <Checkbox
-              checked={task.archived}
-              className="mt-1 h-4 w-4 shrink-0 transition-colors"
-              disabled={isLoading}
-              onCheckedChange={handleArchiveToggle}
-            />
-            <div className="min-w-0 space-y-1.5">
-              <div className="flex items-start justify-between gap-2">
-                <p
-                  className={cn(
-                    'line-clamp-2 flex-1 leading-tight font-medium',
-                    task.archived && 'text-muted-foreground line-through'
-                  )}
-                >
-                  {task.name}
-                </p>
-                {!isOverlay && onUpdate && (
-                  <div className="flex -space-x-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          disabled={isLoading}
-                          onClick={() => setIsEditDialogOpen(true)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                          <span className="sr-only">Edit task</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Edit task</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            'h-6 w-6',
-                            !task.priority && 'opacity-50'
-                          )}
-                          disabled={isLoading}
-                          onClick={() =>
-                            handleQuickPriorityChange(task.priority ? null : 1)
-                          }
-                        >
-                          {isLoading ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Flag
-                              className={cn(
-                                'h-3 w-3',
-                                task.priority === 1 &&
-                                  'fill-destructive stroke-destructive',
-                                task.priority === 2 &&
-                                  'fill-yellow-500 stroke-yellow-500',
-                                task.priority === 3 &&
-                                  'fill-green-500 stroke-green-500'
-                              )}
-                            />
-                          )}
-                          <span className="sr-only">Toggle priority</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Toggle priority</TooltipContent>
-                    </Tooltip>
-                  </div>
-                )}
-              </div>
-              {task.description && (
-                <p className="line-clamp-2 text-xs leading-normal text-muted-foreground">
-                  {task.description}
-                </p>
-              )}
-            </div>
+      <div className="p-4">
+        {/* Header */}
+        <div className="mb-3 flex items-start gap-3">
+          <div
+            {...attributes}
+            {...listeners}
+            className={cn(
+              'mt-1 h-4 w-4 shrink-0 cursor-grab text-gray-400 transition-all duration-200',
+              'group-hover:text-gray-600 dark:group-hover:text-gray-300',
+              'hover:scale-110',
+              isDragging && 'cursor-grabbing text-primary',
+              isOverlay && 'cursor-grabbing'
+            )}
+          >
+            <GripVertical className="h-4 w-4" />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <h3
+                className={cn(
+                  'text-sm leading-tight font-semibold transition-colors',
+                  task.archived
+                    ? 'text-gray-500 line-through dark:text-gray-400'
+                    : 'text-gray-900 group-hover:text-gray-800 dark:text-gray-100 dark:group-hover:text-gray-50'
+                )}
+              >
+                {task.name}
+              </h3>
+            </div>
+
+            {task.description && (
+              <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                {task.description}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Metadata */}
+        <div className="space-y-3">
+          {/* Priority and Status */}
+          <div className="flex flex-wrap items-center gap-2">
             {task.priority && (
               <Badge
                 variant={getPriorityVariant(task.priority)}
-                className="text-[10px] font-medium"
-              >
-                P{task.priority}
-              </Badge>
-            )}
-            {startDate && (
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                Starts {formatDistanceToNow(startDate, { addSuffix: true })}
-              </div>
-            )}
-            {endDate && (
-              <div
                 className={cn(
-                  'flex items-center gap-1',
-                  isOverdue && !task.archived
-                    ? 'font-medium text-destructive'
-                    : 'text-muted-foreground'
+                  'rounded-md px-2 py-0.5 text-[10px] font-medium shadow-sm',
+                  task.priority === 1 &&
+                    'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
+                  task.priority === 2 &&
+                    'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
+                  task.priority === 3 &&
+                    'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300'
                 )}
               >
-                <Calendar className="h-3 w-3" />
-                Due {formatDistanceToNow(endDate, { addSuffix: true })}
-              </div>
+                <Flag className="mr-1 h-2.5 w-2.5" />P{task.priority}
+              </Badge>
             )}
-            {isOverdue && !task.archived && (
-              <div className="flex items-center gap-1 font-medium text-destructive">
-                <AlertCircle className="h-3 w-3" />
-                Overdue
-              </div>
+
+            {task.archived && (
+              <Badge
+                variant="secondary"
+                className="rounded-md px-2 py-0.5 text-[10px]"
+              >
+                Completed
+              </Badge>
             )}
+          </div>
+
+          {/* Dates */}
+          {(startDate || endDate) && (
+            <div className="flex items-center gap-3 text-xs">
+              {startDate && (
+                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                  <Clock className="h-3 w-3" />
+                  <span>Starts {formatSmartDate(startDate)}</span>
+                </div>
+              )}
+              {endDate && (
+                <div
+                  className={cn(
+                    'flex items-center gap-1.5',
+                    isOverdue && !task.archived
+                      ? 'font-medium text-red-600 dark:text-red-400'
+                      : 'text-gray-600 dark:text-gray-400'
+                  )}
+                >
+                  <Calendar className="h-3 w-3" />
+                  <span>Due {formatSmartDate(endDate)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Assignees */}
+          <div className="flex items-center justify-between">
             <AssigneeSelect
               taskId={task.id}
               assignees={task.assignees}
               onUpdate={onUpdate}
             />
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={task.archived}
+                className={cn(
+                  'h-4 w-4 transition-all duration-200',
+                  'data-[state=checked]:border-green-500 data-[state=checked]:bg-green-500',
+                  'hover:scale-110'
+                )}
+                disabled={isLoading}
+                onCheckedChange={handleArchiveToggle}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-800">
+          <span className="text-[10px] text-gray-500 dark:text-gray-500">
+            Created {formatDistanceToNow(createdAt, { addSuffix: true })}
+          </span>
+
+          {!task.archived && task.priority === 1 && (
+            <div className="flex items-center gap-1 text-red-500">
+              <Sparkles className="h-3 w-3" />
+              <span className="text-[10px] font-medium">High Priority</span>
+            </div>
+          )}
         </div>
       </div>
 
       {!isOverlay && onUpdate && (
-        <TaskActions
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          taskId={task.id}
-          taskName={task.name}
-          taskDescription={task.description || null}
-          startDate={task.start_date || null}
-          endDate={task.end_date || null}
-          priority={task.priority || null}
-          archived={task.archived}
-          assignees={task.assignees || []}
-          onUpdate={onUpdate}
-        />
+        <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />
       )}
-
-      <div className="text-[10px] text-muted-foreground/50">
-        Created {formatDistanceToNow(createdAt, { addSuffix: true })}
-      </div>
     </Card>
   );
 }
@@ -336,7 +305,9 @@ function getPriorityVariant(
       return 'destructive';
     case 2:
       return 'secondary';
-    default:
+    case 3:
       return 'default';
+    default:
+      return 'secondary';
   }
 }

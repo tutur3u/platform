@@ -1,9 +1,8 @@
-import { AssigneeSelect } from './_components/assignee-select';
-import { deleteTask, updateTask } from '@/lib/task-helper';
+import { useDeleteTask, useUpdateTask } from '@/lib/task-helper';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -49,149 +48,150 @@ import { useEffect, useState } from 'react';
 
 interface Props {
   taskId: string;
-  taskName: string;
-  taskDescription: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  priority: number | null;
-  archived: boolean;
-  assignees?: {
-    id: string;
-    display_name?: string;
-    email?: string;
-    avatar_url?: string;
-    handle?: string;
-  }[];
+  boardId: string;
   onUpdate: () => void;
-  open?: boolean;
-  // eslint-disable-next-line no-unused-vars
-  onOpenChange?: (open: boolean) => void;
 }
 
-export function TaskActions({
-  taskId,
-  taskName,
-  taskDescription,
-  startDate,
-  endDate,
-  priority,
-  archived,
-  assignees,
-  onUpdate,
-  open,
-  onOpenChange,
-}: Props) {
+export function TaskActions({ taskId, boardId, onUpdate }: Props) {
+  // Fetch the latest task data using React Query
+  const { data: task, isLoading: isTaskLoading } = useQuery({
+    queryKey: ['task', taskId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(
+          `
+          *,
+          assignees:task_assignees(
+            user:users(
+              id,
+              display_name,
+              avatar_url,
+              handle
+            )
+          )
+        `
+        )
+        .eq('id', taskId)
+        .single();
+
+      if (error) throw error;
+
+      // Transform the nested assignees data
+      const transformedTask = {
+        ...data,
+        assignees: data.assignees
+          ?.map((a: any) => a.user)
+          .filter(
+            (user: any, index: number, self: any[]) =>
+              user &&
+              user.id &&
+              self.findIndex((u: any) => u.id === user.id) === index
+          ),
+      };
+
+      return transformedTask;
+    },
+    enabled: !!taskId && !!open, // Only fetch when modal is open
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: false,
+  });
+
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [newName, setNewName] = useState(taskName);
-  const [newDescription, setNewDescription] = useState(taskDescription || '');
-  const [newStartDate, setNewStartDate] = useState<Date | undefined>(
-    startDate ? new Date(startDate) : undefined
-  );
-  const [newEndDate, setNewEndDate] = useState<Date | undefined>(
-    endDate ? new Date(endDate) : undefined
-  );
-  const [newPriority, setNewPriority] = useState<string>(
-    priority?.toString() || '0'
-  );
-  const [newAssignees, setNewAssignees] = useState<typeof assignees>(
-    assignees || []
-  );
+  const [newName, setNewName] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newStartDate, setNewStartDate] = useState<Date | undefined>(undefined);
+  const [newEndDate, setNewEndDate] = useState<Date | undefined>(undefined);
+  const [newPriority, setNewPriority] = useState<string>('0');
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const updateTaskMutation = useUpdateTask(boardId);
+  const deleteTaskMutation = useDeleteTask(boardId);
+
+  // Update local state when task data changes
+  useEffect(() => {
+    if (task) {
+      setNewName(task.name || '');
+      setNewDescription(task.description || '');
+      setNewStartDate(task.start_date ? new Date(task.start_date) : undefined);
+      setNewEndDate(task.end_date ? new Date(task.end_date) : undefined);
+      setNewPriority(task.priority?.toString() || '0');
+    }
+  }, [task]);
 
   useEffect(() => {
-    const hasNameChange = newName !== taskName;
-    const hasDescriptionChange = newDescription !== (taskDescription || '');
+    if (!task) return;
+
+    const hasNameChange = newName !== (task.name || '');
+    const hasDescriptionChange = newDescription !== (task.description || '');
     const hasStartDateChange =
-      (newStartDate?.toISOString() || null) !== startDate;
-    const hasEndDateChange = (newEndDate?.toISOString() || null) !== endDate;
-    const hasPriorityChange = newPriority !== (priority?.toString() || '0');
-    const hasAssigneesChange =
-      JSON.stringify(newAssignees) !== JSON.stringify(assignees);
+      (newStartDate?.toISOString() || null) !== task.start_date;
+    const hasEndDateChange =
+      (newEndDate?.toISOString() || null) !== task.end_date;
+    const hasPriorityChange =
+      newPriority !== (task.priority?.toString() || '0');
 
     setHasChanges(
       hasNameChange ||
         hasDescriptionChange ||
         hasStartDateChange ||
         hasEndDateChange ||
-        hasPriorityChange ||
-        hasAssigneesChange
+        hasPriorityChange
     );
-  }, [
-    newName,
-    newDescription,
-    newStartDate,
-    newEndDate,
-    newPriority,
-    newAssignees,
-    taskName,
-    taskDescription,
-    startDate,
-    endDate,
-    priority,
-    assignees,
-  ]);
+  }, [newName, newDescription, newStartDate, newEndDate, newPriority, task]);
 
   async function handleDelete() {
-    try {
-      setIsLoading(true);
-      const supabase = createClient();
-      await deleteTask(supabase, taskId);
-      setIsDeleteDialogOpen(false);
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to delete task:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    setIsLoading(true);
+    deleteTaskMutation.mutate(taskId, {
+      onSuccess: () => {
+        setIsDeleteDialogOpen(false);
+        onUpdate();
+        setIsEditDialogOpen(false);
+      },
+      onSettled: () => {
+        setIsLoading(false);
+      },
+    });
   }
 
   async function handleUpdate() {
-    if (!hasChanges) return;
+    if (!hasChanges || !task) return;
 
-    try {
-      setIsLoading(true);
-      const supabase = createClient();
-
-      await updateTask(supabase, taskId, {
-        name: newName,
-        description: newDescription === '' ? undefined : newDescription,
-        start_date: newStartDate?.toISOString() ?? undefined,
-        end_date: newEndDate?.toISOString() ?? undefined,
-        priority: newPriority === '0' ? undefined : parseInt(newPriority),
-      });
-
-      onUpdate();
-      onOpenChange?.(false);
-    } catch (error) {
-      console.error('Failed to update task:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleToggleArchive() {
-    try {
-      setIsLoading(true);
-      const supabase = createClient();
-      await updateTask(supabase, taskId, {
-        archived: !archived,
-      });
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to update task archive status:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    setIsLoading(true);
+    updateTaskMutation.mutate(
+      {
+        taskId,
+        updates: {
+          name: newName,
+          description: newDescription === '' ? undefined : newDescription,
+          start_date: newStartDate?.toISOString() ?? undefined,
+          end_date: newEndDate?.toISOString() ?? undefined,
+          priority: newPriority === '0' ? undefined : parseInt(newPriority),
+        },
+      },
+      {
+        onSuccess: () => {
+          onUpdate();
+          setIsEditDialogOpen(false);
+        },
+        onSettled: () => {
+          setIsLoading(false);
+        },
+      }
+    );
   }
 
   function handleResetChanges() {
-    setNewName(taskName);
-    setNewDescription(taskDescription || '');
-    setNewStartDate(startDate ? new Date(startDate) : undefined);
-    setNewEndDate(endDate ? new Date(endDate) : undefined);
-    setNewPriority(priority ? priority.toString() : '0');
-    setNewAssignees(assignees || []);
+    if (!task) return;
+
+    setNewName(task.name || '');
+    setNewDescription(task.description || '');
+    setNewStartDate(task.start_date ? new Date(task.start_date) : undefined);
+    setNewEndDate(task.end_date ? new Date(task.end_date) : undefined);
+    setNewPriority(task.priority?.toString() || '0');
   }
 
   const today = startOfToday();
@@ -199,35 +199,53 @@ export function TaskActions({
   const isStartDateAfterEndDate =
     newStartDate && newEndDate && isBefore(newEndDate, newStartDate);
 
+  // Show loading state if task is being fetched
+  if (isTaskLoading || !task) {
+    return (
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Loading Task</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-6">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="ml-2">Loading task...</span>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <div onClick={(e) => e.stopPropagation()}>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2 h-6 w-6 p-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted/50"
+            variant="outline"
+            size="xs"
+            className="absolute top-2 right-2 z-10 h-7 border-border/50 px-2 text-muted-foreground opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-border hover:bg-muted/80 hover:text-foreground hover:shadow-sm"
           >
-            <MoreHorizontal className="h-4 w-4" />
-            <span className="sr-only">Open task menu</span>
+            <MoreHorizontal className="h-3.5 w-3.5" />
+            <span className="sr-only">Open task options</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[180px]">
+        <DropdownMenuContent align="end" className="w-[200px] p-1">
           <DropdownMenuItem
-            onClick={() => onOpenChange?.(true)}
-            className="gap-2 text-sm"
+            onClick={() => setIsEditDialogOpen(true)}
+            className="cursor-pointer gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
           >
             <Pencil className="h-4 w-4" />
-            Edit task
+            <span>Edit task</span>
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
+
+          <DropdownMenuSeparator className="my-1" />
           <DropdownMenuItem
             onClick={() => setIsDeleteDialogOpen(true)}
-            className="gap-2 text-sm text-red-600 focus:text-red-600"
+            className="cursor-pointer gap-3 rounded-md px-3 py-2 text-sm font-medium"
           >
             <Trash2 className="h-4 w-4" />
-            Delete task
+            <span>Delete task</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -237,7 +255,7 @@ export function TaskActions({
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{taskName}"? This action cannot
+              Are you sure you want to delete "{task.name}"? This action cannot
               be undone.
             </DialogDescription>
           </DialogHeader>
@@ -269,13 +287,10 @@ export function TaskActions({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Pencil className="h-4 w-4" />
-              Edit Task
-            </DialogTitle>
+            <DialogTitle>Edit Task</DialogTitle>
             <DialogDescription>
               Make changes to your task here. Click save when you're done.
             </DialogDescription>
@@ -309,14 +324,6 @@ export function TaskActions({
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="Add a more detailed description"
                 className="min-h-[100px] resize-y"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Assignees</Label>
-              <AssigneeSelect
-                taskId={taskId}
-                assignees={newAssignees}
-                onUpdate={onUpdate}
               />
             </div>
             <div className="grid gap-2">
@@ -384,18 +391,15 @@ export function TaskActions({
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {newStartDate ? format(newStartDate, 'PPP') : 'Pick a date'}
                     {newStartDate && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="ml-auto h-4 w-4 p-0 opacity-50 hover:opacity-100"
+                      <span
+                        className="ml-auto flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm p-0 opacity-50 hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           setNewStartDate(undefined);
                         }}
                       >
                         <Undo2 className="h-3 w-3" />
-                      </Button>
+                      </span>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -446,18 +450,15 @@ export function TaskActions({
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {newEndDate ? format(newEndDate, 'PPP') : 'Pick a date'}
                     {newEndDate && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="ml-auto h-4 w-4 p-0 opacity-50 hover:opacity-100"
+                      <span
+                        className="ml-auto flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm p-0 opacity-50 hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           setNewEndDate(undefined);
                         }}
                       >
                         <Undo2 className="h-3 w-3" />
-                      </Button>
+                      </span>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -499,14 +500,6 @@ export function TaskActions({
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={archived}
-                onCheckedChange={handleToggleArchive}
-                disabled={isLoading}
-              />
-              <Label>Mark as done</Label>
-            </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <div className="flex flex-1 items-center gap-2">
@@ -541,7 +534,7 @@ export function TaskActions({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange?.(false)}
+                onClick={() => setIsEditDialogOpen(false)}
                 disabled={isLoading}
               >
                 Cancel
