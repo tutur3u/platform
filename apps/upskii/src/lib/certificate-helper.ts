@@ -102,10 +102,10 @@ export async function getAllCertificatesForUser(
       `
       id,
       completed_date,
-      workspace_courses!course_certificates_course_id_fkey (
+      workspace_courses!inner (
         name,
         ws_id,
-        workspaces!workspace_courses_ws_id_fkey (
+        workspaces!inner (
           name
         )
       )
