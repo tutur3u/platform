@@ -6,7 +6,7 @@ import { Trash } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function DeleteResourceButton({ path }: { path: string }) {
+export function DeleteResourceButton({ path }: { path: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 

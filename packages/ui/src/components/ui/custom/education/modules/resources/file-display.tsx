@@ -8,13 +8,16 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 const PDFViewer = dynamic(
-  () => import('./pdf-viewer').then((mod) => mod.PDFViewer),
+  () =>
+    import('@tuturuuu/ui/custom/education/modules/resources/pdf-viewer').then(
+      (mod) => mod.PDFViewer
+    ),
   { ssr: false }
 );
 
 const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
 
-export default function FileDisplay({
+export function FileDisplay({
   path,
   file,
 }: {
@@ -29,9 +32,11 @@ export default function FileDisplay({
   useEffect(() => {
     const fetchSignedUrl = async () => {
       if (!file.id || !file.name) return;
+
+      const fullPath = `${path.endsWith('/') ? path : `${path}/`}${file.name}`;
       const { data, error } = await supabase.storage
         .from('workspaces')
-        .createSignedUrl(`${path}${file.name}`, 3600);
+        .createSignedUrl(fullPath, 3600);
 
       if (error) {
         console.error(error);
