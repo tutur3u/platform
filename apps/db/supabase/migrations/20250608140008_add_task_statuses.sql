@@ -175,10 +175,10 @@ CREATE POLICY "Status templates are manageable by authenticated users" ON task_b
 -- Set default statuses for existing task lists based on common naming patterns
 UPDATE task_lists 
 SET status = CASE 
-    WHEN LOWER(name) ILIKE '%done%' OR LOWER(name) ILIKE '%complete%' OR LOWER(name) ILIKE '%finish%' THEN 'done'
-    WHEN LOWER(name) ILIKE '%progress%' OR LOWER(name) ILIKE '%doing%' OR LOWER(name) ILIKE '%active%' OR LOWER(name) ILIKE '%working%' THEN 'active'
-    WHEN LOWER(name) ILIKE '%closed%' OR LOWER(name) ILIKE '%archive%' OR LOWER(name) ILIKE '%trash%' THEN 'closed'
-    ELSE 'not_started'
+    WHEN LOWER(name) ILIKE '%done%' OR LOWER(name) ILIKE '%complete%' OR LOWER(name) ILIKE '%finish%' THEN 'done'::task_board_status
+    WHEN LOWER(name) ILIKE '%progress%' OR LOWER(name) ILIKE '%doing%' OR LOWER(name) ILIKE '%active%' OR LOWER(name) ILIKE '%working%' THEN 'active'::task_board_status
+    WHEN LOWER(name) ILIKE '%closed%' OR LOWER(name) ILIKE '%archive%' OR LOWER(name) ILIKE '%trash%' THEN 'closed'::task_board_status
+    ELSE 'not_started'::task_board_status
 END,
 color = CASE 
     WHEN LOWER(name) ILIKE '%done%' OR LOWER(name) ILIKE '%complete%' OR LOWER(name) ILIKE '%finish%' THEN 'GREEN'
