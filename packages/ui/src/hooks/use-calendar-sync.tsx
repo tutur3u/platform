@@ -23,10 +23,13 @@ const CalendarSyncContext = createContext<{
   googleData: WorkspaceCalendarEvent[] | null;
   error: Error | null;
   dates: Date[];
+  // eslint-disable-next-line no-unused-vars
   setDates: (dates: Date[]) => void;
   currentView: 'day' | '4-day' | 'week' | 'month';
+  // eslint-disable-next-line no-unused-vars
   setCurrentView: (view: 'day' | '4-day' | 'week' | 'month') => void;
   syncToTuturuuu: (
+    // eslint-disable-next-line no-unused-vars
     progressCallback?: (progress: {
       phase: 'get' | 'fetch' | 'delete' | 'upsert' | 'complete';
       percentage: number;
@@ -282,6 +285,7 @@ export const CalendarSyncProvider = ({
   // Sync Google events of current view to Tuturuuu database
   const syncToTuturuuu = useCallback(
     async (
+      // eslint-disable-next-line no-unused-vars
       progressCallback?: (progress: {
         phase: 'get' | 'fetch' | 'delete' | 'upsert' | 'complete';
         percentage: number;
