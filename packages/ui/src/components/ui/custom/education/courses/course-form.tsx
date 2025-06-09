@@ -1,6 +1,6 @@
 'use client';
 
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import { WorkspaceCourse } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -20,8 +20,7 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  courseId: string;
-  data?: WorkspaceCourseModule;
+  data?: WorkspaceCourse & { description?: string }; // Add description property
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
@@ -29,15 +28,11 @@ interface Props {
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
+  description: z.string().optional(),
 });
 
-export default function CourseModuleForm({
-  wsId,
-  courseId,
-  data,
-  onFinish,
-}: Props) {
-  const t = useTranslations('ws-course-modules');
+export function CourseForm({ wsId, data, onFinish }: Props) {
+  const t = useTranslations('ws-courses');
   const router = useRouter();
 
   const form = useForm({
@@ -45,6 +40,7 @@ export default function CourseModuleForm({
     values: {
       id: data?.id,
       name: data?.name || '',
+      description: data?.description || '',
     },
   });
 
@@ -58,8 +54,8 @@ export default function CourseModuleForm({
     try {
       const res = await fetch(
         data.id
-          ? `/api/v1/workspaces/${wsId}/course-modules/${data.id}`
-          : `/api/v1/workspaces/${wsId}/courses/${courseId}/modules`,
+          ? `/api/v1/workspaces/${wsId}/courses/${data.id}`
+          : `/api/v1/workspaces/${wsId}/courses`,
         {
           method: data.id ? 'PUT' : 'POST',
           body: JSON.stringify(data),
@@ -72,13 +68,13 @@ export default function CourseModuleForm({
       } else {
         const data = await res.json();
         toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} course module`,
+          title: `Failed to ${data.id ? 'edit' : 'create'} course`,
           description: data.message,
         });
       }
     } catch (error) {
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} course module`,
+        title: `Failed to ${data.id ? 'edit' : 'create'} course`,
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -90,14 +86,33 @@ export default function CourseModuleForm({
         <FormField
           control={form.control}
           name="name"
+          rules={{ required: true }}
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('name')}</FormLabel>
-              <FormControl>
-                <Input placeholder={t('name')} autoComplete="off" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+            <>
+              <FormItem>
+                <FormLabel>{t('name')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('name')}
+                    autoComplete="off"
+                    required
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+
+              <FormItem>
+                <FormLabel>{t('course_description')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('course_description')}
+                    autoComplete="off"
+                    {...form.register('description')}
+                  />
+                </FormControl>
+              </FormItem>
+            </>
           )}
         />
 

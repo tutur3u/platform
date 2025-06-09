@@ -1,6 +1,6 @@
 'use client';
 
-import { WorkspaceCourse } from '@tuturuuu/types/db';
+import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -20,7 +20,8 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  data?: WorkspaceCourse;
+  courseId: string;
+  data?: WorkspaceCourseModule;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
@@ -30,8 +31,8 @@ const FormSchema = z.object({
   name: z.string().min(1),
 });
 
-export default function CourseForm({ wsId, data, onFinish }: Props) {
-  const t = useTranslations('ws-courses');
+export function CourseModuleForm({ wsId, courseId, data, onFinish }: Props) {
+  const t = useTranslations('ws-course-modules');
   const router = useRouter();
 
   const form = useForm({
@@ -52,8 +53,8 @@ export default function CourseForm({ wsId, data, onFinish }: Props) {
     try {
       const res = await fetch(
         data.id
-          ? `/api/v1/workspaces/${wsId}/courses/${data.id}`
-          : `/api/v1/workspaces/${wsId}/courses`,
+          ? `/api/v1/workspaces/${wsId}/course-modules/${data.id}`
+          : `/api/v1/workspaces/${wsId}/courses/${courseId}/modules`,
         {
           method: data.id ? 'PUT' : 'POST',
           body: JSON.stringify(data),
@@ -66,13 +67,13 @@ export default function CourseForm({ wsId, data, onFinish }: Props) {
       } else {
         const data = await res.json();
         toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} course`,
+          title: `Failed to ${data.id ? 'edit' : 'create'} course module`,
           description: data.message,
         });
       }
     } catch (error) {
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} course`,
+        title: `Failed to ${data.id ? 'edit' : 'create'} course module`,
         description: error instanceof Error ? error.message : String(error),
       });
     }

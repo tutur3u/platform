@@ -1,9 +1,9 @@
 'use client';
 
-import WorkspaceCourseForm from './form';
 import { Row } from '@tanstack/react-table';
-import { WorkspaceCourse } from '@tuturuuu/types/db';
+import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
+import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
@@ -18,50 +18,45 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface WorkspaceCourseRowActionsProps {
-  row: Row<WorkspaceCourse>;
+interface WorkspaceCourseModuleRowActionsProps {
+  wsId: string;
+  courseId: string;
+  row: Row<WorkspaceCourseModule>;
 }
 
-export function WorkspaceCourseRowActions({
+export function WorkspaceCourseModuleRowActions({
+  wsId,
+  courseId,
   row,
-}: WorkspaceCourseRowActionsProps) {
+}: WorkspaceCourseModuleRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
   const data = row.original;
-
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const deleteWorkspaceCourse = async () => {
-    try {
-      const res = await fetch(
-        `/api/v1/workspaces/${data.ws_id}/courses/${data.id}`,
-        {
-          method: 'DELETE',
-        }
-      );
 
-      if (res.ok) {
-        router.refresh();
-      } else {
-        const data = await res.json();
-        toast({
-          title: 'Failed to delete workspace course',
-          description: data.message,
-        });
+  const deleteWorkspaceCourseModule = async () => {
+    const res = await fetch(
+      `/api/v1/workspaces/${wsId}/course-modules/${data.id}`,
+      {
+        method: 'DELETE',
       }
-    } catch (err) {
+    );
+
+    if (res.ok) {
+      router.refresh();
+    } else {
+      const data = await res.json();
       toast({
-        title: 'Error',
-        description: 'There was an error while deleting the course.',
+        title: 'Failed to delete workspace user group tag',
+        description: data.message,
       });
-    } finally {
-      setShowDeleteDialog(false);
     }
   };
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  if (!data.id || !data.ws_id) return null;
+  if (!data.id || !wsId) return null;
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -98,15 +93,10 @@ export function WorkspaceCourseRowActions({
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('ws-courses.edit')}
-        editDescription={t('ws-courses.edit_description')}
+        title={t('ws-course-modules.edit')}
+        editDescription={t('ws-course-modules.edit_description')}
         setOpen={setShowEditDialog}
-        form={
-          <WorkspaceCourseForm
-            wsId={data.ws_id}
-            data={{ ...data, description: data.description ?? '' }}
-          />
-        }
+        form={<CourseModuleForm wsId={wsId} courseId={courseId} data={data} />}
       />
 
       <ModifiableDialogTrigger
@@ -123,7 +113,7 @@ export function WorkspaceCourseRowActions({
             >
               {t('common.cancel')}
             </Button>
-            <Button variant="destructive" onClick={deleteWorkspaceCourse}>
+            <Button variant="destructive" onClick={deleteWorkspaceCourseModule}>
               {t('common.delete')}
             </Button>
           </div>

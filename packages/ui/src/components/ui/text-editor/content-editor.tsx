@@ -13,11 +13,7 @@ interface Props {
   content?: JSONContent;
 }
 
-export default function ModuleContentEditor({
-  courseId,
-  moduleId,
-  content,
-}: Props) {
+export function ModuleContentEditor({ courseId, moduleId, content }: Props) {
   const [post, setPost] = useState<JSONContent | null>(content || null);
   const t = useTranslations();
 

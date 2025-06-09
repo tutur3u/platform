@@ -3524,7 +3524,9 @@
     "edit_description": "Edit an existing course",
     "delete_confirm_title": "Deleting \"{name}\"",
     "card_view": "Card View",
-    "table_view": "Table View"
+    "table_view": "Table View",
+    "no_courses_found": "No courses found",
+    "no_description_provided": "No description provided"
   },
   "ws-crawlers": {
     "plural": "Crawlers",
@@ -4136,7 +4138,5 @@
     "ai_teach_studio": "AI Teaching Studio",
     "users": "Users",
     "teams": "Teams"
-  },
-  "no-courses-found": "No courses found",
-  "no-description-provided": "No description provided"
+  }
 }

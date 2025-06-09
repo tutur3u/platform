@@ -1,9 +1,9 @@
 'use client';
 
-import WorkspaceCourseForm from './form';
 import { Row } from '@tanstack/react-table';
 import { WorkspaceCourse } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
+import { CourseForm } from '@tuturuuu/ui/custom/education/courses/course-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
@@ -30,22 +30,32 @@ export function WorkspaceCourseRowActions({
 
   const data = row.original;
 
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteWorkspaceCourse = async () => {
-    const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/courses/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
+    try {
+      const res = await fetch(
+        `/api/v1/workspaces/${data.ws_id}/courses/${data.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
-    if (res.ok) {
-      router.refresh();
-    } else {
-      const data = await res.json();
+      if (res.ok) {
+        router.refresh();
+      } else {
+        const data = await res.json();
+        toast({
+          title: 'Failed to delete workspace course',
+          description: data.message,
+        });
+      }
+    } catch (err) {
       toast({
-        title: 'Failed to delete workspace user group tag',
-        description: data.message,
+        title: 'Error',
+        description: 'There was an error while deleting the course.',
       });
+    } finally {
+      setShowDeleteDialog(false);
     }
   };
 
@@ -79,7 +89,7 @@ export function WorkspaceCourseRowActions({
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteWorkspaceCourse}>
+          <DropdownMenuItem onClick={() => setShowDeleteDialog(true)}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -88,10 +98,36 @@ export function WorkspaceCourseRowActions({
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('ws-flashcards.edit')}
-        editDescription={t('ws-flashcards.edit_description')}
+        title={t('ws-courses.edit')}
+        editDescription={t('ws-courses.edit_description')}
         setOpen={setShowEditDialog}
-        form={<WorkspaceCourseForm wsId={data.ws_id} data={data} />}
+        form={
+          <CourseForm
+            wsId={data.ws_id}
+            data={{ ...data, description: data.description ?? '' }}
+          />
+        }
+      />
+
+      <ModifiableDialogTrigger
+        data={data}
+        open={showDeleteDialog}
+        title={t('ws-courses.delete_confirm_title', { name: data.name })}
+        editDescription={t('common.confirm_delete_description')}
+        setOpen={setShowDeleteDialog}
+        form={
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button variant="destructive" onClick={deleteWorkspaceCourse}>
+              {t('common.delete')}
+            </Button>
+          </div>
+        }
       />
     </div>
   );

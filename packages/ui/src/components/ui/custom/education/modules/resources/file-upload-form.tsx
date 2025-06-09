@@ -1,6 +1,5 @@
 'use client';
 
-import { joinPath } from '@/utils/path-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
@@ -18,6 +17,7 @@ import { Check, Trash } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { joinPath } from '@tuturuuu/utils/path-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -140,7 +140,7 @@ export function StorageObjectForm({
   wsId,
   path,
   uploadPath = '',
-  accept = 'image/*',
+  accept = '*',
   onComplete,
   submitLabel,
 }: Props) {
@@ -178,13 +178,21 @@ export function StorageObjectForm({
         [file.name]: 'uploading',
       }));
 
+      const finalPath = path
+        ? joinPath(path, `${generateRandomUUID()}_${file.name}`)
+        : joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`);
+
       const { error } = await supabase.storage
         .from('workspaces')
-        .upload(
-          path ||
-            joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`),
-          file
-        );
+        .upload(finalPath, file);
+
+      // const { error } = await supabase.storage
+      //   .from('workspaces')
+      //   .upload(
+      //     path ||
+      //       joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`),
+      //     file
+      //   );
 
       if (error) {
         setFileStatuses((prev) => ({
@@ -309,7 +317,7 @@ export function StorageObjectForm({
                               />
                             ) : (
                               <div
-                                className="line-clamp-1 text-sm opacity-70"
+                                className="line-clamp-1 max-w-[400px] text-sm break-all opacity-70"
                                 onClick={() => {
                                   setNewFileName(file.name);
                                   setEditingFile(file);
