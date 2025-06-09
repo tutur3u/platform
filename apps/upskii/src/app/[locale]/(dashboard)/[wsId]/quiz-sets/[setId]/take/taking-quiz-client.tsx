@@ -1,5 +1,4 @@
 'use client';
-//
 import BeforeTakeQuizSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/before-take-quiz-section';
 import PastDueSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/past-due-section';
 import QuizStatusSidebar, {

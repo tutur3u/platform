@@ -1,5 +1,3 @@
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
 import TakingQuizClient from "@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/taking-quiz-client";
 
 export default async function TakeQuiz({
