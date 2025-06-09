@@ -87,7 +87,10 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
     >
       <div className="cursor-default font-semibold transition duration-150">
         <span className="text-foreground/60">{invitedTo} </span>
-        <Link href={`/${ws.id}`} className="text-foreground hover:underline">
+        <Link
+          href={`/${ws.id}/home`}
+          className="text-foreground hover:underline"
+        >
           {ws?.name || `Unnamed Workspace`}
         </Link>
         {ws?.created_at ? (
