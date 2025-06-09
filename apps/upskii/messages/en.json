@@ -1,4 +1,23 @@
 {
+  "quiz-set-statistics": {
+    "title": "Quiz Set Statistics",
+    "description": "View detailed statistics for your quizzes, including average scores, completion rates, and more.",
+    "average_pass_rate": "Average Pass Rate",
+    "average_score": "Average Score",
+    "total_participants": "Total Participants",
+    "total_quizzes": "Total Quizzes",
+    "active_quizzes": "Active quizzes in set",
+    "total_attempts": "Total Attempts",
+    "accross_all_quizzes": "Across all quizzes",
+    "individual_quiz_performance": "Individual Quiz Performance",
+    "back": "Back",
+    "pass_rate": "Pass Rate",
+    "active_students": "Active Students",
+    "unique_participants": "Unique participants",
+    "last_attempt": "Last Attempt",
+    "no_quizzes": "No Quiz Data Available",
+    "no_quizzes_description": "No quiz attempts found for this set. Students haven't started taking quizzes yet."
+  },
   "home-hero": {
     "welcome": "Welcome back, {username}!",
     "badge": "Your AI-Enhanced Learning Experience",
@@ -6,19 +25,19 @@
     "cards": {
       "courses": {
         "title": "Courses",
-        "description": "Explore diverse subjects through structured lessons that build knowledge step-by-step."
+        "description": "Learn the fundamentals and advanced techniques of prompt engineering through step-by-step lessons and practical examples."
       },
       "quizzes": {
         "title": "Quizzes",
-        "description": "Strengthen what you’ve learned with interactive quizzes across various topics."
+        "description": "Test your understanding with interactive quizzes designed to reinforce key concepts and sharpen your prompt design skills."
       },
       "challenges": {
         "title": "Challenges",
-        "description": "Put your knowledge to the test with fun and creative real-world challenges."
+        "description": "Take on creative challenges that push your limits and inspire innovative prompt solutions using AI."
       },
       "ai-chat": {
         "title": "AI Chat",
-        "description": "Chat with AI for instant help, study tips, and personalized learning support."
+        "description": "Engage in real-time conversations with AI to practice prompt engineering, get instant feedback, and refine your skills."
       }
     },
     "get-certificate": "Get Your Certificate"
@@ -300,6 +319,7 @@
     "events": "Events"
   },
   "common": {
+    "statistics": "Statistics",
     "allow_manage_all_challenges": "Allow Manage All Challenges",
     "name_placeholder": "Enter name",
     "name": "Name",
@@ -3818,9 +3838,40 @@
     "edit": "Edit quiz",
     "question": "Question",
     "answer": "Answer",
+    "question_status_title": "Question Progress",
+    "answered_status_short": "answered",
+    "quiz_progress_label": "Quiz Progress",
+    "question_navigation_label": "Question Navigation",
+    "jump_to_question_aria": "Question {{number}}, {{status}}",
+    "answered_state": "Answered",
+    "unanswered_state": "Unanswered",
+    "answered_icon": "✓",
+    "unanswered_icon": "⚪",
+    "time_elapsed": "Time Elapsed",
+    "hidden_time_elapsed": "Time Elapsed (hidden)",
+    "hidden_time_remaining": "Hidden Timer",
     "edit_description": "Edit an existing quiz",
     "generation_error": "An error has occured when generating quizzes.",
-    "generation_accepted": "AI-generated quizzes are accepted!"
+    "generation_accepted": "AI-generated quizzes are accepted!",
+    "please_answer_all": "Please answer all questions.",
+    "loading": "Loading...",
+    "results": "Results",
+    "attempt": "Attempt",
+    "of": "of",
+    "unlimited": "Unlimited Attempts",
+    "score": "Score",
+    "done": "Done",
+    "attempts": "Attempts",
+    "time_limit": "Time Limit",
+    "no_time_limit": "No Time Limit",
+    "minutes": "Minutes",
+    "take_quiz": "Take Quiz",
+    "time_remaining": "Time Remaining",
+    "points": "Points",
+    "submitting": "Submitting...",
+    "submit": "Submit",
+    "due_on": "Due on",
+    "quiz_past_due": "This quiz is past its due date."
   },
   "ws-reports": {
     "report": "Report",
