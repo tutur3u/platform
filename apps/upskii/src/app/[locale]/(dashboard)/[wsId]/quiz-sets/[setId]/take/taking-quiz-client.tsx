@@ -1,9 +1,10 @@
 'use client';
-import BeforeTakeQuizSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/before-take-quiz-section';
-import PastDueSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/past-due-section';
+
 import QuizStatusSidebar, {
   Question,
 } from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/quiz-status-sidebar';
+import BeforeTakeQuizSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/before-take-quiz-section';
+import PastDueSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/past-due-section';
 import ShowResultSummarySection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/show-result-summary-section';
 import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/time-elapsed-status';
 import { Button } from '@tuturuuu/ui/button';
@@ -355,7 +356,7 @@ export default function TakingQuizClient({
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col p-0 lg:flex-row lg:gap-6 lg:p-6">
-      <div className="bg-card/90 backdrop-blur-xs sticky top-0 z-10 mb-2 space-y-2 rounded-md shadow lg:hidden">
+      <div className="sticky top-0 z-10 mb-2 space-y-2 rounded-md bg-card/90 shadow backdrop-blur-xs lg:hidden">
         <div className="flex gap-2">
           <button
             className="group"
@@ -363,7 +364,7 @@ export default function TakingQuizClient({
           >
             <ListCheck
               size={32}
-              className="text-dynamic-purple group-hover:text-dynamic-purple/70 transition-colors duration-200"
+              className="text-dynamic-purple transition-colors duration-200 group-hover:text-dynamic-purple/70"
             />
           </button>
           <TimeElapsedStatus
@@ -372,7 +373,7 @@ export default function TakingQuizClient({
             t={t}
           />
         </div>
-        <div className="absolute left-0 right-0 top-16">
+        <div className="absolute top-16 right-0 left-0">
           {sidebarVisible && quizMeta && (
             <QuizStatusSidebar
               questions={quizMeta.questions}
@@ -438,7 +439,7 @@ export default function TakingQuizClient({
               className={`w-full rounded px-6 py-5 text-white md:py-4 lg:w-fit lg:py-2 ${
                 submitting || (isCountdown && timeLeft === 0)
                   ? 'cursor-not-allowed bg-gray-400'
-                  : 'bg-dynamic-purple/20 hover:bg-dynamic-purple/40 border-dynamic-purple border'
+                  : 'border border-dynamic-purple bg-dynamic-purple/20 hover:bg-dynamic-purple/40'
               }`}
             >
               {submitting
