@@ -1,8 +1,10 @@
 'use client';
 
+import { ActivityHeatmap } from './components/activity-heatmap';
 import { CategoryManager } from './components/category-manager';
 import { GoalManager } from './components/goal-manager';
 import { SessionHistory } from './components/session-history';
+import { StatsOverview } from './components/stats-overview';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
@@ -23,12 +25,11 @@ import {
   Timer,
   TrendingUp,
   WifiOff,
-  Zap,
 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface TimeTrackerContentProps {
   wsId: string;
@@ -45,6 +46,11 @@ interface TimerStats {
     week: Record<string, number>;
     month: Record<string, number>;
   };
+  dailyActivity?: Array<{
+    date: string;
+    duration: number;
+    sessions: number;
+  }>;
 }
 
 // Unified SessionWithRelations type that matches both TimerControls and SessionHistory expectations
@@ -401,41 +407,6 @@ export default function TimeTrackerContent({
     fetchData(true, true);
   }, [fetchData]);
 
-  // Memoized stats cards
-  const statsCards = useMemo(
-    () => [
-      {
-        icon: Calendar,
-        label: 'Today',
-        value: formatDuration(timerStats.todayTime),
-        color: 'text-blue-500',
-        bg: 'from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20',
-      },
-      {
-        icon: TrendingUp,
-        label: 'This Week',
-        value: formatDuration(timerStats.weekTime),
-        color: 'text-green-500',
-        bg: 'from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20',
-      },
-      {
-        icon: Zap,
-        label: 'This Month',
-        value: formatDuration(timerStats.monthTime),
-        color: 'text-purple-500',
-        bg: 'from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20',
-      },
-      {
-        icon: Clock,
-        label: 'Streak',
-        value: `${timerStats.streak} days`,
-        color: 'text-orange-500',
-        bg: 'from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20',
-      },
-    ],
-    [timerStats, formatDuration]
-  );
-
   if (isLoadingUser || !currentUserId) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -467,6 +438,23 @@ export default function TimeTrackerContent({
               ? "Viewing another user's time tracking data"
               : 'Track and manage your time across projects'}
           </p>
+          {!isViewingOtherUser && (
+            <p className="text-xs text-muted-foreground">
+              Week starts Monday • Times updated in real-time
+              {(() => {
+                const today = new Date();
+                const dayOfWeek = today.getDay();
+
+                if (dayOfWeek === 1) {
+                  return ' • Week resets today! 🎯';
+                } else if (dayOfWeek === 0) {
+                  return ' • Week resets tomorrow';
+                } else {
+                  return ' • Week resets Monday';
+                }
+              })()}
+            </p>
+          )}
           {lastRefresh && (
             <p className="text-xs text-muted-foreground">
               Last updated: {lastRefresh.toLocaleTimeString()}
@@ -533,42 +521,14 @@ export default function TimeTrackerContent({
         </Alert>
       )}
 
-      {/* Stats Overview with improved responsive design */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {statsCards.map((stat, index) => (
-          <Card
-            key={stat.label}
-            className={cn(
-              'group cursor-pointer border-0 bg-gradient-to-br transition-all duration-300 hover:scale-105 hover:shadow-lg',
-              stat.bg,
-              'duration-500 animate-in slide-in-from-bottom'
-            )}
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
-            <CardContent className="p-3 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-4">
-                <div
-                  className={cn(
-                    'rounded-full bg-white p-2 shadow-sm transition-transform group-hover:scale-110 sm:p-3 dark:bg-gray-800'
-                  )}
-                >
-                  <stat.icon
-                    className={cn('h-4 w-4 sm:h-6 sm:w-6', stat.color)}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-muted-foreground sm:text-sm">
-                    {stat.label}
-                  </p>
-                  <p className="truncate text-lg font-bold transition-all group-hover:scale-105 sm:text-2xl">
-                    {stat.value}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <StatsOverview timerStats={timerStats} formatDuration={formatDuration} />
+
+      {timerStats.dailyActivity && (
+        <ActivityHeatmap
+          dailyActivity={timerStats.dailyActivity}
+          formatDuration={formatDuration}
+        />
+      )}
 
       {/* Main Content Tabs with improved mobile design */}
       <Tabs
