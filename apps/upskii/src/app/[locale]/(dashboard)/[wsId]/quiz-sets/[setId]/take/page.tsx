@@ -13,8 +13,6 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useRef, useState } from 'react';
 
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
 type TakeResponse = {
   setId: string;
   setName: string;
