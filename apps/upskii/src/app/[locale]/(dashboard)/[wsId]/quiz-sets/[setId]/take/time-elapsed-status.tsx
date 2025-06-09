@@ -35,7 +35,7 @@ export default function TimeElapsedStatus({
       : 'text-foreground';
 
   return (
-    <div className="bg-card flex w-full flex-col gap-2 rounded-lg border p-4 shadow-sm">
+    <div className="flex w-full flex-col gap-2 rounded-lg border bg-card p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <p className={`text-sm md:text-base lg:text-lg ${timerColorClass}`}>
           {isVisible
@@ -48,7 +48,7 @@ export default function TimeElapsedStatus({
         </p>
         <button
           onClick={toggleVisibility}
-          className="text-muted-foreground hover:text-foreground ml-4 text-sm underline"
+          className="ml-4 text-sm text-muted-foreground underline hover:text-foreground"
         >
           {isVisible ? (
             <Eye className="h-5 w-5" />
