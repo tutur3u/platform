@@ -39,7 +39,8 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
   const t = await getTranslations('quiz-set-statistics');
   const { wsId, setId } = await params;
 
-  const { attemptedQuizzes: stats, totalQuizCount } = await getQuizSetStatistics(setId);
+  const { attemptedQuizzes: stats, totalQuizCount } =
+    await getQuizSetStatistics(setId);
 
   const overallStats = {
     totalQuizzes: totalQuizCount, // Use total count from all quizzes
@@ -89,7 +90,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
             <div className="text-3xl font-bold">
               {overallStats.totalQuizzes}
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {t('active_quizzes')}
             </p>
           </CardContent>
@@ -106,7 +107,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
             <div className="text-3xl font-bold">
               {overallStats.totalAttempts}
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {t('accross_all_quizzes')}
             </p>
           </CardContent>
@@ -123,7 +124,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
             <div className="text-3xl font-bold">
               {overallStats.totalStudents}
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {t('unique_participants')}
             </p>
           </CardContent>
@@ -140,7 +141,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
             <div className="text-3xl font-bold">
               {overallStats.averagePassRate.toFixed(1)}%
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               70% passing threshold
             </p>
           </CardContent>
@@ -155,7 +156,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
           <h2 className="text-2xl font-semibold">
             {t('individual_quiz_performance')}
           </h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {stats.length} quizzes analyzed
           </p>
         </div>
@@ -163,7 +164,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
         {stats.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <BarChart3 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+              <BarChart3 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <h3 className="mb-2 text-lg font-semibold">{t('no_quizzes')}</h3>
               <p className="text-muted-foreground">
                 {t('no_quizzes_description')}
@@ -207,7 +208,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                       <div className="text-2xl font-bold text-blue-600">
                         {quiz.totalAttempts}
                       </div>
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-sm text-muted-foreground">
                         {t('total_attempts')}
                       </div>
                     </div>
@@ -215,7 +216,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                       <div className="text-2xl font-bold text-purple-600">
                         {quiz.uniqueStudents}
                       </div>
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-sm text-muted-foreground">
                         {t('unique_participants')}
                       </div>
                     </div>
@@ -223,7 +224,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                       <div className="text-2xl font-bold text-green-600">
                         {quiz.averageScore}%
                       </div>
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-sm text-muted-foreground">
                         {t('average_score')}
                       </div>
                     </div>
@@ -239,7 +240,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                       >
                         {quiz.passRate}%
                       </div>
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-sm text-muted-foreground">
                         {t('pass_rate')}
                       </div>
                     </div>
@@ -249,7 +250,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                           ? new Date(quiz.lastAttempt).toLocaleDateString()
                           : 'Never'}
                       </div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="text-xs text-muted-foreground">
                         {t('last_attempt')}
                       </div>
                     </div>
@@ -268,7 +269,7 @@ async function getQuizSetStatistics(setId: string): Promise<{
   attemptedQuizzes: QuizStats[];
   totalQuizCount: number;
 }> {
-const supabase = await createClient();
+  const supabase = await createClient();
 
   try {
     // Get all quizzes in this set with their details (following route.ts pattern)
@@ -287,7 +288,7 @@ const supabase = await createClient();
 
     if (qErr || !questionsRaw) {
       console.error('Error fetching questions:', qErr);
-    return { attemptedQuizzes: [], totalQuizCount: 0 };
+      return { attemptedQuizzes: [], totalQuizCount: 0 };
     }
 
     const quizStats: QuizStats[] = [];
@@ -320,13 +321,14 @@ const supabase = await createClient();
         continue;
       }
 
-
       // Now we know attempts is defined and has length > 0
       const totalAttempts = attempts.length;
       const uniqueStudents = new Set(attempts.map((a) => a.user_id)).size;
-      
+
       // Calculate average score as percentage
-      const averageScore = attempts.reduce((sum, a) => sum + (a.total_score || 0), 0) / attempts.length;
+      const averageScore =
+        attempts.reduce((sum, a) => sum + (a.total_score || 0), 0) /
+        attempts.length;
 
       // Calculate pass rate (assuming 70% is passing threshold)
       // We need to get the max possible score for this quiz set
@@ -341,16 +343,25 @@ const supabase = await createClient();
         )
         .eq('set_id', setId);
 
-      const maxPossibleScore = maxScoreData?.reduce((sum, q) => sum + (q.workspace_quizzes?.score || 0), 0) || 100;
-      
-      const passRate = (attempts.filter((a) => {
-        const scorePercentage = ((a.total_score || 0) / maxPossibleScore) * 100;
-        return scorePercentage >= 70;
-      }).length / attempts.length) * 100;
+      const maxPossibleScore =
+        maxScoreData?.reduce(
+          (sum, q) => sum + (q.workspace_quizzes?.score || 0),
+          0
+        ) || 100;
+
+      const passRate =
+        (attempts.filter((a) => {
+          const scorePercentage =
+            ((a.total_score || 0) / maxPossibleScore) * 100;
+          return scorePercentage >= 70;
+        }).length /
+          attempts.length) *
+        100;
 
       // Get the most recent attempt
       const sortedAttempts = [...attempts].sort(
-        (a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+        (a, b) =>
+          new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
       );
       const lastAttempt = sortedAttempts[0]?.started_at || null;
 
@@ -371,11 +382,10 @@ const supabase = await createClient();
       }
     }
 
-
     // Return both attempted quizzes and total count
     return {
       attemptedQuizzes: quizStats,
-      totalQuizCount: questionsRaw.length
+      totalQuizCount: questionsRaw.length,
     };
   } catch (error) {
     console.error('Error fetching quiz statistics:', error);
