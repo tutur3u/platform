@@ -1,4 +1,3 @@
-// File: app/api/quiz-sets/[setId]/results/route.ts
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
