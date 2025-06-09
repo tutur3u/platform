@@ -1,4 +1,3 @@
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
 'use client';
 
 import BeforeTakeQuizSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/before-take-quiz-section';
@@ -12,15 +11,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { ListCheck } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/take/page.tsx
+import { use, useEffect, useRef, useState } from 'react';
 
 type TakeResponse = {
   setId: string;
@@ -40,7 +31,7 @@ type SubmitResult = {
   maxPossibleScore: number;
 };
 
-export default async function TakeQuiz({
+export default function TakeQuiz({
   params,
 }: {
   params: Promise<{
@@ -50,7 +41,7 @@ export default async function TakeQuiz({
     setId: string;
   }>;
 }) {
-  const { wsId, courseId, moduleId, setId } = await params;
+  const { wsId, courseId, moduleId, setId } = use(params);
   const t = useTranslations();
   const router = useRouter();
 
@@ -66,7 +57,7 @@ export default async function TakeQuiz({
   const [dueDateStr, setDueDateStr] = useState<string | null>(null);
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<string, string>
@@ -85,7 +76,9 @@ export default async function TakeQuiz({
   const clearStartTimestamp = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
-    } catch {}
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const computeElapsedSeconds = (startTs: number) =>
@@ -148,8 +141,7 @@ export default async function TakeQuiz({
         clearInterval(timerRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setId]);
+  }, [setId, totalSeconds]);
 
   // ─── TIMER LOGIC ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -193,7 +185,9 @@ export default async function TakeQuiz({
     const nowMs = Date.now();
     try {
       localStorage.setItem(STORAGE_KEY, nowMs.toString());
-    } catch {}
+    } catch (e) {
+      console.error(e);
+    }
     setHasStarted(true);
     setTimeLeft(totalSeconds ?? 0);
   };
