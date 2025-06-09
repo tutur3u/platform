@@ -89,7 +89,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
             <div className="text-3xl font-bold">
               {overallStats.totalQuizzes}
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {t('active_quizzes')}
             </p>
           </CardContent>
@@ -106,7 +106,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
             <div className="text-3xl font-bold">
               {overallStats.totalAttempts}
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {t('accross_all_quizzes')}
             </p>
           </CardContent>
@@ -123,7 +123,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
             <div className="text-3xl font-bold">
               {overallStats.totalStudents}
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {t('unique_participants')}
             </p>
           </CardContent>
@@ -140,7 +140,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
             <div className="text-3xl font-bold">
               {overallStats.averagePassRate.toFixed(1)}%
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               70% passing threshold
             </p>
           </CardContent>
@@ -155,7 +155,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
           <h2 className="text-2xl font-semibold">
             {t('individual_quiz_performance')}
           </h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {stats.length} quizzes analyzed
           </p>
         </div>
@@ -163,7 +163,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
         {stats.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <BarChart3 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+              <BarChart3 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <h3 className="mb-2 text-lg font-semibold">{t('no_quizzes')}</h3>
               <p className="text-muted-foreground">
                 {t('no_quizzes_description')}
@@ -207,7 +207,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                       <div className="text-2xl font-bold text-blue-600">
                         {quiz.totalAttempts}
                       </div>
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-sm text-muted-foreground">
                         {t('total_attempts')}
                       </div>
                     </div>
@@ -215,7 +215,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                       <div className="text-2xl font-bold text-purple-600">
                         {quiz.uniqueStudents}
                       </div>
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-sm text-muted-foreground">
                         {t('unique_participants')}
                       </div>
                     </div>
@@ -223,7 +223,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                       <div className="text-2xl font-bold text-green-600">
                         {quiz.averageScore}%
                       </div>
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-sm text-muted-foreground">
                         {t('average_score')}
                       </div>
                     </div>
@@ -239,7 +239,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                       >
                         {quiz.passRate}%
                       </div>
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-sm text-muted-foreground">
                         {t('pass_rate')}
                       </div>
                     </div>
@@ -249,7 +249,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                           ? new Date(quiz.lastAttempt).toLocaleDateString()
                           : 'Never'}
                       </div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="text-xs text-muted-foreground">
                         {t('last_attempt')}
                       </div>
                     </div>
