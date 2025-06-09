@@ -50,20 +50,20 @@ const QuizStatusSidebar = ({
   );
 
   return (
-    <aside className="bg-card text-card-foreground h-fit max-h-96 w-full rounded-lg border p-4 shadow-sm">
+    <aside className="h-fit max-h-96 w-full rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
       <h2 className="mb-4 text-lg font-semibold">
         {translate('ws-quizzes.question_status_title', 'Question Progress')}
       </h2>
 
       {/* Optional Progress Overview */}
       <div className="mb-4">
-        <p className="text-muted-foreground mb-1 text-sm">
+        <p className="mb-1 text-sm text-muted-foreground">
           {answeredCount} / {questions.length}{' '}
           {translate('ws-quizzes.answered_status_short', 'answered')}
         </p>
-        <div className="bg-muted h-2 w-full rounded-full">
+        <div className="h-2 w-full rounded-full bg-muted">
           <div
-            className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
+            className="h-2 rounded-full bg-primary transition-all duration-300 ease-out"
             style={{
               width: `${questions.length > 0 ? (answeredCount / questions.length) * 100 : 0}%`,
             }}
@@ -100,10 +100,10 @@ const QuizStatusSidebar = ({
                 `Question ${questionNumber}, ${isAnswered ? translate('ws-quizzes.answered_state', 'Answered') : translate('ws-quizzes.unanswered_state', 'Unanswered')}`,
                 { number: questionNumber }
               )}
-              className={`focus-visible:ring-ring focus-visible:ring-offset-card flex h-9 w-full items-center justify-center rounded-md border text-xs font-medium transition-all duration-150 ease-in-out hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:opacity-60 ${
+              className={`flex h-9 w-full items-center justify-center rounded-md border text-xs font-medium transition-all duration-150 ease-in-out hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card focus-visible:outline-none active:opacity-60 ${
                 isAnswered
                   ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border bg-background hover:bg-muted text-muted-foreground'
+                  : 'border-border bg-background text-muted-foreground hover:bg-muted'
               } `}
             >
               <span className="mr-0.5" aria-hidden="true">
