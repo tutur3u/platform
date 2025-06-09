@@ -140,12 +140,12 @@ export default function ManagePage() {
     <div className="container mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-linear-to-r flex h-10 w-10 items-center justify-center rounded-full from-blue-500/80 to-purple-500/80">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-blue-500/80 to-purple-500/80">
             <UserCog className="h-5 w-5 text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">Family Management</h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Manage members, invites, and subscription
             </p>
           </div>
@@ -171,10 +171,10 @@ export default function ManagePage() {
         </TabsList>
 
         <TabsContent value="members">
-          <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 relative overflow-hidden backdrop-blur-sm">
+          <Card className="relative overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
             {/* Decorative elements */}
-            <div className="absolute -left-20 -top-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
-            <div className="absolute -bottom-20 -right-20 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-500/20"></div>
+            <div className="absolute -top-20 -left-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
+            <div className="absolute -right-20 -bottom-20 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl dark:bg-purple-500/20"></div>
 
             <CardHeader>
               <CardTitle>Family Members</CardTitle>
@@ -190,7 +190,7 @@ export default function ManagePage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="border-foreground/10 dark:border-foreground/5 flex items-center justify-between rounded-lg border p-4"
+                    className="flex items-center justify-between rounded-lg border border-foreground/10 p-4 dark:border-foreground/5"
                   >
                     <div className="flex items-center gap-4">
                       <Avatar
@@ -210,7 +210,7 @@ export default function ManagePage() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                           {member.email}
                         </p>
                       </div>
@@ -250,7 +250,7 @@ export default function ManagePage() {
           </Card>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
+            <Card className="overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
               <CardHeader className="bg-linear-to-r from-blue-500/10 to-purple-500/10 pb-2 dark:from-blue-500/20 dark:to-purple-500/20">
                 <CardTitle className="text-base">Family Settings</CardTitle>
               </CardHeader>
@@ -266,12 +266,12 @@ export default function ManagePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
+            <Card className="overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
               <CardHeader className="bg-linear-to-r from-green-500/10 to-teal-500/10 pb-2 dark:from-green-500/20 dark:to-teal-500/20">
                 <CardTitle className="text-base">Family Sharing</CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
-                <CardDescription className="text-foreground/80 mb-4">
+                <CardDescription className="mb-4 text-foreground/80">
                   Share your family code to invite others
                 </CardDescription>
                 <div className="flex items-center gap-2">
@@ -290,9 +290,9 @@ export default function ManagePage() {
         </TabsContent>
 
         <TabsContent value="invites">
-          <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 relative overflow-hidden backdrop-blur-sm">
-            <div className="absolute -left-20 -top-20 h-40 w-40 rounded-full bg-pink-500/10 blur-3xl dark:bg-pink-500/20"></div>
-            <div className="absolute -bottom-20 -right-20 h-40 w-40 rounded-full bg-orange-500/10 blur-3xl dark:bg-orange-500/20"></div>
+          <Card className="relative overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
+            <div className="absolute -top-20 -left-20 h-40 w-40 rounded-full bg-pink-500/10 blur-3xl dark:bg-pink-500/20"></div>
+            <div className="absolute -right-20 -bottom-20 h-40 w-40 rounded-full bg-orange-500/10 blur-3xl dark:bg-orange-500/20"></div>
 
             <CardHeader>
               <CardTitle>Pending Invites</CardTitle>
@@ -309,11 +309,11 @@ export default function ManagePage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className="border-foreground/10 dark:border-foreground/5 flex items-center justify-between rounded-lg border p-4"
+                      className="flex items-center justify-between rounded-lg border border-foreground/10 p-4 dark:border-foreground/5"
                     >
                       <div>
                         <p className="font-medium">{invite.email}</p>
-                        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <span>
                             Sent {invite.sentAt} by {invite.sentBy}
                           </span>
@@ -336,14 +336,14 @@ export default function ManagePage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-16">
-                  <UserPlus className="text-muted-foreground mb-2 h-12 w-12 opacity-20" />
-                  <p className="text-muted-foreground text-center">
+                  <UserPlus className="mb-2 h-12 w-12 text-muted-foreground opacity-20" />
+                  <p className="text-center text-muted-foreground">
                     No pending invites
                   </p>
                 </div>
               )}
             </CardContent>
-            <CardFooter className="bg-foreground/5 flex flex-col items-stretch gap-4 px-6 py-4">
+            <CardFooter className="flex flex-col items-stretch gap-4 bg-foreground/5 px-6 py-4">
               <h3 className="text-sm font-medium">Send New Invite</h3>
               <div className="flex gap-2">
                 <Input
@@ -358,12 +358,12 @@ export default function ManagePage() {
           </Card>
 
           <div className="mt-6">
-            <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
+            <Card className="overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
               <CardHeader className="bg-linear-to-r from-purple-500/10 to-pink-500/10 pb-2 dark:from-purple-500/20 dark:to-pink-500/20">
                 <CardTitle className="text-base">Invite Methods</CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
-                <CardDescription className="text-foreground/80 mb-4">
+                <CardDescription className="mb-4 text-foreground/80">
                   Choose how to invite family members to join
                 </CardDescription>
                 <div className="space-y-3">
@@ -381,9 +381,9 @@ export default function ManagePage() {
 
         <TabsContent value="subscription">
           <div className="grid gap-6 md:grid-cols-[1fr_300px]">
-            <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 relative overflow-hidden backdrop-blur-sm">
-              <div className="absolute -left-20 -top-20 h-60 w-60 rounded-full bg-green-500/10 blur-3xl dark:bg-green-500/20"></div>
-              <div className="absolute -bottom-20 -right-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
+            <Card className="relative overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
+              <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full bg-green-500/10 blur-3xl dark:bg-green-500/20"></div>
+              <div className="absolute -right-20 -bottom-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-500/20"></div>
 
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -400,7 +400,7 @@ export default function ManagePage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="border-foreground/10 dark:border-foreground/5 rounded-lg border p-4">
+                <div className="rounded-lg border border-foreground/10 p-4 dark:border-foreground/5">
                   <h3 className="mb-2 font-medium">Plan Information</h3>
                   <div className="grid gap-1 text-sm">
                     <div className="flex justify-between">
@@ -455,7 +455,7 @@ export default function ManagePage() {
             </Card>
 
             <div className="space-y-6">
-              <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
+              <Card className="overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
                 <CardHeader className="bg-linear-to-r from-blue-500/10 to-purple-500/10 pb-2 dark:from-blue-500/20 dark:to-purple-500/20">
                   <CardTitle className="text-base">Billing History</CardTitle>
                 </CardHeader>
@@ -490,12 +490,12 @@ export default function ManagePage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-foreground/10 bg-background/60 dark:border-foreground/5 overflow-hidden backdrop-blur-sm">
+              <Card className="overflow-hidden border-foreground/10 bg-background/60 backdrop-blur-sm dark:border-foreground/5">
                 <CardHeader className="bg-linear-to-r from-pink-500/10 to-rose-500/10 pb-2 dark:from-pink-500/20 dark:to-rose-500/20">
                   <CardTitle className="text-base">Need Help?</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <CardDescription className="text-foreground/80 mb-4">
+                  <CardDescription className="mb-4 text-foreground/80">
                     If you have any questions about your subscription
                   </CardDescription>
                   <Button size="sm" variant="outline" className="w-full">

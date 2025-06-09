@@ -1,14 +1,15 @@
-import { CourseSection } from '../../section';
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
-import FileDisplay from './resources/file-display';
-import { YoutubeEmbed } from './youtube-links/embed';
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import { Accordion } from '@tuturuuu/ui/accordion';
+import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
+import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
+import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
 import {
   BookText,
   Goal,
@@ -18,6 +19,8 @@ import {
   Youtube,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
+import { JSONContent } from '@tuturuuu/ui/tiptap';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -50,7 +53,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
         {fc?.front || '...'}
       </div>
     ),
@@ -60,28 +63,29 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">
         {fc?.back || '...'}
       </div>
     ),
   }));
 
   return (
-    <div className="grid gap-4">
+    <Accordion type="multiple" className="grid gap-4">
       <CourseSection
-        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/content`}
+        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
         rawContent={data.content as any | undefined}
         content={
-          data.content
-            ? // <BlockEditor document={data.content as any} />
-              undefined
-            : undefined
+          data.content ? (
+            <div className="h-full max-h-[500px] overflow-y-auto">
+              <RichTextEditor content={data.content as JSONContent} readOnly />
+            </div>
+          ) : undefined
         }
       />
       <CourseSection
-        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/resources`}
+        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/resources`}
         title={t('course-details-tabs.resources')}
         icon={<Paperclip className="h-5 w-5" />}
         content={
@@ -112,7 +116,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/youtube-links`}
+        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/youtube-links`}
         title={t('course-details-tabs.youtube_links')}
         icon={<Youtube className="h-5 w-5" />}
         content={
@@ -126,7 +130,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes`}
+        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/quizzes`}
         title={t('ws-quizzes.plural')}
         icon={<ListTodo className="h-5 w-5" />}
         content={
@@ -143,7 +147,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets`}
+        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/quiz-sets`}
         title={t('ws-quiz-sets.plural')}
         icon={<ListTodo className="h-5 w-5" />}
         content={
@@ -160,7 +164,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/flashcards`}
+        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/flashcards`}
         title={t('ws-flashcards.plural')}
         icon={<SwatchBook className="h-5 w-5" />}
         content={
@@ -177,7 +181,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/extra-content`}
+        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/extra-content`}
         title={t('course-details-tabs.extra_reading')}
         icon={<BookText className="h-5 w-5" />}
         rawContent={data.extra_content as any | undefined}
@@ -188,7 +192,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
             : undefined
         }
       />
-    </div>
+    </Accordion>
   );
 }
 

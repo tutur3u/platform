@@ -1,8 +1,8 @@
-import ModuleContentEditor from './content-editor';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Goal, Sparkles } from '@tuturuuu/ui/icons';
+import { ModuleContentEditor } from '@tuturuuu/ui/text-editor/content-editor';
 import { JSONContent } from '@tuturuuu/ui/tiptap';
 import { getTranslations } from 'next-intl/server';
 

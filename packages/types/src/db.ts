@@ -21,6 +21,7 @@ export type WorkspaceTaskList = Tables<'task_lists'> & {
   tasks?: Partial<WorkspaceTask>[];
 };
 export type WorkspaceTask = Tables<'tasks'>;
+export type WorkspaceCalendarEvent = Tables<'workspace_calendar_events'>;
 export type User = Tables<'users'>;
 export type UserPrivateDetails = Tables<'user_private_details'>;
 export type PlatformUser = Tables<'platform_user_roles'>;
@@ -68,6 +69,10 @@ export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {
   href?: string;
 };
 export type WorkspaceCalendarGoogleToken = Tables<'calendar_auth_tokens'>;
+
+export type TimeTrackingCategory = Tables<'time_tracking_categories'>;
+export type TimeTrackingSession = Tables<'time_tracking_sessions'>;
+export type TimeTrackingGoal = Tables<'time_tracking_goals'>;
 
 export type AuroraStatisticalForecast = Tables<'aurora_statistical_forecast'>;
 export type AuroraStatisticalMetrics = Tables<'aurora_statistical_metrics'>;

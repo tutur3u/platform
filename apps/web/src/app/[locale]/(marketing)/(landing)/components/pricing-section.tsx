@@ -124,44 +124,44 @@ export function PricingSection() {
     <section
       id="pricing"
       ref={sectionRef}
-      className="container relative w-full px-0 py-40"
+      className="relative container w-full px-0 py-40"
     >
       <div className="pricing-title-wrapper mb-16 text-center">
         <h2 className="pricing-title mb-6 text-4xl font-bold md:text-5xl">
-          <span className="from-dynamic-light-purple to-dynamic-light-blue bg-gradient-to-r bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue bg-clip-text text-transparent">
             {t('simple_transparent_pricing')}
           </span>
         </h2>
-        <p className="text-muted-foreground mx-auto max-w-3xl text-xl leading-relaxed">
+        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
           {t('choose_the_plan_that_works_best_for_you_and_your_team')}
         </p>
 
         <div className="pricing-toggle mt-10 flex items-center justify-center">
-          <div className="dark:bg-foreground/5 inline-flex rounded-full bg-white/90 p-1.5 shadow-md backdrop-blur-sm">
+          <div className="inline-flex rounded-full bg-white/90 p-1.5 shadow-md backdrop-blur-sm dark:bg-foreground/5">
             <button
               className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
                 !isAnnual
-                  ? 'from-dynamic-light-purple to-dynamic-light-blue bg-gradient-to-r text-white'
+                  ? 'bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={() => setIsAnnual(false)}
             >
               {t('monthly')}
               {!isAnnual && (
-                <div className="from-dynamic-light-purple/80 to-dynamic-light-blue/80 absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r blur-sm"></div>
+                <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 blur-sm"></div>
               )}
             </button>
             <button
               className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
                 isAnnual
-                  ? 'from-dynamic-light-purple to-dynamic-light-blue bg-gradient-to-r text-white'
+                  ? 'bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={() => setIsAnnual(true)}
             >
               {t('annual')}
               {isAnnual && (
-                <div className="from-dynamic-light-purple/80 to-dynamic-light-blue/80 absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r blur-sm"></div>
+                <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 blur-sm"></div>
               )}
             </button>
           </div>
@@ -180,14 +180,14 @@ export function PricingSection() {
           return (
             <div
               key={index}
-              className={`pricing-card dark:bg-foreground/5 group relative overflow-hidden rounded-2xl bg-white/90 shadow-lg transition-all duration-500 hover:shadow-xl ${
+              className={`pricing-card group relative overflow-hidden rounded-2xl bg-white/90 shadow-lg transition-all duration-500 hover:shadow-xl dark:bg-foreground/5 ${
                 plan.popular
                   ? 'transform ring-2 ring-purple-500 md:-translate-y-4'
                   : ''
               }`}
             >
               {plan.popular && (
-                <div className="from-dynamic-light-purple to-dynamic-light-blue bg-gradient-to-r py-2 text-center text-sm font-medium text-white">
+                <div className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue py-2 text-center text-sm font-medium text-white">
                   {t('most_popular')}
                 </div>
               )}
@@ -196,7 +196,7 @@ export function PricingSection() {
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                       plan.name === 'Pro'
-                        ? 'from-dynamic-light-purple to-dynamic-light-blue bg-gradient-to-r text-white'
+                        ? 'bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white'
                         : plan.name === 'Enterprise'
                           ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
                           : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
@@ -207,14 +207,14 @@ export function PricingSection() {
                   <h3 className="text-2xl font-bold">{plan.name}</h3>
                 </div>
 
-                <p className="text-muted-foreground mb-8">{plan.description}</p>
+                <p className="mb-8 text-muted-foreground">{plan.description}</p>
                 <div className="mb-8">
                   {price === null ? (
                     <span className="text-4xl font-bold">{t('custom')}</span>
                   ) : (
                     <div className="flex items-baseline">
                       <span className="text-5xl font-bold">${price}</span>
-                      <span className="ml-2 lowercase text-gray-500">
+                      <span className="ml-2 text-gray-500 lowercase">
                         {isAnnual ? `/${t('year')}` : `/${t('month')}`}
                       </span>
                     </div>
@@ -245,7 +245,7 @@ export function PricingSection() {
                   </Button>
                 </Link>
                 <div className="space-y-4">
-                  <div className="text-muted-foreground mb-4 font-medium">
+                  <div className="mb-4 font-medium text-muted-foreground">
                     {t('features_include')}:
                   </div>
                   {plan.features.map((feature, i) => (
@@ -264,7 +264,7 @@ export function PricingSection() {
                         <div
                           className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${
                             plan.name === 'Pro'
-                              ? 'text-dynamic-light-purple bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400'
+                              ? 'bg-purple-100 text-dynamic-light-purple dark:bg-purple-900/30 dark:text-purple-400'
                               : plan.name === 'Enterprise'
                                 ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
                                 : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
@@ -290,7 +290,7 @@ export function PricingSection() {
                             hoveredFeature.featureName === feature.feature && (
                               <div className="absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 transform rounded-lg bg-gray-800 p-3 text-xs leading-relaxed text-white shadow-lg">
                                 {featureDescriptions[feature.feature]}
-                                <div className="absolute left-1/2 top-full -translate-x-1/2 transform border-4 border-transparent border-t-gray-800"></div>
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 transform border-4 border-transparent border-t-gray-800"></div>
                               </div>
                             )}
                         </div>

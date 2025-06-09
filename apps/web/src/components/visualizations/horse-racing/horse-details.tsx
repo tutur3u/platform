@@ -86,7 +86,7 @@ export function HorseDetails({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <div className="bg-linear-to-r h-2 flex-1 overflow-hidden rounded-full from-green-500 to-red-500">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-linear-to-r from-green-500 to-red-500">
                           <div
                             className="h-full bg-transparent"
                             style={{
@@ -114,7 +114,7 @@ export function HorseDetails({
                           #{rank}
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-xs text-muted-foreground">
                           Unknown
                         </span>
                       )}

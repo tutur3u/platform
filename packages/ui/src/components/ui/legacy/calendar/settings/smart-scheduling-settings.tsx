@@ -314,7 +314,7 @@ export function SmartSchedulingSettings({
             disabled={!value.enableSmartScheduling}
             className="py-4"
           />
-          <div className="text-muted-foreground flex justify-between text-sm">
+          <div className="flex justify-between text-sm text-muted-foreground">
             <span>More meetings</span>
             <span>More focus time</span>
           </div>

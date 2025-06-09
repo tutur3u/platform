@@ -21,11 +21,13 @@ export default async function NavbarActions({
   } = await supabase.auth.getUser();
 
   return (
-    <div className="relative">
-      <div className="flex items-center gap-1">
+    <div className="relative flex w-full">
+      <div className="flex w-full items-center gap-1">
         {sbUser ? (
           <>
-            <UserNavWrapper hideMetadata={hideMetadata} />
+            <div className="flex-1">
+              <UserNavWrapper hideMetadata={hideMetadata} />
+            </div>
             <NotificationPopover />
           </>
         ) : (

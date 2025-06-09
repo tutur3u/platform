@@ -1,7 +1,10 @@
 'use client';
 
-import { StorageFolderForm, StorageObjectForm } from './form';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  StorageFolderForm,
+  StorageObjectForm,
+} from '@tuturuuu/ui/custom/education/modules/resources/file-upload-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,

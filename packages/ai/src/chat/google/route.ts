@@ -13,7 +13,11 @@ export const preferredRegion = 'sin1';
 
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
 
-export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
+export function createPOST(
+  options: { serverAPIKeyFallback?: boolean } = {
+    serverAPIKeyFallback: false,
+  }
+) {
   // Higher-order function that returns the actual request handler
   return async function handler(req: NextRequest) {
     const sbAdmin = await createAdminClient();
@@ -35,11 +39,11 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
         return new Response('Missing messages', { status: 400 });
       }
 
-      // eslint-disable-next-line no-undef
       const apiKey =
         (await cookies()).get('google_api_key')?.value ||
         (options.serverAPIKeyFallback
-          ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
+          ? // eslint-disable-next-line no-undef
+            process.env.GOOGLE_GENERATIVE_AI_API_KEY
           : undefined);
 
       if (!apiKey) {

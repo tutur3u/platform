@@ -13,16 +13,28 @@ export interface TestCaseComponentProps {
   className?: string;
 }
 
+const copyProtectionStyles: React.CSSProperties = {
+  WebkitUserSelect: 'none',
+  MozUserSelect: 'none',
+  msUserSelect: 'none',
+  userSelect: 'none',
+  WebkitTouchCallout: 'none',
+};
+
 export default function TestCaseComponent({
   testCases,
   className,
 }: TestCaseComponentProps) {
   return (
-    <div className={className}>
+    <div
+      className={className}
+      style={copyProtectionStyles}
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Code className="text-primary h-4 w-4" />
+            <Code className="h-4 w-4 text-primary" />
             Test Cases
           </CardTitle>
           <CardDescription>
@@ -39,7 +51,7 @@ export default function TestCaseComponent({
                   <div className="flex flex-col gap-4">
                     <div className="space-y-2">
                       <p className="ml-2 text-sm font-medium">Input</p>
-                      <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                      <div className="rounded-md bg-muted p-3 font-mono text-sm">
                         {testcase.input ? (
                           <p className="whitespace-pre-wrap">
                             {testcase.input}
@@ -55,7 +67,7 @@ export default function TestCaseComponent({
                       <p className="ml-2 text-sm font-medium">
                         Output (Expected)
                       </p>
-                      <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                      <div className="rounded-md bg-muted p-3 font-mono text-sm">
                         {testcase.output ? (
                           <p className="whitespace-pre-wrap">
                             {testcase.output}

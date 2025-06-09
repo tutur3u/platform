@@ -9,7 +9,7 @@ npm install --dev @tuturuuu/typescript-config
 # or
 yarn add --dev @tuturuuu/typescript-config
 # or
-pnpm add -D @tuturuuu/typescript-config
+bun add -D @tuturuuu/typescript-config
 ```
 
 ## Usage

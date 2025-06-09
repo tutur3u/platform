@@ -61,16 +61,16 @@ export default function InteractiveDemo() {
   return (
     <div className="relative">
       {/* Decorative elements */}
-      <div className="from-primary/5 bg-linear-to-b absolute inset-0 rounded-xl via-transparent to-transparent" />
+      <div className="absolute inset-0 rounded-xl bg-linear-to-b from-primary/5 via-transparent to-transparent" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_0%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
       <div className="relative mx-auto max-w-3xl">
-        <Card className="border-primary/10 bg-background/10 overflow-hidden backdrop-blur-sm">
+        <Card className="overflow-hidden border-primary/10 bg-background/10 backdrop-blur-sm">
           {/* Demo header */}
-          <div className="border-primary/10 bg-primary/5 flex items-center gap-2 border-b p-4">
-            <Bot className="text-primary h-5 w-5" />
+          <div className="flex items-center gap-2 border-b border-primary/10 bg-primary/5 p-4">
+            <Bot className="h-5 w-5 text-primary" />
             <span className="font-semibold">{t('title')}</span>
-            <span className="bg-primary/10 text-primary ml-auto flex items-center gap-1 rounded-full px-2 py-1 text-xs">
+            <span className="ml-auto flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
               <Sparkles className="h-3 w-3" />
               {t('badge')}
             </span>
@@ -115,7 +115,7 @@ export default function InteractiveDemo() {
               </motion.div>
             ))}
             {currentStep < demoConversation.length && (
-              <div className="text-muted-foreground flex items-center gap-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <motion.div
                   animate={{
                     scale: [1, 1.2, 1],
@@ -125,7 +125,7 @@ export default function InteractiveDemo() {
                     duration: 1.5,
                     repeat: Infinity,
                   }}
-                  className="bg-primary h-2 w-2 rounded-full"
+                  className="h-2 w-2 rounded-full bg-primary"
                 />
                 <span className="text-sm">
                   {demoConversation[currentStep]?.role === 'assistant'
@@ -137,15 +137,15 @@ export default function InteractiveDemo() {
           </div>
 
           {/* Input area */}
-          <div className="border-primary/10 bg-background/10 flex items-center gap-2 border-t p-4">
+          <div className="flex items-center gap-2 border-t border-primary/10 bg-background/10 p-4">
             <div className="relative flex-1">
               <input
                 type="text"
                 placeholder={t('input-place-holder')}
-                className="border-primary/10 bg-background/10 placeholder:text-muted-foreground focus:ring-primary/20 w-full rounded-lg border px-4 py-2 pr-10 text-sm focus:outline-none focus:ring-2"
+                className="w-full rounded-lg border border-primary/10 bg-background/10 px-4 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 disabled
               />
-              <MessageSquare className="text-muted-foreground absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+              <MessageSquare className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             </div>
             <Button size="icon" disabled>
               <Send className="h-4 w-4" />

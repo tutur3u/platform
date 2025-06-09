@@ -70,7 +70,7 @@ export function getProblemColumns(
           row.original.challenge_id === _extraData.filteredChallengeId;
 
         return (
-          <span className={isHighlighted ? 'text-primary font-semibold' : ''}>
+          <span className={isHighlighted ? 'font-semibold text-primary' : ''}>
             {row.original.challenge?.title || 'Not assigned'}
           </span>
         );

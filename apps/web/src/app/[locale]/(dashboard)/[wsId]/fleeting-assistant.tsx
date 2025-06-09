@@ -140,9 +140,9 @@ export default function FleetingAssistant({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="h-113 flex flex-col p-2">
+      <div className="flex h-113 flex-col p-2">
         <div className="mb-2 flex items-center justify-between gap-2 transition">
-          <div className="bg-foreground text-background w-fit rounded border px-2 py-0.5 font-mono text-xs font-bold">
+          <div className="w-fit rounded border bg-foreground px-2 py-0.5 font-mono text-xs font-bold text-background">
             ALPHA
           </div>
 

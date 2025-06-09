@@ -22,7 +22,7 @@ export default function Navbar({
   const renderNavbarActions = () => (
     <Suspense
       fallback={
-        <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+        <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
       }
     >
       <NavbarActions hideMetadata={hideMetadata} />
