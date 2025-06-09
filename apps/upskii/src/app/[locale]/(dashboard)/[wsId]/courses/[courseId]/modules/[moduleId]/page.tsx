@@ -40,7 +40,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
   const flashcards = await getFlashcards(moduleId);
-  const quizzes = await getQuizzes(moduleId);
+  const quizSets = await getQuizzes(moduleId);
 
   const cards = flashcards.map((fc) => ({
     id: fc.id,
@@ -134,12 +134,12 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         title={t('ws-quizzes.plural')}
         icon={<ListTodo className="h-5 w-5" />}
         content={
-          quizzes && quizzes.length > 0 ? (
+          quizSets && quizSets.length > 0 ? (
             <div className="grid gap-4 pt-2 md:grid-cols-2">
               <ClientQuizzes
                 wsId={wsId}
                 moduleId={moduleId}
-                quizzes={quizzes}
+                quizSets={quizSets}
                 previewMode
               />
             </div>
@@ -229,18 +229,74 @@ const getFlashcards = async (moduleId: string) => {
 };
 
 const getQuizzes = async (moduleId: string) => {
+  // created_at: "2025-05-29T08:12:16.653395+00:00"
+  // id: "426d031f-2dc4-4370-972d-756af04288fb"
+  // question: "What are the main building blocks of a NestJS application?"
+  // quiz_options: (4) [{…}, {…}, {…}, {…}]
+  // ws_id: "00000000-0000-0000-0000-000000000000"
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('course_module_quizzes')
-    .select('...workspace_quizzes(*, quiz_options(*))')
+    .select(
+      `
+      quiz_id,
+      workspace_quizzes (
+        id,
+        question,
+        created_at,
+        ws_id,
+        quiz_options(*),
+        quiz_set_quizzes(
+          set_id,
+          workspace_quiz_sets(name)
+        )
+      )
+    `
+    )
     .eq('module_id', moduleId);
 
   if (error) {
-    console.error('error', error);
+    console.error('Error fetching grouped quizzes:', error);
+    return [];
   }
 
-  return data || [];
+  const grouped = new Map<
+    string,
+    {
+      setId: string;
+      setName: string;
+      quizzes: any[];
+    }
+  >();
+
+  for (const cmq of data || []) {
+    const quiz = cmq.workspace_quizzes;
+    const setData = quiz?.quiz_set_quizzes?.[0]; // assume only one set
+
+    if (!quiz || !setData) continue;
+
+    const setId = setData.set_id;
+    const setName = setData.workspace_quiz_sets?.name || 'Unnamed Set';
+
+    if (!grouped.has(setId)) {
+      grouped.set(setId, {
+        setId,
+        setName,
+        quizzes: [],
+      });
+    }
+
+    grouped.get(setId)!.quizzes.push({
+      id: quiz.id,
+      question: quiz.question,
+      quiz_options: quiz.quiz_options,
+      created_at: quiz.created_at,
+      ws_id: quiz.ws_id,
+    });
+  }
+
+  return Array.from(grouped.values());
 };
 
 async function getResources({ path }: { path: string }) {

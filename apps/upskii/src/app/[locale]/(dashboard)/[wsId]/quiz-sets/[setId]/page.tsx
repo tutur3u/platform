@@ -2,7 +2,7 @@ import { getWorkspaceQuizColumns } from './columns';
 import QuizForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceQuiz } from '@tuturuuu/types/db';
+import type { WorkspaceQuiz } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -79,8 +79,8 @@ async function getData(
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = Number.parseInt(page);
+    const parsedSize = Number.parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);
