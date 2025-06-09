@@ -54,7 +54,7 @@ export async function POST(req: Request, { params }: Params) {
       { status: 500 }
     );
   }
-  let renderedName = "";
+  let renderedName = '';
   if (!quizSetName || quizSetName.length === 0) {
     renderedName = formattedName;
   } else {
@@ -108,5 +108,9 @@ export async function POST(req: Request, { params }: Params) {
       .insert(quiz_options.map((o: any) => ({ ...o, quiz_id: data.id })));
   }
 
-  return NextResponse.json({ message: 'success', setId: data.id, name: renderedName });
+  return NextResponse.json({
+    message: 'success',
+    setId: data.id,
+    name: renderedName,
+  });
 }

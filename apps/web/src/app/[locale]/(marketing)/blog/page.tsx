@@ -33,7 +33,7 @@ export default function BlogPage() {
   const t = useTranslations();
 
   return (
-    <main className="container relative space-y-24 py-24">
+    <main className="relative container space-y-24 py-24">
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -44,10 +44,10 @@ export default function BlogPage() {
         <Badge variant="secondary" className="mb-6">
           {t('common.blog')}
         </Badge>
-        <h1 className="text-foreground mb-6 text-balance text-5xl font-bold">
+        <h1 className="mb-6 text-5xl font-bold text-balance text-foreground">
           Insights & Innovation
         </h1>
-        <p className="text-foreground/80 mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-foreground/80">
           Our blog is coming soon! We&apos;re preparing insightful articles
           about technology, innovation, and business transformation.
         </p>
@@ -60,7 +60,7 @@ export default function BlogPage() {
         viewport={{ once: true }}
         className="mx-auto max-w-3xl text-center"
       >
-        <Card className="bg-foreground/5 relative overflow-hidden p-12">
+        <Card className="relative overflow-hidden bg-foreground/5 p-12">
           {/* Animated Background */}
           <div className="absolute inset-0 overflow-hidden">
             <div className="animate-aurora absolute inset-0 opacity-20" />
@@ -75,7 +75,7 @@ export default function BlogPage() {
               transition={{ delay: 0.2 }}
               className="mb-8 flex justify-center"
             >
-              <div className="bg-primary/10 text-primary flex h-24 w-24 items-center justify-center rounded-full">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Rocket className="h-12 w-12" />
               </div>
             </motion.div>
@@ -88,7 +88,7 @@ export default function BlogPage() {
               <h2 className="mb-4 text-3xl font-bold">
                 Exciting Content Coming Soon!
               </h2>
-              <p className="text-foreground/60 mx-auto mb-8 max-w-xl text-lg">
+              <p className="mx-auto mb-8 max-w-xl text-lg text-foreground/60">
                 We&apos;re crafting high-quality articles covering:
               </p>
 
@@ -100,7 +100,7 @@ export default function BlogPage() {
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.6 + index * 0.1 }}
-                    className="bg-foreground/10 flex items-center justify-center gap-2 rounded-lg p-3"
+                    className="flex items-center justify-center gap-2 rounded-lg bg-foreground/10 p-3"
                   >
                     <div className="text-primary">{category.icon}</div>
                     <span className="text-sm font-medium">{category.name}</span>
@@ -117,7 +117,7 @@ export default function BlogPage() {
               className="mx-auto max-w-md"
             >
               <div className="mb-6 flex items-center justify-center gap-2 text-lg font-medium">
-                <Sparkles className="text-primary h-5 w-5" />
+                <Sparkles className="h-5 w-5 text-primary" />
                 <span>Be the first to know when we launch!</span>
               </div>
 
@@ -125,15 +125,15 @@ export default function BlogPage() {
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="bg-foreground/10 outline-hidden placeholder:text-foreground/40 flex-1 rounded-lg px-4 py-2"
+                  className="flex-1 rounded-lg bg-foreground/10 px-4 py-2 outline-hidden placeholder:text-foreground/40"
                 />
-                <button className="bg-foreground text-background hover:bg-foreground/90 flex items-center gap-2 rounded-lg px-6 py-2 font-medium transition-colors">
+                <button className="flex items-center gap-2 rounded-lg bg-foreground px-6 py-2 font-medium text-background transition-colors hover:bg-foreground/90">
                   Notify Me
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
 
-              <p className="text-foreground/40 mt-4 flex items-center justify-center gap-2 text-sm">
+              <p className="mt-4 flex items-center justify-center gap-2 text-sm text-foreground/40">
                 <Timer className="h-4 w-4" />
                 <span>Expected launch: Q2 2024</span>
               </p>
@@ -148,7 +148,7 @@ export default function BlogPage() {
             >
               <Link
                 href="/contact"
-                className="text-foreground/60 hover:text-foreground flex items-center gap-2 text-sm transition-colors"
+                className="flex items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground"
               >
                 <BookText className="h-4 w-4" />
                 <span>Submit a guest post</span>
@@ -158,7 +158,7 @@ export default function BlogPage() {
                 href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-foreground/60 hover:text-foreground flex items-center gap-2 text-sm transition-colors"
+                className="flex items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground"
               >
                 <Globe className="h-4 w-4" />
                 <span>Follow our journey</span>

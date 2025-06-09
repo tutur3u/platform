@@ -18,7 +18,7 @@ export default function ProblemChanger({
       <Button onClick={onPrev} variant="outline" size="sm">
         {'<'}
       </Button>
-      <div className="text-foreground text-sm">
+      <div className="text-sm text-foreground">
         {currentProblem} of {problemLength}
       </div>
       <Button onClick={onNext} variant="outline" size="sm">

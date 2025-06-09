@@ -1,20 +1,22 @@
-import LinkButton from '../../link-button';
-import ModuleToggles from './toggles';
 import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
+import { ModuleToggles } from '@tuturuuu/ui/custom/education/modules/module-toggle';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   BookText,
   Box,
+  CheckCircle,
   Eye,
   Goal,
   ListTodo,
   Paperclip,
   SquareCheck,
   SwatchBook,
+  XIcon,
   Youtube,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -39,8 +41,9 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
 
   const data = await getData(courseId, moduleId);
   const resources = await getResources({
-    path: `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`,
+    path: `${commonHref}/resources/`,
   });
+  const completionStatus = await getCompletionStatus(moduleId);
 
   const flashcards = await getFlashcards(moduleId);
   const quizSets = await getQuizSets(moduleId);
@@ -51,14 +54,32 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
       <FeatureSummary
         title={
           <>
-            <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-              <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
-                <Box className="h-6 w-6" />
-                {t('ws-course-modules.singular')}
+            <h1 className="flex w-full items-center justify-between gap-2 text-2xl font-bold">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-lg text-dynamic-purple max-md:hidden">
+                  <Box className="h-6 w-6" />
+                  {t('ws-course-modules.singular')}
+                </div>
+                <div className="line-clamp-1 text-lg font-bold md:text-2xl">
+                  {data.name || t('common.unknown')}
+                </div>
               </div>
-              <div className="line-clamp-1 text-lg font-bold md:text-2xl">
-                {data.name || t('common.unknown')}
-              </div>
+              {/* Currently the not completed text is only displayed for testing purposes, I plan to only display the completed icon when the module is completed */}
+              {completionStatus ? (
+                <div className="flex items-center gap-2 rounded-lg border border-dynamic-green/20 bg-dynamic-green/10 px-2 py-1 text-base text-dynamic-green">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <span className="text-green-500">
+                    {t('common.completed')}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 px-2 py-1 text-sm text-dynamic-red sm:text-base">
+                  <XIcon className="h-5 w-5 text-red-500" />
+                  <span className="text-red-500">
+                    {t('common.not_completed')}
+                  </span>
+                </div>
+              )}
             </h1>
             <ModuleToggles
               courseId={courseId}
@@ -190,3 +211,72 @@ async function getResources({ path }: { path: string }) {
 
   return data;
 }
+
+const getCompletionStatus = async (moduleId: string) => {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  // 1. Check if the row exists
+  let { data, error } = await supabase
+    .from('course_module_completion_status')
+    .select('completion_status')
+    .eq('module_id', moduleId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.log('error', error);
+    return null;
+  }
+
+  // 2. If not found, insert a new row
+  if (!data || data.length === 0) {
+    const { data: insertData, error: insertError } = await supabase
+      .from('course_module_completion_status')
+      .insert([
+        {
+          module_id: moduleId,
+          user_id: user.id,
+          completion_status: false,
+        },
+      ])
+      .select('completion_status');
+
+    if (insertError) {
+      console.log('insert error', insertError);
+      return null;
+    }
+
+    return insertData?.[0]?.completion_status;
+  }
+
+  // 3. Return the found row(s)
+  return data?.[0]?.completion_status;
+};
+
+// const updateCompletionStatus = async (moduleId: string) => {
+//   const supabase = await createClient();
+
+//   const { data: { user } } = await supabase.auth.getUser();
+//   if (!user) {
+//     throw new Error('User not authenticated');
+//   }
+
+//   const { data, error } = await supabase
+//     .from('course_module_completion_status')
+//     .update({ completion_status: true })
+//     .eq('module_id', moduleId)
+//     .eq('user_id', user.id);
+
+//   if (error) {
+//     console.error('error', error);
+//     return null;
+//   }
+
+//   return data;
+// };

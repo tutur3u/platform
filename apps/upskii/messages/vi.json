@@ -1,4 +1,47 @@
 {
+  "quiz-set-statistics": {
+    "title": "Thống Kê",
+    "description": "Xem thống kê chi tiết về các bài kiểm tra của bạn, bao gồm điểm trung bình, tỷ lệ hoàn thành và nhiều thông tin khác.",
+    "average_pass_rate": "Tỷ Lệ Đạt Trung Bình",
+    "average_score": "Điểm Trung Bình",
+    "total_participants": "Tổng Số Người Tham Gia",
+    "total_quizzes": "Tổng Số Bài Kiểm Tra",
+    "active_quizzes": "Bài kiểm tra hiện có",
+    "total_attempts": "Tổng Số Lượt Làm Bài",
+    "accross_all_quizzes": "Trên tất cả bài kiểm tra",
+    "individual_quiz_performance": "Số Liệu Từng Bài Kiểm Tra",
+    "back": "Quay Lại",
+    "pass_rate": "Tỷ Lệ Đạt",
+    "active_students": "Học Viên Đang Hoạt Động",
+    "unique_participants": "Người tham gia khác nhau",
+    "last_attempt": "Lần Làm Bài Gần Nhất",
+    "no_quizzes": "Không Có Dữ Liệu Bài Kiểm Tra",
+    "no_quizzes_description": "Không tìm thấy lượt làm bài nào cho bộ câu hỏi này. Học viên chưa bắt đầu làm bài kiểm tra."
+  },
+  "home-hero": {
+    "welcome": "Xin chào, {username}!",
+    "badge": "Trải nghiệm học tập nâng cao với AI",
+    "title": "Khám phá các công cụ hiện đại, bài học sinh động và cộng tác dễ dàng",
+    "cards": {
+      "courses": {
+        "title": "Khóa học",
+        "description": "Nắm vững các kỹ thuật thiết kế prompt từ cơ bản đến nâng cao thông qua bài học từng bước và ví dụ thực tiễn."
+      },
+      "quizzes": {
+        "title": "Câu hỏi ôn tập",
+        "description": "Kiểm tra mức độ hiểu biết của bạn với các câu hỏi tương tác giúp củng cố kiến thức và nâng cao kỹ năng thiết kế prompt."
+      },
+      "challenges": {
+        "title": "Thử thách",
+        "description": "Tham gia các thử thách sáng tạo để vượt qua giới hạn và khám phá các giải pháp prompt đột phá cùng AI."
+      },
+      "ai-chat": {
+        "title": "Trò chuyện với AI",
+        "description": "Luyện tập kỹ năng thiết kế prompt qua các cuộc đối thoại thời gian thực với AI, nhận phản hồi ngay lập tức và cải thiện hiệu quả."
+      }
+    },
+    "get-certificate": "Nhận chứng chỉ của bạn"
+  },
   "score-calculator": {
     "test_formula": "(Số Bài Đạt / Tổng Số Bài Kiểm Tra) × 10 × Trọng Số",
     "criteria_formula": "(Tổng Điểm Tiêu Chí / (Tổng Số Tiêu Chí × 10)) × 10 × Trọng Số",
@@ -276,6 +319,7 @@
     "events": "Sự kiện"
   },
   "common": {
+    "statistics": "Thống kê",
     "allow_manage_all_challenges": "Cho phép quản lý tất cả các thử thách",
     "name_placeholder": "Nhập tên",
     "name": "Tên",
@@ -570,7 +614,8 @@
     "example_content": "Nội dung mẫu",
     "whats_the_title": "Tiêu đề là gì?",
     "write_something": "Hãy viết gì đó...",
-    "error_saving_content": "Lỗi khi lưu nội dung của bạn"
+    "error_saving_content": "Lỗi khi lưu nội dung của bạn",
+    "not_completed": "Chưa hoàn thành"
   },
   "contact": {
     "title": "Liên hệ với chúng tôi",
@@ -596,6 +641,7 @@
     "name": "Tên",
     "is_public": "Công khai",
     "is_published": "Đã xuất bản",
+    "is_completed": "Đã hoàn thành",
     "modules": "Mô-đun",
     "created_at": "Ngày tạo"
   },
@@ -2870,8 +2916,16 @@
     "bio-max-length": "Bio phải ít hơn {max} từ.",
     "display-name-min-error": "Tên hiển thị phải ít nhất {min} kí tự",
     "display-name-max-error": "Tên hiển thị phải ít hơn {max} kí tự",
+    "full-name-min-error": "Họ và tên phải ít nhất {min} kí tự",
+    "full-name-max-error": "Họ và tên phải ít hơn {max} kí tự",
     "email-invalid": "Email không hợp lệ",
-    "view-full-settings": "Xem cài đặt đầy đủ"
+    "view-full-settings": "Xem cài đặt đầy đủ",
+    "full-name": "Họ và tên",
+    "full-name-description": "Tên đầy đủ của bạn sẽ được sử dụng để hiển thị trên chứng chỉ",
+    "profile-updated": "Cập nhật hồ sơ",
+    "full-name-updated": "Họ và tên của bạn đã được cập nhật thành công",
+    "error-occurred": "Đã có lỗi đã xảy ra",
+    "please-try-again": "Vui lòng thử lại sau"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
@@ -3488,6 +3542,11 @@
     "edit": "Chỉnh sửa khóa học",
     "name": "Tên khóa học",
     "edit_description": "Chỉnh sửa khóa học hiện có",
+    "course_description": "Mô tả khóa học",
+    "card_view": "Dạng thẻ",
+    "table_view": "Dạng bảng",
+    "no_courses_found": "Chưa có khóa học nào",
+    "no_description_provided": "Không có mô tả",
     "delete_confirm_title": "Xác nhận xoá \"{name}\""
   },
   "ws-crawlers": {
@@ -4116,6 +4175,14 @@
     "completion_text": "đã hoàn thành khóa học",
     "completion_date": "Ngày chứng nhận",
     "certificate_id": "ID Chứng chỉ",
-    "download_button": "Tải xuống"
+    "download_button": "Tải xuống",
+    "error": "Không thể tải chứng chỉ",
+    "error_description": "Có lỗi xảy ra khi tải chứng chỉ của bạn. Vui lòng thử lại sau.",
+    "page_title": "Chứng chỉ của tôi",
+    "page_description": "Xem và tải tất cả chứng chỉ của mình",
+    "empty_state_title": "Chưa có chứng chỉ",
+    "empty_state_description": "Hoàn thành các khóa học để giành chứng chỉ và thể hiện thành tích của bạn.",
+    "browse_courses": "Xem các khóa học",
+    "certified": "Được chứng nhận"
   }
 }

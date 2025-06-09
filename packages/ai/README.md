@@ -9,17 +9,17 @@ npm install @tuturuuu/ai
 # or
 yarn add @tuturuuu/ai
 # or
-pnpm add @tuturuuu/ai
+bun add @tuturuuu/ai
 ```
 
 ## Development
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Run tests
-pnpm test
+bun run test
 ```
 
 ## License

@@ -3,11 +3,7 @@ import { Structure } from '@/components/layout/structure';
 import NavbarActions from '@/components/navbar-actions';
 import type { NavLink } from '@/components/navigation';
 import { UserNav } from '@/components/user-nav';
-import {
-  MAIN_CONTENT_SIZE_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-  SIDEBAR_SIZE_COOKIE_NAME,
-} from '@/constants/common';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import {
   getPermissions,
   getWorkspace,
@@ -169,7 +165,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     },
     {
       title: t('sidebar.certificates'),
-      href: `/${wsId}/certificate/CERT-2024-03-15-a1b2c3d4-e5f6-4321-9876-123456789abc`, // TODO: Replace with dynamic certificate ID
+      href: `/${wsId}/certificates`,
       icon: <Award className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'Q',
@@ -272,15 +268,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
-  const sidebarSize = (await cookies()).get(SIDEBAR_SIZE_COOKIE_NAME);
-  const mainSize = (await cookies()).get(MAIN_CONTENT_SIZE_COOKIE_NAME);
-
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
-
-  const defaultLayout =
-    sidebarSize !== undefined && mainSize !== undefined
-      ? [JSON.parse(sidebarSize.value), JSON.parse(mainSize.value)]
-      : undefined;
 
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
 
@@ -297,14 +285,12 @@ export default async function Layout({ children, params }: LayoutProps) {
       wsId={wsId}
       user={user}
       workspace={workspace}
-      defaultLayout={defaultLayout}
       defaultCollapsed={defaultCollapsed}
-      navCollapsedSize={4}
       links={navLinks}
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -313,7 +299,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />

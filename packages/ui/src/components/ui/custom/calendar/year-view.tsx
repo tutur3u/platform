@@ -47,7 +47,7 @@ export const YearView: React.FC<{
           <button
             key={`month-${idx}`}
             onClick={() => handleMonthClick(month.getMonth())}
-            className="bg-foreground/5 hover:bg-foreground/10 flex flex-none cursor-pointer justify-center rounded p-4 font-semibold transition duration-300"
+            className="flex flex-none cursor-pointer justify-center rounded bg-foreground/5 p-4 font-semibold transition duration-300 hover:bg-foreground/10"
           >
             {month.toLocaleString(locale, { month: 'long' })}
           </button>

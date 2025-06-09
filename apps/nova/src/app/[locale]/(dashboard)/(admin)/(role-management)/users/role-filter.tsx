@@ -44,7 +44,7 @@ export default function RoleFilter({ currentRole }: RoleFilterProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <Filter className="text-muted-foreground h-4 w-4" />
+      <Filter className="h-4 w-4 text-muted-foreground" />
       <span className="text-sm font-medium">Role:</span>
       <Select
         defaultValue={currentRole || 'all'}

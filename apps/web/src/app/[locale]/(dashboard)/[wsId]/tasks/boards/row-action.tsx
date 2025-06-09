@@ -3,6 +3,16 @@
 import { TaskBoardForm } from './form';
 import { Row } from '@tanstack/react-table';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
@@ -39,6 +49,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
     if (res.ok) {
       router.refresh();
+      setShowDeleteDialog(false);
     } else {
       const data = await res.json();
       toast({
@@ -49,49 +60,74 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
   };
 
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   if (!data.id || !data.ws_id) return null;
 
   return (
-    <div className="flex items-center justify-end gap-2">
-      {data.href && (
-        <Link href={data.href}>
-          <Button>
-            <Eye className="mr-1 h-5 w-5" />
-            {t('common.view')}
-          </Button>
-        </Link>
-      )}
+    <>
+      <div className="flex items-center justify-end gap-2">
+        {data.href && (
+          <Link href={data.href}>
+            <Button>
+              <Eye className="mr-1 h-5 w-5" />
+              {t('common.view')}
+            </Button>
+          </Link>
+        )}
 
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
-          >
-            <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteData}>
-            {t('common.delete')}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+            >
+              <Ellipsis className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[160px]">
+            <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+              {t('common.edit')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setShowDeleteDialog(true)}>
+              {t('common.delete')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      <ModifiableDialogTrigger
-        data={data}
-        open={showEditDialog}
-        title={t('ws-user-group-tags.edit')}
-        editDescription={t('ws-user-group-tags.edit_description')}
-        setOpen={setShowEditDialog}
-        form={<TaskBoardForm wsId={data.ws_id} data={data} />}
-      />
-    </div>
+        <ModifiableDialogTrigger
+          data={data}
+          open={showEditDialog}
+          title={t('ws-user-group-tags.edit')}
+          editDescription={t('ws-user-group-tags.edit_description')}
+          setOpen={setShowEditDialog}
+          form={<TaskBoardForm wsId={data.ws_id} data={data} />}
+        />
+      </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task Board</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{data.name}"? This action cannot
+              be undone and will permanently delete the task board and all its
+              tasks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteData}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

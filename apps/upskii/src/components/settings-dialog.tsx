@@ -1,6 +1,7 @@
 import UserAvatar from './settings-avatar';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
+import FullNameInput from './settings-full-name-input';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
@@ -20,7 +21,7 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
       <DialogHeader>
         <DialogTitle>{t('settings-account.account')}</DialogTitle>
       </DialogHeader>
-      <div className="grid gap-1 md:min-w-max md:max-w-lg">
+      <div className="grid gap-1 md:max-w-lg md:min-w-max">
         <SettingItemTab
           title={t('settings-account.avatar')}
           description={t('settings-account.avatar-description')}
@@ -45,6 +46,25 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
             description={t('settings-account.display-name-description')}
           >
             <DisplayNameInput defaultValue={user?.display_name} />
+          </SettingItemTab>
+        </Suspense>
+        <Separator className="my-4" />
+
+        <Suspense
+          fallback={
+            <SettingItemTab
+              title={t('settings-account.full-name')}
+              description={t('settings-account.full-name-description')}
+            >
+              <FullNameInput disabled />
+            </SettingItemTab>
+          }
+        >
+          <SettingItemTab
+            title={t('settings-account.full-name')}
+            description={t('settings-account.full-name-description')}
+          >
+            <FullNameInput defaultValue={user?.full_name} />
           </SettingItemTab>
         </Suspense>
 

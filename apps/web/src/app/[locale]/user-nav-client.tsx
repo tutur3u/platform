@@ -10,6 +10,7 @@ import MeetTogetherMenuItem from './meet-together-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
+import { SidebarContext } from '@/context/sidebar-context';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -26,12 +27,22 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
+import {
+  Check,
+  Globe,
+  Palette,
+  PanelLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings,
+  SquareMousePointer,
+  User,
+} from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 
 export default function UserNavClient({
   user,
@@ -44,6 +55,7 @@ export default function UserNavClient({
 }) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
+  const sidebar = useContext(SidebarContext);
 
   return (
     <>
@@ -60,7 +72,7 @@ export default function UserNavClient({
               'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
               hideMetadata
                 ? 'items-center justify-center'
-                : 'hover:bg-foreground/5 items-center justify-start'
+                : 'items-center justify-start hover:bg-foreground/5'
             )}
           >
             <Avatar className="relative cursor-pointer overflow-visible font-semibold">
@@ -75,14 +87,14 @@ export default function UserNavClient({
                   <User className="h-5 w-5" />
                 )}
               </AvatarFallback>
-              <UserPresenceIndicator className="-bottom-1 -right-1 h-3 w-3 border-2" />
+              <UserPresenceIndicator className="-right-1 -bottom-1 h-3 w-3 border-2" />
             </Avatar>
             {hideMetadata || (
               <div className="flex w-full flex-col items-start justify-center">
-                <div className="line-clamp-1 break-all text-sm font-semibold">
+                <div className="line-clamp-1 text-sm font-semibold break-all">
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
-                <div className="line-clamp-1 break-all text-xs opacity-70">
+                <div className="line-clamp-1 text-xs break-all opacity-70">
                   {user?.email}
                 </div>
               </div>
@@ -99,11 +111,11 @@ export default function UserNavClient({
             <div className="flex flex-col">
               <Link
                 href="/settings/account"
-                className="line-clamp-1 w-fit break-all text-sm font-medium hover:underline"
+                className="line-clamp-1 w-fit text-sm font-medium break-all hover:underline"
               >
                 {user?.display_name || user?.handle || t('common.unnamed')}
               </Link>
-              <p className="text-muted-foreground line-clamp-1 break-all text-xs">
+              <p className="line-clamp-1 text-xs break-all text-muted-foreground">
                 {user?.email}
               </p>
             </div>
@@ -113,9 +125,51 @@ export default function UserNavClient({
           <MeetTogetherMenuItem />
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
+            {sidebar && (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="hidden md:flex">
+                  <PanelLeft className="h-4 w-4" />
+                  <span className="text-foreground">{t('common.sidebar')}</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent sideOffset={4}>
+                    <DropdownMenuItem
+                      onClick={() => sidebar.handleBehaviorChange('expanded')}
+                      disabled={sidebar.behavior === 'expanded'}
+                    >
+                      <PanelLeftOpen className="h-4 w-4" />
+                      <span>{t('common.expanded')}</span>
+                      {sidebar.behavior === 'expanded' && (
+                        <Check className="ml-auto h-4 w-4" />
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => sidebar.handleBehaviorChange('collapsed')}
+                      disabled={sidebar.behavior === 'collapsed'}
+                    >
+                      <PanelLeftClose className="h-4 w-4" />
+                      <span>{t('common.collapsed')}</span>
+                      {sidebar.behavior === 'collapsed' && (
+                        <Check className="ml-auto h-4 w-4" />
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => sidebar.handleBehaviorChange('hover')}
+                      disabled={sidebar.behavior === 'hover'}
+                    >
+                      <SquareMousePointer className="h-4 w-4" />
+                      <span>{t('common.expand_on_hover')}</span>
+                      {sidebar.behavior === 'hover' && (
+                        <Check className="ml-auto h-4 w-4" />
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            )}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Palette className="text-muted-foreground h-4 w-4" />
+                <Palette className="h-4 w-4 text-muted-foreground" />
                 <span className="text-foreground">{t('common.theme')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
@@ -126,7 +180,7 @@ export default function UserNavClient({
             </DropdownMenuSub>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Globe className="text-muted-foreground h-4 w-4" />
+                <Globe className="h-4 w-4 text-muted-foreground" />
                 <span className="text-foreground">{t('common.language')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>

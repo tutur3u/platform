@@ -26,6 +26,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: 'Failed to set API key' },
       { status: 500 }
@@ -42,6 +43,7 @@ export async function DELETE() {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: 'Failed to delete API key' },
       { status: 500 }

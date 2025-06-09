@@ -1,61 +1,47 @@
 import { CertificateDocument } from './certificate-document';
 import { CertificateData } from './types';
-import { BASE_URL } from '@/constants/common';
+import { getCertificateDetails } from '@/lib/certificate-helper';
 import { renderToStream } from '@react-pdf/renderer';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { getTranslations } from 'next-intl/server';
 import { NextRequest } from 'next/server';
-
-const getCertificateData = async (certID: string) => {
-  const response = await fetch(`${BASE_URL}/api/v1/certificates/${certID}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch certificate data');
-  }
-
-  const userDetails = await getCurrentUser();
-  const certDetails = await response.json();
-
-  if (userDetails) {
-    certDetails.studentName = userDetails.full_name;
-  }
-
-  return certDetails;
-};
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ certId: string }> }
 ) {
   try {
-    const {
-      title,
-      certifyText,
-      completionText,
-      offeredBy,
-      completionDateLabel,
-      certificateIdLabel,
-    } = await req.json();
+    const { locale = 'en', wsId } = await req.json();
     const { certId } = await params;
 
-    if (!certId) {
-      return new Response('Certificate ID is required', { status: 400 });
+    if (!certId || !wsId) {
+      return new Response('Certificate ID and Workspace ID are required', {
+        status: 400,
+      });
     }
 
-    const certData = await getCertificateData(certId);
+    const t = await getTranslations({ locale, namespace: 'certificates' });
+
+    // Get the authenticated user
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.id) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    // Get certificate data directly using our helper
+    const certData = await getCertificateDetails(certId, user.id, wsId);
 
     const data: CertificateData = {
       certData,
-      title,
-      certify_text: certifyText,
-      completion_text: completionText,
-      offered_by: offeredBy,
-      completion_date: completionDateLabel,
-      certificate_id: certificateIdLabel,
+      title: t('title'),
+      certifyText: t('certify_text'),
+      completionText: t('completion_text'),
+      offeredBy: t('offered_by'),
+      completionDateLabel: t('completion_date'),
+      certificateIdLabel: t('certificate_id'),
     };
 
     const stream = await renderToStream(<CertificateDocument data={data} />);

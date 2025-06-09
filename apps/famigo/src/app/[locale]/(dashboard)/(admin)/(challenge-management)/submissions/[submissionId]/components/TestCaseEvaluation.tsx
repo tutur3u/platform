@@ -91,7 +91,7 @@ export default function TestCaseEvaluation({
       <div className="mb-4 flex items-center justify-between">
         <div className="space-y-1">
           <h3 className="font-medium">Test Case Results</h3>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {passedTests} of {totalTests} test cases passed
           </p>
         </div>
@@ -137,7 +137,7 @@ export default function TestCaseEvaluation({
                           {renderConfidenceBadge(confidence)}
                         </div>
                       ) : (
-                        <div className="text-destructive flex items-center">
+                        <div className="flex items-center text-destructive">
                           <XCircle className="mr-1 h-4 w-4" />
                           Failed
                           {renderConfidenceBadge(confidence)}
@@ -146,7 +146,7 @@ export default function TestCaseEvaluation({
                     </TableCell>
                     <TableCell>
                       <div className="max-h-20 overflow-auto">
-                        <pre className="whitespace-pre-wrap text-xs">
+                        <pre className="text-xs whitespace-pre-wrap">
                           {testCaseInput}
                         </pre>
                       </div>
@@ -154,22 +154,22 @@ export default function TestCaseEvaluation({
                     <TableCell>
                       <div className="flex flex-col gap-2">
                         <div>
-                          <span className="text-muted-foreground text-xs font-semibold">
+                          <span className="text-xs font-semibold text-muted-foreground">
                             Expected:
                           </span>
                           <div className="max-h-20 overflow-auto">
-                            <pre className="whitespace-pre-wrap text-xs">
+                            <pre className="text-xs whitespace-pre-wrap">
                               {expectedOutput}
                             </pre>
                           </div>
                         </div>
                         <div>
-                          <span className="text-muted-foreground text-xs font-semibold">
+                          <span className="text-xs font-semibold text-muted-foreground">
                             Actual:
                           </span>
                           <div className="max-h-20 overflow-auto">
                             <pre
-                              className={`whitespace-pre-wrap text-xs ${!matched ? 'text-destructive' : ''}`}
+                              className={`text-xs whitespace-pre-wrap ${!matched ? 'text-destructive' : ''}`}
                             >
                               {actualOutput}
                             </pre>
@@ -180,7 +180,7 @@ export default function TestCaseEvaluation({
                     <TableCell>
                       <button
                         onClick={() => toggleRow(rowKey)}
-                        className="hover:bg-muted rounded p-1 transition-colors"
+                        className="rounded p-1 transition-colors hover:bg-muted"
                         aria-label={
                           isExpanded ? 'Hide details' : 'Show details'
                         }
@@ -198,12 +198,12 @@ export default function TestCaseEvaluation({
                       className={matched ? 'bg-success/5' : 'bg-destructive/5'}
                     >
                       <TableCell colSpan={5} className="px-4 py-3">
-                        <div className="bg-background/80 rounded-md p-3 shadow-sm">
+                        <div className="rounded-md bg-background/80 p-3 shadow-sm">
                           <div className="mb-2 flex items-center gap-2">
-                            <AlertCircle className="text-muted-foreground h-4 w-4" />
+                            <AlertCircle className="h-4 w-4 text-muted-foreground" />
                             <h4 className="font-medium">Reasoning</h4>
                           </div>
-                          <p className="whitespace-pre-wrap text-sm">
+                          <p className="text-sm whitespace-pre-wrap">
                             {reasoning}
                           </p>
                         </div>

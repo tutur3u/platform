@@ -1,5 +1,6 @@
 import WorkspaceInviteSnippet from '@/components/notifications/WorkspaceInviteSnippet';
 import { getWorkspaceInvites, getWorkspaces } from '@/lib/workspace-helper';
+import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
@@ -9,7 +10,13 @@ export default async function WorkspaceInvites() {
   const workspaces = await getWorkspaces();
   const workspaceInvites = await getWorkspaceInvites();
 
-  if (workspaces?.[0]?.id) redirect(`/${workspaces[0].id}`);
+  // Check if user has workspaces and redirect to the default one
+  if (workspaces?.length) {
+    const defaultWorkspace = await getUserDefaultWorkspace();
+    if (defaultWorkspace?.id) {
+      redirect(`/${defaultWorkspace.id}`);
+    }
+  }
 
   return (
     <div className="scrollbar-none grid h-full w-full gap-4 overflow-y-auto">
@@ -18,7 +25,7 @@ export default async function WorkspaceInvites() {
           <WorkspaceInviteSnippet key={ws.id} ws={ws} />
         ))
       ) : (
-        <div className="text-foreground/60 flex h-full items-center justify-center px-4 py-16 text-center text-lg font-semibold md:text-2xl">
+        <div className="flex h-full items-center justify-center px-4 py-16 text-center text-lg font-semibold text-foreground/60 md:text-2xl">
           {t('no-invites')}
         </div>
       )}

@@ -60,12 +60,12 @@ const TechnologySection = () => {
   return (
     <section
       id="technology"
-      className="bg-foreground/5 dark:bg-foreground/[0.02] relative w-full py-24"
+      className="relative w-full bg-foreground/5 py-24 dark:bg-foreground/[0.02]"
     >
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-40 dark:opacity-20">
-        <div className="absolute -left-4 top-1/3 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl"></div>
-        <div className="absolute -right-4 top-2/3 h-48 w-48 rounded-full bg-purple-500/10 blur-3xl"></div>
+        <div className="absolute top-1/3 -left-4 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl"></div>
+        <div className="absolute top-2/3 -right-4 h-48 w-48 rounded-full bg-purple-500/10 blur-3xl"></div>
       </div>
 
       <div className="mx-auto max-w-6xl px-4">
@@ -76,7 +76,7 @@ const TechnologySection = () => {
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">
             Built With Cutting-Edge AI
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-2xl">
+          <p className="mx-auto max-w-2xl text-muted-foreground">
             Powered by Google's Mental Health Companion AI via the Gemini API,
             enabling empathetic, context-aware support for families.
           </p>
@@ -109,7 +109,7 @@ const TechnologySection = () => {
                   </div>
                   <div>
                     <h4 className="font-medium">{item.title}</h4>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {item.description}
                     </p>
                   </div>
@@ -125,25 +125,25 @@ const TechnologySection = () => {
             className="relative"
           >
             {/* AI visualization */}
-            <div className="border-foreground/10 bg-background/30 dark:border-foreground/5 relative rounded-xl border backdrop-blur-sm">
-              <div className="from-primary/10 bg-linear-to-br absolute inset-0 rounded-xl via-transparent to-transparent"></div>
+            <div className="relative rounded-xl border border-foreground/10 bg-background/30 backdrop-blur-sm dark:border-foreground/5">
+              <div className="absolute inset-0 rounded-xl bg-linear-to-br from-primary/10 via-transparent to-transparent"></div>
               <div className="relative p-8">
-                <div className="bg-linear-to-br flex aspect-square items-center justify-center rounded-xl from-blue-500/20 via-purple-500/20 to-pink-500/20">
+                <div className="flex aspect-square items-center justify-center rounded-xl bg-linear-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20">
                   <div className="text-center">
-                    <div className="border-foreground/10 bg-background/40 mx-auto flex h-32 w-32 items-center justify-center rounded-full border backdrop-blur-md">
+                    <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full border border-foreground/10 bg-background/40 backdrop-blur-md">
                       <span className="text-5xl">👨‍👩‍👧‍👦</span>
                     </div>
-                    <div className="border-foreground/10 bg-background/40 mt-4 rounded-lg border p-4 backdrop-blur-md">
+                    <div className="mt-4 rounded-lg border border-foreground/10 bg-background/40 p-4 backdrop-blur-md">
                       <h4 className="text-lg font-bold">Fami AI</h4>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         Emotionally intelligent family companion
                       </p>
                     </div>
 
                     {/* Add animated connection lines */}
-                    <div className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2">
-                      <div className="border-foreground/10 absolute left-1/2 top-1/2 h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed opacity-50"></div>
-                      <div className="border-foreground/10 absolute left-1/2 top-1/2 h-[150%] w-[150%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed opacity-30"></div>
+                    <div className="absolute top-1/2 left-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2">
+                      <div className="absolute top-1/2 left-1/2 h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-foreground/10 opacity-50"></div>
+                      <div className="absolute top-1/2 left-1/2 h-[150%] w-[150%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-foreground/10 opacity-30"></div>
                     </div>
                   </div>
                 </div>

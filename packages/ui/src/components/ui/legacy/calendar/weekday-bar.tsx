@@ -1,5 +1,6 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { AllDayEventBar } from './all-day-event-bar';
+import { MIN_COLUMN_WIDTH } from './config';
 import { DayTitle } from './day-title';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -35,16 +36,16 @@ export const WeekdayBar = ({
       {/* Weekday header bar */}
       <div className="flex">
         {/* Time column header */}
-        <div className="bg-muted/30 flex w-16 items-center justify-center rounded-tl-lg border border-r-0 p-2 font-medium">
-          <Clock className="text-muted-foreground h-4 w-4" />
+        <div className="flex w-16 items-center justify-center rounded-tl-lg border border-r-0 bg-muted/30 p-2 font-medium">
+          <Clock className="h-4 w-4 text-muted-foreground" />
         </div>
 
         {/* Weekday columns */}
         <div
-          className={cn('grid flex-1 rounded-tr-lg border-r border-t')}
+          className={cn('grid flex-1 rounded-tr-lg border-t border-r')}
           style={{
             gridTemplateColumns: `repeat(${visibleDates.length}, minmax(0, 1fr))`,
-            minWidth: `${visibleDates.length * 120}px`, // Match column width
+            minWidth: `${visibleDates.length * MIN_COLUMN_WIDTH}px`, // Match column width
           }}
         >
           {visibleDates.map((weekday) => {
@@ -53,7 +54,7 @@ export const WeekdayBar = ({
             return (
               <div
                 key={`date-${dayjsDate.format('YYYY-MM-DD')}`}
-                className="hover:bg-muted/20 group transition-colors last:border-r-0"
+                className="group transition-colors last:border-r-0 hover:bg-muted/20"
               >
                 <DayTitle
                   view={view}

@@ -92,14 +92,14 @@ export default function GroupMemberForm({
           icon={<User className="mr-2 h-4 w-4" />}
           options={users.map((user) => ({
             label: user.display_name || user.full_name || 'No name',
-            description: user.email,
+            description: user.email || undefined,
             icon: (
               <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">
                 <AvatarImage
                   src={user?.avatar_url ?? undefined}
-                  className="border-foreground/50 overflow-clip rounded-full border"
+                  className="overflow-clip rounded-full border border-foreground/50"
                 />
-                <AvatarFallback className="border-foreground/50 border font-semibold">
+                <AvatarFallback className="border border-foreground/50 font-semibold">
                   {user?.display_name ? (
                     getInitials(user.display_name)
                   ) : (
@@ -133,9 +133,9 @@ export default function GroupMemberForm({
                   <Avatar className="relative h-12 w-12 overflow-visible font-semibold">
                     <AvatarImage
                       src={user?.avatar_url ?? undefined}
-                      className="border-foreground/50 overflow-clip rounded-full border"
+                      className="overflow-clip rounded-full border border-foreground/50"
                     />
-                    <AvatarFallback className="border-foreground/50 border font-semibold">
+                    <AvatarFallback className="border border-foreground/50 font-semibold">
                       {user?.display_name
                         ? getInitials(user?.display_name)
                         : null}
@@ -164,7 +164,7 @@ export default function GroupMemberForm({
           </div>
         </ScrollArea>
       ) : (
-        <div className="text-foreground/50 mt-4 rounded border border-dashed p-4 text-center font-semibold md:p-8">
+        <div className="mt-4 rounded border border-dashed p-4 text-center font-semibold text-foreground/50 md:p-8">
           This group has no members yet.
         </div>
       )}

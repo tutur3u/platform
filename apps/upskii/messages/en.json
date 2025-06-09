@@ -1,4 +1,47 @@
 {
+  "quiz-set-statistics": {
+    "title": "Quiz Set Statistics",
+    "description": "View detailed statistics for your quizzes, including average scores, completion rates, and more.",
+    "average_pass_rate": "Average Pass Rate",
+    "average_score": "Average Score",
+    "total_participants": "Total Participants",
+    "total_quizzes": "Total Quizzes",
+    "active_quizzes": "Active quizzes in set",
+    "total_attempts": "Total Attempts",
+    "accross_all_quizzes": "Across all quizzes",
+    "individual_quiz_performance": "Individual Quiz Performance",
+    "back": "Back",
+    "pass_rate": "Pass Rate",
+    "active_students": "Active Students",
+    "unique_participants": "Unique participants",
+    "last_attempt": "Last Attempt",
+    "no_quizzes": "No Quiz Data Available",
+    "no_quizzes_description": "No quiz attempts found for this set. Students haven't started taking quizzes yet."
+  },
+  "home-hero": {
+    "welcome": "Welcome back, {username}!",
+    "badge": "Your AI-Enhanced Learning Experience",
+    "title": "Explore smart tools, interactive lessons, and seamless collaboration",
+    "cards": {
+      "courses": {
+        "title": "Courses",
+        "description": "Learn the fundamentals and advanced techniques of prompt engineering through step-by-step lessons and practical examples."
+      },
+      "quizzes": {
+        "title": "Quizzes",
+        "description": "Test your understanding with interactive quizzes designed to reinforce key concepts and sharpen your prompt design skills."
+      },
+      "challenges": {
+        "title": "Challenges",
+        "description": "Take on creative challenges that push your limits and inspire innovative prompt solutions using AI."
+      },
+      "ai-chat": {
+        "title": "AI Chat",
+        "description": "Engage in real-time conversations with AI to practice prompt engineering, get instant feedback, and refine your skills."
+      }
+    },
+    "get-certificate": "Get Your Certificate"
+  },
   "score-calculator": {
     "title": "Score Calculator",
     "subtitle": "Calculate your submission score based on test results and criteria evaluation",
@@ -276,6 +319,7 @@
     "events": "Events"
   },
   "common": {
+    "statistics": "Statistics",
     "allow_manage_all_challenges": "Allow Manage All Challenges",
     "name_placeholder": "Enter name",
     "name": "Name",
@@ -570,7 +614,8 @@
     "example_content": "Example content",
     "whats_the_title": "What's the title?",
     "write_something": "Write something",
-    "error_saving_content": "There was an error saving your content"
+    "error_saving_content": "There was an error saving your content",
+    "not_completed": "Not completed"
   },
   "contact": {
     "title": "Contact us",
@@ -596,6 +641,7 @@
     "name": "Name",
     "is_public": "Public",
     "is_published": "Published",
+    "is_completed": "Completed",
     "modules": "Modules",
     "created_at": "Created At"
   },
@@ -2869,8 +2915,16 @@
     "bio-max-length": "Bio must have at most {max} words.",
     "display-name-min-error": "Display name must be at least {min} character",
     "display-name-max-error": "Display name must be less than {max} characters",
+    "full-name-min-error": "Full name must be at least {min} character",
+    "full-name-max-error": "Full name must be less than {max} characters",
     "email-invalid": "Invalid email",
-    "view-full-settings": "View full settings"
+    "view-full-settings": "View full settings",
+    "full-name": "Full name",
+    "full-name-description": "Your full name will be used to display on certificates",
+    "profile-updated": "Profile Updated",
+    "full-name-updated": "Your full name has been successfully updated",
+    "error-occurred": "An error occurred",
+    "please-try-again": "Please try again"
   },
   "settings-appearance": {
     "appearance": "Appearance",
@@ -3488,7 +3542,11 @@
     "edit": "Edit course",
     "name": "Course name",
     "edit_description": "Edit an existing course",
-    "delete_confirm_title": "Deleting \"{name}\""
+    "delete_confirm_title": "Deleting \"{name}\"",
+    "card_view": "Card View",
+    "table_view": "Table View",
+    "no_courses_found": "No courses found",
+    "no_description_provided": "No description provided"
   },
   "ws-crawlers": {
     "plural": "Crawlers",
@@ -4101,8 +4159,22 @@
     "completion_text": "has successfully completed the course",
     "completion_date": "Completion Date",
     "certificate_id": "Certificate ID",
-    "download_button": "Download Certificate",
-    "offered_by": "offered by"
+    "download_button": "Download",
+    "offered_by": "offered by",
+    "page_title": "My Certificates",
+    "page_description": "View and download all your earned certificates",
+    "earned_certificates": "Earned Certificates",
+    "view_certificate": "View Certificate",
+    "download_pdf": "Download PDF",
+    "download_png": "Download PNG",
+    "empty_state_title": "No certificates yet",
+    "empty_state_description": "Complete courses to earn your first certificate and showcase your achievements.",
+    "browse_courses": "Browse Courses",
+    "error_loading": "Error loading certificates. Please try again.",
+    "completed_on": "Completed on",
+    "error": "Unable to Load Certificates",
+    "error_description": "There was an error loading your certificates. Please try again later.",
+    "certified": "Certified"
   },
   "sidebar": {
     "home": "Home",

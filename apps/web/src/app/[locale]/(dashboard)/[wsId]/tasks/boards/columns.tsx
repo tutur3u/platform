@@ -5,6 +5,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
+import Link from 'next/link';
 
 export const projectColumns = (
   t: any,
@@ -56,9 +57,12 @@ export const projectColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-32 break-all">
+      <Link
+        href={`/${row.original.ws_id}/tasks/boards/${row.getValue('id')}`}
+        className="line-clamp-1 max-w-32 font-semibold break-all hover:underline"
+      >
         {row.getValue('name') || '-'}
-      </div>
+      </Link>
     ),
   },
   {
