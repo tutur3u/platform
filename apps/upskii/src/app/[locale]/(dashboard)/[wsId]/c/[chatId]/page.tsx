@@ -26,16 +26,7 @@ export default async function AIPage({ params, searchParams }: Props) {
 
   // Check if user is whitelisted
   const user = await getCurrentUser();
-  if (!user?.email) redirect('/login');
-
-  const adminSb = await createAdminClient();
-  const { data: whitelisted, error } = await adminSb
-    .from('ai_whitelisted_emails')
-    .select('enabled')
-    .eq('email', user?.email)
-    .maybeSingle();
-
-  if (error || !whitelisted?.enabled) redirect('/not-whitelisted');
+  if (!user) redirect('/login');
 
   // Get chat data
   const chat = await getChat(chatId);
@@ -50,6 +41,7 @@ export default async function AIPage({ params, searchParams }: Props) {
         chats={chats}
         count={count}
         locale={locale}
+        user={user}
       />
     </div>
   );

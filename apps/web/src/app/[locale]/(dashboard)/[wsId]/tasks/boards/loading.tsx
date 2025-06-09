@@ -1,17 +1,8 @@
-import { CustomDataTable } from '@/components/custom-data-table';
-import { Separator } from '@tuturuuu/ui/separator';
-
 export default function Loading() {
   return (
-    <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 text-transparent md:flex-row md:items-start">
-        <div>
-          <h1 className="text-2xl font-bold">secrets</h1>
-          <p className="">description</p>
-        </div>
-      </div>
-      <Separator className="my-4" />
-      <CustomDataTable namespace="secret-data-table" />
-    </>
+    <div className="flex h-full w-full flex-col gap-4 p-4">
+      <div className="h-10 w-48 animate-pulse rounded-lg bg-foreground/5" />
+      <div className="h-full w-full animate-pulse rounded-lg bg-foreground/5" />
+    </div>
   );
 }

@@ -3,22 +3,22 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "pnpm supabase start",
-    "stop": "pnpm supabase stop",
-    "sb:status": "pnpm supabase status",
-    "sb:start": "pnpm supabase start",
-    "sb:stop": "pnpm supabase stop",
-    "sb:pull": "pnpm supabase db pull",
-    "sb:push": "pnpm supabase db push",
-    "sb:link": "pnpm supabase link",
-    "sb:reset": "pnpm supabase db reset && pnpm supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts",
-    "sb:diff": "pnpm supabase db diff -f new_migration",
-    "sb:new": "pnpm supabase migration new new_migration",
-    "sb:up": "pnpm supabase migration up",
-    "sb:typegen": "pnpm supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts"
+    "start": "bun supabase start",
+    "stop": "bun supabase stop",
+    "sb:status": "bun supabase status",
+    "sb:start": "bun supabase start",
+    "sb:stop": "bun supabase stop",
+    "sb:pull": "bun supabase db pull",
+    "sb:push": "bun supabase db push",
+    "sb:link": "bun supabase link",
+    "sb:reset": "bun supabase db reset && bun supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts",
+    "sb:diff": "bun supabase db diff -f new_migration",
+    "sb:new": "bun supabase migration new new_migration",
+    "sb:up": "bun supabase migration up",
+    "sb:typegen": "bun supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts"
   },
   "devDependencies": {
-    "supabase": "^2.23.4"
+    "supabase": "^2.24.3"
   },
-  "packageManager": "pnpm@10.11.0"
+  "packageManager": "bun@1.2.15"
 }

@@ -12,7 +12,7 @@ export async function UsersCategoryStatistics({ wsId }: { wsId: string }) {
   if (!enabled || !permissions.includes('manage_users')) return null;
 
   return (
-    <div className="mb-2 mt-4 text-2xl font-semibold">
+    <div className="mt-4 mb-2 text-2xl font-semibold">
       {t('sidebar_tabs.users')}
     </div>
   );

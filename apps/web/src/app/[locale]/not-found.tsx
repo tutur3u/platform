@@ -8,7 +8,7 @@ export default function NotFound() {
   const backToHome = t('back-to-home');
 
   return (
-    <div className="absolute inset-0 mx-4 mb-8 mt-24 flex flex-col items-center justify-center text-center md:mx-32 lg:mx-64">
+    <div className="absolute inset-0 mx-4 mt-24 mb-8 flex flex-col items-center justify-center text-center md:mx-32 lg:mx-64">
       <h1 className="text-9xl font-bold">
         <span className="text-orange-500 dark:text-orange-300">4</span>
         <span className="text-green-500 dark:text-green-300">0</span>

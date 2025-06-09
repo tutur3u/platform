@@ -25,7 +25,7 @@ const RoadmapSection = () => {
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">
             Our Implementation Journey
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-2xl">
+          <p className="mx-auto max-w-2xl text-muted-foreground">
             From research to full deployment, we're committed to creating a
             solution that respects Vietnamese cultural nuances while embracing
             innovative technology.
@@ -72,7 +72,7 @@ const RoadmapSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.5 }}
-              className="border-foreground/10 bg-background/50 text-muted-foreground dark:border-foreground/5 mt-4 rounded-full border px-4 py-1 text-sm"
+              className="mt-4 rounded-full border border-foreground/10 bg-background/50 px-4 py-1 text-sm text-muted-foreground dark:border-foreground/5"
             >
               And beyond...
             </motion.div>
@@ -80,8 +80,8 @@ const RoadmapSection = () => {
         </div>
 
         {/* Decorative light rays */}
-        <div className="via-primary/20 bg-linear-to-b absolute left-0 top-1/3 h-[500px] w-px from-transparent to-transparent"></div>
-        <div className="bg-linear-to-b absolute right-0 top-2/3 h-[300px] w-px from-transparent via-blue-500/20 to-transparent"></div>
+        <div className="absolute top-1/3 left-0 h-[500px] w-px bg-linear-to-b from-transparent via-primary/20 to-transparent"></div>
+        <div className="absolute top-2/3 right-0 h-[300px] w-px bg-linear-to-b from-transparent via-blue-500/20 to-transparent"></div>
       </div>
     </section>
   );

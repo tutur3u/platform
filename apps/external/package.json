@@ -16,19 +16,20 @@
     "@tuturuuu/typescript-config": "npm:@jsr/tuturuuu__typescript-config@^0.1.0",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "npm:@jsr/tuturuuu__utils@^0.0.1",
-    "next": "^15.3.2",
+    "next": "15.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tailwindcss": "^4.1.7"
+    "tailwindcss": "^4.1.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@types/node": "^22.15.23",
+    "@types/node": "^22.15.30",
     "@types/react": "^19.1.6",
-    "@types/react-dom": "^19.1.5",
-    "eslint": "^9.27.0",
-    "eslint-config-next": "^15.3.2",
-    "postcss": "^8.5.3",
+    "@types/react-dom": "^19.1.6",
+    "eslint": "^9.28.0",
+    "eslint-config-next": "15.3.3",
+    "postcss": "^8.5.4",
     "typescript": "^5.8.3"
-  }
+  },
+  "packageManager": "bun@1.2.15"
 }

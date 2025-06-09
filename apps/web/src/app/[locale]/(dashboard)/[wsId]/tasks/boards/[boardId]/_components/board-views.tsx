@@ -1,100 +1,82 @@
 'use client';
 
 import { KanbanBoard } from '../kanban';
+import { StatusGroupedBoard } from '../status-grouped-board';
 import { BoardHeader } from './board-header';
-import { CalendarView } from './calendar-view';
+import { BoardSummary } from './board-summary';
 import { ListView } from './list-view';
-import { getTasks } from '@/lib/task-helper';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  Task,
+  TaskBoard,
+  TaskList,
+} from '@tuturuuu/types/primitives/TaskBoard';
+import { useState } from 'react';
+
+type ViewType = 'status-grouped' | 'kanban' | 'list';
 
 interface Props {
-  boardId: string;
-  boardName: string;
-  initialView?: 'kanban' | 'list' | 'calendar';
+  board: TaskBoard & { tasks: Task[]; lists: TaskList[] };
 }
 
-export function BoardViews({
-  boardId,
-  boardName,
-  initialView = 'kanban',
-}: Props) {
-  const [viewType, setViewType] = useState<'kanban' | 'list' | 'calendar'>(
-    initialView
-  );
+export function BoardViews({ board }: Props) {
+  const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const queryClient = useQueryClient();
 
-  const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ['tasks', boardId],
-    queryFn: async () => {
-      const supabase = createClient();
-      return getTasks(supabase, boardId);
-    },
-  });
+  const handleUpdate = async () => {
+    // const supabase = createClient(); // Not needed for current implementation
 
-  useEffect(() => {
-    let mounted = true;
-    const supabase = createClient();
+    // Refresh both tasks and lists
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['tasks', board.id] }),
+      queryClient.invalidateQueries({ queryKey: ['task-lists', board.id] }),
+    ]);
+  };
 
-    // Set up real-time subscriptions
-    const tasksSubscription = supabase
-      .channel('tasks-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tasks',
-          filter: `board_id=eq.${boardId}`,
-        },
-        async () => {
-          if (!mounted) return;
-          // Invalidate the tasks query to trigger a refetch
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'task_assignees',
-          filter: `task_id=in.(${tasks.map((t) => t.id).join(',')})`,
-        },
-        async () => {
-          if (!mounted) return;
-          // Invalidate the tasks query to trigger a refetch
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      mounted = false;
-      tasksSubscription.unsubscribe();
-    };
-  }, [boardId, queryClient, tasks]);
+  const renderView = () => {
+    switch (currentView) {
+      case 'status-grouped':
+        return (
+          <StatusGroupedBoard
+            lists={board.lists}
+            tasks={board.tasks}
+            boardId={board.id}
+            onUpdate={handleUpdate}
+            hideTasksMode={true}
+          />
+        );
+      case 'kanban':
+        return (
+          <KanbanBoard
+            boardId={board.id}
+            tasks={board.tasks}
+            isLoading={false}
+          />
+        );
+      case 'list':
+        return <ListView board={board} />;
+      default:
+        return (
+          <StatusGroupedBoard
+            lists={board.lists}
+            tasks={board.tasks}
+            boardId={board.id}
+            onUpdate={handleUpdate}
+            hideTasksMode={true}
+          />
+        );
+    }
+  };
 
   return (
-    <>
+    <div className="flex h-full flex-col">
       <BoardHeader
-        boardId={boardId}
-        boardName={boardName}
-        viewType={viewType}
-        onViewChange={setViewType}
+        board={board}
+        currentView={currentView}
+        onViewChange={setCurrentView}
       />
-      <div className="flex-1">
-        {viewType === 'kanban' && (
-          <KanbanBoard boardId={boardId} tasks={tasks} isLoading={isLoading} />
-        )}
-        {viewType === 'list' && (
-          <ListView boardId={boardId} tasks={tasks} isLoading={isLoading} />
-        )}
-        {viewType === 'calendar' && (
-          <CalendarView boardId={boardId} tasks={tasks} isLoading={isLoading} />
-        )}
-      </div>
-    </>
+      <BoardSummary board={board} />
+      <div className="flex-1 overflow-hidden">{renderView()}</div>
+    </div>
   );
 }

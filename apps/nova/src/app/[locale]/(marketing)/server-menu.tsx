@@ -10,6 +10,5 @@ export default async function ServerMenu() {
   } = await supabase.auth.getUser();
 
   const user = await getCurrentUser(true);
-
   return <Menu sbUser={sbUser} user={user} />;
 }

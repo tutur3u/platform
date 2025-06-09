@@ -36,24 +36,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-      - uses: pnpm/action-setup@v4
+      - uses: oven-sh/setup-bun@v2
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Check Prettier formatting
         id: check-format
-        run: pnpm format:check || echo "format_failed=true" >> $GITHUB_OUTPUT
+        run: bun format:check || echo "format_failed=true" >> $GITHUB_OUTPUT
 
       - name: Apply Prettier fixes
         if: steps.check-format.outputs.format_failed == 'true'
-        run: pnpm format
+        run: bun format
 
       - name: Check for changes
         if: steps.check-format.outputs.format_failed == 'true'
@@ -104,5 +103,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '❌ Prettier format check failed. Please run `pnpm format` locally and commit the changes.'
+              body: '❌ Prettier format check failed. Please run `bun format` locally and commit the changes.'
             })

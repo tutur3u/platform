@@ -40,20 +40,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'pnpm'
+          node-version: 24
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Run tests
         working-directory: packages/ui
-        run: pnpm test
+        run: bun run test
 
   publish-jsr:
     needs: [build]
@@ -66,21 +65,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'pnpm'
+          node-version: 24
           registry-url: https://npm.jsr.io
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Publish package to JSR
         working-directory: packages/ui
-        run: pnpm dlx jsr publish
+        run: bunx jsr publish
 
   publish-gpr:
     needs: [build]
@@ -92,21 +90,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'pnpm'
+          node-version: 24
           registry-url: https://npm.pkg.github.com
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Publish package
         working-directory: packages/ui
-        run: pnpm publish --no-git-checks
+        run: bun publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
@@ -120,20 +117,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'pnpm'
+          node-version: 24
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Publish package
         working-directory: packages/ui
-        run: pnpm publish
+        run: bun publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
