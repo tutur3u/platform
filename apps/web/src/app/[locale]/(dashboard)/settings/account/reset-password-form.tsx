@@ -42,7 +42,11 @@ const formSchema = z
     path: ['confirmPassword'],
   });
 
-export default function ResetPasswordForm({ user }: { user: WorkspaceUser }) {
+export default function ResetPasswordForm({
+  user,
+}: {
+  user: WorkspaceUser | null;
+}) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -60,7 +64,7 @@ export default function ResetPasswordForm({ user }: { user: WorkspaceUser }) {
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    if (!user.email) return;
+    if (!user?.email) return;
 
     setLoading(true);
     try {
@@ -128,9 +132,9 @@ export default function ResetPasswordForm({ user }: { user: WorkspaceUser }) {
                     <FormLabel>{t('login.password')}</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Lock className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                        <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                          className="pl-10 pr-10"
+                          className="pr-10 pl-10"
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Enter new password"
                           {...field}
@@ -139,7 +143,7 @@ export default function ResetPasswordForm({ user }: { user: WorkspaceUser }) {
                         <button
                           tabIndex={-1}
                           type="button"
-                          className="text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2"
+                          className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
                           onClick={() => setShowPassword(!showPassword)}
                         >
                           {showPassword ? (
@@ -163,9 +167,9 @@ export default function ResetPasswordForm({ user }: { user: WorkspaceUser }) {
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Lock className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                        <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                          className="pl-10 pr-10"
+                          className="pr-10 pl-10"
                           type={showConfirmPassword ? 'text' : 'password'}
                           placeholder="Confirm your password"
                           {...field}
@@ -174,7 +178,7 @@ export default function ResetPasswordForm({ user }: { user: WorkspaceUser }) {
                         <button
                           tabIndex={-1}
                           type="button"
-                          className="text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2"
+                          className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
                           onClick={() =>
                             setShowConfirmPassword(!showConfirmPassword)
                           }

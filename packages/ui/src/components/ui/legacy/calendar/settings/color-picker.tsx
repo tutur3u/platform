@@ -124,7 +124,7 @@ export function ColorPicker({
               sizeClasses[size],
               'rounded-full transition-all hover:scale-110',
               isSelected
-                ? 'ring-primary ring-offset-background shadow-md ring-2 ring-offset-2'
+                ? 'shadow-md ring-2 ring-primary ring-offset-2 ring-offset-background'
                 : 'hover:shadow-md'
             )}
             onClick={() => onChange(colorKey as SupportedColor)}

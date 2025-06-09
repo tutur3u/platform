@@ -167,15 +167,15 @@ export default function ChallengeHeader({
   };
 
   const getTimeColor = () => {
-    if (timeLeft.totalSeconds < 300) return 'text-red-500'; // Less than 5 minutes
-    if (timeLeft.totalSeconds < 900) return 'text-amber-500'; // Less than 15 minutes
-    return 'text-emerald-500';
+    if (timeLeft.totalSeconds < 300) return 'text-dynamic-red'; // Less than 5 minutes
+    if (timeLeft.totalSeconds < 900) return 'text-dynamic-amber'; // Less than 15 minutes
+    return 'text-dynamic-green';
   };
 
   const getProgressColor = () => {
-    if (timeLeft.totalSeconds < 300) return 'bg-red-500';
-    if (timeLeft.totalSeconds < 900) return 'bg-amber-500';
-    return 'bg-emerald-500';
+    if (timeLeft.totalSeconds < 300) return 'bg-dynamic-red/20';
+    if (timeLeft.totalSeconds < 900) return 'bg-dynamic-amber/20';
+    return 'bg-dynamic-green/20';
   };
 
   return (
@@ -263,7 +263,7 @@ export default function ChallengeHeader({
         </Badge>
       </div>
 
-      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2">
+      <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <Clock className={cn('h-4 w-4', getTimeColor())} />

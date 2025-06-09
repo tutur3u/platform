@@ -48,6 +48,7 @@ export default async function WorkspaceProjectsPage({
         createTitle={t('ws-task-boards.create')}
         createDescription={t('ws-task-boards.create_description')}
         form={<TaskBoardForm wsId={wsId} />}
+        requireExpansion
       />
       <Separator className="my-4" />
       <CustomDataTable

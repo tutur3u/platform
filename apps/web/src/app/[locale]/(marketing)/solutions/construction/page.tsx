@@ -145,12 +145,12 @@ export default function ConstructionPage() {
         <Badge variant="secondary" className="mb-4">
           Construction Management Solutions
         </Badge>
-        <h1 className="mb-4 text-balance text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
+        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
           <GradientHeadline>
             Transform Your Construction Business
           </GradientHeadline>
         </h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Streamline project management, improve efficiency, and ensure safety
           with our comprehensive construction management platform.
         </p>
@@ -168,7 +168,7 @@ export default function ConstructionPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <HardHat className="text-primary h-12 w-12" />
+            <HardHat className="h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">
               Trusted by Leading Construction Companies
             </h2>
@@ -193,7 +193,7 @@ export default function ConstructionPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Card className="hover:border-primary h-full p-6 transition-colors">
+              <Card className="h-full p-6 transition-colors hover:border-primary">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="text-primary">{feature.icon}</div>
                   <h3 className="text-xl font-semibold">{feature.title}</h3>
@@ -211,7 +211,7 @@ export default function ConstructionPage() {
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
-              <Hammer className="text-primary mb-4 h-8 w-8" />
+              <Hammer className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-2 text-xl font-bold">
                 Enhanced Project Management
               </h3>
@@ -219,11 +219,11 @@ export default function ConstructionPage() {
                 Improve project outcomes with advanced planning tools and
                 real-time progress tracking.
               </p>
-              <div className="bg-background/50 mt-4 grow rounded-lg p-4">
+              <div className="mt-4 grow rounded-lg bg-background/50 p-4">
                 <div className="space-y-2">
-                  <div className="bg-primary/20 h-2 w-3/4 rounded" />
-                  <div className="bg-primary/20 h-2 w-1/2 rounded" />
-                  <div className="bg-primary/20 h-2 w-2/3 rounded" />
+                  <div className="h-2 w-3/4 rounded bg-primary/20" />
+                  <div className="h-2 w-1/2 rounded bg-primary/20" />
+                  <div className="h-2 w-2/3 rounded bg-primary/20" />
                 </div>
               </div>
             </div>
@@ -237,10 +237,10 @@ export default function ConstructionPage() {
               >
                 {benefit.icon}
                 <h3 className="mb-2 font-bold">{benefit.title}</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {benefit.description}
                 </p>
-                <div className="bg-primary/10 mt-4 h-1 w-0 transition-all group-hover:w-full" />
+                <div className="mt-4 h-1 w-0 bg-primary/10 transition-all group-hover:w-full" />
               </motion.div>
             </Card>
           ))}
@@ -252,23 +252,23 @@ export default function ConstructionPage() {
         <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
-            <Users className="text-primary mx-auto mb-4 h-8 w-8" />
+            <Users className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Team Management</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Efficient workforce coordination
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <LineChart className="text-primary mx-auto mb-4 h-8 w-8" />
+            <LineChart className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Project Analytics</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Real-time performance tracking
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <Clock className="text-primary mx-auto mb-4 h-8 w-8" />
+            <Clock className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Timeline Management</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Smart scheduling and planning
             </p>
           </Card>
@@ -280,41 +280,41 @@ export default function ConstructionPage() {
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="p-8">
-              <Star className="text-primary mb-4 h-8 w-8" />
+              <Star className="mb-4 h-8 w-8 text-primary" />
               <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
-              <p className="text-muted-foreground mb-4">
+              <p className="mb-4 text-muted-foreground">
                 "This platform has revolutionized how we manage construction
                 projects. We've seen significant improvements in efficiency,
                 safety, and project delivery times."
               </p>
               <p className="font-semibold">- John Anderson</p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Project Director, Premier Construction Group
               </p>
             </div>
-            <div className="bg-primary/5 flex items-center justify-center p-8">
+            <div className="flex items-center justify-center bg-primary/5 p-8">
               <div className="grid gap-4 text-center">
                 <div>
-                  <div className="text-primary mb-2 text-3xl font-bold">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     35%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Faster Project Delivery
                   </div>
                 </div>
                 <div>
-                  <div className="text-primary mb-2 text-3xl font-bold">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     45%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Cost Reduction
                   </div>
                 </div>
                 <div>
-                  <div className="text-primary mb-2 text-3xl font-bold">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     99%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Safety Compliance
                   </div>
                 </div>
@@ -362,7 +362,7 @@ export default function ConstructionPage() {
           <h2 className="mb-4 text-3xl font-bold">
             Ready to Transform Your Construction Business?
           </h2>
-          <p className="text-muted-foreground mx-auto mb-8 max-w-2xl">
+          <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">
             Join leading construction companies using our platform to improve
             project management and drive growth.
           </p>

@@ -1,30 +1,32 @@
 export interface WorkspaceUser {
   id: string;
   name?: string;
-  full_name?: string;
-  display_name?: string;
+  full_name?: string | null;
+  display_name?: string | null;
   avatar_url?: string | null;
   bio?: string | null;
-  handle?: string;
-  email?: string;
-  new_email?: string;
-  phone?: string;
-  birthday?: string;
-  gender?: string;
-  ethnicity?: string;
-  guardian?: string;
-  national_id?: string;
-  address?: string;
-  warehouse_id?: string;
-  note?: string;
-  ws_id?: string;
+  handle?: string | null;
+  email?: string | null;
+  new_email?: string | null;
+  phone?: string | null;
+  birthday?: string | null;
+  gender?: string | null;
+  ethnicity?: string | null;
+  guardian?: string | null;
+  national_id?: string | null;
+  address?: string | null;
+  warehouse_id?: string | null;
+  note?: string | null;
+  ws_id?: string | null;
+  default_workspace_id?: string | null;
   linked_users?: {
     id: string;
-    display_name: string;
+    display_name: string | null;
   }[];
   href?: string;
   attendance?: WorkspaceUserAttendance[];
-  created_at?: string;
+  created_at?: string | null;
+  deleted?: boolean | null;
 }
 
 export interface WorkspaceUserAttendance {

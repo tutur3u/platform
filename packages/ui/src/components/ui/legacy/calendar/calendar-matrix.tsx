@@ -3,6 +3,7 @@ import { CalendarColumn } from './calendar-column';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { EventCard } from './event-card';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
@@ -37,7 +38,8 @@ export const CalendarBaseMatrix = ({ dates }: { dates: Date[] }) => {
 export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const params = useParams();
   const wsId = params?.wsId as string;
-  const { eventsWithoutAllDays, settings } = useCalendar();
+  const { settings } = useCalendar();
+  const { eventsWithoutAllDays } = useCalendarSync();
   const tz = settings?.timezone?.timezone;
 
   // Get all events

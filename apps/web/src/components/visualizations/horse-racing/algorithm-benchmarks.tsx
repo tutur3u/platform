@@ -101,7 +101,7 @@ export function AlgorithmBenchmarks({
 
           <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-3">
             <div>
-              <div className="text-muted-foreground text-xs">Configuration</div>
+              <div className="text-xs text-muted-foreground">Configuration</div>
               <div className="font-medium">
                 {closestBenchmark.horses} horses / {closestBenchmark.raceSize}{' '}
                 race size
@@ -109,21 +109,21 @@ export function AlgorithmBenchmarks({
             </div>
 
             <div>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-xs text-muted-foreground">
                 Expected Races
               </div>
               <div className="font-medium">{closestBenchmark.races}</div>
             </div>
 
             <div>
-              <div className="text-muted-foreground text-xs">Efficiency</div>
+              <div className="text-xs text-muted-foreground">Efficiency</div>
               <div className="font-medium">
                 {(closestBenchmark.efficiency * 100).toFixed(1)}%
               </div>
             </div>
           </div>
 
-          <div className="text-muted-foreground text-sm">
+          <div className="text-sm text-muted-foreground">
             {isExactMatch ? (
               <>
                 Expected to complete in {closestBenchmark.races} races, which is{' '}
@@ -237,10 +237,10 @@ export function AlgorithmBenchmarks({
                     <TableCell className="text-center font-medium">
                       {benchmark.races}
                     </TableCell>
-                    <TableCell className="text-muted-foreground hidden text-center md:table-cell">
+                    <TableCell className="hidden text-center text-muted-foreground md:table-cell">
                       {benchmark.theoreticalMinimum}
                     </TableCell>
-                    <TableCell className="text-muted-foreground hidden text-center md:table-cell">
+                    <TableCell className="hidden text-center text-muted-foreground md:table-cell">
                       {benchmark.theoreticalMaximum}
                     </TableCell>
                     <TableCell className="text-center">
@@ -292,7 +292,7 @@ export function AlgorithmBenchmarks({
           )}
         </>
       ) : (
-        <div className="text-muted-foreground rounded-md border py-6 text-center">
+        <div className="rounded-md border py-6 text-center text-muted-foreground">
           <p className="mb-2">No benchmark data available yet</p>
           <p className="text-sm">
             Run benchmarks from the main Benchmarks tab to generate data

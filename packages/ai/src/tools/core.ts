@@ -1,0 +1,1 @@
+export { tool } from 'ai';

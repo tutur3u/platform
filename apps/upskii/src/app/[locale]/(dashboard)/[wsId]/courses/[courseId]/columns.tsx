@@ -1,8 +1,8 @@
 'use client';
 
-import { WorkspaceCourseModuleRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import { WorkspaceCourseModuleRowActions } from '@tuturuuu/ui/custom/education/modules/course-module-row-actions';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';
 import moment from 'moment';
@@ -91,6 +91,21 @@ export const getWorkspaceCourseModuleColumns = (
     cell: ({ row }) => (
       <div className="font-semibold">
         {row.getValue('is_published') ? <Check /> : <X />}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'is_completed',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.is_completed`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="font-semibold">
+        {row.getValue('is_completed') ? <Check /> : <X />}
       </div>
     ),
   },

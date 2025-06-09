@@ -48,7 +48,7 @@ export default function BeforeTakeQuizSection({
         </p>
       )}
       <Button
-        className="bg-dynamic-purple/20 border-dynamic-purple hover:bg-dynamic-purple/40 border text-white"
+        className="border border-dynamic-purple bg-dynamic-purple/20 text-white hover:bg-dynamic-purple/40"
         onClick={onClickStart}
       >
         {t('ws-quizzes.take_quiz') || 'Take Quiz'}

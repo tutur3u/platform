@@ -1,7 +1,7 @@
-import DeleteResourceButton from './delete-resource';
-import FileDisplay from './file-display';
-import { StorageObjectForm } from '@/app/[locale]/(dashboard)/[wsId]/drive/form';
 import { createDynamicClient } from '@tuturuuu/supabase/next/server';
+import { DeleteResourceButton } from '@tuturuuu/ui/custom/education/modules/resources/delete-resource';
+import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
+import { StorageObjectForm } from '@tuturuuu/ui/custom/education/modules/resources/file-upload-form';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Paperclip } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -51,7 +51,7 @@ export default async function ModuleResourcesPage({ params }: Props) {
         resources.map((file) => (
           <div
             key={file.name}
-            className="border-foreground/10 flex flex-wrap items-center gap-2 rounded-lg border p-2 md:p-4"
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-foreground/10 p-2 md:p-4"
           >
             <DeleteResourceButton path={`${storagePath}${file.name}`} />
             <div className="font-semibold hover:underline">

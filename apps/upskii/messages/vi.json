@@ -614,7 +614,8 @@
     "example_content": "Nội dung mẫu",
     "whats_the_title": "Tiêu đề là gì?",
     "write_something": "Hãy viết gì đó...",
-    "error_saving_content": "Lỗi khi lưu nội dung của bạn"
+    "error_saving_content": "Lỗi khi lưu nội dung của bạn",
+    "not_completed": "Chưa hoàn thành"
   },
   "contact": {
     "title": "Liên hệ với chúng tôi",
@@ -640,6 +641,7 @@
     "name": "Tên",
     "is_public": "Công khai",
     "is_published": "Đã xuất bản",
+    "is_completed": "Đã hoàn thành",
     "modules": "Mô-đun",
     "created_at": "Ngày tạo"
   },
@@ -2914,8 +2916,16 @@
     "bio-max-length": "Bio phải ít hơn {max} từ.",
     "display-name-min-error": "Tên hiển thị phải ít nhất {min} kí tự",
     "display-name-max-error": "Tên hiển thị phải ít hơn {max} kí tự",
+    "full-name-min-error": "Họ và tên phải ít nhất {min} kí tự",
+    "full-name-max-error": "Họ và tên phải ít hơn {max} kí tự",
     "email-invalid": "Email không hợp lệ",
-    "view-full-settings": "Xem cài đặt đầy đủ"
+    "view-full-settings": "Xem cài đặt đầy đủ",
+    "full-name": "Họ và tên",
+    "full-name-description": "Tên đầy đủ của bạn sẽ được sử dụng để hiển thị trên chứng chỉ",
+    "profile-updated": "Cập nhật hồ sơ",
+    "full-name-updated": "Họ và tên của bạn đã được cập nhật thành công",
+    "error-occurred": "Đã có lỗi đã xảy ra",
+    "please-try-again": "Vui lòng thử lại sau"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
@@ -3532,6 +3542,11 @@
     "edit": "Chỉnh sửa khóa học",
     "name": "Tên khóa học",
     "edit_description": "Chỉnh sửa khóa học hiện có",
+    "course_description": "Mô tả khóa học",
+    "card_view": "Dạng thẻ",
+    "table_view": "Dạng bảng",
+    "no_courses_found": "Chưa có khóa học nào",
+    "no_description_provided": "Không có mô tả",
     "delete_confirm_title": "Xác nhận xoá \"{name}\""
   },
   "ws-crawlers": {
@@ -4160,6 +4175,14 @@
     "completion_text": "đã hoàn thành khóa học",
     "completion_date": "Ngày chứng nhận",
     "certificate_id": "ID Chứng chỉ",
-    "download_button": "Tải xuống"
+    "download_button": "Tải xuống",
+    "error": "Không thể tải chứng chỉ",
+    "error_description": "Có lỗi xảy ra khi tải chứng chỉ của bạn. Vui lòng thử lại sau.",
+    "page_title": "Chứng chỉ của tôi",
+    "page_description": "Xem và tải tất cả chứng chỉ của mình",
+    "empty_state_title": "Chưa có chứng chỉ",
+    "empty_state_description": "Hoàn thành các khóa học để giành chứng chỉ và thể hiện thành tích của bạn.",
+    "browse_courses": "Xem các khóa học",
+    "certified": "Được chứng nhận"
   }
 }

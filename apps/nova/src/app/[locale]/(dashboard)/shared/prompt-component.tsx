@@ -13,7 +13,7 @@ export default function PromptComponent({
   return (
     <Card
       className={cn(
-        'bg-foreground/10 text-foreground flex h-full flex-col overflow-y-auto',
+        'flex h-full flex-col overflow-y-auto bg-foreground/5 text-foreground',
         className
       )}
     >

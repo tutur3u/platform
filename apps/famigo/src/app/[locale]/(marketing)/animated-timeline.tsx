@@ -18,7 +18,7 @@ export default function AnimatedTimeline({ events }: AnimatedTimelineProps) {
   return (
     <div className="relative mt-12">
       {/* Timeline line */}
-      <div className="bg-primary/20 absolute left-1/2 hidden h-full w-0.5 -translate-x-1/2 md:block" />
+      <div className="absolute left-1/2 hidden h-full w-0.5 -translate-x-1/2 bg-primary/20 md:block" />
 
       <div className="space-y-12">
         {events.map((event, index) => (
@@ -37,18 +37,18 @@ export default function AnimatedTimeline({ events }: AnimatedTimelineProps) {
               whileHover={{ scale: 1.02 }}
               className="relative w-full md:w-[calc(50%-2rem)]"
             >
-              <Card className="border-foreground/10 bg-foreground/5 overflow-hidden p-6">
+              <Card className="overflow-hidden border-foreground/10 bg-foreground/5 p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {event.date}
                     </p>
                     <h3 className="mb-2 text-lg font-bold">{event.title}</h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {event.description}
                     </p>
                   </div>
-                  <span className="bg-primary/10 text-primary flex-none rounded-full px-3 py-1 text-xs">
+                  <span className="flex-none rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
                     {event.type}
                   </span>
                 </div>
@@ -61,7 +61,7 @@ export default function AnimatedTimeline({ events }: AnimatedTimelineProps) {
               whileInView={{ scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.2 + 0.1 }}
-              className="bg-foreground relative hidden h-12 w-12 items-center justify-center rounded-full border-4 md:flex"
+              className="relative hidden h-12 w-12 items-center justify-center rounded-full border-4 bg-foreground md:flex"
             >
               <div className="text-background">{event.icon}</div>
             </motion.div>
