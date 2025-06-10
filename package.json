@@ -46,7 +46,8 @@
     "sb:up": "cd apps/db && bun sb:up",
     "sb:typegen": "cd apps/db && bun sb:typegen",
     "ui:add": "bun --filter ui ui:add",
-    "ui:diff": "bun --filter ui ui:diff"
+    "ui:diff": "bun --filter ui ui:diff",
+    "update-all": "(cd apps && for dir in */; do echo \"Updating apps/$dir...\" && cd \"$dir\" && bun update && cd ..; done) && (cd packages && for dir in */; do echo \"Updating packages/$dir...\" && cd \"$dir\" && bun update && cd ..; done)"
   },
   "dependencies": {
     "cookies-next": "^6.0.0",
@@ -58,7 +59,7 @@
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "^3.2.2",
+    "@vitest/coverage-v8": "^3.2.3",
     "eslint": "^9.28.0",
     "prettier": "^3.5.3",
     "prettier-eslint": "^16.4.2",
@@ -66,7 +67,7 @@
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
-    "vitest": "^3.2.2"
+    "vitest": "^3.2.3"
   },
   "engines": {
     "node": ">=20"
