@@ -1,4 +1,4 @@
-import { DownloadButtonPDF } from './[certificateId]/download-button-pdf';
+import { DownloadButtonPDF } from '@tuturuuu/ui/custom/education/certificates/download-button-pdf';
 import { CertificatePagination } from './certificate-pagination';
 import { getAllCertificatesForUser } from '@/lib/certificate-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';

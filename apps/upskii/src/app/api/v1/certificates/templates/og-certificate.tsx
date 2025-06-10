@@ -1,4 +1,4 @@
-import { CertificateData } from './types';
+import { CertificateData } from '../[certId]/generate/types';
 import { BASE_URL } from '@/constants/common';
 import {
   Document,
@@ -167,7 +167,7 @@ const CertificateFooter = ({ data }: { data: CertificateData }) => (
   </View>
 );
 
-export const CertificateDocument: React.FC<{ data: CertificateData }> = ({
+export const OGCertificateDocument: React.FC<{ data: CertificateData }> = ({
   data,
 }) => (
   <Document>

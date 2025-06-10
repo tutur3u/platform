@@ -56,7 +56,7 @@ export async function getCertificateDetails(
         cert_template,
         workspaces!workspace_courses_ws_id_fkey (
           name
-        ), 
+        )
       ),
       users!course_certificates_user_id_fkey (
         user_private_details (
@@ -71,6 +71,7 @@ export async function getCertificateDetails(
     .single()) as { data: CertificateWithDetails | null; error: any };
 
   if (error) {
+    console.log(error);
     throw new Error('Failed to fetch certificate');
   }
 
@@ -84,6 +85,7 @@ export async function getCertificateDetails(
     courseLecturer: certificate.workspace_courses.workspaces.name,
     completionDate: certificate.completed_date,
     certificateId: certificate.id,
+    certTemplate: certificate.workspace_courses.cert_template,
   };
 }
 

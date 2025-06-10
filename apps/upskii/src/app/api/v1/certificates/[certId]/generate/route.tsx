@@ -1,8 +1,11 @@
-import { CertificateDocument } from './certificate-document';
+import { ElegantCertificateDocument } from '../../templates/elegant-certificate';
+import { ModernCertificateDocument } from '../../templates/modern-certificate';
+import { OGCertificateDocument } from '../../templates/og-certificate';
 import { CertificateData } from './types';
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { renderToStream } from '@react-pdf/renderer';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { Database } from '@tuturuuu/types/supabase';
 import { getTranslations } from 'next-intl/server';
 import { NextRequest } from 'next/server';
 
@@ -44,7 +47,25 @@ export async function POST(
       certificateIdLabel: t('certificate_id'),
     };
 
-    const stream = await renderToStream(<CertificateDocument data={data} />);
+    const certTemplate : Database['public']['Enums']['certificate_templates'] = certData.certTemplate;
+
+    let stream;
+
+    switch (certTemplate) {
+      case 'elegant':
+        stream = await renderToStream(
+          <ElegantCertificateDocument data={data} />
+        );
+        break;
+      case 'modern':
+        stream = await renderToStream(
+          <ModernCertificateDocument data={data} />
+        );
+        break;
+      default:
+        stream = await renderToStream(<OGCertificateDocument data={data} />);
+        break;
+    }
     const chunks: Buffer[] = [];
     for await (const chunk of stream) {
       chunks.push(Buffer.from(chunk));
