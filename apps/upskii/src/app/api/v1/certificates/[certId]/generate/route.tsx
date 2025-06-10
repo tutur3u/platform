@@ -47,7 +47,8 @@ export async function POST(
       certificateIdLabel: t('certificate_id'),
     };
 
-    const certTemplate : Database['public']['Enums']['certificate_templates'] = certData.certTemplate;
+    const certTemplate: Database['public']['Enums']['certificate_templates'] =
+      certData.certTemplate;
 
     let stream;
 

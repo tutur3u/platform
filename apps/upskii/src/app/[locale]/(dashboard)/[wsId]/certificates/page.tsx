@@ -1,4 +1,3 @@
-import { DownloadButtonPDF } from '@tuturuuu/ui/custom/education/certificates/download-button-pdf';
 import { CertificatePagination } from './certificate-pagination';
 import { getAllCertificatesForUser } from '@/lib/certificate-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -12,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { DownloadButtonPDF } from '@tuturuuu/ui/custom/education/certificates/download-button-pdf';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Award, Calendar, Eye } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
