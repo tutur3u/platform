@@ -41,6 +41,8 @@
     "blue": "Blue",
     "system": "System",
     "language": "Language",
+    "select-language": "Select Language",
+    "member-since": "Member since {date}",
     "settings": "Settings",
     "sidebar": "Sidebar",
     "expanded": "Expanded",
@@ -341,7 +343,15 @@
   "onboarding": {
     "just-a-moment": "Just a moment...",
     "just-a-moment-desc": "Accept a workspace invite to get started.",
-    "no-invites": "You have no pending invites."
+    "no-invites": "You have no pending invites.",
+    "account-info": "Account Information",
+    "account-info-desc": "Your current account details and profile information.",
+    "preferences": "Preferences",
+    "preferences-desc": "Customize your theme, language, and other settings.",
+    "change-theme": "Switch between light and dark themes",
+    "change-language": "Change display language",
+    "sign-out": "Sign Out",
+    "sign-out-desc": "Log out of your current session"
   },
   "meet-together": {
     "headline-p1": "Find the best time slot for everyone,",

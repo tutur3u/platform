@@ -42,6 +42,8 @@
     "blue": "Xanh dương",
     "system": "Hệ thống",
     "language": "Ngôn ngữ",
+    "select-language": "Chọn ngôn ngữ",
+    "member-since": "Thành viên từ {date}",
     "settings": "Cài đặt",
     "invite_users": "Mời người dùng",
     "logout": "Đăng xuất",
@@ -339,7 +341,15 @@
   "onboarding": {
     "just-a-moment": "Bước cuối cùng!",
     "just-a-moment-desc": "Chấp nhận lời mời để bắt đầu trải nghiệm",
-    "no-invites": "Bạn không có lời mời nào."
+    "no-invites": "Bạn không có lời mời nào.",
+    "account-info": "Thông tin tài khoản",
+    "account-info-desc": "Chi tiết tài khoản và thông tin hồ sơ hiện tại của bạn.",
+    "preferences": "Tùy chỉnh",
+    "preferences-desc": "Tùy chỉnh giao diện, ngôn ngữ và các cài đặt khác.",
+    "change-theme": "Chuyển đổi giữa giao diện sáng và tối",
+    "change-language": "Thay đổi ngôn ngữ hiển thị",
+    "sign-out": "Đăng xuất",
+    "sign-out-desc": "Đăng xuất khỏi phiên đăng nhập hiện tại"
   },
   "meet-together": {
     "headline-p1": "Tìm khung giờ tốt nhất cho mọi người,",
