@@ -1,14 +1,15 @@
-import { CourseSection } from '../../section';
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
-import FileDisplay from './resources/file-display';
-import { YoutubeEmbed } from './youtube-links/embed';
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import { Accordion } from '@tuturuuu/ui/accordion';
+import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
+import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
+import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
 import {
   BookText,
   Goal,
@@ -18,6 +19,8 @@ import {
   Youtube,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
+import { JSONContent } from '@tuturuuu/ui/tiptap';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -67,17 +70,18 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   }));
 
   return (
-    <div className="grid gap-4">
+    <Accordion type="multiple" className="grid gap-4">
       <CourseSection
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
         rawContent={data.content as any | undefined}
         content={
-          data.content
-            ? // <BlockEditor document={data.content as any} />
-              undefined
-            : undefined
+          data.content ? (
+            <div className="h-full max-h-[500px] overflow-y-auto">
+              <RichTextEditor content={data.content as JSONContent} readOnly />
+            </div>
+          ) : undefined
         }
       />
       <CourseSection
@@ -188,7 +192,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
             : undefined
         }
       />
-    </div>
+    </Accordion>
   );
 }
 

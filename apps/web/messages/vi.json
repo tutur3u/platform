@@ -282,7 +282,11 @@
     "expand_on_hover": "Mở rộng khi di chuột",
     "collapsed": "Thu nhỏ",
     "expanded": "Mở rộng",
-    "sidebar": "Thanh bên"
+    "sidebar": "Thanh bên",
+    "whats_the_title": "Tiêu đề là gì?",
+    "write_something": "Hãy viết gì đó...",
+    "error_saving_content": "Lỗi khi lưu nội dung của bạn",
+    "not_completed": "Chưa hoàn thành"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1985,7 +1989,13 @@
     "create_description": "Tạo một khóa học mới",
     "edit": "Chỉnh sửa khóa học",
     "name": "Tên khóa học",
-    "edit_description": "Chỉnh sửa khóa học hiện có"
+    "edit_description": "Chỉnh sửa khóa học hiện có",
+    "course_description": "Mô tả khóa học",
+    "card_view": "Dạng thẻ",
+    "table_view": "Dạng bảng",
+    "no_courses_found": "Chưa có khóa học nào",
+    "no_description_provided": "Không có mô tả",
+    "delete_confirm_title": "Xác nhận xoá \"{name}\""
   },
   "ws-course-modules": {
     "plural": "Mô-đun khóa học",

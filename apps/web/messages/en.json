@@ -284,7 +284,11 @@
     "waitlist": "Waitlist",
     "sign_in_with_google": "Sign in with Google",
     "sign_in_with_microsoft": "Sign in with Microsoft",
-    "sign_in_with_github": "Sign in with Github"
+    "sign_in_with_github": "Sign in with Github",
+    "whats_the_title": "What's the title?",
+    "write_something": "Write something",
+    "error_saving_content": "There was an error saving your content",
+    "not_completed": "Not completed"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1973,7 +1977,14 @@
     "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
     "edit": "Edit course",
     "name": "Course name",
-    "edit_description": "Edit an existing course"
+    "edit_description": "Edit an existing course",
+    "course_description": "Course description",
+    "card_view": "Card view",
+    "table_view": "Table view",
+    "no_courses_found": "No courses found",
+    "no_courses_found_description": "No courses found in your workspace. Create a new course to get started.",
+    "no_description_provided": "No description provided",
+    "delete_confirm_title": "Deleting \"{name}\""
   },
   "ws-course-modules": {
     "plural": "Course Modules",
