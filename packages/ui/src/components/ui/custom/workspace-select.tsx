@@ -46,7 +46,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 
 const FormSchema = z.object({
@@ -162,22 +162,6 @@ export function WorkspaceSelect({
   };
 
   const workspace = workspaces?.find((ws: Workspace) => ws.id === wsId);
-
-  // Toggle the menu when ⌘K is pressed
-  useEffect(() => {
-    function down(e: KeyboardEvent) {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((open) => !open);
-      }
-    }
-
-    document.addEventListener('keydown', down);
-
-    return () => {
-      document.removeEventListener('keydown', down);
-    };
-  }, []);
 
   if (!wsId) return <div />;
 

@@ -39,9 +39,11 @@ export async function GET(
       200
     );
     const offset = parseInt(url.searchParams.get('offset') || '0');
+    const boardId = url.searchParams.get('boardId');
+    const listId = url.searchParams.get('listId');
 
-    // Fetch tasks from all boards in the workspace
-    const { data, error } = await supabase
+    // Build the query for fetching tasks
+    let query = supabase
       .from('tasks')
       .select(
         `
@@ -67,7 +69,17 @@ export async function GET(
       `
       )
       .eq('task_lists.workspace_boards.ws_id', wsId)
-      .eq('deleted', false)
+      .eq('deleted', false);
+
+    // Apply filters based on query parameters
+    if (listId) {
+      query = query.eq('list_id', listId);
+    } else if (boardId) {
+      query = query.eq('task_lists.board_id', boardId);
+    }
+
+    // Apply ordering and pagination
+    const { data, error } = await query
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
