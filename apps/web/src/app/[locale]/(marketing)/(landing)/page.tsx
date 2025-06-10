@@ -31,6 +31,31 @@ export default function MarketingPage() {
     loadGsap();
   }, []); // Empty dependency array ensures this runs only once on mount
 
+  // Handle hash navigation after page loads
+  useEffect(() => {
+    const handleHashNavigation = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        setTimeout(() => {
+          const element = document.querySelector(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100); // Small delay to ensure page is rendered
+      }
+    };
+
+    // Handle initial hash on load
+    handleHashNavigation();
+
+    // Handle hash changes (e.g., when clicking links)
+    window.addEventListener('hashchange', handleHashNavigation);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashNavigation);
+    };
+  }, []);
+
   return (
     <div className="relative -mt-[53px] flex w-screen flex-col items-center overflow-x-hidden p-4 md:p-8 lg:p-16">
       <FloatingElements />
