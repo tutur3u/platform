@@ -64,20 +64,24 @@ export default async function CertificatePage({ params }: PageProps) {
       certificateIdLabel: t('certificate_id'),
     };
 
-    const certTemplate : Database['public']['Enums']['certificate_templates'] = certDetails.certTemplate;
+    const certTemplate: Database['public']['Enums']['certificate_templates'] =
+      certDetails.certTemplate;
     let pdfBuffer: Buffer;
     switch (certTemplate) {
       case 'elegant':
-        pdfBuffer = await renderToBuffer(<ElegantCertificateDocument data={data} />);
+        pdfBuffer = await renderToBuffer(
+          <ElegantCertificateDocument data={data} />
+        );
         break;
       case 'modern':
-        pdfBuffer = await renderToBuffer(<ModernCertificateDocument data={data} />);
+        pdfBuffer = await renderToBuffer(
+          <ModernCertificateDocument data={data} />
+        );
         break;
       default:
         pdfBuffer = await renderToBuffer(<OGCertificateDocument data={data} />);
         break;
     }
-
 
     // Convert buffer to base64 data URL
     const pdfDataUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
