@@ -14,6 +14,7 @@ import {
   DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
+  MeasuringStrategy,
   PointerSensor,
   closestCenter,
   useSensor,
@@ -265,13 +266,32 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   }
 
   return (
-    <div className="mt-2 h-full overflow-x-hidden">
+    <div className="mt-2 h-full overflow-hidden">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={onDragStart}
         onDragOver={onDragOver}
         onDragEnd={onDragEnd}
+        measuring={{
+          droppable: {
+            strategy: MeasuringStrategy.Always,
+          },
+        }}
+        modifiers={[
+          (args) => {
+            const { transform } = args;
+
+            // Get viewport bounds
+            const viewportWidth = window.innerWidth;
+            const maxX = viewportWidth - 350; // Account for card width
+
+            return {
+              ...transform,
+              x: Math.min(Math.max(transform.x, -50), maxX), // Constrain X position
+            };
+          },
+        ]}
       >
         <BoardContainer>
           <SortableContext
@@ -313,7 +333,14 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
           </SortableContext>
         </BoardContainer>
 
-        <DragOverlay>
+        <DragOverlay
+          wrapperElement="div"
+          style={{
+            width: 'min(350px, 90vw)',
+            maxWidth: '350px',
+            pointerEvents: 'none',
+          }}
+        >
           {activeColumn && (
             <BoardColumn
               column={activeColumn}
@@ -325,13 +352,15 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
             />
           )}
           {activeTask && (
-            <TaskCard
-              task={activeTask}
-              taskList={columns.find((col) => col.id === activeTask.list_id)}
-              boardId={boardId}
-              isOverlay
-              onUpdate={handleTaskCreated}
-            />
+            <div className="w-full max-w-[350px]">
+              <TaskCard
+                task={activeTask}
+                taskList={columns.find((col) => col.id === activeTask.list_id)}
+                boardId={boardId}
+                isOverlay
+                onUpdate={handleTaskCreated}
+              />
+            </div>
           )}
         </DragOverlay>
       </DndContext>

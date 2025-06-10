@@ -196,7 +196,7 @@ export function BoardColumn({
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="scrollbar-none flex h-full w-full gap-4 overflow-x-auto pb-6">
+    <div className="relative scrollbar-none flex h-full w-full gap-4 overflow-x-auto pb-6">
       {children}
     </div>
   );

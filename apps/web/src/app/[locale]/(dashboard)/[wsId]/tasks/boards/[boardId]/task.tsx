@@ -3,6 +3,7 @@ import { TaskActions } from './task-actions';
 import { useDeleteTask, useUpdateTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
   TaskList,
@@ -33,6 +34,7 @@ import {
   Calendar,
   CalendarDays,
   CalendarPlus,
+  CheckCircle2,
   Clock,
   Edit3,
   Flag,
@@ -55,7 +57,7 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface Task extends TaskType {}
 
@@ -84,9 +86,41 @@ export function TaskCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [customDateOpen, setCustomDateOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [availableLists, setAvailableLists] = useState<TaskList[]>([]);
   const datePickerRef = useRef<HTMLButtonElement>(null);
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
+
+  // Fetch available task lists for the board
+  useEffect(() => {
+    const fetchTaskLists = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('task_lists')
+        .select('*')
+        .eq('board_id', boardId)
+        .eq('deleted', false)
+        .order('position')
+        .order('created_at');
+
+      if (!error && data) {
+        setAvailableLists(data as TaskList[]);
+      }
+    };
+
+    fetchTaskLists();
+  }, [boardId]);
+
+  // Find the first list with 'done' or 'closed' status
+  const getTargetCompletionList = () => {
+    const doneList = availableLists.find((list) => list.status === 'done');
+    const closedList = availableLists.find((list) => list.status === 'closed');
+    return doneList || closedList || null;
+  };
+
+  const targetCompletionList = getTargetCompletionList();
+  const canMoveToCompletion =
+    targetCompletionList && targetCompletionList.id !== task.list_id;
 
   const {
     setNodeRef,
@@ -201,6 +235,28 @@ export function TaskCard({
           setIsLoading(false);
           setCustomDateOpen(false);
           onUpdate?.();
+        },
+      }
+    );
+  }
+
+  async function handleMoveToCompletion() {
+    if (!targetCompletionList || !onUpdate) return;
+
+    setIsLoading(true);
+    updateTaskMutation.mutate(
+      {
+        taskId: task.id,
+        updates: {
+          list_id: targetCompletionList.id,
+          archived: true, // Also mark as archived when moving to completion
+        },
+      },
+      {
+        onSettled: () => {
+          setIsLoading(false);
+          setMenuOpen(false);
+          onUpdate();
         },
       }
     );
@@ -556,6 +612,23 @@ export function TaskCard({
                             <Edit3 className="h-4 w-4" />
                             Edit task
                           </DropdownMenuItem>
+
+                          {/* Quick Completion Action */}
+                          {canMoveToCompletion && (
+                            <DropdownMenuItem
+                              onClick={handleMoveToCompletion}
+                              className="cursor-pointer"
+                              disabled={isLoading}
+                            >
+                              <CheckCircle2 className="h-4 w-4 text-dynamic-green/80" />
+                              Mark as{' '}
+                              {targetCompletionList?.status === 'done'
+                                ? 'Done'
+                                : 'Closed'}
+                            </DropdownMenuItem>
+                          )}
+
+                          {canMoveToCompletion && <DropdownMenuSeparator />}
 
                           {/* Priority Actions */}
                           <DropdownMenuItem
