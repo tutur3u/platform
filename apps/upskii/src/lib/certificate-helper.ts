@@ -5,7 +5,7 @@ export type CertificateWithDetails =
   Database['public']['Tables']['course_certificates']['Row'] & {
     workspace_courses: Pick<
       Database['public']['Tables']['workspace_courses']['Row'],
-      'name' | 'ws_id'
+      'name' | 'ws_id' | 'cert_template'
     > & {
       workspaces: Pick<
         Database['public']['Tables']['workspaces']['Row'],
@@ -53,9 +53,10 @@ export async function getCertificateDetails(
       workspace_courses!course_certificates_course_id_fkey (
         name,
         ws_id,
+        cert_template,
         workspaces!workspace_courses_ws_id_fkey (
           name
-        )
+        ), 
       ),
       users!course_certificates_user_id_fkey (
         user_private_details (
