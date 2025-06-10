@@ -222,16 +222,16 @@ export function TaskCard({
   // Dynamic color mappings based on task list color
   const getListColorClasses = (color: SupportedColor) => {
     const colorMap: Record<SupportedColor, string> = {
-      GRAY: 'border-l-dynamic-gray/70 bg-dynamic-gray/5',
-      RED: 'border-l-dynamic-red/70 bg-dynamic-red/5',
-      BLUE: 'border-l-dynamic-blue/70 bg-dynamic-blue/5',
-      GREEN: 'border-l-dynamic-green/70 bg-dynamic-green/5',
-      YELLOW: 'border-l-dynamic-yellow/70 bg-dynamic-yellow/5',
-      ORANGE: 'border-l-dynamic-orange/70 bg-dynamic-orange/5',
-      PURPLE: 'border-l-dynamic-purple/70 bg-dynamic-purple/5',
-      PINK: 'border-l-dynamic-pink/70 bg-dynamic-pink/5',
-      INDIGO: 'border-l-dynamic-indigo/70 bg-dynamic-indigo/5',
-      CYAN: 'border-l-dynamic-cyan/70 bg-dynamic-cyan/5',
+      GRAY: 'border-dynamic-gray/70 bg-dynamic-gray/5',
+      RED: 'border-dynamic-red/70 bg-dynamic-red/5',
+      BLUE: 'border-dynamic-blue/70 bg-dynamic-blue/5',
+      GREEN: 'border-dynamic-green/70 bg-dynamic-green/5',
+      YELLOW: 'border-dynamic-yellow/70 bg-dynamic-yellow/5',
+      ORANGE: 'border-dynamic-orange/70 bg-dynamic-orange/5',
+      PURPLE: 'border-dynamic-purple/70 bg-dynamic-purple/5',
+      PINK: 'border-dynamic-pink/70 bg-dynamic-pink/5',
+      INDIGO: 'border-dynamic-indigo/70 bg-dynamic-indigo/5',
+      CYAN: 'border-dynamic-cyan/70 bg-dynamic-cyan/5',
     };
     return colorMap[color] || colorMap.GRAY;
   };
@@ -240,30 +240,32 @@ export function TaskCard({
     if (!task.priority) return '';
     switch (task.priority) {
       case 1:
-        return 'border-l-dynamic-red/70';
+        return 'border-dynamic-red/70';
       case 2:
-        return 'border-l-dynamic-orange/70';
+        return 'border-dynamic-orange/70';
       case 3:
-        return 'border-l-dynamic-yellow/70';
+        return 'border-dynamic-yellow/70';
       default:
-        return 'border-l-dynamic-blue/70';
+        return 'border-dynamic-blue/70';
     }
   };
 
   const getPriorityIndicator = () => {
     if (!task.priority) return null;
     const colors = {
-      1: 'bg-dynamic-red/80 text-white',
-      2: 'bg-dynamic-orange/80 text-white',
-      3: 'bg-dynamic-yellow/80 text-gray-900',
-      4: 'bg-dynamic-blue/80 text-white',
+      1: 'bg-dynamic-red/10 border-dynamic-red/30 text-dynamic-red',
+      2: 'bg-dynamic-orange/10 border-dynamic-orange/30 text-dynamic-orange',
+      3: 'bg-dynamic-yellow/10 border-dynamic-yellow/30 text-dynamic-yellow',
+      4: 'bg-dynamic-blue/10 border-dynamic-blue/30 text-dynamic-blue',
     };
+
     const labels = {
       1: 'Urgent',
       2: 'High',
       3: 'Medium',
       4: 'Low',
     };
+
     return (
       <Badge
         variant="secondary"
@@ -317,13 +319,13 @@ export function TaskCard({
       {/* Overdue indicator */}
       {isOverdue && !task.archived && (
         <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-l-[20px] border-t-dynamic-red/80 border-l-transparent">
-          <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3 text-white" />
+          <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3" />
         </div>
       )}
 
       <div className="p-4">
         {/* Header */}
-        <div className="mb-4 flex items-start gap-3">
+        <div className="flex items-start gap-1">
           <div
             {...attributes}
             {...listeners}
@@ -386,10 +388,10 @@ export function TaskCard({
               </div>
             ) : (
               <>
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-1">
                   <h3
                     className={cn(
-                      'mb-2 cursor-pointer text-sm leading-tight font-semibold transition-colors',
+                      'mb-2 cursor-pointer text-left text-xs leading-tight font-semibold transition-colors',
                       task.archived
                         ? 'text-muted-foreground line-through'
                         : 'text-foreground group-hover:text-foreground/90 hover:text-primary'
@@ -399,38 +401,7 @@ export function TaskCard({
                     {task.name}
                   </h3>
 
-                  <div className="flex items-center gap-1">
-                    {/* Quick Date Actions - More Accessible */}
-                    {!task.end_date && !isOverlay && (
-                      <div
-                        className={cn(
-                          'flex items-center gap-1 transition-opacity duration-200',
-                          isHovered || menuOpen
-                            ? 'opacity-100'
-                            : 'opacity-0 group-hover:opacity-100'
-                        )}
-                      >
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDueDateChange(0)}
-                          className="h-6 px-2 text-xs hover:bg-dynamic-blue/10 hover:text-dynamic-blue/80"
-                          disabled={isLoading}
-                        >
-                          Today
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDueDateChange(1)}
-                          className="h-6 px-2 text-xs hover:bg-dynamic-green/10 hover:text-dynamic-green/80"
-                          disabled={isLoading}
-                        >
-                          Tomorrow
-                        </Button>
-                      </div>
-                    )}
-
+                  <div className="flex items-center justify-end gap-1">
                     {/* Custom Date Picker - Separate from Dropdown */}
                     {!isOverlay && (
                       <Popover
@@ -441,7 +412,7 @@ export function TaskCard({
                           <Button
                             ref={datePickerRef}
                             variant="ghost"
-                            size="sm"
+                            size="xs"
                             className={cn(
                               'h-7 w-7 shrink-0 p-0 transition-all duration-200',
                               'hover:scale-105 hover:bg-dynamic-purple/10 hover:text-dynamic-purple/80',
@@ -453,7 +424,7 @@ export function TaskCard({
                             )}
                             disabled={isLoading}
                           >
-                            <CalendarPlus className="h-4 w-4" />
+                            <CalendarPlus className="h-3 w-3" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent
@@ -485,7 +456,7 @@ export function TaskCard({
                                 onClick={() => handleDueDateChange(0)}
                                 className="justify-start text-xs"
                               >
-                                <CalendarDays className="mr-2 h-3 w-3" />
+                                <CalendarDays className="h-3 w-3" />
                                 Today
                               </Button>
                               <Button
@@ -494,7 +465,7 @@ export function TaskCard({
                                 onClick={() => handleDueDateChange(1)}
                                 className="justify-start text-xs"
                               >
-                                <CalendarDays className="mr-2 h-3 w-3" />
+                                <CalendarDays className="h-3 w-3" />
                                 Tomorrow
                               </Button>
                               <Button
@@ -503,7 +474,7 @@ export function TaskCard({
                                 onClick={() => handleDueDateChange(7)}
                                 className="justify-start text-xs"
                               >
-                                <CalendarDays className="mr-2 h-3 w-3" />
+                                <CalendarDays className="h-3 w-3" />
                                 Next Week
                               </Button>
                               <Button
@@ -512,7 +483,7 @@ export function TaskCard({
                                 onClick={() => handleDueDateChange(30)}
                                 className="justify-start text-xs"
                               >
-                                <CalendarDays className="mr-2 h-3 w-3" />
+                                <CalendarDays className="h-3 w-3" />
                                 Next Month
                               </Button>
                             </div>
@@ -542,7 +513,7 @@ export function TaskCard({
                                   handleCustomDateChange(undefined)
                                 }
                               >
-                                <X className="mr-2 h-4 w-4" />
+                                <X className="h-4 w-4" />
                                 Remove Due Date
                               </Button>
                             )}
@@ -557,7 +528,7 @@ export function TaskCard({
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="xs"
                             className={cn(
                               'h-7 w-7 shrink-0 p-0 transition-all duration-200',
                               'hover:scale-105 hover:bg-muted/80',
@@ -567,7 +538,7 @@ export function TaskCard({
                               menuOpen && 'bg-muted ring-1 ring-border'
                             )}
                           >
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreHorizontal className="h-3 w-3" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
@@ -582,7 +553,7 @@ export function TaskCard({
                             }}
                             className="cursor-pointer"
                           >
-                            <Edit3 className="mr-2 h-4 w-4" />
+                            <Edit3 className="h-4 w-4" />
                             Edit task
                           </DropdownMenuItem>
 
@@ -594,7 +565,7 @@ export function TaskCard({
                             }}
                             className="cursor-pointer"
                           >
-                            <Flag className="mr-2 h-4 w-4 text-dynamic-red/80" />
+                            <Flag className="h-4 w-4 text-dynamic-red/80" />
                             Urgent Priority
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -604,7 +575,7 @@ export function TaskCard({
                             }}
                             className="cursor-pointer"
                           >
-                            <Flag className="mr-2 h-4 w-4 text-dynamic-orange/80" />
+                            <Flag className="h-4 w-4 text-dynamic-orange/80" />
                             High Priority
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -614,7 +585,7 @@ export function TaskCard({
                             }}
                             className="cursor-pointer"
                           >
-                            <Flag className="mr-2 h-4 w-4 text-dynamic-yellow/80" />
+                            <Flag className="h-4 w-4 text-dynamic-yellow/80" />
                             Medium Priority
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -624,7 +595,7 @@ export function TaskCard({
                             }}
                             className="cursor-pointer"
                           >
-                            <Flag className="mr-2 h-4 w-4 text-dynamic-blue/80" />
+                            <Flag className="h-4 w-4 text-dynamic-blue/80" />
                             Low Priority
                           </DropdownMenuItem>
 
@@ -638,7 +609,7 @@ export function TaskCard({
                                 }}
                                 className="cursor-pointer text-muted-foreground"
                               >
-                                <X className="mr-2 h-4 w-4" />
+                                <X className="h-4 w-4" />
                                 Remove Due Date
                               </DropdownMenuItem>
                             </>
@@ -652,7 +623,7 @@ export function TaskCard({
                             }}
                             className="cursor-pointer text-dynamic-red/80 hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
                           >
-                            <Trash2 className="mr-2 h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                             Delete task
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -663,7 +634,7 @@ export function TaskCard({
 
                 {task.description && (
                   <p
-                    className="line-clamp-2 cursor-pointer text-xs leading-relaxed text-muted-foreground transition-colors hover:text-foreground/80"
+                    className="mb-2 line-clamp-2 cursor-pointer text-xs leading-relaxed text-muted-foreground transition-colors hover:text-foreground/80"
                     onClick={() => setIsEditing(true)}
                   >
                     {task.description}
@@ -675,7 +646,7 @@ export function TaskCard({
         </div>
 
         {/* Metadata */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Priority and Status Tags */}
           {!task.archived && getPriorityIndicator() && (
             <div className="flex flex-wrap items-center gap-2">
@@ -732,7 +703,11 @@ export function TaskCard({
                 className={cn(
                   'h-4 w-4 transition-all duration-200',
                   'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
-                  'hover:scale-110 hover:border-primary/50'
+                  'hover:scale-110 hover:border-primary/50',
+                  getListColorClasses(taskList?.color as SupportedColor),
+                  isOverdue &&
+                    !task.archived &&
+                    'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
                 )}
                 disabled={isLoading}
                 onCheckedChange={handleArchiveToggle}
@@ -780,7 +755,7 @@ export function TaskCard({
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Deleting...
                 </>
               ) : (

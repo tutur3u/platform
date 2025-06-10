@@ -1,4 +1,5 @@
 import { ListActions } from './list-actions';
+import { statusIcons } from './status-section';
 import { Task, TaskCard } from './task';
 import { TaskForm } from './task-form';
 import { useSortable } from '@dnd-kit/sortable';
@@ -35,13 +36,6 @@ const colorClasses: Record<SupportedColor, string> = {
   PINK: 'border-l-dynamic-pink/50 bg-dynamic-pink/5',
   INDIGO: 'border-l-dynamic-indigo/50 bg-dynamic-indigo/5',
   CYAN: 'border-l-dynamic-cyan/50 bg-dynamic-cyan/5',
-};
-
-const statusIcons = {
-  not_started: '⚪',
-  active: '🔵',
-  done: '🟢',
-  closed: '🟣',
 };
 
 export function BoardColumn({
@@ -86,14 +80,14 @@ export function BoardColumn({
 
   const colorClass =
     colorClasses[column.color as SupportedColor] || colorClasses.GRAY;
-  const statusIcon = statusIcons[column.status] || '⚪';
+  const statusIcon = statusIcons[column.status];
 
   return (
     <Card
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group flex h-3/4 w-[350px] flex-col rounded-xl transition-all duration-200',
+        'group flex h-full w-[350px] flex-col rounded-xl transition-all duration-200',
         'touch-none border-l-4 select-none',
         colorClass,
         isDragging &&
@@ -138,7 +132,7 @@ export function BoardColumn({
         />
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="max-h-[32rem] flex-1 space-y-2 overflow-y-auto p-3">
         {tasks.length === 0 ? (
           <div className="flex h-32 items-center justify-center text-muted-foreground">
             <p className="text-sm">No tasks yet</p>
@@ -165,7 +159,7 @@ export function BoardColumn({
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full w-full gap-4 overflow-x-auto pb-6">
+    <div className="scrollbar-none flex h-full w-full gap-4 overflow-x-auto pb-6">
       {children}
     </div>
   );

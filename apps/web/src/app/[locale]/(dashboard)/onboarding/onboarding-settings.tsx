@@ -1,7 +1,6 @@
 'use client';
 
 import { LanguageWrapper } from '../_components/language-wrapper';
-import { LogoutDropdownItem } from '../_components/logout-dropdown-item';
 import { SystemLanguageWrapper } from '../_components/system-language-wrapper';
 import { ThemeDropdownToggle } from '../_components/theme-dropdown-toggle';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -25,6 +24,7 @@ import {
 import { Globe, Settings, User } from '@tuturuuu/ui/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 interface OnboardingSettingsProps {
   user: WorkspaceUser | null;
@@ -35,7 +35,15 @@ export function OnboardingSettings({
   user,
   currentLocale,
 }: OnboardingSettingsProps) {
+  const router = useRouter();
   const t = useTranslations();
+
+  const logout = async () => {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+    });
+    router.refresh();
+  };
 
   return (
     <div className="w-full space-y-6">
@@ -156,16 +164,9 @@ export function OnboardingSettings({
                   {t('onboarding.sign-out-desc')}
                 </div>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    {t('common.logout')}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <LogoutDropdownItem />
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button onClick={logout} variant="destructive" size="sm">
+                {t('common.logout')}
+              </Button>
             </div>
           </div>
         </CardContent>

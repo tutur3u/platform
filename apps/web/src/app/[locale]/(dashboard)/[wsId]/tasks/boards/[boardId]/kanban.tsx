@@ -265,7 +265,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   }
 
   return (
-    <div className="mt-2 h-full">
+    <div className="mt-2 h-full overflow-x-hidden">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
