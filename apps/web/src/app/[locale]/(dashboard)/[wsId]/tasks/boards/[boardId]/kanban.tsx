@@ -27,6 +27,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { type Task as TaskType } from '@tuturuuu/types/primitives/TaskBoard';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
@@ -254,11 +255,40 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <div className="mb-2 text-lg">Loading board...</div>
-          <div className="text-sm text-muted-foreground">
-            Please wait while we load your tasks
+      <div className="flex h-full flex-col">
+        {/* Loading skeleton for search bar */}
+        <Card className="mb-4 border-dynamic-blue/20 bg-dynamic-blue/5">
+          <CardContent className="p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative max-w-md flex-1">
+                <div className="h-9 w-full animate-pulse rounded-md bg-dynamic-blue/10"></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-16 animate-pulse rounded-md bg-dynamic-blue/10"></div>
+                <div className="h-8 w-20 animate-pulse rounded-md bg-dynamic-blue/10"></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Loading skeleton for kanban columns */}
+        <div className="flex-1 overflow-hidden">
+          <div className="flex h-full gap-4 p-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="h-full w-[350px] animate-pulse">
+                <div className="p-4">
+                  <div className="mb-4 h-6 w-32 rounded bg-gray-200"></div>
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((j) => (
+                      <div
+                        key={j}
+                        className="h-24 w-full rounded bg-gray-100"
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       </div>
@@ -266,104 +296,109 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   }
 
   return (
-    <div className="mt-2 h-full overflow-hidden">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={onDragStart}
-        onDragOver={onDragOver}
-        onDragEnd={onDragEnd}
-        measuring={{
-          droppable: {
-            strategy: MeasuringStrategy.Always,
-          },
-        }}
-        modifiers={[
-          (args) => {
-            const { transform } = args;
-
-            // Get viewport bounds
-            const viewportWidth = window.innerWidth;
-            const maxX = viewportWidth - 350; // Account for card width
-
-            return {
-              ...transform,
-              x: Math.min(Math.max(transform.x, -50), maxX), // Constrain X position
-            };
-          },
-        ]}
-      >
-        <BoardContainer>
-          <SortableContext
-            items={columnsId}
-            strategy={horizontalListSortingStrategy}
-          >
-            <div className="flex h-full gap-4">
-              {columns
-                .sort((a, b) => {
-                  // First sort by status priority, then by position within status
-                  const statusOrder = {
-                    not_started: 0,
-                    active: 1,
-                    done: 2,
-                    closed: 3,
-                  };
-                  const statusA =
-                    statusOrder[a.status as keyof typeof statusOrder] ?? 999;
-                  const statusB =
-                    statusOrder[b.status as keyof typeof statusOrder] ?? 999;
-                  if (statusA !== statusB) return statusA - statusB;
-                  return (a.position || 0) - (b.position || 0);
-                })
-                .map((column) => (
-                  <BoardColumn
-                    key={column.id}
-                    column={column}
-                    boardId={boardId}
-                    tasks={tasks.filter((task) => task.list_id === column.id)}
-                    onTaskCreated={handleTaskCreated}
-                    onListUpdated={handleTaskCreated}
-                  />
-                ))}
-              <TaskListForm
-                boardId={boardId}
-                onListCreated={handleTaskCreated}
-              />
-            </div>
-          </SortableContext>
-        </BoardContainer>
-
-        <DragOverlay
-          wrapperElement="div"
-          style={{
-            width: 'min(350px, 90vw)',
-            maxWidth: '350px',
-            pointerEvents: 'none',
+    <div className="flex h-full flex-col">
+      {/* Kanban Board */}
+      <div className="flex-1 overflow-hidden">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={onDragStart}
+          onDragOver={onDragOver}
+          onDragEnd={onDragEnd}
+          measuring={{
+            droppable: {
+              strategy: MeasuringStrategy.Always,
+            },
           }}
+          modifiers={[
+            (args) => {
+              const { transform } = args;
+
+              // Get viewport bounds
+              const viewportWidth = window?.innerWidth ?? 0;
+              const maxX = viewportWidth - 350; // Account for card width
+
+              return {
+                ...transform,
+                x: Math.min(Math.max(transform.x, -50), maxX), // Constrain X position
+              };
+            },
+          ]}
         >
-          {activeColumn && (
-            <BoardColumn
-              column={activeColumn}
-              boardId={boardId}
-              tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
-              isOverlay
-              onTaskCreated={handleTaskCreated}
-              onListUpdated={handleTaskCreated}
-            />
-          )}
-          {activeTask && (
-            <div className="w-full max-w-[350px]">
-              <TaskCard
-                task={activeTask}
-                taskList={columns.find((col) => col.id === activeTask.list_id)}
+          <BoardContainer>
+            <SortableContext
+              items={columnsId}
+              strategy={horizontalListSortingStrategy}
+            >
+              <div className="flex h-full gap-4">
+                {columns
+                  .sort((a, b) => {
+                    // First sort by status priority, then by position within status
+                    const statusOrder = {
+                      not_started: 0,
+                      active: 1,
+                      done: 2,
+                      closed: 3,
+                    };
+                    const statusA =
+                      statusOrder[a.status as keyof typeof statusOrder] ?? 999;
+                    const statusB =
+                      statusOrder[b.status as keyof typeof statusOrder] ?? 999;
+                    if (statusA !== statusB) return statusA - statusB;
+                    return (a.position || 0) - (b.position || 0);
+                  })
+                  .map((column) => (
+                    <BoardColumn
+                      key={column.id}
+                      column={column}
+                      boardId={boardId}
+                      tasks={tasks.filter((task) => task.list_id === column.id)}
+                      onTaskCreated={handleTaskCreated}
+                      onListUpdated={handleTaskCreated}
+                    />
+                  ))}
+                <TaskListForm
+                  boardId={boardId}
+                  onListCreated={handleTaskCreated}
+                />
+              </div>
+            </SortableContext>
+          </BoardContainer>
+
+          <DragOverlay
+            wrapperElement="div"
+            style={{
+              width: 'min(350px, 90vw)',
+              maxWidth: '350px',
+              pointerEvents: 'none',
+            }}
+          >
+            {activeColumn && (
+              <BoardColumn
+                column={activeColumn}
                 boardId={boardId}
+                tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
                 isOverlay
-                onUpdate={handleTaskCreated}
+                onTaskCreated={handleTaskCreated}
+                onListUpdated={handleTaskCreated}
               />
-            </div>
-          )}
-        </DragOverlay>
-      </DndContext>
+            )}
+            {activeTask && (
+              <div className="w-full max-w-[350px]">
+                <TaskCard
+                  task={activeTask}
+                  taskList={columns.find(
+                    (col) => col.id === activeTask.list_id
+                  )}
+                  boardId={boardId}
+                  isOverlay
+                  onUpdate={handleTaskCreated}
+                />
+              </div>
+            )}
+          </DragOverlay>
+        </DndContext>
+      </div>
     </div>
   );
 }

@@ -31,19 +31,23 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import {
   BarChart2,
+  CheckCircle,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
   Clock,
   Edit,
+  ExternalLink,
   Filter,
   History,
   Layers,
+  MapPin,
   MoreHorizontal,
   RefreshCw,
   RotateCcw,
   Search,
+  Tag,
   Trash2,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -74,7 +78,10 @@ interface SessionHistoryProps {
   wsId: string;
   sessions: SessionWithRelations[];
   categories: TimeTrackingCategory[];
-  tasks: Partial<WorkspaceTask>[];
+  tasks: (Partial<WorkspaceTask> & {
+    board_name?: string;
+    list_name?: string;
+  })[];
   onSessionUpdate: () => void;
   readOnly?: boolean;
   // eslint-disable-next-line no-unused-vars
@@ -210,6 +217,10 @@ const StackedSessionItem: FC<{
   // eslint-disable-next-line no-unused-vars
   onDelete: (session: SessionWithRelations) => void;
   actionStates: { [key: string]: boolean };
+  tasks: (Partial<WorkspaceTask> & {
+    board_name?: string;
+    list_name?: string;
+  })[];
 }> = ({
   stackedSession,
   readOnly,
@@ -218,6 +229,7 @@ const StackedSessionItem: FC<{
   onEdit,
   onDelete,
   actionStates,
+  tasks,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const userTimezone = dayjs.tz.guess();
@@ -266,16 +278,25 @@ const StackedSessionItem: FC<{
                 </Badge>
               )}
               {stackedSession.task && (
-                <Badge variant="outline" className="text-xs">
-                  {stackedSession.task.name}
-                </Badge>
+                <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
+                  <CheckCircle className="h-3 w-3 text-dynamic-blue" />
+                  <span className="text-xs font-medium text-dynamic-blue">
+                    {stackedSession.task.name}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-1 h-3 w-3 p-0 text-dynamic-blue/60 hover:text-dynamic-blue"
+                  >
+                    <ExternalLink className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
               )}
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 <span>
                   {stackedSession.isStacked &&
                   stackedSession.sessions.length > 1 ? (
-                    // For stacked sessions, show date range
                     <>
                       {firstStartTime.format('MMM D')}
                       {lastEndTime &&
@@ -293,7 +314,6 @@ const StackedSessionItem: FC<{
                       )}
                     </>
                   ) : (
-                    // For single sessions, show time
                     <>
                       {firstStartTime.format('MMM D')} at{' '}
                       {firstStartTime.format('h:mm A')}
@@ -310,6 +330,26 @@ const StackedSessionItem: FC<{
                 </span>
               </div>
             </div>
+            {stackedSession.task &&
+              (() => {
+                const taskWithDetails = tasks.find(
+                  (t) => t.id === stackedSession.task?.id
+                );
+                return taskWithDetails?.board_name &&
+                  taskWithDetails?.list_name ? (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      <span>{taskWithDetails.board_name}</span>
+                    </div>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      <span>{taskWithDetails.list_name}</span>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
           </div>
 
           <div className="flex items-start gap-3">
@@ -965,7 +1005,7 @@ export function SessionHistory({
     <>
       <Card>
         <CardHeader className="gap-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
               Session History
@@ -977,7 +1017,7 @@ export function SessionHistory({
             </CardTitle>
 
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="relative">
                   <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -1536,6 +1576,7 @@ export function SessionHistory({
                                   onEdit={openEditDialog}
                                   onDelete={setSessionToDelete}
                                   actionStates={actionStates}
+                                  tasks={tasks}
                                 />
                               ))}
                             </div>

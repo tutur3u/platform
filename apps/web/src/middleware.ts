@@ -58,10 +58,13 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     supportedLocales.includes(pathSegments[0] as Locale);
 
   const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
+  const isHashNavigation = req.nextUrl.searchParams.has('hash-nav');
 
   if (
     isOnboardingPath ||
-    ((isRootPath || isLocaleRootPath) && !skipWorkspaceRedirect)
+    ((isRootPath || isLocaleRootPath) &&
+      !skipWorkspaceRedirect &&
+      !isHashNavigation)
   ) {
     try {
       const supabase = await createClient();

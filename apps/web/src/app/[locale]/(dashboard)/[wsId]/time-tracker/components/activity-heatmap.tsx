@@ -137,137 +137,329 @@ export function ActivityHeatmap({
   const totalDuration =
     dailyActivity?.reduce((sum, day) => sum + day.duration, 0) || 0;
 
+  // Split weeks for different layouts
+  // Mobile: 3 rows of ~4 months each (17-18 weeks per row)
+  const mobileFirstRow = weeks.slice(0, 18);
+  const mobileSecondRow = weeks.slice(18, 35);
+  const mobileThirdRow = weeks.slice(35);
+
+  // Desktop: 2 rows of ~6 months each (26-27 weeks per row)
+  const desktopFirstRow = weeks.slice(0, 26);
+  const desktopSecondRow = weeks.slice(26);
+
+  // Helper function to render month labels for a subset of weeks
+  const getMonthLabelsForWeeks = (weeksSubset: typeof weeks) => {
+    const labels: Array<{ label: string; weekIndex: number }> = [];
+    let lastMonth = -1;
+
+    weeksSubset.forEach((week, weekIndex) => {
+      const firstDayOfWeek = week.find((day) => day !== null);
+      if (firstDayOfWeek) {
+        const month = firstDayOfWeek.date.month();
+        const dayOfMonth = firstDayOfWeek.date.date();
+
+        if (month !== lastMonth && dayOfMonth <= 7) {
+          labels.push({
+            label: monthNames[month]!,
+            weekIndex: weekIndex,
+          });
+          lastMonth = month;
+        }
+      }
+    });
+
+    return labels;
+  };
+
+  // Helper function to render a heatmap section
+  const renderHeatmapSection = (
+    weeksSubset: typeof weeks,
+    sectionKey: string,
+    isMobile = false
+  ) => {
+    // Calculate global index offset for proper unique keys
+    let globalOffset = 0;
+    if (sectionKey === 'mobile-second')
+      globalOffset = mobileFirstRow.flat().length;
+    if (sectionKey === 'mobile-third')
+      globalOffset =
+        mobileFirstRow.flat().length + mobileSecondRow.flat().length;
+    if (sectionKey === 'desktop-second')
+      globalOffset = desktopFirstRow.flat().length;
+
+    return (
+      <div className={cn('space-y-1.5', isMobile ? 'space-y-1' : 'space-y-2')}>
+        {/* Month Labels */}
+        <div
+          className="grid text-xs font-medium text-gray-500 dark:text-gray-400"
+          style={{
+            gridTemplateColumns: `repeat(${weeksSubset.length}, minmax(0, 1fr))`,
+            gap: isMobile ? '1.5px' : '2.5px',
+          }}
+        >
+          {getMonthLabelsForWeeks(weeksSubset).map(({ label, weekIndex }) => (
+            <div
+              key={`${sectionKey}-${label}-${weekIndex}`}
+              className="text-center"
+              style={{ gridColumnStart: weekIndex + 1 }}
+            >
+              <span
+                className={cn(
+                  isMobile ? 'text-[10px]' : 'text-xs',
+                  'sm:hidden'
+                )}
+              >
+                {label.slice(0, 1)}
+              </span>
+              <span className="hidden text-xs sm:inline">{label}</span>
+            </div>
+          ))}
+        </div>
+        {/* Grid */}
+        <div
+          className="grid grid-flow-col grid-rows-7"
+          style={{
+            gridTemplateColumns: `repeat(${weeksSubset.length}, minmax(0, 1fr))`,
+            gap: isMobile ? '1.5px' : '2.5px',
+          }}
+        >
+          {weeksSubset.flat().map((day, index) => {
+            const globalIndex = globalOffset + index;
+
+            if (!day) {
+              return (
+                <div
+                  key={globalIndex}
+                  className={cn(
+                    'aspect-square rounded-[2px] bg-gray-100/80 dark:bg-gray-800/60',
+                    isMobile
+                      ? 'min-h-[11px] min-w-[11px]'
+                      : 'min-h-[13px] min-w-[13px] sm:min-h-[15px] sm:min-w-[15px]'
+                  )}
+                />
+              );
+            }
+
+            const intensity = getIntensity(day.activity?.duration || 0);
+            const isToday = day.date.isSame(today, 'day');
+
+            return (
+              <Tooltip key={globalIndex}>
+                <TooltipTrigger asChild>
+                  <button
+                    className={cn(
+                      'aspect-square rounded-[2px] transition-all duration-200 ease-out hover:shadow-sm focus:ring-2 focus:ring-emerald-400/50 focus:ring-offset-1 focus:outline-none',
+                      isMobile
+                        ? 'min-h-[11px] min-w-[11px] hover:scale-[1.15]'
+                        : 'min-h-[13px] min-w-[13px] hover:scale-110 sm:min-h-[15px] sm:min-w-[15px] sm:hover:scale-105',
+                      getColorClass(intensity),
+                      'hover:ring-2 hover:ring-emerald-400/60 hover:ring-offset-1 dark:hover:ring-emerald-500/50 dark:hover:ring-offset-gray-900',
+                      isToday &&
+                        'shadow-md ring-2 ring-blue-500/80 ring-offset-2 dark:ring-blue-400/70 dark:ring-offset-gray-900'
+                    )}
+                    aria-label={`Activity for ${day.date.format('MMMM D, YYYY')}: ${
+                      day.activity
+                        ? formatDuration(day.activity.duration)
+                        : 'No activity'
+                    }`}
+                  />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="pointer-events-none max-w-sm border-0 bg-white/96 p-3 shadow-xl backdrop-blur-md dark:bg-gray-900/96"
+                  sideOffset={8}
+                >
+                  <div className="space-y-2.5">
+                    <div className="font-semibold text-gray-900 dark:text-gray-100">
+                      {day.date.format('dddd, MMMM D, YYYY')}
+                    </div>
+                    {day.activity ? (
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <div
+                              className={cn(
+                                'h-2.5 w-2.5 rounded-full shadow-sm',
+                                intensity === 0
+                                  ? 'bg-gray-400'
+                                  : intensity === 1
+                                    ? 'bg-emerald-300'
+                                    : intensity === 2
+                                      ? 'bg-emerald-400'
+                                      : intensity === 3
+                                        ? 'bg-emerald-500'
+                                        : 'bg-emerald-600'
+                              )}
+                            />
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                              {formatDuration(day.activity.duration)}
+                            </span>
+                          </div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            tracked
+                          </span>
+                        </div>
+                        {day.activity.sessions > 0 && (
+                          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                            <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                            <span>
+                              {day.activity.sessions} session
+                              {day.activity.sessions > 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <div
+                                key={i}
+                                className={cn(
+                                  'h-1.5 w-1.5 rounded-full transition-colors',
+                                  i < intensity
+                                    ? 'bg-emerald-500'
+                                    : 'bg-gray-300 dark:bg-gray-600'
+                                )}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                            Level {intensity}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                        <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                        <span className="text-sm">No activity recorded</span>
+                      </div>
+                    )}
+                    {isToday && (
+                      <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-1.5 dark:bg-blue-900/40">
+                        <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-500 shadow-sm" />
+                        <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                          Today
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-4 rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-gray-900/50">
+    <div className="space-y-4 rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:space-y-5 sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Activity
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
+            Activity Heatmap
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600 sm:text-base dark:text-gray-400">
             {totalDuration > 0
               ? `${formatDuration(totalDuration)} tracked this year`
-              : 'No activity tracked this year'}
+              : 'Start tracking to see your activity pattern'}
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span>Less</span>
+        <div className="flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2 text-xs text-gray-600 shadow-sm sm:gap-3 dark:bg-gray-800/60 dark:text-gray-400">
+          <span className="hidden font-medium sm:inline">Less</span>
           <div className="flex items-center gap-1">
             {[0, 1, 2, 3, 4].map((intensity) => (
               <div
                 key={intensity}
                 className={cn(
-                  'h-2.5 w-2.5 rounded-sm',
+                  'h-2.5 w-2.5 rounded-[2px] transition-transform hover:scale-125 sm:h-3 sm:w-3',
                   getColorClass(intensity)
                 )}
+                title={`Level ${intensity} intensity`}
               />
             ))}
           </div>
-          <span>More</span>
+          <span className="hidden font-medium sm:inline">More</span>
         </div>
       </div>
 
-      {/* Heatmap */}
-      <div className="flex gap-4">
-        <div className="flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400">
-          <span>Mon</span>
-          <span>Wed</span>
-          <span>Fri</span>
-        </div>
-        <div className="w-full">
-          {/* Month Labels */}
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
-            }}
-          >
-            {monthLabels.map(({ label, weekIndex }) => (
-              <div
-                key={`${label}-${weekIndex}`}
-                className="text-xs text-gray-500"
-                style={{ gridColumnStart: weekIndex + 1 }}
-              >
-                {label}
-              </div>
-            ))}
+      {/* Mobile: Three-row layout */}
+      <div className="block lg:hidden">
+        <div className="space-y-6">
+          {/* Day labels for mobile */}
+          <div className="flex items-center gap-3">
+            <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
+              <span className="leading-none">M</span>
+              <span className="leading-none">T</span>
+              <span className="leading-none">W</span>
+              <span className="leading-none">T</span>
+              <span className="leading-none">F</span>
+              <span className="leading-none">S</span>
+              <span className="leading-none">S</span>
+            </div>
+            <div className="flex-1">
+              {renderHeatmapSection(mobileFirstRow, 'mobile-first', true)}
+            </div>
           </div>
-          {/* Grid */}
-          <div
-            className="grid grid-flow-col grid-rows-7 gap-1"
-            style={{
-              gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
-            }}
-          >
-            {weeks.flat().map((day, index) => {
-              if (!day) {
-                return (
-                  <div
-                    key={index}
-                    className="aspect-square rounded-sm bg-gray-50 dark:bg-gray-900"
-                  />
-                );
-              }
 
-              const intensity = getIntensity(day.activity?.duration || 0);
-              const isToday = day.date.isSame(today, 'day');
+          <div className="flex items-center gap-3">
+            <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
+              <span className="leading-none">M</span>
+              <span className="leading-none">T</span>
+              <span className="leading-none">W</span>
+              <span className="leading-none">T</span>
+              <span className="leading-none">F</span>
+              <span className="leading-none">S</span>
+              <span className="leading-none">S</span>
+            </div>
+            <div className="flex-1">
+              {renderHeatmapSection(mobileSecondRow, 'mobile-second', true)}
+            </div>
+          </div>
 
-              return (
-                <Tooltip key={index}>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={cn(
-                        'aspect-square cursor-pointer rounded-sm transition-colors hover:ring-1 hover:ring-gray-400',
-                        getColorClass(intensity),
-                        isToday &&
-                          'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-gray-900'
-                      )}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <div className="space-y-1">
-                      <div className="font-medium">
-                        {day.date.format('dddd, MMMM D, YYYY')}
-                      </div>
-                      {day.activity ? (
-                        <div className="space-y-0.5 text-xs">
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                              {formatDuration(day.activity.duration)}
-                            </span>
-                            <span className="text-muted-foreground">
-                              tracked
-                            </span>
-                          </div>
-                          {day.activity.sessions > 0 && (
-                            <div className="text-muted-foreground">
-                              {day.activity.sessions} session
-                              {day.activity.sessions > 1 ? 's' : ''}
-                            </div>
-                          )}
-                          <div className="text-muted-foreground">
-                            Level {intensity} intensity
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground">
-                          No activity recorded
-                        </div>
-                      )}
-                      {isToday && (
-                        <div className="flex items-center gap-1 text-xs">
-                          <div className="h-2 w-2 rounded-full bg-blue-500" />
-                          <span className="font-medium text-blue-600 dark:text-blue-400">
-                            Today
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
+          {/* Third row for mobile */}
+          <div className="flex items-center gap-3">
+            <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
+              <span className="leading-none">M</span>
+              <span className="leading-none">T</span>
+              <span className="leading-none">W</span>
+              <span className="leading-none">T</span>
+              <span className="leading-none">F</span>
+              <span className="leading-none">S</span>
+              <span className="leading-none">S</span>
+            </div>
+            <div className="flex-1">
+              {renderHeatmapSection(mobileThirdRow, 'mobile-third', true)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop: Two-row layout */}
+      <div className="hidden lg:block">
+        <div className="space-y-6">
+          {/* Row 1: First 6 months */}
+          <div className="flex gap-4">
+            <div className="flex flex-col justify-between text-sm font-semibold text-gray-500 dark:text-gray-400">
+              <span className="leading-none">Mon</span>
+              <span className="leading-none">Wed</span>
+              <span className="leading-none">Fri</span>
+            </div>
+            <div className="flex-1">
+              {renderHeatmapSection(desktopFirstRow, 'desktop-first', false)}
+            </div>
+          </div>
+
+          {/* Row 2: Last 6 months */}
+          <div className="flex gap-4">
+            <div className="flex flex-col justify-between text-sm font-semibold text-gray-500 dark:text-gray-400">
+              <span className="leading-none">Mon</span>
+              <span className="leading-none">Wed</span>
+              <span className="leading-none">Fri</span>
+            </div>
+            <div className="flex-1">
+              {renderHeatmapSection(desktopSecondRow, 'desktop-second', false)}
+            </div>
           </div>
         </div>
       </div>

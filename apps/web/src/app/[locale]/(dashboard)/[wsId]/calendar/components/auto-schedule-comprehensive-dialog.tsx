@@ -22,7 +22,14 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { useRef, useState } from 'react';
+
+// Extend dayjs with timezone and UTC plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface AutoScheduleComprehensiveDialogProps {
   wsId: string;
@@ -38,7 +45,9 @@ export default function AutoScheduleComprehensiveDialog({
   const [isRealtime, setIsRealtime] = useState(true);
   const [gapMinutes, setGapMinutes] = useState(0);
   const queryClient = useQueryClient();
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
 
   const stopRefreshing = () => {
     if (refreshIntervalRef.current) {
@@ -64,13 +73,19 @@ export default function AutoScheduleComprehensiveDialog({
     }
 
     try {
+      // Get user's timezone
+      const userTimezone = dayjs.tz.guess();
+
       const apiUrl = `/api/${wsId}/calendar/auto-schedule?stream=${isRealtime}`;
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ gapMinutes }),
+        body: JSON.stringify({
+          gapMinutes,
+          timezone: userTimezone,
+        }),
       });
 
       if (!response.ok) {
@@ -114,7 +129,7 @@ export default function AutoScheduleComprehensiveDialog({
                   throw new Error(json.message || 'An unknown error occurred');
                 }
               } catch (e) {
-                console.warn('Failed to parse stream chunk:', line);
+                console.warn('Failed to parse stream chunk:', line, e);
               }
             }
           }
