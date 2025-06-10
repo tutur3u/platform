@@ -138,15 +138,52 @@ export function BoardColumn({
             <p className="text-sm">No tasks yet</p>
           </div>
         ) : (
-          tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              taskList={column}
-              boardId={boardId}
-              onUpdate={handleUpdate}
-            />
-          ))
+          // Sort tasks by priority (1 is highest priority)
+          // Tasks without priority (null/undefined) should appear last
+          [...tasks]
+            .sort((a, b) => {
+              // If both have priority, sort by priority (1 comes first)
+              if (a.priority != null && b.priority != null) {
+                const priorityDiff = a.priority - b.priority;
+                // If priorities are the same, sort by due date
+                if (priorityDiff === 0) {
+                  // Tasks with due dates come before tasks without due dates
+                  if (a.end_date && b.end_date) {
+                    return (
+                      new Date(a.end_date).getTime() -
+                      new Date(b.end_date).getTime()
+                    );
+                  }
+                  if (a.end_date && !b.end_date) return -1;
+                  if (!a.end_date && b.end_date) return 1;
+                  return 0;
+                }
+                return priorityDiff;
+              }
+              // Tasks with priority come before tasks without priority
+              if (a.priority != null && b.priority == null) return -1;
+              if (a.priority == null && b.priority != null) return 1;
+              // If both have no priority, sort by due date
+              if (a.end_date && b.end_date) {
+                return (
+                  new Date(a.end_date).getTime() -
+                  new Date(b.end_date).getTime()
+                );
+              }
+              if (a.end_date && !b.end_date) return -1;
+              if (!a.end_date && b.end_date) return 1;
+              // If both have no priority and no due date, maintain original order
+              return 0;
+            })
+            .map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                taskList={column}
+                boardId={boardId}
+                onUpdate={handleUpdate}
+              />
+            ))
         )}
       </div>
 
