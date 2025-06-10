@@ -99,3 +99,131 @@ export async function GET(
     );
   }
 }
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string }> }
+) {
+  try {
+    const { wsId } = await params;
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify workspace access
+    const { data: memberCheck } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { name, description, listId, priority } = body;
+
+    if (!name?.trim()) {
+      return NextResponse.json(
+        { error: 'Task name is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!listId) {
+      return NextResponse.json(
+        { error: 'List ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify that the list belongs to a board in this workspace
+    const { data: listCheck } = await supabase
+      .from('task_lists')
+      .select('id, workspace_boards!inner(ws_id)')
+      .eq('id', listId)
+      .eq('workspace_boards.ws_id', wsId)
+      .single();
+
+    if (!listCheck) {
+      return NextResponse.json(
+        { error: 'List not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // Create the task
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert({
+        name: name.trim(),
+        description: description?.trim() || null,
+        list_id: listId,
+        priority: priority || null,
+        created_at: new Date().toISOString(),
+        deleted: false,
+        completed: false,
+      })
+      .select(
+        `
+        id,
+        name,
+        description,
+        priority,
+        completed,
+        start_date,
+        end_date,
+        created_at,
+        list_id,
+        task_lists (
+          id,
+          name,
+          board_id,
+          workspace_boards (
+            id,
+            name,
+            ws_id
+          )
+        )
+      `
+      )
+      .single();
+
+    if (error) throw error;
+
+    // Transform the data to match the expected format
+    const task = {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      priority: data.priority,
+      completed: data.completed,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      created_at: data.created_at,
+      list_id: data.list_id,
+      board_name: data.task_lists?.workspace_boards?.name,
+      list_name: data.task_lists?.name,
+    };
+
+    return NextResponse.json({ task }, { status: 201 });
+  } catch (error) {
+    console.error('Error creating task:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

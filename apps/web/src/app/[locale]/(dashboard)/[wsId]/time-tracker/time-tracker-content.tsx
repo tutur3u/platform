@@ -71,12 +71,17 @@ export interface TimeTrackingGoal {
   category: TimeTrackingCategory | null;
 }
 
+interface ExtendedWorkspaceTask extends Partial<WorkspaceTask> {
+  board_name?: string;
+  list_name?: string;
+}
+
 export interface TimeTrackerData {
   categories: TimeTrackingCategory[];
   runningSession: SessionWithRelations | null;
   recentSessions: SessionWithRelations[] | null;
   goals: TimeTrackingGoal[] | null;
-  tasks: Partial<WorkspaceTask>[];
+  tasks: ExtendedWorkspaceTask[];
   stats: TimerStats;
 }
 
@@ -111,7 +116,7 @@ export default function TimeTrackerContent({
     return Math.max(0, elapsed); // Ensure non-negative
   });
   const [isRunning, setIsRunning] = useState(!!initialData.runningSession);
-  const [tasks, setTasks] = useState<Partial<WorkspaceTask>[]>(
+  const [tasks, setTasks] = useState<ExtendedWorkspaceTask[]>(
     initialData.tasks || []
   );
 
