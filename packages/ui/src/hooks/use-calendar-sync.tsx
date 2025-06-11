@@ -164,7 +164,7 @@ export const CalendarSyncProvider = ({
     const isCurrentWeek = includesCurrentWeek(dateRange);
     // Use 2 minutes for current week, 5 minutes for other weeks
     const staleTime = 30 * 1000; // 30 seconds
-    const isStale = Date.now() - lastUpdated > staleTime;
+    const isStale = Date.now() - lastUpdated >= staleTime;
 
     if (isCurrentWeek && isStale) {
       console.log('Current week cache is stale, forcing fresh fetch');
@@ -561,13 +561,30 @@ export const CalendarSyncProvider = ({
           console.log('Upsert status: Finished');
         }
 
-        setData(upsertData);
+        // After successful upsert, fetch ALL events for the date range
+        // (not just the newly inserted ones)
+        const { data: allEventsData, error: fetchError } = await supabase
+          .from('workspace_calendar_events')
+          .select('*')
+          .eq('ws_id', wsId)
+          .gte('start_at', startDate.toISOString())
+          .lte('end_at', endDate.toISOString())
+          .order('start_at', { ascending: true });
 
-        // After successful sync, update the cache
-        if (upsertData) {
+        if (fetchError) {
+          console.error('Error fetching events after upsert:', fetchError);
+          setError(fetchError);
+          return;
+        }
+
+        console.log('All events after upsert:', allEventsData);
+        setData(allEventsData);
+
+        // After successful sync, update the cache with ALL events
+        if (allEventsData) {
           const cacheKey = getCacheKey(dates);
           updateCache(cacheKey, {
-            dbEvents: upsertData,
+            dbEvents: allEventsData,
             lastUpdated: Date.now(),
           });
 
