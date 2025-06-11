@@ -1792,7 +1792,8 @@
     "storage-usage": "Storage",
     "team-members-usage": "Team Members",
     "upgrade-plan": "Upgrade Plan",
-    "view-all-plans": "View All Plans"
+    "view-all-plans": "View All Plans",
+    "account-settings": "Account Settings"
   },
   "settings-appearance": {
     "appearance": "Appearance",
@@ -3151,5 +3152,61 @@
     "next_step": "Next step",
     "start_over": "Start over"
   },
-  "benefits:": "Benefits:"
+  "benefits:": "Benefits:",
+  "settings-nav": {
+    "profile": {
+      "name": "Profile & Contact",
+      "description": "Manage your personal information and contact details"
+    },
+    "security": {
+      "name": "Security",
+      "description": "Password, two-factor authentication, and security settings"
+    },
+    "sessions": {
+      "name": "Sessions",
+      "description": "Manage your active sessions and device logins"
+    },
+    "notifications": {
+      "name": "Notifications",
+      "description": "Control how and when you receive notifications"
+    },
+    "billing": {
+      "name": "Billing & Plan",
+      "description": "Subscription, payment methods, and billing history"
+    },
+    "workspaces": {
+      "name": "Workspaces",
+      "description": "Manage your workspace settings and preferences"
+    }
+  },
+  "sessions-card": {
+    "title": "Active Sessions",
+    "loading_description": "Loading your active sessions...",
+    "failed_description": "Failed to load session data. Please try refreshing the page.",
+    "try_again": "Try Again",
+    "overview_title": "Session Overview",
+    "overview_description": "Overview of your account sessions and security status",
+    "total_sessions": "Total Sessions",
+    "active_sessions": "Active Sessions",
+    "current_session_age": "Current Session Age",
+    "manage_description": "Manage devices and browsers that are signed into your account",
+    "sign_out_all": "Sign Out All Other Sessions",
+    "revoking": "Revoking...",
+    "sign_out_all_question": "Sign Out All Other Sessions?",
+    "sign_out_all_confirm_description": "This will sign you out of all other devices and browsers. You'll remain signed in on this device.",
+    "sign_out_all_others": "Sign Out All Others",
+    "no_active_sessions": "No active sessions found",
+    "current_session": "Current Session",
+    "last_active": "Last active",
+    "revoke": "Revoke",
+    "revoke_session_question": "Revoke Session?",
+    "revoke_session_description": "This will sign out the device/browser and it will need to sign in again to access your account.",
+    "revoke_session": "Revoke Session",
+    "time": {
+      "just_now": "Just now",
+      "minutes_ago": "{count}m ago",
+      "hours_ago": "{count}h ago",
+      "days_ago": "{count}d ago"
+    }
+  }
 }

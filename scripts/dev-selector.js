@@ -2,6 +2,9 @@
 
 const { spawn } = require('child_process');
 const readline = require('readline');
+const path = require('path');
+
+let devProcess = null; // Keep a reference to the dev server process
 
 // Colors for terminal output
 const colors = {
@@ -179,14 +182,57 @@ function askForDatabaseReset(defaultValue = false) {
   });
 }
 
+// Helper to run shell commands in a cross-platform way
+function runShellCommand(command, options = {}) {
+  /**
+   * Using `{ shell: true }` delegates execution to the user's default shell
+   * (e.g. bash, zsh, fish on Unix; cmd.exe or PowerShell on Windows).
+   * This avoids the hard dependency on `/bin/sh`, making the script
+   * portable across operating systems.
+   */
+  // `process.platform` returns 'win32' for both 32-bit and 64-bit Windows.
+  // This check is sufficient for all modern Windows versions.
+  const isWindows = process.platform === 'win32';
+  return spawn(command, {
+    stdio: 'inherit',
+    shell: true,
+    cwd: process.cwd(),
+    // On non-Windows, detached creates a new process group that can be killed at once.
+    detached: !isWindows,
+    ...options,
+  });
+}
+
+async function runCommands(commands) {
+  for (const { cmd, cwd, name } of commands) {
+    console.log(colorize(`\n⏳ ${name}...`, 'yellow'));
+    console.log(colorize(`   Running: ${cmd} in ${cwd || './'}`, 'gray'));
+    await new Promise((resolve, reject) => {
+      const proc = runShellCommand(cmd, { cwd });
+      proc.on('close', (code) => {
+        if (code === 0) {
+          console.log(colorize(`✅ ${name} complete.`, 'green'));
+          resolve();
+        } else {
+          const errorMsg = `❌ ${name} failed with exit code ${code}.`;
+          console.error(colorize(errorMsg, 'red'));
+          reject(new Error(errorMsg));
+        }
+      });
+      proc.on('error', (err) => {
+        const errorMsg = `❌ Error during "${name}":`;
+        console.error(colorize(errorMsg, 'red'), err);
+        reject(err);
+      });
+    });
+  }
+}
+
 function startDevelopmentServers(turboCommand) {
   console.log(colorize('🚀 Starting development servers...', 'cyan'));
 
   // Run the turbo command
-  const devProcess = spawn('sh', ['-c', turboCommand], {
-    stdio: 'inherit',
-    cwd: process.cwd(),
-  });
+  devProcess = runShellCommand(turboCommand);
 
   devProcess.on('close', (devCode) => {
     console.log(
@@ -286,82 +332,89 @@ async function runDevelopment() {
     rl.close();
 
     if (shouldRestartDb) {
-      // Set up the database
       const resetText = shouldReset ? ' and resetting' : '';
       console.log(
         colorize(
-          `\n🗄️  Stopping, installing packages${resetText}, and starting database...`,
-          'yellow'
+          `\n🗄️  Setting up database (stop, install,${resetText} start)...`,
+          'cyan'
         )
       );
 
-      const dbCommands = [
-        'cd apps/db',
-        'bun supabase stop',
-        'bun i',
-        'bun supabase start',
-      ];
+      const dbDir = path.join('apps', 'db');
+      const dbSetupCommands = [];
 
-      if (shouldReset) {
-        dbCommands.push('bun sb:reset', 'bun sb:typegen');
+      dbSetupCommands.push({
+        cmd: 'bun i',
+        cwd: '.',
+        name: 'Installing dependencies',
+      });
+
+      // If we are not resetting, we might need to stop it first.
+      // If we are resetting, the reset command handles this.
+      if (!shouldReset) {
+        dbSetupCommands.push({
+          cmd: 'bun supabase stop',
+          cwd: dbDir,
+          name: 'Stopping database',
+        });
       }
 
-      dbCommands.push('cd ../..');
-      const dbCommand = dbCommands.join(' && ');
+      if (shouldReset) {
+        dbSetupCommands.push(
+          // Start is required for reset to work
+          {
+            cmd: 'bun sb:start',
+            cwd: dbDir,
+            name: 'Ensuring DB is running for reset',
+          },
+          { cmd: 'bun sb:reset', cwd: dbDir, name: 'Resetting database' },
+          { cmd: 'bun sb:typegen', cwd: dbDir, name: 'Generating DB types' }
+        );
+      } else {
+        // If not resetting, just start it.
+        dbSetupCommands.push({
+          cmd: 'bun sb:start',
+          cwd: dbDir,
+          name: 'Starting database',
+        });
+      }
 
-      // Run database setup
-      const dbProcess = spawn('sh', ['-c', dbCommand], {
-        stdio: 'inherit',
-        cwd: process.cwd(),
-      });
-
-      dbProcess.on('close', (code) => {
-        if (code === 0) {
-          console.log(
-            colorize(
-              '✅ Database setup complete. Starting development servers...\n',
-              'green'
-            )
-          );
-          startDevelopmentServers(turboCommand);
-        } else {
-          console.error(colorize('❌ Database setup failed', 'red'));
-          process.exit(code);
-        }
-      });
-
-      dbProcess.on('error', (err) => {
-        console.error(colorize('❌ Error setting up database:', 'red'), err);
+      try {
+        await runCommands(dbSetupCommands);
+        console.log(
+          colorize(
+            '\n✅ Database setup complete. Starting development servers...\n',
+            'green'
+          )
+        );
+        startDevelopmentServers(turboCommand);
+      } catch (error) {
+        console.error(colorize('\n❌ Database setup failed. Aborting.', 'red'));
+        console.error(colorize(String(error), 'red'));
         process.exit(1);
-      });
+      }
     } else {
-      // Just install packages and start development
-      console.log(colorize('\n📦 Installing packages...', 'yellow'));
-
-      const installProcess = spawn('bun', ['i'], {
-        stdio: 'inherit',
-        cwd: process.cwd(),
-      });
-
-      installProcess.on('close', (code) => {
-        if (code === 0) {
-          console.log(
-            colorize(
-              '✅ Packages installed. Starting development servers...\n',
-              'green'
-            )
-          );
-          startDevelopmentServers(turboCommand);
-        } else {
-          console.error(colorize('❌ Package installation failed', 'red'));
-          process.exit(code);
-        }
-      });
-
-      installProcess.on('error', (err) => {
-        console.error(colorize('❌ Error installing packages:', 'red'), err);
+      try {
+        await runCommands([
+          {
+            cmd: 'bun i',
+            name: 'Installing dependencies',
+          },
+        ]);
+        console.log(
+          colorize(
+            '\n✅ Packages installed. Starting development servers...\n',
+            'green'
+          )
+        );
+        startDevelopmentServers(turboCommand);
+      } catch (error) {
+        console.error(
+          colorize('\n❌ Package installation failed. Aborting.', 'red')
+        );
+        console.error(colorize(String(error), 'red'));
         process.exit(1);
-      });
+      }
     }
   } catch (error) {
     console.error(colorize('❌ Error:', 'red'), error);
@@ -370,11 +423,36 @@ async function runDevelopment() {
   }
 }
 
-// Handle Ctrl+C gracefully
-process.on('SIGINT', () => {
-  console.log(colorize('\n👋 Goodbye!', 'cyan'));
+function cleanupAndExit() {
+  console.log(colorize('\n👋 Goodbye! Cleaning up...', 'cyan'));
   rl.close();
-  process.exit(0);
-});
+
+  if (devProcess && devProcess.pid) {
+    const isWindows = process.platform === 'win32';
+    if (isWindows) {
+      // On Windows, use taskkill to recursively kill the process tree.
+      // `taskkill` is a standard utility on Windows XP and later.
+      spawn('taskkill', ['/pid', devProcess.pid, '/t', '/f'], {
+        stdio: 'ignore',
+      });
+    } else {
+      // On Unix, kill the entire process group by sending a signal to -pid.
+      // This requires the `detached` option to be set on the child process.
+      try {
+        process.kill(-devProcess.pid, 'SIGINT');
+      } catch (e) {
+        // Fallback for cases where process group kill fails
+        devProcess.kill('SIGINT');
+      }
+    }
+  }
+
+  // Allow a moment for cleanup before exiting
+  setTimeout(() => process.exit(0), 300);
+}
+
+// Handle termination signals gracefully
+process.on('SIGINT', cleanupAndExit); // Ctrl+C
+process.on('SIGTERM', cleanupAndExit); // Kill command
 
 runDevelopment();
