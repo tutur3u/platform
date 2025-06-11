@@ -3539,6 +3539,8 @@
     "create_description": "Create a new course",
     "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
     "course_description": "Course description",
+    "certificate_template": "Certificate Design",
+    "select_certificate_template": "Choose a certificate template",
     "edit": "Edit course",
     "name": "Course name",
     "edit_description": "Edit an existing course",

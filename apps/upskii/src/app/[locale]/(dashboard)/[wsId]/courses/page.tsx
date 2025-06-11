@@ -57,7 +57,7 @@ export default async function WorkspaceCoursesPage({
           description={t('ws-courses.description')}
           createTitle={t('ws-courses.create')}
           createDescription={t('ws-courses.create_description')}
-          form={<CourseForm wsId={wsId} />}
+          form={<CourseForm wsId={wsId} enableCerts={true} />}
         />
         <Separator className="my-4" />
 

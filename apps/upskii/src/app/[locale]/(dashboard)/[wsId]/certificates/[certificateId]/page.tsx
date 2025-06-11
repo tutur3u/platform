@@ -1,4 +1,3 @@
-import { CertificateData } from '@/app/api/v1/certificates/[certId]/generate/types';
 import { ElegantCertificateDocument } from '@/app/api/v1/certificates/templates/elegant-certificate';
 import { ModernCertificateDocument } from '@/app/api/v1/certificates/templates/modern-certificate';
 import { OGCertificateDocument } from '@/app/api/v1/certificates/templates/og-certificate';
@@ -7,20 +6,9 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Database } from '@tuturuuu/types/supabase';
 import { CertificateViewer } from '@tuturuuu/ui/custom/education/certificates/certificate-viewer';
+import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
-
-export type CertificateProps = {
-  certDetails: {
-    courseName: string;
-    studentName: string | null;
-    courseLecturer: string | null;
-    completionDate: string;
-    certificateId: string;
-    certTemplate: string;
-  };
-  wsId: string;
-};
 
 interface PageProps {
   params: Promise<{
@@ -90,8 +78,6 @@ export default async function CertificatePage({ params }: PageProps) {
       <CertificateViewer
         certificateId={certificateId}
         wsId={wsId}
-        locale={locale}
-        showDownloadButton={true}
         pdfDataUrl={pdfDataUrl}
       />
     );

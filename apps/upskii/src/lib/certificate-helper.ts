@@ -20,13 +20,6 @@ export type CertificateWithDetails =
     };
   };
 
-export type CertificateDetails = {
-  courseName: string;
-  studentName: string;
-  courseLecturer: string;
-  completionDate: string;
-  certificateId: string;
-};
 
 export type CertificateListItem = {
   id: string;

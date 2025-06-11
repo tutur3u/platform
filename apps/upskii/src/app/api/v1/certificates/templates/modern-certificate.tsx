@@ -1,4 +1,4 @@
-import type { CertificateData } from '../[certId]/generate/types';
+import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import { BASE_URL } from '@/constants/common';
 import {
   Document,
