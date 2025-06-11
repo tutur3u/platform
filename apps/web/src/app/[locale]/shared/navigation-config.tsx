@@ -38,7 +38,6 @@ export interface NavCategory {
   items: NavItem[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const products: NavItem[] = [
     {
@@ -179,7 +178,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
 
   const company: NavItem[] = [
     {
-      href: '/#pricing',
+      href: '/?hash-nav=1#pricing',
       label: t('common.pricing'),
       description: '',
     },

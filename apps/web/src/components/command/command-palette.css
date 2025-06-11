@@ -1,0 +1,76 @@
+/* Command Palette Animations */
+.command-palette-enter {
+  animation: commandPaletteSlideIn 0.2s ease-out;
+}
+
+.command-palette-exit {
+  animation: commandPaletteSlideOut 0.15s ease-in;
+}
+
+@keyframes commandPaletteSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes commandPaletteSlideOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(-10px);
+  }
+}
+
+/* Page transition animations */
+.command-page-enter {
+  animation: pageSlideIn 0.2s ease-out;
+}
+
+.command-page-exit {
+  animation: pageSlideOut 0.15s ease-in;
+}
+
+@keyframes pageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pageSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+
+/* Loading state animations */
+.command-loading-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

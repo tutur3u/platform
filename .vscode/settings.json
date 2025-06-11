@@ -1,7 +1,6 @@
 {
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit",
-    "source.organizeImports": "always"
+    "source.fixAll.eslint": "explicit"
   },
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -24,7 +23,7 @@
   "i18n-ally.autoDetection": true,
   "i18n-ally.keystyle": "nested",
   "[xml]": {
-    "editor.defaultFormatter": "redhat.vscode-xml"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
