@@ -73,8 +73,10 @@ export function Structure({
         <div className="relative h-screen w-full">
           <aside
             className={cn(
-              'group fixed z-50 flex h-full flex-col overflow-hidden border-r bg-background/70 backdrop-blur-lg transition-all duration-300 ease-in-out md:z-20',
-              isCollapsed ? 'w-16 max-md:w-0' : 'w-72',
+              'group fixed z-50 flex h-full flex-col overflow-hidden border-r backdrop-blur-lg transition-all duration-300 ease-in-out md:z-20',
+              isCollapsed
+                ? 'w-16 bg-background/50 max-md:w-0'
+                : 'w-72 bg-background',
               'max-md:absolute',
               isCollapsed && 'max-md:-translate-x-full'
             )}
@@ -142,7 +144,7 @@ export function Structure({
           <main
             id="main-content"
             className={cn(
-              'relative flex h-full min-h-screen flex-col overflow-y-auto transition-all duration-300 ease-in-out',
+              'relative flex h-full min-h-screen flex-col overflow-x-hidden overflow-y-auto transition-all duration-300 ease-in-out',
               isCollapsed ? 'md:pl-16' : 'md:pl-72'
             )}
           >

@@ -8,6 +8,7 @@ import { StatsOverview } from './components/stats-overview';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
+import { useQuery } from '@tanstack/react-query';
 import type {
   TimeTrackingCategory,
   TimeTrackingSession,
@@ -71,12 +72,17 @@ export interface TimeTrackingGoal {
   category: TimeTrackingCategory | null;
 }
 
+interface ExtendedWorkspaceTask extends Partial<WorkspaceTask> {
+  board_name?: string;
+  list_name?: string;
+}
+
 export interface TimeTrackerData {
   categories: TimeTrackingCategory[];
   runningSession: SessionWithRelations | null;
   recentSessions: SessionWithRelations[] | null;
   goals: TimeTrackingGoal[] | null;
-  tasks: Partial<WorkspaceTask>[];
+  tasks: ExtendedWorkspaceTask[];
   stats: TimerStats;
 }
 
@@ -87,6 +93,23 @@ export default function TimeTrackerContent({
   const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
   const [activeTab, setActiveTab] = useState('timer');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
+  // Use React Query for running session to sync with command palette
+  const { data: runningSessionFromQuery } = useQuery({
+    queryKey: ['running-time-session', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
+      );
+      if (!response.ok) throw new Error('Failed to fetch running session');
+      const data = await response.json();
+      return data.session;
+    },
+    refetchInterval: 30000, // 30 seconds
+    initialData: initialData.runningSession,
+    enabled: !selectedUserId, // Only fetch for current user
+  });
+
   const [currentSession, setCurrentSession] =
     useState<SessionWithRelations | null>(initialData.runningSession);
   const [categories, setCategories] = useState<TimeTrackingCategory[]>(
@@ -100,6 +123,27 @@ export default function TimeTrackerContent({
   );
   const [timerStats, setTimerStats] = useState<TimerStats>(initialData.stats);
 
+  // Sync React Query data with local state
+  useEffect(() => {
+    if (!selectedUserId && runningSessionFromQuery !== undefined) {
+      setCurrentSession(runningSessionFromQuery);
+      setIsRunning(!!runningSessionFromQuery);
+      if (runningSessionFromQuery) {
+        const elapsed = Math.max(
+          0,
+          Math.floor(
+            (new Date().getTime() -
+              new Date(runningSessionFromQuery.start_time).getTime()) /
+              1000
+          )
+        );
+        setElapsedTime(elapsed);
+      } else {
+        setElapsedTime(0);
+      }
+    }
+  }, [runningSessionFromQuery, selectedUserId]);
+
   // Timer state (only for current user)
   const [elapsedTime, setElapsedTime] = useState(() => {
     if (!initialData.runningSession) return 0;
@@ -111,7 +155,7 @@ export default function TimeTrackerContent({
     return Math.max(0, elapsed); // Ensure non-negative
   });
   const [isRunning, setIsRunning] = useState(!!initialData.runningSession);
-  const [tasks, setTasks] = useState<Partial<WorkspaceTask>[]>(
+  const [tasks, setTasks] = useState<ExtendedWorkspaceTask[]>(
     initialData.tasks || []
   );
 

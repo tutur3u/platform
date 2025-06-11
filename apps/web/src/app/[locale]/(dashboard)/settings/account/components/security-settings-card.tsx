@@ -1,4 +1,4 @@
-import ResetPasswordForm from '../reset-password-form';
+import ResetPasswordDialog from '../reset-password-dialog';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,
@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Shield } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
@@ -37,7 +38,12 @@ export default async function SecuritySettingsCard({
         </div>
       </CardHeader>
       <CardContent className="p-6">
-        <ResetPasswordForm user={user} />
+        <SettingItemTab
+          title={t('change-password')}
+          description={t('change-password-description')}
+        >
+          <ResetPasswordDialog user={user} />
+        </SettingItemTab>
       </CardContent>
     </Card>
   );

@@ -23,6 +23,7 @@ interface CentralizedAuthOptions {
   /**
    * Callback function to determine if a path should be public
    */
+  // eslint-disable-next-line no-unused-vars
   isPublicPath?: (pathname: string) => boolean;
 
   /**

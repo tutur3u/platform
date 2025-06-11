@@ -97,6 +97,8 @@ enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
+# If enabled, requires the user's current password to be provided when changing to a new password.
+secure_password_change = true
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
