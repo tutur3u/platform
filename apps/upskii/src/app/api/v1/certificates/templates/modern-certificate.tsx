@@ -1,5 +1,4 @@
 import { BASE_URL } from '@/constants/common';
-import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import {
   Document,
   Font,
@@ -9,6 +8,7 @@ import {
   Text,
   View,
 } from '@react-pdf/renderer';
+import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import type React from 'react';
 
 // Register fonts (same as original)

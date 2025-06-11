@@ -20,7 +20,6 @@ export type CertificateWithDetails =
     };
   };
 
-
 export type CertificateListItem = {
   id: string;
   courseName: string;
