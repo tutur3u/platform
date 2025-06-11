@@ -23,5 +23,3 @@ export type CertificateProps = {
   certDetails: CertificateDetails;
   wsId: string;
 };
-
-

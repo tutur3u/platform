@@ -5,9 +5,9 @@ import { getCertificateDetails } from '@/lib/certificate-helper';
 import { renderToStream } from '@react-pdf/renderer';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Database } from '@tuturuuu/types/supabase';
+import { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import { getTranslations } from 'next-intl/server';
 import { NextRequest } from 'next/server';
-import { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 
 export async function POST(
   req: NextRequest,
