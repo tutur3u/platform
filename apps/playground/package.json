@@ -11,8 +11,6 @@
     "preview": "next build && next start -p 3002 --turbopack",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "stop": "cd ../db && bun sb:stop",
     "sb:status": "cd ../db && bun sb:status",
     "sb:start": "cd ../db && bun sb:start",
