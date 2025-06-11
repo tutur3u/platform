@@ -5,9 +5,7 @@
   "scripts": {
     "dev": "next dev -p 7804 --turbopack",
     "devx": "cd ../db && bun supabase stop && bun i && bun supabase start && cd ../rewise && next dev -p 7804 --turbopack",
-    "bdevx": "cd ../db && bun supabase stop && bun i && bun supabase start && cd ../rewise && next dev -p 7804 --turbopack",
     "devrs": "cd ../db && bun supabase stop --no-backup && bun i && bun supabase start && bun supabase db reset && cd ../rewise && next dev -p 7804 --turbopack",
-    "bdevrs": "cd ../db && bun supabase stop --no-backup && bun i && bun supabase start && bun supabase db reset && cd ../rewise && next dev -p 7804 --turbopack",
     "build": "next build",
     "start": "next start",
     "preview": "next build && cd ../rewise && next start -p 7804 --turbopack",
