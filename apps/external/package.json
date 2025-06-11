@@ -3,10 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev -p 3000 --turbopack",
+    "devx": "bun sb:stop && bun sb:start && bun dev",
+    "devrs": "bun sb:stop && bun sb:reset && bun sb:start && bun dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "preview": "next build && next start -p 3000 --turbopack",
+    "lint": "next lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "stop": "cd ../db && bun sb:stop",
+    "sb:status": "cd ../db && bun sb:status",
+    "sb:start": "cd ../db && bun sb:start",
+    "sb:stop": "cd ../db && bun sb:stop",
+    "sb:sync": "cd ../db && bun sb:sync",
+    "sb:reset": "cd ../db && bun sb:reset",
+    "sb:diff": "cd ../db && bun sb:diff",
+    "sb:new": "cd ../db && bun sb:new",
+    "sb:up": "cd ../db && bun sb:up",
+    "sb:typegen": "cd ../db && bun sb:typegen",
+    "ui:add": "bunx shadcn-ui@latest add",
+    "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
     "@tuturuuu/ai": "workspace:*",

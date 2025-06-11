@@ -11,7 +11,7 @@
     "sb:pull": "bun supabase db pull",
     "sb:push": "bun supabase db push",
     "sb:link": "bun supabase link",
-    "sb:reset": "bun supabase db reset && bun supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts",
+    "sb:reset": "bun supabase db reset && bun sb:typegen",
     "sb:diff": "bun supabase db diff -f new_migration",
     "sb:new": "bun supabase migration new new_migration",
     "sb:up": "bun supabase migration up",
