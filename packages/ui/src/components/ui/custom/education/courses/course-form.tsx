@@ -205,7 +205,9 @@ export function CourseForm({
                   onClick={() => setShowPreview(!showPreview)}
                   className="w-full"
                 >
-                  {showPreview ? t('hide_certificate_preview') : t('show_certificate_preview')}
+                  {showPreview
+                    ? t('hide_certificate_preview')
+                    : t('show_certificate_preview')}
                 </Button>
               </>
             ) : (
