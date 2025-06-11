@@ -164,7 +164,8 @@ export const CalendarSyncProvider = ({
   // Enhanced cache staleness check - shorter staleness for current week
   const isCacheStaleEnhanced = (lastUpdated: number, dateRange: Date[]) => {
     const isCurrentWeek = includesCurrentWeek(dateRange);
-    const staleTime = 30 * 1000; // 30 seconds
+    // 30 seconds for current week, 5 minutes for other weeks
+    const staleTime = isCurrentWeek ? 30 * 1000 : 5 * 60 * 1000; // 30 seconds
     const isStale = Date.now() - lastUpdated >= staleTime;
 
     if (isCurrentWeek && isStale) {
@@ -218,11 +219,6 @@ export const CalendarSyncProvider = ({
         !isCacheStaleEnhanced(cachedData.dbLastUpdated, dates) &&
         !cachedData.isForced
       ) {
-        console.log(
-          'isCacheStaleEnhanced',
-          isCacheStaleEnhanced(cachedData.dbLastUpdated, dates)
-        );
-        console.log('cachedData.isForced', cachedData.isForced);
         setData(cachedData.dbEvents);
         return cachedData.dbEvents;
       }
@@ -253,7 +249,6 @@ export const CalendarSyncProvider = ({
         isForced: false, // Reset isForced after successful fetch
       });
 
-      console.log('fetchedData', fetchedData);
       setData(fetchedData);
       return fetchedData;
     },
@@ -277,7 +272,6 @@ export const CalendarSyncProvider = ({
         cachedData.googleEvents.length > 0 &&
         !isCacheStaleEnhanced(cachedData.googleLastUpdated, dates)
       ) {
-        console.log('cachedData.googleEvents', cachedData.googleEvents);
         setGoogleData(cachedData.googleEvents);
         return cachedData.googleEvents;
       }
@@ -567,39 +561,7 @@ export const CalendarSyncProvider = ({
           console.log('Upsert status: Finished');
         }
 
-        // // After successful upsert, fetch ALL events for the date range
-        // // (not just the newly inserted ones)
-        // const { data: allEventsData, error: fetchError } = await supabase
-        //   .from('workspace_calendar_events')
-        //   .select('*')
-        //   .eq('ws_id', wsId)
-        //   .gte('start_at', startDate.toISOString())
-        //   .lte('end_at', endDate.toISOString())
-        //   .order('start_at', { ascending: true });
-
-        // if (fetchError) {
-        //   console.error('Error fetching events after upsert:', fetchError);
-        //   setError(fetchError);
-        //   return;
-        // }
-
-        // console.log('All events after upsert:', allEventsData);
-        // setData(allEventsData);
-
-        // // After successful sync, update the cache with ALL events
-        // if (allEventsData) {
-        //   const cacheKey = getCacheKey(dates);
-        //   updateCache(cacheKey, {
-        //     dbEvents: allEventsData,
-        //     lastUpdated: Date.now(),
-        //   });
-
-        //   // Trigger an immediate refetch of database events
-        //   queryClient.invalidateQueries({
-        //     queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
-        //   });
-        // }
-
+        // Refresh the cache to trigger queryClient to refetch the data from database
         refresh();
 
         if (progressCallback) {
@@ -639,7 +601,8 @@ export const CalendarSyncProvider = ({
     }
   }, [fetchedGoogleData, syncToTuturuuu]);
 
-  // Sync to Tuturuuu database when changing views AND there are changes in Google data
+  // Trigger refetch from DB and Google when changing views AND there are changes in Google data
+  // This will trigger syncToTuturuuu()
   useEffect(() => {
     // If have not connected to google, don't sync
     if (experimentalGoogleToken?.ws_id !== wsId) {
