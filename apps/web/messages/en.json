@@ -1994,7 +1994,9 @@
     "no_courses_found": "No courses found",
     "no_courses_found_description": "No courses found in your workspace. Create a new course to get started.",
     "no_description_provided": "No description provided",
-    "delete_confirm_title": "Deleting \"{name}\""
+    "delete_confirm_title": "Deleting \"{name}\"",
+    "certificate_template": "Certificate Design",
+    "select_certificate_template": "Choose a certificate template"
   },
   "ws-course-modules": {
     "plural": "Course Modules",

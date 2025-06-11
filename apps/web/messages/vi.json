@@ -2005,7 +2005,9 @@
     "table_view": "Dạng bảng",
     "no_courses_found": "Chưa có khóa học nào",
     "no_description_provided": "Không có mô tả",
-    "delete_confirm_title": "Xác nhận xoá \"{name}\""
+    "delete_confirm_title": "Xác nhận xoá \"{name}\"",
+    "certificate_template": "Thiết kế bằng chứng chỉ",
+    "select_certificate_template": "Chọn một mẫu thiết kế chứng chỉ"
   },
   "ws-course-modules": {
     "plural": "Mô-đun khóa học",

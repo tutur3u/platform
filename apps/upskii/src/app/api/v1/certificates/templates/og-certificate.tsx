@@ -1,4 +1,3 @@
-import { CertificateData } from '../[certId]/generate/types';
 import { BASE_URL } from '@/constants/common';
 import {
   Document,
@@ -9,6 +8,7 @@ import {
   Text,
   View,
 } from '@react-pdf/renderer';
+import { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 
 // Register fonts
 Font.register({

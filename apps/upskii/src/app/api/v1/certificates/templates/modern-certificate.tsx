@@ -1,5 +1,5 @@
-import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import { BASE_URL } from '@/constants/common';
+import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import {
   Document,
   Font,
