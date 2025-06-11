@@ -292,7 +292,7 @@ export default function SessionsCard() {
           <CardDescription>{t('overview_description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 text-center md:grid-cols-3">
             <div className="space-y-2">
               <div className="text-2xl font-bold text-dynamic-blue">
                 {stats.total_sessions}
@@ -382,7 +382,7 @@ export default function SessionsCard() {
                         {getDeviceIcon(session.user_agent)}
                       </div>
                       <div className="flex-1 space-y-1">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col items-start gap-1 md:flex-row md:items-center md:justify-start md:gap-2">
                           <div className="font-medium">
                             {formatUserAgent(session.user_agent)}
                           </div>
@@ -395,7 +395,7 @@ export default function SessionsCard() {
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center space-x-4 text-sm text-foreground">
+                        <div className="flex flex-col items-start gap-1 text-sm text-foreground md:flex-row md:items-center md:justify-start md:gap-2">
                           <div className="flex items-center space-x-1">
                             <MapPin className="h-3 w-3" />
                             <span>{session.ip}</span>
