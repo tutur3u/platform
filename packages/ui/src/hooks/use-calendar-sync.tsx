@@ -82,7 +82,8 @@ type CalendarCache = {
   [key: string]: {
     dbEvents: WorkspaceCalendarEvent[];
     googleEvents: WorkspaceCalendarEvent[];
-    lastUpdated: number;
+    dbLastUpdated: number;
+    googleLastUpdated: number;
     isForced: boolean;
   };
 };
@@ -91,7 +92,8 @@ type CalendarCache = {
 type CacheUpdate = {
   dbEvents?: WorkspaceCalendarEvent[];
   googleEvents?: WorkspaceCalendarEvent[];
-  lastUpdated: number;
+  dbLastUpdated?: number;
+  googleLastUpdated?: number;
   isForced?: boolean;
 };
 
@@ -162,7 +164,6 @@ export const CalendarSyncProvider = ({
   // Enhanced cache staleness check - shorter staleness for current week
   const isCacheStaleEnhanced = (lastUpdated: number, dateRange: Date[]) => {
     const isCurrentWeek = includesCurrentWeek(dateRange);
-    // Use 2 minutes for current week, 5 minutes for other weeks
     const staleTime = 30 * 1000; // 30 seconds
     const isStale = Date.now() - lastUpdated >= staleTime;
 
@@ -179,7 +180,8 @@ export const CalendarSyncProvider = ({
       const existing = prev[cacheKey] || {
         dbEvents: [],
         googleEvents: [],
-        lastUpdated: 0,
+        dbLastUpdated: 0,
+        googleLastUpdated: 0,
         isForced: false,
       };
 
@@ -188,7 +190,9 @@ export const CalendarSyncProvider = ({
         [cacheKey]: {
           dbEvents: update.dbEvents || existing.dbEvents,
           googleEvents: update.googleEvents || existing.googleEvents,
-          lastUpdated: update.lastUpdated,
+          dbLastUpdated: update.dbLastUpdated || existing.dbLastUpdated,
+          googleLastUpdated:
+            update.googleLastUpdated || existing.googleLastUpdated,
           isForced: update.isForced || existing.isForced,
         },
       };
@@ -211,15 +215,16 @@ export const CalendarSyncProvider = ({
       if (
         cachedData?.dbEvents &&
         cachedData.dbEvents.length > 0 &&
-        !isCacheStaleEnhanced(cachedData.lastUpdated, dates) &&
+        !isCacheStaleEnhanced(cachedData.dbLastUpdated, dates) &&
         !cachedData.isForced
       ) {
+        console.log(
+          'isCacheStaleEnhanced',
+          isCacheStaleEnhanced(cachedData.dbLastUpdated, dates)
+        );
+        console.log('cachedData.isForced', cachedData.isForced);
         setData(cachedData.dbEvents);
         return cachedData.dbEvents;
-      }
-
-      if (cachedData) {
-        cachedData.isForced = false;
       }
 
       // Otherwise fetch fresh data
@@ -241,10 +246,11 @@ export const CalendarSyncProvider = ({
         return null;
       }
 
-      // Update cache with new data
+      // Update cache with new data and reset isForced flag
       updateCache(cacheKey, {
         dbEvents: fetchedData,
-        lastUpdated: Date.now(),
+        dbLastUpdated: Date.now(),
+        isForced: false, // Reset isForced after successful fetch
       });
 
       console.log('fetchedData', fetchedData);
@@ -269,8 +275,9 @@ export const CalendarSyncProvider = ({
       if (
         cachedData?.googleEvents &&
         cachedData.googleEvents.length > 0 &&
-        !isCacheStaleEnhanced(cachedData.lastUpdated, dates)
+        !isCacheStaleEnhanced(cachedData.googleLastUpdated, dates)
       ) {
+        console.log('cachedData.googleEvents', cachedData.googleEvents);
         setGoogleData(cachedData.googleEvents);
         return cachedData.googleEvents;
       }
@@ -300,7 +307,7 @@ export const CalendarSyncProvider = ({
       // Update cache with new data
       updateCache(cacheKey, {
         googleEvents: googleResponse.events,
-        lastUpdated: Date.now(),
+        googleLastUpdated: Date.now(),
       });
 
       setGoogleData(googleResponse.events);
@@ -544,13 +551,12 @@ export const CalendarSyncProvider = ({
         );
 
         // Upsert using id as conflict target since we've properly assigned ids
-        const { data: upsertData, error: upsertError } = await supabase
+        const { error: upsertError } = await supabase
           .from('workspace_calendar_events')
           .upsert(eventsToUpsert, {
             onConflict: 'google_event_id',
             ignoreDuplicates: true,
-          })
-          .select();
+          });
 
         if (upsertError) {
           console.error('Error upserting events:', upsertError);
@@ -561,38 +567,40 @@ export const CalendarSyncProvider = ({
           console.log('Upsert status: Finished');
         }
 
-        // After successful upsert, fetch ALL events for the date range
-        // (not just the newly inserted ones)
-        const { data: allEventsData, error: fetchError } = await supabase
-          .from('workspace_calendar_events')
-          .select('*')
-          .eq('ws_id', wsId)
-          .gte('start_at', startDate.toISOString())
-          .lte('end_at', endDate.toISOString())
-          .order('start_at', { ascending: true });
+        // // After successful upsert, fetch ALL events for the date range
+        // // (not just the newly inserted ones)
+        // const { data: allEventsData, error: fetchError } = await supabase
+        //   .from('workspace_calendar_events')
+        //   .select('*')
+        //   .eq('ws_id', wsId)
+        //   .gte('start_at', startDate.toISOString())
+        //   .lte('end_at', endDate.toISOString())
+        //   .order('start_at', { ascending: true });
 
-        if (fetchError) {
-          console.error('Error fetching events after upsert:', fetchError);
-          setError(fetchError);
-          return;
-        }
+        // if (fetchError) {
+        //   console.error('Error fetching events after upsert:', fetchError);
+        //   setError(fetchError);
+        //   return;
+        // }
 
-        console.log('All events after upsert:', allEventsData);
-        setData(allEventsData);
+        // console.log('All events after upsert:', allEventsData);
+        // setData(allEventsData);
 
-        // After successful sync, update the cache with ALL events
-        if (allEventsData) {
-          const cacheKey = getCacheKey(dates);
-          updateCache(cacheKey, {
-            dbEvents: allEventsData,
-            lastUpdated: Date.now(),
-          });
+        // // After successful sync, update the cache with ALL events
+        // if (allEventsData) {
+        //   const cacheKey = getCacheKey(dates);
+        //   updateCache(cacheKey, {
+        //     dbEvents: allEventsData,
+        //     lastUpdated: Date.now(),
+        //   });
 
-          // Trigger an immediate refetch of database events
-          queryClient.invalidateQueries({
-            queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
-          });
-        }
+        //   // Trigger an immediate refetch of database events
+        //   queryClient.invalidateQueries({
+        //     queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
+        //   });
+        // }
+
+        refresh();
 
         if (progressCallback) {
           progressCallback({
@@ -653,7 +661,8 @@ export const CalendarSyncProvider = ({
       cacheData.isForced = true;
       // For current week, also reset the cache timestamp to force refresh
       if (isCurrentWeek) {
-        cacheData.lastUpdated = 0;
+        cacheData.dbLastUpdated = 0;
+        cacheData.googleLastUpdated = 0;
       }
     }
 
@@ -788,15 +797,30 @@ export const CalendarSyncProvider = ({
     if (!cacheKey) return null;
 
     const cacheData = calendarCache[cacheKey];
+    console.log('Before refresh - cacheData:', {
+      isForced: cacheData?.isForced,
+      dbLastUpdated: cacheData?.dbLastUpdated,
+      googleLastUpdated: cacheData?.googleLastUpdated,
+      dbEventsLength: cacheData?.dbEvents?.length,
+    });
 
-    if (cacheData) {
-      cacheData.isForced = true;
-    }
+    // Use updateCache instead of direct mutation
+    updateCache(cacheKey, {
+      isForced: true,
+      dbLastUpdated: 0,
+    });
+
+    console.log('After refresh - cacheData:', {
+      isForced: cacheData?.isForced,
+      dbLastUpdated: cacheData?.dbLastUpdated,
+      googleLastUpdated: cacheData?.googleLastUpdated,
+      dbEventsLength: cacheData?.dbEvents?.length,
+    });
 
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
     });
-  }, [queryClient, wsId, calendarCache, dates]);
+  }, [queryClient, wsId, calendarCache, dates, updateCache]);
 
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
