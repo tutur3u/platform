@@ -91,19 +91,5 @@
     "sharp",
     "supabase",
     "unrs-resolver"
-  ],
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@tailwindcss/oxide",
-      "@vercel/speed-insights",
-      "canvas",
-      "core-js",
-      "cytoscape",
-      "esbuild",
-      "puppeteer",
-      "sharp",
-      "supabase",
-      "unrs-resolver"
-    ]
-  }
+  ]
 }
