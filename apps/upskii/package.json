@@ -8,7 +8,7 @@
     "devrs": "bun sb:stop && bun sb:reset && bun sb:start && bun dev",
     "build": "next build",
     "start": "next start",
-    "preview": "next build && cd ../upskii && next start -p 7806 --turbopack",
+    "preview": "next build && next start -p 7806 --turbopack",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "stop": "cd ../db && bun sb:stop",

@@ -8,7 +8,7 @@
     "devrs": "bun sb:stop && bun sb:reset && bun sb:start && bun dev",
     "build": "next build",
     "start": "next start",
-    "preview": "next build && cd ../nova && next start -p 7805 --turbopack",
+    "preview": "next build && next start -p 7805 --turbopack",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "test": "vitest run",
