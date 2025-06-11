@@ -6,4 +6,6 @@ export { default as PageHeader } from './page-header';
 export { default as PaymentBillingCard } from './payment-billing-card';
 export { default as ProfileInformationCard } from './profile-information-card';
 export { default as SecuritySettingsCard } from './security-settings-card';
+export { default as SessionsCard } from './sessions-card';
+export { default as SettingsNav } from './settings-nav';
 export { default as WorkspaceSettingsCard } from './workspace-settings-card';
