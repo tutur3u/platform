@@ -12,6 +12,16 @@
     "**/components/**/index.tsx": "${dirname} - Component"
   },
   "tailwindCSS.experimental.configFile": "packages/ui/src/globals.css",
+  "i18n-ally.enabledFrameworks": ["next-intl"],
+  "i18n-ally.localesPaths": [
+    "apps/calendar/messages",
+    "apps/web/messages",
+    "apps/rewise/messages",
+    "apps/nova/messages",
+    "apps/upskii/messages"
+  ],
+  "i18n-ally.autoDetection": true,
+  "i18n-ally.keystyle": "nested",
   "[xml]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -33,5 +43,11 @@
   "[typescriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "typescript.experimental.useTsgo": false
+  "codeQL.githubDatabase.update": "never",
+  "codeQL.githubDatabase.download": "never",
+  "IDX.aI.enableInlineCompletion": true,
+  "IDX.aI.enableCodebaseIndexing": true,
+  "i18n-ally.sourceLanguage": "en",
+  "typescript.experimental.useTsgo": false,
+  "cSpell.words": ["tuturuuu"]
 }
