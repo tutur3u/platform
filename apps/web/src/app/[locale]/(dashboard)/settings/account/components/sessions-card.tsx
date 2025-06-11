@@ -110,6 +110,8 @@ function getTimeAgoFormatter(t: ReturnType<typeof useTranslations>) {
   };
 }
 
+const REQUEST_DELAY_MS = 250; // 250 ms delay between bulk revocation requests to avoid spamming the server
+
 export default function SessionsCard() {
   const [sessionsData, setSessionsData] = useState<SessionsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -219,6 +221,8 @@ export default function SessionsCard() {
           ...prev,
           completed: prev.completed + 1,
         }));
+        // Throttle requests to avoid overwhelming the server
+        await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY_MS));
       }
     }
 
