@@ -163,7 +163,7 @@ export const CalendarSyncProvider = ({
   const isCacheStaleEnhanced = (lastUpdated: number, dateRange: Date[]) => {
     const isCurrentWeek = includesCurrentWeek(dateRange);
     // Use 2 minutes for current week, 5 minutes for other weeks
-    const staleTime = isCurrentWeek ? 2 * 60 * 1000 : 5 * 60 * 1000;
+    const staleTime = 30 * 1000; // 30 seconds
     const isStale = Date.now() - lastUpdated > staleTime;
 
     if (isCurrentWeek && isStale) {
@@ -205,6 +205,7 @@ export const CalendarSyncProvider = ({
       if (!cacheKey) return null;
 
       const cachedData = calendarCache[cacheKey];
+      console.log('cachedData.dbEvents', cachedData?.dbEvents);
 
       // If we have cached data and it's not stale, return it immediately
       if (
@@ -246,6 +247,7 @@ export const CalendarSyncProvider = ({
         lastUpdated: Date.now(),
       });
 
+      console.log('fetchedData', fetchedData);
       setData(fetchedData);
       return fetchedData;
     },
