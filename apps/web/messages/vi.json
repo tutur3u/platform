@@ -3086,5 +3086,61 @@
     "next_step": "Bước tiếp theo",
     "start_over": "Bắt đầu lại"
   },
-  "benefits:": "Những lợi ích:"
+  "benefits:": "Những lợi ích:",
+  "settings-nav": {
+    "profile": {
+      "name": "Hồ sơ & Liên hệ",
+      "description": "Quản lý thông tin cá nhân và chi tiết liên hệ của bạn"
+    },
+    "security": {
+      "name": "Bảo mật",
+      "description": "Mật khẩu, xác thực hai yếu tố và cài đặt bảo mật"
+    },
+    "sessions": {
+      "name": "Phiên",
+      "description": "Quản lý các phiên hoạt động và đăng nhập thiết bị của bạn"
+    },
+    "notifications": {
+      "name": "Thông báo",
+      "description": "Kiểm soát cách và thời điểm bạn nhận thông báo"
+    },
+    "billing": {
+      "name": "Thanh toán & Gói",
+      "description": "Gói đăng ký, phương thức thanh toán và lịch sử thanh toán"
+    },
+    "workspaces": {
+      "name": "Không gian làm việc",
+      "description": "Quản lý cài đặt và tùy chọn không gian làm việc của bạn"
+    }
+  },
+  "sessions-card": {
+    "title": "Phiên hoạt động",
+    "loading_description": "Đang tải các phiên hoạt động của bạn...",
+    "failed_description": "Không thể tải dữ liệu phiên. Vui lòng thử làm mới trang.",
+    "try_again": "Thử lại",
+    "overview_title": "Tổng quan phiên",
+    "overview_description": "Tổng quan về các phiên và trạng thái bảo mật tài khoản của bạn",
+    "total_sessions": "Tổng phiên",
+    "active_sessions": "Phiên hoạt động",
+    "current_session_age": "Tuổi phiên hiện tại",
+    "manage_description": "Quản lý thiết bị và trình duyệt đã đăng nhập vào tài khoản của bạn",
+    "sign_out_all": "Đăng xuất tất cả phiên khác",
+    "revoking": "Đang thu hồi...",
+    "sign_out_all_question": "Đăng xuất tất cả phiên khác?",
+    "sign_out_all_confirm_description": "Điều này sẽ đăng xuất bạn khỏi tất cả thiết bị và trình duyệt khác. Bạn sẽ vẫn đăng nhập trên thiết bị này.",
+    "sign_out_all_others": "Đăng xuất tất cả",
+    "no_active_sessions": "Không tìm thấy phiên hoạt động nào",
+    "current_session": "Phiên hiện tại",
+    "last_active": "Hoạt động lần cuối",
+    "revoke": "Thu hồi",
+    "revoke_session_question": "Thu hồi phiên?",
+    "revoke_session_description": "Điều này sẽ đăng xuất thiết bị/trình duyệt và phải đăng nhập lại để truy cập tài khoản của bạn.",
+    "revoke_session": "Thu hồi phiên",
+    "time": {
+      "just_now": "Vừa xong",
+      "minutes_ago": "{count} phút trước",
+      "hours_ago": "{count} giờ trước",
+      "days_ago": "{count} ngày trước"
+    }
+  }
 }

@@ -10,53 +10,49 @@ import {
   Smartphone,
   User,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const settingsNav = [
   {
-    name: 'Profile & Contact',
+    key: 'profile',
     href: '/settings/account',
     icon: User,
-    description: 'Manage your personal information and contact details',
   },
   {
-    name: 'Security',
+    key: 'security',
     href: '/settings/account/security',
     icon: Shield,
-    description: 'Password, two-factor authentication, and security settings',
   },
   {
-    name: 'Sessions',
+    key: 'sessions',
     href: '/settings/account/sessions',
     icon: Smartphone,
-    description: 'Manage your active sessions and device logins',
   },
   {
-    name: 'Notifications',
+    key: 'notifications',
     href: '/settings/account/notifications',
     icon: Bell,
-    description: 'Control how and when you receive notifications',
   },
   {
-    name: 'Billing & Plan',
+    key: 'billing',
     href: '/settings/account/billing',
     icon: CreditCard,
-    description: 'Subscription, payment methods, and billing history',
   },
   {
-    name: 'Workspaces',
+    key: 'workspaces',
     href: '/settings/account/workspaces',
     icon: Settings,
-    description: 'Manage your workspace settings and preferences',
   },
-];
+] as const;
 
 interface SettingsNavProps {
   className?: string;
 }
 
 export default function SettingsNav({ className }: SettingsNavProps) {
+  const t = useTranslations('settings-nav');
   const pathname = usePathname();
 
   return (
@@ -95,7 +91,7 @@ export default function SettingsNav({ className }: SettingsNavProps) {
                     isActive ? 'text-dynamic-blue' : 'text-dynamic-foreground'
                   )}
                 >
-                  {item.name}
+                  {t(`${item.key}.name`)}
                 </div>
                 <div
                   className={cn(
@@ -105,7 +101,7 @@ export default function SettingsNav({ className }: SettingsNavProps) {
                       : 'text-foreground/70 group-hover:text-foreground'
                   )}
                 >
-                  {item.description}
+                  {t(`${item.key}.description`)}
                 </div>
               </div>
             </div>
