@@ -4,6 +4,8 @@ const { spawn } = require('child_process');
 const readline = require('readline');
 const path = require('path');
 
+let devProcess = null; // Keep a reference to the dev server process
+
 // Colors for terminal output
 const colors = {
   reset: '\x1b[0m',
@@ -188,10 +190,15 @@ function runShellCommand(command, options = {}) {
    * This avoids the hard dependency on `/bin/sh`, making the script
    * portable across operating systems.
    */
+  // `process.platform` returns 'win32' for both 32-bit and 64-bit Windows.
+  // This check is sufficient for all modern Windows versions.
+  const isWindows = process.platform === 'win32';
   return spawn(command, {
     stdio: 'inherit',
     shell: true,
     cwd: process.cwd(),
+    // On non-Windows, detached creates a new process group that can be killed at once.
+    detached: !isWindows,
     ...options,
   });
 }
@@ -225,7 +232,7 @@ function startDevelopmentServers(turboCommand) {
   console.log(colorize('🚀 Starting development servers...', 'cyan'));
 
   // Run the turbo command
-  const devProcess = runShellCommand(turboCommand);
+  devProcess = runShellCommand(turboCommand);
 
   devProcess.on('close', (devCode) => {
     console.log(
@@ -416,11 +423,36 @@ async function runDevelopment() {
   }
 }
 
-// Handle Ctrl+C gracefully
-process.on('SIGINT', () => {
-  console.log(colorize('\n👋 Goodbye!', 'cyan'));
+function cleanupAndExit() {
+  console.log(colorize('\n👋 Goodbye! Cleaning up...', 'cyan'));
   rl.close();
-  process.exit(0);
-});
+
+  if (devProcess && devProcess.pid) {
+    const isWindows = process.platform === 'win32';
+    if (isWindows) {
+      // On Windows, use taskkill to recursively kill the process tree.
+      // `taskkill` is a standard utility on Windows XP and later.
+      spawn('taskkill', ['/pid', devProcess.pid, '/t', '/f'], {
+        stdio: 'ignore',
+      });
+    } else {
+      // On Unix, kill the entire process group by sending a signal to -pid.
+      // This requires the `detached` option to be set on the child process.
+      try {
+        process.kill(-devProcess.pid, 'SIGINT');
+      } catch (e) {
+        // Fallback for cases where process group kill fails
+        devProcess.kill('SIGINT');
+      }
+    }
+  }
+
+  // Allow a moment for cleanup before exiting
+  setTimeout(() => process.exit(0), 300);
+}
+
+// Handle termination signals gracefully
+process.on('SIGINT', cleanupAndExit); // Ctrl+C
+process.on('SIGTERM', cleanupAndExit); // Kill command
 
 runDevelopment();
