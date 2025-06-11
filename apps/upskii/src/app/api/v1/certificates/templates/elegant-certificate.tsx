@@ -1,7 +1,7 @@
 import { BASE_URL } from '@/constants/common';
+import { registerRobotoFonts } from '@/lib/font-register-pdf';
 import {
   Document,
-  Font,
   Image,
   Page,
   StyleSheet,
@@ -10,16 +10,7 @@ import {
 } from '@react-pdf/renderer';
 import { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 
-// Register fonts (same as original)
-Font.register({
-  family: 'Roboto',
-  fonts: [
-    { src: `${BASE_URL}/fonts/Roboto-Regular.ttf` },
-    { src: `${BASE_URL}/fonts/Roboto-Medium.ttf`, fontWeight: 'medium' },
-    { src: `${BASE_URL}/fonts/Roboto-Bold.ttf`, fontWeight: 'bold' },
-    { src: `${BASE_URL}/fonts/Roboto-Light.ttf`, fontWeight: 'light' },
-  ],
-});
+registerRobotoFonts();
 
 // Elegant Certificate Styles
 const styles = StyleSheet.create({
@@ -30,7 +21,9 @@ const styles = StyleSheet.create({
   },
   container: {
     backgroundColor: '#fefefe',
-    border: '3pt solid #2563eb',
+    borderWidth: 3,
+    borderColor: '#2563eb',
+    borderStyle: 'solid',
     padding: '32pt 24pt',
     position: 'relative',
     display: 'flex',
@@ -152,7 +145,9 @@ const styles = StyleSheet.create({
     fontWeight: 'light',
   },
   nameContainer: {
-    borderBottom: '2pt solid #2563eb',
+    borderBottomWidth: 2,
+    borderBottomColor: '#2563eb',
+    borderBottomStyle: 'solid',
     paddingBottom: '4pt',
     paddingHorizontal: '16pt',
   },
@@ -173,7 +168,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     padding: '12pt',
     borderRadius: '8pt',
-    border: '1pt solid #e5e7eb',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderStyle: 'solid',
   },
   course: {
     fontSize: 24,

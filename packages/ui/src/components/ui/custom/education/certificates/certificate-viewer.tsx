@@ -33,11 +33,11 @@ export function CertificateViewer({
   useEffect(() => {
     // Cleanup blob URLs when component unmounts (but not data URLs)
     return () => {
-      if (pdfUrl && pdfUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(pdfUrl);
+      if (pdfDataUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(pdfDataUrl);
       }
     };
-  }, [pdfUrl]);
+  }, [pdfDataUrl]);
 
   const handlePNG = useCallback(async () => {
     const element = document.getElementById('certificate-area');

@@ -63,7 +63,12 @@ export async function POST(
           <ModernCertificateDocument data={data} />
         );
         break;
+      case 'original':
+        stream = await renderToStream(<OGCertificateDocument data={data} />);
+        break;
       default:
+        console.log('Unhandled template:', certTemplate);
+        console.log('Using original template as fallback');
         stream = await renderToStream(<OGCertificateDocument data={data} />);
         break;
     }

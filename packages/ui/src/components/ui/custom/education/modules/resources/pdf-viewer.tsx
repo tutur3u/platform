@@ -46,10 +46,7 @@ export function PDFViewer({ url }: { url: string }) {
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="relative flex h-full w-full items-center justify-center"
-    >
+    <div ref={containerRef} className="relative">
       <Document file={url} onLoadSuccess={onDocumentLoadSuccess}>
         <AnimatePresence mode="wait">
           <motion.div
@@ -58,12 +55,12 @@ export function PDFViewer({ url }: { url: string }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="relative"
-            style={{ width: pdfWidth, height: '100%' }}
+            className="relative aspect-auto"
+            style={{ width: pdfWidth }}
           >
             <div
-              className="absolute inset-0 animate-pulse bg-white"
-              style={{ width: pdfWidth, height: '100%' }}
+              className="absolute inset-0 aspect-auto animate-pulse bg-white"
+              style={{ width: pdfWidth }}
             />
             <Page
               pageNumber={pageNumber}
@@ -74,8 +71,8 @@ export function PDFViewer({ url }: { url: string }) {
               className={cn(isLoading ? 'opacity-0' : 'opacity-100')}
               loading={
                 <div
-                  className="absolute inset-0 animate-pulse bg-white"
-                  style={{ width: pdfWidth, height: '100%' }}
+                  className="absolute inset-0 aspect-auto animate-pulse bg-white"
+                  style={{ width: pdfWidth }}
                 />
               }
             />

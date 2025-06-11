@@ -1,7 +1,7 @@
 import { BASE_URL } from '@/constants/common';
+import { registerRobotoFonts } from '@/lib/font-register-pdf';
 import {
   Document,
-  Font,
   Image,
   Page,
   StyleSheet,
@@ -11,16 +11,7 @@ import {
 import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import type React from 'react';
 
-// Register fonts (same as original)
-Font.register({
-  family: 'Roboto',
-  fonts: [
-    { src: `${BASE_URL}/fonts/Roboto-Regular.ttf` },
-    { src: `${BASE_URL}/fonts/Roboto-Medium.ttf`, fontWeight: 'medium' },
-    { src: `${BASE_URL}/fonts/Roboto-Bold.ttf`, fontWeight: 'bold' },
-    { src: `${BASE_URL}/fonts/Roboto-Light.ttf`, fontWeight: 'light' },
-  ],
-});
+registerRobotoFonts();
 
 // Modern Certificate Styles
 const styles = StyleSheet.create({
