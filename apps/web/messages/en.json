@@ -1997,7 +1997,11 @@
     "no_description_provided": "No description provided",
     "delete_confirm_title": "Deleting \"{name}\"",
     "certificate_template": "Certificate Design",
-    "select_certificate_template": "Choose a certificate template"
+    "select_certificate_template": "Choose a certificate template",
+    "image_preview_not_available": "Image Preview Not Available",
+    "image_preview_not_available_description": "A preview of the certificate template is not available.",
+    "hide_certificate_preview": "Hide Certificate Preview",
+    "show_certificate_preview": "Show Certificate Preview"
   },
   "ws-course-modules": {
     "plural": "Course Modules",

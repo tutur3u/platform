@@ -3549,7 +3549,11 @@
     "no_description_provided": "Không có mô tả",
     "delete_confirm_title": "Xác nhận xóa \"{name}\"",
     "certificate_template": "Mẫu chứng chỉ",
-    "select_certificate_template": "Chọn một mẫu chứng chỉ"
+    "select_certificate_template": "Chọn một mẫu chứng chỉ",
+    "image_preview_not_available": "Chưa có mẫu xem trước",
+    "image_preview_not_available_description": "Ảnh xem trước của mẫu chứng chỉ không có sẵn.",
+    "hide_certificate_preview": "Ẩn xem mẫu chứng chỉ",
+    "show_certificate_preview": "Hiển thị xem mẫu chứng chỉ"
   },
   "ws-crawlers": {
     "plural": "Công cụ cào dữ liệu",

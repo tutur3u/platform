@@ -1,5 +1,6 @@
 'use client';
 
+import { Alert, AlertDescription, AlertTitle } from '../../../alert';
 import { WorkspaceCourse } from '@tuturuuu/types/db';
 import { Constants } from '@tuturuuu/types/supabase';
 import { Button } from '@tuturuuu/ui/button';
@@ -27,7 +28,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
@@ -77,6 +78,12 @@ export function CourseForm({
 
   // Only watch the cert_template field instead of all form values
   const certTemplate = form.watch('cert_template');
+
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [certTemplate, locale]);
 
   const isDirty = form.formState.isDirty;
   const isValid = form.formState.isValid;
@@ -198,7 +205,7 @@ export function CourseForm({
                   onClick={() => setShowPreview(!showPreview)}
                   className="w-full"
                 >
-                  {showPreview ? 'Hide' : 'Show'} Certificate Preview
+                  {showPreview ? t('hide_certificate_preview') : t('show_certificate_preview')}
                 </Button>
               </>
             ) : (
@@ -213,18 +220,26 @@ export function CourseForm({
 
       {/* Preview Section */}
       {enableCerts && showPreview && (
-        <div className="col-span-2 col-start-3">
-          <Card className="h-full">
-            <CardContent className="h-[300px] p-2">
-              <div className="flex h-full w-full items-center justify-center rounded-lg border bg-gray-100">
+        <div className="col-span-2 col-start-3 flex items-center justify-center">
+          <Card className="flex items-center justify-center">
+            <CardContent className="flex items-center justify-center p-2">
+              {imageError ? (
+                <Alert>
+                  <AlertTitle>{t('image_preview_not_available')}</AlertTitle>
+                  <AlertDescription>
+                    {t('image_preview_not_available_description')}
+                  </AlertDescription>
+                </Alert>
+              ) : (
                 <Image
-                  src={`/media/certificate-previews/${locale}/${certTemplate}-preview.png`}
                   alt={`${certTemplate} certificate template preview`}
                   width={400}
                   height={300}
                   className="object-contain"
+                  onError={() => setImageError(true)}
+                  src={`/media/certificate-previews/${locale}/${certTemplate}-preview.png`}
                 />
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
