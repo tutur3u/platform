@@ -104,9 +104,6 @@ enable_confirmations = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1s"
 
-[auth.rate_limit]
-email_sent = 1000000
-
 # Use a production-ready SMTP server
 # [auth.email.smtp]
 # host = "smtp.sendgrid.net"
@@ -141,6 +138,14 @@ content_path = "./supabase/templates/magic_link.html"
 [auth.email.template.recovery]
 subject = "Tuturuuu Password Recovery"
 content_path = "./supabase/templates/recovery.html"
+
+[auth.mfa]
+totp.enroll_enabled = true
+totp.verify_enabled = true
+max_enrolled_factors = 10
+
+[auth.rate_limit]
+email_sent = 1000000
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
