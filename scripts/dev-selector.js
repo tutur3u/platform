@@ -238,8 +238,22 @@ async function runCommands(commands) {
 function startDevelopmentServers(turboCommand) {
   console.log(colorize('🚀 Starting development servers...', 'cyan'));
 
-  // Run the turbo command
-  devProcess = runShellCommand(turboCommand);
+  const isWindows = process.platform === 'win32';
+
+  if (isWindows) {
+    const [command, ...args] = turboCommand.split(' ');
+    // On Windows, spawn the command directly without an intermediate shell
+    // to ensure proper TTY handling for interactive terminals. This avoids
+    // issues where stdin is not correctly passed to the child process.
+    devProcess = spawn(command, args, {
+      stdio: 'inherit',
+      cwd: process.cwd(),
+      shell: false,
+    });
+  } else {
+    // For non-Windows platforms, the existing shell command runner works well.
+    devProcess = runShellCommand(turboCommand);
+  }
 
   devProcess.on('close', (devCode) => {
     console.log(
