@@ -4,7 +4,7 @@ import { OGCertificateDocument } from '../../templates/og-certificate';
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { renderToStream } from '@react-pdf/renderer';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Database } from '@tuturuuu/types/supabase';
+import type { CertificateTemplate } from '@tuturuuu/types/db';
 import { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import { getTranslations } from 'next-intl/server';
 import { NextRequest } from 'next/server';
@@ -47,8 +47,7 @@ export async function POST(
       certificateIdLabel: t('certificate_id'),
     };
 
-    const certTemplate: Database['public']['Enums']['certificate_templates'] =
-      certData.certTemplate;
+    const certTemplate: CertificateTemplate = certData.certTemplate;
 
     let stream;
 

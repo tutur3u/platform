@@ -1,4 +1,4 @@
-import { Database } from '@tuturuuu/types/supabase';
+import type { CertificateTemplate } from '@tuturuuu/types/db';
 
 export type CertificateDetails = {
   courseName: string;
@@ -6,7 +6,7 @@ export type CertificateDetails = {
   courseLecturer: string | null;
   completionDate: string;
   certificateId: string;
-  certTemplate: Database['public']['Enums']['certificate_templates'];
+  certTemplate: CertificateTemplate;
 };
 
 export interface CertificateData {

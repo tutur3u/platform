@@ -4,7 +4,7 @@ import { OGCertificateDocument } from '@/app/api/v1/certificates/templates/og-ce
 import { getCertificateDetails } from '@/lib/certificate-helper';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Database } from '@tuturuuu/types/supabase';
+import type { CertificateTemplate } from '@tuturuuu/types/db';
 import { CertificateViewer } from '@tuturuuu/ui/custom/education/certificates/certificate-viewer';
 import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -52,8 +52,7 @@ export default async function CertificatePage({ params }: PageProps) {
       certificateIdLabel: t('certificate_id'),
     };
 
-    const certTemplate: Database['public']['Enums']['certificate_templates'] =
-      certDetails.certTemplate;
+    const certTemplate: CertificateTemplate = certDetails.certTemplate;
     let pdfBuffer: Buffer;
     switch (certTemplate) {
       case 'elegant':
