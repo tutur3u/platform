@@ -1,5 +1,5 @@
 import ResetPasswordDialog from '../reset-password-dialog';
-import { type User } from '@supabase/supabase-js';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -27,7 +27,7 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 interface SecuritySettingsCardProps {
-  user: User | null;
+  user: SupabaseUser | null;
   className?: string;
 }
 
@@ -53,8 +53,8 @@ export default async function SecuritySettingsCard({
     <Card className={className}>
       <CardHeader className="pb-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-full bg-dynamic-green/10 p-2.5 dark:bg-dynamic-green/20">
-            <Shield className="h-5 w-5 text-dynamic-green dark:text-dynamic-green/80" />
+          <div className="rounded-full bg-dynamic-green/10 p-2.5">
+            <Shield className="h-5 w-5 text-dynamic-green" />
           </div>
           <div className="space-y-1">
             <CardTitle className="text-xl font-semibold">
@@ -69,8 +69,8 @@ export default async function SecuritySettingsCard({
               variant={securityLevel === 'good' ? 'default' : 'destructive'}
               className={
                 securityLevel === 'good'
-                  ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green dark:bg-dynamic-green/20 dark:text-dynamic-green/80'
-                  : 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red dark:bg-dynamic-red/20 dark:text-dynamic-red/80'
+                  ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
+                  : 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
               }
             >
               {securityLevel === 'good' ? (
@@ -92,25 +92,25 @@ export default async function SecuritySettingsCard({
         {/* Security Overview */}
         <div className="grid gap-4 sm:grid-cols-3">
           {/* Email Verification */}
-          <div className="rounded-lg border bg-gradient-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4 dark:from-dynamic-blue/5 dark:to-dynamic-cyan/5">
+          <div className="rounded-lg border bg-gradient-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-full bg-dynamic-blue/10 p-2 dark:bg-dynamic-blue/20">
-                <Mail className="h-4 w-4 text-dynamic-blue dark:text-dynamic-blue/80" />
+              <div className="rounded-full bg-dynamic-blue/10 p-2">
+                <Mail className="h-4 w-4 text-dynamic-blue" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">{t('email-verification')}</p>
                 <div className="flex items-center gap-2">
                   {user.email ? (
                     <>
-                      <CheckCircle2 className="h-4 w-4 text-dynamic-green dark:text-dynamic-green/80" />
-                      <span className="text-xs text-dynamic-green dark:text-dynamic-green/80">
+                      <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
+                      <span className="text-xs text-dynamic-green">
                         {t('verified')}
                       </span>
                     </>
                   ) : (
                     <>
-                      <AlertTriangle className="text-dynamic-amber dark:text-dynamic-amber/80 h-4 w-4" />
-                      <span className="text-dynamic-amber dark:text-dynamic-amber/80 text-xs">
+                      <AlertTriangle className="text-dynamic-amber h-4 w-4" />
+                      <span className="text-dynamic-amber text-xs">
                         {t('unverified')}
                       </span>
                     </>
@@ -121,10 +121,10 @@ export default async function SecuritySettingsCard({
           </div>
 
           {/* Password Protection */}
-          <div className="rounded-lg border bg-gradient-to-br from-dynamic-indigo/5 to-dynamic-purple/5 p-4 dark:from-dynamic-indigo/5 dark:to-dynamic-purple/5">
+          <div className="rounded-lg border bg-gradient-to-br from-dynamic-indigo/5 to-dynamic-purple/5 p-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-full bg-dynamic-indigo/10 p-2 dark:bg-dynamic-indigo/20">
-                <Lock className="h-4 w-4 text-dynamic-indigo dark:text-dynamic-indigo/80" />
+              <div className="rounded-full bg-dynamic-blue/10 p-2">
+                <Lock className="h-4 w-4 text-dynamic-blue" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">
@@ -133,15 +133,15 @@ export default async function SecuritySettingsCard({
                 <div className="flex items-center gap-2">
                   {hasPassword ? (
                     <>
-                      <CheckCircle2 className="h-4 w-4 text-dynamic-green dark:text-dynamic-green/80" />
-                      <span className="text-xs text-dynamic-green dark:text-dynamic-green/80">
+                      <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
+                      <span className="text-xs text-dynamic-green">
                         {t('protected')}
                       </span>
                     </>
                   ) : (
                     <>
-                      <AlertTriangle className="text-dynamic-amber dark:text-dynamic-amber/80 h-4 w-4" />
-                      <span className="text-dynamic-amber dark:text-dynamic-amber/80 text-xs">
+                      <AlertTriangle className="text-dynamic-amber h-4 w-4" />
+                      <span className="text-dynamic-amber text-xs">
                         {t('weak')}
                       </span>
                     </>
@@ -152,16 +152,16 @@ export default async function SecuritySettingsCard({
           </div>
 
           {/* Account Age */}
-          <div className="from-dynamic-emerald/5 to-dynamic-teal/5 dark:from-dynamic-emerald/5 dark:to-dynamic-teal/5 rounded-lg border bg-gradient-to-br p-4">
+          <div className="rounded-lg border bg-gradient-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4">
             <div className="flex items-center gap-3">
-              <div className="bg-dynamic-emerald/10 dark:bg-dynamic-emerald/20 rounded-full p-2">
-                <Calendar className="text-dynamic-emerald dark:text-dynamic-emerald/80 h-4 w-4" />
+              <div className="rounded-full bg-dynamic-blue/10 p-2">
+                <Calendar className="h-4 w-4 text-dynamic-blue" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">{t('account-age')}</p>
                 <div className="flex items-center gap-2">
-                  <UserCheck className="text-dynamic-emerald dark:text-dynamic-emerald/80 h-4 w-4" />
-                  <span className="text-dynamic-emerald dark:text-dynamic-emerald/80 text-xs">
+                  <UserCheck className="h-4 w-4 text-dynamic-green" />
+                  <span className="text-xs text-dynamic-green">
                     {t('days-old', { days: accountAgeDays })}
                   </span>
                 </div>
@@ -220,19 +220,19 @@ export default async function SecuritySettingsCard({
 
         {/* Security Recommendations */}
         {(!user.email || securityLevel === 'warning') && (
-          <div className="rounded-lg border border-dynamic-yellow/30 bg-dynamic-yellow/5 p-4 dark:border-dynamic-yellow/50 dark:bg-dynamic-yellow/10">
+          <div className="rounded-lg border border-dynamic-yellow/30 bg-dynamic-yellow/5 p-4">
             <div className="flex gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-yellow dark:text-dynamic-yellow/80" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-yellow" />
               <div className="space-y-2">
                 <div>
-                  <p className="text-sm font-medium text-dynamic-yellow dark:text-dynamic-yellow/90">
+                  <p className="text-sm font-medium text-dynamic-yellow">
                     {t('security-recommendations')}
                   </p>
-                  <p className="text-sm text-dynamic-yellow/80 dark:text-dynamic-yellow/70">
+                  <p className="text-sm text-dynamic-yellow">
                     {t('security-recommendations-description')}
                   </p>
                 </div>
-                <ul className="space-y-1 text-sm text-dynamic-yellow/80 dark:text-dynamic-yellow/70">
+                <ul className="space-y-1 text-sm text-dynamic-yellow">
                   {!user.email && <li>• {t('verify-email-recommendation')}</li>}
                   <li>• {t('link-additional-accounts-recommendation')}</li>
                   <li>• {t('enable-2fa-recommendation')}</li>
@@ -243,19 +243,19 @@ export default async function SecuritySettingsCard({
         )}
 
         {/* Security Tips */}
-        <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4 dark:border-dynamic-blue/30 dark:bg-dynamic-blue/10">
+        <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
           <div className="flex gap-3">
-            <Shield className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-blue dark:text-dynamic-blue/80" />
+            <Shield className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-blue" />
             <div className="space-y-2">
               <div>
-                <p className="text-sm font-medium text-dynamic-blue dark:text-dynamic-blue/90">
+                <p className="text-sm font-medium text-dynamic-blue">
                   {t('security-tips')}
                 </p>
-                <p className="text-sm text-dynamic-blue/80 dark:text-dynamic-blue/70">
+                <p className="text-sm text-dynamic-blue">
                   {t('security-tips-description')}
                 </p>
               </div>
-              <ul className="space-y-1 text-sm text-dynamic-blue/80 dark:text-dynamic-blue/70">
+              <ul className="space-y-1 text-sm text-dynamic-blue">
                 <li>• {t('use-strong-passwords-tip')}</li>
                 <li>• {t('avoid-public-wifi-tip')}</li>
                 <li>• {t('regular-logout-tip')}</li>
