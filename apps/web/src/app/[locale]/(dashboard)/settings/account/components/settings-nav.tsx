@@ -69,7 +69,7 @@ export default function SettingsNav({ className }: SettingsNavProps) {
               'group relative flex items-center justify-between rounded-lg bg-background px-3 py-3 text-sm font-medium transition-all duration-200 ease-in-out',
               'hover:scale-[1.02] hover:shadow-sm active:scale-[0.98]',
               isActive
-                ? 'border border-dynamic-blue/40 bg-dynamic-blue/15 text-dynamic-blue shadow-sm ring-1 ring-dynamic-blue/20'
+                ? 'border border-dynamic-blue/30 bg-dynamic-blue/5 text-dynamic-blue shadow-sm ring-1 ring-dynamic-blue/20'
                 : 'hover:border-dynamic-border hover:text-dynamic-foreground border border-transparent text-foreground hover:bg-foreground/8'
             )}
           >
