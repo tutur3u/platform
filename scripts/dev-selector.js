@@ -8,6 +8,44 @@ let devProcess = null; // Keep a reference to the dev server process
 
 const isWindows = process.platform === 'win32';
 
+// On Windows, fallback to legacy mode due to terminal interaction issues
+if (isWindows) {
+  console.log('🪟 Windows detected - using legacy mode (running all apps)');
+  console.log('💡 For interactive selection, please use WSL or PowerShell with better TTY support');
+  
+  // Run dev:legacy which runs all apps
+  const legacyProcess = spawn('bun', ['run', 'dev:legacy'], {
+    stdio: 'inherit',
+    shell: true,
+    cwd: process.cwd(),
+  });
+
+  legacyProcess.on('close', (code) => {
+    process.exit(code);
+  });
+
+  legacyProcess.on('error', (err) => {
+    console.error('❌ Error starting development servers:', err);
+    process.exit(1);
+  });
+
+  // Handle cleanup for legacy mode
+  const cleanupLegacy = () => {
+    console.log('\n👋 Goodbye! Cleaning up...');
+    if (legacyProcess && legacyProcess.pid) {
+      spawn('taskkill', ['/pid', legacyProcess.pid, '/t', '/f'], {
+        stdio: 'ignore',
+      });
+    }
+    setTimeout(() => process.exit(0), 300);
+  };
+
+  process.on('SIGINT', cleanupLegacy);
+  process.on('SIGTERM', cleanupLegacy);
+  
+  return; // Exit early, don't run the rest of the script
+}
+
 // Colors for terminal output
 const colors = {
   reset: '\x1b[0m',

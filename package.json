@@ -6,6 +6,7 @@
     "buildx": "bun i && turbo test lint build",
     "dev": "bun scripts/dev-selector.js dev",
     "dev:all": "turbo run dev --parallel",
+    "dev:legacy": "turbo run dev --parallel",
     "dev:web": "turbo run dev -F @tuturuuu/web",
     "dev:calendar": "turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",
     "dev:rewise": "turbo run dev -F @tuturuuu/rewise -F @tuturuuu/web",
