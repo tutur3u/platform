@@ -1756,6 +1756,8 @@
     "email-verified": "Email Verified",
     "verified": "Verified",
     "member-since": "Member Since",
+    "mfa": "Multi-Factor Authentication",
+    "mfa-description": "Manage your multi-factor authentication settings",
     "security-settings": "Security Settings",
     "security-settings-description": "Manage your password and account security",
     "payment-billing": "Payment & Billing",

@@ -1768,6 +1768,8 @@
     "email-verified": "Email đã xác minh",
     "verified": "Đã xác minh",
     "member-since": "Thành viên từ",
+    "mfa": "Xác thực hai yếu tố",
+    "mfa-description": "Quản lý cài đặt xác thực hai yếu tố của bạn",
     "security-settings": "Cài đặt bảo mật",
     "security-settings-description": "Quản lý mật khẩu và bảo mật tài khoản của bạn",
     "payment-billing": "Thanh toán & Hóa đơn",
