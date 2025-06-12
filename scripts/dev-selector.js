@@ -241,11 +241,12 @@ function startDevelopmentServers(turboCommand) {
   const isWindows = process.platform === 'win32';
 
   if (isWindows) {
-    const [command, ...args] = turboCommand.split(' ');
-    // On Windows, spawn the command directly without an intermediate shell
-    // to ensure proper TTY handling for interactive terminals. This avoids
-    // issues where stdin is not correctly passed to the child process.
-    devProcess = spawn(command, args, {
+    const args = turboCommand.split(' ').slice(1);
+    // On Windows, we must spawn the `turbo.cmd` executable directly,
+    // and we must NOT use the shell. Using the shell (even `cmd.exe`)
+    // interferes with the TTY and prevents keyboard input from reaching
+    // the interactive turbo process.
+    devProcess = spawn('turbo.cmd', args, {
       stdio: 'inherit',
       cwd: process.cwd(),
       shell: false,
