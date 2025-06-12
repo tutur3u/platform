@@ -1,4 +1,4 @@
-import { WorkspaceSettingsCard } from '../components';
+import WorkspaceSettingsCard from './workspace-settings-card';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 
 export default async function WorkspacesPage() {

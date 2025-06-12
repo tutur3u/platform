@@ -1,4 +1,4 @@
-import ResetPasswordDialog from '../reset-password-dialog';
+import ResetPasswordDialog from './reset-password-dialog';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,

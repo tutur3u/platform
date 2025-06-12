@@ -1,4 +1,4 @@
-import SettingsNav from './components/settings-nav';
+import SettingsNav from './settings-nav';
 import { getTranslations } from 'next-intl/server';
 
 interface AccountLayoutProps {
@@ -12,7 +12,7 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
     <div className="w-full">
       {/* Header */}
       <div className="mb-8 space-y-1 md:space-y-3">
-        <h1 className="text-dynamic-foreground text-lg font-bold tracking-tight md:text-3xl">
+        <h1 className="text-lg font-bold tracking-tight text-foreground md:text-3xl">
           {t('account')}
         </h1>
         <p className="max-w-2xl text-sm text-foreground/70 md:text-lg">
@@ -26,7 +26,7 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
         <div className="w-full md:w-96">
           <div className="sticky top-6">
             <div className="mb-4">
-              <h2 className="text-dynamic-foreground/80 text-sm font-semibold tracking-wide uppercase">
+              <h2 className="text-sm font-semibold tracking-wide text-foreground/80 uppercase">
                 {t('account-settings')}
               </h2>
             </div>

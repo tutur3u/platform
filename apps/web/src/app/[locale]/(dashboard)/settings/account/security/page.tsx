@@ -1,4 +1,4 @@
-import { SecuritySettingsCard } from '../components';
+import SecuritySettingsCard from './security-settings-card';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 
 export default async function SecurityPage() {

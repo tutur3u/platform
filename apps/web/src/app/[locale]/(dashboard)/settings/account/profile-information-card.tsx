@@ -1,6 +1,6 @@
-import UserAvatar from '../../../../settings-avatar';
-import DisplayNameInput from '../../../../settings-display-name-input';
-import FullNameInput from '../../../../settings-full-name-input';
+import UserAvatar from '../../../settings-avatar';
+import DisplayNameInput from '../../../settings-display-name-input';
+import FullNameInput from '../../../settings-full-name-input';
 import AccountStatusSection from './account-status-section';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
