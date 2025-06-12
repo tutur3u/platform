@@ -6,6 +6,8 @@ const path = require('path');
 
 let devProcess = null; // Keep a reference to the dev server process
 
+const isWindows = process.platform === 'win32';
+
 // Colors for terminal output
 const colors = {
   reset: '\x1b[0m',
@@ -19,7 +21,12 @@ const colors = {
   gray: '\x1b[90m',
 };
 
-const colorize = (text, color) => `${colors[color]}${text}${colors.reset}`;
+const colorize = (text, color) => {
+  // On Windows, especially in older terminals, ANSI codes can cause issues.
+  // Disabling colors improves compatibility.
+  if (isWindows) return text;
+  return `${colors[color]}${text}${colors.reset}`;
+};
 
 const rl = readline.createInterface({
   input: process.stdin,
