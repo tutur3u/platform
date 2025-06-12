@@ -5041,6 +5041,7 @@ export type Database = {
       };
       workspace_courses: {
         Row: {
+          cert_template: Database['public']['Enums']['certificate_templates'];
           created_at: string;
           description: string | null;
           id: string;
@@ -5050,6 +5051,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          cert_template?: Database['public']['Enums']['certificate_templates'];
           created_at?: string;
           description?: string | null;
           id?: string;
@@ -5059,6 +5061,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          cert_template?: Database['public']['Enums']['certificate_templates'];
           created_at?: string;
           description?: string | null;
           id?: string;
@@ -7828,6 +7831,7 @@ export type Database = {
         | 'paragraph_quiz'
         | 'flashcards';
       calendar_hour_type: 'WORK' | 'PERSONAL' | 'MEETING';
+      certificate_templates: 'original' | 'modern' | 'elegant';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       dataset_type: 'excel' | 'csv' | 'html';
       task_board_status: 'not_started' | 'active' | 'done' | 'closed';
@@ -7980,6 +7984,7 @@ export const Constants = {
         'flashcards',
       ],
       calendar_hour_type: ['WORK', 'PERSONAL', 'MEETING'],
+      certificate_templates: ['original', 'modern', 'elegant'],
       chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
       dataset_type: ['excel', 'csv', 'html'],
       task_board_status: ['not_started', 'active', 'done', 'closed'],

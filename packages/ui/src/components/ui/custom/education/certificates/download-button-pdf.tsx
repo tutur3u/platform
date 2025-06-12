@@ -1,6 +1,5 @@
 'use client';
 
-import { BASE_URL } from '@/constants/common';
 import { Button } from '@tuturuuu/ui/button';
 import { FileText } from '@tuturuuu/ui/icons';
 import { useLocale, useTranslations } from 'next-intl';
@@ -11,19 +10,32 @@ export function DownloadButtonPDF({
   wsId,
   className = '',
   variant = 'outline',
+  pdfDataUrl,
 }: {
   certificateId: string;
   wsId: string;
   className?: string;
   variant?: 'default' | 'outline' | 'ghost' | 'link' | 'destructive';
+  pdfDataUrl?: string;
 }) {
   const t = useTranslations('certificates');
   const locale = useLocale();
 
   const handleDownload = useCallback(async () => {
     try {
+      if (pdfDataUrl) {
+        // Use the data URL directly for download
+        const link = document.createElement('a');
+        link.href = pdfDataUrl;
+        link.download = `${certificateId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return;
+      }
+
       const res = await fetch(
-        `${BASE_URL}/api/v1/certificates/${certificateId}/generate`,
+        `/api/v1/certificates/${certificateId}/generate`,
         {
           method: 'POST',
           headers: {
@@ -55,7 +67,7 @@ export function DownloadButtonPDF({
     } catch (error) {
       console.error('Error downloading PDF:', error);
     }
-  }, [certificateId, wsId]);
+  }, [certificateId, wsId, pdfDataUrl, locale]);
 
   return (
     <Button

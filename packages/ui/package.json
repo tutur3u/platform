@@ -125,6 +125,10 @@
       "types": "./src/components/ui/text-editor/types.ts",
       "import": "./src/components/ui/text-editor/types.ts"
     },
+    "./custom/education/certificates/types": {
+      "types": "./src/components/ui/custom/education/certificates/types.ts",
+      "import": "./src/components/ui/custom/education/certificates/types.ts"
+    },
     "./*": "./src/components/ui/*.tsx"
   }
 }

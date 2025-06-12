@@ -3539,6 +3539,8 @@
     "create_description": "Create a new course",
     "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
     "course_description": "Course description",
+    "certificate_template": "Certificate Design",
+    "select_certificate_template": "Choose a certificate template",
     "edit": "Edit course",
     "name": "Course name",
     "edit_description": "Edit an existing course",
@@ -3546,7 +3548,11 @@
     "card_view": "Card View",
     "table_view": "Table View",
     "no_courses_found": "No courses found",
-    "no_description_provided": "No description provided"
+    "no_description_provided": "No description provided",
+    "image_preview_not_available": "Image Preview Not Available",
+    "image_preview_not_available_description": "A preview of the certificate template is not available.",
+    "hide_certificate_preview": "Hide Certificate Preview",
+    "show_certificate_preview": "Show Certificate Preview"
   },
   "ws-crawlers": {
     "plural": "Crawlers",

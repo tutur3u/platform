@@ -20,10 +20,12 @@ import { useState } from 'react';
 
 interface WorkspaceCourseRowActionsProps {
   row: Row<WorkspaceCourse>;
+  enableCerts?: boolean;
 }
 
 export function WorkspaceCourseRowActions({
   row,
+  enableCerts = false,
 }: WorkspaceCourseRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
@@ -105,6 +107,7 @@ export function WorkspaceCourseRowActions({
           <CourseForm
             wsId={data.ws_id}
             data={{ ...data, description: data.description ?? '' }}
+            enableCerts={enableCerts}
           />
         }
       />
