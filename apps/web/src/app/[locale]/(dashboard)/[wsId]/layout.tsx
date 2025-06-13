@@ -373,7 +373,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           icon: <Archive className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_inventory'),
           shortcut: 'I',
-        },
+      },
       ],
     },
     null,

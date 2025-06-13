@@ -1,5 +1,6 @@
 'use client';
 
+import { Checkout } from '@polar-sh/nextjs';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -168,18 +169,20 @@ export default function BillingPage() {
       </p>
 
       {/* Current Plan Card */}
-      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold">Current Plan</h2>
-            <p className="text-gray-500">Your subscription details</p>
+            <h2 className="text-2xl font-semibold tracking-tight text-card-foreground">
+              Current Plan
+            </h2>
+            <p className="text-muted-foreground">Your subscription details</p>
           </div>
           <div className="flex items-center">
             <span
               className={`rounded-full px-3 py-1 text-sm font-medium ${
                 currentPlan.status === 'active'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-yellow-100 text-yellow-800'
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
               }`}
             >
               {currentPlan.status === 'active' ? 'Active' : 'Pending'}
@@ -190,10 +193,12 @@ export default function BillingPage() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="col-span-2">
             <div className="mb-6">
-              <h3 className="mb-1 text-xl font-bold">{currentPlan.name}</h3>
-              <p className="text-2xl font-bold text-blue-600">
+              <h3 className="mb-1 text-xl font-bold text-card-foreground">
+                {currentPlan.name}
+              </h3>
+              <p className="text-2xl font-bold text-primary">
                 {currentPlan.price}
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   /{currentPlan.billingCycle}
                 </span>
               </p>
@@ -201,21 +206,32 @@ export default function BillingPage() {
 
             <div className="mb-6 grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-500">Start Date</p>
-                <p className="font-medium">{currentPlan.startDate}</p>
+                <p className="text-sm text-muted-foreground">Start Date</p>
+                <p className="font-medium text-card-foreground">
+                  {currentPlan.startDate}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Next Billing Date</p>
-                <p className="font-medium">{currentPlan.nextBillingDate}</p>
+                <p className="text-sm text-muted-foreground">
+                  Next Billing Date
+                </p>
+                <p className="font-medium text-card-foreground">
+                  {currentPlan.nextBillingDate}
+                </p>
               </div>
             </div>
 
             <div className="mb-6">
-              <h4 className="mb-2 font-medium">Features:</h4>
+              <h4 className="mb-2 font-medium text-card-foreground">
+                Features:
+              </h4>
               <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {currentPlan.features?.map((feature, index) => (
-                  <li key={index} className="flex items-center">
-                    <CheckCircle className="mr-2 h-5 w-5 text-green-500" />
+                  <li
+                    key={index}
+                    className="flex items-center text-card-foreground"
+                  >
+                    <CheckCircle className="mr-2 h-5 w-5 text-primary" />
                     {feature}
                   </li>
                 ))}
@@ -223,32 +239,40 @@ export default function BillingPage() {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <button
+              <Button
                 onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
-                className="flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                className="flex items-center"
               >
                 <ArrowUpCircle className="mr-1 h-5 w-5" />
                 Upgrade Plan
-              </button>
-              <button className="rounded-md border border-gray-300 px-4 py-2 hover:bg-gray-50">
+              </Button>
+              <Button variant="outline" className="border-border">
                 Cancel Subscription
-              </button>
+              </Button>
             </div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
-            <h3 className="mb-4 text-lg font-semibold">Payment Method</h3>
+          <div className="rounded-lg border border-border bg-accent/30 p-6">
+            <h3 className="mb-4 text-lg font-semibold text-card-foreground">
+              Payment Method
+            </h3>
             <div className="mb-4 flex items-center">
-              <CreditCard className="mr-3 h-8 w-8 text-gray-500" />
+              <CreditCard className="mr-3 h-8 w-8 text-muted-foreground" />
               <div>
-                <p className="font-medium">Visa ending in 4242</p>
-                <p className="text-sm text-gray-500">Expires 05/2025</p>
+                <p className="font-medium text-card-foreground">
+                  Visa ending in 4242
+                </p>
+                <p className="text-sm text-muted-foreground">Expires 05/2025</p>
               </div>
             </div>
             <div className="mt-6">
-              <button className="text-sm font-medium text-blue-600 hover:text-blue-800">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm font-medium"
+              >
                 Update payment method
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -256,50 +280,57 @@ export default function BillingPage() {
 
       {/* Upgrade Options */}
       {showUpgradeOptions && (
-        <div className="mb-8 rounded-lg border-2 border-blue-200 bg-white p-8 shadow-sm">
-          <h2 className="mb-6 text-2xl font-semibold">Upgrade Options</h2>
+        <div className="mb-8 rounded-lg border-2 border-primary/20 bg-card p-8 shadow-sm dark:bg-card/80">
+          <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
+            Upgrade Options
+          </h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {upgradePlans.map((plan) => (
               <div
                 key={plan.id}
-                className={`rounded-lg border p-6 transition-shadow hover:shadow-md ${
-                  plan.popular ? 'relative border-blue-500' : ''
+                className={`rounded-lg border transition-shadow hover:shadow-md ${
+                  plan.popular ? 'relative border-primary' : 'border-border'
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute top-0 right-0 rounded-tr-md rounded-bl-lg bg-blue-500 px-3 py-1 text-xs text-white">
+                  <div className="absolute top-0 right-0 rounded-tr-md rounded-bl-lg bg-primary px-3 py-1 text-xs text-primary-foreground">
                     RECOMMENDED
                   </div>
                 )}
-                <h3 className="mb-1 text-xl font-bold">{plan.name}</h3>
-                <p className="mb-4 text-2xl font-bold text-blue-600">
-                  {plan.price}
-                  <span className="text-sm text-gray-500">
-                    /{plan.billingCycle}
-                  </span>
-                </p>
-                <ul className="mb-6">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="mb-2 flex items-start">
-                      <CheckCircle className="mt-0.5 mr-2 h-5 w-5 flex-shrink-0 text-green-500" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => handleUpgradePlan(plan.id)}
-                  className={`w-full rounded-md px-4 py-2 ${
-                    plan.popular
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'border border-blue-600 text-blue-600 hover:bg-blue-50'
-                  }`}
-                >
-                  Select {plan.name}
-                </button>
+                <div className="p-6">
+                  <h3 className="mb-1 text-xl font-bold text-card-foreground">
+                    {plan.name}
+                  </h3>
+                  <p className="mb-4 text-2xl font-bold text-primary">
+                    {plan.price}
+                    <span className="text-sm text-muted-foreground">
+                      /{plan.billingCycle}
+                    </span>
+                  </p>
+                  <ul className="mb-6">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="mb-2 flex items-start">
+                        <CheckCircle className="mt-0.5 mr-2 h-5 w-5 flex-shrink-0 text-primary" />
+                        <span className="text-card-foreground">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    onClick={() => handleUpgradePlan(plan.id)}
+                    className={`w-full ${
+                      plan.popular
+                        ? ''
+                        : 'border-primary bg-transparent text-primary hover:bg-primary/10'
+                    }`}
+                    variant={plan.popular ? 'default' : 'outline'}
+                  >
+                    Select {plan.name}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-sm text-gray-500">
+          <p className="mt-6 text-sm text-muted-foreground">
             * Upgrading your plan will take effect immediately. You'll be
             charged the prorated amount for the remainder of your current
             billing cycle.
@@ -308,48 +339,52 @@ export default function BillingPage() {
       )}
 
       {/* Plan History */}
-      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-        <h2 className="mb-6 text-2xl font-semibold">Plan History</h2>
+      <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
+        <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
+          Plan History
+        </h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
+          <table className="min-w-full">
             <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-gray-500 uppercase">
+              <tr className="border-b border-border bg-muted/50">
+                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
                   Plan
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
                   Price
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
                   Start Date
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
                   End Date
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
                   Status
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {planHistory?.map((plan, index) => (
                 <tr key={index}>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
                     {plan.planName}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">{plan.price}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
+                    {plan.price}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
                     {plan.startDate}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
                     {plan.endDate || '-'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span
                       className={`inline-flex rounded-full px-2 text-xs leading-5 font-semibold ${
                         plan.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-muted text-muted-foreground'
                       }`}
                     >
                       {plan.status}
@@ -363,45 +398,49 @@ export default function BillingPage() {
       </div>
 
       {/* Payment History */}
-      <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-        <h2 className="mb-6 text-2xl font-semibold">Payment History</h2>
+      <div className="rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
+        <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
+          Payment History
+        </h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
+          <table className="min-w-full">
             <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-gray-500 uppercase">
+              <tr className="border-b border-border bg-muted/50">
+                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
                   Invoice #
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
                   Date
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
                   Amount
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {paymentHistory.map((payment) => (
                 <tr key={payment.id}>
-                  <td className="px-4 py-3 whitespace-nowrap">{payment.id}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
+                    {payment.id}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
                     {payment.date}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
                     {payment.amount}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span
                       className={`inline-flex rounded-full px-2 text-xs leading-5 font-semibold ${
                         payment.status === 'Paid'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                       }`}
                     >
                       {payment.status}
@@ -409,7 +448,7 @@ export default function BillingPage() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <button
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-primary hover:text-primary/80"
                       title="Download Receipt"
                     >
                       <Receipt className="h-5 w-5" />
