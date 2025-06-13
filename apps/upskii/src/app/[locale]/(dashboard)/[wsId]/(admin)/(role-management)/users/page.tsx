@@ -139,11 +139,26 @@ async function getUserData({
 
       if (countError) {
         console.error('Error getting count:', countError);
-        return { userData: data || [], userCount: data?.length || 0 };
+        return {
+          userData: (data || [])
+            .map((user: any) => ({
+              ...user,
+              services: user.services || [],
+            }))
+            .filter((user: any) => user.services?.includes('UPSKII')),
+          userCount: (data || []).filter((user: any) =>
+            user.services?.includes('UPSKII')
+          ).length,
+        };
       }
 
       return {
-        userData: data || [],
+        userData: (data || [])
+          .map((user: any) => ({
+            ...user,
+            services: user.services || [],
+          }))
+          .filter((user: any) => user.services?.includes('UPSKII')),
         userCount: countData || 0,
       };
     }
@@ -157,6 +172,7 @@ async function getUserData({
           count: 'exact',
         }
       )
+      .contains('users.services', ['UPSKII'])
       .order('created_at', { ascending: false })
       .order('user_id');
 
@@ -205,6 +221,7 @@ async function getUserData({
       userData:
         data.map(({ nova_team_members, ...user }) => ({
           ...user,
+          services: user.services || [],
           team_name:
             nova_team_members
               ?.map((member) => member.team_name)

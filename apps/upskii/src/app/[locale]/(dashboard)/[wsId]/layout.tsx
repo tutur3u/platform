@@ -2,6 +2,7 @@ import InvitationCard from '@/app/[locale]/(dashboard)/_components/invitation-ca
 import { Structure } from '@/components/layout/structure';
 import NavbarActions from '@/components/navbar-actions';
 import type { NavLink } from '@/components/navigation';
+import { EducationBanner } from '@/components/request-education-banner';
 import { UserNav } from '@/components/user-nav';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import {
@@ -49,6 +50,14 @@ export default async function Layout({ children, params }: LayoutProps) {
     name: 'ENABLE_AI_ONLY',
     value: 'true',
   });
+
+  const ENABLE_EDUCATION = await verifySecret({
+    forceAdmin: true,
+    wsId,
+    name: 'ENABLE_EDUCATION',
+    value: 'true',
+  });
+  console.log('ENABLE_EDUCATION', ENABLE_EDUCATION);
 
   const navLinks: (NavLink | null)[] = [
     // {
@@ -266,7 +275,12 @@ export default async function Layout({ children, params }: LayoutProps) {
   ];
 
   const workspace = await getWorkspace(wsId);
+
   const user = await getCurrentUser();
+
+  // Check if user is workspace creator for education access request
+  const isWorkspaceCreator = workspace?.role === 'OWNER';
+  const shouldShowRequestButton = isWorkspaceCreator && !ENABLE_EDUCATION;
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
 
@@ -306,6 +320,9 @@ export default async function Layout({ children, params }: LayoutProps) {
         </Suspense>
       }
     >
+      {shouldShowRequestButton && workspace.name && (
+        <EducationBanner workspaceName={workspace.name} wsId={wsId} />
+      )}
       {children}
     </Structure>
   );

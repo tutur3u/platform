@@ -3,7 +3,7 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import Image from 'next/image';
 import { Suspense } from 'react';
 
-export function TokenVerifier() {
+export function TokenVerifier({ devMode }: { devMode: boolean }) {
   return (
     <div className="fixed inset-0 flex h-screen w-screen flex-col items-center justify-center gap-2">
       <div className="flex items-center justify-center">
@@ -23,7 +23,7 @@ export function TokenVerifier() {
           </div>
         }
       >
-        <TokenVerifierCore />
+        <TokenVerifierCore devMode={devMode} />
       </Suspense>
     </div>
   );

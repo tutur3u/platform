@@ -207,10 +207,12 @@ export const verifyRouteToken = async ({
   searchParams,
   token,
   router,
+  devMode,
 }: {
   searchParams: URLSearchParams;
   token: string | null;
   router: any;
+  devMode: boolean;
 }) => {
   const supabase = createClient();
 
@@ -230,7 +232,7 @@ export const verifyRouteToken = async ({
   } else {
     let userId = user?.id;
 
-    if (!userId) {
+    if (devMode || !userId) {
       const res = await fetch('/api/auth/verify-app-token', {
         method: 'POST',
         headers: {
