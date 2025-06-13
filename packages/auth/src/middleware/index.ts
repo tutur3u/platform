@@ -1,4 +1,5 @@
 import { updateSession } from '@tuturuuu/supabase/next/middleware';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -31,6 +32,24 @@ interface CentralizedAuthOptions {
    * @default true
    */
   skipApiRoutes?: boolean;
+}
+
+interface MFAMiddlewareOptions {
+  /**
+   * Paths that require MFA
+   */
+  protectedPaths?: string[];
+
+  /**
+   * Paths that are excluded from MFA checks
+   */
+  excludedPaths?: string[];
+
+  /**
+   * Whether to enforce MFA for all authenticated routes
+   * @default true
+   */
+  enforceForAll?: boolean;
 }
 
 /**
@@ -91,6 +110,76 @@ export function createCentralizedAuthMiddleware(
     } catch (error) {
       console.error('Error updating session:', error);
       return NextResponse.redirect(new URL('/', req.nextUrl));
+    }
+  };
+}
+
+export function createMFAMiddleware(options: MFAMiddlewareOptions = {}) {
+  const {
+    protectedPaths = [],
+    excludedPaths = [],
+    enforceForAll = true,
+  } = options;
+
+  return async function mfaMiddleware(
+    req: NextRequest
+  ): Promise<NextResponse | null> {
+    const pathname = req.nextUrl.pathname;
+
+    // Skip if path is excluded
+    if (excludedPaths.some((path) => pathname.startsWith(path))) {
+      return null;
+    }
+
+    // Check if this path requires MFA
+    const needsMFA =
+      enforceForAll || protectedPaths.some((path) => pathname.startsWith(path));
+
+    if (!needsMFA) {
+      return null;
+    }
+
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return null;
+
+      // Check if user has verified MFA factors
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const hasVerifiedMFA = factors?.all?.some(
+        (factor) => factor.status === 'verified'
+      );
+
+      if (hasVerifiedMFA) {
+        // Check current AAL level
+        const { data: assuranceLevel } =
+          await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+        if (
+          assuranceLevel?.currentLevel === 'aal1' &&
+          assuranceLevel?.nextLevel === 'aal2'
+        ) {
+          // Sign out for security
+          await supabase.auth.signOut();
+        }
+      }
+
+      return null; // Continue processing
+    } catch (error) {
+      console.error('Error in MFA middleware:', error);
+
+      // On error, sign out for security
+      try {
+        const supabase = await createClient();
+        await supabase.auth.signOut();
+      } catch (signOutError) {
+        console.error('Error signing out in MFA middleware:', signOutError);
+      }
+
+      return null;
     }
   };
 }

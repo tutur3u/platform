@@ -30,12 +30,19 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
 
+// Constants
+const COOLDOWN_DURATION = 60;
+const MAX_OTP_LENGTH = 6;
+
 export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const supabase = createClient();
   const t = useTranslations();
   const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const PasswordFormSchema = z.object({
+  // Schema Definitions
+  const passwordFormSchema = z.object({
     email: z.string().email(),
     password: z.string().min(8, t('login.password_min_length')),
   });
@@ -45,39 +52,49 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     otp: z.string(),
   });
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const TOTPFormSchema = z.object({
+    totp: z.string().length(6, 'TOTP code must be 6 digits'),
+  });
 
+  // Form Hooks
+  const otpForm = useForm({
+    resolver: zodResolver(OTPFormSchema),
+    defaultValues: {
+      email: DEV_MODE ? 'local@tuturuuu.com' : '',
+      otp: '',
+    },
+  });
+
+  const passwordForm = useForm({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: {
+      email: DEV_MODE ? 'local@tuturuuu.com' : '',
+      password: '',
+    },
+  });
+
+  const totpForm = useForm({
+    resolver: zodResolver(TOTPFormSchema),
+    defaultValues: {
+      totp: '',
+    },
+  });
+
+  // State Management
   const passwordless = searchParams.get('passwordless') !== 'false';
-
   const [initialized, setInitialized] = useState(false);
   const [readyForAuth, setReadyForAuth] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [requiresMFA, setRequiresMFA] = useState(false);
   const [loginMethod, setLoginMethod] = useState<'passwordless' | 'password'>(
     passwordless ? 'passwordless' : 'password'
   );
   const [showPassword, setShowPassword] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
-  useEffect(() => {
-    if (passwordless) {
-      setLoginMethod('passwordless');
-    } else {
-      setLoginMethod('password');
-    }
-  }, [passwordless]);
-
-  useEffect(() => {
-    async function checkUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-      setInitialized(true);
-    }
-
-    checkUser();
-  }, []);
-
+  // URL Processing Helper
   const processNextUrl = useCallback(async () => {
     const returnUrl = searchParams.get('returnUrl');
 
@@ -101,14 +118,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         return;
       }
 
-      // construct nextUrl with searchParams
       const nextUrl = new URL(returnUrl);
       nextUrl.searchParams.set('token', token);
       nextUrl.searchParams.set('originApp', 'web');
       nextUrl.searchParams.set('targetApp', returnApp);
       nextUrl.searchParams.set('locale', locale);
 
-      // Redirect to the nextUrl
       router.push(nextUrl.toString());
       router.refresh();
       return;
@@ -125,80 +140,42 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     router.refresh();
   }, [searchParams, router]);
 
-  useEffect(() => {
-    const processUrl = async () => {
-      // Check if the user is logged in
-      if (user) await processNextUrl();
-      else {
-        setReadyForAuth(true);
-      }
-    };
+  const loginWithPassword = async (data: {
+    email: string;
+    password: string;
+  }) => {
+    if (!locale || !data.email || !data.password) return;
+    setLoading(true);
 
-    if (initialized) {
-      processUrl();
-    }
-  }, [user, initialized]);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
 
-  // Form for OTP (passwordless) login
-  const otpForm = useForm({
-    resolver: zodResolver(OTPFormSchema),
-    defaultValues: {
-      email: DEV_MODE ? 'local@tuturuuu.com' : '',
-      otp: '',
-    },
-  });
+      if (error) throw error;
 
-  // Form for password-based login
-  const passwordForm = useForm({
-    resolver: zodResolver(PasswordFormSchema),
-    defaultValues: {
-      email: DEV_MODE ? 'local@tuturuuu.com' : '',
-      password: '',
-    },
-  });
-
-  useEffect(() => {
-    if (DEV_MODE) {
-      if (loginMethod === 'passwordless') {
-        otpForm.setFocus('email');
+      if (await needsMFA()) {
+        setRequiresMFA(true);
       } else {
-        passwordForm.setFocus('email');
+        window.location.reload();
       }
+    } catch (error) {
+      console.error('Error signing in with password:', error);
+      passwordForm.setError('password', {
+        message: t('login.invalid_credentials'),
+      });
+
+      toast({
+        title: t('login.failed'),
+        description: t('login.invalid_credentials'),
+      });
     }
-  }, [DEV_MODE, loginMethod]);
 
-  const [otpSent, setOtpSent] = useState(false);
-  const [loading, setLoading] = useState(false);
+    setLoading(false);
+  };
 
-  // Resend cooldown
-  const cooldown = 60;
-  const [resendCooldown, setResendCooldown] = useState(0);
-
-  const maxOTPLength = 6;
-
-  // Update resend cooldown OTP is sent
-  useEffect(() => {
-    if (otpSent) {
-      setResendCooldown(cooldown);
-
-      // if on DEV_MODE, auto-open inbucket
-      if (DEV_MODE) {
-        window.open(window.location.origin.replace('7803', '8004'), '_blank');
-      }
-    }
-  }, [otpSent]);
-
-  // Reduce cooldown by 1 every second
-  useEffect(() => {
-    if (resendCooldown > 0) {
-      const timer = setTimeout(() => {
-        setResendCooldown((prev) => prev - 1);
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [resendCooldown]);
-
+  // Authentication Functions
   const sendOtp = async (data: { email: string }) => {
     if (!locale || !data.email) return;
     setLoading(true);
@@ -209,19 +186,19 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     });
 
     if (res.ok) {
-      // Notify user
       toast({
         title: t('login.success'),
         description: t('login.otp_sent'),
       });
 
-      // OTP has been sent
       otpForm.setValue('otp', '');
       otpForm.clearErrors('otp');
       setOtpSent(true);
+      setResendCooldown(COOLDOWN_DURATION);
 
-      // Reset cooldown
-      setResendCooldown(cooldown);
+      if (DEV_MODE) {
+        window.open(window.location.origin.replace('7803', '8004'), '_blank');
+      }
     } else {
       toast({
         title: t('login.failed'),
@@ -259,67 +236,73 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
   };
 
-  const loginWithPassword = async (data: {
-    email: string;
-    password: string;
-  }) => {
-    if (!locale || !data.email || !data.password) return;
+  const needsMFA = async () => {
+    const { data: assuranceLevel } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+    if (
+      assuranceLevel?.currentLevel === 'aal1' &&
+      assuranceLevel?.nextLevel === 'aal2'
+    )
+      return true;
+
+    return false;
+  };
+
+  const verifyTOtp = async (data: { totp: string }) => {
+    if (!data.totp) return;
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
+      const { data: factors, error: factorsError } =
+        await supabase.auth.mfa.listFactors();
+
+      if (factorsError) throw factorsError;
+
+      const totpFactor = factors?.totp?.find(
+        (factor) => factor.status === 'verified'
+      );
+
+      if (!totpFactor) throw new Error('No verified TOTP factor found');
+
+      const { data: challenge, error: challengeError } =
+        await supabase.auth.mfa.challenge({
+          factorId: totpFactor.id,
+        });
+
+      if (challengeError) throw challengeError;
+
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: totpFactor.id,
+        challengeId: challenge.id,
+        code: data.totp,
       });
 
-      if (error) {
-        throw error;
-      }
+      if (verifyError) throw verifyError;
 
-      // On successful login, reload the page
       window.location.reload();
     } catch (error) {
-      setLoading(false);
-      passwordForm.setError('password', {
-        message: t('login.invalid_credentials'),
+      console.error('Error verifying TOTP:', error);
+      totpForm.setError('totp', {
+        message: t('login.invalid_verification_code'),
       });
+      totpForm.setValue('totp', '');
+
+      setLoading(false);
 
       toast({
         title: t('login.failed'),
-        description: t('login.invalid_credentials'),
+        description: t('login.invalid_verification_code'),
       });
     }
   };
 
-  async function onOtpSubmit(data: z.infer<typeof OTPFormSchema>) {
-    const { email, otp } = data;
-
-    if (!otpSent) await sendOtp({ email });
-    else if (otp) await verifyOtp({ email, otp });
-    else {
-      setLoading(false);
-      toast({
-        title: 'Error',
-        description:
-          'Please enter the OTP code sent to your email to continue.',
-      });
-    }
-  }
-
-  async function onPasswordSubmit(data: z.infer<typeof PasswordFormSchema>) {
-    await loginWithPassword(data);
-  }
-
-  // Google login function
   const handleGoogleLogin = async () => {
     setLoading(true);
     const supabase = createClient();
 
-    // Pass the returnUrl and/or nextUrl to the callback
     const returnUrl = searchParams.get('returnUrl');
     const nextUrl = searchParams.get('nextUrl');
-
-    // Build the redirect URL with query parameters
     let redirectURL = `${window.location.origin}/${locale}/login`;
     const searchParamsArray = [];
 
@@ -332,7 +315,6 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       redirectURL += `?${searchParamsArray.join('&')}`;
     }
 
-    // Sign in with Google
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -354,16 +336,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
   };
 
-  // GitHub login function
   const handleGitHubLogin = async () => {
     setLoading(true);
     const supabase = createClient();
 
-    // Pass the returnUrl and/or nextUrl to the callback
     const returnUrl = searchParams.get('returnUrl');
     const nextUrl = searchParams.get('nextUrl');
-
-    // Build the redirect URL with query parameters
     let redirectURL = `${window.location.origin}/${locale}/login`;
     const searchParamsArray = [];
 
@@ -376,7 +354,6 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       redirectURL += `?${searchParamsArray.join('&')}`;
     }
 
-    // Sign in with GitHub
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
@@ -394,7 +371,85 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
   };
 
-  if (!initialized) {
+  const onPasswordSubmit = async (data: z.infer<typeof passwordFormSchema>) => {
+    await loginWithPassword(data);
+  };
+
+  const onOtpSubmit = async (data: z.infer<typeof OTPFormSchema>) => {
+    const { email, otp } = data;
+
+    if (!otpSent) await sendOtp({ email });
+    else if (otp) await verifyOtp({ email, otp });
+    else {
+      toast({
+        title: 'Error',
+        description:
+          'Please enter the OTP code sent to your email to continue.',
+      });
+    }
+
+    setLoading(false);
+  };
+
+  const onTOtpSubmit = async (data: z.infer<typeof TOTPFormSchema>) => {
+    await verifyTOtp(data);
+  };
+
+  useEffect(() => {
+    if (passwordless) {
+      setLoginMethod('passwordless');
+    } else {
+      setLoginMethod('password');
+    }
+  }, [passwordless]);
+
+  useEffect(() => {
+    async function checkUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      setInitialized(true);
+    }
+
+    checkUser();
+  }, []);
+
+  useEffect(() => {
+    const processUrl = async () => {
+      if (user) await processNextUrl();
+      else {
+        setReadyForAuth(true);
+      }
+    };
+
+    if (initialized) {
+      processUrl();
+    }
+  }, [user, initialized]);
+
+  useEffect(() => {
+    if (DEV_MODE) {
+      if (loginMethod === 'passwordless') {
+        otpForm.setFocus('email');
+      } else {
+        passwordForm.setFocus('email');
+      }
+    }
+  }, [DEV_MODE, loginMethod]);
+
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  // Loading States
+  if (!initialized || !readyForAuth) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <LoadingIndicator />
@@ -402,14 +457,79 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     );
   }
 
-  if (!readyForAuth) {
+  // MFA State
+  if (requiresMFA) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
-        <LoadingIndicator />
-      </div>
+      <Card className="overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl">
+        <CardContent className="space-y-6 p-8">
+          <div className="space-y-2 text-center">
+            <h2 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:to-gray-300">
+              Two-Factor Authentication
+            </h2>
+            <p className="text-sm text-balance text-muted-foreground">
+              Enter your 6-digit verification code from your authenticator app
+            </p>
+          </div>
+
+          <Form {...totpForm}>
+            <form
+              onSubmit={totpForm.handleSubmit(onTOtpSubmit)}
+              className="space-y-6"
+            >
+              <FormField
+                control={totpForm.control}
+                name="totp"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Verification Code
+                    </FormLabel>
+                    <FormControl>
+                      <InputOTP
+                        maxLength={6}
+                        {...field}
+                        disabled={loading}
+                        className="justify-center"
+                      >
+                        <InputOTPGroup className="w-full gap-2">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <InputOTPSlot
+                              key={i}
+                              index={i}
+                              className="h-12 w-full rounded-lg border bg-white/50 text-lg font-semibold transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
+                            />
+                          ))}
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                variant={loading ? 'outline' : undefined}
+                className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
+                disabled={loading || totpForm.watch('totp').length !== 6}
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <LoadingIndicator className="h-4 w-4" />
+                    <span>{t('common.loading')}...</span>
+                  </div>
+                ) : (
+                  'Verify'
+                )}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     );
   }
 
+  // Main Login Form
   return (
     <Card className="overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl">
       <CardContent className="space-y-6 p-8">
@@ -489,13 +609,13 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                         </FormLabel>
                         <FormControl>
                           <InputOTP
-                            maxLength={maxOTPLength}
+                            maxLength={MAX_OTP_LENGTH}
                             {...field}
                             disabled={loading}
                             className="justify-center"
                           >
                             <InputOTPGroup className="w-full gap-2">
-                              {Array.from({ length: maxOTPLength }).map(
+                              {Array.from({ length: MAX_OTP_LENGTH }).map(
                                 (_, i) => (
                                   <InputOTPSlot
                                     key={i}
@@ -522,7 +642,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                   className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
                   disabled={
                     loading ||
-                    (otpSent && otpForm.watch('otp').length !== maxOTPLength)
+                    (otpSent && otpForm.watch('otp').length !== MAX_OTP_LENGTH)
                   }
                 >
                   {loading ? (
