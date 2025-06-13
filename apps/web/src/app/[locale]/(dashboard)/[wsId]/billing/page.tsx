@@ -19,7 +19,6 @@ export default async function BillingPage({
 }: {
   params: Promise<{ wsId: string }>;
 }) {
-  // Fetch data directly on the server
   const products = await fetchProducts();
   const { wsId } = await params;
   const currentPlan = {
@@ -110,12 +109,8 @@ export default async function BillingPage({
         Manage your billing information and subscriptions here.
       </p>
 
-      {/* The interactive part of the UI is now handled by the BillingClient component.
-        We pass the data it needs (currentPlan, upgradePlans) as props.
-      */}
       <BillingClient currentPlan={currentPlan} upgradePlans={upgradePlans} />
 
-      {/* Plan History (Dynamic) */}
       <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
         <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
           Plan History
