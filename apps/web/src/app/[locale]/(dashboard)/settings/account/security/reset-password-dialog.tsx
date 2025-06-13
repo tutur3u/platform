@@ -6,6 +6,7 @@ import ReauthenticateForm, {
 import ResetPasswordForm, {
   type ResetPasswordFormData,
 } from './reset-password-form';
+import { DEV_MODE } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -55,6 +56,15 @@ export default function ResetPasswordDialog() {
           }
 
           setNeedsReauth(true);
+
+          // if on DEV_MODE, auto-open inbucket
+          if (DEV_MODE) {
+            window.open(
+              window.location.origin.replace('7803', '8004'),
+              '_blank'
+            );
+          }
+
           toast({
             title: 'Verification Required',
             description:
