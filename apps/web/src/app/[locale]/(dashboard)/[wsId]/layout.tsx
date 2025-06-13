@@ -379,7 +379,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     null,
     {
       title: t('sidebar_tabs.billing'),
-      href: `/${wsId}/inventory`,
+      href: `/${wsId}/billing`,
       icon: <Receipt className="h-5 w-5" />,
       // disabled: ENABLE_AI_ONLY ,
       shortcut: 'B',
