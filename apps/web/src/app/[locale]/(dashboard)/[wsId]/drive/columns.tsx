@@ -1,15 +1,16 @@
 'use client';
 
 import { StorageObjectRowActions } from './row-actions';
-import { StorageObject } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
-import { joinPath } from '@/utils/path-helper';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { joinPath, popPath } from '@/utils/path-helper';
+import { StorageObject } from '@ncthub/types/primitives/StorageObject';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { ChevronLeft, FileText, Folder } from '@ncthub/ui/icons';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { Fragment } from 'react';
 
 export const storageObjectsColumns = (
   t: any,
@@ -50,7 +51,7 @@ export const storageObjectsColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+      <div className="line-clamp-1 min-w-32">{row.getValue('id')}</div>
     ),
   },
   {
@@ -65,7 +66,8 @@ export const storageObjectsColumns = (
     cell: ({ row }) => {
       if (row.getValue('id'))
         return (
-          <div className="min-w-[8rem] font-semibold">
+          <div className="flex min-w-32 items-center gap-2 font-semibold">
+            <FileText className="h-4 w-4" />
             {(row.getValue('name') as string | undefined)?.replace(
               /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
               ''
@@ -79,31 +81,31 @@ export const storageObjectsColumns = (
       const searchParams = useSearchParams();
       const basePath = searchParams.get('path') ?? '';
 
-      // merging current params with newly added param
-      // see: https://nextjs.org/docs/app/api-reference/functions/use-search-params#updating-searchparams
-      const createQueryString = useCallback(
-        (name: string, value: string) => {
-          const params = new URLSearchParams(searchParams.toString());
-          params.set(name, value);
-
-          return params.toString();
-        },
-        [searchParams]
-      );
-
       return (
-        <div className="min-w-[8rem] font-semibold">
+        <div className="min-w-32 font-semibold">
           <Link
-            href={
-              pathname +
-              '?' +
-              createQueryString(
-                'path',
-                joinPath(basePath, row.getValue('name'))
-              )
-            }
+            href={{
+              pathname,
+              query: {
+                path:
+                  row.getValue('name') === '...'
+                    ? popPath(basePath)
+                    : joinPath(basePath, row.getValue('name')),
+              },
+            }}
+            className="flex items-center gap-2"
           >
-            {row.getValue('name')}
+            {row.getValue('name') === '...' ? (
+              <Fragment>
+                <ChevronLeft className="h-4 w-4" />
+                {t('common.back')}
+              </Fragment>
+            ) : (
+              <Fragment>
+                <Folder className="h-4 w-4" />
+                {row.getValue('name')}
+              </Fragment>
+            )}
           </Link>
         </div>
       );
@@ -118,13 +120,14 @@ export const storageObjectsColumns = (
         title={t(`${namespace}.size`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">
-        {row.original?.metadata?.size !== undefined
-          ? formatBytes(row.original.metadata.size)
-          : '-'}
-      </div>
-    ),
+    cell: ({ row }) =>
+      row.getValue('name') === '...' ? null : (
+        <div className="min-w-32">
+          {row.original?.metadata?.size !== undefined
+            ? formatBytes(row.original.metadata.size)
+            : '-'}
+        </div>
+      ),
   },
   {
     accessorKey: 'created_at',
@@ -135,23 +138,25 @@ export const storageObjectsColumns = (
         title={t(`${namespace}.created_at`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">
-        {row.getValue('created_at')
-          ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
-          : '-'}
-      </div>
-    ),
+    cell: ({ row }) =>
+      row.getValue('name') === '...' ? null : (
+        <div className="min-w-32">
+          {row.getValue('created_at')
+            ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
+            : '-'}
+        </div>
+      ),
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <StorageObjectRowActions
-        wsId={wsId}
-        row={row}
-        path={path}
-        setStorageObject={setStorageObject}
-      />
-    ),
+    cell: ({ row }) =>
+      row.getValue('name') === '...' ? null : (
+        <StorageObjectRowActions
+          wsId={wsId}
+          row={row}
+          path={path}
+          setStorageObject={setStorageObject}
+        />
+      ),
   },
 ];

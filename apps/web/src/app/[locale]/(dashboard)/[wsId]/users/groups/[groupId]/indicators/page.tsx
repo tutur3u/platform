@@ -1,12 +1,17 @@
-import { cn } from '@/lib/utils';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Button } from '@ncthub/ui/button';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import {
+  CalendarIcon,
+  ChartColumn,
+  FileUser,
+  UserCheck,
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import 'dayjs/locale/vi';
-import { CalendarIcon, ChartColumn, FileUser, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -137,14 +142,14 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
             <div className="grid border-r last:border-r-0">
               <button
                 key={indicator.id}
-                className="hover:bg-dynamic-purple/10 hover:text-dynamic-purple w-32 px-4 py-2 font-semibold"
+                className="w-32 px-4 py-2 font-semibold hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
               >
                 <span className="line-clamp-1 break-all">{indicator.name}</span>
               </button>
               {users.map((user) => (
                 <button
                   key={user.id}
-                  className="hover:bg-dynamic-blue/10 hover:text-dynamic-blue w-32 border-t px-4 py-2"
+                  className="w-32 border-t px-4 py-2 hover:bg-dynamic-blue/10 hover:text-dynamic-blue"
                 >
                   {indicators.find(
                     (i) =>

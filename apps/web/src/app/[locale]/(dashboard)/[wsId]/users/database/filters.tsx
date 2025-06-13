@@ -1,7 +1,7 @@
-import { UserDatabaseFilter } from '../filters';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/server';
-import { MinusCircle, PlusCircle } from 'lucide-react';
+import { Filter } from '../filters';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { MinusCircle, PlusCircle } from '@ncthub/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -19,7 +19,7 @@ export default async function Filters({
   noExclude = false,
 }: {
   wsId: string;
-  searchParams: SearchParams;
+  searchParams?: SearchParams;
   noInclude?: boolean;
   noExclude?: boolean;
 }) {
@@ -34,7 +34,7 @@ export default async function Filters({
   return (
     <>
       {noInclude || (
-        <UserDatabaseFilter
+        <Filter
           key="included-user-groups-filter"
           tag="includedGroups"
           title={t('included_groups')}
@@ -47,7 +47,7 @@ export default async function Filters({
         />
       )}
       {noExclude || (
-        <UserDatabaseFilter
+        <Filter
           key="excluded-user-groups-filter"
           tag="excludedGroups"
           title={t('excluded_groups')}
@@ -82,7 +82,7 @@ async function getUserGroups(wsId: string) {
 
 async function getExcludedUserGroups(
   wsId: string,
-  { includedGroups }: SearchParams
+  { includedGroups }: SearchParams = {}
 ) {
   const supabase = await createClient();
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
+import { TooltipProvider } from '@ncthub/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 

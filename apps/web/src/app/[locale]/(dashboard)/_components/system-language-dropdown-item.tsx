@@ -1,7 +1,7 @@
 'use client';
 
-import { DropdownMenuItem } from '@repo/ui/components/ui/dropdown-menu';
-import { Check, Monitor } from 'lucide-react';
+import { DropdownMenuItem } from '@ncthub/ui/dropdown-menu';
+import { Check, Monitor } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 

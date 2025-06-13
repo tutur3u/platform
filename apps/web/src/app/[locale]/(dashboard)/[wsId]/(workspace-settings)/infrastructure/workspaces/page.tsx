@@ -1,11 +1,7 @@
 import WorkspaceCard from '../../../../../../../components/cards/WorkspaceCard';
-import GeneralSearchBar from '../../../../../../../components/inputs/GeneralSearchBar';
-import PaginationIndicator from '../../../../../../../components/pagination/PaginationIndicator';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
-import { Workspace } from '@/types/primitives/Workspace';
-import { createAdminClient } from '@/utils/supabase/server';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { notFound } from 'next/navigation';
+import { createAdminClient } from '@ncthub/supabase/next/server';
+import { Separator } from '@ncthub/ui/separator';
 
 interface Props {
   params: Promise<{
@@ -20,16 +16,10 @@ export default async function InfrastructureWorkspacesPage({ params }: Props) {
   });
 
   const workspaces = await getWorkspaces();
-  const count = await getWorkspaceCount();
 
   return (
     <div className="flex min-h-full w-full flex-col">
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GeneralSearchBar />
-      </div>
-
       <Separator className="mt-4" />
-      <PaginationIndicator totalItems={count} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {workspaces.map((ws) => (
@@ -42,21 +32,9 @@ export default async function InfrastructureWorkspacesPage({ params }: Props) {
 
 async function getWorkspaces() {
   const supabaseAdmin = await createAdminClient();
-  if (!supabaseAdmin) notFound();
+  if (!supabaseAdmin) return [];
 
   const { data } = await supabaseAdmin.from('workspaces').select('*');
 
-  return data as Workspace[];
-}
-
-async function getWorkspaceCount() {
-  const supabaseAdmin = await createAdminClient();
-  if (!supabaseAdmin) notFound();
-
-  const { count } = await supabaseAdmin.from('workspaces').select('*', {
-    count: 'exact',
-    head: true,
-  });
-
-  return count;
+  return data || [];
 }

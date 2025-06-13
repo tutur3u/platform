@@ -1,6 +1,6 @@
 'use client';
 
-import { TabsTrigger } from '@repo/ui/components/ui/tabs';
+import { TabsTrigger } from '@ncthub/ui/tabs';
 import { useRouter } from 'next/navigation';
 
 interface Props {

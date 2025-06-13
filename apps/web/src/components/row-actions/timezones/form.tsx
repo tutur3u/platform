@@ -1,7 +1,6 @@
-import { Timezone } from '@/types/primitives/Timezone';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { Timezone } from '@ncthub/types/primitives/Timezone';
+import { Button } from '@ncthub/ui/button';
+import { Checkbox } from '@ncthub/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -9,9 +8,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { useForm } from 'react-hook-form';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import * as z from 'zod';
 
 interface Props {
@@ -34,7 +34,7 @@ export const ApiConfigFormSchema = FormSchema;
 export default function TimezoneForm({ data, submitLabel, onSubmit }: Props) {
   const t = (key: string) => key;
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       value: data.value || '',

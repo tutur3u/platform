@@ -11,10 +11,10 @@ import { DEFAULT_TURNS, Fruit, Fruits } from './types';
 import { useGameLogic } from './use-game-logic';
 import { createBoard } from './utils';
 import { DEV_MODE } from '@/constants/common';
-import { cn } from '@/lib/utils';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Button } from '@ncthub/ui/button';
+import { Card } from '@ncthub/ui/card';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import React, { useEffect, useMemo, useState } from 'react';
 
 export const NeoCrushGame: React.FC = () => {
@@ -57,7 +57,7 @@ export const NeoCrushGame: React.FC = () => {
       <Card className="w-full p-2 md:p-4">
         <div className={cn(turns <= 0 ? 'opacity-50' : '', 'relative')}>
           {turns === 0 && !unlimitedTurns && (
-            <div className="bg-foreground/20 absolute inset-0 flex items-center justify-center rounded-lg text-5xl font-semibold text-white">
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-foreground/20 text-5xl font-semibold text-white">
               GAME OVER
             </div>
           )}
@@ -119,7 +119,7 @@ export const NeoCrushGame: React.FC = () => {
         </div>
       </Card>
 
-      <div className="bg-foreground/5 hidden gap-2 rounded-lg border p-4 font-mono md:grid">
+      <div className="hidden gap-2 rounded-lg border bg-foreground/5 p-4 font-mono md:grid">
         <div className="grid h-fit grid-cols-1 gap-2 md:grid-cols-3">
           {DEV_MODE && (
             <>

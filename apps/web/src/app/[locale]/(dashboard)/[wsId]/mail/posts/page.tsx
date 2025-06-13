@@ -1,11 +1,11 @@
 import { getPostEmailColumns } from './columns';
 import Filters from './filters';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { PostEmail } from '@/types/primitives/post-email';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { MailWarning, Send } from 'lucide-react';
+import { createClient } from '@ncthub/supabase/next/server';
+import { PostEmail } from '@ncthub/types/primitives/post-email';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { MailWarning, Send } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -42,23 +42,23 @@ export default async function WorkspacePostEmailsPage({
       />
       <Separator className="my-4" />
       <div className="gird-cols-1 grid gap-2 md:grid-cols-2">
-        <div className="bg-dynamic-purple/15 text-dynamic-purple border-dynamic-purple/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 p-4 text-dynamic-purple">
           <div className="flex items-center gap-2 text-xl font-bold">
             <Send />
             {t('ws-post-emails.sent_emails')}
           </div>
-          <Separator className="bg-dynamic-purple/15 my-1" />
+          <Separator className="my-1 bg-dynamic-purple/15" />
           <div className="text-xl font-semibold md:text-3xl">
             {status.count || 0}
             <span className="opacity-50">/{count || 0}</span>
           </div>
         </div>
-        <div className="bg-dynamic-red/15 text-dynamic-red border-dynamic-red/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-4 text-dynamic-red">
           <div className="flex items-center gap-2 text-xl font-bold">
             <MailWarning />
             {t('ws-post-emails.pending_emails')}
           </div>
-          <Separator className="bg-dynamic-red/15 my-1" />
+          <Separator className="my-1 bg-dynamic-red/15" />
           <div className="text-3xl font-semibold">
             {(count || 0) - (status.count || 0)}
             <span className="opacity-50">/{count || 0}</span>

@@ -1,9 +1,11 @@
 import { Bill } from './bill';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { DetailObjects } from './objects';
+import { joinPath } from '@/utils/path-helper';
+import { createClient } from '@ncthub/supabase/next/server';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { CalendarIcon, DollarSign, Wallet } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import 'dayjs/locale/vi';
-import { CalendarIcon, DollarSign, Wallet } from 'lucide-react';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -20,7 +22,7 @@ interface Props {
 export default async function TransactionDetailsPage({ params }: Props) {
   const { wsId, transactionId, locale } = await params;
   const t = await getTranslations();
-  const { transaction } = await getData(transactionId);
+  const { objects, transaction } = await getData(wsId, transactionId);
 
   if (!transaction) notFound();
 
@@ -37,7 +39,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
       />
       <Separator className="my-4" />
       <div className="grid h-fit gap-4 md:grid-cols-2">
-        <div className="grid gap-4">
+        <div className="space-y-4 overflow-auto">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
             <div className="text-lg font-semibold">
               {t('invoices.basic-info')}
@@ -69,9 +71,17 @@ export default async function TransactionDetailsPage({ params }: Props) {
               }
             />
           </div>
+
+          {objects.length > 0 && (
+            <DetailObjects
+              wsId={wsId}
+              transactionId={transactionId}
+              objects={objects}
+            />
+          )}
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid h-fit gap-4">
           <div className="h-full rounded-lg border p-4">
             <div className="grid h-full content-start gap-2">
               <div className="text-lg font-semibold">
@@ -115,7 +125,7 @@ function DetailItem({
   );
 }
 
-async function getData(transactionId: string) {
+async function getData(wsId: string, transactionId: string) {
   const supabase = await createClient();
 
   const { data: transaction, error: transactionError } = await supabase
@@ -128,5 +138,42 @@ async function getData(transactionId: string) {
 
   if (transactionError) throw transactionError;
 
-  return { transaction };
+  const { data: objects, error: objectError } = await supabase.storage
+    .from('workspaces')
+    .list(joinPath(wsId, 'finance/transactions', transactionId));
+
+  if (objectError) throw objectError;
+
+  const imageObjects = objects.filter((object) =>
+    object.metadata.mimetype.includes('image')
+  );
+
+  // batch signed to reduce network calls
+  const { data: previews, error: previewError } = imageObjects.length
+    ? await supabase.storage.from('workspaces').createSignedUrls(
+        imageObjects.map((object) =>
+          joinPath(wsId, 'finance/transactions', transactionId, object.name)
+        ),
+        // TODO: externalize expiresIn params, currently 5 minutes
+        3600
+      )
+    : { data: [], error: undefined };
+
+  if (previewError) throw previewError;
+
+  // assign preview-able objects results to objects' metadata
+  Object.assign(
+    objects,
+    objects.map((object) => ({
+      ...object,
+      metadata: {
+        ...object.metadata,
+        preview: previews?.find(
+          (preview) => preview?.path?.split('/').pop() === object.name
+        ),
+      },
+    }))
+  );
+
+  return { objects, transaction, previews };
 }

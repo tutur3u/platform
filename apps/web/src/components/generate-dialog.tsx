@@ -1,6 +1,5 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { Button } from '@ncthub/ui/button';
+import { Checkbox } from '@ncthub/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -9,19 +8,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Loader2, Sparkles } from 'lucide-react';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { Loader2, Sparkles } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -45,7 +45,7 @@ export function GenerateDialog({
   const t = useTranslations();
   const [open, setOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       context: '',
@@ -89,7 +89,7 @@ export function GenerateDialog({
               <Checkbox id="include-content" disabled />
               <label
                 htmlFor="include-content"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_module_content')}
               </label>
@@ -99,7 +99,7 @@ export function GenerateDialog({
               <Checkbox id="include-resources" disabled />
               <label
                 htmlFor="include-resources"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_resources')}
               </label>
@@ -109,7 +109,7 @@ export function GenerateDialog({
               <Checkbox id="include-youtube-links" disabled />
               <label
                 htmlFor="include-youtube-links"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_youtube_links')}
               </label>

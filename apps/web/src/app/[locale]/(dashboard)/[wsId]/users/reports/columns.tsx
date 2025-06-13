@@ -1,8 +1,8 @@
 'use client';
 
 import { UserReportRowActions } from './row-actions';
-import { WorkspaceUserReport } from '@/types/db';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { WorkspaceUserReport } from '@ncthub/types/db';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import Link from 'next/link';
@@ -66,7 +66,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 min-w-[8rem] max-w-[24rem]">
+      <div className="line-clamp-2 max-w-[24rem] min-w-32">
         {row.getValue('user_name') || '-'}
       </div>
     ),
@@ -83,7 +83,7 @@ export const getUserReportColumns = (
     cell: ({ row }) => (
       <Link
         href={row.original.href || '#'}
-        className="line-clamp-2 min-w-[8rem] max-w-[24rem] hover:underline"
+        className="line-clamp-2 max-w-[24rem] min-w-32 hover:underline"
       >
         {row.getValue('title') || '-'}
       </Link>
@@ -99,7 +99,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 min-w-[8rem] whitespace-pre-wrap">
+      <div className="line-clamp-2 min-w-32 whitespace-pre-wrap">
         {row.getValue('content') || '-'}
       </div>
     ),
@@ -114,7 +114,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 min-w-[8rem] whitespace-pre-wrap">
+      <div className="line-clamp-2 min-w-32 whitespace-pre-wrap">
         {row.getValue('feedback') || '-'}
       </div>
     ),
@@ -129,7 +129,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">{row.getValue('creator_name') || '-'}</div>
+      <div className="min-w-32">{row.getValue('creator_name') || '-'}</div>
     ),
   },
   {

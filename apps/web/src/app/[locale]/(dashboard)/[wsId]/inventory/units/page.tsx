@@ -1,10 +1,10 @@
 import { productUnitColumns } from './columns';
 import { ProductUnitForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { ProductUnit } from '@/types/primitives/ProductUnit';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { ProductUnit } from '@ncthub/types/primitives/ProductUnit';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

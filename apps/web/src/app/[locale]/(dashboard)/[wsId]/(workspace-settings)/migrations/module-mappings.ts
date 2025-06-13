@@ -305,7 +305,7 @@ export const userStatusChangesMapping = (wsId: string, data: any[]) =>
 export const usersMapping = (wsId: string, data: any[]) =>
   data.map((i) => ({
     id: i?.id,
-    email: i?.email,
+    email: i?.email || null,
     display_name: i?.nickname,
     full_name: i?.display_name,
     phone: i?.phone_number,

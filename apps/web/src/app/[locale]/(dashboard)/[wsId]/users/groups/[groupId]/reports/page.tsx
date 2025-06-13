@@ -1,16 +1,22 @@
-import { UserDatabaseFilter } from '../../../filters';
+import { Filter } from '../../../filters';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
-import { cn } from '@/lib/utils';
-import { WorkspaceUserReport } from '@/types/db';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Calendar, ChartColumn, FileUser, User, UserCheck } from 'lucide-react';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceUserReport } from '@ncthub/types/db';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Button } from '@ncthub/ui/button';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import {
+  Calendar,
+  ChartColumn,
+  FileUser,
+  User,
+  UserCheck,
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -151,7 +157,7 @@ export default async function UserGroupDetailsPage({
       <Separator className="my-4" />
       <div className="flex min-h-full w-full flex-col">
         <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
-          <UserDatabaseFilter
+          <Filter
             key="user-filter"
             tag="userId"
             title={t('user-data-table.user')}
@@ -178,7 +184,7 @@ export default async function UserGroupDetailsPage({
           />
 
           {reports.length > 0 && (
-            <UserDatabaseFilter
+            <Filter
               key="report-filter"
               tag="reportId"
               title={t('user-data-table.report')}
@@ -266,12 +272,10 @@ async function getReport({
   } = {
     user_name: Array.isArray(rawData.user)
       ? rawData.user?.[0]?.full_name
-      : // @ts-expect-error
-        (rawData.user?.full_name ?? undefined),
+      : (rawData.user?.full_name ?? undefined),
     creator_name: Array.isArray(rawData.creator)
       ? rawData.creator?.[0]?.full_name
-      : // @ts-expect-error
-        (rawData.creator?.full_name ?? undefined),
+      : (rawData.creator?.full_name ?? undefined),
     ...rawData,
   };
 
@@ -326,10 +330,8 @@ async function getReports(wsId: string, groupId: string, userId: string) {
   if (error) throw error;
 
   const data = rawData?.map((rawData) => ({
-    // @ts-expect-error
     user_name: rawData.user.full_name,
-    // @ts-expect-error
-    creator_name: rawData.creator.full_name,
+    creator_name: rawData.creator?.full_name,
     ...rawData,
   }));
 
@@ -347,7 +349,9 @@ async function getConfigs(wsId: string) {
 
   queryBuilder.in(
     'id',
-    availableConfigs.map(({ id }) => id)
+    availableConfigs
+      .map(({ id }) => id)
+      .filter((id): id is string => id !== undefined)
   );
 
   const { data: rawData, error } = await queryBuilder;

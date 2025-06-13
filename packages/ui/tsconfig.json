@@ -1,18 +1,11 @@
 {
-  "extends": "@repo/typescript-config/react-library.json",
+  "extends": "@ncthub/typescript-config/react-library.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@repo/ui/*": [
-        "./src/*"
-      ]
+      "@ncthub/ui/*": ["./src/*"]
     }
   },
-  "include": [
-    "src",
-    "../../apps/web/src/app/[locale]/ws-settings-dialog.tsx"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules"]
 }

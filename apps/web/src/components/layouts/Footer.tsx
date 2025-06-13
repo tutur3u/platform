@@ -1,5 +1,5 @@
-import GetStartedButton from '@/app/[locale]/(marketing)/get-started-button';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { GetStartedButton } from '@ncthub/ui/custom/get-started-button';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -8,7 +8,7 @@ export default async function Footer() {
 
   return (
     <div className="w-full px-0 text-center md:px-4 lg:px-10">
-      <Separator className="bg-foreground/5 mb-5 mt-8" />
+      <Separator className="mt-8 mb-5 bg-foreground/5" />
       <p className="mb-8 text-2xl font-bold md:text-3xl">
         Want to join with us?
       </p>
@@ -16,7 +16,7 @@ export default async function Footer() {
         Feel free to reach out if you want to collaborate with us, or simply
         have a chat.
       </div>
-      <GetStartedButton href="/login" />
+      <GetStartedButton href="/login" text={t('common.get-started')} />
       <Separator className="mt-8 h-1 bg-gradient-to-r from-[#5FC6E5] to-[#FBC821] blur-sm" />
 
       <div className="mx-auto flex flex-col items-center justify-evenly gap-5 py-8 md:flex-row md:py-24">
@@ -87,7 +87,7 @@ export default async function Footer() {
           </div>
 
           <Link
-            href="/calendar/meet-together"
+            href="/meet-together"
             className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
           >
             {t('common.meet-together')}
@@ -137,7 +137,7 @@ export default async function Footer() {
         <div className="text-center opacity-80">{t('common.copyright')}</div>
         <Link
           href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
-          className="text-brand-light-red font-semibold underline"
+          className="font-semibold text-brand-light-red underline"
         >
           neoculturetechclub.sgs@rmit.edu.vn
         </Link>

@@ -1,7 +1,7 @@
 'use client';
 
-import { ProductBatch } from '@/types/primitives/ProductBatch';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { ProductBatch } from '@ncthub/types/primitives/ProductBatch';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 

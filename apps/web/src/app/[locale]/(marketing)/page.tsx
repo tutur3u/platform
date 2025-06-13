@@ -5,7 +5,7 @@ import WhyUs from './why-us';
 export default function MarketingPage() {
   return (
     <div className="flex justify-center">
-      <div className="text-foreground container flex flex-col items-center gap-6">
+      <div className="container flex flex-col items-center gap-6 text-foreground">
         <WhatIsNeo />
         <Events />
         <WhyUs />

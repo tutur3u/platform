@@ -65,7 +65,7 @@ export default function Projects() {
                 stiffness: 300,
                 damping: 20,
               }}
-              className="whitespace-nowrap rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] text-white md:text-base"
+              className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] whitespace-nowrap text-white md:text-base"
             >
               {p.label}
             </motion.button>
@@ -96,7 +96,7 @@ export default function Projects() {
                 stiffness: 300,
                 damping: 20,
               }}
-              className="whitespace-nowrap rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] text-white md:text-base"
+              className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] whitespace-nowrap text-white md:text-base"
             >
               {p.label}
             </motion.button>

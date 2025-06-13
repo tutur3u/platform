@@ -1,8 +1,8 @@
 'use client';
 
 import { PromotionRowActions } from './row-actions';
-import { ProductPromotion } from '@/types/primitives/ProductPromotion';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { ProductPromotion } from '@ncthub/types/primitives/ProductPromotion';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 

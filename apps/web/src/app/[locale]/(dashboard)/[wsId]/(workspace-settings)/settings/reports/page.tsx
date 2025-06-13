@@ -2,10 +2,10 @@ import { configColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { availableConfigs } from '@/constants/configs/reports';
 import { getPermissions } from '@/lib/workspace-helper';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { createClient } from '@/utils/supabase/server';
-import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
+import ReportPreview from '@ncthub/ui/custom/report-preview';
+import { Separator } from '@ncthub/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -41,7 +41,7 @@ export default async function WorkspaceReportsSettingsPage({
   const configs = data.map((config) => ({
     ...config,
     ws_id: wsId,
-    name: config?.id ? t(config.id.toLowerCase() as any) : '',
+    name: config?.id ? t(`ws-reports.${config.id.toLowerCase()}` as any) : '',
   }));
 
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
@@ -60,7 +60,7 @@ export default async function WorkspaceReportsSettingsPage({
         return (
           <span
             key={key + index}
-            className="text-background bg-foreground rounded px-1 py-0.5 font-semibold"
+            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
           >
             {key}
           </span>
@@ -74,7 +74,7 @@ export default async function WorkspaceReportsSettingsPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">{t('ws-reports.reports')}</h1>
           <p className="text-foreground/80">{t('ws-reports.description')}</p>

@@ -1,5 +1,5 @@
 import { Project } from './data';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@ncthub/ui/separator';
 
 interface ProjectCardProps {
   project: Project;
@@ -61,7 +61,7 @@ export default function ProjectCard({
           </div>
 
           <div className="space-y-4">
-            <div className="bg-brand-light-blue rounded-lg p-[1px] [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)] dark:bg-[#D9D9D9]">
+            <div className="rounded-lg bg-brand-light-blue p-[1px] [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)] dark:bg-[#D9D9D9]">
               <p className="rounded-lg bg-gradient-to-b from-[#F4B71A] to-[#9a7005] px-4 py-2 text-sm font-semibold text-black transition-opacity [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)] hover:opacity-90 dark:from-[#1AF4E6] dark:to-black/75">
                 {project.type === 'web'
                   ? 'Web Development'
@@ -72,7 +72,7 @@ export default function ProjectCard({
                       : 'Other'}
               </p>
             </div>
-            <div className="bg-brand-light-blue rounded-lg p-[1px] [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)] dark:bg-[#D9D9D9]">
+            <div className="rounded-lg bg-brand-light-blue p-[1px] [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)] dark:bg-[#D9D9D9]">
               <p className="rounded-lg bg-gradient-to-b from-[#F4B71A] to-[#9a7005] px-4 py-2 text-sm font-semibold text-black transition-opacity [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)] hover:opacity-90 dark:from-[#1AF4E6] dark:to-black/75">
                 {project.status === 'completed'
                   ? 'Completed'

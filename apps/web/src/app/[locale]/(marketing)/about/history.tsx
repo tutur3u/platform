@@ -25,7 +25,7 @@ const timelineData = [
 export default function History() {
   return (
     <div className="flex justify-center">
-      <div className="text-foreground container flex flex-col items-center gap-6">
+      <div className="container flex flex-col items-center gap-6 text-foreground">
         <div
           className="mt-8 flex h-24 w-full items-center justify-center rounded-lg border-2 border-[#5FC6E5] py-2 text-center lg:h-28"
           style={{
@@ -62,17 +62,17 @@ export default function History() {
               ))}
             </div>
 
-            <div className="absolute right-6 top-3 h-0.5 w-3/4 bg-[#1AF4E6] lg:right-20 lg:top-3 lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-5 h-0.5 w-3/4 bg-[#1AF4E6] bg-opacity-70 lg:right-20 lg:top-6 lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-7 h-0.5 w-3/4 bg-[#1AF4E6] bg-opacity-50 lg:right-20 lg:top-9 lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-9 h-0.5 w-3/4 bg-[#1AF4E6] bg-opacity-30 lg:right-20 lg:top-12 lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-11 h-0.5 w-3/4 bg-[#1AF4E6] bg-opacity-10 lg:right-20 lg:top-[3.75rem] lg:h-1 lg:w-4/5"></div>
+            <div className="absolute top-3 right-6 h-0.5 w-3/4 bg-[#1AF4E6] lg:top-3 lg:right-20 lg:h-1 lg:w-4/5"></div>
+            <div className="bg-opacity-70 absolute top-5 right-6 h-0.5 w-3/4 bg-[#1AF4E6] lg:top-6 lg:right-20 lg:h-1 lg:w-4/5"></div>
+            <div className="bg-opacity-50 absolute top-7 right-6 h-0.5 w-3/4 bg-[#1AF4E6] lg:top-9 lg:right-20 lg:h-1 lg:w-4/5"></div>
+            <div className="bg-opacity-30 absolute top-9 right-6 h-0.5 w-3/4 bg-[#1AF4E6] lg:top-12 lg:right-20 lg:h-1 lg:w-4/5"></div>
+            <div className="bg-opacity-10 absolute top-11 right-6 h-0.5 w-3/4 bg-[#1AF4E6] lg:top-[3.75rem] lg:right-20 lg:h-1 lg:w-4/5"></div>
 
-            <div className="absolute right-6 top-[6rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-10 lg:right-20 lg:top-[11rem] lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-[6.5rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-30 lg:right-20 lg:top-[11.75rem] lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-[7rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-50 lg:right-20 lg:top-[12.5rem] lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-[7.5rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-70 lg:right-20 lg:top-[13.25rem] lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-[8rem] h-0.5 w-3/4 bg-[#FBC721] lg:right-20 lg:top-[14rem] lg:h-1 lg:w-4/5"></div>
+            <div className="bg-opacity-10 absolute top-[6rem] right-6 h-0.5 w-3/4 bg-[#FBC721] lg:top-[11rem] lg:right-20 lg:h-1 lg:w-4/5"></div>
+            <div className="bg-opacity-30 absolute top-[6.5rem] right-6 h-0.5 w-3/4 bg-[#FBC721] lg:top-[11.75rem] lg:right-20 lg:h-1 lg:w-4/5"></div>
+            <div className="bg-opacity-50 absolute top-[7rem] right-6 h-0.5 w-3/4 bg-[#FBC721] lg:top-[12.5rem] lg:right-20 lg:h-1 lg:w-4/5"></div>
+            <div className="bg-opacity-70 absolute top-[7.5rem] right-6 h-0.5 w-3/4 bg-[#FBC721] lg:top-[13.25rem] lg:right-20 lg:h-1 lg:w-4/5"></div>
+            <div className="absolute top-[8rem] right-6 h-0.5 w-3/4 bg-[#FBC721] lg:top-[14rem] lg:right-20 lg:h-1 lg:w-4/5"></div>
           </div>
         </div>
       </div>

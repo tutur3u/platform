@@ -1,7 +1,7 @@
 'use client';
 
-import { Workspace } from '@/types/primitives/Workspace';
-import { toast } from '@repo/ui/hooks/use-toast';
+import { Workspace } from '@ncthub/types/db';
+import { toast } from '@ncthub/ui/hooks/use-toast';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale, useTranslations } from 'next-intl';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 interface Props {
-  ws: Workspace;
+  ws: Pick<Workspace, 'id' | 'name' | 'created_at'>;
   transparent?: boolean;
 }
 
@@ -37,7 +37,7 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   const declineInviteErrorTitle = t('decline-invite-error-title');
   const declineInviteErrorMessage = t('decline-invite-error-msg');
 
-  const acceptInvite = async (ws: Workspace) => {
+  const acceptInvite = async (ws: Pick<Workspace, 'id'>) => {
     const response = await fetch(`/api/workspaces/${ws.id}/accept-invite`, {
       method: 'POST',
     });
@@ -58,7 +58,7 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
     }
   };
 
-  const declineInvite = async (ws: Workspace) => {
+  const declineInvite = async (ws: Pick<Workspace, 'id'>) => {
     const response = await fetch(`/api/workspaces/${ws.id}/decline-invite`, {
       method: 'POST',
     });
@@ -91,7 +91,7 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
           {ws?.name || `Unnamed Workspace`}
         </Link>
         {ws?.created_at ? (
-          <span className="text-foreground/60 font-normal">
+          <span className="font-normal text-foreground/60">
             {' '}
             • {creationDate}
           </span>
@@ -100,14 +100,14 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
 
       <div className="mt-2 grid gap-2 md:grid-cols-2">
         <div
-          className="text-foreground hover:bg-foreground/5 flex cursor-pointer items-center justify-center rounded border p-1 font-semibold transition duration-300"
+          className="flex cursor-pointer items-center justify-center rounded border p-1 font-semibold text-foreground transition duration-300 hover:bg-foreground/5"
           onClick={() => declineInvite(ws)}
         >
           {declineInviteLabel}
         </div>
 
         <div
-          className="text-foreground hover:bg-foreground/5 flex flex-1 cursor-pointer items-center justify-center rounded border p-1 font-semibold transition duration-300"
+          className="flex flex-1 cursor-pointer items-center justify-center rounded border p-1 font-semibold text-foreground transition duration-300 hover:bg-foreground/5"
           onClick={() => acceptInvite(ws)}
         >
           {acceptInviteLabel}

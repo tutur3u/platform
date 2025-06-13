@@ -1,7 +1,7 @@
-import { UserDatabaseFilter } from '../filters';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/server';
-import { MinusCircle, PlusCircle } from 'lucide-react';
+import { Filter } from '../filters';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { MinusCircle, PlusCircle } from '@ncthub/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -26,7 +26,7 @@ export default async function Filters({
 
   return (
     <>
-      <UserDatabaseFilter
+      <Filter
         key="included-user-tags-filter"
         tag="includedTags"
         title={t('included_tags')}
@@ -38,7 +38,7 @@ export default async function Filters({
         }))}
         disabled
       />
-      <UserDatabaseFilter
+      <Filter
         key="excluded-user-tags-filter"
         tag="excludedTags"
         title={t('excluded_tags')}

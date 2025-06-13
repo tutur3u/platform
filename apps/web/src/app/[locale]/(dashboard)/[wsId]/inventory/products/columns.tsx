@@ -1,8 +1,8 @@
 'use client';
 
 import { ProductRowActions } from './row-actions';
-import { Product } from '@/types/primitives/Product';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { Product } from '@ncthub/types/primitives/Product';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 

@@ -15,8 +15,7 @@ export const isValidURL = (url: string): boolean => {
     ];
 
     return validProtocols.includes(parsedUrl.protocol);
-  } catch (e) {
-    console.error(e);
+  } catch {
     return false;
   }
 };
@@ -24,25 +23,29 @@ export const isValidURL = (url: string): boolean => {
 export const extractYoutubeId = (url: string): string | undefined => {
   if (!url) return undefined;
 
-  const parsedUrl = new URL(url);
-  const youtubeHosts = ['www.youtube.com', 'youtube.com', 'youtu.be'];
+  try {
+    const parsedUrl = new URL(url);
+    const youtubeHosts = ['www.youtube.com', 'youtube.com', 'youtu.be'];
 
-  if (youtubeHosts.includes(parsedUrl.host)) {
-    const searchParams = new URLSearchParams(parsedUrl.search);
-    const videoId = searchParams.get('v');
+    if (youtubeHosts.includes(parsedUrl.host)) {
+      const searchParams = new URLSearchParams(parsedUrl.search);
+      const videoId = searchParams.get('v');
 
-    if (videoId) {
-      return videoId;
-    }
+      if (videoId) {
+        return videoId;
+      }
 
-    const pathSegments = parsedUrl.pathname.split('/');
-    if (pathSegments.length > 1) {
-      const possibleId = pathSegments[pathSegments.length - 1];
-      if (possibleId?.length === 11) {
-        return possibleId;
+      const pathSegments = parsedUrl.pathname.split('/');
+      if (pathSegments.length > 1) {
+        const possibleId = pathSegments[pathSegments.length - 1];
+        if (possibleId?.length === 11) {
+          return possibleId;
+        }
       }
     }
-  }
 
-  return undefined;
+    return undefined;
+  } catch {
+    return undefined;
+  }
 };

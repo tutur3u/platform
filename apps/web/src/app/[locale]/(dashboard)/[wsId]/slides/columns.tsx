@@ -1,9 +1,9 @@
 'use client';
 
 import { ApiKeyRowActions } from './row-actions';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
-import { ColorPicker } from '@repo/ui/components/ui/color-picker';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { WorkspaceApiKey } from '@ncthub/types/primitives/WorkspaceApiKey';
+import { ColorPicker } from '@ncthub/ui/color-picker';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
@@ -42,7 +42,7 @@ export const groupTagColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('id')}
       </div>
     ),
@@ -57,7 +57,7 @@ export const groupTagColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         <ColorPicker
           text={row.getValue('name')}
           value={row.getValue('color') || '#000000'}
@@ -76,7 +76,7 @@ export const groupTagColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 max-w-[8rem] break-all">
+      <div className="line-clamp-2 max-w-32 break-all">
         {row.getValue('created_at')
           ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}

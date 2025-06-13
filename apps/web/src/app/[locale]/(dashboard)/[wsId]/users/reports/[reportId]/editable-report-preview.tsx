@@ -2,14 +2,14 @@
 
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
-import { WorkspaceUserReport } from '@/types/db';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { zodResolver } from '@hookform/resolvers/zod';
-import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { WorkspaceUserReport } from '@ncthub/types/db';
+import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
+import ReportPreview from '@ncthub/ui/custom/report-preview';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { Separator } from '@ncthub/ui/separator';
 import { useLocale, useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 export const UserReportFormSchema = z.object({
@@ -36,7 +36,7 @@ export default function EditableReportPreview({
   const locale = useLocale();
   const t = useTranslations();
 
-  const form = useForm<z.infer<typeof UserReportFormSchema>>({
+  const form = useForm({
     resolver: zodResolver(UserReportFormSchema),
     defaultValues: {
       title: report?.title || '',
@@ -90,7 +90,7 @@ export default function EditableReportPreview({
         return (
           <span
             key={key + index}
-            className="text-background bg-foreground rounded px-1 py-0.5 font-semibold"
+            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
           >
             {key}
           </span>
@@ -117,7 +117,7 @@ export default function EditableReportPreview({
                 <div className="flex items-center gap-1">
                   Average score:
                   <div className="flex flex-wrap gap-1">
-                    <div className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold">
+                    <div className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background">
                       {(
                         (report?.scores
                           ?.filter((s) => s !== null && s !== undefined)
@@ -143,7 +143,7 @@ export default function EditableReportPreview({
                       ?.map((s, idx) => (
                         <div
                           key={`report-${report.id}-score-${idx}`}
-                          className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold"
+                          className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background"
                         >
                           {s}
                         </div>
@@ -159,7 +159,6 @@ export default function EditableReportPreview({
           isNew={isNew}
           form={form}
           submitLabel={t('common.save')}
-          onSubmit={(_) => {}}
         />
 
         {/* <div className="grid h-fit gap-2 rounded-lg border p-4">

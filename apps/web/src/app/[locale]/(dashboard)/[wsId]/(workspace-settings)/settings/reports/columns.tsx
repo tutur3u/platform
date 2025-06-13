@@ -1,8 +1,8 @@
 'use client';
 
 import { ConfigRowActions } from './row-actions';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { WorkspaceConfig } from '@ncthub/types/primitives/WorkspaceConfig';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
@@ -84,7 +84,7 @@ export const configColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 max-w-[8rem] break-all">
+      <div className="line-clamp-2 max-w-32 break-all">
         {row.getValue('updated_at')
           ? moment(row.getValue('updated_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}

@@ -1,7 +1,7 @@
 'use client';
 
-import { Entity } from '@/types/primitives/Entity';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { Entity } from '@ncthub/types/primitives/Entity';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 

@@ -5,28 +5,23 @@ import RoleFormMembersSection from './role-members';
 import RoleFormPermissionsSection from './role-permissions';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { permissionGroups, totalPermissions } from '@/lib/permissions';
-import { cn } from '@/lib/utils';
-import { PermissionId, WorkspaceRole } from '@/types/db';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/client';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { Form } from '@repo/ui/components/ui/form';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@repo/ui/components/ui/tabs';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { User } from '@supabase/supabase-js';
+import { createClient } from '@ncthub/supabase/next/client';
+import { SupabaseUser } from '@ncthub/supabase/next/user';
+import { PermissionId, WorkspaceRole } from '@ncthub/types/db';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Button } from '@ncthub/ui/button';
+import { Form } from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Monitor, PencilRuler, Users } from '@ncthub/ui/icons';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { cn } from '@ncthub/utils/format';
 import { useQuery } from '@tanstack/react-query';
-import { Monitor, PencilRuler, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 const FormSchema = z.object({
@@ -59,15 +54,16 @@ type FormType = z.infer<typeof FormSchema>;
 
 interface Props {
   wsId: string;
-  user: User | null;
+  user: SupabaseUser | null;
   data?: WorkspaceRole;
   forceDefault?: boolean;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: FormType) => void;
 }
 
 export interface SectionProps {
   wsId: string;
-  user: User | null;
+  user: SupabaseUser | null;
   roleId?: string;
   form: ReturnType<typeof useForm<FormType>>;
   enabledPermissionsCount: { id: string; count: number }[];
@@ -96,7 +92,7 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
     ? workspaceMembersQuery.data?.count
     : roleMembersCount;
 
-  const form = useForm<FormType>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: forceDefault ? 'DEFAULT' : roleId,

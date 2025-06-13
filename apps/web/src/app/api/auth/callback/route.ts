@@ -1,18 +1,44 @@
-import { createClient } from '@/utils/supabase/server';
-import { NextResponse } from 'next/server';
+import { createClient } from '@ncthub/supabase/next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
-  // The `/auth/callback` route is required for the server-side auth flow implemented
-  // by the Auth Helpers package. It exchanges an auth code for the user's session.
-  // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-sign-in-with-code-exchange
+export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
 
+  // Get returnUrl and nextUrl from query parameters
+  const returnUrl = requestUrl.searchParams.get('returnUrl');
+  const nextUrl = requestUrl.searchParams.get('nextUrl');
+
+  // Determine the redirect URL after authentication
+  let redirectTo: string;
+
+  if (returnUrl) {
+    try {
+      // Validate the returnUrl to ensure it's a proper URL
+      const decodedUrl = decodeURIComponent(returnUrl);
+      new URL(decodedUrl); // This will throw if invalid
+      redirectTo = decodedUrl;
+    } catch (error) {
+      console.error('Invalid returnUrl:', error);
+      // Fall back to nextUrl or default
+      redirectTo = nextUrl ? `/${nextUrl}` : '/onboarding';
+    }
+  } else {
+    // Use nextUrl or fall back to default
+    redirectTo = nextUrl ? `/${nextUrl}` : '/onboarding';
+  }
+
   if (code) {
+    // Create and await the Supabase client
     const supabase = await createClient();
+    // Exchange the code for a session
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  // URL to redirect to after sign in process completes
-  return NextResponse.redirect(requestUrl.origin);
+  // Redirect to the determined URL
+  return NextResponse.redirect(
+    redirectTo.startsWith('http')
+      ? redirectTo
+      : new URL(redirectTo, requestUrl.origin)
+  );
 }

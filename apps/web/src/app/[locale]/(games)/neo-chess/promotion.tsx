@@ -12,7 +12,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({ onSelect, team }) => {
   const pieceColor = team === TeamType.OURS ? 'w' : 'b';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
       <div className="rounded-lg bg-white p-6 shadow-lg">
         <h3 className="mb-4 text-lg font-semibold">
           Choose a piece for promotion:

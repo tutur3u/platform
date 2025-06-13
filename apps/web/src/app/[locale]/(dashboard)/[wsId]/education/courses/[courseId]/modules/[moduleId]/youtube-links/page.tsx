@@ -1,11 +1,11 @@
 import DeleteLinkButton from './delete-link';
 import { YoutubeEmbed } from './embed';
 import YouTubeLinkForm from './form';
-import { createClient } from '@/utils/supabase/server';
 import { extractYoutubeId } from '@/utils/url-helper';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Youtube } from 'lucide-react';
+import { createClient } from '@ncthub/supabase/next/server';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Youtube } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -50,7 +50,7 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
         links.map((link: string, index: number) => (
           <div
             key={`${index}-${link}`}
-            className="border-foreground/10 flex flex-wrap items-center gap-2 rounded-lg border p-2 md:p-4"
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-foreground/10 p-2 md:p-4"
           >
             <DeleteLinkButton
               moduleId={moduleId}

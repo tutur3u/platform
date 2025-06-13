@@ -1,13 +1,13 @@
 import LogList from './log-list';
-import { AuditLog } from '@/types/primitives/audit-log';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@ncthub/supabase/next/server';
+import { AuditLog } from '@ncthub/types/primitives/audit-log';
 import { notFound } from 'next/navigation';
 
 interface Props {
   params: Promise<{
     wsId?: string;
     page?: string;
-    ops?: string[];
+    ops?: ('INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE' | null)[];
     userIds?: string[];
     itemsPerPage?: string;
   }>;
@@ -36,7 +36,7 @@ export default async function WorkspaceActivitiesPage({ params }: Props) {
 async function getLogs(
   wsId: string,
   page: string,
-  ops: string[],
+  ops: ('INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE' | null)[],
   userIds: string[],
   itemsPerPage: string
 ) {

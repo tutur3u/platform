@@ -1,11 +1,9 @@
 'use client';
 
-import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@/types/primitives/StorageObject';
 import { joinPath } from '@/utils/path-helper';
-import { createClient } from '@/utils/supabase/client';
-import { generateRandomUUID } from '@/utils/uuid-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@ncthub/types/primitives/StorageObject';
+import { Button } from '@ncthub/ui/button';
 import {
   Form,
   FormControl,
@@ -13,15 +11,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Check, Trash } from 'lucide-react';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Check, Trash } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
+import { generateRandomUUID } from '@ncthub/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface FolderProps {
@@ -69,7 +69,7 @@ export function StorageFolderForm({
 
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof FolderFormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FolderFormSchema),
     defaultValues: {
       name: '',
@@ -151,7 +151,7 @@ export function StorageObjectForm({
 
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof ObjectFormSchema>>({
+  const form = useForm({
     resolver: zodResolver(ObjectFormSchema),
     defaultValues: {
       files: [],

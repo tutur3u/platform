@@ -1,8 +1,8 @@
 'use client';
 
-import { Workspace } from '@/types/primitives/Workspace';
-import { Button } from '@repo/ui/components/ui/button';
-import { toast } from '@repo/ui/hooks/use-toast';
+import { Workspace } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
+import { toast } from '@ncthub/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -33,9 +33,9 @@ export default function Security({ workspace }: Props) {
   };
 
   return (
-    <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+    <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
       <div className="mb-1 text-2xl font-bold">{t('security')}</div>
-      <div className="text-foreground/80 mb-4 font-semibold">
+      <div className="mb-4 font-semibold text-foreground/80">
         {t('security_description')}
       </div>
 

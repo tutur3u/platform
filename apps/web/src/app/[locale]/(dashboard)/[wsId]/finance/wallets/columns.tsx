@@ -1,10 +1,10 @@
 'use client';
 
 import { WalletRowActions } from './row-actions';
-import { Wallet } from '@/types/primitives/Wallet';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { Wallet } from '@ncthub/types/primitives/Wallet';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { Check, X } from '@ncthub/ui/icons';
 import { ColumnDef } from '@tanstack/react-table';
-import { Check, X } from 'lucide-react';
 import moment from 'moment';
 
 export const walletColumns = (

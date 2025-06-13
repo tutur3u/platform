@@ -7,25 +7,15 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@repo/ui/components/ui/breadcrumb';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@ncthub/ui/breadcrumb';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from '@repo/ui/components/ui/sidebar';
+} from '@ncthub/ui/dialog';
 import {
   Bell,
   Check,
@@ -39,7 +29,17 @@ import {
   Paintbrush,
   Settings,
   Video,
-} from 'lucide-react';
+} from '@ncthub/ui/icons';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from '@ncthub/ui/sidebar';
 import * as React from 'react';
 
 const data = {
@@ -97,7 +97,7 @@ export function WSSettingsDialog() {
             </SidebarContent>
           </Sidebar>
           <main className="flex h-[480px] flex-1 flex-col overflow-hidden">
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
               <div className="flex items-center gap-2 px-4">
                 <Breadcrumb>
                   <BreadcrumbList>
@@ -116,7 +116,7 @@ export function WSSettingsDialog() {
               {Array.from({ length: 10 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-muted/50 aspect-video max-w-3xl rounded-xl"
+                  className="aspect-video max-w-3xl rounded-xl bg-muted/50"
                 />
               ))}
             </div>

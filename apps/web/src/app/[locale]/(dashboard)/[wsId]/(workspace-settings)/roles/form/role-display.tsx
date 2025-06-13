@@ -5,8 +5,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
+} from '@ncthub/ui/form';
+import { Input } from '@ncthub/ui/input';
 import { useTranslations } from 'next-intl';
 
 export default function RoleFormDisplaySection({ form }: SectionProps) {
@@ -14,7 +14,7 @@ export default function RoleFormDisplaySection({ form }: SectionProps) {
 
   return (
     <>
-      <div className="bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
+      <div className="mb-2 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/10 p-2 text-center font-bold text-dynamic-blue">
         {form.watch('name') || '-'}
       </div>
       <FormField

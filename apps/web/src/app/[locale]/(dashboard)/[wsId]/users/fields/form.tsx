@@ -1,8 +1,7 @@
 import { DatePicker } from '@/components/row-actions/users/date-picker';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { fetcher } from '@/utils/fetcher';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { WorkspaceUserField } from '@ncthub/types/primitives/WorkspaceUserField';
+import { Button } from '@ncthub/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -10,7 +9,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@repo/ui/components/ui/command';
+} from '@ncthub/ui/command';
 import {
   Form,
   FormControl,
@@ -19,22 +18,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { cn } from '@repo/ui/lib/utils';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { CheckIcon, ChevronsUpDown, PlusIcon, XIcon } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@ncthub/ui/popover';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
+import { Separator } from '@ncthub/ui/separator';
+import { Textarea } from '@ncthub/ui/textarea';
+import { cn } from '@ncthub/utils/format';
 import dayjs from 'dayjs';
-import { CheckIcon, ChevronsUpDown, PlusIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import useSWR from 'swr';
 import * as z from 'zod';
 
@@ -58,7 +54,7 @@ export const ApiConfigFormSchema = FormSchema;
 export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
   const t = useTranslations();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       name: data.name || '',

@@ -1,16 +1,16 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
-import {
-  DataTable,
-  DataTableProps,
-} from '@repo/ui/components/ui/custom/tables/data-table';
+import { DataTable, DataTableProps } from '@ncthub/ui/custom/tables/data-table';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 
 export function CustomDataTable<TData, TValue>({
   namespace,
+  hideToolbar,
+  hidePagination,
+  className,
   ...props
 }: DataTableProps<TData, TValue>) {
   const t = useTranslations();
@@ -25,6 +25,8 @@ export function CustomDataTable<TData, TValue>({
     <Suspense fallback={null}>
       <DataTable
         t={t}
+        hideToolbar={hideToolbar}
+        hidePagination={hidePagination}
         namespace={namespace}
         pageIndex={pageIndex || 0}
         pageSize={pageSize || 10}
@@ -39,6 +41,7 @@ export function CustomDataTable<TData, TValue>({
         resetParams={() => searchParams.reset()}
         isEmpty={searchParams.isEmpty}
         newObjectTitle={t('common.create')}
+        className={className}
         {...props}
       />
     </Suspense>

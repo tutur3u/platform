@@ -2,5 +2,5 @@
   "compilerOptions": {
     "jsx": "react"
   },
-  "extends": "@repo/typescript-config/base.json"
+  "extends": "@ncthub/typescript-config/base.json"
 }

@@ -1,17 +1,26 @@
 'use client';
 
-import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
-import { cn } from '@/lib/utils';
-import type { GroupPostCheck } from '@/types/db';
-import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { isEmail } from '@/utils/email-helper';
-import { createClient } from '@/utils/supabase/client';
-import { Avatar, AvatarFallback } from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { Check, Mail, MailCheck, MoveRight, Save, Send, X } from 'lucide-react';
+import { createClient } from '@ncthub/supabase/next/client';
+import type { GroupPostCheck } from '@ncthub/types/db';
+import type { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
+import { Card } from '@ncthub/ui/card';
+import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
+import {
+  Check,
+  CircleSlash,
+  Mail,
+  MailCheck,
+  MoveRight,
+  Save,
+  Send,
+  X,
+} from '@ncthub/ui/icons';
+import { Textarea } from '@ncthub/ui/textarea';
+import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -96,7 +105,7 @@ function UserCard({
     isCompleted,
     notes,
   }: {
-    isCompleted?: boolean;
+    isCompleted?: boolean | null;
     notes: string;
   }) {
     if (
@@ -125,20 +134,28 @@ function UserCard({
         ...check,
         user_id: user.id,
         post_id: post.id,
-        is_completed: isCompleted ?? check?.is_completed ?? true,
+        is_completed: isCompleted,
         notes,
       }),
     });
 
     if (response.ok) {
       console.log('Data saved/updated successfully');
-      setCheck((prev) => ({
-        ...prev,
-        user_id: user.id,
-        post_id: post.id,
-        is_completed: isCompleted ?? check?.is_completed ?? true,
-        notes,
-      }));
+      if (isCompleted == null)
+        setCheck({
+          user_id: user.id,
+          post_id: post.id,
+          notes,
+        });
+      else
+        setCheck((prev) => ({
+          ...prev,
+          user_id: user.id,
+          post_id: post.id,
+          is_completed: isCompleted ?? check?.is_completed ?? true,
+          notes,
+        }));
+
       router.refresh();
     } else {
       console.error('Error saving/updating data');
@@ -190,11 +207,11 @@ function UserCard({
           </Avatar>
         )}
         <div className="ml-4 w-full">
-          <h3 className="text-foreground text-lg font-semibold">
+          <h3 className="text-lg font-semibold text-foreground">
             {user.full_name}
           </h3>
           {(user.email || user.phone) && (
-            <p className="text-foreground text-sm">
+            <p className="text-sm text-foreground">
               {user.email || user.phone}
             </p>
           )}
@@ -214,62 +231,7 @@ function UserCard({
           hideEmailSending && 'justify-end'
         )}
       >
-        {hideEmailSending ? (
-          <div>
-            <Button variant="secondary" disabled>
-              {disableEmailSending || success ? (
-                <MailCheck className="h-6 w-6" />
-              ) : (
-                <Send className="h-6 w-6" />
-              )}
-            </Button>
-          </div>
-        ) : (
-          <div>
-            <Button
-              onClick={handleSendEmail}
-              disabled={
-                disableEmailSending ||
-                success ||
-                loading ||
-                !user.email ||
-                !isEmail(user.email) ||
-                user.email.endsWith('@easy.com') ||
-                check?.is_completed == null ||
-                saving ||
-                !check ||
-                (check?.notes != null && check?.notes !== notes)
-              }
-              variant={
-                loading || disableEmailSending || success
-                  ? 'secondary'
-                  : undefined
-              }
-            >
-              <Mail className="mr-2" />
-              <span className="flex items-center justify-center opacity-70">
-                {loading ? (
-                  <LoadingIndicator />
-                ) : disableEmailSending || success ? (
-                  'Email sent'
-                ) : (
-                  'Send email'
-                )}
-              </span>
-              {user.email && (
-                <>
-                  <MoveRight className="mx-2 hidden h-4 w-4 opacity-70 md:inline-block" />
-                  <span className="hidden underline md:inline-block">
-                    {user.email}
-                  </span>
-                </>
-              )}
-            </Button>
-            {error && <p>Error: {error}</p>}
-          </div>
-        )}
-
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex w-full items-center justify-center gap-2">
           {check && check.notes !== notes ? (
             <Button
               onClick={() =>
@@ -297,26 +259,40 @@ function UserCard({
                 }
                 className={cn(
                   check?.is_completed != null && !check.is_completed
-                    ? 'bg-dynamic-red/10 border-dynamic-red/20 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
+                    ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
                     : '',
-                  'border'
+                  'w-full border'
                 )}
                 disabled={saving || !check}
               >
                 <X />
               </Button>
               <Button
-                variant={
-                  check?.is_completed != null && !check.is_completed
-                    ? 'outline'
-                    : 'ghost'
+                variant={check?.is_completed != null ? 'outline' : 'ghost'}
+                onClick={() =>
+                  handleSaveStatus({
+                    isCompleted: null,
+                    notes,
+                  })
                 }
+                className={cn(
+                  check?.is_completed == null
+                    ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20 hover:text-dynamic-blue'
+                    : '',
+                  'w-full border'
+                )}
+                disabled={saving || !check}
+              >
+                <CircleSlash />
+              </Button>
+              <Button
+                variant={check?.is_completed == null ? 'outline' : 'ghost'}
                 onClick={() => handleSaveStatus({ isCompleted: true, notes })}
                 className={cn(
                   check?.is_completed != null && check.is_completed
-                    ? 'bg-dynamic-green/10 border-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
+                    ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
                     : '',
-                  'border'
+                  'w-full border'
                 )}
                 disabled={saving || !check}
               >
@@ -325,6 +301,62 @@ function UserCard({
             </>
           )}
         </div>
+
+        {hideEmailSending ? (
+          <div>
+            <Button variant="secondary" disabled>
+              {disableEmailSending || success ? (
+                <MailCheck className="h-6 w-6" />
+              ) : (
+                <Send className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
+        ) : (
+          <div className="w-full">
+            <Button
+              onClick={handleSendEmail}
+              disabled={
+                disableEmailSending ||
+                success ||
+                loading ||
+                !user.email ||
+                !isEmail(user.email) ||
+                user.email.endsWith('@easy.com') ||
+                check?.is_completed == null ||
+                saving ||
+                !check ||
+                (check?.notes != null && check?.notes !== notes)
+              }
+              variant={
+                loading || disableEmailSending || success
+                  ? 'secondary'
+                  : undefined
+              }
+              className="w-full"
+            >
+              <Mail className="mr-2" />
+              <span className="flex items-center justify-center opacity-70">
+                {loading ? (
+                  <LoadingIndicator />
+                ) : disableEmailSending || success ? (
+                  'Email sent'
+                ) : (
+                  'Send email'
+                )}
+              </span>
+              {user.email && (
+                <>
+                  <MoveRight className="mx-2 hidden h-4 w-4 opacity-70 md:inline-block" />
+                  <span className="hidden underline md:inline-block">
+                    {user.email}
+                  </span>
+                </>
+              )}
+            </Button>
+            {error && <p>Error: {error}</p>}
+          </div>
+        )}
       </div>
     </Card>
   );

@@ -1,9 +1,5 @@
 import BatchesStatistics from './batches';
 import ExpenseStatistics from './expense';
-import HealthCheckupsStatistics from './health-checkups';
-import HealthDiagnosesStatistics from './health-diagnoses';
-import HealthVitalGroupsStatistics from './health-vital-groups';
-import HealthVitalsStatistics from './health-vitals';
 import IncomeStatistics from './income';
 import InventoryProductsStatistics from './inventory-products';
 import InvoicesStatistics from './invoices';
@@ -23,27 +19,23 @@ import WalletsStatistics from './wallets';
 import WarehousesStatistics from './warehouses';
 
 export {
+  BatchesStatistics,
   ExpenseStatistics,
   IncomeStatistics,
+  InventoryProductsStatistics,
   InvoicesStatistics,
+  ProductCategoriesStatistics,
+  ProductsStatistics,
+  PromotionsStatistics,
+  SuppliersStatistics,
   TotalBalanceStatistics,
   TransactionCategoriesStatistics,
   TransactionsStatistics,
-  UserGroupsStatistics,
+  UnitsStatistics,
   UserGroupTagsStatistics,
+  UserGroupsStatistics,
   UserReportsStatistics,
   UsersStatistics,
   WalletsStatistics,
-  ProductsStatistics,
-  InventoryProductsStatistics,
-  ProductCategoriesStatistics,
-  BatchesStatistics,
   WarehousesStatistics,
-  UnitsStatistics,
-  SuppliersStatistics,
-  PromotionsStatistics,
-  HealthCheckupsStatistics,
-  HealthDiagnosesStatistics,
-  HealthVitalGroupsStatistics,
-  HealthVitalsStatistics,
 };

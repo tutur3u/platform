@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -28,9 +28,42 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   if (quiz_options) {
-    await supabase
+    const { data: existingOptions } = await supabase
       .from('quiz_options')
-      .upsert(quiz_options.map((o: any) => ({ ...o, quiz_id: id })));
+      .select('id')
+      .eq('quiz_id', id);
+
+    const existingOptionIds =
+      existingOptions?.map((option: any) => option.id) || [];
+
+    const optionsToUpdate = quiz_options.filter((option: any) =>
+      existingOptionIds.includes(option.id)
+    );
+
+    const optionsToInsert = quiz_options.filter(
+      (option: any) => !existingOptionIds.includes(option.id)
+    );
+
+    const optionsToDelete = existingOptionIds.filter(
+      (optionId: string) =>
+        !quiz_options.some((option: any) => option.id === optionId)
+    );
+
+    if (optionsToUpdate.length > 0) {
+      await supabase
+        .from('quiz_options')
+        .upsert(optionsToUpdate.map((o: any) => ({ ...o, quiz_id: id })));
+    }
+
+    if (optionsToInsert.length > 0) {
+      await supabase
+        .from('quiz_options')
+        .insert(optionsToInsert.map((o: any) => ({ ...o, quiz_id: id })));
+    }
+
+    if (optionsToDelete.length > 0) {
+      await supabase.from('quiz_options').delete().in('id', optionsToDelete);
+    }
   }
 
   return NextResponse.json({ message: 'success' });

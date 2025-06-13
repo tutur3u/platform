@@ -2,14 +2,13 @@
 
 import { MigrationModule, ModulePackage, generateModules } from './modules';
 import { useLocalStorage } from '@mantine/hooks';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Progress } from '@repo/ui/components/ui/progress';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { IconGitMerge } from '@tabler/icons-react';
-import { Play, RefreshCcw } from 'lucide-react';
+import { Button } from '@ncthub/ui/button';
+import { Card } from '@ncthub/ui/card';
+import { GitMerge, Play, RefreshCcw } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Label } from '@ncthub/ui/label';
+import { Progress } from '@ncthub/ui/progress';
+import { Separator } from '@ncthub/ui/separator';
 import { useState } from 'react';
 
 export default function MigrationDashboard() {
@@ -283,7 +282,7 @@ export default function MigrationDashboard() {
               size="icon"
               disabled={disabled || getLoading(module)}
             >
-              <IconGitMerge className="h-4 w-4" />
+              <GitMerge className="h-4 w-4" />
             </Button>
 
             <Button
@@ -384,7 +383,7 @@ export default function MigrationDashboard() {
           <div className="grid w-full items-center gap-1.5">
             <Label>API endpoint</Label>
             <Input
-              placeholder="https://rmitnct.club/api/v1"
+              placeholder="https://tuturuuu.com/api/v1"
               value={apiEndpoint}
               onChange={(e) => setApiEndpoint(e.currentTarget.value)}
             />
@@ -435,7 +434,7 @@ export default function MigrationDashboard() {
             size="icon"
             disabled={loading}
           >
-            <IconGitMerge className="h-4 w-4" />
+            <GitMerge className="h-4 w-4" />
           </Button>
 
           <Button

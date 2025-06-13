@@ -1,7 +1,9 @@
 'use client';
 
-import { cn } from '../../lib/utils';
+import { cn } from '@ncthub/utils/format';
 import * as React from 'react';
+
+export * from 'lucide-react';
 
 function IconNextChat({
   className,

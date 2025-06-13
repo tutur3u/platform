@@ -1,19 +1,19 @@
 'use client';
 
-import { StorageObject } from '@/types/primitives/StorageObject';
 import { joinPath } from '@/utils/path-helper';
-import { createDynamicClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
+import { createDynamicClient } from '@ncthub/supabase/next/client';
+import { StorageObject } from '@ncthub/types/primitives/StorageObject';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@ncthub/ui/dropdown-menu';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Ellipsis } from '@ncthub/ui/icons';
 import { Row } from '@tanstack/react-table';
-import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
@@ -115,6 +115,56 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
     }
   };
 
+  const renameStorageFolder = async () => {
+    if (!storageObj.name) return;
+
+    const newName = prompt(
+      'Enter new name',
+      storageObj.name.split(`${wsId}/`)[1]
+    );
+
+    if (!newName) return;
+
+    // get all inside contents using query
+    const { data, error } = await supabase
+      .schema('storage')
+      .from('objects')
+      .select()
+      .ilike('name', joinPath(wsId, path, storageObj.name, '%'));
+
+    if (error) {
+      toast({
+        title: 'Failed to get folder files',
+        description: error.message,
+      });
+      return;
+    }
+
+    for (const object of data) {
+      const source = object.name;
+      const destination = source.replace(
+        joinPath(wsId, path, storageObj.name),
+        joinPath(wsId, path, newName)
+      );
+
+      // try to move everything from old folder to new folder
+      const { error } = await supabase.storage
+        .from('workspaces')
+        .move(source, destination);
+
+      // prompt in case of error, continue otherwise
+      if (error) {
+        toast({
+          title: `Failed to move ${source} to ${destination}`,
+          description: error.message,
+        });
+      }
+    }
+
+    // refresh on complete
+    router.refresh();
+  };
+
   const downloadStorageObject = async () => {
     if (!storageObj.name) return;
 
@@ -146,20 +196,22 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
+          <DropdownMenuItem
+            onClick={storageObj.id ? renameStorageObject : renameStorageFolder}
+          >
+            {t('common.rename')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           {storageObj.id && (
             // only allows rename & download on onject
             <>
-              <DropdownMenuItem onClick={renameStorageObject}>
-                {t('common.rename')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={downloadStorageObject}>
                 {t('common.download')}
               </DropdownMenuItem>

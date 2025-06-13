@@ -69,7 +69,7 @@ export class Fruit {
       : Math.floor(Math.random() * (FRUIT_COLOR_NAMES.length - 1));
 
     this.color =
-      type === 'rainbow' ? 'null' : FRUIT_COLOR_NAMES[colorIndex] ?? 'null';
+      type === 'rainbow' ? 'null' : (FRUIT_COLOR_NAMES[colorIndex] ?? 'null');
     this.type = type ?? 'normal';
   }
 }

@@ -1,11 +1,7 @@
 import { getPermissions } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
-export default async function UsersCategoryStatistics({
-  wsId,
-}: {
-  wsId: string;
-}) {
+export async function UsersCategoryStatistics({ wsId }: { wsId: string }) {
   const t = await getTranslations();
   const enabled = true;
 
@@ -16,7 +12,7 @@ export default async function UsersCategoryStatistics({
   if (!enabled || !permissions.includes('manage_users')) return null;
 
   return (
-    <div className="mb-2 mt-4 text-2xl font-semibold">
+    <div className="mt-4 mb-2 text-2xl font-semibold">
       {t('sidebar_tabs.users')}
     </div>
   );

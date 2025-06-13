@@ -146,13 +146,13 @@ export default function ChessBoard() {
   }
 
   return (
-    <div className="left-[50%] top-[50%] m-auto grid w-full max-w-sm p-6 sm:rounded-lg md:max-w-4xl lg:max-w-6xl">
+    <div className="top-[50%] left-[50%] m-auto grid w-full max-w-sm p-6 sm:rounded-lg md:max-w-4xl lg:max-w-6xl">
       <div className="m-auto grid grid-cols-1 items-center justify-center">
         <div className="flex items-center justify-center text-lg font-medium uppercase">
           {turnAnnouncement}
         </div>
 
-        <div className="bg-card text-card-foreground w-full rounded-lg border p-4 shadow-sm md:max-w-fit">
+        <div className="w-full rounded-lg border bg-card p-4 text-card-foreground shadow-sm md:max-w-fit">
           <div
             className="relative divide-y"
             ref={chessboardRef}
@@ -186,10 +186,10 @@ export default function ChessBoard() {
           <div
             data-orientation="horizontal"
             role="none"
-            className="bg-border my-2 h-[1px] w-full shrink-0 md:my-4"
+            className="my-2 h-[1px] w-full shrink-0 bg-border md:my-4"
           ></div>
           <button
-            className="ring-offset-background focus-visible:ring-ring bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-10 w-full items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-semibold whitespace-nowrap text-destructive-foreground ring-offset-background transition-colors hover:bg-destructive/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
             onClick={handleRestart}
           >
             Restart

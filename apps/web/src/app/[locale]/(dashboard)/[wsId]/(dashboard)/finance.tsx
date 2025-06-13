@@ -1,6 +1,5 @@
 import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
-import FinanceCategoryStatistics from './categories/finance';
-import FinanceToggle from './finance-toggle';
+import { FinanceCategoryStatistics } from './categories/finance';
 import {
   ExpenseStatistics,
   IncomeStatistics,
@@ -23,7 +22,7 @@ export default async function FinanceStatistics({
   return (
     <>
       <FinanceCategoryStatistics wsId={wsId} />
-      <FinanceToggle />
+      {/* <FinanceToggle /> */}
 
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>

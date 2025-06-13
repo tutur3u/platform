@@ -1,10 +1,8 @@
 'use client';
 
 import DocumentShareDialog from '../document-share-dialog';
-import { DocumentEditor } from './editor';
-import { cn } from '@/lib/utils';
-import { WorkspaceDocument } from '@/types/db';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@ncthub/supabase/next/client';
+import { WorkspaceDocument } from '@ncthub/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,26 +13,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/ui/components/ui/alert-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { Input } from '@repo/ui/components/ui/input';
+} from '@ncthub/ui/alert-dialog';
+import { Button } from '@ncthub/ui/button';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { Globe2, Lock } from 'lucide-react';
-import { CircleCheck, CircleDashed } from 'lucide-react';
+  AlertCircle,
+  ChevronLeft,
+  CircleCheck,
+  Globe2,
+  Loader2,
+  Lock,
+  Share2,
+} from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
+import debounce from 'lodash/debounce';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { JSONContent } from 'novel';
-import { useEffect, useRef, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
   params: Promise<{
     wsId: string;
     documentId: string;
   }>;
+}
+
+interface SyncStatus {
+  type: 'saving' | 'saved' | 'error';
+  message: string;
+  timestamp: number;
 }
 
 async function deleteDocument(wsId: string, documentId: string) {
@@ -55,21 +63,39 @@ export default function DocumentDetailsPage({ params }: Props) {
   const t = useTranslations();
   const nameInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [wsId, setWsId] = useState<string | null>(null);
-  const [documentId, setDocumentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [document, setDocument] = useState<WorkspaceDocument | null>(null);
-  const [saveStatus, setSaveStatus] = useState(t('common.saved'));
+  const [document, setDocument] = useState<Partial<WorkspaceDocument> | null>(
+    null
+  );
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    type: 'saved',
+    message: t('common.saved'),
+    timestamp: Date.now(),
+  });
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
 
+  const { wsId, documentId } = use(params);
+
+  // Debounced sync status update
+  const updateSyncStatus = useMemo(
+    () =>
+      debounce((newStatus: SyncStatus) => {
+        setSyncStatus({
+          ...newStatus,
+          timestamp: Date.now(),
+        });
+      }, 100),
+    []
+  );
+
+  // Cleanup on unmount
   useEffect(() => {
-    params.then((resolvedParams) => {
-      setWsId(resolvedParams.wsId);
-      setDocumentId(resolvedParams.documentId);
-    });
-  }, [params]);
+    return () => {
+      updateSyncStatus.cancel();
+    };
+  }, [updateSyncStatus]);
 
   useEffect(() => {
     if (wsId && documentId) {
@@ -85,10 +111,15 @@ export default function DocumentDetailsPage({ params }: Props) {
     if (document && wsId && documentId) {
       try {
         setLoading(true);
-        await deleteDocument(wsId, document.id);
+        if (document.id) await deleteDocument(wsId, document.id);
         router.push(`/${wsId}/documents`);
       } catch (error) {
         console.error(error);
+        updateSyncStatus({
+          type: 'error',
+          message: t('common.error_deleting'),
+          timestamp: Date.now(),
+        });
       } finally {
         setLoading(false);
       }
@@ -97,120 +128,307 @@ export default function DocumentDetailsPage({ params }: Props) {
 
   const handleUpdateVisibility = async (is_public: boolean) => {
     if (document && documentId) {
-      const supabase = createClient();
-      await supabase
-        .from('workspace_documents')
-        .update({ is_public })
-        .eq('id', documentId);
-      setDocument({ ...document, is_public });
+      updateSyncStatus({
+        type: 'saving',
+        message: t('common.updating'),
+        timestamp: Date.now(),
+      });
+
+      try {
+        const supabase = createClient();
+        await supabase
+          .from('workspace_documents')
+          .update({ is_public })
+          .eq('id', documentId);
+        setDocument((prevDoc) => ({ ...prevDoc, is_public }));
+
+        updateSyncStatus({
+          type: 'saved',
+          message: t('common.visibility_updated'),
+          timestamp: Date.now(),
+        });
+        // eslint-disable-next-line no-unused-vars
+      } catch (error) {
+        updateSyncStatus({
+          type: 'error',
+          message: t('common.error_updating_visibility'),
+          timestamp: Date.now(),
+        });
+      }
     }
   };
 
   const handleNameInputChange = () => {
-    setSaveStatus(t('common.save'));
+    updateSyncStatus({
+      type: 'saving',
+      message: t('common.saving'),
+      timestamp: Date.now(),
+    });
   };
 
   const handleNameChange = async () => {
     const newName = nameInputRef.current?.value;
     if (newName && document) {
-      setSaveStatus(t('common.saving'));
-      const supabase = createClient();
-      await supabase
-        .from('workspace_documents')
-        .update({ name: newName })
-        .eq('id', document.id);
+      updateSyncStatus({
+        type: 'saving',
+        message: t('common.saving'),
+        timestamp: Date.now(),
+      });
 
-      setDocument({ ...document, name: newName });
-      setSaveStatus(t('common.saved'));
+      try {
+        const supabase = createClient();
+        if (!document.id) return;
+
+        await supabase
+          .from('workspace_documents')
+          .update({ name: newName })
+          .eq('id', document.id);
+
+        setDocument((prevDoc) => ({ ...prevDoc, name: newName }));
+        updateSyncStatus({
+          type: 'saved',
+          message: t('common.name_updated'),
+          timestamp: Date.now(),
+        });
+        // eslint-disable-next-line no-unused-vars
+      } catch (error) {
+        updateSyncStatus({
+          type: 'error',
+          message: t('common.error_updating_name'),
+          timestamp: Date.now(),
+        });
+      }
     }
   };
 
+  const saveContentToDatabase = useCallback(
+    async (content: string) => {
+      if (!document?.id) return;
+
+      updateSyncStatus({
+        type: 'saving',
+        message: t('common.saving'),
+        timestamp: Date.now(),
+      });
+
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('workspace_documents')
+          .update({ content })
+          .eq('id', document.id);
+
+        if (error) throw error;
+
+        updateSyncStatus({
+          type: 'saved',
+          message: t('common.saved'),
+          timestamp: Date.now(),
+        });
+
+        return true;
+      } catch (error) {
+        console.error('Error saving document:', error);
+        updateSyncStatus({
+          type: 'error',
+          message: t('common.error_saving'),
+          timestamp: Date.now(),
+        });
+        throw error;
+      }
+    },
+    [document?.id, t, updateSyncStatus]
+  );
+
+  const handleRetrySave = useCallback(() => {
+    // if (editorRef.current?.editor) {
+    // const content = editorRef.current.editor.getJSON();
+    const content = '';
+    updateSyncStatus({
+      type: 'saving',
+      message: t('common.saving'),
+      timestamp: Date.now(),
+    });
+    saveContentToDatabase(content).catch(() => {
+      updateSyncStatus({
+        type: 'error',
+        message: t('common.error_saving'),
+        timestamp: Date.now(),
+      });
+    });
+    // }
+  }, [t, saveContentToDatabase, updateSyncStatus]);
+
   if (loading || !wsId || !documentId) {
-    return <div>{t('common.loading')}...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span className="ml-2">{t('common.loading')}...</span>
+      </div>
+    );
   }
+
   if (!document) return null;
 
   return (
-    <div className="relative w-full">
-      <div className="mb-4 flex items-center justify-end gap-2">
-        <Input
-          ref={nameInputRef}
-          type="text"
-          defaultValue={document.name || ''}
-          className="flex-grow text-2xl"
-          onChange={handleNameInputChange}
-          onBlur={handleNameChange}
-          onKeyDown={(e) => e.key === 'Enter' && handleNameChange()}
-        />
-        <div>
-          {saveStatus === t('common.saved') ? (
-            <CircleCheck className="h-7 w-7" />
-          ) : (
-            <CircleDashed className="h-7 w-7" />
-          )}
-        </div>
-        <AlertDialog
-          open={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
-        >
-          <AlertDialogTrigger asChild>
-            <Button onClick={() => setIsDeleteDialogOpen(true)}>
-              {t('common.delete')}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {t('common.confirm_delete_title')}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {t('common.confirm_delete_description')}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
-                {t('common.cancel')}
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>
-                {t('common.delete')}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
+    <div className="relative flex h-screen flex-col bg-background">
+      <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center gap-4">
             <Button
-              size="icon"
               variant="ghost"
-              className={cn(
-                'transition duration-300',
-                !document.id
-                  ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
-                  : 'pointer-events-auto w-10 opacity-100'
-              )}
+              size="icon"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => router.push(`/${wsId}/documents`)}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <Input
+                ref={nameInputRef}
+                type="text"
+                defaultValue={document.name || ''}
+                className="h-9 w-fit border bg-transparent px-2 text-lg font-medium focus-visible:ring-0"
+                onChange={handleNameInputChange}
+                onBlur={handleNameChange}
+                onKeyDown={(e) => e.key === 'Enter' && handleNameChange()}
+              />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                      'cursor-default select-none hover:bg-muted/50',
+                      syncStatus.type === 'saving' &&
+                        'bg-muted/30 text-muted-foreground',
+                      syncStatus.type === 'saved' && 'text-emerald-500',
+                      syncStatus.type === 'error' &&
+                        'text-destructive hover:bg-destructive/10'
+                    )}
+                    role="status"
+                    aria-label={t('common.save_status')}
+                  >
+                    {syncStatus.type === 'saving' && (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    )}
+                    {syncStatus.type === 'saved' && (
+                      <CircleCheck className="h-3.5 w-3.5" />
+                    )}
+                    {syncStatus.type === 'error' && (
+                      <AlertCircle className="h-3.5 w-3.5" />
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  sideOffset={4}
+                  className="text-xs"
+                >
+                  {syncStatus.type === 'error' ? (
+                    <div className="flex flex-col gap-1">
+                      <span>{t('common.save_failed')}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={handleRetrySave}
+                      >
+                        {t('common.retry_save')}
+                      </Button>
+                    </div>
+                  ) : (
+                    t('common.last_saved', {
+                      time: new Date(syncStatus.timestamp).toLocaleTimeString(
+                        undefined,
+                        {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }
+                      ),
+                    })
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
               onClick={() => setIsShareDialogOpen(true)}
             >
-              {document.is_public ? <Globe2 /> : <Lock />}
-              <span className="sr-only">{t('common.share')}</span>
+              <Share2 className="h-4 w-4" />
+              {t('common.share')}
             </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t('common.share')}</TooltipContent>
-        </Tooltip>
+
+            <div className="mx-2 h-5 w-px bg-border" />
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={cn(
+                    'h-8 w-8 transition-colors',
+                    !document.id && 'pointer-events-none opacity-50'
+                  )}
+                  onClick={() => setIsShareDialogOpen(true)}
+                >
+                  {document.is_public ? (
+                    <Globe2 className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <Lock className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={4}>
+                {document.is_public
+                  ? t('common.public_document')
+                  : t('common.private_document')}
+              </TooltipContent>
+            </Tooltip>
+
+            <AlertDialog
+              open={isDeleteDialogOpen}
+              onOpenChange={setIsDeleteDialogOpen}
+            >
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  {t('common.delete')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {t('common.confirm_delete_title')}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('common.confirm_delete_description')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>
+                    {t('common.delete')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
       </div>
 
-      <DocumentEditor
-        wsId={wsId}
-        docId={documentId}
-        content={document.content as JSONContent}
-      />
-      <DocumentShareDialog
-        isOpen={isShareDialogOpen}
-        onClose={() => setIsShareDialogOpen(false)}
-        documentId={document.id}
-        isPublic={document.is_public!!}
-        onUpdateVisibility={handleUpdateVisibility}
-      />
+      {document.id && (
+        <DocumentShareDialog
+          isOpen={isShareDialogOpen}
+          onClose={() => setIsShareDialogOpen(false)}
+          documentId={document.id}
+          isPublic={document.is_public!!}
+          onUpdateVisibility={handleUpdateVisibility}
+        />
+      )}
     </div>
   );
 }

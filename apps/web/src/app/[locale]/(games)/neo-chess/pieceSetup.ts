@@ -52,7 +52,10 @@ const initialPositions: Record<
     Object.values(initialPositions).forEach((piece) => {
       piece.positions.forEach((x) => {
         const pieceY = piece.type === PieceType.PAWN ? pawnY : y;
-        const id = colour === 'b' ? `dark-${piece.type.toLowerCase()}-${x}` : `light-${piece.type.toLowerCase()}-${x}`;
+        const id =
+          colour === 'b'
+            ? `dark-${piece.type.toLowerCase()}-${x}`
+            : `light-${piece.type.toLowerCase()}-${x}`;
         pieces.push({
           id,
           image: `neo-chess/${colour}_${PieceType[piece.type].toLowerCase()}.png`,

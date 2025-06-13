@@ -1,7 +1,7 @@
 import { FinanceDashboardSearchParams } from '../../finance/(dashboard)/page';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import dayjs, { OpUnitType } from 'dayjs';
 import { getTranslations } from 'next-intl/server';
 
@@ -9,7 +9,7 @@ const enabled = true;
 
 export default async function InvoicesStatistics({
   wsId,
-  searchParams: { showFinanceStats, view, startDate, endDate } = {},
+  searchParams: { showFinanceStats = true, view, startDate, endDate } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;

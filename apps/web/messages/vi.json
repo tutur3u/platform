@@ -24,6 +24,7 @@
     "500-msg": "Đã xảy ra lỗi. Vui lòng thử lại sau.",
     "unsaved-changes": "Bạn có thay đổi chưa được lưu.",
     "back-to-home": "Quay lại trang chủ",
+    "back-to-login": "Quay lại đăng nhập",
     "home": "Trang chủ",
     "about": "Về chúng tôi",
     "projects": "Các dự án",
@@ -60,7 +61,7 @@
     "download": "Tải xuống",
     "rename": "Đổi tên",
     "processing": "Đang xử lý...",
-    "saving": "Đang lưu",
+    "saving": "Đang lưu thay đổi...",
     "loading": "Đang tải",
     "success": "Thành công",
     "complete": "Hoàn tất",
@@ -92,6 +93,7 @@
     "view": "Xem",
     "show-all": "Hiển thị tất cả",
     "hide-all": "Ẩn tất cả",
+    "columns": "Cột",
     "toggle-columns": "Hiển thị cột",
     "no-results": "Không có kết quả",
     "of": "trên",
@@ -142,7 +144,7 @@
     "share": "Chia sẻ",
     "confirm_delete_title": "Xác nhận xoá",
     "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này? Hành động xoá này là vĩnh viễn và không thể thay đổi được.",
-    "saved": "Đã lưu",
+    "saved": "Đã lưu tất cả thay đổi",
     "unsaved": "Chưa lưu",
     "previous": "Trước đó",
     "next": "Tiếp theo",
@@ -161,7 +163,124 @@
     "context": "Bối cảnh",
     "enter_context": "Nhập ngữ cảnh",
     "generate": "Tạo nội dung",
-    "enabled": "Đã bật"
+    "enabled": "Đã bật",
+    "explanation": "Giải thích",
+    "generate_explanation": "Tạo lời giải thích",
+    "products": "Các sản phẩm",
+    "solutions": "Giải pháp",
+    "pricing": "Bảng giá",
+    "about": "Giới thiệu",
+    "contact": "Liên hệ",
+    "ai-assistant": "Trợ lý AI",
+    "lms": "LMS",
+    "calendar": "Lịch",
+    "documents": "Tài liệu",
+    "drive": "Kho lưu trữ",
+    "crm": "CRM",
+    "inventory": "Quản kho",
+    "finance": "Tài chính",
+    "mail": "Hộp thư",
+    "tasks": "Tác vụ",
+    "workflows": "Quy trình",
+    "education": "Giáo dục",
+    "restaurants": "Nhà hàng",
+    "pharmacies": "Nhà thuốc",
+    "agencies": "Agency",
+    "realestate": "Bất động sản",
+    "blog": "Blog",
+    "blog-description": "Đọc các bài viết và cập nhật mới nhất của chúng tôi.",
+    "documentation-description": "Tìm tài liệu và hướng dẫn chi tiết.",
+    "education-description": "Giải pháp dành riêng cho các tổ chức giáo dục.",
+    "retail-description": "Giải pháp dành riêng cho các doanh nghiệp bán lẻ.",
+    "hospitality-description": "Giải pháp dành riêng cho các doanh nghiệp khách sạn.",
+    "construction-description": "Giải pháp dành riêng cho các doanh nghiệp xây dựng.",
+    "restaurants-description": "Quản lý hoạt động nhà hàng của bạn một cách hiệu quả.",
+    "manufacturing-description": "Giải pháp dành riêng cho các doanh nghiệp chế tạo.",
+    "pharmacies-description": "Chuẩn hóa việc quản lý và dịch vụ nhà thuốc.",
+    "realestate-description": "Tối ưu hóa hoạt động kinh doanh bất động sản của bạn.",
+    "meet-together-description": "Lên lịch cuộc họp dễ dàng giữa các múi giờ khác nhau và đội ngũ khác nhau.",
+    "ai-assistant-description": "Tận dụng AI để tự động hóa các nhiệm vụ và nâng cao năng suất.",
+    "lms-description": "Cung cấp và theo dõi nội dung giáo dục một cách hiệu quả.",
+    "calendar-description": "Hệ thống quản lý sự kiện và lịch toàn diện.",
+    "documents-description": "Quản lý và cộng tác tài liệu được hỗ trợ bởi AI.",
+    "drive-description": "Lưu trữ đám mây an toàn với tính năng chia sẻ tệp liền mạch.",
+    "crm-description": "Xây dựng và duy trì các mối quan hệ khách hàng có giá trị.",
+    "inventory-description": "Hợp lý hóa việc kiểm soát hàng tồn kho và quản lý hàng tồn kho.",
+    "branding-description": "Xem bộ nhận diện thương hiệu của Tuturuuu.",
+    "github-description": "Xem các dự án nguồn mở của chúng tôi trên GitHub.",
+    "finance-description": "Theo dõi tài chính và quản lý giao dịch hiệu quả.",
+    "mail-description": "Quản lý email và truyền thông mạnh mẽ.",
+    "tasks-description": "Tổ chức và theo dõi các dự án một cách rõ ràng.",
+    "workflows-description": "Tự động hóa và tối ưu hóa quy trình kinh doanh của bạn.",
+    "scroll_to_explore": "Cuộn để khám phá",
+    "features": "Các tính năng",
+    "learn_more": "Tìm hiểu thêm",
+    "pricing_hook": "Giá cả đơn giản, minh bạch",
+    "usage_based_pricing": "Bảng giá",
+    "usage_based_pricing_description": "Chỉ trả tiền cho những gì bạn sử dụng. Tất cả các gói đều bao gồm các tính năng cốt lõi với các giới hạn sử dụng khác nhau.",
+    "faq": "Câu hỏi thường gặp",
+    "unlink": "Hủy liên kết",
+    "add_column": "Thêm Cột",
+    "add_column_description": "Nhập tên cho cột mới",
+    "column_name": "Tên Cột",
+    "explore": "Khám phá",
+    "actions": "hành động",
+    "clear_all": "Xóa tất cả",
+    "clear_all_title": "Xóa tất cả nội dung",
+    "clear_all_description": "Bạn có chắc chắn muốn xóa tất cả nội dung? Hành động này không thể hoàn tác.",
+    "clearing": "Đang xoá",
+    "retail": "Bán lẻ",
+    "manufacturing": "Chế tạo",
+    "hospitality": "Du lịch & Khách sạn",
+    "construction": "Thi công",
+    "changelog": "Nhật ký thay đổi",
+    "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
+    "about-description": "Tìm hiểu thêm về Tuturuuu và sứ mệnh của chúng tôi.",
+    "careers-description": "Tham gia cùng chúng tôi và giúp chúng tôi xây dựng tương lai của Tuturuuu.",
+    "contributors": "Người đóng góp",
+    "contributors-description": "Gặp gỡ những người đã giúp tạo nên Tuturuuu.",
+    "security": "Bảo mật",
+    "security-description": "Tìm hiểu về cách chúng tôi bảo vệ dữ liệu và thông tin của bạn.",
+    "pitch-description": "Kế hoạch kinh doanh của Tuturuuu.",
+    "product-updates": "Cập nhật sản phẩm",
+    "product-updates-title": "Cập nhật sản phẩm",
+    "product-updates-description": "Theo dõi các tính năng, cải tiến và sửa lỗi mới nhất trong hành trình phát triển sản phẩm của chúng tôi.",
+    "new-features": "Tính năng mới",
+    "improvements": "Cải tiến",
+    "bug-fixes": "Sửa lỗi",
+    "stay-updated": "Cập nhật thường xuyên",
+    "changelog-subscribe-description": "Đăng ký nhận thông báo về các cập nhật và tính năng mới khi chúng được phát hành.",
+    "enter-email": "Nhập email của bạn",
+    "subscribe": "Đăng ký",
+    "view-full-documentation": "Xem tài liệu đầy đủ",
+    "company": "Công ty",
+    "pitch": "Kế hoạch kinh doanh",
+    "careers": "Việc làm",
+    "not_whitelisted": "Không có trong danh sách trắng",
+    "email_added": "Đã thêm email",
+    "error_adding_email": "Lỗi khi thêm email",
+    "history": "Lịch sử",
+    "public_document": "Tài liệu công khai",
+    "private_document": "Tài liệu riêng tư",
+    "last_saved": "Lần lưu cuối: {time}",
+    "unsaved_changes": "Bạn có thay đổi chưa được lưu",
+    "error_saving": "Lỗi khi lưu thay đổi",
+    "save_failed": "Không thể lưu thay đổi",
+    "retry_save": "Thử lưu lại",
+    "auto_save_enabled": "Tự động lưu đã bật",
+    "save_status": "Trạng thái lưu",
+    "document_status": "Trạng thái tài liệu",
+    "updating": "Đang cập nhật...",
+    "name_updated": "Đã cập nhật tên thành công",
+    "error_updating_name": "Lỗi khi cập nhật tên",
+    "visibility_updated": "Đã cập nhật quyền truy cập thành công",
+    "error_updating_visibility": "Lỗi khi cập nhật quyền truy cập",
+    "error_deleting": "Lỗi khi xoá tài liệu",
+    "domain_added": "Tên miền được thêm vào",
+    "error_adding_domain": "Không thể thêm miền",
+    "rewise-description": "Truy cập một loạt các công cụ hỗ trợ AI dành cho doanh nghiệp.",
+    "nova-description": "Sân chơi prompt engineering cho mọi người.",
+    "waitlist": "Danh sách chờ"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -188,8 +307,8 @@
     "next-year": "Năm sau"
   },
   "home": {
-    "headline-p1": "Quản lý công việc của bạn,",
-    "headline-p2": "siêu tốc độ cùng AI",
+    "headline": "Lối tắt thông minh của bạn",
+    "subheadline": "Quản lý công việc, siêu tốc độ cùng AI",
     "get-started": "Bắt đầu ngay",
     "features-lead": "Bạn có thể làm gì với NCT Hub?",
     "features-1-title": "Tăng cường bởi AI",
@@ -203,7 +322,8 @@
     "features-5-title": "Theo dõi tài chính linh hoạt",
     "features-5-subtitle": "Theo dõi tài chính của bạn, và giữ cho đội của bạn luôn được cập nhật, để bạn có thể tập trung vào những điều quan trọng.",
     "features-6-title": "Mã nguồn mở",
-    "features-6-subtitle": "NCT Hub là dự án mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và biến nó trở nên tốt hơn cho mọi người."
+    "features-6-subtitle": "NCT Hub là dự án mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và biến nó trở nên tốt hơn cho mọi người.",
+    "join-waitlist": "Tham gia danh sách chờ"
   },
   "branding": {
     "branding": "Thương hiệu",
@@ -288,7 +408,10 @@
     "delete_plan_warning": "Thao tác này không thể hoàn tác. Kế hoạch và tất cả thông tin liên quan sẽ bị xóa vĩnh viễn khỏi hệ thống của NCT Hub.",
     "select_users_to_filter": "Chọn người dùng để lọc kết quả",
     "show_qr_code": "Xem mã QR",
-    "qr_code_description": "Quét mã QR này để truy cập nhanh vào thông tin chi tiết về kế hoạch gặp mặt."
+    "qr_code_description": "Quét mã QR này để truy cập nhanh vào thông tin chi tiết về kế hoạch gặp mặt.",
+    "save_credentials": "Lưu thông tin đăng nhập cho kế hoạch này",
+    "save_credentials_desc": "Tự động đăng nhập khi bạn quay lại kế hoạch này",
+    "logged_in_as": "Đăng nhập như"
   },
   "invite": {
     "invited-to": "Bạn được mời vào",
@@ -321,10 +444,20 @@
   "reset-password": {
     "reset-password": "Đặt lại mật khẩu",
     "reset-password-desc": "Nhập mật khẩu mới cho tài khoản của bạn",
-    "resetting": "Đang đặt lại"
+    "resetting": "Đang đặt lại",
+    "email-sent": "Email đặt lại mật khẩu đã được gửi",
+    "email-sent-message-1": "Chúng tôi đã gửi email với hướng dẫn đặt lại mật khẩu đến ",
+    "email-sent-message-2": ". Vui lòng kiểm tra email của bạn và làm theo hướng dẫn để đặt lại mật khẩu.",
+    "check-spam": "Nếu bạn không nhận được email trong vòng vài phút, vui lòng kiểm tra thư mục spam hoặc thùng rác.",
+    "new-password": "Mật khẩu mới",
+    "confirm-password": "Xác nhận mật khẩu",
+    "success-message": "Mật khẩu của bạn đã được đặt lại thành công. Bạn có thể đăng nhập bằng mật khẩu mới.",
+    "error-message": "Đã xảy ra lỗi khi đặt lại mật khẩu. Vui lòng thử lại sau."
   },
   "login": {
-    "email_placeholder": "Địa chỉ email",
+    "welcome": "Chào mừng quay lại",
+    "email": "Email",
+    "email_placeholder": "Nhập địa chỉ email của bạn",
     "email_description": "Nhập địa chỉ email của bạn để bắt đầu với NCT Hub.",
     "otp_code": "Mã xác thực",
     "otp_description": "Nhập mã xác thực được gửi đến địa chỉ email của bạn.",
@@ -338,9 +471,29 @@
     "failed_to_send": "Không thể gửi mã xác thực.",
     "failed_to_verify": "Không thể xác thực địa chỉ email của bạn.",
     "invalid_verification_code": "Mã xác thực không hợp lệ.",
+    "invalid_credentials": "Email hoặc mật khẩu không đúng.",
     "resend": "Gửi lại",
     "processing": "Đang xử lý...",
-    "continue": "Tiếp tục"
+    "continue": "Tiếp tục",
+    "continue_with_google": "Tiếp tục với Google",
+    "continue_with_github": "Tiếp tục với GitHub",
+    "continue_with_apple": "Tiếp tục với Apple",
+    "continue_with_discord": "Tiếp tục với Discord",
+    "or_continue_with": "Hoặc tiếp tục với",
+    "verify": "Xác minh",
+    "passwordless": "Không mật khẩu",
+    "with_password": "Với mật khẩu",
+    "password": "Mật khẩu",
+    "password_placeholder": "Nhập mật khẩu của bạn",
+    "sign_in": "Đăng nhập",
+    "forgot_password": "Quên mật khẩu?",
+    "or": "hoặc",
+    "check_email": "Kiểm tra email của bạn",
+    "verification_code": "Mã xác thực",
+    "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự",
+    "powered-by": "Tuturuuu cung cấp hệ thống xác thực phía sau {domain}.",
+    "choose_sign_in_method": "Chọn phương thức đăng nhập ưa thích của bạn",
+    "sign_in_to_your_account": "Đăng nhập vào tài khoản của bạn để tiếp tục"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",
@@ -407,7 +560,19 @@
     "slides": "Trang trình bày",
     "mail": "Hộp thư",
     "tasks": "Nhiệm vụ",
-    "education": "Giáo dục"
+    "education": "Giáo dục",
+    "models": "Các mô hình",
+    "datasets": "Bộ dữ liệu",
+    "pipelines": "Quy trình",
+    "cron": "Công việc định kỳ",
+    "workouts": "Vận động thể chất",
+    "readings": "Đọc sách",
+    "diet_and_nutrition": "Ăn uống",
+    "progress": "Tiến độ",
+    "metrics": "Chỉ số",
+    "crawlers": "Công cụ cào dữ liệu",
+    "queues": "Hàng chờ",
+    "time_tracker": "Trình theo dõi thời gian"
   },
   "team-tabs": {
     "overview": "Tổng quan",
@@ -504,8 +669,10 @@
   "user-data-table": {
     "id": "Mã số",
     "avatar_url": "Ảnh đại diện",
+    "name": "Tên",
     "full_name": "Họ và tên",
     "display_name": "Tên hiển thị",
+    "description": "Mô tả",
     "email": "Email",
     "phone": "SĐT",
     "gender": "Giới tính",
@@ -541,7 +708,11 @@
     "applying": "Đang áp dụng...",
     "selected": "nhóm",
     "linked_products": "Sản phẩm liên kết",
-    "remove-from-group": "Xóa khỏi nhóm"
+    "remove-from-group": "Xóa khỏi nhóm",
+    "url": "Liên kết",
+    "columns": "Cột",
+    "rows": "Dòng",
+    "type": "Loại"
   },
   "email-data-table": {
     "id": "Mã số",
@@ -574,6 +745,14 @@
     "is_published": "Đã xuất bản",
     "modules": "Mô-đun",
     "created_at": "Ngày tạo"
+  },
+  "quiz-set-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "linked_modules": "Mô đun liên kết",
+    "is_public": "Public",
+    "is_published": "Published",
+    "created_at": "Created At"
   },
   "quiz-data-table": {
     "id": "Mã số",
@@ -741,6 +920,35 @@
     "user_count": "Số người dùng",
     "created_at": "Tạo lúc"
   },
+  "cron-job-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "description": "Mô tả",
+    "schedule": "Lịch trình",
+    "status": "Trạng thái",
+    "last_run": "Lần chạy cuối",
+    "next_run": "Lần Chạy tới",
+    "inactive": "Không hoạt động",
+    "active": "Đang hoạt động",
+    "running": "Đang chạy",
+    "failed": "Thất bại",
+    "created_at": "Tạo lúc"
+  },
+  "cron-execution-data-table": {
+    "id": "Mã số",
+    "job": "Công việc",
+    "status": "Trạng thái",
+    "started_at": "Bắt đầu lúc",
+    "finished_at": "Kết thúc lúc",
+    "created_at": "Tạo lúc"
+  },
+  "crawled-url-data-table": {
+    "id": "Mã số",
+    "url": "URL",
+    "html": "HTML",
+    "markdown": "Markdown",
+    "created_at": "Tạo lúc"
+  },
   "ws-home": {
     "home": "Trang chủ",
     "description_p1": "Tổng quan về không gian làm việc",
@@ -826,10 +1034,12 @@
     "description": "Khoá bí mật để truy cập dữ liệu của bạn từ bên ngoài thông qua API của NCT Hub một cách an toàn và bảo mật.",
     "name": "Tên",
     "value": "Giá trị",
-    "create_key": "Tạo khoá",
-    "edit_key": "Sửa khoá",
-    "add_new_workspace_key": "Thêm một khoá API mới cho không gian làm việc này.",
-    "edit_existing_workspace_key": "Sửa khoá API đã tồn tại cho không gian làm việc này."
+    "create_key": "Tạo khóa",
+    "edit_key": "Sửa khóa",
+    "add_new_workspace_key": "Thêm khóa mới",
+    "edit_existing_workspace_key": "Sửa khóa hiện có",
+    "no_api_keys_found": "Không tìm thấy khóa API nào",
+    "select_api_key": "Chọn khóa API"
   },
   "ws-reports": {
     "report": "Báo cáo",
@@ -1308,7 +1518,10 @@
     "current": "Hiện tại",
     "day": "Ngày",
     "4-days": "4 ngày",
-    "week": "Tuần"
+    "week": "Tuần",
+    "month": "Tháng",
+    "view": "Chế độ hiển thị",
+    "this-month": "Tháng này"
   },
   "documents": {
     "documents": "Tài liệu",
@@ -1377,7 +1590,9 @@
     "discounts": "Giảm giá",
     "rounding": "Làm tròn",
     "print": "In",
-    "download_image": "Tải hình ảnh xuống"
+    "download_image": "Tải hình ảnh xuống",
+    "add_promotion": "Thêm khuyến mãi",
+    "files": "Tệp tin"
   },
   "ai_chat": {
     "welcome_to": "Chào mừng đến với",
@@ -1392,6 +1607,8 @@
     "example_4_prompt": "Tóm tắt bài viết sau cho học sinh lớp 2: \n\n",
     "example_5": "Viết một email",
     "example_5_prompt": "Viết một email cho sếp tôi về vấn đề sau: \n\n",
+    "example_6": "Tạo một bài thơ",
+    "example_6_prompt": "Tạo một bài thơ về vấn đề sau: \n\n",
     "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với NCT Hub AI.",
     "prompt_placeholder": "Nhập yêu cầu của bạn...",
     "chats": "Các cuộc trò chuyện",
@@ -1447,7 +1664,11 @@
     "multiple_choice": "Bộ trắc nghiệm",
     "paragraph_answers": "Câu hỏi đoạn văn",
     "ai_models": "Mô hình AI",
-    "quizzes": "Bộ câu hỏi"
+    "quizzes": "Bộ câu hỏi",
+    "chatbots": "Thư viện chatbot",
+    "my_chatbots": "Chatbot của tôi",
+    "my_chatbots_description": "Quản lý chatbot tùy chỉnh của bạn với các lệnh nhắc và câu trả lời của riêng bạn.",
+    "new_chatbot": "Chatbot mới"
   },
   "crud-ops": {
     "ops": "Thao tác",
@@ -1485,14 +1706,19 @@
     "logout-description": "Đăng xuất khỏi tài khoản của bạn.",
     "confirm-account-deletion": "Xác nhận xóa tài khoản",
     "change-password": "Đổi mật khẩu",
-    "change-password-description": "Đổi mật khẩu của bạn.",
+    "change-password-description": "Đổi mật khẩu cho tài khoản của bạn.",
+    "reset-password": "Đặt lại mật khẩu",
     "delete-account": "Xóa tài khoản",
     "delete-account-description": "Xóa tài khoản của bạn.",
     "delete-account-message": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản.",
     "new_avatar": "Hình đại diện mới",
     "upload_avatar": "Hình đại diện mới",
     "remove_avatar": "Xóa hình đại diện",
-    "save_avatar": "Lưu hình đại diện"
+    "save_avatar": "Lưu hình đại diện",
+    "full-settings": "Xem tất cả cài đặt",
+    "view-full-settings": "Xem tất cả cài đặt",
+    "default-workspace": "Không gian làm việc mặc định",
+    "default-workspace-description": "Chọn không gian làm việc nào để chuyển hướng đến khi bạn truy cập trang chủ. \nNếu không có mặc định được đặt, bạn sẽ được chuyển hướng đến không gian làm việc có sẵn đầu tiên của bạn."
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
@@ -1517,7 +1743,11 @@
     "prompts": "Lệnh nhắc",
     "workflows": "Quy trình",
     "pipeline": "Luồng xử lý",
-    "pipelines": "Luồng xử lý"
+    "pipelines": "Luồng xử lý",
+    "executions": "Lịch sử chạy",
+    "cron_jobs": "Lịch trình",
+    "jobs": "Lịch trình",
+    "uncrawled": "Chưa cào"
   },
   "workspace-settings-layout": {
     "workspace": "Không gian làm việc",
@@ -1560,7 +1790,10 @@
     "create": "Tạo hóa đơn",
     "create_description": "Tạo hóa đơn mới",
     "edit": "Chỉnh sửa hóa đơn",
-    "edit_description": "Chỉnh sửa hóa đơn hiện có"
+    "edit_description": "Chỉnh sửa hóa đơn hiện có",
+    "new_invoice": "Hóa đơn mới",
+    "standard": "Hóa đơn tiêu chuẩn",
+    "subscription": "Hóa đơn định kỳ"
   },
   "ws-inventory-products": {
     "plural": "Sản phẩm",
@@ -1667,8 +1900,10 @@
     "overview": "Tổng quan",
     "courses": "Khóa học",
     "materials": "Tài liệu học tập",
-    "quizzes": "Bộ trắc nghiệm",
-    "flashcards": "Thẻ từ vựng"
+    "quizzes": "Câu hỏi trắc nghiệm",
+    "flashcards": "Thẻ từ vựng",
+    "quiz-sets": "Bộ trắc nghiệm",
+    "attempts": "Lịch sử làm bài"
   },
   "ws-courses": {
     "plural": "Khóa học",
@@ -1714,9 +1949,9 @@
     "generation_accepted": "Thẻ từ do AI tạo đã được chấp nhận!"
   },
   "ws-quizzes": {
-    "plural": "Bộ trắc nghiệm",
+    "plural": "Câu hỏi trắc nghiệm",
     "singular": "Bộ trắc nghiệm",
-    "create": "Tạo bộ trắc nghiệm",
+    "create": "Tạo câu hỏi",
     "create_description": "Tạo một bộ trắc nghiệm mới",
     "description": "Quản lý bộ trắc nghiệm trong không gian làm việc của bạn có các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
     "edit": "Chỉnh sửa bộ trắc nghiệm",
@@ -1735,5 +1970,1028 @@
     "module_content": "Nội dung mô-đun",
     "no_youtube_links": "Chưa có liên kết YouTube nào.",
     "resource_preview_unavailable": "Bản xem trước tài nguyên không có sẵn"
-  }
+  },
+  "ws-ai-whitelist-emails": {
+    "plural": "Email thuộc danh sách trắng",
+    "singular": "Email được đưa vào danh sách trắng",
+    "description": "Email được đưa vào danh sách trắng được sử dụng để cho phép các địa chỉ email cụ thể truy cập các tính năng AI.",
+    "create": "Tạo email được đưa vào danh sách trắng",
+    "create_description": "Tạo một email được đưa vào danh sách trắng mới"
+  },
+  "ws-ai-chatbots": {
+    "plural": "Thư viện chatbot",
+    "singular": "Chatbot",
+    "description": "Xem các chatbot tùy chỉnh được tạo bởi cộng đồng.",
+    "create": "Tạo chatbot",
+    "create_description": "Tạo một chatbot mới"
+  },
+  "ws-quiz-sets": {
+    "plural": "Bộ trắc nghiệm",
+    "singular": "Bộ trắc nghiệm",
+    "description": "Quản lý các bộ trắc nghiệm trong không gian làm việc của bạn bao gồm các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
+    "create": "Tạo bộ trắc nghiệm",
+    "create_description": "Tạo bộ trắc nghiệm mới",
+    "name": "Tên bộ trắc nghiệm",
+    "edit": "Chỉnh sửa bộ",
+    "link-quizzes": "Liên kết câu hỏi",
+    "link-modules": "Liên kết mô-đun"
+  },
+  "slogan": {
+    "title": "Sẵn sàng để bắt đầu?",
+    "description": "Hãy tham gia danh sách chờ để trở thành một trong những người đầu tiên trải nghiệm nền tảng quản lý doanh nghiệp thông minh của chúng tôi khi nền tảng này ra mắt.",
+    "join_waitlist": "Tham gia danh sách chờ"
+  },
+  "contact": {
+    "title": "Liên hệ với chúng tôi",
+    "description": "Có thắc mắc hoặc cần hỗ trợ? Chúng tôi ở đây để giúp đỡ. Hãy chọn cách ưa thích của bạn để tiếp cận chúng tôi.",
+    "get_in_touch": "Liên hệ",
+    "founder_contact": "Thông tin người sáng lập",
+    "founder_description": "Người sáng lập",
+    "on_github": "trên GitHub",
+    "send_us_a_message": "Cần hỗ trợ?",
+    "form": {
+      "name_label": "Tên",
+      "name_placeholder": "Tên của bạn",
+      "subject_label": "Chủ đề",
+      "subject_placeholder": "Chúng tôi có thể giúp gì?",
+      "message_label": "Tin nhắn",
+      "message_placeholder": "Tin nhắn của bạn...",
+      "submit_button": "Gửi tin nhắn",
+      "sent_message": "Cảm ơn bạn đã liên hệ với chúng tôi! Chúng tôi sẽ phản hồi bạn sớm nhất có thể."
+    }
+  },
+  "marketing": {
+    "solutions": {
+      "education": {
+        "education_solutions": "Giải pháp dành riêng cho giáo dục",
+        "title": "Chuyển đổi giáo dục với AI",
+        "description": "Trao nguồn sức mạnh công nghệ cho giáo dục: Các giải pháp thông minh giúp cá nhân hóa việc học, kết nối dễ dàng và mang lại kết quả học tập vượt trội.",
+        "trusted_section_title": "Được tin cậy bởi các tổ chức giáo dục",
+        "trusted_section_description": "Nền tảng của chúng tôi được thiết kế để đáp ứng các tiêu chuẩn cao nhất về bảo mật và quyền riêng tư, đảm bảo môi trường học tập an toàn cho học sinh ở mọi lứa tuổi.",
+        "features_title": "Công cụ giáo dục mạnh mẽ",
+        "features": {
+          "smart_learning_management": "Quản lý học tập thông minh",
+          "smart_learning_management_desc": "LMS được hỗ trợ bởi AI thích ứng với phong cách và tốc độ học tập của từng học sinh.",
+          "interactive_classrooms": "Lớp học tương tác",
+          "interactive_classrooms_desc": "Thu hút học sinh bằng các công cụ lớp học ảo và cộng tác theo thời gian thực.",
+          "progress_tracking": "Theo dõi tiến độ",
+          "progress_tracking_desc": "Phân tích toàn diện để theo dõi hiệu suất và sự tham gia của sinh viên.",
+          "course_creation": "Tạo khóa học",
+          "course_creation_desc": "Các công cụ dễ sử dụng để tạo và quản lý nội dung giáo dục.",
+          "virtual_classrooms": "Lớp học ảo",
+          "virtual_classrooms_desc": "Tích hợp hội nghị truyền hình liền mạch cho việc học từ xa.",
+          "ai assessment": "Đánh giá bằng AI",
+          "ai assessment_desc": "Tự động chấm điểm và phản hồi được cá nhân hóa nhờ AI."
+        },
+        "use_cases_title": "Giải pháp cho mọi cấp độ",
+        "use_cases": {
+          "K_12_education": "Chương trình phổ thông 12 năm",
+          "K_12_education_desc": "Công cụ toàn diện để quản lý giáo dục tiểu học và trung học.",
+          "K_12_education_item1": "Bài học tương tác",
+          "K_12_education_item2": "Giao tiếp phụ huynh",
+          "K_12_education_item3": "Quản lý bài tập về nhà",
+          "K_12_education_item4": "Báo cáo tiến độ",
+          "higher_education": "Giáo dục bậc cao",
+          "higher_education_desc": "Các tính năng nâng cao dành cho các trường đại học và cao đẳng.",
+          "higher_education_item1": "Quản lý khóa học",
+          "higher_education_item2": "Hợp tác nghiên cứu",
+          "higher_education_item3": "Phân tích sinh viên",
+          "higher_education_item4": "Chia sẻ tài nguyên",
+          "professional_training": "Đào tạo chuyên nghiệp",
+          "professional_training_desc": "Giải pháp đào tạo và phát triển chuyên môn doanh nghiệp.",
+          "professional_training_item1": "Đánh giá kỹ năng",
+          "professional_training_item2": "Chương trình chứng nhận",
+          "professional_training_item3": "Giới thiệu nhân viên",
+          "professional_training_item4": "Theo dõi hiệu suất"
+        },
+        "bento_grid_title": "Học tập xuất sắc",
+        "bento_grid_subtitle": "Thư viện tổng hợp",
+        "bento_grid_description": "Truy cập hàng nghìn tài nguyên giáo dục, sách giáo khoa và nội dung đa phương tiện được tuyển chọn.",
+        "bento_grid_features": {
+          "global_reach": "Phạm vi tiếp cận toàn cầu",
+          "global_reach_desc": "Kết nối với người học trên toàn thế giới",
+          "gamification": "Trò chơi hóa",
+          "gamification_desc": "Kiếm huy hiệu và chứng chỉ",
+          "smart_network": "Mạng thông minh",
+          "smart_network_desc": "Lộ trình học tập được hỗ trợ bởi AI",
+          "custom_dashboard": "Trang tổng quan tùy chỉnh",
+          "custom_dashboard_desc": "Không gian học tập cá nhân hóa"
+        },
+        "timeline_title": "Hành trình thực hiện",
+        "timeline_steps": {
+          "step1": "Thiết lập nền tảng",
+          "week1": "Tuần 1",
+          "step2": "Đào tạo nhân viên",
+          "week2": "Tuần 2",
+          "step3": "Di chuyển dữ liệu",
+          "week3": "Tuần 3",
+          "step4": "Triển khai đầy đủ",
+          "week4": "Tuần 4"
+        },
+        "faq": {
+          "answer1": "Hệ thống AI của chúng tôi phân tích hiệu suất, mô hình học tập và mức độ tương tác của sinh viên để tạo ra lộ trình học tập được cá nhân hóa. \nNó thích ứng trong thời gian thực để cung cấp và hỗ trợ nội dung tối ưu.",
+          "question1": "Hệ thống học tập được hỗ trợ bởi AI hoạt động như thế nào?",
+          "question2": "Những biện pháp an ninh nào được áp dụng?",
+          "answer2": "Chúng tôi triển khai mã hóa cấp doanh nghiệp, kiểm tra bảo mật thường xuyên và tuân thủ các yêu cầu của FERPA và GDPR để đảm bảo bảo vệ dữ liệu của sinh viên.",
+          "question3": "Khả năng tích hợp với các hệ thống hiện có",
+          "answer3": "Có, nền tảng của chúng tôi cung cấp khả năng tích hợp API mạnh mẽ và hỗ trợ các tiêu chuẩn công nghệ giáo dục phổ biến để tích hợp liền mạch với các hệ thống hiện có.",
+          "question4": "Những hình thức hỗ trợ được cung cấp",
+          "answer4": "Chúng tôi cung cấp hỗ trợ kỹ thuật 24/7, người quản lý thành công của khách hàng tận tâm và hỗ trợ triển khai toàn diện. \nNhóm của chúng tôi cũng cung cấp các buổi đào tạo thường xuyên và hội thảo trực tuyến về giáo dục.",
+          "question5": "Nền tảng có thể tùy chỉnh như thế nào?",
+          "answer5": "Nền tảng này có khả năng tùy biến cao với các tùy chọn gắn nhãn trắng, nhãn hiệu tùy chỉnh, quy trình công việc có thể định cấu hình và tích hợp API. \nBạn có thể điều chỉnh trải nghiệm học tập để phù hợp với nhu cầu của tổ chức bạn.",
+          "question6": "Các yêu cầu phần cứng là gì?",
+          "answer6": "Nền tảng dựa trên đám mây của chúng tôi hoạt động trên mọi trình duyệt web hiện đại. \nĐể tổ chức hội nghị truyền hình tối ưu, chúng tôi khuyên bạn nên kết nối Internet ổn định và cập nhật các thiết bị có chức năng camera và micrô.",
+          "question7": "Việc sao lưu dữ liệu được xử lí như thế nào?",
+          "answer7": "Chúng tôi duy trì các bản sao lưu tự động hàng ngày với khả năng lưu giữ trong 30 ngày, lưu trữ dự phòng theo địa lý và các giao thức khắc phục thảm họa. \nDữ liệu của bạn luôn an toàn và có thể truy cập được."
+        }
+      }
+    }
+  },
+  "ws-models": {
+    "plural": "Các mô hình",
+    "singular": "Mô hình",
+    "create": "Tạo mô hình",
+    "create_description": "Tạo một mô hình mới",
+    "description": "Các mô hình là các mô hình AI được huấn luyện có thể được sử dụng cho các nhiệm vụ khác nhau."
+  },
+  "ws-datasets": {
+    "plural": "Bộ dữ liệu",
+    "singular": "Tập dữ liệu",
+    "description": "Tập dữ liệu được sử dụng để huấn luyện các mô hình AI.",
+    "create": "Tạo tập dữ liệu",
+    "create_description": "Tạo một tập dữ liệu",
+    "total_columns": "Tổng số cột",
+    "total_rows": "Tổng số dòng",
+    "last_updated": "Cập nhật lần cuối",
+    "add_row": "Thêm dòng",
+    "edit_row": "Chỉnh sửa dòng",
+    "delete_row": "Xóa dòng",
+    "confirm_delete_row": "Bạn có chắc chắn muốn xóa dòng này?",
+    "no_data": "Không có dữ liệu",
+    "columns_description": "Quản lý các cột trong bộ dữ liệu của bạn, bao gồm tên, mô tả và tên thay thế."
+  },
+  "ws-cron": {
+    "description": "Lịch trình được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể."
+  },
+  "ws-cron-jobs": {
+    "singular": "Công việc định kỳ",
+    "plural": "Công việc định kỳ",
+    "create": "Tạo công việc",
+    "create_description": "Tạo một công việc mới",
+    "description": "Công việc định kỳ được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể.",
+    "edit": "Chỉnh sửa công việc",
+    "edit_description": "Chỉnh sửa công việc hiện có"
+  },
+  "ws-cron-executions": {
+    "plural": "Lịch sử chạy",
+    "singular": "Lịch sử chạy",
+    "description": "Lịch sử chạy được sử dụng để xem lịch sử của các công việc định kỳ."
+  },
+  "landing": {
+    "headline": "Công cụ năng suất của bạn",
+    "subheadline": "Tất cả ở một nơi, được tăng cường bởi AI.",
+    "features": {
+      "title": "Tính năng",
+      "subtitle": "Khám phá các tính năng mạnh mẽ được thiết kế để nâng cao năng suất và tối ưu hóa quy trình làm việc của bạn",
+      "ai_powered": {
+        "title": "Được hỗ trợ bởi AI",
+        "description": "Phát triển và tổ chức ý tưởng của bạn với tốc độ tư duy, với các công cụ thông minh được hỗ trợ bởi AI"
+      },
+      "collaboration": {
+        "title": "Hợp tác Nhóm",
+        "description": "Tính năng giao tiếp và hợp tác liền mạch cho toàn bộ đội ngũ của bạn"
+      },
+      "task_management": {
+        "title": "Quản lý Công việc",
+        "description": "Tạo công việc, giao cho đội ngũ của bạn và theo dõi tiến độ, tất cả trong một nơi"
+      },
+      "document_management": {
+        "title": "Quản lý Tài liệu",
+        "description": "Viết và duy trì tài liệu của bạn một cách dễ dàng, với trình soạn thảo trực quan và mạnh mẽ"
+      },
+      "finance_tracking": {
+        "title": "Theo dõi Tài chính",
+        "description": "Theo dõi tài chính và cập nhật cho đội ngũ của bạn, để bạn có thể tập trung vào những điều quan trọng"
+      },
+      "open_source": {
+        "title": "Mã nguồn Mở",
+        "description": "Tuturuuu là mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và làm cho nó tốt hơn cho mọi người"
+      },
+      "calendar": {
+        "description": "Lịch trình được tự động sắp xếp bằng AI, thông qua quá trình cá nhân hoá và tối ưu hóa lịch của bạn, mọi lúc, mọi nơi.",
+        "details": {
+          "1": "Lập lịch thông minh dựa trên các ưu tiên và thời hạn",
+          "2": "Bảo vệ thời gian tập trung trong giờ năng suất cao điểm của bạn",
+          "3": "Sắp xếp lại tự động khi xung đột phát sinh",
+          "4": "Tìm thời điểm thích hợp để gặp mặt mọi người với thời gian họp tối ưu",
+          "5": "Tận dụng ngôn ngữ tự nhiên để tạo sự kiện nhanh chóng"
+        }
+      },
+      "tasks": {
+        "description": "Quản lý nhiệm vụ tích hợp liền mạch ưu tiên công việc của bạn và lên lịch thông minh.",
+        "details": {
+          "1": "Ưu tiên nhiệm vụ tự động dựa trên thời hạn và tầm quan trọng",
+          "2": "Cân bằng khối lượng công việc để ngăn chặn sự quá mức",
+          "3": "Lập lịch thông minh các nhiệm vụ trong lịch của bạn",
+          "4": "Thống kê theo dõi và hoàn thành tiến độ",
+          "5": "Phân chia công việc của nhóm và hợp tác hiệu quả"
+        }
+      },
+      "meetings": {
+        "description": "Hội nghị video tích hợp với các tính năng được hỗ trợ bởi AI để làm cho các cuộc họp của bạn hiệu quả hơn.",
+        "details": {
+          "1": "Một chạm để tạo nhanh cuộc họp từ các sự kiện lịch",
+          "2": "Ghi chú họp và các mục hành động do AI tạo ra",
+          "3": "Phiên âm và dịch thuật thời gian thực",
+          "4": "Theo dõi thông minh và tạo nhiệm vụ",
+          "5": "Phân tích hiệu quả và hiểu biết sâu sắc"
+        }
+      },
+      "chat": {
+        "description": "Trò chuyện nhóm tích hợp tích hợp liền mạch với lịch, nhiệm vụ và các cuộc họp của bạn.",
+        "details": {
+          "1": "Tin nhắn thời gian thực với các thành viên trong nhóm",
+          "2": "Tích hợp trực tiếp với các sự kiện và nhiệm vụ lịch",
+          "3": "Chia sẻ và hợp tác tập tin",
+          "4": "Tóm tắt và theo dõi những tin nhắn nổi bật trong cuộc trò chuyện, được hỗ trợ AI",
+          "5": "Thông báo và lời nhắc thông minh"
+        }
+      },
+      "mail": {
+        "description": "Quản lý email thông minh tích hợp với lịch và các nhiệm vụ của bạn cho năng suất liền mạch.",
+        "details": {
+          "1": "Phân loại và ưu tiên email do AI cung cấp",
+          "2": "Trả lời thông minh và đề xuất tiếp theo",
+          "3": "Tạo nhiệm vụ tự động từ email",
+          "4": "Lập lịch họp trực tiếp từ email",
+          "5": "Phân tích email và hiểu biết sâu sắc"
+        }
+      }
+    },
+    "products": {
+      "title": "Sản phẩm",
+      "subtitle": "Khám phá bộ sản phẩm mạnh mẽ được thiết kế để giúp bạn làm việc thông minh hơn",
+      "ai_assistant": {
+        "title": "Trợ lý AI",
+        "description": "Tự động hóa thông minh và thông tin chi tiết được hỗ trợ bởi AI tiên tiến"
+      },
+      "meet_together": {
+        "title": "Họp cùng nhau",
+        "description": "Cuộc họp trực tuyến, hợp tác nhóm và quản lý dự án trong một nơi"
+      },
+      "calendar": {
+        "title": "Lịch",
+        "description": "Công cụ lập lịch và quản lý thời gian thông minh"
+      },
+      "documents": {
+        "title": "Tài liệu",
+        "description": "Lưu trữ, chia sẻ và cộng tác tài liệu tập trung"
+      },
+      "drive": {
+        "title": "Kho lưu trữ",
+        "description": "Lưu trữ đám mây an toàn cho tất cả tệp và dữ liệu kinh doanh của bạn"
+      },
+      "crm": {
+        "title": "CRM",
+        "description": "Xây dựng và duy trì các mối quan hệ khách hàng có giá trị"
+      },
+      "finance": {
+        "title": "Tài chính",
+        "description": "Quản lý và báo cáo tài chính toàn diện"
+      },
+      "inventory": {
+        "title": "Kho hàng",
+        "description": "Theo dõi và quản lý kho hàng theo thời gian thực"
+      },
+      "tasks": {
+        "title": "Công việc",
+        "description": "Theo dõi công việc và phối hợp nhóm được tối ưu hóa"
+      },
+      "workflows": {
+        "title": "Quy trình",
+        "description": "Quy trình kinh doanh và công việc tự động hóa"
+      }
+    },
+    "solutions": {
+      "title": "Giải pháp",
+      "subtitle": "Giải pháp tùy chỉnh cho từng ngành",
+      "industries": {
+        "manufacturing": "Sản xuất",
+        "healthcare": "Y tế",
+        "education": "Giáo dục",
+        "retail": "Bán lẻ",
+        "real_estate": "Bất động sản",
+        "hospitality": "Khách sạn",
+        "construction": "Xây dựng",
+        "pharmacies": "Nhà thuốc"
+      }
+    },
+    "benefits": {
+      "title": "Lợi ích",
+      "subtitle": "Trải nghiệm những ưu điểm của nền tảng tất cả trong một được thiết kế cho doanh nghiệp hiện đại",
+      "for_businesses": {
+        "title": "Cho Doanh nghiệp",
+        "items": [
+          "Giảm chi phí vận hành",
+          "Cải thiện hiệu quả và năng suất",
+          "Ra quyết định tốt hơn với thông tin chi tiết từ AI",
+          "Tăng cường hợp tác nhóm",
+          "Tối ưu hóa quy trình làm việc",
+          "Giải pháp có thể mở rộng cho sự phát triển"
+        ]
+      },
+      "for_teams": {
+        "title": "Cho Đội ngũ",
+        "items": [
+          "Giao tiếp liền mạch",
+          "Hợp tác thời gian thực",
+          "Quản lý công việc tự động",
+          "Truy cập thông tin tập trung",
+          "Công cụ và tính năng tích hợp",
+          "Nâng cao năng suất"
+        ]
+      }
+    },
+    "how_it_works": {
+      "title": "Cách Hoạt động",
+      "subtitle": "Bắt đầu với Tuturuuu chỉ trong vài bước đơn giản",
+      "steps": {
+        "step1": {
+          "title": "Đăng Ký",
+          "description": "Tạo tài khoản trong vài giây và bắt đầu dùng thử miễn phí"
+        },
+        "step2": {
+          "title": "Thiết Lập Không Gian Làm Việc",
+          "description": "Tùy chỉnh không gian làm việc và mời các thành viên trong nhóm"
+        },
+        "step3": {
+          "title": "Bắt Đầu Cộng Tác",
+          "description": "Bắt đầu sử dụng các công cụ mạnh mẽ để tăng năng suất"
+        },
+        "step4": {
+          "title": "Mở Rộng & Phát Triển",
+          "description": "Mở rộng việc sử dụng khi doanh nghiệp phát triển với nền tảng linh hoạt của chúng tôi"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Người Dùng Nói Gì",
+      "subtitle": "Tham gia cùng hàng nghìn người dùng hài lòng tin tưởng Tuturuuu",
+      "items": [
+        {
+          "quote": "Tuturuuu đã thay đổi cách chúng tôi làm việc. Các tính năng AI thật đáng kinh ngạc!",
+          "author": "Sarah Chen",
+          "role": "Quản lý Sản phẩm",
+          "company": "TechCorp"
+        },
+        {
+          "quote": "Giải pháp tất cả trong một tốt nhất mà chúng tôi từng tìm thấy cho nhu cầu của đội ngũ.",
+          "author": "Michael Rodriguez",
+          "role": "Giám đốc Điều hành",
+          "company": "StartupX"
+        },
+        {
+          "quote": "Giao diện trực quan và tính năng mạnh mẽ. Rất đáng để giới thiệu!",
+          "author": "Emily Johnson",
+          "role": "Trưởng nhóm",
+          "company": "DesignPro"
+        }
+      ]
+    },
+    "ai_revolution": {
+      "title": "Cuộc Cách Mạng AI",
+      "subtitle": "Trải nghiệm tương lai của công việc với AI hiểu, thích nghi và phát triển cùng bạn",
+      "items": [
+        {
+          "title": "Tư duy Nhanh hơn",
+          "description": "Thông tin chi tiết và tự động hóa được hỗ trợ bởi AI giúp bạn ra quyết định nhanh hơn 10 lần"
+        },
+        {
+          "title": "Làm việc Thông minh hơn",
+          "description": "Để AI xử lý các công việc lặp lại trong khi bạn tập trung vào những điều quan trọng nhất"
+        },
+        {
+          "title": "Phát triển Lớn mạnh hơn",
+          "description": "Mở rộng hoạt động một cách dễ dàng với AI học hỏi và thích nghi"
+        },
+        {
+          "title": "Luôn Dẫn đầu",
+          "description": "Luôn ở vị trí dẫn đầu với khả năng AI không ngừng phát triển"
+        }
+      ]
+    },
+    "universal_value": {
+      "title": "Cho Mọi người, Mọi nơi",
+      "subtitle": "Từ doanh nhân cá nhân đến doanh nghiệp toàn cầu, Tuturuuu thích nghi với nhu cầu của bạn",
+      "categories": {
+        "business_size": {
+          "title": "Mọi Quy mô",
+          "items": [
+            "Doanh nhân & Freelancer",
+            "Doanh nghiệp Vừa và Nhỏ",
+            "Doanh nghiệp Lớn",
+            "Tổ chức Toàn cầu"
+          ]
+        },
+        "industries": {
+          "title": "Mọi Ngành nghề",
+          "items": [
+            "Công nghệ & Đổi mới",
+            "Y tế & Sức khỏe",
+            "Giáo dục & Học tập",
+            "Bán lẻ & Thương mại điện tử",
+            "Sản xuất & Chế tạo",
+            "Dịch vụ & Tư vấn",
+            "Sáng tạo & Giải trí",
+            "Phi lợi nhuận & Tác động xã hội"
+          ]
+        },
+        "use_cases": {
+          "title": "Mọi Mục tiêu",
+          "items": [
+            "Tối ưu hóa Hoạt động",
+            "Tăng Năng suất",
+            "Nâng cao Hợp tác",
+            "Thúc đẩy Đổi mới",
+            "Cải thiện Trải nghiệm Khách hàng",
+            "Mở rộng Toàn cầu",
+            "Giảm Chi phí",
+            "Đạt được Tính bền vững"
+          ]
+        }
+      }
+    },
+    "ai_features": {
+      "title": "AI là Cốt lõi",
+      "subtitle": "Mọi tính năng đều được nâng cao bởi trí tuệ nhân tạo tiên tiến",
+      "features": [
+        {
+          "title": "Tự động hóa Thông minh",
+          "description": "Tự động hóa quy trình phức tạp với AI học hỏi từ sở thích của bạn"
+        },
+        {
+          "title": "Thông tin Chi tiết Thông minh",
+          "description": "Nhận các đề xuất hữu ích dựa trên dữ liệu và xu hướng ngành của bạn"
+        },
+        {
+          "title": "Hợp tác Tự nhiên",
+          "description": "Làm việc với AI hiểu ngữ cảnh và giao tiếp tự nhiên"
+        },
+        {
+          "title": "Phân tích Dự đoán",
+          "description": "Dự đoán thách thức và cơ hội với dự báo được hỗ trợ bởi AI"
+        },
+        {
+          "title": "Học hỏi Thích nghi",
+          "description": "AI liên tục cải thiện dựa trên mô hình sử dụng của đội ngũ bạn"
+        },
+        {
+          "title": "Trí tuệ Toàn cầu",
+          "description": "Truy cập thông tin từ dữ liệu toàn cầu trong khi vẫn đảm bảo quyền riêng tư"
+        }
+      ]
+    },
+    "success_metrics": {
+      "title": "Tác động Thực tế",
+      "subtitle": "Tham gia cùng hàng nghìn tổ chức đạt được kết quả đáng kinh ngạc",
+      "metrics": [
+        {
+          "value": "10x",
+          "label": "Ra quyết định Nhanh hơn"
+        },
+        {
+          "value": "80%",
+          "label": "Thời gian Tiết kiệm cho Công việc Thường xuyên"
+        },
+        {
+          "value": "50%",
+          "label": "Giảm Chi phí Hoạt động"
+        },
+        {
+          "value": "3x",
+          "label": "Tăng Năng suất Đội ngũ"
+        }
+      ]
+    },
+    "transformation": {
+      "title": "Chuyển đổi Công việc",
+      "subtitle": "Trải nghiệm sức mạnh của chuyển đổi được hỗ trợ bởi AI",
+      "steps": [
+        {
+          "title": "Bắt đầu Ngay lập tức",
+          "description": "Bắt đầu và vận hành trong vài phút với hướng dẫn trực quan"
+        },
+        {
+          "title": "Mở rộng Dễ dàng",
+          "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại"
+        },
+        {
+          "title": "Phát triển Liên tục",
+          "description": "Luôn dẫn đầu với AI học hỏi và cải thiện mỗi ngày"
+        }
+      ]
+    },
+    "title_p1": "Công cụ năng suất hoàn chỉnh",
+    "title_p2": "của bạn",
+    "description": "Tuturuuu hợp nhất lịch, các tác vụ, cuộc họp, trò chuyện và email của bạn trong một không gian làm việc thông minh, tất cả được bổ trợ bởi AI.",
+    "cta": "Đăng ký sớm",
+    "calendar": "Lịch",
+    "tasks": "Công việc",
+    "meetings": "Cuộc họp",
+    "chat": "Trò chuyện",
+    "email": "Email",
+    "tuturuuu_workspace": "Không gian làm việc Tuturuuu",
+    "today": "Hôm nay",
+    "month": "Tháng",
+    "team_sync": "Họp nhóm",
+    "team_sync_time": "10:00 - 11:00 AM • Tất cả các thành viên trong nhóm đều rảnh",
+    "quarterly_report": "Báo cáo hàng quý",
+    "task": "Nhiệm vụ",
+    "quarterly_report_time": "Cần nộp trong 3 ngày • Dự kiến tốn 4 tiếng làm việc • Ưu tiên trung bình",
+    "client_proposal": "Nghiên cứu chiến lược marketing",
+    "client_proposal_time": "Đến hạn vào ngày mai • Dự kiến tốn 2 tiếng làm việc • Tự động theo lịch trình",
+    "my_tasks": "Nhiệm vụ của tôi",
+    "add_task": "Thêm tác vụ",
+    "filter": "Lọc",
+    "finalize_q2_marketing_strategy": "Hoàn thiện chiến lược tiếp thị quý 2",
+    "3-hours": "3 giờ",
+    "high_priority": "Ưu tiên cao",
+    "review_product_design_mockups": "Xem xét các mockup thiết kế sản phẩm",
+    "2-hours": "2 giờ",
+    "medium_priority": "Ưu tiên trung bình",
+    "prepare_for_team_meeting": "Chuẩn bị cho cuộc họp nhóm",
+    "1-hour": "1 giờ",
+    "low_priority": "Ưu tiên thấp",
+    "ai_suggestion": "Đề xuất của AI",
+    "ai_suggestion_description": "Hãy xếp lịch để hoàn thành công việc \"Hoàn thiện chiến lược tiếp thị quý 2\" cho sáng mai khi mức độ tập trung của bạn ở mức tốt nhất.",
+    "upcoming_meetings": "Các cuộc họp sắp tới",
+    "new_meeting": "Cuộc họp mới",
+    "today_at_10_am": "Hôm nay, 10 giờ sáng",
+    "4-participants": "4 người tham gia",
+    "join_tuturuuu": "Tham gia với Tuturuuu",
+    "view_details": "Xem chi tiết",
+    "client_presentation": "Trình bày sản phẩm với khách hàng",
+    "tomorrow_at_2_pm": "Ngày mai, 2 giờ chiều",
+    "2-participants": "2 người tham gia",
+    "prepare": "Chuẩn bị",
+    "tuturuuu_features": "Các tính năng Tuturuuu",
+    "tuturuuu_features_description": "Ghi chú cuộc họp do AI tạo ra, phiên âm thời gian thực và theo dõi thông minh.",
+    "team_chat": "Trò chuyện nhóm",
+    "new_chat": "Trò chuyện mới",
+    "marketing_project": "Dự án tiếp thị",
+    "mp": "D",
+    "5-members": "5 thành viên",
+    "3-online": "3 Trực tuyến",
+    "alex": "Phát",
+    "alex-initials": "P",
+    "has_everyone_reviewed_the_latest_campaign_mockups": "Mọi người đã xem qua các mockup chiến dịch mới nhất chưa?",
+    "10_15_am": "10:15 sáng",
+    "you": "Bạn",
+    "yes_ive_added_my_comments_in_the_shared_document": "Rồi nha Phát ơi, tôi đã thêm nhận xét vào trong tài liệu được chia sẻ rồi á.",
+    "10_17_am": "10:17 sáng",
+    "you-initials": "B",
+    "ben": "Quốc",
+    "ben-initials": "Q",
+    "ill_finish_my_review_by_eod_need_to_coordinate_with_the_design_team_first": "Tôi sẽ cố hoàn thành phần của tôi trong hôm nay. Để tôi làm việc với nhóm thiết kế trước đã.",
+    "10_20_am": "10:20 sáng",
+    "type_a_message": "Nhập tin nhắn ...",
+    "smart_mail": "Hộp thư thông minh",
+    "compose": "Soạn thư",
+    "ac-initials": "PV",
+    "alex_chen": "Phúc Võ",
+    "10_30_am": "10:30 sáng",
+    "project_update_q2_marketing_campaign": "Cập nhật dự án: Chiến dịch tiếp thị Q2",
+    "hi_team_i_wanted_to_share_the_latest_updates_on_our_q2_marketing_campaign_weve_made_significant_progress": "Chào mọi người, tôi muốn chia sẻ các bản cập nhật mới nhất về chiến dịch tiếp thị Q2 của chúng tôi. Chúng tôi đã đạt được tiến bộ đáng kể ...",
+    "st-initials": "TN",
+    "sarah_thompson": "Thư Nguyễn",
+    "yesterday": "Hôm qua",
+    "client_feedback_on_proposal": "Phản hồi của khách hàng về đề xuất",
+    "the_client_has_reviewed_our_proposal_and_has_some_feedback_overall_theyre_impressed_with_our_approach": "Khách hàng đã xem xét đề xuất của chúng tôi và có một số phản hồi. Nhìn chung, họ có ấn tượng với cách tiếp cận của chúng tôi ...",
+    "search_emails": "Tìm kiếm email...",
+    "jd-initials": "VD",
+    "john_doe": "Việt Đình",
+    "may_12": "Ngày 12 tháng 5",
+    "meeting_follow_up_action_items": "Hướng đi tiếp theo",
+    "following_our_meeting_yesterday_ive_compiled_a_list_of_action_items_for_each_team_member": "Sau cuộc họp của chúng tôi ngày hôm qua, tôi đã biên soạn một danh sách các mục hành động cho mỗi thành viên trong nhóm ...",
+    "smart_mail_features_description": "Phân loại email do AI cung cấp, trả lời thông minh và nhắc nhở theo dõi.",
+    "smart_mail_features": "Các tính năng thư thông minh",
+    "stats": {
+      "the": "Sự tác động của",
+      "impact": " ",
+      "real_results_from_real_users_who_have_transformed_their_productivity": "Kết quả cho thấy từ những người dùng đã chuyển đổi năng suất của họ.",
+      "hours_saved_weekly": "Giờ tiết kiệm hàng tuần",
+      "our_users_report_saving_over_10_hours_every_week_on_scheduling_and_task_management": "Người dùng của chúng tôi báo cáo tiết kiệm hơn 10 giờ mỗi tuần về lịch trình và quản lý nhiệm vụ",
+      "reduction_in_scheduling_time": "Giảm thời gian xếp lịch",
+      "tuturuuu_reduces_the_time_spent_on_scheduling_by_85_compared_to_manual_methods": "Tuturuuu giảm thời gian dành cho việc lên lịch 85% so với các phương pháp thủ công",
+      "user_satisfaction": "Người dùng hài lòng",
+      "94_of_our_users_report_feeling_less_stressed_and_more_in_control_of_their_time": "94% người dùng của chúng tôi báo cáo cảm thấy ít căng thẳng hơn và kiểm soát nhiều hơn thời gian của họ",
+      "productivity_increase": "Năng suất tăng",
+      "users_report_completing_3x_more_meaningful_work_after_switching_to_tuturuuu": "Người dùng báo cáo hoàn thành công việc có ý nghĩa hơn 3 lần sau khi chuyển sang Tuturuuu"
+    },
+    "one_platform_complete_productivity": "Một nền tảng, năng suất hoàn chỉnh.",
+    "tuturuuu_unifies_all_your_productivity_tools_in_one_intelligent_workspace": "Tuturuuu hợp nhất tất cả các công cụ năng suất của bạn trong một không gian làm việc thông minh.",
+    "week": "Tuần",
+    "tomorrow": "Ngày mai",
+    "due": "Thời hạn",
+    "live": "Trực tuyến",
+    "inbox": "Hộp thư",
+    "3-new": "3 mới",
+    "may_10": "Ngày 10 tháng 5",
+    "seamless_integration": "Tích hợp liền mạch",
+    "tuturuuu_brings_all_your_productivity_tools_together_in_one_unified_workspace": "Tuturuuu mang tất cả các công cụ năng suất của bạn lại với nhau trong một không gian làm việc thống nhất",
+    "everything_works_together": "Mọi thứ hoạt động cùng nhau",
+    "no_more_switching_between_apps_or_losing_context": "Không còn chuyển đổi giữa các ứng dụng hoặc bị thiếu ngữ cảnh. Tuturuuu tích hợp lịch, nhiệm vụ, cuộc họp, trò chuyện và email của bạn trong một không gian làm việc thông minh.",
+    "unified_workspace": "Không gian làm việc thống nhất",
+    "calendar_tasks": "Lịch + Nhiệm vụ",
+    "tasks_automatically_appear_in_your_calendar_scheduled_at_the_optimal_time_based_on_priority_and_deadline": "Nhiệm vụ tự động xuất hiện trong lịch của bạn, được lên lịch vào thời điểm tối ưu dựa trên mức độ ưu tiên và thời hạn.",
+    "meetings_chat": "Cuộc họp + Trò chuyện",
+    "tuturuuu_meetings_integrate_with_chat_for_pre_meeting_discussions_and_post_meeting_follow_ups": "Các cuộc họp Tuturuuu tích hợp với trò chuyện để thảo luận trước các cuộc thảo luận và theo dõi sau cuộc họp.",
+    "emails_can_be_converted_to_calendar_events_or_tasks_with_a_single_click": "Email có thể được chuyển đổi thành các sự kiện hoặc nhiệm vụ lịch chỉ bằng một cú nhấp chuột.",
+    "email_calendar": "Email + Lịch",
+    "chat_tasks": "Trò chuyện + Nhiệm vụ",
+    "create_and_assign_tasks_directly_from_chat_conversations_keeping_everything_in_context": "Tạo và gán các tác vụ trực tiếp từ các cuộc hội thoại trò chuyện, giữ mọi thứ trong ngữ cảnh và bối cảnh phù hợp.",
+    "finalize_report": "Hoàn thiện báo cáo",
+    "review_design": "Xem lại thiết kế",
+    "latest_updates_on_project": "Cập nhật mới nhất về dự án ...",
+    "2_new_messages_from_clients": "2 tin nhắn mới từ khách hàng ...",
+    "strategic_advantages": "Ưu điểm chiến lược",
+    "why_tuturuuu_is_a_game_changer_for_your_productivity": "Tại sao Tuturuuu thay đổi trò chơi cho năng suất của bạn",
+    "stop_switching_between_apps_and_losing_context_tuturuuu_brings_your_calendar_tasks_meetings_chat_and_email_into_one_intelligent_workspace": "Dừng chuyển đổi giữa các ứng dụng và bị lạc ngữ cảnh. \nTuturuuu mang lịch, nhiệm vụ, cuộc họp, trò chuyện và email của bạn vào một không gian làm việc thông minh.",
+    "strategic_impact": "Tác động chiến lược:",
+    "reduce_context_switching_by_70": "Giảm 70% chuyển đổi bối cảnh",
+    "save_5_hours_weekly_on_app_switching": "Tiết kiệm 5 giờ hàng tuần khi chuyển đổi ứng dụng",
+    "maintain_complete_workflow_visibility": "Duy trì khả năng hiển thị quy trình công việc hoàn chỉnh",
+    "tuturuuu_s_advanced_ai_understands_your_priorities_deadlines_and_preferences_to_optimize_your_schedule_automatically": "AI nâng cao của Tuturuuu hiểu các ưu tiên, thời hạn và sở thích của bạn để tối ưu hóa lịch trình của bạn một cách tự động.",
+    "ai_powered_intelligence": "Trí thông minh hỗ trợ AI",
+    "reduce_scheduling_time_by_85": "Giảm 85% thời gian lập lịch",
+    "ensure_high_priority_work_gets_done": "Đảm bảo công việc ưu tiên cao được thực hiện",
+    "prevent_burnout_through_workload_balancing": "Ngăn ngừa kiệt sức thông qua cân bằng khối lượng công việc",
+    "join_thousands_of_professionals_who_have_reclaimed_their_time_and_reduced_scheduling_stress_with_tuturuuu": "Tham gia cùng hàng ngàn chuyên gia đã đòi lại thời gian của họ và giảm căng thẳng lập lịch với Tuturuuu.",
+    "ready_to_transform_your_calendar_experience": "Sẵn sàng để chuyển đổi trải nghiệm lịch của bạn?",
+    "get_early_access": "Nhận quyền truy cập sớm",
+    "limited_spots_available_for_our_q3_2025_early_access_program": "Số lượng người dùng có giới hạn cho chương trình truy cập sớm trong quý 3, 2025 của chúng tôi.",
+    "tuturuuu_automatically_blocks_out_time_for_deep_work_based_on_your_productivity_patterns_ensuring_you_have_uninterrupted_time_for_meaningful_work": "Tuturuuu tự động chặn thời gian cho công việc sâu sắc dựa trên các mẫu năng suất của bạn, đảm bảo bạn có thời gian không bị gián đoạn cho công việc có ý nghĩa.",
+    "focus_time_protection": "Bảo vệ thời gian tập trung",
+    "gain_10_hours_of_deep_work_weekly": "Đạt được 10 giờ làm việc sâu hàng tuần",
+    "increase_quality_of_work_output": "Tăng chất lượng sản lượng công việc",
+    "reduce_stress_from_constant_interruptions": "Giảm căng thẳng từ sự gián đoạn không đổi",
+    "tuturuuu_meetings_go_beyond_video_conferencing_with_ai_generated_notes_automatic_task_creation_and_smart_follow_ups": "Các cuộc họp của Tuturuuu vượt ra ngoài hội nghị video với các ghi chú do AI tạo, tạo nhiệm vụ tự động và theo dõi thông minh.",
+    "enhanced_meetings": "Các cuộc họp nâng cao",
+    "eliminate_manual_note_taking": "Loại bỏ ghi chú thủ công",
+    "ensure_100_follow_through_on_action_items": "Đảm bảo 100% theo dõi các mục hành động",
+    "reduce_meeting_time_by_30": "Giảm 30% thời gian họp",
+    "productive_communication": "Giao tiếp sản xuất",
+    "tuturuuu_s_chat_and_email_systems_are_designed_for_productivity_with_task_creation_meeting_scheduling_and_ai_powered_summaries": "Hệ thống trò chuyện và email của Tuturuuu được thiết kế để năng suất, với việc tạo nhiệm vụ, lập lịch họp và tóm tắt được hỗ trợ bởi AI.",
+    "reduce_email_processing_time_by_60": "Giảm 60% thời gian xử lý email",
+    "never_miss_important_messages_or_action_items": "Không bao giờ bỏ lỡ các tin nhắn hoặc mục hành động quan trọng",
+    "streamline_team_communication_and_collaboration": "Hợp tác và giao tiếp nhóm hợp lý",
+    "tuturuuu_learns_from_your_habits_and_preferences_over_time_getting_smarter_and_more_personalized_to_make_you_increasingly_productive": "Tuturuuu học hỏi từ thói quen và sở thích của bạn theo thời gian, trở nên thông minh hơn và cá nhân hóa hơn để làm cho bạn ngày càng năng suất.",
+    "continuous_improvement": "Cải tiến liên tục",
+    "productivity_increases_month_over_month": "Năng suất tăng hàng tháng qua tháng",
+    "personalized_experience_based_on_your_work_style": "Kinh nghiệm cá nhân hóa dựa trên phong cách làm việc của bạn",
+    "ongoing_roi_as_the_system_gets_smarter": "ROI đang diễn ra khi hệ thống trở nên thông minh hơn",
+    "reclaim_your_time_for_what_matters": "Đòi lại thời gian của bạn cho những gì quan trọng",
+    "reclaim_your_time_for_what_matters_description": "Tuturuuu không chỉ quản lý lịch của bạn, nó mang lại cho bạn thời gian trở lại cho công việc và cuộc sống có ý nghĩa.",
+    "meaningful_work_time": "Thời gian làm việc có ý nghĩa",
+    "current": "Hiện tại",
+    "from_last_month": "so với tháng trước",
+    "task_completion_rate": "Tỷ lệ hoàn thành nhiệm vụ",
+    "score": "Điểm",
+    "outstanding": "Nổi bật",
+    "time_reclaimed": "Thời gian đòi lại",
+    "hours": "giờ",
+    "this_week": "Tuần này",
+    "workload_balance": "Cân bằng khối lượng công việc",
+    "optimal": "Tối ưu",
+    "deadline_success": "Hạn chót thành công",
+    "time_reclaimed_dashboard": "Thời gian đã được tiết kiệm",
+    "reduce_time_spent_on_scheduling_by_85": "Giảm thời gian dành cho việc lên lịch 85%",
+    "never_miss_a_deadline_again": "Đừng bao giờ bỏ lỡ thời hạn nữa",
+    "balance_workload_to_prevent_burnout": "Cân bằng khối lượng công việc để ngăn chặn sự kiệt sức",
+    "gain_10_hours_of_meaningful_work_time_weekly": "Đạt được 10 giờ thời gian làm việc có ý nghĩa hàng tuần",
+    "eliminate_the_stress_of_manual_prioritization": "Loại bỏ sự căng thẳng của ưu tiên thủ công",
+    "ensure_team_alignment_without_endless_emails": "Đảm bảo sự liên kết của nhóm mà không có email vô tận",
+    "make_time_for_what_truly_matters_to_you": "Dành thời gian cho những gì thực sự quan trọng với bạn",
+    "simple_transparent_pricing": "Đơn giản, giá cả minh bạch",
+    "choose_the_plan_that_works_best_for_you_and_your_team": "Chọn kế hoạch phù hợp nhất cho bạn và nhóm của bạn.",
+    "monthly": "Hàng tháng",
+    "annual": "Hàng năm",
+    "most_popular": "Phổ biến nhất",
+    "custom": "Tuỳ chọn",
+    "savings_annually": "Tiết kiệm hàng năm",
+    "features_include": "Các tính năng bao gồm",
+    "year": "Năm",
+    "free": "Miễn phí",
+    "perfect_for_individuals_just_getting_started_with_ai_scheduling": "Hoàn hảo cho các cá nhân chỉ cần bắt đầu với lịch trình AI.",
+    "get_started_free": "Bắt đầu miễn phí",
+    "pro": "Chuyên nghiệp",
+    "advanced_features_for_professionals_who_value_their_time": "Các tính năng nâng cao cho các chuyên gia coi trọng thời gian của họ.",
+    "coming_soon": "Sắp ra mắt",
+    "enterprise": "Doanh nghiệp",
+    "powerful_tools_for_teams_to_coordinate_and_optimize_schedules": "Các công cụ mạnh mẽ để các nhóm phối hợp và tối ưu hóa lịch trình.",
+    "basic_ai_scheduling": "Lập lịch AI cơ bản",
+    "calendar_integration": "Tích hợp lịch",
+    "3_meetings_per_day": "3 cuộc họp mỗi ngày",
+    "email_notifications": "Thông báo qua email",
+    "team_availability_view": "Quan điểm sẵn có của đội",
+    "advanced_ai_features": "Các tính năng AI nâng cao",
+    "unlimited_meetings": "Các cuộc họp không giới hạn",
+    "priority_support": "Hỗ trợ ưu tiên",
+    "everything_in_pro": "Mọi thứ trong gói chuyên nghiệp",
+    "team_calendar_management": "Quản lý lịch nhóm",
+    "admin_controls": "Điều khiển quản trị viên",
+    "analytics_dashboard": "Bảng điều khiển phân tích",
+    "api_access": "Truy cập API",
+    "custom_integrations": "Tích hợp tùy chỉnh",
+    "dedicated_support": "Hỗ trợ chuyên dụng",
+    "sso_advanced_security": "SSO",
+    "sla_guarantees": "Đảm bảo SLA",
+    "who_benefits_from_tuturuuu": "Ai được hưởng lợi từ Tuturuuu?",
+    "tuturuuu_helps_people_from_all_walks_of_life_reclaim_their_time_and_reduce_scheduling_stress": "Tuturuuu giúp mọi người từ mọi tầng lớp đòi lại thời gian của họ và giảm căng thẳng lập lịch",
+    "pain_points": "Điểm đau",
+    "our_solution": "Giải pháp của chúng tôi",
+    "busy_professionals": "Các chuyên gia bận rộn",
+    "balance_client_meetings_project_deadlines_and_personal_commitments_without_the_stress_of_manual_scheduling": "Cân bằng các cuộc họp của khách hàng, thời hạn dự án và các cam kết cá nhân mà không có sự căng thẳng của việc lập lịch thủ công.",
+    "constantly_overbooked": "Liên tục đặt trước",
+    "missing_deadlines": "Thiếu thời hạn",
+    "no_time_for_deep_work": "Không có thời gian cho công việc sâu sắc",
+    "tuturuuu_automatically_balances_your_workload_protects_focus_time_and_ensures_you_never_miss_a_deadline_again": "Tuturuuu tự động cân bằng khối lượng công việc của bạn, bảo vệ thời gian tập trung và đảm bảo bạn không bao giờ bỏ lỡ thời hạn nữa.",
+    "coordinate_team_schedules_optimize_meeting_times_and_ensure_everyone_has_balanced_workloads": "Phối hợp lịch trình nhóm, tối ưu hóa thời gian họp và đảm bảo mọi người đều có khối lượng công việc cân bằng.",
+    "team_leaders": "Lãnh đạo nhóm",
+    "difficult_to_find_meeting_times": "Khó tìm thời gian họp",
+    "team_burnout": "Sự kiệt sức của đội",
+    "uneven_workload_distribution": "Phân phối khối lượng công việc không đồng đều",
+    "tuturuuu_analyzes_team_availability_suggests_optimal_meeting_slots_and_helps_distribute_work_evenly_across_your_team": "Tuturuuu phân tích tính khả dụng của nhóm, cho thấy các vị trí cuộc họp tối ưu và giúp phân phối công việc đồng đều trên toàn nhóm của bạn.",
+    "manage_classes_study_sessions_assignments_and_social_activities_with_intelligent_scheduling": "Quản lý các lớp học, các buổi học, bài tập và các hoạt động xã hội với lịch trình thông minh.",
+    "students": "Sinh viên",
+    "last_minute_cramming": "Ôn bài dồn dập vào phút cuối",
+    "missed_assignments": "Bỏ lỡ bài tập",
+    "poor_work_life_balance": "Cân bằng cuộc sống công việc kém",
+    "tuturuuu_helps_you_plan_ahead_for_assignments_allocates_proper_study_time_and_ensures_you_maintain_a_healthy_balance": "Tuturuuu giúp bạn lên kế hoạch trước cho các bài tập, phân bổ thời gian học tập thích hợp và đảm bảo bạn duy trì sự cân bằng lành mạnh.",
+    "juggle_multiple_clients_and_projects_while_maintaining_control_of_your_schedule_and_work_life_balance": "Tung hứng nhiều khách hàng và dự án trong khi duy trì quyền kiểm soát lịch trình và cân bằng cuộc sống công việc của bạn.",
+    "freelancers": "Người làm việc tự do",
+    "tuturuuu_helps_you_manage_multiple_clients_balance_your_workload_and_ensure_you_meet_all_deadlines_without_overcommitting": "Tuturuuu giúp bạn quản lý nhiều khách hàng, cân bằng khối lượng công việc của bạn và đảm bảo bạn đáp ứng tất cả các thời hạn mà không bị quá tải.",
+    "inconsistent_workload": "Khối lượng công việc không nhất quán",
+    "difficulty_tracking_multiple_projects": "Khó theo dõi nhiều dự án",
+    "client_deadline_conflicts": "Xung đột thời hạn khách hàng",
+    "balance_family_responsibilities_work_commitments_and_personal_time_with_intelligent_scheduling": "Cân bằng trách nhiệm gia đình, cam kết công việc và thời gian cá nhân với lịch trình thông minh.",
+    "parents": "Cha mẹ",
+    "missed_family_events": "Bỏ lỡ các sự kiện gia đình",
+    "constant_overwhelm": "Áp đảo liên tục",
+    "no_personal_time": "Không có thời gian cá nhân",
+    "tuturuuu_helps_you_prioritize_family_time_while_ensuring_work_commitments_are_met_giving_you_back_control_of_your_life": "Tuturuuu giúp bạn ưu tiên thời gian của gia đình trong khi đảm bảo các cam kết công việc được đáp ứng, giúp bạn kiểm soát lại cuộc sống của bạn.",
+    "before_and_after_tuturuuu": "Trước & Sau khi có Tuturuuu",
+    "see_the_transformation_in_your_calendar_and_life_when_you_switch_to_ai_powered_scheduling": "Xem sự chuyển đổi trong lịch và cuộc sống của bạn khi bạn chuyển sang lập lịch hỗ trợ AI",
+    "split_view": "Chế độ xem chia",
+    "before": "Trước",
+    "after": "Sau đó",
+    "traditional_calendar": "Lịch truyền thống",
+    "chaotic": "Hỗn loạn",
+    "manually_scheduling_everything_takes_hours_each_week": "Lập kế hoạch thủ công mọi thứ mất nhiều giờ mỗi tuần",
+    "constant_context_switching_between_tasks": "Chuyển đổi ngữ cảnh liên tục giữa các tác vụ",
+    "important_tasks_get_buried_under_urgent_but_less_important_ones": "Các nhiệm vụ quan trọng bị chôn vùi dưới những nhiệm vụ khẩn cấp nhưng ít quan trọng hơn",
+    "no_protection_for_focus_time_or_deep_work": "Không bảo vệ thời gian tập trung hoặc công việc sâu sắc",
+    "constantly_feeling_overwhelmed_and_behind": "Liên tục cảm thấy choáng ngợp và phía sau",
+    "8_meetings_overbooked": "8 cuộc họp (đặt trước!)",
+    "3_scheduling_conflicts": "3 Lập kế hoạch xung đột",
+    "0_protected_focus_time": "0 Thời gian tập trung được bảo vệ",
+    "tuturuuu_ai_calendar": "Tuturuuu Lịch AI",
+    "optimized": "Tối ưu hóa",
+    "ai_automatically_schedules_tasks_based_on_priority_and_deadline": "AI tự động lên lịch các nhiệm vụ dựa trên mức độ ưu tiên và thời hạn",
+    "similar_tasks_are_grouped_to_minimize_context_switching": "Các nhiệm vụ tương tự được nhóm lại để giảm thiểu chuyển đổi ngữ cảnh",
+    "important_tasks_are_prioritized_over_urgent_but_less_important_ones": "Các nhiệm vụ quan trọng được ưu tiên hơn những nhiệm vụ khẩn cấp nhưng ít quan trọng hơn",
+    "focus_time_is_protected_and_scheduled_during_your_peak_productivity_hours": "Thời gian tập trung được bảo vệ và lên lịch trong giờ năng suất cao điểm của bạn",
+    "feeling_in_control_and_accomplishing_more_meaningful_work": "Cảm thấy kiểm soát và hoàn thành công việc có ý nghĩa hơn",
+    "4_optimized_meetings": "4 cuộc họp được tối ưu hóa",
+    "4_protected_focus_blocks": "4 khối tập trung được bảo vệ",
+    "4_prioritized_tasks": "4 Nhiệm vụ ưu tiên",
+    "time_spent_on_manual_scheduling": "Thời gian dành cho việc lên lịch thủ công",
+    "hours_of_deep_work_gained_weekly": "Giờ làm việc sâu đã đạt được hàng tuần",
+    "users_report_reduced_stress": "Người dùng báo cáo giảm căng thẳng",
+    "competitive_advantage": "Lợi thế cạnh tranh",
+    "why_choose_tuturuuu": "Tại sao chọn Tuturuuu?",
+    "see_how_tuturuuu_compares_to_traditional_productivity_tools_and_why_its_the_smarter_choice": "Xem cách Tuturuuu so sánh với các công cụ năng suất truyền thống và tại sao đó là sự lựa chọn thông minh hơn",
+    "discover_the_key_differences": "Khám phá sự khác biệt chính",
+    "vs": "so với",
+    "feature": "Tính năng",
+    "basic_scheduling": "Lập kế hoạch cơ bản",
+    "calendar_sharing": "Chia sẻ lịch",
+    "ai_powered_scheduling": "Lập kế hoạch hỗ trợ AI",
+    "workload_balancing": "Cân bằng khối lượng công việc",
+    "task_integration": "Tích hợp nhiệm vụ",
+    "team_availability_matching": "Đội phù hợp với nhóm",
+    "google_calendar_description": "Lịch Google rất tốt cho việc lên lịch cơ bản, nhưng thiếu các tính năng do AI cung cấp khiến Tuturuuu thực sự thông minh. \nTuturuuu tự động tối ưu hóa lịch trình của bạn dựa trên các ưu tiên, thời hạn và khối lượng công việc.",
+    "show_less": "Hiển thị ít hơn",
+    "show_all_features": "Hiển thị tất cả các tính năng",
+    "ready_to_upgrade_your_workflow": "Sẵn sàng để nâng cấp quy trình làm việc của bạn?",
+    "get_started": "Bắt đầu",
+    "calendar_comparison": "So sánh lịch",
+    "team_meeting": "Cuộc họp nhóm",
+    "10_00_am_11_00_am": "10:00 sáng - 11:00 sáng",
+    "client_call": "Cuộc gọi của khách hàng",
+    "1_00_pm_2_00_pm": "1:00 chiều - 2:00 chiều",
+    "3_00_pm_4_00_pm": "3:00 chiều - 4:00 chiều",
+    "project_review": "Đánh giá dự án",
+    "no_focus_time_protection": "Không có sự bảo vệ thời gian tập trung",
+    "focus_time": "Thời gian tập trung",
+    "9_00_am_11_00_am": "9:00 sáng - 11:00 sáng",
+    "11_30_am_12_30_pm": "11:30 sáng - 12:30 tối",
+    "2_00_pm_3_00_pm": "2:00 chiều - 3:00 chiều",
+    "ai_optimized_for_focus_time": "AI được tối ưu hóa cho thời gian tập trung",
+    "tuturuuu_advantages": "Tuturuuu Ưu điểm:",
+    "automatically_protects_focus_time_for_deep_work_based_on_your_preferences": "Tự động bảo vệ thời gian tập trung cho công việc sâu dựa trên sở thích của bạn",
+    "balances_workload_to_prevent_burnout_and_overcommitment": "Cân bằng khối lượng công việc để ngăn chặn sự kiệt sức và quá mức",
+    "intelligently_schedules_meetings_when_team_energy_is_highest_for_more_productive_collaboration": "Lịch trình thông minh các cuộc họp khi năng lượng nhóm cao nhất để hợp tác hiệu quả hơn",
+    "integrates_tasks_directly_into_your_calendar_with_smart_prioritization": "Tích hợp các nhiệm vụ trực tiếp vào lịch của bạn với ưu tiên thông minh",
+    "meeting_comparison": "So sánh sản phẩm",
+    "video_conference": "Hội nghị video",
+    "basic_video_conferencing": "Hội nghị video cơ bản",
+    "screen_sharing": "Chia sẻ màn hình",
+    "no_ai_meeting_notes": "Không có ghi chú cuộc họp AI",
+    "no_automatic_task_creation": "Không tạo nhiệm vụ tự động",
+    "ai_enhanced_video_conference": "Hội nghị video được tăng cường AI",
+    "advanced_video_conferencing": "Hội nghị video nâng cao",
+    "ai_generated_meeting_notes": "Ghi chú cuộc họp do AI tạo ra",
+    "automatic_task_creation": "Tạo nhiệm vụ tự động",
+    "smart_follow_ups": "Theo dõi thông minh",
+    "ai_automatically_generates_meeting_notes_and_action_items": "AI tự động tạo ra các ghi chú và các mục hành động",
+    "creates_tasks_directly_from_meeting_discussions": "Tạo các nhiệm vụ trực tiếp từ các cuộc thảo luận gặp gỡ",
+    "sends_smart_follow_ups_to_ensure_tasks_are_completed": "Gửi theo dõi thông minh để đảm bảo hoàn thành các nhiệm vụ",
+    "provides_meeting_analytics_to_improve_productivity": "Cung cấp các phân tích cuộc họp để cải thiện năng suất",
+    "video_conferencing": "Trao đổi video",
+    "meeting_analytics": "Gặp gỡ phân tích",
+    "google_meet_description": "Google Meet cung cấp hội nghị truyền hình cơ bản, nhưng các cuộc họp Tuturuuu đi xa hơn với các tính năng được hỗ trợ bởi AI như ghi chú tự động, tạo nhiệm vụ từ các cuộc họp và theo dõi thông minh để đảm bảo không có gì rơi vào các vết nứt.",
+    "real_time_messaging": "Tin nhắn thời gian thực",
+    "file_sharing": "Chia sẻ tập tin",
+    "group_chats": "Trò chuyện nhóm",
+    "ai_chat_summaries": "Tóm tắt trò chuyện AI",
+    "task_creation_from_chat": "Tạo nhiệm vụ từ trò chuyện",
+    "meeting_scheduling": "Lập kế hoạch cuộc họp",
+    "messenger_description": "Messenger là tuyệt vời cho các cuộc trò chuyện thông thường, nhưng hệ thống trò chuyện của Tuturuuu được thiết kế cho năng suất. \nTạo các nhiệm vụ trực tiếp từ các cuộc hội thoại, lịch trình các cuộc họp bằng một cú nhấp chuột và nhận được các bản tóm tắt do AI tạo ra các cuộc thảo luận quan trọng.",
+    "chatgpt_description": "Chatgpt cung cấp hỗ trợ AI chung, nhưng AI của Tuturuuu được thiết kế đặc biệt cho năng suất. \nNó hiểu lịch, nhiệm vụ và quy trình làm việc của bạn để cung cấp hỗ trợ theo ngữ cảnh giúp bạn làm việc hiệu quả hơn.",
+    "gmail_description": "Gmail xử lý email của bạn, nhưng hệ thống thư thông minh của Tuturuuu ưu tiên thông minh các tin nhắn, tạo các tác vụ từ email và đảm bảo các giao tiếp quan trọng không bao giờ rơi vào các vết nứt.",
+    "natural_language_understanding": "Hiểu ngôn ngữ tự nhiên",
+    "ai_assistance": "Hỗ trợ AI",
+    "task_management": "Quản lý nhiệm vụ",
+    "email_integration": "Tích hợp email",
+    "email_management": "Quản lý email",
+    "basic_categorization": "Phân loại cơ bản",
+    "ai_powered_prioritization": "Ưu tiên hỗ trợ AI",
+    "task_creation_from_emails": "Tạo nhiệm vụ từ email",
+    "product_comparison": "So sánh sản phẩm",
+    "can_everyone_review_the_design_mockups": "Mọi người có thể xem lại các mockup thiết kế?",
+    "ill_take_a_look_this_afternoon": "Tôi sẽ xem vào chiều nay",
+    "basic_messaging": "Tin nhắn cơ bản",
+    "no_task_creation": "Không tạo ra nhiệm vụ",
+    "no_calendar_integration": "Không tích hợp lịch",
+    "task_created": "Nhiệm vụ được tạo ra",
+    "review_design_mockups_due_today": "Đánh giá các mockup thiết kế do hôm nay",
+    "advanced_messaging": "Tin nhắn nâng cao",
+    "create_tasks_directly_from_chat_conversations": "Tạo các tác vụ trực tiếp từ các cuộc hội thoại trò chuyện",
+    "schedule_meetings_with_team_members_in_one_click": "Lên lịch các cuộc họp với các thành viên trong nhóm trong một lần nhấp",
+    "ai_generates_summaries_of_important_discussions": "AI tạo ra các bản tóm tắt các cuộc thảo luận quan trọng",
+    "seamless_integration_with_calendar_and_tasks": "Tích hợp liền mạch với lịch và nhiệm vụ",
+    "user": "Người dùng",
+    "schedule_a_meeting_with_the_marketing_team_next_tuesday": "Lên lịch một cuộc họp với nhóm tiếp thị vào thứ ba tới",
+    "i_can_help_you_draft_a_message_to_schedule_that_meeting_but_i_cant_directly_access_your_calendar_or_send_invites": "Tôi có thể giúp bạn soạn thảo một tin nhắn để lên lịch cuộc họp đó, nhưng tôi không thể truy cập trực tiếp lịch của bạn hoặc gửi lời mời.",
+    "general_ai_assistance": "Hỗ trợ chung của AI",
+    "no_calendar_access": "Không có truy cập lịch",
+    "no_task_management": "Không quản lý nhiệm vụ",
+    "ive_scheduled_a_meeting_with_the_marketing_team_for_next_tuesday_at_2pm_when_everyone_is_available_ive_sent_calendar_invites_to_all_team_members": "Tôi đã lên lịch một cuộc họp với đội ngũ tiếp thị vào thứ ba tới lúc 2 giờ chiều, khi mọi người có mặt. \nTôi đã gửi lời mời lịch cho tất cả các thành viên trong nhóm.",
+    "productivity_focused_ai": "AI tập trung năng suất",
+    "full_calendar_integration": "Tích hợp lịch đầy đủ",
+    "complete_task_management": "Hoàn thành quản lý nhiệm vụ",
+    "ai_specifically_designed_for_productivity_and_time_management": "AI được thiết kế đặc biệt để quản lý năng suất và thời gian",
+    "direct_access_to_your_calendar_tasks_and_meetings": "Truy cập trực tiếp vào lịch, nhiệm vụ và các cuộc họp của bạn",
+    "understands_your_work_context_and_preferences": "Hiểu bối cảnh và sở thích công việc của bạn",
+    "takes_actions_on_your_behalf_to_save_you_time": "Thay mặt bạn hành động để tiết kiệm thời gian của bạn",
+    "hi_would_you_be_available_for_a_meeting_next_week_to_discuss": "Xin chào, bạn có sẵn sàng cho một cuộc họp vào tuần tới để thảo luận ...",
+    "client_meeting_request": "Yêu cầu cuộc họp của khách hàng",
+    "project_update": "Cập nhật dự án",
+    "here_s_the_latest_update_on_the_project_we_need_to_finalize": "Đây là bản cập nhật mới nhất về dự án. \nChúng ta cần hoàn thiện ...",
+    "basic_email_management": "Quản lý email cơ bản",
+    "limited_calendar_integration": "Tích hợp lịch hạn chế",
+    "meeting_scheduled": "Cuộc họp dự kiến",
+    "tuesday_2pm": "Thứ ba, 2 giờ chiều",
+    "finalize_project_details": "Hoàn thiện chi tiết dự án",
+    "smart_email_management": "Quản lý email thông minh",
+    "seamless_calendar_integration": "Tích hợp lịch liền mạch",
+    "ai_automatically_identifies_action_items_in_emails": "AI tự động xác định các mục hành động trong email",
+    "creates_tasks_and_calendar_events_directly_from_emails": "Tạo các tác vụ và sự kiện lịch trực tiếp từ email",
+    "smart_follow_up_reminders_for_important_emails": "Nhắc nhở theo dõi thông minh cho các email quan trọng",
+    "prioritizes_emails_based_on_urgency_and_importance": "Ưu tiên các email dựa trên sự cấp bách và tầm quan trọng"
+  },
+  "ai-whitelist": {
+    "add_email": "Thêm email",
+    "add_domain": "Thêm tên miền"
+  },
+  "ws-ai-whitelist-domains": {
+    "plural": "Tên miền thuộc danh sách trắng",
+    "singular": "Tên miền thuộc danh sách trắng",
+    "description": "Các miền được liệt kê trắng được sử dụng để cho phép các miền cụ thể truy cập các tính năng AI.",
+    "create": "Tạo tên miền danh sách trắng",
+    "create_description": "Tạo một miền được liệt kê trong danh sách trắng"
+  },
+  "ws-crawlers": {
+    "plural": "Công cụ cào dữ liệu",
+    "singular": "Công cụ cào dữ liệu",
+    "description": "Công cụ cào dữ liệu được sử dụng để thu thập dữ liệu từ các trang web và nguồn dữ liệu khác.",
+    "create": "Tạo công cụ cào dữ liệu",
+    "create_description": "Tạo một công cụ cào dữ liệu mới",
+    "uncrawled": "Chưa cào",
+    "domains": "Tên miền",
+    "connections": "Kết nối",
+    "crawled": "Đã cào"
+  },
+  "ws-pipelines": {
+    "plural": "Quy trình",
+    "singular": "Quy trình",
+    "description": "Quy trình được sử dụng để chạy các tác vụ có thể lập trình.",
+    "create": "Tạo quy trình",
+    "create_description": "Tạo một quy trình mới"
+  },
+  "ws-queues": {
+    "plural": "Hàng chờ",
+    "singular": "Hàng chờ",
+    "description": "Hàng chờ được sử dụng để quản lý các công việc và tác vụ.",
+    "create": "Tạo hàng chờ",
+    "create_description": "Tạo một hàng chờ mới"
+  },
+  "aurora": {
+    "statistical_models": "Mô hình thống kê",
+    "ml_models": "Mô hình học máy",
+    "last_updated": "Cập nhật lần cuối",
+    "current_price": "Giá hiện tại",
+    "forecast_range": "Phạm vi dự báo",
+    "high": "Cao",
+    "low": "Thấp",
+    "average": "Trung bình",
+    "trend": "Xu hướng",
+    "volatility": "Biến động giá",
+    "90_confidence_high": "Tự tin 90% (cao)",
+    "90_confidence_lo": "Tự tin 90% (thấp)",
+    "ml_price_prediction": "Dự đoán giá mô hình học máy",
+    "slope": "độ dốc",
+    "prediction_insights": "Những insights từ dự đoán",
+    "relative": "liên quan",
+    "strong": "Mạnh",
+    "moderate": "Vừa phải",
+    "weak": "Yếu đuối",
+    "model_comparison": "So sánh mô hình",
+    "select_date": "Chọn ngày",
+    "model_correlation": "Tương quan mô hình",
+    "no_data": "Không có dữ liệu.",
+    "model_performance": "Hiệu suất mô hình",
+    "stable": "Ổn định",
+    "improving": "Cải thiện",
+    "declining": "Suy giảm",
+    "best_performing": "Hiệu năng tốt nhất",
+    "average_performance": "Hiệu năng trung bình",
+    "worst_performing": "Hiệu năng tệ nhất",
+    "scaled_model": "(Scaled)",
+    "weighted_score": "Trọng số",
+    "turning_point_accuracy": "Độ chính xác điểm",
+    "directional_accuracy": "Độ chính xác định hướng",
+    "accuracy": "Độ chính xác",
+    "consistency": "Tính nhất quán",
+    "overall": "Tổng thể"
+  },
+  "aurora_select_model": "Chọn mô hình",
+  "workflow": {
+    "how_tuturuuu_works": "Cách thức hoạt động của Tuturuuu",
+    "our_intelligent_workflow_makes_productivity_effortless": "Quy trình công việc thông minh của chúng tôi làm cho năng suất dễ dàng",
+    "create_tasks_naturally_description": "Gõ hoặc nói bằng ngôn ngữ tự nhiên để tạo ra các nhiệm vụ. \nAI của Tuturuuu hiểu bối cảnh, thời hạn và ưu tiên.",
+    "create_tasks_naturally": "Tạo nhiệm vụ một cách tự nhiên",
+    "natural_language_input": "Đầu vào ngôn ngữ tự nhiên",
+    "schedule_a_meeting_with_the_marketing_team_next_tuesday_at_10am_high_priority": "\"Lên lịch một cuộc họp với nhóm tiếp thị vào thứ ba tới lúc 10 giờ sáng, ưu tiên cao\"",
+    "task_created_and_scheduled": "Nhiệm vụ được tạo và lên lịch",
+    "ai_analyzes_optimizes": "Phân tích AI",
+    "ai_analyzes_optimizes_description": "AI của chúng tôi phân tích các nhiệm vụ, ưu tiên, thời hạn và tính khả dụng của nhóm để tạo ra lịch trình tối ưu.",
+    "ai_analysis": "Phân tích AI",
+    "priority_analysis": "Phân tích ưu tiên",
+    "high_priority": "Ưu tiên cao",
+    "all_available": "Tất cả có sẵn",
+    "team_availability": "Đội ngũ sẵn có",
+    "tuesday_10_00_am": "Thứ ba, 10:00 sáng",
+    "optimal_time_slot": "Khe thời gian tối ưu",
+    "everything_in_one_place": "Mọi thứ ở một nơi",
+    "everything_in_one_place_description": "Các sự kiện lịch, nhiệm vụ, cuộc họp, trò chuyện và email đều hoạt động cùng nhau trong một không gian làm việc thống nhất.",
+    "unified_workspace": "Không gian làm việc thống nhất",
+    "calendar": "Lịch",
+    "tasks": "Nhiệm vụ",
+    "meetings": "Các cuộc họp",
+    "chat": "Trò chuyện",
+    "email": "E-mail",
+    "continuous_improvement": "Cải tiến liên tục",
+    "continuous_improvement_description": "Tuturuuu học hỏi từ thói quen và sở thích của bạn để trở nên tốt hơn theo thời gian, giúp bạn làm việc hiệu quả hơn mỗi ngày.",
+    "learning_adaptation": "Học hỏi",
+    "productivity_pattern": "Mô hình năng suất",
+    "morning_focus": "Tập trung buổi sáng",
+    "meeting_preference": "Đáp ứng sở thích",
+    "afternoons": "Buổi chiều",
+    "task_completion_rate": "Tỷ lệ hoàn thành nhiệm vụ",
+    "next_step": "Bước tiếp theo",
+    "start_over": "Bắt đầu lại"
+  },
+  "benefits:": "Những lợi ích:"
 }

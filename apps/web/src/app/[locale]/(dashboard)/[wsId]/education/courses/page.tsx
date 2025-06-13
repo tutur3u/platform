@@ -1,10 +1,10 @@
 import { getWorkspaceCourseColumns } from './columns';
 import CourseForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceCourse } from '@/types/db';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceCourse } from '@ncthub/types/db';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

@@ -1,10 +1,10 @@
 'use client';
 
 import { RoleRowActions } from './row-actions';
-import { WorkspaceRole } from '@/types/db';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { WorkspaceRole } from '@ncthub/types/db';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { UserCircle } from '@ncthub/ui/icons';
 import { ColumnDef } from '@tanstack/react-table';
-import { UserCircle } from 'lucide-react';
 import moment from 'moment';
 
 export const roleColumns = (
@@ -44,7 +44,7 @@ export const roleColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('id')}
       </div>
     ),
@@ -59,7 +59,7 @@ export const roleColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
+      <div className="line-clamp-1 max-w-32 break-all">
         {row.getValue('name') || '-'}
       </div>
     ),

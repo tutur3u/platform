@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
@@ -9,5 +9,5 @@ export async function POST() {
   });
 
   if (error) return NextResponse.json({ error }, { status: 500 });
-  return NextResponse.redirect('/login');
+  return NextResponse.json({ success: true });
 }

@@ -1,9 +1,11 @@
-import SettingItemTab from '../../../../../components/settings/SettingItemTab';
 import UserAvatar from '../../../settings-avatar';
 import DisplayNameInput from '../../../settings-display-name-input';
 import EmailInput from '../../../settings-email-input';
-import { getCurrentUser } from '@/lib/user-helper';
-import { Separator } from '@repo/ui/components/ui/separator';
+import DefaultWorkspaceSetting from './default-workspace-setting';
+import ResetPasswordForm from './reset-password-form';
+import { SettingItemTab } from '@ncthub/ui/custom/settings-item-tab';
+import { Separator } from '@ncthub/ui/separator';
+import { getCurrentUser } from '@ncthub/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
@@ -12,7 +14,7 @@ export default async function AccountSettingsPage() {
   const user = await getCurrentUser();
 
   return (
-    <div className="grid gap-1 md:min-w-max md:max-w-lg">
+    <div className="grid gap-1 md:max-w-lg md:min-w-max">
       <SettingItemTab
         title={t('settings-account.avatar')}
         description={t('settings-account.avatar-description')}
@@ -75,6 +77,30 @@ export default async function AccountSettingsPage() {
           <EmailInput oldEmail={user!?.email} newEmail={user!?.new_email} />
         </SettingItemTab>
       </Suspense>
+
+      <Separator className="my-4" />
+
+      <SettingItemTab
+        title={t('settings-account.default-workspace')}
+        description={t('settings-account.default-workspace-description')}
+      >
+        <Suspense
+          fallback={
+            <div className="h-10 w-full animate-pulse rounded bg-muted" />
+          }
+        >
+          <DefaultWorkspaceSetting
+            defaultWorkspaceId={user?.default_workspace_id}
+          />
+        </Suspense>
+      </SettingItemTab>
+
+      {user && (
+        <>
+          <Separator className="my-4" />
+          <ResetPasswordForm user={user} />
+        </>
+      )}
 
       {/* <Separator className="my-2" />
 

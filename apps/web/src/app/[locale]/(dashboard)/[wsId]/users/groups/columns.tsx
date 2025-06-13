@@ -2,10 +2,10 @@
 
 import GroupAttendanceStats from './attendance-stats';
 import { UserGroupRowActions } from './row-actions';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { Check, X } from '@ncthub/ui/icons';
 import { ColumnDef } from '@tanstack/react-table';
-import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -57,7 +57,7 @@ export const getUserGroupColumns = (
     cell: ({ row }) => (
       <Link
         href={row.original.href || '#'}
-        className="min-w-[8rem] font-semibold hover:underline"
+        className="min-w-32 font-semibold hover:underline"
       >
         {row.getValue('name') || '-'}
       </Link>

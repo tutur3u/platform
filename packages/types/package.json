@@ -1,0 +1,35 @@
+{
+  "name": "@ncthub/types",
+  "license": "MIT",
+  "version": "0.1.5",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "packageManager": "bun@1.2.15",
+  "dependencies": {
+    "eslint": "^9.28.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.51"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.28.0",
+    "@ncthub/eslint-config": "workspace:*",
+    "@ncthub/typescript-config": "workspace:*",
+    "@types/node": "^22.15.29",
+    "@types/react": "^19.1.6",
+    "@typescript-eslint/eslint-plugin": "^8.33.1",
+    "@typescript-eslint/parser": "^8.33.1",
+    "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "react-is": "^19.1.0"
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  }
+}

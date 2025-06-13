@@ -1,4 +1,3 @@
-import { cn } from '../../../lib/utils';
 import { Label } from '../label';
 import {
   Select,
@@ -7,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../select';
+import { cn } from '@ncthub/utils/format';
 import { Root } from '@radix-ui/react-select';
 import React, { forwardRef } from 'react';
 
@@ -39,7 +39,7 @@ export interface SelectProps
 // Merge the two interfaces
 type Props = SelectFieldProps & SelectProps;
 
-const SelectField = forwardRef<React.ElementRef<typeof Root>, Props>(
+const SelectField = forwardRef<React.ComponentRef<typeof Root>, Props>(
   ({ id, label, placeholder, options, classNames, ...props }, ref) => {
     return (
       <div className={cn('grid gap-2', classNames?.root)}>

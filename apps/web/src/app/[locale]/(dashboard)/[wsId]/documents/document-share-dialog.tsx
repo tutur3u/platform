@@ -1,13 +1,12 @@
 import { BASE_URL } from '@/constants/common';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Separator } from '@repo/ui/components/ui/separator';
+} from '@ncthub/ui/dialog';
 import {
   Check,
   CheckCheck,
@@ -15,9 +14,10 @@ import {
   Globe,
   LinkIcon,
   Lock,
-} from 'lucide-react';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { QRCodeCanvas } from 'qrcode.react';
 import React, { useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
 
 interface DocumentShareDialogProps {
   isOpen: boolean;
@@ -94,12 +94,11 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
             <>
               <Separator className="my-4" />
               <div className="flex items-center justify-center">
-                <QRCode
+                <QRCodeCanvas
                   value={publicLink}
                   size={256}
-                  style={{
-                    borderRadius: '0.5rem',
-                  }}
+                  marginSize={2}
+                  className="rounded-lg"
                 />
               </div>
             </>

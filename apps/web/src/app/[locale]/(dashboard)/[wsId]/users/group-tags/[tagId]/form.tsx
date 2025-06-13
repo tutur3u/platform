@@ -1,13 +1,13 @@
 'use client';
 
-import { UserDatabaseFilter } from '../../../users/filters';
-import { cn } from '@/lib/utils';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import SearchBar from '@repo/ui/components/ui/custom/search-bar';
+import { Filter } from '../../../users/filters';
+import { createClient } from '@ncthub/supabase/next/client';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { Button } from '@ncthub/ui/button';
+import SearchBar from '@ncthub/ui/custom/search-bar';
+import { Users, X } from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
 import { useQuery } from '@tanstack/react-query';
-import { Users, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -73,7 +73,7 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
     <>
       <div className="flex items-center gap-2">
         <SearchBar t={t} className={cn('w-full')} onSearch={setQuery} />
-        <UserDatabaseFilter
+        <Filter
           title={t('ws-user-group-tags.add_group')}
           icon={<Users className="mr-2 h-4 w-4" />}
           options={groups.map((group) => ({
@@ -117,7 +117,7 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
           ))}
         </div>
       ) : (
-        <div className="text-foreground/50 mt-4 rounded border border-dashed p-4 text-center font-semibold md:p-8">
+        <div className="mt-4 rounded border border-dashed p-4 text-center font-semibold text-foreground/50 md:p-8">
           This tag has no user groups yet.
         </div>
       )}

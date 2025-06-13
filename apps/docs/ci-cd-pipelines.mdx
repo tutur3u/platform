@@ -1,0 +1,638 @@
+---
+title: 'CI/CD Pipelines'
+description: 'Understanding Tuturuuu CI/CD pipelines and automated workflows.'
+---
+
+<Info>
+  **Prerequisite**: You should have read the [Monorepo
+  Architecture](/monorepo-architecture) page to understand the basic structure
+  of the codebase.
+</Info>
+
+## Overview
+
+Tuturuuu uses GitHub Actions for continuous integration and continuous deployment (CI/CD) across our monorepo. These automated workflows help us maintain code quality, run tests, and deploy our applications to various environments.
+
+This page documents the key CI/CD pipelines used in the Tuturuuu platform and how they support our development workflow.
+
+## Workflow Categories
+
+Our GitHub Actions workflows are organized into several categories:
+
+### 1. Application Deployments
+
+Automated deployments to Vercel for our Next.js applications:
+
+- Production deployments (from `production` branch)
+- Preview deployments (from push events to non-production branches)
+
+### 2. Database Migrations
+
+Supabase database migration workflows for different environments:
+
+- Production database migrations
+- Staging database migrations
+- Type generation verification
+
+### 3. Package Publishing
+
+Workflows that publish our shared packages to NPM, GitHub Packages, and JSR:
+
+- Types package
+- UI package
+- Supabase client package
+- ESLint config package
+- TypeScript config package
+- AI package
+
+### 4. Quality Assurance
+
+Workflows that ensure code quality:
+
+- Unit tests
+- Prettier formatting checks
+- CodeQL security scanning
+- CodeCov code coverage reporting
+
+## Key Workflows
+
+### Application Deployments
+
+We use Vercel for deploying our Next.js applications. The main deployment workflows are:
+
+#### Production Deployments
+
+When code is pushed to the `production` branch, applications are automatically deployed to production:
+
+```yaml
+name: Vercel Platform Production Deployment
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.PRODUCTION_SUPABASE_SERVICE_KEY }}
+on:
+  push:
+    branches:
+      - production
+  workflow_dispatch:
+
+jobs:
+  Deploy-Production:
+    runs-on: ubuntu-latest
+    steps:
+      # Setup and optimization steps...
+      - name: Check for newer commits
+        id: check_commits
+        run: |
+          git fetch origin production
+          LATEST_COMMIT=$(git rev-parse origin/production 2>/dev/null || echo "")
+          CURRENT_COMMIT=${GITHUB_SHA}
+          if [ -n "$LATEST_COMMIT" ] && [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
+            echo "Newer commit found on production branch. Skipping build."
+            echo "skip_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "This is the latest commit. Proceeding with build."
+            echo "skip_build=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Deployment steps, only run if no newer commits found
+      - name: Pull Vercel Environment Information
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Project Artifacts to Vercel
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+```
+
+We have separate production deployment workflows for each application:
+
+- `vercel-production-hub.yaml` - Main web app
+
+All production workflows follow the same pattern but deploy to different Vercel projects, each with its own environment variables and project ID.
+
+#### Preview Deployments
+
+For non-production branches, we create preview deployments that allow developers to see their changes live before merging:
+
+```yaml
+name: Vercel Platform Preview Deployment
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+on:
+  push:
+    branches-ignore:
+      - production
+  workflow_dispatch:
+
+jobs:
+  Deploy-Preview:
+    runs-on: ubuntu-latest
+    steps:
+      # Setup and optimization steps...
+      - name: Check for newer commits
+        id: check_commits
+        run: |
+          CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
+          git fetch origin $CURRENT_BRANCH
+          # Skip if newer commits exist on the same branch
+          # ... (commit checking logic)
+
+      # Deployment steps, with conditional execution
+      - name: Pull Vercel Environment Information
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Project Artifacts to Vercel
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: vercel deploy --archive=tgz --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+```
+
+Preview deployments are set up for all our applications, providing a temporary deployment URL for each branch.
+
+### Database Migrations
+
+We use Supabase for our database, and have automated workflows for managing database migrations:
+
+#### Production Database Migrations
+
+```yaml
+name: Supabase CI
+
+on:
+  # push:
+  #   branches:
+  #     - production
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Migrate production database
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
+      PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+      PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy migrations to production
+        run: |
+          cd apps/db
+          supabase link --project-ref ${{ env.PRODUCTION_PROJECT_ID }}
+          supabase db push
+```
+
+This workflow is manually triggered (via `workflow_dispatch`) to deploy database migrations to production environment. This gives us control over when migrations are applied to production.
+
+#### Supabase Type Verification
+
+We ensure that generated TypeScript types match our database schema:
+
+```yaml
+name: Supabase CI
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Verify generated types
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
+      STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - run: supabase init
+      - run: supabase db start
+      - name: Verify generated types match Postgres schema
+        run: |
+          supabase gen types typescript --local > schema.gen.ts
+          if ! git diff --ignore-space-at-eol --exit-code --quiet schema.gen.ts; then
+            echo "Detected uncommitted changes after build. See status below:"
+            git diff
+            exit 1
+          fi
+```
+
+This workflow runs on every push, ensuring that our TypeScript types are always in sync with the database schema.
+
+### Package Publishing
+
+We publish several packages to make our code reusable across projects. Here's an example workflow for the types package:
+
+```yaml
+name: Release @ncthub/types package
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'packages/types/package.json'
+      - 'packages/types/jsr.json'
+  workflow_dispatch:
+
+jobs:
+  check-version-bump:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@ncthub/types)')
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - id: check
+        run: echo "should_release=true" >> $GITHUB_OUTPUT
+
+  build:
+    needs: check-version-bump
+    if: needs.check-version-bump.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    # Build steps
+
+  publish-jsr:
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      # Setup steps
+      - name: Publish package to JSR
+        working-directory: packages/types
+        run: bunx jsr publish
+
+  publish-npm:
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      # Setup steps
+      - name: Publish package
+        working-directory: packages/types
+        run: bun publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+```
+
+Our package publishing workflows follow a pattern:
+
+1. Check for a version bump in the package.json and ensure the PR title follows our convention
+2. Build and test the package
+3. Publish to multiple registries (JSR, GitHub Packages, NPM)
+
+We have similar workflows for other packages:
+
+- `release-ui-package.yaml`
+- `release-ai-package.yaml`
+- `release-supabase-package.yaml`
+- `release-eslint-config-package.yaml`
+- `release-typescript-config-package.yaml`
+
+### Quality Assurance
+
+We use several workflows to ensure code quality:
+
+#### Unit Tests
+
+```yaml
+name: Test
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+
+jobs:
+  build:
+    name: Unit Tests
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22]
+
+    env:
+      # Use Vercel Remote Caching
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+      # Configure environment variables
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+    steps:
+      # Setup steps
+      - name: Test
+        run: bun run test
+```
+
+This workflow runs on every push to main and on all pull requests, ensuring our tests pass.
+
+#### Prettier Formatting
+
+We enforce consistent code formatting with Prettier using an automated workflow that can create PRs for formatting fixes:
+
+```yaml
+name: Prettier Format Check
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  format:
+    name: Prettier Check
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      matrix:
+        node-version: [23]
+
+    steps:
+      # Setup steps
+      - name: Check Prettier formatting
+        id: check-format
+        run: bun format:check || echo "format_failed=true" >> $GITHUB_OUTPUT
+
+      - name: Apply Prettier fixes
+        if: steps.check-format.outputs.format_failed == 'true'
+        run: bun format
+
+      - name: Check for changes
+        if: steps.check-format.outputs.format_failed == 'true'
+        id: git-check
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.git-check.outputs.changes == 'true'
+        id: create-pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'style: apply prettier formatting'
+          title: 'style: apply prettier formatting for ${{ github.ref_name }}'
+          body: |
+            This PR fixes code formatting issues using Prettier.
+            Auto-generated by the Prettier Format Check workflow.
+          branch: fix/prettier-formatting-${{ github.ref_name }}
+          base: ${{ github.ref_name }}
+          delete-branch: true
+```
+
+This workflow not only checks code formatting but also:
+
+1. Automatically applies Prettier fixes if formatting issues are found
+2. Creates a pull request with the fixes
+3. Adds informative comments to existing PRs if formatting issues are detected
+
+## Workflow Organization
+
+Our GitHub Actions workflows are all defined in the `.github/workflows` directory of the repository. They follow a consistent naming convention:
+
+### Application Deployment Workflows
+
+- `vercel-production-*.yaml`: Production deployment workflows for each application
+  - Example: `vercel-production-hub.yaml`
+- `vercel-preview-*.yaml`: Preview deployment workflows for each application
+  - Example: `vercel-preview-hub.yaml`
+
+### Database Workflows
+
+- `supabase-production.yaml`: Production database migrations
+- `supabase-staging.yaml`: Staging database migrations
+- `supabase-types.yaml`: TypeScript type verification
+
+### Package Publishing Workflows
+
+- `release-*-package.yaml`: Package publishing workflows
+  - Example: `release-ui-package.yaml`, `release-types-package.yaml`
+
+### Quality Assurance Workflows
+
+- `turbo-unit-tests.yaml`: Unit test workflow
+- `prettier-check.yaml`: Code formatting workflow
+- `codecov.yaml`: Code coverage reporting
+- `codeql.yml`: Security scanning
+
+### Other Utilities
+
+- `check-and-bump-versions.yaml`: Automated dependency version management
+- `external-internal-packages.yaml`: Managing external vs internal dependencies
+
+## Common Workflow Patterns
+
+Our workflows follow several common patterns:
+
+### 1. Conditional Execution
+
+Many workflows check if they should run based on certain conditions:
+
+```yaml
+- name: Check for newer commits
+  id: check_commits
+  run: |
+    # Logic to determine if build should be skipped
+    echo "skip_build=false" >> $GITHUB_OUTPUT
+
+- name: Next step
+  if: steps.check_commits.outputs.skip_build != 'true'
+  run: echo "Only runs if no newer commits were found"
+```
+
+### 2. Dependency Caching
+
+Most workflows use caching to speed up builds:
+
+```yaml
+- name: Cache turbo build setup
+  uses: actions/cache@v4
+  with:
+    path: .turbo
+    key: ${{ runner.os }}-turbo-${{ github.sha }}
+    restore-keys: |
+      ${{ runner.os }}-turbo-
+
+- name: Setup bun
+  uses: oven-sh/setup-bun@v2
+
+- name: Use Node.js 24
+  uses: actions/setup-node@v4
+  with:
+    node-version: 24
+```
+
+### 3. PR-based Publishing
+
+Package releases are triggered by merged PRs with specific title patterns:
+
+```yaml
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'packages/types/package.json'
+  # ...
+
+jobs:
+  check-version-bump:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@ncthub/types)')
+    # ...
+```
+
+## Environment Variables and Secrets
+
+Our workflows use several environment variables and secrets stored in GitHub:
+
+- `VERCEL_TOKEN`: For deploying to Vercel
+- `VERCEL_ORG_ID`: Vercel organization ID
+- `VERCEL_*_PROJECT_ID`: Project-specific Vercel IDs
+- `SUPABASE_ACCESS_TOKEN`: For authenticating with Supabase
+- `*_SUPABASE_URL`, `*_SUPABASE_ANON_KEY`, `*_SUPABASE_SERVICE_KEY`: Environment-specific Supabase credentials
+- `NPM_TOKEN`: For publishing to NPM
+- `TIPTAP_PRO_TOKEN`: For accessing Tiptap Pro packages
+- `TURBO_TOKEN` and `TURBO_TEAM`: For Turborepo remote caching
+
+<Warning>
+  Never hard-code sensitive information in workflow files. Always use GitHub
+  Secrets for API tokens, passwords, and other sensitive data.
+</Warning>
+
+## Remote Caching with Turborepo
+
+We leverage Turborepo's remote caching feature in our CI pipelines to speed up builds:
+
+```yaml
+env:
+  # Use Vercel Remote Caching
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+```
+
+This allows our CI jobs to reuse cached build artifacts from previous runs, significantly reducing build times. For large monorepos like ours, this can reduce CI times from 20+ minutes to just a few minutes when the cache is warm.
+
+## Best Practices
+
+When working with our CI/CD pipelines, follow these best practices:
+
+### 1. Test Workflows Locally
+
+Before creating a new workflow, test it locally using [act](https://github.com/nektos/act) or similar tools.
+
+```bash
+# Install act
+brew install act
+
+# Run a specific workflow locally
+act -W .github/workflows/your-workflow.yaml
+```
+
+### 2. Keep Workflows Focused
+
+Each workflow should have a single responsibility. Split complex workflows into smaller, more focused ones.
+
+### 3. Reuse Common Steps
+
+Use composite actions or job templates to reuse common steps across workflows.
+
+### 4. Monitor Workflow Performance
+
+Regularly check workflow runs for performance issues and optimize as needed:
+
+1. Use GitHub's workflow visualization to identify bottlenecks
+2. Implement caching for dependencies and build artifacts
+3. Run jobs in parallel when possible
+4. Skip unnecessary steps with conditional execution
+
+### 5. Document Workflow Changes
+
+When making significant changes to workflows, document them in pull request descriptions and update this documentation.
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Workflow Timeouts
+
+If a workflow times out, it might be due to:
+
+- Inefficient build process
+- Missing cache configuration
+- Network issues with external services
+
+Try adding or improving caching strategies and optimizing build steps.
+
+#### 2. Failed Deployments
+
+When deployments fail, check:
+
+- Build logs for errors
+- Environment variable configuration
+- Access tokens and permissions
+
+#### 3. Authentication Issues
+
+For authentication problems with NPM, GitHub Packages, or Vercel:
+
+- Verify token permissions
+- Ensure tokens are not expired
+- Check that the token is correctly configured in GitHub Secrets
+
+## Creating New Workflows
+
+When creating a new workflow, use this checklist:
+
+1. **Naming Convention**: Follow the established naming patterns
+2. **Trigger Conditions**: Define when the workflow should run
+3. **Environment Variables**: Include all necessary secrets and variables
+4. **Optimizations**: Add caching and conditional execution
+5. **Error Handling**: Include appropriate error handling and notifications
+6. **Documentation**: Add comments within the workflow file and update documentation
+
+## Further Resources
+
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Vercel CLI Documentation](https://vercel.com/docs/cli)
+- [Supabase CLI Documentation](https://supabase.com/docs/guides/cli)
+- [Turborepo Documentation](https://turbo.build/repo/docs/ci)
+- [bun Workspace Documentation](https://bun.sh/docs/install/workspaces)

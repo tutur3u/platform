@@ -1,13 +1,12 @@
 import { DEV_MODE } from '@/constants/common';
-import { Workspace } from '@/types/primitives/Workspace';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@ncthub/supabase/next/client';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@repo/ui/components/ui/dropdown-menu';
+} from '@ncthub/ui/dropdown-menu';
+import { ActivitySquare, Database } from '@ncthub/ui/icons';
 import { useQuery } from '@tanstack/react-query';
-import { ActivitySquare, Database } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -54,7 +53,7 @@ async function fetchWorkspaces() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return;
+  if (!user) return [];
 
   const { data: workspaces, error: error } = await supabase
     .from('workspaces')
@@ -63,6 +62,6 @@ async function fetchWorkspaces() {
     )
     .eq('workspace_members.user_id', user.id);
 
-  if (error) return;
-  return workspaces as Workspace[];
+  if (error) return [];
+  return workspaces;
 }

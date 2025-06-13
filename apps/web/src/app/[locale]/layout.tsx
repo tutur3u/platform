@@ -3,21 +3,24 @@ import { ProductionIndicator } from '@/components/production-indicator';
 import { Providers } from '@/components/providers';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { siteConfig } from '@/constants/configs';
-import { routing, supportedLocales } from '@/i18n/routing';
+import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
-import { Toaster } from '@repo/ui/components/ui/toaster';
-import '@repo/ui/globals.css';
-import { cn } from '@repo/ui/lib/utils';
+import '@ncthub/ui/globals.css';
+import { Toaster } from '@ncthub/ui/toaster';
+import { cn } from '@ncthub/utils/format';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, setRequestLocale } from 'next-intl/server';
-import { Inter } from 'next/font/google';
+import { setRequestLocale } from 'next-intl/server';
+import { Noto_Sans } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
-const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
+const font = Noto_Sans({
+  subsets: ['latin', 'vietnamese'],
+  display: 'block',
+});
 
 interface Props {
   children: ReactNode;
@@ -77,7 +80,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: siteConfig.name,
       description,
       images: [siteConfig.ogImage],
-      creator: '@tutur3u',
+      creator: '@tuturuuu',
     },
     icons: {
       icon: '/favicon.ico',
@@ -104,53 +107,27 @@ export function generateStaticParams() {
 }
 
 export default async function RootLayout({ children, params }: Props) {
+  const { locale } = await params;
+
   // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes((await params).locale as any)) {
+  if (!routing.locales.includes(locale as Locale)) {
     notFound();
   }
 
-  const { locale } = await params;
-  setRequestLocale(locale);
-  const messages = await getMessages();
+  setRequestLocale(locale as Locale);
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'bg-background overflow-hidden antialiased',
+          'overflow-y-scroll bg-background antialiased',
           font.className
         )}
       >
         <VercelAnalytics />
         <VercelInsights />
-        <Providers
-          attribute="class"
-          defaultTheme="dark"
-          themes={[
-            'system',
-
-            'light',
-            'light-pink',
-            'light-purple',
-            'light-yellow',
-            'light-orange',
-            'light-green',
-            'light-blue',
-
-            'dark',
-            'dark-pink',
-            'dark-purple',
-            'dark-yellow',
-            'dark-orange',
-            'dark-green',
-            'dark-blue',
-          ]}
-          enableColorScheme={false}
-          enableSystem={false}
-        >
-          <NextIntlClientProvider messages={messages}>
-            {children}
-          </NextIntlClientProvider>
+        <Providers>
+          <NextIntlClientProvider>{children}</NextIntlClientProvider>
         </Providers>
         <TailwindIndicator />
         <ProductionIndicator />

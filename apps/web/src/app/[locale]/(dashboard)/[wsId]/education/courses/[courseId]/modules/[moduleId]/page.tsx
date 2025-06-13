@@ -1,13 +1,14 @@
-import { TailwindAdvancedEditor } from '../../../../../documents/advanced-editor';
 import { CourseSection } from '../../section';
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
 import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';
-import { WorkspaceCourseModule } from '@/types/db';
-import { createClient, createDynamicClient } from '@/utils/supabase/server';
 import { extractYoutubeId } from '@/utils/url-helper';
-import { Separator } from '@repo/ui/components/ui/separator';
+import {
+  createClient,
+  createDynamicClient,
+} from '@ncthub/supabase/next/server';
+import { WorkspaceCourseModule } from '@ncthub/types/db';
 import {
   BookText,
   Goal,
@@ -15,9 +16,9 @@ import {
   Paperclip,
   SwatchBook,
   Youtube,
-} from 'lucide-react';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
-import { JSONContent } from 'novel';
 
 interface Props {
   params: Promise<{
@@ -49,7 +50,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
         {fc?.front || '...'}
       </div>
     ),
@@ -59,7 +60,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">
         {fc?.back || '...'}
       </div>
     ),
@@ -68,22 +69,19 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   return (
     <div className="grid gap-4">
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/content`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
-        rawContent={data.content as JSONContent | undefined}
+        rawContent={data.content as any | undefined}
         content={
-          data.content ? (
-            <TailwindAdvancedEditor
-              content={data.content as JSONContent}
-              disableLocalStorage
-              previewMode
-            />
-          ) : undefined
+          data.content
+            ? // <BlockEditor document={data.content as any} />
+              undefined
+            : undefined
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/resources`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/resources`}
         title={t('course-details-tabs.resources')}
         icon={<Paperclip className="h-5 w-5" />}
         content={
@@ -114,7 +112,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/youtube-links`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/youtube-links`}
         title={t('course-details-tabs.youtube_links')}
         icon={<Youtube className="h-5 w-5" />}
         content={
@@ -128,7 +126,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/quizzes`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes`}
         title={t('ws-quizzes.plural')}
         icon={<ListTodo className="h-5 w-5" />}
         content={
@@ -145,7 +143,24 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/flashcards`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets`}
+        title={t('ws-quiz-sets.plural')}
+        icon={<ListTodo className="h-5 w-5" />}
+        content={
+          quizzes && quizzes.length > 0 ? (
+            <div className="grid gap-4 pt-2 md:grid-cols-2">
+              <ClientQuizzes
+                wsId={wsId}
+                moduleId={moduleId}
+                quizzes={quizzes}
+                previewMode
+              />
+            </div>
+          ) : undefined
+        }
+      />
+      <CourseSection
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/flashcards`}
         title={t('ws-flashcards.plural')}
         icon={<SwatchBook className="h-5 w-5" />}
         content={
@@ -162,18 +177,15 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
-        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/extra-content`}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/extra-content`}
         title={t('course-details-tabs.extra_reading')}
         icon={<BookText className="h-5 w-5" />}
-        rawContent={data.extra_content as JSONContent | undefined}
+        rawContent={data.extra_content as any | undefined}
         content={
-          data.extra_content ? (
-            <TailwindAdvancedEditor
-              content={data.extra_content as JSONContent}
-              disableLocalStorage
-              previewMode
-            />
-          ) : undefined
+          data.extra_content
+            ? // <BlockEditor document={data.extra_content as any} />
+              undefined
+            : undefined
         }
       />
     </div>
