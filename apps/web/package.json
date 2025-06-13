@@ -57,7 +57,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.17.3",
-    "google-auth-library": "^9.15.1",
+    "google-auth-library": "^10.1.0",
     "googleapis": "^149.0.0",
     "html2canvas": "^1.4.1",
     "jotai": "^2.12.5",
