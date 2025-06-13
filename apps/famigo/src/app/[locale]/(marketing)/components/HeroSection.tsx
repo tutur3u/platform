@@ -20,7 +20,7 @@ const HeroSection = () => {
         ease: 'easeInOut',
       },
     },
-  } as Variants;
+  } satisfies Variants;
 
   return (
     <section id="hero" className="relative w-full">

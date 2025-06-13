@@ -61,7 +61,7 @@ const bugReport: BugReport = {
 };
 
 // Floating animation variants
-const floatingVariants: Variants = {
+const floatingVariants = {
   initial: { y: 0 },
   float: {
     y: [-5, 5],
@@ -72,10 +72,10 @@ const floatingVariants: Variants = {
       ease: 'easeInOut',
     },
   },
-};
+} satisfies Variants;
 
 // Glowing animation variants
-const glowVariants: Variants = {
+const glowVariants = {
   initial: { opacity: 0.7, scale: 1 },
   glow: {
     opacity: [0.7, 1, 0.7],
@@ -86,7 +86,7 @@ const glowVariants: Variants = {
       ease: 'easeInOut',
     },
   },
-};
+} satisfies Variants;
 
 export default function BugBountyPage() {
   const [isConfettiActive, setIsConfettiActive] = useState(false);
