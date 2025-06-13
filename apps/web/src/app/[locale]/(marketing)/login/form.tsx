@@ -106,6 +106,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
       if (returnApp === 'web') {
         router.push(returnUrl);
+        router.refresh();
         return;
       }
 
@@ -220,8 +221,14 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     });
 
     if (res.ok) {
-      // reload the page
-      window.location.reload();
+      router.refresh();
+
+      if (await needsMFA()) {
+        setRequiresMFA(true);
+        setLoading(false);
+      } else {
+        window.location.reload();
+      }
     } else {
       setLoading(false);
 
@@ -301,7 +308,23 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         throw lastError || new Error('Verification failed for all factors');
       }
 
-      window.location.reload();
+      // Handle redirect after successful MFA verification
+      const nextUrl = searchParams.get('nextUrl');
+      const returnUrl = searchParams.get('returnUrl');
+
+      if (nextUrl) {
+        router.push(decodeURIComponent(nextUrl));
+        router.refresh();
+        return;
+      }
+
+      if (returnUrl) {
+        await processNextUrl();
+        router.refresh();
+        return;
+      }
+
+      router.refresh();
     } catch (error) {
       console.error('Error verifying TOTP:', error);
       totpForm.setError('totp', {
@@ -430,16 +453,27 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
+
+      // Check if MFA is required from URL parameter
+      const mfaRequired = searchParams.get('mfa') === 'required';
+      if (user && mfaRequired) {
+        const needsAuth = await needsMFA();
+        if (needsAuth) {
+          setRequiresMFA(true);
+        }
+      }
+
       setInitialized(true);
     }
 
     checkUser();
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     const processUrl = async () => {
-      if (user) await processNextUrl();
-      else {
+      if (user && !requiresMFA) {
+        await processNextUrl();
+      } else {
         setReadyForAuth(true);
       }
     };
@@ -447,7 +481,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     if (initialized) {
       processUrl();
     }
-  }, [user, initialized]);
+  }, [user, initialized, requiresMFA]);
 
   useEffect(() => {
     if (DEV_MODE) {

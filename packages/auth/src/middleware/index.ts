@@ -16,11 +16,6 @@ async function handleMFACheck(
 ): Promise<NextResponse | null> {
   const pathname = req.nextUrl.pathname;
 
-  // Skip MFA verification page itself to prevent redirect loop
-  if (pathname.startsWith('/mfa') || pathname.startsWith('/verify-mfa')) {
-    return null;
-  }
-
   // Skip if path is excluded
   if (excludedPaths.some((path) => pathname.startsWith(path))) {
     return null;
@@ -52,21 +47,23 @@ async function handleMFACheck(
         req.nextUrl.origin === webAppUrl;
 
       if (isCentralWebApp) {
-        // Handle MFA verification locally in the central web app
+        // Handle MFA verification in the login page
         const returnUrl = encodeURIComponent(
           req.nextUrl.pathname + req.nextUrl.search
         );
-        const verifyUrl = new URL('/verify-mfa', req.nextUrl);
-        verifyUrl.searchParams.set('returnUrl', returnUrl);
+        const loginUrl = new URL('/login', req.nextUrl);
+        loginUrl.searchParams.set('nextUrl', returnUrl);
+        loginUrl.searchParams.set('mfa', 'required');
 
-        return NextResponse.redirect(verifyUrl);
+        return NextResponse.redirect(loginUrl);
       } else {
         // All other apps redirect to central web app for MFA verification
         const returnUrl = encodeURIComponent(req.nextUrl.href);
-        const verifyUrl = new URL('/verify-mfa', webAppUrl);
-        verifyUrl.searchParams.set('returnUrl', returnUrl);
+        const loginUrl = new URL('/login', webAppUrl);
+        loginUrl.searchParams.set('returnUrl', returnUrl);
+        loginUrl.searchParams.set('mfa', 'required');
 
-        return NextResponse.redirect(verifyUrl);
+        return NextResponse.redirect(loginUrl);
       }
     }
 
@@ -257,7 +254,7 @@ export function createMFAMiddleware(options: MFAMiddlewareOptions = {}) {
     const pathname = req.nextUrl.pathname;
 
     // Skip MFA verification page itself to prevent redirect loop
-    if (pathname.startsWith('/mfa') || pathname.startsWith('/verify-mfa')) {
+    if (pathname.startsWith('/mfa')) {
       return null;
     }
 
@@ -304,21 +301,23 @@ export function createMFAMiddleware(options: MFAMiddlewareOptions = {}) {
           req.nextUrl.origin === centralWebAppUrl;
 
         if (isCentralWebApp) {
-          // Handle MFA verification locally in the central web app
+          // Handle MFA verification in the login page
           const returnUrl = encodeURIComponent(
             req.nextUrl.pathname + req.nextUrl.search
           );
-          const verifyUrl = new URL('/verify-mfa', req.nextUrl);
-          verifyUrl.searchParams.set('returnUrl', returnUrl);
+          const loginUrl = new URL('/login', req.nextUrl);
+          loginUrl.searchParams.set('nextUrl', returnUrl);
+          loginUrl.searchParams.set('mfa', 'required');
 
-          return NextResponse.redirect(verifyUrl);
+          return NextResponse.redirect(loginUrl);
         } else {
           // All other apps redirect to central web app for MFA verification
           const returnUrl = encodeURIComponent(req.nextUrl.href);
-          const verifyUrl = new URL('/verify-mfa', centralWebAppUrl);
-          verifyUrl.searchParams.set('returnUrl', returnUrl);
+          const loginUrl = new URL('/login', centralWebAppUrl);
+          loginUrl.searchParams.set('returnUrl', returnUrl);
+          loginUrl.searchParams.set('mfa', 'required');
 
-          return NextResponse.redirect(verifyUrl);
+          return NextResponse.redirect(loginUrl);
         }
       }
 

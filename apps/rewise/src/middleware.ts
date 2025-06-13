@@ -18,7 +18,7 @@ const authMiddleware = createCentralizedAuthMiddleware({
   skipApiRoutes: true,
   mfa: {
     enabled: true,
-    excludedPaths: ['/verify-mfa', '/mfa', '/api/', '/login', '/signup'],
+    excludedPaths: ['/api/', '/login', '/signup'],
     enforceForAll: true,
   },
 });
