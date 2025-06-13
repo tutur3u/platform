@@ -180,7 +180,7 @@ export function createCentralizedAuthMiddleware(
   const {
     enabled: mfaEnabled = true,
     protectedPaths: mfaProtectedPaths = [],
-    excludedPaths: mfaExcludedPaths = [],
+    excludedPaths: mfaExcludedPaths = ['/api/', '/login'],
     enforceForAll: mfaEnforceForAll = true,
   } = mfa;
 
@@ -250,7 +250,7 @@ export function createCentralizedAuthMiddleware(
 export function createMFAMiddleware(options: MFAMiddlewareOptions = {}) {
   const {
     protectedPaths = [],
-    excludedPaths = [],
+    excludedPaths = ['/api/', '/login'],
     enforceForAll = true,
     webAppUrl,
   } = options;
@@ -259,11 +259,6 @@ export function createMFAMiddleware(options: MFAMiddlewareOptions = {}) {
     req: NextRequest
   ): Promise<NextResponse | null> {
     const pathname = req.nextUrl.pathname;
-
-    // Skip MFA verification page itself to prevent redirect loop
-    if (pathname.startsWith('/mfa')) {
-      return null;
-    }
 
     // Skip if path is excluded
     if (excludedPaths.some((path) => pathname.startsWith(path))) {

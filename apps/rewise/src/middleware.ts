@@ -16,11 +16,6 @@ const authMiddleware = createCentralizedAuthMiddleware({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
-  mfa: {
-    enabled: true,
-    excludedPaths: ['/api/', '/login', '/signup'],
-    enforceForAll: true,
-  },
 });
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
