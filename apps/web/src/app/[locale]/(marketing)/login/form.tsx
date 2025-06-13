@@ -259,26 +259,46 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
       if (factorsError) throw factorsError;
 
-      const totpFactor = factors?.totp?.find(
-        (factor) => factor.status === 'verified'
-      );
+      const verifiedFactors =
+        factors?.totp?.filter((factor) => factor.status === 'verified') || [];
 
-      if (!totpFactor) throw new Error('No verified TOTP factor found');
+      if (verifiedFactors.length === 0) {
+        throw new Error('No verified TOTP factor found');
+      }
 
-      const { data: challenge, error: challengeError } =
-        await supabase.auth.mfa.challenge({
-          factorId: totpFactor.id,
-        });
+      let verificationSuccess = false;
+      let lastError: any = null;
 
-      if (challengeError) throw challengeError;
+      for (const factor of verifiedFactors) {
+        try {
+          const { data: challenge, error: challengeError } =
+            await supabase.auth.mfa.challenge({
+              factorId: factor.id,
+            });
 
-      const { error: verifyError } = await supabase.auth.mfa.verify({
-        factorId: totpFactor.id,
-        challengeId: challenge.id,
-        code: data.totp,
-      });
+          if (challengeError) continue;
 
-      if (verifyError) throw verifyError;
+          const { error: verifyError } = await supabase.auth.mfa.verify({
+            factorId: factor.id,
+            challengeId: challenge.id,
+            code: data.totp,
+          });
+
+          if (!verifyError) {
+            verificationSuccess = true;
+            break;
+          }
+
+          lastError = verifyError;
+        } catch (error) {
+          lastError = error;
+          continue;
+        }
+      }
+
+      if (!verificationSuccess) {
+        throw lastError || new Error('Verification failed for all factors');
+      }
 
       window.location.reload();
     } catch (error) {
