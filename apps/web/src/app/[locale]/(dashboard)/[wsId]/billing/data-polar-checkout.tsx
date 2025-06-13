@@ -40,7 +40,9 @@ const PurchaseLink = ({
   //    intercept the click.
   return (
     <a
-      href={'/checkout?productId=' + productId} // Use the dynamic URL here
+      href={
+        'https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_J8GoQufIe6E1WJnYnBIYOJKST2G1tWMj9XWXL336OPA/redirect'
+      } // Use the dynamic URL here
       // 'https://buy.polar.sh/polar_cl_OyedkX3Pzn0fA7cMMqsIdu5OkJzUxPRfqFbHw3xjhnO'
       // Use the dynamic URL here
       data-polar-checkout
