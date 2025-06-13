@@ -1,91 +1,45 @@
-'use client';
-
-import { Checkout } from '@polar-sh/nextjs';
-import { Badge } from '@tuturuuu/ui/badge';
+import { BillingClient } from './billing-client';
+import { api } from '@/lib/polar';
 import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import { Separator } from '@tuturuuu/ui/separator';
-import { motion } from 'framer-motion';
-import {
-  ArrowRight,
-  ArrowUpCircle,
-  CalendarDays,
-  CheckCircle,
-  CreditCard,
-  Gem,
-  Receipt,
-  Shield,
-  Sparkles,
-} from 'lucide-react';
-import { useState } from 'react';
+import { CheckCircle, CreditCard, Receipt } from 'lucide-react';
 
-export default function BillingPage() {
-  const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
+const fetchProducts = async () => {
+  try {
+    const res = await api.products.list({ isArchived: false });
+    return res.result.items ?? [];
+  } catch (err) {
+    console.error('Failed to fetch products:', err);
+    return [];
+  }
+};
 
-  // Motion variants
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        staggerChildren: 0.15,
-        duration: 0.8,
-        ease: 'easeOut',
-      },
-    },
-  };
+export default async function BillingPage() {
+  // Fetch data directly on the server
+  const products = await fetchProducts();
+  console.log(products, 'pro');
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: 'spring',
-        stiffness: 100,
-        damping: 15,
-      },
-    },
-  };
-
-  const cardVariants = {
-    hidden: { scale: 0.95, opacity: 0, y: 20 },
-    show: {
-      scale: 1,
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: 'spring',
-        stiffness: 100,
-        damping: 15,
-      },
-    },
-    hover: {
-      scale: 1.03,
-      y: -5,
-      transition: {
-        type: 'spring',
-        stiffness: 400,
-        damping: 10,
-      },
-    },
-  };
-
-  // Mock current plan data
   const currentPlan = {
     name: 'Pro',
     price: '$19.99',
+    billingCycle: 'month',
+    startDate: 'Jan 1, 2023',
+    nextBillingDate: 'Jan 1, 2024',
+    status: 'active',
+    features: [
+      'Unlimited projects',
+      'Advanced collaboration tools',
+      'Priority support',
+      'AI-powered insights',
+    ],
   };
 
-  // Mock plan history
   const planHistory = [
     {
-      planName: 'Pro',
-      price: '$19.99',
-      startDate: 'Jan 1, 2023',
-      endDate: 'Dec 31, 2023',
-      status: 'active',
+      planName: products[0]?.name,
+      price: products[0]?.name == 'Enterprise' ?'$Custom' : '$19.99',
+      // startDate: 'Jan 1, 2023',
+      // endDate: 'Dec 31, 2023',
+      // status: 'active',
     },
     {
       planName: 'Basic',
@@ -96,7 +50,6 @@ export default function BillingPage() {
     },
   ];
 
-  // Mock payment history
   const paymentHistory = [
     {
       id: 'INV-2023-06',
@@ -116,50 +69,38 @@ export default function BillingPage() {
       amount: '$19.99',
       status: 'Paid',
     },
-    {
-      id: 'INV-2023-03',
-      date: 'Mar 15, 2023',
-      amount: '$19.99',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-2023-02',
-      date: 'Feb 15, 2023',
-      amount: '$19.99',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-2023-01',
-      date: 'Jan 15, 2023',
-      amount: '$19.99',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-2022-12',
-      date: 'Dec 15, 2022',
-      amount: '$9.99',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-2022-11',
-      date: 'Nov 15, 2022',
-      amount: '$9.99',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-2022-10',
-      date: 'Oct 15, 2022',
-      amount: '$9.99',
-      status: 'Paid',
-    },
   ];
 
-  // Function to handle plan upgrade
-  const handleUpgradePlan = (planId: string) => {
-    console.log(`Upgrading to plan: ${planId}`);
-    // In a real application, this would navigate to checkout or process the upgrade
-    alert(`Plan upgrade to ${planId} will be processed. This is a demo.`);
-  };
+  // This data is needed by the client component, so we'll pass it as a prop
+  const upgradePlans = [
+    {
+      id: 'pro_monthly',
+      name: 'Pro Monthly',
+      price: '$25',
+      billingCycle: 'month',
+      popular: false,
+      features: [
+        'Everything in Free',
+        'Advanced analytics',
+        'Up to 10 team members',
+        'Email & chat support',
+      ],
+    },
+    {
+      id: 'business_monthly',
+      name: 'Business',
+      price: '$80',
+      billingCycle: 'month',
+      popular: true,
+      features: [
+        'Everything in Pro',
+        'Unlimited team members',
+        'Dedicated account manager',
+        '24/7 priority support',
+        'Custom branding',
+      ],
+    },
+  ];
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
@@ -168,177 +109,12 @@ export default function BillingPage() {
         Manage your billing information and subscriptions here.
       </p>
 
-      {/* Current Plan Card */}
-      <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-card-foreground">
-              Current Plan
-            </h2>
-            <p className="text-muted-foreground">Your subscription details</p>
-          </div>
-          <div className="flex items-center">
-            <span
-              className={`rounded-full px-3 py-1 text-sm font-medium ${
-                currentPlan.status === 'active'
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-              }`}
-            >
-              {currentPlan.status === 'active' ? 'Active' : 'Pending'}
-            </span>
-          </div>
-        </div>
+      {/* The interactive part of the UI is now handled by the BillingClient component.
+        We pass the data it needs (currentPlan, upgradePlans) as props.
+      */}
+      <BillingClient currentPlan={currentPlan} upgradePlans={upgradePlans} />
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div className="col-span-2">
-            <div className="mb-6">
-              <h3 className="mb-1 text-xl font-bold text-card-foreground">
-                {currentPlan.name}
-              </h3>
-              <p className="text-2xl font-bold text-primary">
-                {currentPlan.price}
-                <span className="text-sm text-muted-foreground">
-                  /{currentPlan.billingCycle}
-                </span>
-              </p>
-            </div>
-
-            <div className="mb-6 grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Start Date</p>
-                <p className="font-medium text-card-foreground">
-                  {currentPlan.startDate}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Next Billing Date
-                </p>
-                <p className="font-medium text-card-foreground">
-                  {currentPlan.nextBillingDate}
-                </p>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h4 className="mb-2 font-medium text-card-foreground">
-                Features:
-              </h4>
-              <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                {currentPlan.features?.map((feature, index) => (
-                  <li
-                    key={index}
-                    className="flex items-center text-card-foreground"
-                  >
-                    <CheckCircle className="mr-2 h-5 w-5 text-primary" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button
-                onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
-                className="flex items-center"
-              >
-                <ArrowUpCircle className="mr-1 h-5 w-5" />
-                Upgrade Plan
-              </Button>
-              <Button variant="outline" className="border-border">
-                Cancel Subscription
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-accent/30 p-6">
-            <h3 className="mb-4 text-lg font-semibold text-card-foreground">
-              Payment Method
-            </h3>
-            <div className="mb-4 flex items-center">
-              <CreditCard className="mr-3 h-8 w-8 text-muted-foreground" />
-              <div>
-                <p className="font-medium text-card-foreground">
-                  Visa ending in 4242
-                </p>
-                <p className="text-sm text-muted-foreground">Expires 05/2025</p>
-              </div>
-            </div>
-            <div className="mt-6">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-sm font-medium"
-              >
-                Update payment method
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Upgrade Options */}
-      {showUpgradeOptions && (
-        <div className="mb-8 rounded-lg border-2 border-primary/20 bg-card p-8 shadow-sm dark:bg-card/80">
-          <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
-            Upgrade Options
-          </h2>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {upgradePlans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`rounded-lg border transition-shadow hover:shadow-md ${
-                  plan.popular ? 'relative border-primary' : 'border-border'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute top-0 right-0 rounded-tr-md rounded-bl-lg bg-primary px-3 py-1 text-xs text-primary-foreground">
-                    RECOMMENDED
-                  </div>
-                )}
-                <div className="p-6">
-                  <h3 className="mb-1 text-xl font-bold text-card-foreground">
-                    {plan.name}
-                  </h3>
-                  <p className="mb-4 text-2xl font-bold text-primary">
-                    {plan.price}
-                    <span className="text-sm text-muted-foreground">
-                      /{plan.billingCycle}
-                    </span>
-                  </p>
-                  <ul className="mb-6">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="mb-2 flex items-start">
-                        <CheckCircle className="mt-0.5 mr-2 h-5 w-5 flex-shrink-0 text-primary" />
-                        <span className="text-card-foreground">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    onClick={() => handleUpgradePlan(plan.id)}
-                    className={`w-full ${
-                      plan.popular
-                        ? ''
-                        : 'border-primary bg-transparent text-primary hover:bg-primary/10'
-                    }`}
-                    variant={plan.popular ? 'default' : 'outline'}
-                  >
-                    Select {plan.name}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 text-sm text-muted-foreground">
-            * Upgrading your plan will take effect immediately. You'll be
-            charged the prorated amount for the remainder of your current
-            billing cycle.
-          </p>
-        </div>
-      )}
-
-      {/* Plan History */}
+      {/* Plan History (Static) */}
       <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
         <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
           Plan History
@@ -397,7 +173,7 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Payment History */}
+      {/* Payment History (Static) */}
       <div className="rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
         <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
           Payment History
