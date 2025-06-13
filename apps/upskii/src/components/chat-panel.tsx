@@ -193,11 +193,11 @@ export function ChatPanel({
             {dialogType === 'files' ? (
               t('upload_file_description')
             ) : dialogType === 'api' ? (
-              <div className="flex flex-col gap-2">
+              <span className="flex flex-col gap-2">
                 {t('api_input_description')}
                 <br />
-                <div className="flex items-center gap-2">
-                  {t('get_api_key_from')}:
+                <span className="flex items-center gap-2">
+                  {t('get-api-key-from')}:
                   <Link
                     href="https://aistudio.google.com/app/apikey"
                     target="_blank"
@@ -206,8 +206,8 @@ export function ChatPanel({
                   >
                     Google AI Studio
                   </Link>
-                </div>
-              </div>
+                </span>
+              </span>
             ) : (
               t('chat_visibility_description')
             )}

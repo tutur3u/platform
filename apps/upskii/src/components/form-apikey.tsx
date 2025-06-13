@@ -39,7 +39,9 @@ export default function ApiKeyInput({
     apiKey: z
       .string()
       .min(1, { message: t('api-key-required') })
-      .regex(/^AIza[0-9A-Za-z\-_]{35}$/, { message: t('api-key-required') }),
+      .regex(/^AIza[0-9A-Za-z\-_]{35}$/, {
+        message: t('api-key-required-format'),
+      }),
   });
 
   const form = useForm({

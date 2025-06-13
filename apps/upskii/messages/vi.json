@@ -210,7 +210,7 @@
     "api-key-invalid-title": "API Key không hợp lệ",
     "api-key-valid-title": "API Key hợp lệ",
     "api-key-invalid-desc": "Vui lòng cung cấp API Key hợp lệ hoặc thử lại",
-    "api-key-required": "Vui lòng cung cấp một định dạng hợp lệ",
+    "api-key-required-format": "Vui lòng cung cấp một định dạng hợp lệ",
     "api-key-saved-title": "Key API được lưu",
     "validate": "Kiểm tra",
     "save-api-key": "Lưu trữ",
@@ -221,8 +221,8 @@
     "delete-api-key": "Xóa chìa khóa API",
     "api-key-deleted-title": "Chìa khóa API đã được xóa",
     "api-key-deleted-desc": "Chìa khóa API của bạn đã được xóa",
-    "api_key_required": "Vui lòng cung cấp khóa API của bạn để tiếp tục",
-    "get_api_key_from": "Nhận khóa API của bạn từ"
+    "api-key-required": "Vui lòng cung cấp khóa API của bạn để tiếp tục",
+    "get-api-key-from": "Nhận khóa API của bạn từ"
   },
   "api-key-data-table": {
     "id": "Mã số",
