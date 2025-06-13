@@ -32,15 +32,6 @@ jobs:
             echo "skip_build=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Cache turbo build setup
-        if: steps.check_commits.outputs.skip_build != 'true'
-        uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
-
       - name: Setup bun
         if: steps.check_commits.outputs.skip_build != 'true'
         uses: oven-sh/setup-bun@v2
