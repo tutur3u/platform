@@ -63,7 +63,7 @@ export function RequestAccessButton({
         <Button
           variant="outline"
           size="sm"
-          className="flex items-center gap-2 border-blue-200 text-blue-600 hover:bg-blue-50"
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 whitespace-nowrap text-white hover:from-blue-700 hover:to-indigo-700 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-500 dark:hover:to-indigo-500"
         >
           <BookText className="h-4 w-4" />
           Request Education Access
