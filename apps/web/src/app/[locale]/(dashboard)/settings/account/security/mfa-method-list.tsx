@@ -1,17 +1,30 @@
 'use client';
 
 import TOTPDialog from './totp-dialog';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { FileText, KeyRound, Phone, Smartphone } from '@tuturuuu/ui/icons';
+import { useEffect, useState } from 'react';
 
-const mfaMethods = [
+type MFAStatus = 'enabled' | 'disabled' | 'coming-soon';
+
+interface MFAMethod {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  status: MFAStatus;
+  dialog: React.ReactNode;
+}
+
+const defaultMfaMethods: MFAMethod[] = [
   {
     id: 'authenticator',
     title: 'Authenticator app',
     description:
       'Use an app like Google Authenticator or Authy to generate codes',
     icon: Smartphone,
-    status: 'disabled',
+    status: 'coming-soon',
     dialog: <TOTPDialog />,
   },
   {
@@ -41,6 +54,66 @@ const mfaMethods = [
 ];
 
 export default function MFAMethodList() {
+  const [mfaMethods, setMfaMethods] = useState<MFAMethod[]>(defaultMfaMethods);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchMFAFactors = async () => {
+      try {
+        const { data: factors, error } = await supabase.auth.mfa.listFactors();
+
+        if (error) {
+          console.error('Error fetching MFA factors:', error);
+          setLoading(false);
+          return;
+        }
+
+        // Update the authenticator method status based on enrolled factors
+        const totpFactor = factors?.totp?.find(
+          (factor) => factor.status === 'verified'
+        );
+
+        setMfaMethods((prev) =>
+          prev.map((method) => {
+            if (method.id === 'authenticator') {
+              return {
+                ...method,
+                status: totpFactor ? 'enabled' : ('disabled' as MFAStatus),
+              };
+            }
+            return method;
+          })
+        );
+      } catch (error) {
+        console.error('Error fetching MFA factors:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMFAFactors();
+  }, [supabase.auth]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex animate-pulse items-start gap-3 rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+          >
+            <div className="h-8 w-8 rounded-full bg-gray-200 p-2 dark:bg-gray-700" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-1/3 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="h-3 w-2/3 rounded bg-gray-200 dark:bg-gray-700" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {mfaMethods.map((method) => {
