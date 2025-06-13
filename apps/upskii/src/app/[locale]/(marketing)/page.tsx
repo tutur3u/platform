@@ -61,7 +61,7 @@ export default function MarketingPage() {
         ease: 'easeInOut',
       },
     },
-  } as Variants;
+  } satisfies Variants;
 
   return (
     <>

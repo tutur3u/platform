@@ -24,7 +24,7 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
       <div className="flex w-full flex-col gap-8 md:flex-row">
         {/* Enhanced Navigation Sidebar */}
         <div className="w-full md:w-96">
-          <div className="sticky top-6">
+          <div className="sticky top-20">
             <div className="mb-4">
               <h2 className="text-sm font-semibold tracking-wide text-foreground/80 uppercase">
                 {t('account-settings')}

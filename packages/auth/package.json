@@ -8,7 +8,8 @@
     "./middleware": "./src/middleware/index.ts",
     "./cross-app": "./src/cross-app/index.ts",
     "./cross-app/server": "./src/cross-app/server.ts",
-    "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx"
+    "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx",
+    "./identity-linking": "./src/identity-linking.ts"
   },
   "license": "MIT",
   "scripts": {
@@ -23,8 +24,8 @@
     "react": "^19.1.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "@types/react": "^19.1.7",
+    "@types/node": "^24.0.1",
+    "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "eslint": "^9.28.0",
     "typescript": "^5.8.3"

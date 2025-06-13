@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.2.15",
+  "packageManager": "bun@1.2.16",
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.10",
     "@ai-sdk/anthropic": "^1.2.12",
@@ -47,7 +47,7 @@
     "next": "15.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.57"
+    "zod": "^3.25.63"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -55,8 +55,8 @@
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.0.0",
-    "@types/react": "^19.1.7",
+    "@types/node": "^24.0.1",
+    "@types/react": "^19.1.8",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",
     "typescript": "^5.8.3",
