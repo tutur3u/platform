@@ -1,10 +1,7 @@
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
-import {
-  createCentralizedAuthMiddleware,
-  createMFAMiddleware,
-} from '@tuturuuu/auth/middleware';
+import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import Negotiator from 'negotiator';
@@ -21,26 +18,20 @@ const authMiddleware = createCentralizedAuthMiddleware({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
-});
-
-const mfaMiddleware = createMFAMiddleware({
-  enforceForAll: true,
+  mfa: {
+    enabled: true,
+    excludedPaths: ['/verify-mfa', '/mfa', '/api/', '/login', '/signup'],
+    enforceForAll: true,
+  },
 });
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  // First handle authentication with the centralized middleware
+  // Handle authentication and MFA with the centralized middleware
   const authRes = await authMiddleware(req);
 
   // If the auth middleware returned a redirect response, return it
   if (authRes.headers.has('Location')) {
     return authRes;
-  }
-
-  // Check if MFA is required
-  const mfaRes = await mfaMiddleware(req);
-
-  if (mfaRes) {
-    return mfaRes;
   }
 
   // Skip locale handling for API routes

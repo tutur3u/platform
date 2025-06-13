@@ -17,10 +17,15 @@ const authMiddleware = createCentralizedAuthMiddleware({
   publicPaths: PUBLIC_PATHS,
   excludeRootPath: true,
   skipApiRoutes: true,
+  mfa: {
+    enabled: true,
+    excludedPaths: ['/verify-mfa', '/mfa', '/api/', '/login', '/signup'],
+    enforceForAll: true,
+  },
 });
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  // First handle authentication with the centralized middleware
+  // Handle authentication and MFA with the centralized middleware
   const authRes = await authMiddleware(req);
 
   // If the auth middleware returned a redirect response, return it

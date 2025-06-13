@@ -154,6 +154,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       });
 
       if (error) throw error;
+      router.refresh();
 
       if (await needsMFA()) {
         setRequiresMFA(true);

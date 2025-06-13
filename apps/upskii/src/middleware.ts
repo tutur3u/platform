@@ -12,15 +12,20 @@ const WEB_APP_URL =
     ? 'https://tuturuuu.com'
     : 'http://localhost:7803';
 
-// Create the centralized auth middleware
+// Create the centralized auth middleware with MFA
 const authMiddleware = createCentralizedAuthMiddleware({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
+  mfa: {
+    enabled: true,
+    excludedPaths: ['/verify-mfa', '/mfa', '/api/', '/login', '/signup'],
+    enforceForAll: true,
+  },
 });
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  // If token auth didn't handle it, try centralized auth
+  // Handle authentication and MFA with the centralized middleware
   const authRes = await authMiddleware(req);
 
   // If the auth middleware returned a redirect response, return it
