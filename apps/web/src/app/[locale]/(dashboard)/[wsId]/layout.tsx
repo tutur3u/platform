@@ -35,6 +35,7 @@ import {
   PencilLine,
   Play,
   Presentation,
+  Receipt,
   ScanSearch,
   Sparkles,
   Users,
@@ -376,6 +377,13 @@ export default async function Layout({ children, params }: LayoutProps) {
       ],
     },
     null,
+    {
+      title: t('sidebar_tabs.billing'),
+      href: `/${wsId}/inventory`,
+      icon: <Receipt className="h-5 w-5" />,
+      // disabled: ENABLE_AI_ONLY ,
+      shortcut: 'B',
+    },
     {
       title: t('common.settings'),
       href: `/${wsId}/settings`,
