@@ -1,5 +1,4 @@
 import ResetPasswordDialog from './reset-password-dialog';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,
   CardContent,
@@ -11,16 +10,8 @@ import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Shield } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
-interface SecuritySettingsCardProps {
-  user: WorkspaceUser | null;
-}
-
-export default async function SecuritySettingsCard({
-  user,
-}: SecuritySettingsCardProps) {
+export default async function SecuritySettingsCard() {
   const t = await getTranslations('settings-account');
-
-  if (!user) return null;
 
   return (
     <Card className="border-orange-200 dark:border-orange-800">
@@ -42,7 +33,7 @@ export default async function SecuritySettingsCard({
           title={t('change-password')}
           description={t('change-password-description')}
         >
-          <ResetPasswordDialog user={user} />
+          <ResetPasswordDialog />
         </SettingItemTab>
       </CardContent>
     </Card>

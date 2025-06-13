@@ -1,4 +1,3 @@
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,
   CardContent,
@@ -9,14 +8,8 @@ import {
 import { KeyRound } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
-interface MFACardProps {
-  user: WorkspaceUser | null;
-}
-
-export default async function MFACard({ user }: MFACardProps) {
+export default async function MFACard() {
   const t = await getTranslations('settings-account');
-
-  if (!user) return null;
 
   return (
     <Card className="border-emerald-200 dark:border-emerald-800">
