@@ -36,7 +36,7 @@ export default async function BillingPage() {
   const planHistory = [
     {
       planName: products[0]?.name,
-      price: products[0]?.name == 'Enterprise' ?'$Custom' : '$19.99',
+      price: products[0]?.name == 'Enterprise' ? '$Custom' : '$19.99',
       // startDate: 'Jan 1, 2023',
       // endDate: 'Dec 31, 2023',
       // status: 'active',

@@ -61,4 +61,3 @@ export const appConfig: AppConfig = {
   },
   defaultModel: process.env.DEFAULT_AI_MODEL || 'gemini-2.0-flash-001',
 };
-
