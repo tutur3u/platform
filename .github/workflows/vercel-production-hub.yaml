@@ -2,8 +2,6 @@ name: Vercel NCT Hub Production Deployment
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
   NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_ANON_KEY }}
   SUPABASE_SERVICE_KEY: ${{ secrets.PRODUCTION_SUPABASE_SERVICE_KEY }}
@@ -35,15 +33,6 @@ jobs:
             echo "This is the latest commit. Proceeding with build."
             echo "skip_build=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Cache turbo build setup
-        if: steps.check_commits.outputs.skip_build != 'true'
-        uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
 
       - name: Setup bun
         if: steps.check_commits.outputs.skip_build != 'true'

@@ -1,4 +1,4 @@
-import { vertex } from '@ai-sdk/google-vertex/edge';
+import { google as vertex } from '@ai-sdk/google';
 import { createClient } from '@ncthub/supabase/next/server';
 import { Message, generateText } from 'ai';
 import { NextResponse } from 'next/server';
