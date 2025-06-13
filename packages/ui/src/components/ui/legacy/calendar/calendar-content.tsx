@@ -181,9 +181,22 @@ export const CalendarContent = ({
     newDate.setHours(0, 0, 0, 0);
     newDate.setDate(1); // First day of month
 
+    // Get all dates in the month
+    const monthStart = new Date(newDate);
+    const monthEnd = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
+    const monthDates: Date[] = [];
+
+    for (
+      let d = new Date(monthStart);
+      d <= monthEnd;
+      d.setDate(d.getDate() + 1)
+    ) {
+      monthDates.push(new Date(d));
+    }
+
     transition('month', () => {
       handleSetView('month');
-      setDates([newDate]);
+      setDates(monthDates);
     });
   }, [date, transition, handleSetView, setDates]);
 
@@ -324,7 +337,25 @@ export const CalendarContent = ({
       const newDate = new Date(date);
       newDate.setHours(0, 0, 0, 0);
       newDate.setDate(1);
-      setDates([newDate]);
+
+      // Get all dates in the month
+      const monthStart = new Date(newDate);
+      const monthEnd = new Date(
+        newDate.getFullYear(),
+        newDate.getMonth() + 1,
+        0
+      );
+      const monthDates: Date[] = [];
+
+      for (
+        let d = new Date(monthStart);
+        d <= monthEnd;
+        d.setDate(d.getDate() + 1)
+      ) {
+        monthDates.push(new Date(d));
+      }
+
+      setDates(monthDates);
     }
   }, [date, view]);
 
@@ -411,7 +442,7 @@ export const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="relative scrollbar-none flex-1 overflow-hidden">
+      <div className="relative scrollbar-none flex-1 overflow-hidden bg-background/50">
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar date={dates[0]} workspace={workspace} />
         ) : (

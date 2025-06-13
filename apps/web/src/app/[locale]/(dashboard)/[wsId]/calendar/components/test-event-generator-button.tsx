@@ -4,7 +4,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { FlaskConical, Loader2 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { useState } from 'react';
+
+// Extend dayjs with timezone and UTC plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface TestEventGeneratorButtonProps {
   wsId: string;
@@ -25,12 +32,18 @@ export default function TestEventGeneratorButton({
     });
 
     try {
+      // Get user's timezone
+      const userTimezone = dayjs.tz.guess();
+
       const response = await fetch('/api/test-events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ wsId }),
+        body: JSON.stringify({
+          wsId,
+          timezone: userTimezone,
+        }),
       });
 
       const data = await response.json();

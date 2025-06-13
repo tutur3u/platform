@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 function PricingPage() {
-  redirect('/#pricing');
+  redirect('/?hash-nav=1#pricing');
 }
 
 export default PricingPage;

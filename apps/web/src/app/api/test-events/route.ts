@@ -2,11 +2,18 @@ import { DEV_MODE } from '@/constants/common';
 import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Helper to add minutes to a date
-const addMinutes = (date: Date, minutes: number): Date => {
-  return new Date(date.getTime() + minutes * 60000);
+// Extend dayjs with timezone and UTC plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+// Helper to add minutes to a dayjs date
+const addMinutes = (date: dayjs.Dayjs, minutes: number): dayjs.Dayjs => {
+  return date.add(minutes, 'minute');
 };
 
 export async function POST(request: NextRequest) {
@@ -17,11 +24,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { wsId, count = 1000 } = await request.json();
+  const { wsId, count = 1000, timezone = 'UTC' } = await request.json();
 
   if (!wsId) {
     return NextResponse.json(
       { error: 'Workspace ID is required' },
+      { status: 400 }
+    );
+  }
+
+  // Validate timezone parameter
+  if (!timezone || typeof timezone !== 'string') {
+    return NextResponse.json(
+      { error: 'Invalid timezone parameter' },
       { status: 400 }
     );
   }
@@ -46,37 +61,55 @@ export async function POST(request: NextRequest) {
 
   // 2. Generate events sequentially to be back-to-back
   const generatedEvents = [];
-  const startDate = new Date();
-  startDate.setHours(ACTIVE_HOURS_START, 0, 0, 0);
 
-  let cursorTime = new Date(startDate);
+  // Start from today at the beginning of active hours in the user's timezone
+  let startDate;
+  try {
+    startDate = dayjs()
+      .tz(timezone)
+      .hour(ACTIVE_HOURS_START)
+      .minute(0)
+      .second(0)
+      .millisecond(0);
+  } catch (error) {
+    console.error('Invalid timezone:', timezone, error);
+    return NextResponse.json(
+      { error: `Invalid timezone: ${timezone}` },
+      { status: 400 }
+    );
+  }
+  let cursorTime = startDate;
 
   for (let i = 0; i < count; i++) {
     // Varying durations from 15 minutes to 4 hours (240 minutes)
     const durationInMinutes = (Math.floor(Math.random() * 16) + 1) * 15;
 
-    const eventStartTime = new Date(cursorTime);
+    const eventStartTime = cursorTime;
     const eventEndTime = addMinutes(eventStartTime, durationInMinutes);
 
     // If event ends after active hours, move to the next day and retry this iteration
     if (
-      eventEndTime.getHours() >= ACTIVE_HOURS_END ||
-      eventEndTime.getDate() > eventStartTime.getDate()
+      eventEndTime.hour() >= ACTIVE_HOURS_END ||
+      eventEndTime.date() > eventStartTime.date()
     ) {
-      cursorTime.setDate(cursorTime.getDate() + 1);
-      cursorTime.setHours(ACTIVE_HOURS_START, 0, 0, 0);
+      cursorTime = cursorTime
+        .add(1, 'day')
+        .hour(ACTIVE_HOURS_START)
+        .minute(0)
+        .second(0)
+        .millisecond(0);
       i--; // Decrement to ensure we still generate the correct total `count` of events
       continue;
     }
 
     generatedEvents.push({
       title: `Generated Event ${i + 1}`,
-      start_at: eventStartTime.toISOString(),
-      end_at: eventEndTime.toISOString(),
+      start_at: eventStartTime.utc().toISOString(),
+      end_at: eventEndTime.utc().toISOString(),
     });
 
     // Move cursor to the end of the current event
-    cursorTime = new Date(eventEndTime);
+    cursorTime = eventEndTime;
 
     // Add a random pre-determined break (0 or 15 minutes)
     const gapInMinutes = Math.random() < 0.5 ? 0 : 15;
@@ -117,6 +150,6 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    message: `Generated ${allTestEvents.length} new test events.`,
+    message: `Generated ${allTestEvents.length} new test events in ${timezone} timezone.`,
   });
 }

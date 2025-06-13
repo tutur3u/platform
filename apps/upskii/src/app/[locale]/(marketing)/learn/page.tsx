@@ -9,7 +9,7 @@ import {
   GraduationCap,
   Sparkles,
 } from '@tuturuuu/ui/icons';
-import { motion } from 'framer-motion';
+import { type Variants, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -179,7 +179,7 @@ export default function LearnPage() {
         staggerChildren: 0.1,
       },
     },
-  };
+  } satisfies Variants;
 
   return (
     <div className="relative container mx-auto space-y-16 p-6">

@@ -10,6 +10,7 @@ import MeetTogetherMenuItem from './meet-together-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
+import { CommandPalette } from '@/components/command';
 import { SidebarContext } from '@/context/sidebar-context';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -22,6 +23,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -36,12 +38,14 @@ import {
   PanelLeftOpen,
   Settings,
   SquareMousePointer,
+  Terminal,
   User,
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useContext, useState } from 'react';
 
 export default function UserNavClient({
@@ -54,11 +58,20 @@ export default function UserNavClient({
   hideMetadata?: boolean;
 }) {
   const t = useTranslations();
+
+  const { wsId } = useParams();
   const [open, setOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const sidebar = useContext(SidebarContext);
 
   return (
     <>
+      {wsId && (
+        <CommandPalette
+          open={commandPaletteOpen}
+          setOpen={setCommandPaletteOpen}
+        />
+      )}
       {user && (
         <Dialog open={open} onOpenChange={setOpen}>
           <UserSettingsDialog user={user} />
@@ -125,6 +138,13 @@ export default function UserNavClient({
           <MeetTogetherMenuItem />
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
+            {wsId && (
+              <DropdownMenuItem onSelect={() => setCommandPaletteOpen(true)}>
+                <Terminal className="mr-2 h-4 w-4" />
+                <span>Command Palette</span>
+                <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
             {sidebar && (
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="hidden md:flex">

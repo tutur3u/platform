@@ -21,6 +21,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Variants, motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import {
   Area,
@@ -93,7 +94,7 @@ const Confetti = dynamic(() => import('react-confetti'), {
 });
 
 // Animation variants
-const floatingVariants: Variants = {
+const floatingVariants = {
   initial: { y: 0 },
   float: {
     y: [-5, 5],
@@ -104,7 +105,7 @@ const floatingVariants: Variants = {
       ease: 'easeInOut',
     },
   },
-};
+} satisfies Variants;
 
 // Helper functions for data visualization
 function generateContributionTimeline(
@@ -494,10 +495,12 @@ export default function ContributorsClient({
                     <div className="mb-4 flex items-center justify-between">
                       <div className="relative">
                         <div className="absolute -inset-0.5 rounded-full bg-linear-to-r from-primary to-purple-600 opacity-75 blur-sm group-hover:opacity-100" />
-                        <img
+                        <Image
                           src={contributor.avatar_url}
                           alt={contributor.login}
                           className="relative h-16 w-16 rounded-full border-2 border-background object-cover"
+                          width={64}
+                          height={64}
                         />
                         {index < 3 && (
                           <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">

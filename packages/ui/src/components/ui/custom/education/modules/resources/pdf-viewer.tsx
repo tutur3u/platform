@@ -55,11 +55,11 @@ export function PDFViewer({ url }: { url: string }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="relative aspect-video"
+            className="relative aspect-auto"
             style={{ width: pdfWidth }}
           >
             <div
-              className="absolute inset-0 aspect-video animate-pulse bg-white"
+              className="absolute inset-0 aspect-auto animate-pulse bg-white"
               style={{ width: pdfWidth }}
             />
             <Page
@@ -71,7 +71,7 @@ export function PDFViewer({ url }: { url: string }) {
               className={cn(isLoading ? 'opacity-0' : 'opacity-100')}
               loading={
                 <div
-                  className="absolute inset-0 aspect-video animate-pulse bg-white"
+                  className="absolute inset-0 aspect-auto animate-pulse bg-white"
                   style={{ width: pdfWidth }}
                 />
               }
@@ -79,38 +79,41 @@ export function PDFViewer({ url }: { url: string }) {
           </motion.div>
         </AnimatePresence>
       </Document>
-      <div className="mt-2 flex flex-col items-stretch justify-center gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => changePage(-1)}
-            disabled={pageNumber <= 1 || isLoading}
-            className="w-full md:w-auto"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            {t('common.previous')}
-          </Button>
-          <p className="hidden text-center text-sm md:block">
+      {numPages > 1 && (
+        <div className="mt-2 flex flex-col items-stretch justify-center gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => changePage(-1)}
+              disabled={pageNumber <= 1 || isLoading}
+              className="w-full md:w-auto"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              {t('common.previous')}
+            </Button>
+            <p className="hidden text-center text-sm md:block">
+              {t('common.page')} <span className="font-bold">{pageNumber}</span>{' '}
+              {t('common.of')}{' '}
+              <span className="font-bold">{numPages || 1}</span>
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => changePage(1)}
+              disabled={pageNumber >= numPages || isLoading}
+              className="w-full md:w-auto"
+            >
+              {t('common.next')}
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-center text-sm md:hidden">
             {t('common.page')} <span className="font-bold">{pageNumber}</span>{' '}
             {t('common.of')} <span className="font-bold">{numPages || 1}</span>
           </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => changePage(1)}
-            disabled={pageNumber >= numPages || isLoading}
-            className="w-full md:w-auto"
-          >
-            {t('common.next')}
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
-        <p className="text-center text-sm md:hidden">
-          {t('common.page')} <span className="font-bold">{pageNumber}</span>{' '}
-          {t('common.of')} <span className="font-bold">{numPages || 1}</span>
-        </p>
-      </div>
+      )}
     </div>
   );
 }

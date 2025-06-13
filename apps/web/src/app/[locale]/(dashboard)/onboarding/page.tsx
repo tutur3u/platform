@@ -1,11 +1,19 @@
+import { OnboardingSettings } from './onboarding-settings';
 import WorkspaceInvites from './workspace-invites';
+import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
+import { cookies as c } from 'next/headers';
 import { Suspense } from 'react';
 
 export default async function OnboardingPage() {
   const t = await getTranslations('onboarding');
+  const user = await getCurrentUser();
+
+  const cookies = await c();
+  const currentLocale = cookies.get(LOCALE_COOKIE_NAME)?.value;
 
   return (
     <div className="inset-0 flex h-screen items-center justify-center overflow-scroll p-4 lg:px-32">
@@ -27,6 +35,8 @@ export default async function OnboardingPage() {
             </div>
           </div>
 
+          <Separator />
+          <OnboardingSettings user={user} currentLocale={currentLocale} />
           <Separator />
           <WorkspaceInvites />
         </Suspense>

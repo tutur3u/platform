@@ -91,6 +91,8 @@ export const getWorkspaceCourseColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <WorkspaceCourseRowActions row={row} />,
+    cell: ({ row }) => (
+      <WorkspaceCourseRowActions row={row} enableCerts={true} />
+    ),
   },
 ];

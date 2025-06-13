@@ -32,7 +32,7 @@ export const WeekdayBar = ({
       });
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col bg-background/50">
       {/* Weekday header bar */}
       <div className="flex">
         {/* Time column header */}

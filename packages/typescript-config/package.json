@@ -5,5 +5,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "packageManager": "bun@1.2.15"
+  "packageManager": "bun@1.2.16"
 }

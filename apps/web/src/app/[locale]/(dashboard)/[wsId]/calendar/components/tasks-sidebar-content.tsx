@@ -215,9 +215,9 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="@container ml-2 hidden h-full w-1/3 flex-col rounded-lg border border-border bg-background/80 text-foreground shadow-lg backdrop-blur-sm xl:flex">
+      <div className="@container ml-2 hidden h-full w-1/3 flex-col rounded-lg border border-border bg-background/50 text-foreground shadow-lg backdrop-blur-sm xl:flex">
         {/* Header */}
-        <div className="@container flex items-center justify-between rounded-t-lg border-b bg-muted/30 px-4 py-3">
+        <div className="@container flex items-center justify-between rounded-t-lg border-b bg-background/50 px-4 py-3">
           <div className="flex w-full items-center justify-between gap-1">
             <TimeTracker wsId={wsId} tasks={allTasks} />
             <Button
