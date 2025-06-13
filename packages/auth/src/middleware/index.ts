@@ -147,24 +147,16 @@ export function createMFAMiddleware(options: MFAMiddlewareOptions = {}) {
 
       if (!user) return null;
 
-      // Check if user has verified MFA factors
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      const hasVerifiedMFA = factors?.all?.some(
-        (factor) => factor.status === 'verified'
-      );
+      // Check current AAL level
+      const { data: assuranceLevel } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
-      if (hasVerifiedMFA) {
-        // Check current AAL level
-        const { data: assuranceLevel } =
-          await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-
-        if (
-          assuranceLevel?.currentLevel === 'aal1' &&
-          assuranceLevel?.nextLevel === 'aal2'
-        ) {
-          // Sign out for security
-          await supabase.auth.signOut();
-        }
+      if (
+        assuranceLevel?.currentLevel === 'aal1' &&
+        assuranceLevel?.nextLevel === 'aal2'
+      ) {
+        // Sign out for security
+        await supabase.auth.signOut();
       }
 
       return null; // Continue processing
