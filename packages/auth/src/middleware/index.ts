@@ -43,22 +43,29 @@ async function handleMFACheck(
       // Check if this is the central web app handling MFA
       const isCentralWebApp =
         req.nextUrl.port === '7803' ||
-        req.nextUrl.hostname.includes('tuturuuu.com') ||
+        ['tuturuuu.com'].includes(req.nextUrl.hostname) ||
         req.nextUrl.origin === webAppUrl;
 
       if (isCentralWebApp) {
         // Handle MFA verification in the login page
-        const returnUrl = encodeURIComponent(
-          req.nextUrl.pathname + req.nextUrl.search
-        );
+        // Preserve existing nextUrl if it exists, otherwise use current path
+        const existingNextUrl = req.nextUrl.searchParams.get('nextUrl');
+        const nextUrl =
+          existingNextUrl ||
+          encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search);
+
         const loginUrl = new URL('/login', req.nextUrl);
-        loginUrl.searchParams.set('nextUrl', returnUrl);
+        loginUrl.searchParams.set('nextUrl', nextUrl);
         loginUrl.searchParams.set('mfa', 'required');
 
         return NextResponse.redirect(loginUrl);
       } else {
         // All other apps redirect to central web app for MFA verification
-        const returnUrl = encodeURIComponent(req.nextUrl.href);
+        // Preserve existing returnUrl if it exists, otherwise use current URL
+        const existingReturnUrl = req.nextUrl.searchParams.get('returnUrl');
+        const returnUrl =
+          existingReturnUrl || encodeURIComponent(req.nextUrl.href);
+
         const loginUrl = new URL('/login', webAppUrl);
         loginUrl.searchParams.set('returnUrl', returnUrl);
         loginUrl.searchParams.set('mfa', 'required');
@@ -297,22 +304,29 @@ export function createMFAMiddleware(options: MFAMiddlewareOptions = {}) {
         // Check if this is the central web app handling MFA
         const isCentralWebApp =
           req.nextUrl.port === '7803' ||
-          req.nextUrl.hostname.includes('tuturuuu.com') ||
+          ['tuturuuu.com'].includes(req.nextUrl.hostname) ||
           req.nextUrl.origin === centralWebAppUrl;
 
         if (isCentralWebApp) {
           // Handle MFA verification in the login page
-          const returnUrl = encodeURIComponent(
-            req.nextUrl.pathname + req.nextUrl.search
-          );
+          // Preserve existing nextUrl if it exists, otherwise use current path
+          const existingNextUrl = req.nextUrl.searchParams.get('nextUrl');
+          const nextUrl =
+            existingNextUrl ||
+            encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search);
+
           const loginUrl = new URL('/login', req.nextUrl);
-          loginUrl.searchParams.set('nextUrl', returnUrl);
+          loginUrl.searchParams.set('nextUrl', nextUrl);
           loginUrl.searchParams.set('mfa', 'required');
 
           return NextResponse.redirect(loginUrl);
         } else {
           // All other apps redirect to central web app for MFA verification
-          const returnUrl = encodeURIComponent(req.nextUrl.href);
+          // Preserve existing returnUrl if it exists, otherwise use current URL
+          const existingReturnUrl = req.nextUrl.searchParams.get('returnUrl');
+          const returnUrl =
+            existingReturnUrl || encodeURIComponent(req.nextUrl.href);
+
           const loginUrl = new URL('/login', centralWebAppUrl);
           loginUrl.searchParams.set('returnUrl', returnUrl);
           loginUrl.searchParams.set('mfa', 'required');

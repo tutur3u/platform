@@ -119,7 +119,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         return;
       }
 
-      const nextUrl = new URL(returnUrl);
+      const nextUrl = new URL(decodeURIComponent(returnUrl));
       nextUrl.searchParams.set('token', token);
       nextUrl.searchParams.set('originApp', 'web');
       nextUrl.searchParams.set('targetApp', returnApp);
@@ -454,13 +454,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       } = await supabase.auth.getUser();
       setUser(user);
 
-      // Check if MFA is required from URL parameter
-      const mfaRequired = searchParams.get('mfa') === 'required';
-      if (user && mfaRequired) {
+      // Always check if MFA is needed when user is logged in
+      if (user) {
         const needsAuth = await needsMFA();
-        if (needsAuth) {
-          setRequiresMFA(true);
-        }
+        setRequiresMFA(needsAuth);
+      } else {
+        setRequiresMFA(false);
       }
 
       setInitialized(true);
