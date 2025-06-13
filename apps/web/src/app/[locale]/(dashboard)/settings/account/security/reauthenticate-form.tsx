@@ -14,7 +14,7 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as z from 'zod';
 
 const formSchema = z.object({
@@ -35,7 +35,7 @@ export default function ReauthenticateForm({
   loading: boolean;
 }) {
   const t = useTranslations();
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(60);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -47,18 +47,18 @@ export default function ReauthenticateForm({
   const handleResend = async () => {
     await onResend();
     setResendCooldown(60);
-
-    // Countdown timer
-    const timer = setInterval(() => {
-      setResendCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
+
+  // Reduce cooldown by 1 every second
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   return (
     <Form {...form}>
