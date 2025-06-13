@@ -1,5 +1,6 @@
 {
   "common": {
+    "success": "Thành công",
     "alpha": "Alpha",
     "beta": "Beta",
     "and": "và",
@@ -63,7 +64,6 @@
     "processing": "Đang xử lý...",
     "saving": "Đang lưu thay đổi...",
     "loading": "Đang tải",
-    "success": "Thành công",
     "complete": "Hoàn tất",
     "default": "Mặc định",
     "all": "Tất cả",
