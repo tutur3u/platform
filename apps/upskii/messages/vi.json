@@ -220,7 +220,9 @@
     "api_input_description": "Nhập chìa khóa API của bạn để sử dụng những tính năng AI",
     "delete-api-key": "Xóa chìa khóa API",
     "api-key-deleted-title": "Chìa khóa API đã được xóa",
-    "api-key-deleted-desc": "Chìa khóa API của bạn đã được xóa"
+    "api-key-deleted-desc": "Chìa khóa API của bạn đã được xóa",
+    "api_key_required": "Vui lòng cung cấp khóa API của bạn để tiếp tục",
+    "get_api_key_from": "Nhận khóa API của bạn từ"
   },
   "api-key-data-table": {
     "id": "Mã số",
@@ -1824,7 +1826,7 @@
           "answer5": "Nền tảng này có khả năng tùy biến cao với các tùy chọn gắn nhãn trắng, nhãn hiệu tùy chỉnh, quy trình công việc có thể định cấu hình và tích hợp API. \nBạn có thể điều chỉnh trải nghiệm học tập để phù hợp với nhu cầu của tổ chức bạn.",
           "question6": "Các yêu cầu phần cứng là gì?",
           "answer6": "Nền tảng dựa trên đám mây của chúng tôi hoạt động trên mọi trình duyệt web hiện đại. \nĐể tổ chức hội nghị truyền hình tối ưu, chúng tôi khuyên bạn nên kết nối Internet ổn định và cập nhật các thiết bị có chức năng camera và micrô.",
-          "question7": "Việc sao lưu dữ liệu được xử lí như thế nào?",
+          "question7": "Việc sao lưu dữ liệu ược xử lí như thế nào?",
           "answer7": "Chúng tôi duy trì các bản sao lưu tự động hàng ngày với khả năng lưu giữ trong 30 ngày, lưu trữ dự phòng theo địa lý và các giao thức khắc phục thảm họa. \nDữ liệu của bạn luôn an toàn và có thể truy cập được."
         }
       }
@@ -2905,7 +2907,7 @@
     "change-password-description": "Đổi mật khẩu của bạn.",
     "delete-account": "Xóa tài khoản",
     "delete-account-description": "Xóa tài khoản của bạn.",
-    "delete-account-message": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản.",
+    "delete-account-message": "Tài khoản của bạn sẽ bị xóa vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản.",
     "new_avatar": "Hình đại diện mới",
     "upload_avatar": "Hình đại diện mới",
     "remove_avatar": "Xóa hình đại diện",
