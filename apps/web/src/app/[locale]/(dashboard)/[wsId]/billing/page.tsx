@@ -2,7 +2,7 @@ import { BillingClient } from './billing-client';
 import PurchaseLink from './data-polar-checkout';
 import { api } from '@/lib/polar';
 import { Button } from '@tuturuuu/ui/button';
-import { CheckCircle, CreditCard, Receipt } from 'lucide-react';
+import { CreditCard, Receipt } from 'lucide-react';
 
 const fetchProducts = async () => {
   try {
@@ -17,7 +17,6 @@ const fetchProducts = async () => {
 export default async function BillingPage() {
   // Fetch data directly on the server
   const products = await fetchProducts();
-  console.log(products, 'pro');
 
   const currentPlan = {
     name: 'Pro',
@@ -38,9 +37,6 @@ export default async function BillingPage() {
     {
       planName: products[0]?.name,
       price: products[0]?.name == 'Enterprise' ? '$Custom' : '$19.99',
-      // startDate: 'Jan 1, 2023',
-      // endDate: 'Dec 31, 2023',
-      // status: 'active',
     },
     {
       planName: 'Basic',
@@ -146,9 +142,7 @@ export default async function BillingPage() {
                       {product.name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                      {product.name === 'Enterprise'
-                        ? 'Custom Pricing'
-                        : `$${product.amount / 100}`}
+                      {product.name === 'Enterprise' ? 'Custom Pricing' : `$8`}
                     </td>
                     <td className="max-w-md truncate px-4 py-3 text-card-foreground">
                       {product.description || '-'}
