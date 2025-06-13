@@ -6,8 +6,8 @@ import ReauthenticateForm, {
 import ResetPasswordForm, {
   type ResetPasswordFormData,
 } from './reset-password-form';
+import { DEV_MODE } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -20,11 +20,7 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-export default function ResetPasswordDialog({
-  user,
-}: {
-  user: WorkspaceUser | null;
-}) {
+export default function ResetPasswordDialog() {
   const t = useTranslations();
 
   const [open, setOpen] = useState(false);
@@ -34,8 +30,6 @@ export default function ResetPasswordDialog({
     useState<ResetPasswordFormData | null>(null);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
-    if (!user?.email) return;
-
     setLoading(true);
     try {
       const supabase = createClient();
@@ -62,6 +56,15 @@ export default function ResetPasswordDialog({
           }
 
           setNeedsReauth(true);
+
+          // if on DEV_MODE, auto-open inbucket
+          if (DEV_MODE) {
+            window.open(
+              window.location.origin.replace('7803', '8004'),
+              '_blank'
+            );
+          }
+
           toast({
             title: 'Verification Required',
             description:

@@ -1,7 +1,85 @@
 import { updateSession } from '@tuturuuu/supabase/next/middleware';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+
+/**
+ * Handles MFA verification checks for authenticated users
+ */
+async function handleMFACheck(
+  req: NextRequest,
+  webAppUrl: string,
+  protectedPaths: string[],
+  excludedPaths: string[],
+  enforceForAll: boolean
+): Promise<NextResponse | null> {
+  const pathname = req.nextUrl.pathname;
+
+  // Skip if path is excluded
+  if (excludedPaths.some((path) => pathname.startsWith(path))) {
+    return null;
+  }
+
+  // Check if this path requires MFA
+  const needsMFA =
+    enforceForAll || protectedPaths.some((path) => pathname.startsWith(path));
+
+  if (!needsMFA) {
+    return null;
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Check current AAL level
+    const { data: assuranceLevel } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+    if (
+      assuranceLevel?.currentLevel === 'aal1' &&
+      assuranceLevel?.nextLevel === 'aal2'
+    ) {
+      // Check if this is the central web app handling MFA
+      const isCentralWebApp =
+        req.nextUrl.port === '7803' ||
+        ['tuturuuu.com'].includes(req.nextUrl.hostname) ||
+        req.nextUrl.origin === webAppUrl;
+
+      if (isCentralWebApp) {
+        // Handle MFA verification in the login page
+        // Preserve existing nextUrl if it exists, otherwise use current path
+        const existingNextUrl = req.nextUrl.searchParams.get('nextUrl');
+        const nextUrl =
+          existingNextUrl ||
+          encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search);
+
+        const loginUrl = new URL('/login', req.nextUrl);
+        loginUrl.searchParams.set('nextUrl', nextUrl);
+        loginUrl.searchParams.set('mfa', 'required');
+
+        return NextResponse.redirect(loginUrl);
+      } else {
+        // All other apps redirect to central web app for MFA verification
+        // Preserve existing returnUrl if it exists, otherwise use current URL
+        const existingReturnUrl = req.nextUrl.searchParams.get('returnUrl');
+        const returnUrl =
+          existingReturnUrl || encodeURIComponent(req.nextUrl.href);
+
+        const loginUrl = new URL('/login', webAppUrl);
+        loginUrl.searchParams.set('returnUrl', returnUrl);
+        loginUrl.searchParams.set('mfa', 'required');
+
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error checking MFA:', error);
+    return null;
+  }
+}
 
 interface CentralizedAuthOptions {
   /**
@@ -31,6 +109,57 @@ interface CentralizedAuthOptions {
    * @default true
    */
   skipApiRoutes?: boolean;
+
+  /**
+   * MFA configuration options
+   */
+  mfa?: {
+    /**
+     * Whether to enable MFA enforcement
+     * @default true
+     */
+    enabled?: boolean;
+
+    /**
+     * Paths that require MFA
+     */
+    protectedPaths?: string[];
+
+    /**
+     * Paths that are excluded from MFA checks
+     */
+    excludedPaths?: string[];
+
+    /**
+     * Whether to enforce MFA for all authenticated routes
+     * @default true
+     */
+    enforceForAll?: boolean;
+  };
+}
+
+interface MFAMiddlewareOptions {
+  /**
+   * Paths that require MFA
+   */
+  protectedPaths?: string[];
+
+  /**
+   * Paths that are excluded from MFA checks
+   */
+  excludedPaths?: string[];
+
+  /**
+   * Whether to enforce MFA for all authenticated routes
+   * @default true
+   */
+  enforceForAll?: boolean;
+
+  /**
+   * The URL of the central web app where MFA verification is handled
+   * If not provided, defaults to port detection or production URL
+   */
+  webAppUrl?: string;
 }
 
 /**
@@ -45,7 +174,15 @@ export function createCentralizedAuthMiddleware(
     excludeRootPath = false,
     isPublicPath,
     skipApiRoutes = true,
+    mfa = {},
   } = options;
+
+  const {
+    enabled: mfaEnabled = true,
+    protectedPaths: mfaProtectedPaths = [],
+    excludedPaths: mfaExcludedPaths = ['/api/', '/login'],
+    enforceForAll: mfaEnforceForAll = true,
+  } = mfa;
 
   return async function authMiddleware(
     req: NextRequest
@@ -87,10 +224,125 @@ export function createCentralizedAuthMiddleware(
         return redirectResponse;
       }
 
+      // If user is authenticated and MFA is enabled, check MFA requirements
+      if (user && mfaEnabled) {
+        const mfaRedirect = await handleMFACheck(
+          req,
+          webAppUrl,
+          mfaProtectedPaths,
+          mfaExcludedPaths,
+          mfaEnforceForAll
+        );
+
+        if (mfaRedirect) {
+          return mfaRedirect;
+        }
+      }
+
       return res;
     } catch (error) {
       console.error('Error updating session:', error);
       return NextResponse.redirect(new URL('/', req.nextUrl));
+    }
+  };
+}
+
+export function createMFAMiddleware(options: MFAMiddlewareOptions = {}) {
+  const {
+    protectedPaths = [],
+    excludedPaths = ['/api/', '/login'],
+    enforceForAll = true,
+    webAppUrl,
+  } = options;
+
+  return async function mfaMiddleware(
+    req: NextRequest
+  ): Promise<NextResponse | null> {
+    const pathname = req.nextUrl.pathname;
+
+    // Skip if path is excluded
+    if (excludedPaths.some((path) => pathname.startsWith(path))) {
+      return null;
+    }
+
+    // Check if this path requires MFA
+    const needsMFA =
+      enforceForAll || protectedPaths.some((path) => pathname.startsWith(path));
+
+    if (!needsMFA) {
+      return null;
+    }
+
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return null;
+
+      // Check current AAL level
+      const { data: assuranceLevel } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+      if (
+        assuranceLevel?.currentLevel === 'aal1' &&
+        assuranceLevel?.nextLevel === 'aal2'
+      ) {
+        // Determine the central web app URL
+        const centralWebAppUrl =
+          webAppUrl ||
+          (process.env.NODE_ENV === 'production'
+            ? 'https://tuturuuu.com'
+            : 'http://localhost:7803');
+
+        // Check if this is the central web app handling MFA
+        const isCentralWebApp =
+          req.nextUrl.port === '7803' ||
+          ['tuturuuu.com'].includes(req.nextUrl.hostname) ||
+          req.nextUrl.origin === centralWebAppUrl;
+
+        if (isCentralWebApp) {
+          // Handle MFA verification in the login page
+          // Preserve existing nextUrl if it exists, otherwise use current path
+          const existingNextUrl = req.nextUrl.searchParams.get('nextUrl');
+          const nextUrl =
+            existingNextUrl ||
+            encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search);
+
+          const loginUrl = new URL('/login', req.nextUrl);
+          loginUrl.searchParams.set('nextUrl', nextUrl);
+          loginUrl.searchParams.set('mfa', 'required');
+
+          return NextResponse.redirect(loginUrl);
+        } else {
+          // All other apps redirect to central web app for MFA verification
+          // Preserve existing returnUrl if it exists, otherwise use current URL
+          const existingReturnUrl = req.nextUrl.searchParams.get('returnUrl');
+          const returnUrl =
+            existingReturnUrl || encodeURIComponent(req.nextUrl.href);
+
+          const loginUrl = new URL('/login', centralWebAppUrl);
+          loginUrl.searchParams.set('returnUrl', returnUrl);
+          loginUrl.searchParams.set('mfa', 'required');
+
+          return NextResponse.redirect(loginUrl);
+        }
+      }
+
+      return null; // Continue processing
+    } catch (error) {
+      console.error('Error in MFA middleware:', error);
+
+      // On error, sign out for security
+      try {
+        const supabase = await createClient();
+        await supabase.auth.signOut();
+      } catch (signOutError) {
+        console.error('Error signing out in MFA middleware:', signOutError);
+      }
+
+      return null;
     }
   };
 }
