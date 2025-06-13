@@ -38,6 +38,7 @@
     "@mantine/hooks": "^8.1.0",
     "@octokit/auth-app": "^8.0.1",
     "@octokit/rest": "^22.0.0",
+    "@polar-sh/checkout": "^0.1.11",
     "@polar-sh/nextjs": "^0.4.0",
     "@polar-sh/sdk": "^0.33.1",
     "@tanstack/react-query": "^5.80.7",

@@ -1,4 +1,5 @@
 import { BillingClient } from './billing-client';
+import PurchaseLink from './data-polar-checkout';
 import { api } from '@/lib/polar';
 import { Button } from '@tuturuuu/ui/button';
 import { CheckCircle, CreditCard, Receipt } from 'lucide-react';
@@ -36,7 +37,7 @@ export default async function BillingPage() {
   const planHistory = [
     {
       planName: products[0]?.name,
-      price: products[0]?.name == 'Enterprise' ?'$Custom' : '$19.99',
+      price: products[0]?.name == 'Enterprise' ? '$Custom' : '$19.99',
       // startDate: 'Jan 1, 2023',
       // endDate: 'Dec 31, 2023',
       // status: 'active',
@@ -114,7 +115,7 @@ export default async function BillingPage() {
       */}
       <BillingClient currentPlan={currentPlan} upgradePlans={upgradePlans} />
 
-      {/* Plan History (Static) */}
+      {/* Plan History (Dynamic) */}
       <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
         <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
           Plan History
@@ -130,44 +131,58 @@ export default async function BillingPage() {
                   Price
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Start Date
+                  Description
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  End Date
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Status
+                  Actions
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {planHistory?.map((plan, index) => (
-                <tr key={index}>
-                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                    {plan.planName}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                    {plan.price}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                    {plan.startDate}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                    {plan.endDate || '-'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span
-                      className={`inline-flex rounded-full px-2 text-xs leading-5 font-semibold ${
-                        plan.status === 'active'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {plan.status}
-                    </span>
+              {products && products.length > 0 ? (
+                products.map((product) => (
+                  <tr key={product.id}>
+                    <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
+                      {product.name}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
+                      {product.name === 'Enterprise'
+                        ? 'Custom Pricing'
+                        : `$${product.amount / 100}`}
+                    </td>
+                    <td className="max-w-md truncate px-4 py-3 text-card-foreground">
+                      {product.description || '-'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1 hover:bg-primary/10"
+                        asChild
+                      >
+                        <PurchaseLink
+                          productId={product.id}
+                          customerEmail="t@test.com"
+                          theme="auto"
+                          className="flex items-center"
+                        >
+                          <CreditCard className="mr-1 h-4 w-4" />
+                          Subscribe
+                        </PurchaseLink>
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-4 py-5 text-center text-muted-foreground"
+                  >
+                    No available plans found
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
