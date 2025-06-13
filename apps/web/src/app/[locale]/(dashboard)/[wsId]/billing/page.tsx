@@ -14,10 +14,14 @@ const fetchProducts = async () => {
   }
 };
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
   // Fetch data directly on the server
   const products = await fetchProducts();
-
+  const { wsId } = await params;
   const currentPlan = {
     name: 'Pro',
     price: '$19.99',
@@ -33,19 +37,19 @@ export default async function BillingPage() {
     ],
   };
 
-  const planHistory = [
-    {
-      planName: products[0]?.name,
-      price: products[0]?.name == 'Enterprise' ? '$Custom' : '$19.99',
-    },
-    {
-      planName: 'Basic',
-      price: '$9.99',
-      startDate: 'Jan 1, 2022',
-      endDate: 'Dec 31, 2022',
-      status: 'inactive',
-    },
-  ];
+  // const planHistory = [
+  //   {
+  //     planName: products[0]?.name,
+  //     price: products[0]?.name == 'Enterprise' ? '$Custom' : '$19.99',
+  //   },
+  //   {
+  //     planName: 'Basic',
+  //     price: '$9.99',
+  //     startDate: 'Jan 1, 2022',
+  //     endDate: 'Dec 31, 2022',
+  //     status: 'inactive',
+  //   },
+  // ];
 
   const paymentHistory = [
     {
@@ -156,6 +160,7 @@ export default async function BillingPage() {
                       >
                         <PurchaseLink
                           productId={product.id}
+                          wsId={wsId}
                           customerEmail="t@test.com"
                           theme="auto"
                           className="flex items-center"

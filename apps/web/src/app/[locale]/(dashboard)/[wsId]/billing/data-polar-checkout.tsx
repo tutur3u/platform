@@ -6,6 +6,7 @@ import { type PropsWithChildren, useEffect } from 'react';
 // Define the props for type safety and clarity
 interface PurchaseLinkProps {
   productId: string;
+  wsId: string;
   customerEmail?: string;
   theme?: 'light' | 'dark' | 'auto';
   className?: string;
@@ -14,6 +15,7 @@ interface PurchaseLinkProps {
 // Use PropsWithChildren to correctly type the 'children' prop
 const PurchaseLink = ({
   productId,
+  wsId,
   customerEmail,
   theme = 'auto', // Default theme
   className,
@@ -28,7 +30,7 @@ const PurchaseLink = ({
   // 1. Dynamically create the checkout URL based on the component's props.
   //    This was the missing piece. We use `window.location.origin` to ensure the URL
   //    is always absolute (e.g., http://localhost:3000 or https://your-site.com).
-  const checkoutUrl = new URL('/checkout', window.location.origin);
+  const checkoutUrl = new URL(`api/${wsId}/payment`, window.location.origin);
   checkoutUrl.searchParams.set('productId', productId);
 
   if (customerEmail) {
