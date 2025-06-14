@@ -32,7 +32,8 @@
     "BASE_URL",
     "API_URL",
     "ANALYZE",
-    "NODE_ENV"
+    "NODE_ENV",
+    "TRIGGER_SECRET_KEY"
   ],
   "tasks": {
     "build": {

@@ -1,0 +1,21 @@
+{
+  "name": "@tuturuuu/trigger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./example.ts",
+  "types": "./example.ts",
+  "exports": {
+    ".": {
+      "types": "./example.ts",
+      "import": "./example.ts"
+    },
+    "./example": {
+      "types": "./example.ts",
+      "import": "./example.ts"
+    }
+  },
+  "dependencies": {
+    "@trigger.dev/sdk": "^3.0.0"
+  }
+}

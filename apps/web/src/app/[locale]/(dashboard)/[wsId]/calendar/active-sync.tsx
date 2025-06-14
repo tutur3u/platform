@@ -1,5 +1,7 @@
 'use client';
 
+import { tasks } from '@trigger.dev/sdk/v3';
+import { helloWorldTask } from '@tuturuuu/trigger';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Progress } from '@tuturuuu/ui/progress';
@@ -54,6 +56,12 @@ const InnerComponent = () => {
     }
   };
 
+  const triggerHelloWorld = async () => {
+    const res = await fetch('/api/hello-world');
+    const data = await res.json();
+    console.log(data);
+  };
+
   return (
     <div>
       <div className="mb-4 flex gap-2">
@@ -85,6 +93,7 @@ const InnerComponent = () => {
         >
           Switch to month
         </Button>
+        <Button onClick={() => triggerHelloWorld()}>Trigger Hello World</Button>
       </div>
 
       {/* Add sync progress bar when syncing */}
