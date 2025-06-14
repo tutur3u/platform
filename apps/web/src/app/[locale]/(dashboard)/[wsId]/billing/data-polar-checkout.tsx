@@ -43,6 +43,7 @@ const PurchaseLink = ({
   return (
     <a
       href={
+        // change this to real URL when in production
         'https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_J8GoQufIe6E1WJnYnBIYOJKST2G1tWMj9XWXL336OPA/redirect'
       } // Use the dynamic URL here
       // 'https://buy.polar.sh/polar_cl_OyedkX3Pzn0fA7cMMqsIdu5OkJzUxPRfqFbHw3xjhnO'
