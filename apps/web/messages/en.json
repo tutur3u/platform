@@ -554,6 +554,7 @@
     "migrations": "Migrations",
     "notifications": "Notifications",
     "new-ws": "New workspace",
+    "billing": "Billing",
     "new-team": "New Team",
     "new-task": "New Task",
     "new-note": "New Note",
