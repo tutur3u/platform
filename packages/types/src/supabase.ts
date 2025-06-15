@@ -5852,27 +5852,33 @@ export type Database = {
         Row: {
           attempt_number: number;
           completed_at: string | null;
+          duration_seconds: number | null;
           id: string;
           set_id: string;
           started_at: string;
+          submitted_at: string;
           total_score: number | null;
           user_id: string;
         };
         Insert: {
           attempt_number: number;
           completed_at?: string | null;
+          duration_seconds?: number | null;
           id?: string;
           set_id: string;
           started_at?: string;
+          submitted_at?: string;
           total_score?: number | null;
           user_id: string;
         };
         Update: {
           attempt_number?: number;
           completed_at?: string | null;
+          duration_seconds?: number | null;
           id?: string;
           set_id?: string;
           started_at?: string;
+          submitted_at?: string;
           total_score?: number | null;
           user_id?: string;
         };
@@ -5911,33 +5917,45 @@ export type Database = {
         Row: {
           allow_view_results: boolean;
           attempt_limit: number | null;
+          available_date: string;
           created_at: string;
           due_date: string;
+          explanation_mode: number;
           id: string;
+          instruction: Json | null;
           name: string;
           release_points_immediately: boolean;
+          results_released: boolean;
           time_limit_minutes: number | null;
           ws_id: string | null;
         };
         Insert: {
           allow_view_results?: boolean;
           attempt_limit?: number | null;
+          available_date?: string;
           created_at?: string;
           due_date?: string;
+          explanation_mode?: number;
           id?: string;
+          instruction?: Json | null;
           name?: string;
           release_points_immediately?: boolean;
+          results_released?: boolean;
           time_limit_minutes?: number | null;
           ws_id?: string | null;
         };
         Update: {
           allow_view_results?: boolean;
           attempt_limit?: number | null;
+          available_date?: string;
           created_at?: string;
           due_date?: string;
+          explanation_mode?: number;
           id?: string;
+          instruction?: Json | null;
           name?: string;
           release_points_immediately?: boolean;
+          results_released?: boolean;
           time_limit_minutes?: number | null;
           ws_id?: string | null;
         };
@@ -5955,6 +5973,7 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
+          instruction: Json | null;
           question: string;
           score: number;
           ws_id: string;
@@ -5962,6 +5981,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
+          instruction?: Json | null;
           question: string;
           score?: number;
           ws_id: string;
@@ -5969,6 +5989,7 @@ export type Database = {
         Update: {
           created_at?: string;
           id?: string;
+          instruction?: Json | null;
           question?: string;
           score?: number;
           ws_id?: string;

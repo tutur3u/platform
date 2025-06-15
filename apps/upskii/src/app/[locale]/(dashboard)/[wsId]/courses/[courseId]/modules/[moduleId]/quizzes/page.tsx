@@ -43,7 +43,6 @@ export default async function ModuleQuizzesPage({ params }: Props) {
   const { wsId, moduleId } = await params;
   const t = await getTranslations();
   const quizSets = await getQuizzes(moduleId);
-  console.log('Quiz Sets:', quizSets);
   const moduleName = await getModuleName(moduleId);
   return (
     <div className="grid gap-4">

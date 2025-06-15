@@ -1,125 +1,133 @@
-import { useCallback } from 'react';
+'use client';
 
-const onQuestionJump = (questionIndex: number) => {
-  const element = document.getElementById(`quiz-${questionIndex}`); // or use questionId
-  if (element) {
-    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    element.focus(); // Optional: set focus to the question
-  }
-};
-// ─── TYPES ─────────────────────────────────────────────────────────────────────
-
-type Option = {
-  id: string;
-  value: string;
-};
+import React, { useCallback } from 'react';
 
 export type Question = {
   quizId: string;
   question: string;
   score: number;
-  options: Option[];
+  options: { id: string; value: string }[];
 };
 
 interface QuizStatusSidebarProps {
   questions: Question[];
-  selectedAnswers: Record<string, string>;
+  selectedAnswers: Record<string, string | string[]>;
   t: (key: string, options?: Record<string, any>) => string;
 }
 
-const QuizStatusSidebar = ({
+export default function QuizStatusSidebar({
   questions,
   selectedAnswers,
   t,
-}: QuizStatusSidebarProps) => {
+}: QuizStatusSidebarProps) {
+  // Count how many questions have at least one selected answer
   const answeredCount = questions.reduce((count, q) => {
-    return selectedAnswers[q.quizId] ? count + 1 : count;
+    const sel = selectedAnswers[q.quizId];
+    if (Array.isArray(sel) ? sel.length > 0 : Boolean(sel)) {
+      return count + 1;
+    }
+    return count;
   }, 0);
 
-  // Fallback for t function if not provided or key is missing
+  // Translation helper (falls back to defaultText if t(key) === key)
   const translate = useCallback(
     (key: string, defaultText: string, options: Record<string, any> = {}) => {
-      if (typeof t === 'function') {
-        const translation = t(key, options);
-        // i18next might return the key if not found, so check against that too
-        return translation === key ? defaultText : translation || defaultText;
-      }
-      return defaultText;
+      const msg = t(key, options);
+      return msg === key ? defaultText : msg;
     },
     [t]
   );
 
+  // Scroll smoothly to the question container
+  const onQuestionJump = useCallback((idx: number) => {
+    const el = document.getElementById(`quiz-${idx}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.focus();
+    }
+  }, []);
+
+  const pct = questions.length
+    ? Math.round((answeredCount / questions.length) * 100)
+    : 0;
+
   return (
-    <aside className="h-fit max-h-96 w-full rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+    <aside
+      className="h-fit max-h-96 w-full rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
+      aria-label={translate(
+        'ws-quizzes.sidebar_aria',
+        'Quiz progress navigation'
+      )}
+    >
       <h2 className="mb-4 text-lg font-semibold">
         {translate('ws-quizzes.question_status_title', 'Question Progress')}
       </h2>
 
-      {/* Optional Progress Overview */}
+      {/* Progress overview */}
       <div className="mb-4">
         <p className="mb-1 text-sm text-muted-foreground">
           {answeredCount} / {questions.length}{' '}
           {translate('ws-quizzes.answered_status_short', 'answered')}
         </p>
-        <div className="h-2 w-full rounded-full bg-muted">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div
             className="h-2 rounded-full bg-primary transition-all duration-300 ease-out"
-            style={{
-              width: `${questions.length > 0 ? (answeredCount / questions.length) * 100 : 0}%`,
-            }}
+            style={{ width: `${pct}%` }}
+            role="progressbar"
             aria-valuenow={answeredCount}
             aria-valuemin={0}
             aria-valuemax={questions.length}
-            role="progressbar"
             aria-label={translate(
               'ws-quizzes.quiz_progress_label',
               'Quiz Progress'
             )}
-          ></div>
+          />
         </div>
       </div>
 
-      <div
+      {/* Question jump grid */}
+      <nav
         className="grid grid-cols-5 gap-2 md:grid-cols-6 lg:grid-cols-4 xl:grid-cols-5"
-        role="navigation"
         aria-label={translate(
           'ws-quizzes.question_navigation_label',
-          'Question Navigation'
+          'Jump to question'
         )}
       >
         {questions.map((q, idx) => {
-          const isAnswered = Boolean(selectedAnswers[q.quizId]);
-          const questionNumber = idx + 1;
+          const answered = Array.isArray(selectedAnswers[q.quizId])
+            ? (selectedAnswers[q.quizId] as string[]).length > 0
+            : Boolean(selectedAnswers[q.quizId]);
+          const labelText = answered
+            ? translate('ws-quizzes.answered_state', 'Answered')
+            : translate('ws-quizzes.unanswered_state', 'Unanswered');
+          const icon = answered
+            ? translate('ws-quizzes.answered_icon', '✓')
+            : translate('ws-quizzes.unanswered_icon', '○');
 
           return (
             <button
               key={q.quizId}
-              onClick={() => onQuestionJump(idx)} // Pass index or ID
-              aria-label={translate(
-                'ws-quizzes.jump_to_question_aria',
-                `Question ${questionNumber}, ${isAnswered ? translate('ws-quizzes.answered_state', 'Answered') : translate('ws-quizzes.unanswered_state', 'Unanswered')}`,
-                { number: questionNumber }
-              )}
-              className={`flex h-9 w-full items-center justify-center rounded-md border text-xs font-medium transition-all duration-150 ease-in-out hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card focus-visible:outline-none active:opacity-60 ${
-                isAnswered
+              onClick={() => onQuestionJump(idx)}
+              aria-label={`${translate(
+                'ws-quizzes.jump_to_question',
+                'Jump to question',
+                { number: idx + 1 }
+              )} ${idx + 1}, ${labelText}`}
+              className={
+                `flex h-9 w-full items-center justify-center rounded-md border text-xs font-medium transition ` +
+                (answered
                   ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border bg-background text-muted-foreground hover:bg-muted'
-              } `}
+                  : 'border-border bg-background text-muted-foreground hover:bg-muted')
+              }
             >
-              <span className="mr-0.5" aria-hidden="true">
-                {' '}
-                {/* Icon is decorative if main label is sufficient */}
-                {isAnswered
-                  ? translate('ws-quizzes.answered_icon', '✓')
-                  : translate('ws-quizzes.unanswered_icon', '⚪')}
+              <span className="mr-1" aria-hidden="true">
+                {icon}
               </span>
-              {questionNumber}
+              {idx + 1}
             </button>
           );
         })}
-      </div>
+      </nav>
     </aside>
   );
-};
-
-export default QuizStatusSidebar;
+}
