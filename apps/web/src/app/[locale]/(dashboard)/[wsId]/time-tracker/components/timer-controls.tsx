@@ -491,16 +491,17 @@ export function TimerControls({
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
       if (data.type === 'task' && data.task) {
         const task = data.task;
-        
+
         // Set task mode and populate fields
         setSessionMode('task');
         setSelectedTaskId(task.id);
         setNewSessionTitle(`Working on: ${task.name}`);
         setNewSessionDescription(task.description || '');
-        
+
         // Show success feedback
         toast.success(`Task "${task.name}" ready to track!`, {
-          description: 'Click Start Timer to begin tracking time for this task.',
+          description:
+            'Click Start Timer to begin tracking time for this task.',
           duration: 3000,
         });
       }
@@ -556,10 +557,11 @@ export function TimerControls({
 
   return (
     <>
-      <Card 
+      <Card
         className={cn(
-          "relative transition-all duration-200",
-          isDragOver && "ring-2 ring-blue-500 ring-offset-2 bg-blue-50/50 dark:bg-blue-950/20"
+          'relative transition-all duration-200',
+          isDragOver &&
+            'bg-blue-50/50 ring-2 ring-blue-500 ring-offset-2 dark:bg-blue-950/20'
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -682,21 +684,31 @@ export function TimerControls({
             </div>
           ) : (
             <div className="space-y-6">
-              <div className={cn(
-                "rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200",
-                isDragOver 
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" 
-                  : "border-muted-foreground/25"
-              )}>
-                <Clock className={cn(
-                  "mx-auto mb-3 h-12 w-12 transition-colors duration-200",
-                  isDragOver ? "text-blue-500" : "text-muted-foreground"
-                )} />
-                <p className={cn(
-                  "text-base transition-colors duration-200",
-                  isDragOver ? "text-blue-700 dark:text-blue-300" : "text-muted-foreground"
-                )}>
-                  {isDragOver ? "Drop task here to start tracking" : "Ready to start tracking time"}
+              <div
+                className={cn(
+                  'rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200',
+                  isDragOver
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                    : 'border-muted-foreground/25'
+                )}
+              >
+                <Clock
+                  className={cn(
+                    'mx-auto mb-3 h-12 w-12 transition-colors duration-200',
+                    isDragOver ? 'text-blue-500' : 'text-muted-foreground'
+                  )}
+                />
+                <p
+                  className={cn(
+                    'text-base transition-colors duration-200',
+                    isDragOver
+                      ? 'text-blue-700 dark:text-blue-300'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  {isDragOver
+                    ? 'Drop task here to start tracking'
+                    : 'Ready to start tracking time'}
                 </p>
                 {!isDragOver && (
                   <p className="mt-2 text-xs text-muted-foreground">

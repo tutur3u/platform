@@ -20,22 +20,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   AlertCircle,
   Calendar,
-  Clock,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Copy,
-  CheckCircle,
+  History,
+  Pause,
+  RefreshCw,
   RotateCcw,
+  Settings,
   Sparkles,
   Target,
+  Timer,
   TrendingUp,
   WifiOff,
   Zap,
-  Pause,
-  History,
-  Settings,
-  Timer,
-  RefreshCw,
 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -469,7 +469,8 @@ export default function TimeTrackerContent({
   useEffect(() => {
     const interval = setInterval(() => {
       const timeSinceLastInteraction = Date.now() - lastUserInteraction;
-      if (timeSinceLastInteraction >= 15000) { // 15 seconds
+      if (timeSinceLastInteraction >= 15000) {
+        // 15 seconds
         setCarouselView((prev) => (prev === 2 ? 0 : prev + 1));
       }
     }, 15000);
@@ -478,7 +479,9 @@ export default function TimeTrackerContent({
   }, [lastUserInteraction]);
 
   // Sidebar View Switching
-  const [sidebarView, setSidebarView] = useState<'analytics' | 'tasks' | 'reports' | 'settings'>('analytics');
+  const [sidebarView, setSidebarView] = useState<
+    'analytics' | 'tasks' | 'reports' | 'settings'
+  >('analytics');
 
   if (isLoadingUser || !currentUserId) {
     return (
@@ -520,7 +523,7 @@ export default function TimeTrackerContent({
                 </p>
               </div>
             </div>
-            
+
             {!isViewingOtherUser && (
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
@@ -564,7 +567,7 @@ export default function TimeTrackerContent({
                 })()}
               </div>
             )}
-            
+
             {lastRefresh && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
@@ -578,7 +581,7 @@ export default function TimeTrackerContent({
               </div>
             )}
           </div>
-          
+
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -587,7 +590,9 @@ export default function TimeTrackerContent({
               disabled={isLoading}
               className="gap-2"
             >
-              <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+              <RefreshCw
+                className={cn('h-4 w-4', isLoading && 'animate-spin')}
+              />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
             <UserSelector
@@ -617,7 +622,7 @@ export default function TimeTrackerContent({
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                
+
                 <div className="flex items-center gap-1">
                   {[0, 1, 2].map((index) => (
                     <button
@@ -627,15 +632,15 @@ export default function TimeTrackerContent({
                         setLastUserInteraction(Date.now());
                       }}
                       className={cn(
-                        "h-2 w-2 rounded-full transition-all duration-200",
+                        'h-2 w-2 rounded-full transition-all duration-200',
                         carouselView === index
-                          ? "bg-primary w-6"
-                          : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                          ? 'w-6 bg-primary'
+                          : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
                       )}
                     />
                   ))}
                 </div>
-                
+
                 <Button
                   variant="ghost"
                   size="sm"
@@ -648,17 +653,17 @@ export default function TimeTrackerContent({
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-              
+
               <div className="text-xs text-muted-foreground">
-                {carouselView === 0 && "Smart Quick Actions"}
-                {carouselView === 1 && "Context-Aware Dashboard"}
-                {carouselView === 2 && "Productivity Command Center"}
+                {carouselView === 0 && 'Smart Quick Actions'}
+                {carouselView === 1 && 'Context-Aware Dashboard'}
+                {carouselView === 2 && 'Productivity Command Center'}
               </div>
             </div>
 
             {/* Carousel Content */}
             <div className="relative overflow-hidden">
-              <div 
+              <div
                 className="flex transition-transform duration-300 ease-in-out"
                 style={{ transform: `translateX(-${carouselView * 100}%)` }}
               >
@@ -669,18 +674,21 @@ export default function TimeTrackerContent({
                     <button
                       onClick={() => {
                         // TODO: Implement continue last session
-                        toast.info("Continue last session - Coming soon!");
+                        toast.info('Continue last session - Coming soon!');
                       }}
-                      className="group rounded-lg border border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20"
+                      className="group rounded-lg border border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-blue-500/20 p-1.5">
                           <RotateCcw className="h-3 w-3 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Continue Last</p>
+                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                            Continue Last
+                          </p>
                           <p className="text-sm font-bold text-blue-900 dark:text-blue-100">
-                            {recentSessions[0]?.title?.slice(0, 15) || "No recent session"}
+                            {recentSessions[0]?.title?.slice(0, 15) ||
+                              'No recent session'}
                           </p>
                         </div>
                         <span className="text-sm opacity-70">🔄</span>
@@ -691,16 +699,18 @@ export default function TimeTrackerContent({
                     <button
                       onClick={() => {
                         // TODO: Implement start most used task
-                        toast.info("Start most used task - Coming soon!");
+                        toast.info('Start most used task - Coming soon!');
                       }}
-                      className="group rounded-lg border border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20"
+                      className="group rounded-lg border border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-green-500/20 p-1.5">
                           <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-green-700 dark:text-green-300">Most Used</p>
+                          <p className="text-xs font-medium text-green-700 dark:text-green-300">
+                            Most Used
+                          </p>
                           <p className="text-sm font-bold text-green-900 dark:text-green-100">
                             Quick Start
                           </p>
@@ -713,16 +723,18 @@ export default function TimeTrackerContent({
                     <button
                       onClick={() => {
                         // TODO: Implement quick focus timer
-                        toast.info("Quick 25min focus - Coming soon!");
+                        toast.info('Quick 25min focus - Coming soon!');
                       }}
-                      className="group rounded-lg border border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20"
+                      className="group rounded-lg border border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-purple-500/20 p-1.5">
                           <Clock className="h-3 w-3 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-purple-700 dark:text-purple-300">Quick Focus</p>
+                          <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                            Quick Focus
+                          </p>
                           <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
                             25 minutes
                           </p>
@@ -735,16 +747,18 @@ export default function TimeTrackerContent({
                     <button
                       onClick={() => {
                         // TODO: Implement template selection
-                        toast.info("Start from template - Coming soon!");
+                        toast.info('Start from template - Coming soon!');
                       }}
-                      className="group rounded-lg border border-orange-200/60 bg-gradient-to-br from-orange-50 to-orange-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-orange-800/60 dark:from-orange-950/30 dark:to-orange-900/20"
+                      className="group rounded-lg border border-orange-200/60 bg-gradient-to-br from-orange-50 to-orange-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-orange-800/60 dark:from-orange-950/30 dark:to-orange-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-orange-500/20 p-1.5">
                           <Copy className="h-3 w-3 text-orange-600 dark:text-orange-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-orange-700 dark:text-orange-300">Template</p>
+                          <p className="text-xs font-medium text-orange-700 dark:text-orange-300">
+                            Template
+                          </p>
                           <p className="text-sm font-bold text-orange-900 dark:text-orange-100">
                             Quick Start
                           </p>
@@ -761,16 +775,20 @@ export default function TimeTrackerContent({
                     {/* Today's Calendar */}
                     <button
                       onClick={() => {
-                        toast.info("Today's calendar integration - Coming soon!");
+                        toast.info(
+                          "Today's calendar integration - Coming soon!"
+                        );
                       }}
-                      className="group rounded-lg border border-indigo-200/60 bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-indigo-800/60 dark:from-indigo-950/30 dark:to-indigo-900/20"
+                      className="group rounded-lg border border-indigo-200/60 bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-indigo-800/60 dark:from-indigo-950/30 dark:to-indigo-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-indigo-500/20 p-1.5">
                           <Calendar className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Calendar</p>
+                          <p className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                            Calendar
+                          </p>
                           <p className="text-sm font-bold text-indigo-900 dark:text-indigo-100">
                             Today's Events
                           </p>
@@ -782,16 +800,18 @@ export default function TimeTrackerContent({
                     {/* Suggested Tasks */}
                     <button
                       onClick={() => {
-                        toast.info("AI task suggestions - Coming soon!");
+                        toast.info('AI task suggestions - Coming soon!');
                       }}
-                      className="group rounded-lg border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-emerald-800/60 dark:from-emerald-950/30 dark:to-emerald-900/20"
+                      className="group rounded-lg border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-emerald-800/60 dark:from-emerald-950/30 dark:to-emerald-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-emerald-500/20 p-1.5">
                           <Sparkles className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Suggested</p>
+                          <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                            Suggested
+                          </p>
                           <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
                             Smart Tasks
                           </p>
@@ -805,14 +825,16 @@ export default function TimeTrackerContent({
                       onClick={() => {
                         setActiveTab('goals');
                       }}
-                      className="group rounded-lg border border-rose-200/60 bg-gradient-to-br from-rose-50 to-rose-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-rose-800/60 dark:from-rose-950/30 dark:to-rose-900/20"
+                      className="group rounded-lg border border-rose-200/60 bg-gradient-to-br from-rose-50 to-rose-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-rose-800/60 dark:from-rose-950/30 dark:to-rose-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-rose-500/20 p-1.5">
                           <Target className="h-3 w-3 text-rose-600 dark:text-rose-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-rose-700 dark:text-rose-300">Goals</p>
+                          <p className="text-xs font-medium text-rose-700 dark:text-rose-300">
+                            Goals
+                          </p>
                           <p className="text-sm font-bold text-rose-900 dark:text-rose-100">
                             View Progress
                           </p>
@@ -825,16 +847,20 @@ export default function TimeTrackerContent({
                     <button
                       onClick={() => {
                         // Scroll to timer controls
-                        document.querySelector('[data-timer-controls]')?.scrollIntoView({ behavior: 'smooth' });
+                        document
+                          .querySelector('[data-timer-controls]')
+                          ?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="group rounded-lg border border-cyan-200/60 bg-gradient-to-br from-cyan-50 to-cyan-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-cyan-800/60 dark:from-cyan-950/30 dark:to-cyan-900/20"
+                      className="group rounded-lg border border-cyan-200/60 bg-gradient-to-br from-cyan-50 to-cyan-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-cyan-800/60 dark:from-cyan-950/30 dark:to-cyan-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-cyan-500/20 p-1.5">
                           <Zap className="h-3 w-3 text-cyan-600 dark:text-cyan-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-cyan-700 dark:text-cyan-300">Quick</p>
+                          <p className="text-xs font-medium text-cyan-700 dark:text-cyan-300">
+                            Quick
+                          </p>
                           <p className="text-sm font-bold text-cyan-900 dark:text-cyan-100">
                             Start Timer
                           </p>
@@ -851,16 +877,18 @@ export default function TimeTrackerContent({
                     {/* Active Tasks */}
                     <button
                       onClick={() => {
-                        toast.info("Active tasks view - Coming soon!");
+                        toast.info('Active tasks view - Coming soon!');
                       }}
-                      className="group rounded-lg border border-violet-200/60 bg-gradient-to-br from-violet-50 to-violet-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-violet-800/60 dark:from-violet-950/30 dark:to-violet-900/20"
+                      className="group rounded-lg border border-violet-200/60 bg-gradient-to-br from-violet-50 to-violet-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-violet-800/60 dark:from-violet-950/30 dark:to-violet-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-violet-500/20 p-1.5">
                           <CheckCircle className="h-3 w-3 text-violet-600 dark:text-violet-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-violet-700 dark:text-violet-300">Active</p>
+                          <p className="text-xs font-medium text-violet-700 dark:text-violet-300">
+                            Active
+                          </p>
                           <p className="text-sm font-bold text-violet-900 dark:text-violet-100">
                             {tasks.length} Tasks
                           </p>
@@ -872,16 +900,18 @@ export default function TimeTrackerContent({
                     {/* Focus Score */}
                     <button
                       onClick={() => {
-                        toast.info("Focus score analytics - Coming soon!");
+                        toast.info('Focus score analytics - Coming soon!');
                       }}
-                      className="group rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
+                      className="group rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-amber-500/20 p-1.5">
                           <TrendingUp className="h-3 w-3 text-amber-600 dark:text-amber-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Focus</p>
+                          <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                            Focus
+                          </p>
                           <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
                             Score: 85%
                           </p>
@@ -893,16 +923,18 @@ export default function TimeTrackerContent({
                     {/* Break Timer */}
                     <button
                       onClick={() => {
-                        toast.info("Break timer - Coming soon!");
+                        toast.info('Break timer - Coming soon!');
                       }}
-                      className="group rounded-lg border border-teal-200/60 bg-gradient-to-br from-teal-50 to-teal-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-teal-800/60 dark:from-teal-950/30 dark:to-teal-900/20"
+                      className="group rounded-lg border border-teal-200/60 bg-gradient-to-br from-teal-50 to-teal-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-teal-800/60 dark:from-teal-950/30 dark:to-teal-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-teal-500/20 p-1.5">
                           <Pause className="h-3 w-3 text-teal-600 dark:text-teal-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-teal-700 dark:text-teal-300">Break</p>
+                          <p className="text-xs font-medium text-teal-700 dark:text-teal-300">
+                            Break
+                          </p>
                           <p className="text-sm font-bold text-teal-900 dark:text-teal-100">
                             Take 5min
                           </p>
@@ -916,14 +948,16 @@ export default function TimeTrackerContent({
                       onClick={() => {
                         setActiveTab('history');
                       }}
-                      className="group rounded-lg border border-slate-200/60 bg-gradient-to-br from-slate-50 to-slate-100/50 p-3 text-left transition-all duration-300 hover:shadow-md hover:scale-105 dark:border-slate-800/60 dark:from-slate-950/30 dark:to-slate-900/20"
+                      className="group rounded-lg border border-slate-200/60 bg-gradient-to-br from-slate-50 to-slate-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-slate-800/60 dark:from-slate-950/30 dark:to-slate-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <div className="rounded-full bg-slate-500/20 p-1.5">
                           <History className="h-3 w-3 text-slate-600 dark:text-slate-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-slate-700 dark:text-slate-300">History</p>
+                          <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                            History
+                          </p>
                           <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                             View All
                           </p>
@@ -936,37 +970,38 @@ export default function TimeTrackerContent({
               </div>
             </div>
           </div>
-                 )}
+        )}
 
-         {/* Current Session Status Banner */}
-         {!isViewingOtherUser && currentSession && (
-           <div className="rounded-lg border border-red-200/60 bg-gradient-to-r from-red-50 to-red-100/50 p-4 shadow-sm dark:border-red-800/60 dark:from-red-950/30 dark:to-red-900/20">
-             <div className="flex items-center gap-3">
-               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20">
-                 <div className="h-2 w-2 animate-pulse rounded-full bg-red-500"></div>
-               </div>
-               <div className="flex-1">
-                 <div className="flex items-center gap-2">
-                   <p className="text-sm font-medium text-red-700 dark:text-red-300">
-                     Currently tracking:
-                   </p>
-                   <span className="text-sm font-bold text-red-900 dark:text-red-100">
-                     {currentSession.title}
-                   </span>
-                 </div>
-                 <p className="text-xs text-red-600/70 dark:text-red-400/70">
-                   Started at {new Date(currentSession.start_time).toLocaleTimeString()} • 
-                   Running for {formatTime(elapsedTime)}
-                 </p>
-               </div>
-               <div className="font-mono text-lg font-bold text-red-600 dark:text-red-400">
-                 {formatTime(elapsedTime)}
-               </div>
-             </div>
-           </div>
-         )}
+        {/* Current Session Status Banner */}
+        {!isViewingOtherUser && currentSession && (
+          <div className="rounded-lg border border-red-200/60 bg-gradient-to-r from-red-50 to-red-100/50 p-4 shadow-sm dark:border-red-800/60 dark:from-red-950/30 dark:to-red-900/20">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20">
+                <div className="h-2 w-2 animate-pulse rounded-full bg-red-500"></div>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                    Currently tracking:
+                  </p>
+                  <span className="text-sm font-bold text-red-900 dark:text-red-100">
+                    {currentSession.title}
+                  </span>
+                </div>
+                <p className="text-xs text-red-600/70 dark:text-red-400/70">
+                  Started at{' '}
+                  {new Date(currentSession.start_time).toLocaleTimeString()} •
+                  Running for {formatTime(elapsedTime)}
+                </p>
+              </div>
+              <div className="font-mono text-lg font-bold text-red-600 dark:text-red-400">
+                {formatTime(elapsedTime)}
+              </div>
+            </div>
+          </div>
+        )}
 
-         {/* Error Alert with better UX */}
+        {/* Error Alert with better UX */}
         {error && (
           <Alert
             variant={isOffline ? 'default' : 'destructive'}
@@ -1002,17 +1037,17 @@ export default function TimeTrackerContent({
         {/* New Layout: Analytics sidebar on left, Timer controls and tabs on right */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
           {/* Left Side: Switchable Sidebar Views */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6 lg:col-span-2">
             {/* Sidebar View Switcher */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
                 <button
                   onClick={() => setSidebarView('analytics')}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                    'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                     sidebarView === 'analytics'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <TrendingUp className="h-3 w-3" />
@@ -1021,10 +1056,10 @@ export default function TimeTrackerContent({
                 <button
                   onClick={() => setSidebarView('tasks')}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                    'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                     sidebarView === 'tasks'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <CheckCircle className="h-3 w-3" />
@@ -1033,10 +1068,10 @@ export default function TimeTrackerContent({
                 <button
                   onClick={() => setSidebarView('reports')}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                    'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                     sidebarView === 'reports'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <History className="h-3 w-3" />
@@ -1045,10 +1080,10 @@ export default function TimeTrackerContent({
                 <button
                   onClick={() => setSidebarView('settings')}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                    'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                     sidebarView === 'settings'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <Settings className="h-3 w-3" />
@@ -1061,143 +1096,180 @@ export default function TimeTrackerContent({
             {sidebarView === 'analytics' && (
               <>
                 {/* Stats Overview - Enhanced for sidebar */}
-            <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
-              <div className="mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-                    <TrendingUp className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
-                      Your Progress
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Track your productivity metrics ⚡
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {/* Custom sidebar-optimized stats layout */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {/* Today */}
-                <div className="rounded-lg border border-dynamic-blue/30 bg-gradient-to-br from-blue-50 to-blue-100 p-3 transition-all duration-300 hover:shadow-md dark:from-blue-950/20 dark:to-blue-900/20">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
-                      <Calendar className="h-4 w-4 text-blue-500" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-medium text-muted-foreground">Today</p>
-                        <span className="text-sm">{new Date().getDay() === 0 || new Date().getDay() === 6 ? '🏖️' : '💼'}</span>
+                <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                  <div className="mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+                        <TrendingUp className="h-5 w-5 text-white" />
                       </div>
-                      <p className="text-xs text-muted-foreground/80">
-                        {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
-                      </p>
-                      <p className="text-lg font-bold">{formatDuration(timerStats.todayTime)}</p>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
+                          Your Progress
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Track your productivity metrics ⚡
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Custom sidebar-optimized stats layout */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {/* Today */}
+                    <div className="rounded-lg border border-dynamic-blue/30 bg-gradient-to-br from-blue-50 to-blue-100 p-3 transition-all duration-300 hover:shadow-md dark:from-blue-950/20 dark:to-blue-900/20">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <Calendar className="h-4 w-4 text-blue-500" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              Today
+                            </p>
+                            <span className="text-sm">
+                              {new Date().getDay() === 0 ||
+                              new Date().getDay() === 6
+                                ? '🏖️'
+                                : '💼'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground/80">
+                            {new Date().toLocaleDateString('en-US', {
+                              weekday: 'long',
+                            })}
+                          </p>
+                          <p className="text-lg font-bold">
+                            {formatDuration(timerStats.todayTime)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* This Week */}
+                    <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-br from-green-50 to-green-100 p-3 transition-all duration-300 hover:shadow-md dark:from-green-950/20 dark:to-green-900/20">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              This Week
+                            </p>
+                            <span className="text-sm">📊</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground/80">
+                            {(() => {
+                              const today = new Date();
+                              const dayOfWeek = today.getDay();
+                              const daysToSubtract =
+                                dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                              const startOfWeek = new Date(today);
+                              startOfWeek.setDate(
+                                today.getDate() - daysToSubtract
+                              );
+                              const endOfWeek = new Date(startOfWeek);
+                              endOfWeek.setDate(startOfWeek.getDate() + 6);
+                              return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                            })()}
+                          </p>
+                          <p className="text-lg font-bold">
+                            {formatDuration(timerStats.weekTime)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* This Month */}
+                    <div className="rounded-lg border border-dynamic-purple/30 bg-gradient-to-br from-purple-50 to-purple-100 p-3 transition-all duration-300 hover:shadow-md dark:from-purple-950/20 dark:to-purple-900/20">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <Zap className="h-4 w-4 text-purple-500" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              This Month
+                            </p>
+                            <span className="text-sm">🚀</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground/80">
+                            {new Date().toLocaleDateString('en-US', {
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </p>
+                          <p className="text-lg font-bold">
+                            {formatDuration(timerStats.monthTime)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Streak */}
+                    <div className="rounded-lg border border-dynamic-orange/30 bg-gradient-to-br from-orange-50 to-orange-100 p-3 transition-all duration-300 hover:shadow-md dark:from-orange-950/20 dark:to-orange-900/20">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <Clock className="h-4 w-4 text-orange-500" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              Streak
+                            </p>
+                            <span className="text-sm">
+                              {timerStats.streak >= 7 ? '🏆' : '⭐'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground/80">
+                            {timerStats.streak > 0
+                              ? 'consecutive days'
+                              : 'start today!'}
+                          </p>
+                          <p className="text-lg font-bold">
+                            {timerStats.streak} days
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* This Week */}
-                <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-br from-green-50 to-green-100 p-3 transition-all duration-300 hover:shadow-md dark:from-green-950/20 dark:to-green-900/20">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
-                      <TrendingUp className="h-4 w-4 text-green-500" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-medium text-muted-foreground">This Week</p>
-                        <span className="text-sm">📊</span>
+                {/* Activity Heatmap - Enhanced with better header */}
+                {timerStats.dailyActivity && (
+                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                    <div className="mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
+                          <Calendar className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
+                            Activity Heatmap
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {(() => {
+                              const totalDuration =
+                                timerStats.dailyActivity?.reduce(
+                                  (sum, day) => sum + day.duration,
+                                  0
+                                ) || 0;
+                              return totalDuration > 0
+                                ? `${formatDuration(totalDuration)} tracked this year 🔥`
+                                : 'Start tracking to see your activity pattern 🌱';
+                            })()}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground/80">
-                        {(() => {
-                          const today = new Date();
-                          const dayOfWeek = today.getDay();
-                          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                          const startOfWeek = new Date(today);
-                          startOfWeek.setDate(today.getDate() - daysToSubtract);
-                          const endOfWeek = new Date(startOfWeek);
-                          endOfWeek.setDate(startOfWeek.getDate() + 6);
-                          return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-                        })()}
-                      </p>
-                      <p className="text-lg font-bold">{formatDuration(timerStats.weekTime)}</p>
+                    </div>
+                    {/* Remove the original header from ActivityHeatmap component */}
+                    <div className="[&>div>div:first-child]:hidden">
+                      <ActivityHeatmap
+                        dailyActivity={timerStats.dailyActivity}
+                        formatDuration={formatDuration}
+                      />
                     </div>
                   </div>
-                </div>
-
-                {/* This Month */}
-                <div className="rounded-lg border border-dynamic-purple/30 bg-gradient-to-br from-purple-50 to-purple-100 p-3 transition-all duration-300 hover:shadow-md dark:from-purple-950/20 dark:to-purple-900/20">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
-                      <Zap className="h-4 w-4 text-purple-500" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-medium text-muted-foreground">This Month</p>
-                        <span className="text-sm">🚀</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground/80">
-                        {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                      </p>
-                      <p className="text-lg font-bold">{formatDuration(timerStats.monthTime)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Streak */}
-                <div className="rounded-lg border border-dynamic-orange/30 bg-gradient-to-br from-orange-50 to-orange-100 p-3 transition-all duration-300 hover:shadow-md dark:from-orange-950/20 dark:to-orange-900/20">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
-                      <Clock className="h-4 w-4 text-orange-500" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-medium text-muted-foreground">Streak</p>
-                        <span className="text-sm">{timerStats.streak >= 7 ? '🏆' : '⭐'}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground/80">
-                        {timerStats.streak > 0 ? 'consecutive days' : 'start today!'}
-                      </p>
-                      <p className="text-lg font-bold">{timerStats.streak} days</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Activity Heatmap - Enhanced with better header */}
-            {timerStats.dailyActivity && (
-              <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
-                <div className="mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
-                      <Calendar className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
-                        Activity Heatmap
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {(() => {
-                          const totalDuration = timerStats.dailyActivity?.reduce((sum, day) => sum + day.duration, 0) || 0;
-                          return totalDuration > 0
-                            ? `${formatDuration(totalDuration)} tracked this year 🔥`
-                            : 'Start tracking to see your activity pattern 🌱';
-                        })()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                {/* Remove the original header from ActivityHeatmap component */}
-                <div className="[&>div>div:first-child]:hidden">
-                  <ActivityHeatmap
-                    dailyActivity={timerStats.dailyActivity}
-                    formatDuration={formatDuration}
-                  />
-                </div>
-              </div>
-            )}
+                )}
               </>
             )}
 
@@ -1221,27 +1293,31 @@ export default function TimeTrackerContent({
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Task List */}
                   <div className="space-y-3">
                     {tasks.length === 0 ? (
                       <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
                         <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
-                          No tasks available. Create tasks in your project boards to see them here.
+                          No tasks available. Create tasks in your project
+                          boards to see them here.
                         </p>
                       </div>
                     ) : (
                       tasks.slice(0, 10).map((task) => (
                         <div
                           key={task.id}
-                          className="group cursor-grab rounded-lg border border-gray-200/60 bg-white p-3 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:cursor-grabbing dark:border-gray-700/60 dark:bg-gray-800/50"
+                          className="group cursor-grab rounded-lg border border-gray-200/60 bg-white p-3 shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:cursor-grabbing dark:border-gray-700/60 dark:bg-gray-800/50"
                           draggable
                           onDragStart={(e) => {
-                            e.dataTransfer.setData('application/json', JSON.stringify({
-                              type: 'task',
-                              task: task
-                            }));
+                            e.dataTransfer.setData(
+                              'application/json',
+                              JSON.stringify({
+                                type: 'task',
+                                task: task,
+                              })
+                            );
                           }}
                         >
                           <div className="flex items-start gap-3">
@@ -1279,7 +1355,7 @@ export default function TimeTrackerContent({
                         </div>
                       ))
                     )}
-                    
+
                     {tasks.length > 10 && (
                       <div className="text-center">
                         <p className="text-xs text-muted-foreground">
@@ -1311,11 +1387,13 @@ export default function TimeTrackerContent({
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
                     <History className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
-                      Advanced reporting features are coming soon. Stay tuned for detailed analytics, custom reports, and productivity insights.
+                      Advanced reporting features are coming soon. Stay tuned
+                      for detailed analytics, custom reports, and productivity
+                      insights.
                     </p>
                   </div>
                 </div>
@@ -1341,11 +1419,12 @@ export default function TimeTrackerContent({
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
                     <Settings className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
-                      Timer settings and preferences will be available here. Configure notifications, default categories, and more.
+                      Timer settings and preferences will be available here.
+                      Configure notifications, default categories, and more.
                     </p>
                   </div>
                 </div>
@@ -1421,8 +1500,8 @@ export default function TimeTrackerContent({
                   <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
                     <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                       <Calendar className="h-4 w-4" />
-                      You're viewing another user's session history. You can see their
-                      sessions but cannot edit them.
+                      You're viewing another user's session history. You can see
+                      their sessions but cannot edit them.
                     </p>
                   </div>
                 )}
@@ -1461,8 +1540,8 @@ export default function TimeTrackerContent({
                   <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
                     <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                       <TrendingUp className="h-4 w-4" />
-                      You're viewing another user's goals. You can see their progress
-                      but cannot edit their goals.
+                      You're viewing another user's goals. You can see their
+                      progress but cannot edit their goals.
                     </p>
                   </div>
                 )}
