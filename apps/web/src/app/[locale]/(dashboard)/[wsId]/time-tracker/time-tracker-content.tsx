@@ -48,7 +48,7 @@ import {
   Tag,
 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 

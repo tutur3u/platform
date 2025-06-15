@@ -141,6 +141,8 @@ export function Structure({
               </Button>
             )}
           </aside>
+          {/* Main content area - overflow-y-auto removed to prevent double scrollbars */}
+          {/* Body element now handles page-level scrolling */}
           <main
             id="main-content"
             className={cn(

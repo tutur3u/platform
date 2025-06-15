@@ -662,10 +662,10 @@ export function TimerControls({
   // Open dropdown with position calculation
   const openDropdown = useCallback(() => {
     setIsTaskDropdownOpen(true);
-    // Small delay to ensure DOM is ready for position calculation
-    setTimeout(() => {
+    // Use requestAnimationFrame to ensure DOM is ready for position calculation
+    requestAnimationFrame(() => {
       calculateDropdownPosition();
-    }, 0);
+    });
   }, [calculateDropdownPosition]);
 
   // Close dropdown when clicking outside
@@ -688,7 +688,7 @@ export function TimerControls({
 
   // Handle scroll and resize events
   useEffect(() => {
-    let scrollTimeout: NodeJS.Timeout;
+    let scrollTimeout: ReturnType<typeof setTimeout>;
     
     const handleScroll = () => {
       if (isTaskDropdownOpen) {
