@@ -128,6 +128,9 @@ export function TimerControls({
   const [justCompleted, setJustCompleted] =
     useState<SessionWithRelations | null>(null);
 
+  // Drag and drop state
+  const [isDragOver, setIsDragOver] = useState(false);
+
   // Task creation state
   const [boards, setBoards] = useState<TaskBoard[]>([]);
   const [showTaskCreation, setShowTaskCreation] = useState(false);
@@ -469,6 +472,44 @@ export function TimerControls({
     setSelectedTaskId(template.task_id || 'none');
   };
 
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      if (data.type === 'task' && data.task) {
+        const task = data.task;
+        
+        // Set task mode and populate fields
+        setSessionMode('task');
+        setSelectedTaskId(task.id);
+        setNewSessionTitle(`Working on: ${task.name}`);
+        setNewSessionDescription(task.description || '');
+        
+        // Show success feedback
+        toast.success(`Task "${task.name}" ready to track!`, {
+          description: 'Click Start Timer to begin tracking time for this task.',
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Error handling dropped task:', error);
+      toast.error('Failed to process dropped task');
+    }
+  };
+
   const getCategoryColor = (color: string) => {
     const colorMap: Record<string, string> = {
       RED: 'bg-dynamic-red/80',
@@ -515,7 +556,15 @@ export function TimerControls({
 
   return (
     <>
-      <Card className="relative">
+      <Card 
+        className={cn(
+          "relative transition-all duration-200",
+          isDragOver && "ring-2 ring-blue-500 ring-offset-2 bg-blue-50/50 dark:bg-blue-950/20"
+        )}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Timer className="h-5 w-5" />
@@ -633,11 +682,27 @@ export function TimerControls({
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
-                <Clock className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-                <p className="text-base text-muted-foreground">
-                  Ready to start tracking time
+              <div className={cn(
+                "rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200",
+                isDragOver 
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" 
+                  : "border-muted-foreground/25"
+              )}>
+                <Clock className={cn(
+                  "mx-auto mb-3 h-12 w-12 transition-colors duration-200",
+                  isDragOver ? "text-blue-500" : "text-muted-foreground"
+                )} />
+                <p className={cn(
+                  "text-base transition-colors duration-200",
+                  isDragOver ? "text-blue-700 dark:text-blue-300" : "text-muted-foreground"
+                )}>
+                  {isDragOver ? "Drop task here to start tracking" : "Ready to start tracking time"}
                 </p>
+                {!isDragOver && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Drag tasks from the sidebar or select manually below
+                  </p>
+                )}
               </div>
 
               {/* Session Mode Toggle */}
