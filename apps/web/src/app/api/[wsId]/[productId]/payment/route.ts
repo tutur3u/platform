@@ -28,7 +28,7 @@ export async function GET(
   // HERE is where you add the metadata
   const checkoutSession = await api.checkouts.create({
     products: [productId],
-    successUrl: `http://localhost:7803/success`,
+    successUrl: `http://localhost:7803/${wsId}/billing/success`,
     // Attach your internal workspaceId so you can get it back in the webhook
     metadata: {
       wsId: wsId,
