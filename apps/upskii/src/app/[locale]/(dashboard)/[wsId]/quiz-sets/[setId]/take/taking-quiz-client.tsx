@@ -8,7 +8,10 @@ import PastDueSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/
 import ShowResultSummarySection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/show-result-summary-section';
 import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/time-elapsed-status';
 import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { ListCheck } from '@tuturuuu/ui/icons';
+import { Label } from '@tuturuuu/ui/label';
+import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -69,6 +72,7 @@ export default function TakingQuizClient({
 
   // ─── HELPERS ─────────────────────────────────────────────────────────────────
   const STORAGE_KEY = `quiz_start_${setId}`;
+  const ANSWERS_KEY = `quiz_answers_${setId}`;
   const totalSeconds = quizMeta?.timeLimitMinutes
     ? quizMeta.timeLimitMinutes * 60
     : null;
@@ -104,8 +108,17 @@ export default function TakingQuizClient({
           setLoadingMeta(false);
           return;
         }
-
         setQuizMeta(json as TakeResponse);
+        if ('questions' in json && json.questions) {
+          const saved = localStorage.getItem(ANSWERS_KEY);
+          if (saved) {
+            try {
+              setSelectedAnswers(JSON.parse(saved));
+            } catch {
+              /* ignore invalid JSON */
+            }
+          }
+        }
         if ('dueDate' in json && json.dueDate) {
           setDueDateStr(json.dueDate);
           if (new Date(json.dueDate) < new Date()) {
@@ -394,40 +407,46 @@ export default function TakingQuizClient({
           className="space-y-8"
         >
           {quizMeta.questions.map((q, idx) => (
-            <div key={q.quizId} className="space-y-2" id={`question-${idx}`}>
-              <div>
-                <span className="font-semibold">
+            <Card id={`quiz-${idx}`} key={q.quizId} className="shadow-sm">
+              <CardHeader>
+                <CardTitle>
                   {idx + 1}. {q.question}{' '}
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-muted-foreground">
                     ({t('ws-quizzes.points') || 'Points'}: {q.score})
                   </span>
-                </span>
-              </div>
-              <div className="space-y-1">
-                {q.options.map((opt) => (
-                  <label
-                    key={opt.id}
-                    className="flex cursor-pointer items-center space-x-2"
-                  >
-                    <input
-                      type="radio"
-                      name={`quiz-${q.quizId}`}
-                      value={opt.id}
-                      checked={selectedAnswers[q.quizId] === opt.id}
-                      onChange={() =>
-                        setSelectedAnswers((prev) => ({
-                          ...prev,
-                          [q.quizId]: opt.id,
-                        }))
-                      }
-                      disabled={submitting || (isCountdown && timeLeft === 0)}
-                      className="form-radio"
-                    />
-                    <span>{opt.value}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <RadioGroup
+                  name={`quiz-${q.quizId}`}
+                  value={selectedAnswers[q.quizId] ?? ''}
+                  onValueChange={(value) => {
+                    const next = { ...selectedAnswers, [q.quizId]: value };
+                    setSelectedAnswers(next);
+                    try {
+                      localStorage.setItem(ANSWERS_KEY, JSON.stringify(next));
+                    } catch {
+                      // Ignore localStorage errors
+                    }
+                  }}
+                  className="space-y-2"
+                >
+                  {q.options.map((opt) => (
+                    <div key={opt.id} className="flex items-center space-x-2">
+                      <RadioGroupItem
+                        className="bg-dynamic-purple/10 text-dynamic-purple"
+                        value={opt.id}
+                        id={`${q.quizId}-${opt.id}`}
+                        disabled={submitting || (isCountdown && timeLeft === 0)}
+                      />
+                      <Label htmlFor={`${q.quizId}-${opt.id}`}>
+                        {opt.value}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </CardContent>
+            </Card>
           ))}
 
           {submitError && <p className="text-red-600">{submitError}</p>}

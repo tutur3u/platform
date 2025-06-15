@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 const onQuestionJump = (questionIndex: number) => {
-  const element = document.getElementById(`question-${questionIndex}`); // or use questionId
+  const element = document.getElementById(`quiz-${questionIndex}`); // or use questionId
   if (element) {
     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     element.focus(); // Optional: set focus to the question
