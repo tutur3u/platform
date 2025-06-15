@@ -146,10 +146,12 @@ export function TimerControls({
   });
   const [isTaskDropdownOpen, setIsTaskDropdownOpen] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  
+
   // Dropdown positioning state
-  const [dropdownPosition, setDropdownPosition] = useState<'below' | 'above'>('below');
-  
+  const [dropdownPosition, setDropdownPosition] = useState<'below' | 'above'>(
+    'below'
+  );
+
   // Refs for positioning
   const dropdownContainerRef = useRef<HTMLDivElement>(null);
   const dropdownContentRef = useRef<HTMLDivElement>(null);
@@ -203,13 +205,14 @@ export function TimerControls({
         setSessionMode('task');
         setNewSessionTitle(`Working on: ${selectedTask.name}`);
         setNewSessionDescription(selectedTask.description || '');
-        
+
         // Show success feedback (same as drag & drop)
         toast.success(`Task "${selectedTask.name}" ready to track!`, {
-          description: 'Click Start Timer to begin tracking time for this task.',
+          description:
+            'Click Start Timer to begin tracking time for this task.',
           duration: 3000,
         });
-        
+
         // Close dropdown and exit search mode
         setIsTaskDropdownOpen(false);
         setIsSearchMode(false);
@@ -530,7 +533,7 @@ export function TimerControls({
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     dragCounterRef.current--;
-    
+
     // Only set isDragOver to false when counter reaches 0
     if (dragCounterRef.current === 0) {
       setIsDragOver(false);
@@ -546,21 +549,22 @@ export function TimerControls({
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
       if (data.type === 'task' && data.task) {
         const task = data.task;
-        
+
         // Set task mode and populate fields
         setSessionMode('task');
         setSelectedTaskId(task.id);
         setNewSessionTitle(`Working on: ${task.name}`);
         setNewSessionDescription(task.description || '');
-        
+
         // Exit search mode and show selected task
         setIsSearchMode(false);
         setTaskSearchQuery('');
         setIsTaskDropdownOpen(false);
-        
+
         // Show success feedback
         toast.success(`Task "${task.name}" ready to track!`, {
-          description: 'Click Start Timer to begin tracking time for this task.',
+          description:
+            'Click Start Timer to begin tracking time for this task.',
           duration: 3000,
         });
       }
@@ -600,7 +604,7 @@ export function TimerControls({
         taskFilters.priority === 'all' ||
         String(task.priority) === taskFilters.priority;
       const matchesStatus =
-        taskFilters.status === 'all' || 
+        taskFilters.status === 'all' ||
         (task.completed ? 'completed' : 'active') === taskFilters.status;
       const matchesBoard =
         taskFilters.board === 'all' || task.board_name === taskFilters.board;
@@ -618,8 +622,20 @@ export function TimerControls({
   };
 
   // Get unique boards and lists for filter options
-  const uniqueBoards = [...new Set(tasks.map(task => task.board_name).filter((name): name is string => Boolean(name)))];
-  const uniqueLists = [...new Set(tasks.map(task => task.list_name).filter((name): name is string => Boolean(name)))];
+  const uniqueBoards = [
+    ...new Set(
+      tasks
+        .map((task) => task.board_name)
+        .filter((name): name is string => Boolean(name))
+    ),
+  ];
+  const uniqueLists = [
+    ...new Set(
+      tasks
+        .map((task) => task.list_name)
+        .filter((name): name is string => Boolean(name))
+    ),
+  ];
 
   // Calculate dropdown position
   const calculateDropdownPosition = useCallback(() => {
@@ -630,13 +646,16 @@ export function TimerControls({
     const viewportHeight = window.innerHeight;
     const dropdownHeight = 400; // max-height of dropdown
     const buffer = 20; // Buffer from viewport edges
-    
+
     // Calculate available space
     const spaceBelow = viewportHeight - rect.bottom - buffer;
     const spaceAbove = rect.top - buffer;
-    
+
     // Prefer below unless there's significantly more space above
-    if (spaceBelow >= Math.min(dropdownHeight, 200) || spaceBelow >= spaceAbove) {
+    if (
+      spaceBelow >= Math.min(dropdownHeight, 200) ||
+      spaceBelow >= spaceAbove
+    ) {
       setDropdownPosition('below');
     } else {
       setDropdownPosition('above');
@@ -646,16 +665,16 @@ export function TimerControls({
   // Check if dropdown is visible in viewport
   const isDropdownVisible = useCallback(() => {
     if (!dropdownContainerRef.current) return true;
-    
+
     const rect = dropdownContainerRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-    
+
     // Check if the container is still reasonably visible
     const isVerticallyVisible = rect.bottom >= 0 && rect.top <= viewportHeight;
     const isHorizontallyVisible = rect.right >= 0 && rect.left <= viewportWidth;
     const hasMinimumVisibility = rect.height > 0 && rect.width > 0;
-    
+
     return isVerticallyVisible && isHorizontallyVisible && hasMinimumVisibility;
   }, []);
 
@@ -673,7 +692,10 @@ export function TimerControls({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       // Check if click is outside the dropdown container
-      if (!target.closest('[data-task-dropdown]') && !target.closest('.absolute.z-\\[100\\]')) {
+      if (
+        !target.closest('[data-task-dropdown]') &&
+        !target.closest('.absolute.z-\\[100\\]')
+      ) {
         setIsTaskDropdownOpen(false);
         setIsSearchMode(false);
       }
@@ -682,19 +704,20 @@ export function TimerControls({
     if (isTaskDropdownOpen) {
       // Use capture phase to ensure we catch the event before other handlers
       document.addEventListener('mousedown', handleClickOutside, true);
-      return () => document.removeEventListener('mousedown', handleClickOutside, true);
+      return () =>
+        document.removeEventListener('mousedown', handleClickOutside, true);
     }
   }, [isTaskDropdownOpen]);
 
   // Handle scroll and resize events
   useEffect(() => {
     let scrollTimeout: ReturnType<typeof setTimeout>;
-    
+
     const handleScroll = () => {
       if (isTaskDropdownOpen) {
         // Clear previous timeout
         clearTimeout(scrollTimeout);
-        
+
         // Throttle scroll handling
         scrollTimeout = setTimeout(() => {
           if (!isDropdownVisible()) {
@@ -716,11 +739,11 @@ export function TimerControls({
     if (isTaskDropdownOpen) {
       // Calculate initial position
       calculateDropdownPosition();
-      
+
       // Add event listeners
       window.addEventListener('scroll', handleScroll, true);
       window.addEventListener('resize', handleResize);
-      
+
       return () => {
         clearTimeout(scrollTimeout);
         window.removeEventListener('scroll', handleScroll, true);
@@ -733,9 +756,10 @@ export function TimerControls({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Don't trigger shortcuts when typing in input fields
-      const isInputFocused = document.activeElement?.tagName === 'INPUT' || 
-                            document.activeElement?.tagName === 'TEXTAREA' ||
-                            document.activeElement?.getAttribute('contenteditable') === 'true';
+      const isInputFocused =
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        document.activeElement?.getAttribute('contenteditable') === 'true';
 
       // Escape to close dropdown or cancel drag
       if (event.key === 'Escape') {
@@ -746,7 +770,9 @@ export function TimerControls({
         if (isDraggingTask) {
           // Note: This won't actually cancel the drag since it's controlled by parent
           // But it provides visual feedback
-          toast.info('Press ESC while dragging to cancel (drag outside to cancel)');
+          toast.info(
+            'Press ESC while dragging to cancel (drag outside to cancel)'
+          );
           return;
         }
       }
@@ -780,24 +806,33 @@ export function TimerControls({
       if ((event.ctrlKey || event.metaKey) && event.key === 'm' && !isRunning) {
         event.preventDefault();
         setSessionMode(sessionMode === 'task' ? 'manual' : 'task');
-        toast.success(`Switched to ${sessionMode === 'task' ? 'manual' : 'task'} mode`);
+        toast.success(
+          `Switched to ${sessionMode === 'task' ? 'manual' : 'task'} mode`
+        );
       }
 
       // Arrow keys for task navigation when dropdown is open
-      if (isTaskDropdownOpen && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+      if (
+        isTaskDropdownOpen &&
+        (event.key === 'ArrowDown' || event.key === 'ArrowUp')
+      ) {
         event.preventDefault();
         const filteredTasks = getFilteredTasks();
         if (filteredTasks.length === 0) return;
 
-        const currentIndex = filteredTasks.findIndex(task => task.id === selectedTaskId);
+        const currentIndex = filteredTasks.findIndex(
+          (task) => task.id === selectedTaskId
+        );
         let nextIndex;
-        
+
         if (event.key === 'ArrowDown') {
-          nextIndex = currentIndex < filteredTasks.length - 1 ? currentIndex + 1 : 0;
+          nextIndex =
+            currentIndex < filteredTasks.length - 1 ? currentIndex + 1 : 0;
         } else {
-          nextIndex = currentIndex > 0 ? currentIndex - 1 : filteredTasks.length - 1;
+          nextIndex =
+            currentIndex > 0 ? currentIndex - 1 : filteredTasks.length - 1;
         }
-        
+
         const nextTask = filteredTasks[nextIndex];
         if (nextTask?.id) {
           setSelectedTaskId(nextTask.id);
@@ -805,7 +840,11 @@ export function TimerControls({
       }
 
       // Enter to select highlighted task when dropdown is open
-      if (isTaskDropdownOpen && event.key === 'Enter' && selectedTaskId !== 'none') {
+      if (
+        isTaskDropdownOpen &&
+        event.key === 'Enter' &&
+        selectedTaskId !== 'none'
+      ) {
         event.preventDefault();
         handleTaskSelectionChange(selectedTaskId);
       }
@@ -821,14 +860,27 @@ export function TimerControls({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isRunning, newSessionTitle, startTimer, stopTimer, pauseTimer, isTaskDropdownOpen, isDraggingTask, selectedTaskId, sessionMode]);
+  }, [
+    isRunning,
+    newSessionTitle,
+    startTimer,
+    stopTimer,
+    pauseTimer,
+    isTaskDropdownOpen,
+    isDraggingTask,
+    selectedTaskId,
+    sessionMode,
+  ]);
 
   return (
     <>
-      <Card className={cn(
-        "relative transition-all duration-300",
-        isDraggingTask && "ring-2 ring-blue-500/50 shadow-lg shadow-blue-500/20 bg-blue-50/30 dark:bg-blue-950/20"
-      )}>
+      <Card
+        className={cn(
+          'relative transition-all duration-300',
+          isDraggingTask &&
+            'bg-blue-50/30 shadow-lg ring-2 shadow-blue-500/20 ring-blue-500/50 dark:bg-blue-950/20'
+        )}
+      >
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Timer className="h-5 w-5" />
@@ -954,55 +1006,61 @@ export function TimerControls({
             </div>
           ) : (
             <div className="space-y-6">
-              <div 
+              <div
                 className={cn(
-                  "rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200",
-                  isDragOver 
-                    ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20" 
+                  'rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200',
+                  isDragOver
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
                     : isDraggingTask
-                    ? "border-blue-400/60 bg-blue-50/30 dark:bg-blue-950/10"
-                    : "border-muted-foreground/25"
+                      ? 'border-blue-400/60 bg-blue-50/30 dark:bg-blue-950/10'
+                      : 'border-muted-foreground/25'
                 )}
                 onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
               >
-                <Clock className={cn(
-                  "mx-auto mb-3 h-12 w-12 transition-colors duration-200",
-                  isDragOver 
-                    ? "text-blue-500" 
-                    : isDraggingTask 
-                    ? "text-blue-400" 
-                    : "text-muted-foreground"
-                )} />
-                <p className={cn(
-                  "text-base transition-colors duration-200",
-                  isDragOver 
-                    ? "text-blue-700 dark:text-blue-300" 
-                    : isDraggingTask 
-                    ? "text-blue-600 dark:text-blue-400" 
-                    : "text-muted-foreground"
-                )}>
-                  {isDragOver 
-                    ? "Drop task here to start tracking" 
-                    : isDraggingTask 
-                    ? "Drag task here to start tracking" 
-                    : "Ready to start tracking time"}
+                <Clock
+                  className={cn(
+                    'mx-auto mb-3 h-12 w-12 transition-colors duration-200',
+                    isDragOver
+                      ? 'text-blue-500'
+                      : isDraggingTask
+                        ? 'text-blue-400'
+                        : 'text-muted-foreground'
+                  )}
+                />
+                <p
+                  className={cn(
+                    'text-base transition-colors duration-200',
+                    isDragOver
+                      ? 'text-blue-700 dark:text-blue-300'
+                      : isDraggingTask
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-muted-foreground'
+                  )}
+                >
+                  {isDragOver
+                    ? 'Drop task here to start tracking'
+                    : isDraggingTask
+                      ? 'Drag task here to start tracking'
+                      : 'Ready to start tracking time'}
                 </p>
-                <p className={cn(
-                  "mt-2 text-xs transition-colors duration-200",
-                  isDragOver 
-                    ? "text-blue-600/70 dark:text-blue-400/70" 
-                    : isDraggingTask 
-                    ? "text-blue-500/70 dark:text-blue-400/70" 
-                    : "text-muted-foreground"
-                )}>
-                  {isDragOver 
-                    ? "Release to select this task" 
-                    : isDraggingTask 
-                    ? "Drop zone is ready • Drag outside to cancel" 
-                    : "Drag tasks to the search field or select manually below"}
+                <p
+                  className={cn(
+                    'mt-2 text-xs transition-colors duration-200',
+                    isDragOver
+                      ? 'text-blue-600/70 dark:text-blue-400/70'
+                      : isDraggingTask
+                        ? 'text-blue-500/70 dark:text-blue-400/70'
+                        : 'text-muted-foreground'
+                  )}
+                >
+                  {isDragOver
+                    ? 'Release to select this task'
+                    : isDraggingTask
+                      ? 'Drop zone is ready • Drag outside to cancel'
+                      : 'Drag tasks to the search field or select manually below'}
                 </p>
               </div>
 
@@ -1046,15 +1104,16 @@ export function TimerControls({
                     <Label className="text-sm font-medium">
                       Select a task to track time for:
                     </Label>
-                    
+
                     {tasks.length === 0 ? (
                       <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-4 text-center">
                         <CheckCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                        <p className="mb-2 text-sm font-medium text-muted-foreground">
                           No tasks available
                         </p>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          Create tasks in your project boards to start tracking time
+                        <p className="mb-3 text-xs text-muted-foreground">
+                          Create tasks in your project boards to start tracking
+                          time
                         </p>
                         <Button
                           variant="outline"
@@ -1063,7 +1122,9 @@ export function TimerControls({
                             if (onGoToTasksTab) {
                               onGoToTasksTab();
                             } else {
-                              toast.info("Redirecting to Tasks tab to create a task...");
+                              toast.info(
+                                'Redirecting to Tasks tab to create a task...'
+                              );
                             }
                           }}
                           className="text-xs"
@@ -1073,12 +1134,10 @@ export function TimerControls({
                       </div>
                     ) : (
                       <>
-                        
-
                         {/* Searchable Task Selection */}
-                        <div 
+                        <div
                           ref={dropdownContainerRef}
-                          className="relative" 
+                          className="relative"
                           data-task-dropdown
                           onDragEnter={handleDragEnter}
                           onDragOver={handleDragOver}
@@ -1086,110 +1145,146 @@ export function TimerControls({
                           onDrop={handleDrop}
                         >
                           {/* Display Mode: Show Selected Task */}
-                          {selectedTaskId && selectedTaskId !== 'none' && !isSearchMode && (() => {
-                            const selectedTask = tasks.find(t => t.id === selectedTaskId);
-                            return selectedTask ? (
-                              <div 
-                                className={cn(
-                                  "flex items-center gap-2 py-2 px-3 border rounded-md cursor-text min-h-[2.5rem] transition-all duration-200",
-                                  isDragOver 
-                                    ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20" 
-                                    : isDraggingTask 
-                                    ? "border-blue-400/60 bg-blue-50/20 dark:bg-blue-950/10" 
-                                    : ""
-                                )}
-                                onClick={() => {
-                                  setIsSearchMode(true);
-                                  setTaskSearchQuery('');
-                                  openDropdown();
-                                }}
-                              >
-                                <div className="flex h-6 w-6 items-center justify-center rounded border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10">
-                                  <CheckCircle className="h-3 w-3 text-dynamic-blue" />
-                                </div>
-                                <div className="flex-1 text-left">
-                                  <div className="text-sm font-medium">{selectedTask.name}</div>
-                                  {selectedTask.board_name && selectedTask.list_name && (
-                                    <div className="flex items-center gap-1 mt-1">
-                                      <span className="text-xs text-muted-foreground">{selectedTask.board_name}</span>
-                                      <span className="text-xs text-muted-foreground">•</span>
-                                      <span className="text-xs text-muted-foreground">{selectedTask.list_name}</span>
-                                    </div>
+                          {selectedTaskId &&
+                            selectedTaskId !== 'none' &&
+                            !isSearchMode &&
+                            (() => {
+                              const selectedTask = tasks.find(
+                                (t) => t.id === selectedTaskId
+                              );
+                              return selectedTask ? (
+                                <div
+                                  className={cn(
+                                    'flex min-h-[2.5rem] cursor-text items-center gap-2 rounded-md border px-3 py-2 transition-all duration-200',
+                                    isDragOver
+                                      ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
+                                      : isDraggingTask
+                                        ? 'border-blue-400/60 bg-blue-50/20 dark:bg-blue-950/10'
+                                        : ''
                                   )}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setSelectedTaskId('none');
-                                      setIsSearchMode(true);
-                                      setTaskSearchQuery('');
-                                      toast.success('Task selection cleared');
-                                    }}
-                                    className="p-1 hover:bg-red-100 hover:text-red-600 rounded transition-colors dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                                    title="Remove selected task"
-                                  >
-                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      if (isTaskDropdownOpen) {
-                                        setIsTaskDropdownOpen(false);
-                                        setIsSearchMode(false);
-                                      } else {
-                                        openDropdown();
-                                      }
-                                    }}
-                                    className="p-1 hover:bg-muted rounded"
-                                  >
-                                    <svg
-                                      className={cn(
-                                        "h-4 w-4 transition-transform",
-                                        isTaskDropdownOpen && (dropdownPosition === 'above' ? "rotate-0" : "rotate-180")
+                                  onClick={() => {
+                                    setIsSearchMode(true);
+                                    setTaskSearchQuery('');
+                                    openDropdown();
+                                  }}
+                                >
+                                  <div className="flex h-6 w-6 items-center justify-center rounded border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10">
+                                    <CheckCircle className="h-3 w-3 text-dynamic-blue" />
+                                  </div>
+                                  <div className="flex-1 text-left">
+                                    <div className="text-sm font-medium">
+                                      {selectedTask.name}
+                                    </div>
+                                    {selectedTask.board_name &&
+                                      selectedTask.list_name && (
+                                        <div className="mt-1 flex items-center gap-1">
+                                          <span className="text-xs text-muted-foreground">
+                                            {selectedTask.board_name}
+                                          </span>
+                                          <span className="text-xs text-muted-foreground">
+                                            •
+                                          </span>
+                                          <span className="text-xs text-muted-foreground">
+                                            {selectedTask.list_name}
+                                          </span>
+                                        </div>
                                       )}
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setSelectedTaskId('none');
+                                        setIsSearchMode(true);
+                                        setTaskSearchQuery('');
+                                        toast.success('Task selection cleared');
+                                      }}
+                                      className="rounded p-1 transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                                      title="Remove selected task"
                                     >
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  </button>
+                                      <svg
+                                        className="h-4 w-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M6 18L18 6M6 6l12 12"
+                                        />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (isTaskDropdownOpen) {
+                                          setIsTaskDropdownOpen(false);
+                                          setIsSearchMode(false);
+                                        } else {
+                                          openDropdown();
+                                        }
+                                      }}
+                                      className="rounded p-1 hover:bg-muted"
+                                    >
+                                      <svg
+                                        className={cn(
+                                          'h-4 w-4 transition-transform',
+                                          isTaskDropdownOpen &&
+                                            (dropdownPosition === 'above'
+                                              ? 'rotate-0'
+                                              : 'rotate-180')
+                                        )}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M19 9l-7 7-7-7"
+                                        />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            ) : null;
-                          })()}
-                          
+                              ) : null;
+                            })()}
+
                           {/* Search Mode: Show Input Field */}
-                          {(isSearchMode || !selectedTaskId || selectedTaskId === 'none') && (
+                          {(isSearchMode ||
+                            !selectedTaskId ||
+                            selectedTaskId === 'none') && (
                             <div className="relative">
                               <Input
                                 placeholder={
-                                  isDragOver 
-                                    ? "Drop task here to select" 
-                                    : isDraggingTask 
-                                    ? "Drop here or press ESC to cancel" 
-                                    : "Search tasks or create new..."
+                                  isDragOver
+                                    ? 'Drop task here to select'
+                                    : isDraggingTask
+                                      ? 'Drop here or press ESC to cancel'
+                                      : 'Search tasks or create new...'
                                 }
                                 value={taskSearchQuery}
-                                onChange={(e) => setTaskSearchQuery(e.target.value)}
+                                onChange={(e) =>
+                                  setTaskSearchQuery(e.target.value)
+                                }
                                 onFocus={() => {
                                   setIsSearchMode(true);
                                   openDropdown();
                                 }}
                                 className={cn(
-                                  "h-auto min-h-[2.5rem] pr-10 transition-all duration-200",
-                                  isDragOver 
-                                    ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20" 
-                                    : isDraggingTask 
-                                    ? "border-blue-400/60 bg-blue-50/20 dark:bg-blue-950/10" 
-                                    : ""
+                                  'h-auto min-h-[2.5rem] pr-10 transition-all duration-200',
+                                  isDragOver
+                                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
+                                    : isDraggingTask
+                                      ? 'border-blue-400/60 bg-blue-50/20 dark:bg-blue-950/10'
+                                      : ''
                                 )}
                                 autoFocus={isSearchMode}
                               />
@@ -1205,18 +1300,26 @@ export function TimerControls({
                                     openDropdown();
                                   }
                                 }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded"
+                                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 hover:bg-muted"
                               >
                                 <svg
                                   className={cn(
-                                    "h-4 w-4 transition-transform",
-                                    isTaskDropdownOpen && (dropdownPosition === 'above' ? "rotate-0" : "rotate-180")
+                                    'h-4 w-4 transition-transform',
+                                    isTaskDropdownOpen &&
+                                      (dropdownPosition === 'above'
+                                        ? 'rotate-0'
+                                        : 'rotate-180')
                                   )}
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
                                 >
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 9l-7 7-7-7"
+                                  />
                                 </svg>
                               </button>
                             </div>
@@ -1224,32 +1327,39 @@ export function TimerControls({
 
                           {/* Dropdown Content */}
                           {isTaskDropdownOpen && (
-                            <div 
+                            <div
                               ref={dropdownContentRef}
                               className={cn(
-                                "absolute z-[100] left-0 right-0 bg-popover border rounded-md shadow-lg transition-all duration-200",
-                                dropdownPosition === 'above' ? 'bottom-full mb-1' : 'top-full mt-1'
+                                'absolute right-0 left-0 z-[100] rounded-md border bg-popover shadow-lg transition-all duration-200',
+                                dropdownPosition === 'above'
+                                  ? 'bottom-full mb-1'
+                                  : 'top-full mt-1'
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
                               }}
                             >
                               {/* Filter Buttons */}
-                              <div className="border-b p-3 space-y-2">
-                                <div className="text-xs font-medium text-muted-foreground">Quick Filters</div>
+                              <div className="space-y-2 border-b p-3">
+                                <div className="text-xs font-medium text-muted-foreground">
+                                  Quick Filters
+                                </div>
                                 <div className="flex flex-wrap gap-1">
                                   <button
                                     type="button"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      setTaskFilters(prev => ({ ...prev, board: 'all' }));
+                                      setTaskFilters((prev) => ({
+                                        ...prev,
+                                        board: 'all',
+                                      }));
                                     }}
                                     className={cn(
-                                      "px-2 py-1 text-xs rounded-md border transition-colors",
+                                      'rounded-md border px-2 py-1 text-xs transition-colors',
                                       taskFilters.board === 'all'
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-background hover:bg-muted border-border"
+                                        ? 'border-primary bg-primary text-primary-foreground'
+                                        : 'border-border bg-background hover:bg-muted'
                                     )}
                                   >
                                     All Boards
@@ -1261,33 +1371,39 @@ export function TimerControls({
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        setTaskFilters(prev => ({ ...prev, board }));
+                                        setTaskFilters((prev) => ({
+                                          ...prev,
+                                          board,
+                                        }));
                                       }}
                                       className={cn(
-                                        "px-2 py-1 text-xs rounded-md border transition-colors",
+                                        'rounded-md border px-2 py-1 text-xs transition-colors',
                                         taskFilters.board === board
-                                          ? "bg-primary text-primary-foreground border-primary"
-                                          : "bg-background hover:bg-muted border-border"
+                                          ? 'border-primary bg-primary text-primary-foreground'
+                                          : 'border-border bg-background hover:bg-muted'
                                       )}
                                     >
                                       {board}
                                     </button>
                                   ))}
                                 </div>
-                                
+
                                 <div className="flex flex-wrap gap-1">
                                   <button
                                     type="button"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      setTaskFilters(prev => ({ ...prev, list: 'all' }));
+                                      setTaskFilters((prev) => ({
+                                        ...prev,
+                                        list: 'all',
+                                      }));
                                     }}
                                     className={cn(
-                                      "px-2 py-1 text-xs rounded-md border transition-colors",
+                                      'rounded-md border px-2 py-1 text-xs transition-colors',
                                       taskFilters.list === 'all'
-                                        ? "bg-secondary text-secondary-foreground border-secondary"
-                                        : "bg-background hover:bg-muted border-border"
+                                        ? 'border-secondary bg-secondary text-secondary-foreground'
+                                        : 'border-border bg-background hover:bg-muted'
                                     )}
                                   >
                                     All Lists
@@ -1299,24 +1415,30 @@ export function TimerControls({
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        setTaskFilters(prev => ({ ...prev, list }));
+                                        setTaskFilters((prev) => ({
+                                          ...prev,
+                                          list,
+                                        }));
                                       }}
                                       className={cn(
-                                        "px-2 py-1 text-xs rounded-md border transition-colors",
+                                        'rounded-md border px-2 py-1 text-xs transition-colors',
                                         taskFilters.list === list
-                                          ? "bg-secondary text-secondary-foreground border-secondary"
-                                          : "bg-background hover:bg-muted border-border"
+                                          ? 'border-secondary bg-secondary text-secondary-foreground'
+                                          : 'border-border bg-background hover:bg-muted'
                                       )}
                                     >
                                       {list}
                                     </button>
                                   ))}
                                 </div>
-                                
-                                {(taskSearchQuery || (taskFilters.board !== 'all') || (taskFilters.list !== 'all')) && (
+
+                                {(taskSearchQuery ||
+                                  taskFilters.board !== 'all' ||
+                                  taskFilters.list !== 'all') && (
                                   <div className="flex items-center justify-between text-xs">
                                     <span className="text-muted-foreground">
-                                      {getFilteredTasks().length} of {tasks.length} tasks
+                                      {getFilteredTasks().length} of{' '}
+                                      {tasks.length} tasks
                                     </span>
                                     <button
                                       type="button"
@@ -1324,7 +1446,12 @@ export function TimerControls({
                                         e.preventDefault();
                                         e.stopPropagation();
                                         setTaskSearchQuery('');
-                                        setTaskFilters({ board: 'all', list: 'all', priority: 'all', status: 'all' });
+                                        setTaskFilters({
+                                          board: 'all',
+                                          list: 'all',
+                                          priority: 'all',
+                                          status: 'all',
+                                        });
                                       }}
                                       className="text-muted-foreground hover:text-foreground"
                                     >
@@ -1333,29 +1460,38 @@ export function TimerControls({
                                   </div>
                                 )}
                               </div>
-                              
+
                               {/* Task List */}
                               <div className="max-h-[300px] overflow-y-auto">
                                 {getFilteredTasks().length === 0 ? (
                                   <div className="p-6 text-center text-sm text-muted-foreground">
-                                    {taskSearchQuery || (taskFilters.board !== 'all') || (taskFilters.list !== 'all') ? (
+                                    {taskSearchQuery ||
+                                    taskFilters.board !== 'all' ||
+                                    taskFilters.list !== 'all' ? (
                                       <>
-                                        <div className="mb-2">No tasks found matching your criteria</div>
+                                        <div className="mb-2">
+                                          No tasks found matching your criteria
+                                        </div>
                                         <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              setTaskSearchQuery('');
-                                              setTaskFilters({ board: 'all', list: 'all', priority: 'all', status: 'all' });
-                                            }}
-                                            className="text-xs text-primary hover:underline"
-                                          >
-                                            Clear filters to see all tasks
-                                          </button>
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setTaskSearchQuery('');
+                                            setTaskFilters({
+                                              board: 'all',
+                                              list: 'all',
+                                              priority: 'all',
+                                              status: 'all',
+                                            });
+                                          }}
+                                          className="text-xs text-primary hover:underline"
+                                        >
+                                          Clear filters to see all tasks
+                                        </button>
                                       </>
                                     ) : (
-                                      "No tasks available"
+                                      'No tasks available'
                                     )}
                                   </div>
                                 ) : (
@@ -1370,7 +1506,7 @@ export function TimerControls({
                                           handleTaskSelectionChange(task.id);
                                         }
                                       }}
-                                      className="w-full p-0 text-left hover:bg-muted/50 focus:bg-muted/50 focus:outline-none transition-colors"
+                                      className="w-full p-0 text-left transition-colors hover:bg-muted/50 focus:bg-muted/50 focus:outline-none"
                                     >
                                       <div className="flex w-full items-start gap-3 p-3 hover:bg-muted/30">
                                         <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10">
@@ -1388,22 +1524,23 @@ export function TimerControls({
                                               {task.description}
                                             </p>
                                           )}
-                                          {task.board_name && task.list_name && (
-                                            <div className="mt-2 flex items-center gap-2">
-                                              <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1">
-                                                <MapPin className="h-3 w-3 text-muted-foreground" />
-                                                <span className="text-xs font-medium">
-                                                  {task.board_name}
-                                                </span>
+                                          {task.board_name &&
+                                            task.list_name && (
+                                              <div className="mt-2 flex items-center gap-2">
+                                                <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1">
+                                                  <MapPin className="h-3 w-3 text-muted-foreground" />
+                                                  <span className="text-xs font-medium">
+                                                    {task.board_name}
+                                                  </span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
+                                                  <Tag className="h-3 w-3 text-dynamic-green" />
+                                                  <span className="text-xs font-medium text-dynamic-green">
+                                                    {task.list_name}
+                                                  </span>
+                                                </div>
                                               </div>
-                                              <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
-                                                <Tag className="h-3 w-3 text-dynamic-green" />
-                                                <span className="text-xs font-medium text-dynamic-green">
-                                                  {task.list_name}
-                                                </span>
-                                              </div>
-                                            </div>
-                                          )}
+                                            )}
                                         </div>
                                       </div>
                                     </button>
@@ -1413,7 +1550,6 @@ export function TimerControls({
                             </div>
                           )}
                         </div>
-
 
                         {(selectedTaskId === 'none' || !selectedTaskId) && (
                           <div className="text-center">
