@@ -12,28 +12,78 @@
 //     // return new Response('Subscription canceled', { status: 200 });
 //   },
 // });
-import { NextRequest, NextResponse } from 'next/server';
+// import {
+//   handleOneTimePayment,
+//   handleSubscription,
+//   updateSubscriptionInDatabase,
+// } from '@/lib/api-functions';
+import { logger } from '@/lib/logger';
+import { WebhookPayload } from '@/types/api-types';
+import { headers } from 'next/headers';
 import { Webhook } from 'standardwebhooks';
 
-export async function POST(_req: NextRequest, res: NextResponse) {
-  //   const webhook = new Webhook({
-  //     secret: process.env.POLAR_WEBHOOK_SECRET!,
-  //   });
-  //   try {
-  //     const event = await webhook.verify(req);
-  //     switch (event.type) {
-  //       case 'subscription.active':
-  //         console.log('Subscription activated:', event.data);
-  //         break;
-  //       case 'subscription.canceled':
-  //         console.log('Subscription canceled:', event.data);
-  //         break;
-  //       default:
-  //         console.warn('Unhandled event type:', event.type);
-  //     }
-  //     return new Response('Webhook received', { status: 200 });
-  //   } catch (error) {
-  //     console.error('Webhook verification failed:', error);
-  //     return new Response('Webhook verification failed', { status: 400 });
-  //   }
+const webhook = new Webhook(process.env.NEXT_PUBLIC_DODO_WEBHOOK_KEY!);
+
+export async function POST(request: Request) {
+  const headersList = await headers();
+
+  try {
+    const rawBody = await request.text();
+    logger.info('Received webhook request', { rawBody });
+
+    const webhookHeaders = {
+      'webhook-id': headersList.get('webhook-id') || '',
+      'webhook-signature': headersList.get('webhook-signature') || '',
+      'webhook-timestamp': headersList.get('webhook-timestamp') || '',
+    };
+
+    await webhook.verify(rawBody, webhookHeaders);
+    logger.info('Webhook verified successfully');
+
+    const payload = JSON.parse(rawBody) as WebhookPayload;
+
+    if (!payload.data?.customer?.email) {
+      throw new Error('Missing customer email in payload');
+    }
+
+    const email = payload.data.customer.email;
+
+    if (payload.data.payload_type === 'Subscription') {
+      switch (payload.data.status) {
+        case 'active':
+          //   await handleSubscription(email, payload);
+          console.log('Subscription activated:', payload);
+          break;
+
+        default:
+          //   await updateSubscriptionInDatabase(
+          //     email,
+          //     payload.data.subscription_id!
+          //   );
+          console.log('Subscription status updated:', payload);
+          break;
+      }
+    } else if (
+      payload.data.payload_type === 'Payment' &&
+      payload.type === 'payment.succeeded' &&
+      !payload.data.subscription_id
+    ) {
+      //   await handleOneTimePayment(email, payload);
+      console.log('One-time payment handled:', payload);
+    }
+
+    return Response.json(
+      { message: 'Webhook processed successfully' },
+      { status: 200 }
+    );
+  } catch (error) {
+    logger.error('Webhook processing failed', error);
+    return Response.json(
+      {
+        error: 'Webhook processing failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 400 }
+    );
+  }
 }

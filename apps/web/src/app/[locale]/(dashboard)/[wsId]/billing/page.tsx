@@ -1,13 +1,13 @@
 import { BillingClient } from './billing-client';
 import PurchaseLink from './data-polar-checkout';
-import { payment } from '@/lib/payment';
+import { dodopayments } from '@/lib/payment';
 import { api } from '@/lib/polar';
 import { Button } from '@tuturuuu/ui/button';
 import { CreditCard, Receipt } from 'lucide-react';
 
 const fetchProducts = async () => {
   try {
-    const res = await payment.products.list();
+    const res = await dodopayments.products.list();
     return res.items ?? [];
   } catch (err) {
     console.error('Failed to fetch products:', err);
