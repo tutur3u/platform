@@ -32,7 +32,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { type Variants, motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -47,7 +47,7 @@ const containerVariants = {
       staggerChildren: 0.1,
     },
   },
-};
+} satisfies Variants;
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -60,7 +60,7 @@ const itemVariants = {
       damping: 15,
     },
   },
-};
+} satisfies Variants;
 
 // Enhanced floating animation
 const floatingVariants = {
@@ -74,7 +74,7 @@ const floatingVariants = {
       ease: 'easeInOut',
     },
   },
-};
+} satisfies Variants;
 
 export function AboutUsPage() {
   const t = useTranslations('nova.about');

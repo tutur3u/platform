@@ -5,26 +5,30 @@
     "build": "turbo run build",
     "buildx": "bun i && turbo test lint build",
     "dev": "turbo run dev --parallel",
+    "dev:all": "turbo run dev --parallel",
+    "dev:legacy": "turbo run dev --parallel",
     "dev:web": "turbo run dev -F @tuturuuu/web",
     "dev:calendar": "turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",
     "dev:rewise": "turbo run dev -F @tuturuuu/rewise -F @tuturuuu/web",
     "dev:upskii": "turbo run dev -F @tuturuuu/upskii -F @tuturuuu/web",
     "dev:famigo": "turbo run dev -F @tuturuuu/famigo -F @tuturuuu/web",
     "dev:nova": "turbo run dev -F @tuturuuu/nova -F @tuturuuu/web",
-    "devx": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev --parallel",
-    "devx:web": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev -F @tuturuuu/web",
-    "devx:calendar": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",
-    "devx:rewise": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev -F @tuturuuu/rewise -F @tuturuuu/web",
-    "devx:upskii": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev -F @tuturuuu/upskii -F @tuturuuu/web",
-    "devx:famigo": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev -F @tuturuuu/famigo -F @tuturuuu/web",
-    "devx:nova": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev -F @tuturuuu/nova -F @tuturuuu/web",
-    "devrs": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev --parallel",
-    "devrs:web": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev -F @tuturuuu/web",
-    "devrs:calendar": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",
-    "devrs:rewise": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev -F @tuturuuu/rewise -F @tuturuuu/web",
-    "devrs:upskii": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev -F @tuturuuu/upskii -F @tuturuuu/web",
-    "devrs:famigo": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev -F @tuturuuu/famigo -F @tuturuuu/web",
-    "devrs:nova": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev -F @tuturuuu/nova -F @tuturuuu/web",
+    "devx": "bun sb:stop && bun i && bun sb:start && bun dev:all",
+    "devx:all": "bun sb:stop && bun i && bun sb:start && bun dev:all",
+    "devx:web": "bun sb:stop && bun i && bun sb:start && bun dev:web",
+    "devx:calendar": "bun sb:stop && bun i && bun sb:start && bun dev:calendar",
+    "devx:rewise": "bun sb:stop && bun i && bun sb:start && bun dev:rewise",
+    "devx:upskii": "bun sb:stop && bun i && bun sb:start && bun dev:upskii",
+    "devx:famigo": "bun sb:stop && bun i && bun sb:start && bun dev:famigo",
+    "devx:nova": "bun sb:stop && bun i && bun sb:start && bun dev:nova",
+    "devrs": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:all",
+    "devrs:all": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:all",
+    "devrs:web": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:web",
+    "devrs:calendar": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:calendar",
+    "devrs:rewise": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:rewise",
+    "devrs:upskii": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:upskii",
+    "devrs:famigo": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:famigo",
+    "devrs:nova": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:nova",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
@@ -46,7 +50,8 @@
     "sb:up": "cd apps/db && bun sb:up",
     "sb:typegen": "cd apps/db && bun sb:typegen",
     "ui:add": "bun --filter ui ui:add",
-    "ui:diff": "bun --filter ui ui:diff"
+    "ui:diff": "bun --filter ui ui:diff",
+    "update-all": "(cd apps && for dir in */; do echo \"Updating apps/$dir...\" && cd \"$dir\" && bun update && cd ..; done) && (cd packages && for dir in */; do echo \"Updating packages/$dir...\" && cd \"$dir\" && bun update && cd ..; done)"
   },
   "dependencies": {
     "cookies-next": "^6.0.0",
@@ -58,7 +63,7 @@
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "^3.2.2",
+    "@vitest/coverage-v8": "^3.2.3",
     "eslint": "^9.28.0",
     "prettier": "^3.5.3",
     "prettier-eslint": "^16.4.2",
@@ -66,12 +71,12 @@
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
-    "vitest": "^3.2.2"
+    "vitest": "^3.2.3"
   },
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "bun@1.2.15",
+  "packageManager": "bun@1.2.16",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -87,19 +92,5 @@
     "sharp",
     "supabase",
     "unrs-resolver"
-  ],
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@tailwindcss/oxide",
-      "@vercel/speed-insights",
-      "canvas",
-      "core-js",
-      "cytoscape",
-      "esbuild",
-      "puppeteer",
-      "sharp",
-      "supabase",
-      "unrs-resolver"
-    ]
-  }
+  ]
 }

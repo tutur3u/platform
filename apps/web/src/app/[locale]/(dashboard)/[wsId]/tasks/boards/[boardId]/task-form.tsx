@@ -156,7 +156,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
   }
 
   return (
-    <Card className="border-2 border-dashed border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+    <Card className="border-2 border-dashed">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -186,21 +186,19 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
-              className="border-0 bg-white/80 shadow-sm dark:bg-gray-900/80"
             />
           </div>
 
           {/* Quick Priority Selection */}
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Priority
-            </Label>
-            <div className="flex gap-2">
+            <Label className="text-xs font-medium">Priority</Label>
+            <div className="flex flex-wrap gap-2">
               {[
                 { value: '0', label: 'None', icon: null },
-                { value: '1', label: 'High', icon: Flag },
-                { value: '2', label: 'Medium', icon: Flag },
-                { value: '3', label: 'Low', icon: Flag },
+                { value: '1', label: 'Urgent', icon: Flag },
+                { value: '2', label: 'High', icon: Flag },
+                { value: '3', label: 'Medium', icon: Flag },
+                { value: '4', label: 'Low', icon: Flag },
               ].map(({ value, label, icon: Icon }) => (
                 <Button
                   key={value}
@@ -223,9 +221,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
           {/* Quick Assignee Selection */}
           {members.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                Quick Assign
-              </Label>
+              <Label className="text-xs font-medium">Quick Assign</Label>
               <div className="flex flex-wrap gap-2">
                 {members.map((member: any) => (
                   <Button
@@ -263,17 +259,15 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
 
           {/* Advanced Options */}
           {isExpanded && (
-            <div className="space-y-4 border-t border-gray-200 pt-2 dark:border-gray-700">
+            <div className="space-y-4 border-t">
               {/* Description */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Description
-                </Label>
+                <Label className="text-xs font-medium">Description</Label>
                 <Textarea
                   placeholder="Add a description..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-[60px] border-0 bg-white/80 text-xs shadow-sm dark:bg-gray-900/80"
+                  className="min-h-[60px] text-xs"
                 />
               </div>
 
@@ -281,9 +275,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 {/* Start Date */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    Start Date
-                  </Label>
+                  <Label className="text-xs font-medium">Start Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -310,9 +302,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
 
                 {/* End Date */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    Due Date
-                  </Label>
+                  <Label className="text-xs font-medium">Due Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button

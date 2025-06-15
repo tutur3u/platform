@@ -21,7 +21,7 @@ const authMiddleware = createCentralizedAuthMiddleware({
 });
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  // First handle authentication with the centralized middleware
+  // Handle authentication and MFA with the centralized middleware
   const authRes = await authMiddleware(req);
 
   // If the auth middleware returned a redirect response, return it
@@ -51,12 +51,21 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   // Handle authenticated users accessing the root path or root with locale
   // Skip workspace redirect if no-redirect parameter is present (from /home redirect)
   const isRootPath = req.nextUrl.pathname === '/';
+  const isOnboardingPath = req.nextUrl.pathname === '/onboarding';
+
   const isLocaleRootPath =
     pathSegments.length === 1 &&
     supportedLocales.includes(pathSegments[0] as Locale);
-  const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
 
-  if ((isRootPath || isLocaleRootPath) && !skipWorkspaceRedirect) {
+  const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
+  const isHashNavigation = req.nextUrl.searchParams.has('hash-nav');
+
+  if (
+    isOnboardingPath ||
+    ((isRootPath || isLocaleRootPath) &&
+      !skipWorkspaceRedirect &&
+      !isHashNavigation)
+  ) {
     try {
       const supabase = await createClient();
       const {

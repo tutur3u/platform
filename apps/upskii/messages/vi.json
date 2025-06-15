@@ -1,4 +1,23 @@
 {
+  "quiz-set-statistics": {
+    "title": "Thống Kê",
+    "description": "Xem thống kê chi tiết về các bài kiểm tra của bạn, bao gồm điểm trung bình, tỷ lệ hoàn thành và nhiều thông tin khác.",
+    "average_pass_rate": "Tỷ Lệ Đạt Trung Bình",
+    "average_score": "Điểm Trung Bình",
+    "total_participants": "Tổng Số Người Tham Gia",
+    "total_quizzes": "Tổng Số Bài Kiểm Tra",
+    "active_quizzes": "Bài kiểm tra hiện có",
+    "total_attempts": "Tổng Số Lượt Làm Bài",
+    "accross_all_quizzes": "Trên tất cả bài kiểm tra",
+    "individual_quiz_performance": "Số Liệu Từng Bài Kiểm Tra",
+    "back": "Quay Lại",
+    "pass_rate": "Tỷ Lệ Đạt",
+    "active_students": "Học Viên Đang Hoạt Động",
+    "unique_participants": "Người tham gia khác nhau",
+    "last_attempt": "Lần Làm Bài Gần Nhất",
+    "no_quizzes": "Không Có Dữ Liệu Bài Kiểm Tra",
+    "no_quizzes_description": "Không tìm thấy lượt làm bài nào cho bộ câu hỏi này. Học viên chưa bắt đầu làm bài kiểm tra."
+  },
   "home-hero": {
     "welcome": "Xin chào, {username}!",
     "badge": "Trải nghiệm học tập nâng cao với AI",
@@ -6,19 +25,19 @@
     "cards": {
       "courses": {
         "title": "Khóa học",
-        "description": "Khám phá các chủ đề khác nhau qua các bài học được thiết kế từng bước rõ ràng."
+        "description": "Nắm vững các kỹ thuật thiết kế prompt từ cơ bản đến nâng cao thông qua bài học từng bước và ví dụ thực tiễn."
       },
       "quizzes": {
-        "title": "Trắc nghiệm",
-        "description": "Củng cố kiến thức qua các bài trắc nghiệm tương tác trên nhiều chủ đề."
+        "title": "Câu hỏi ôn tập",
+        "description": "Kiểm tra mức độ hiểu biết của bạn với các câu hỏi tương tác giúp củng cố kiến thức và nâng cao kỹ năng thiết kế prompt."
       },
       "challenges": {
         "title": "Thử thách",
-        "description": "Vận dụng kiến thức với các thử thách thực tế sáng tạo và thú vị."
+        "description": "Tham gia các thử thách sáng tạo để vượt qua giới hạn và khám phá các giải pháp prompt đột phá cùng AI."
       },
       "ai-chat": {
         "title": "Trò chuyện với AI",
-        "description": "Trò chuyện cùng AI để nhận hỗ trợ học tập và lời khuyên hữu ích."
+        "description": "Luyện tập kỹ năng thiết kế prompt qua các cuộc đối thoại thời gian thực với AI, nhận phản hồi ngay lập tức và cải thiện hiệu quả."
       }
     },
     "get-certificate": "Nhận chứng chỉ của bạn"
@@ -191,7 +210,7 @@
     "api-key-invalid-title": "API Key không hợp lệ",
     "api-key-valid-title": "API Key hợp lệ",
     "api-key-invalid-desc": "Vui lòng cung cấp API Key hợp lệ hoặc thử lại",
-    "api-key-required": "Vui lòng cung cấp một định dạng hợp lệ",
+    "api-key-required-format": "Vui lòng cung cấp một định dạng hợp lệ",
     "api-key-saved-title": "Key API được lưu",
     "validate": "Kiểm tra",
     "save-api-key": "Lưu trữ",
@@ -201,7 +220,9 @@
     "api_input_description": "Nhập chìa khóa API của bạn để sử dụng những tính năng AI",
     "delete-api-key": "Xóa chìa khóa API",
     "api-key-deleted-title": "Chìa khóa API đã được xóa",
-    "api-key-deleted-desc": "Chìa khóa API của bạn đã được xóa"
+    "api-key-deleted-desc": "Chìa khóa API của bạn đã được xóa",
+    "api-key-required": "Vui lòng cung cấp khóa API của bạn để tiếp tục",
+    "get-api-key-from": "Nhận khóa API của bạn từ"
   },
   "api-key-data-table": {
     "id": "Mã số",
@@ -300,6 +321,7 @@
     "events": "Sự kiện"
   },
   "common": {
+    "statistics": "Thống kê",
     "allow_manage_all_challenges": "Cho phép quản lý tất cả các thử thách",
     "name_placeholder": "Nhập tên",
     "name": "Tên",
@@ -1804,7 +1826,7 @@
           "answer5": "Nền tảng này có khả năng tùy biến cao với các tùy chọn gắn nhãn trắng, nhãn hiệu tùy chỉnh, quy trình công việc có thể định cấu hình và tích hợp API. \nBạn có thể điều chỉnh trải nghiệm học tập để phù hợp với nhu cầu của tổ chức bạn.",
           "question6": "Các yêu cầu phần cứng là gì?",
           "answer6": "Nền tảng dựa trên đám mây của chúng tôi hoạt động trên mọi trình duyệt web hiện đại. \nĐể tổ chức hội nghị truyền hình tối ưu, chúng tôi khuyên bạn nên kết nối Internet ổn định và cập nhật các thiết bị có chức năng camera và micrô.",
-          "question7": "Việc sao lưu dữ liệu được xử lí như thế nào?",
+          "question7": "Việc sao lưu dữ liệu ược xử lí như thế nào?",
           "answer7": "Chúng tôi duy trì các bản sao lưu tự động hàng ngày với khả năng lưu giữ trong 30 ngày, lưu trữ dự phòng theo địa lý và các giao thức khắc phục thảm họa. \nDữ liệu của bạn luôn an toàn và có thể truy cập được."
         }
       }
@@ -2885,7 +2907,7 @@
     "change-password-description": "Đổi mật khẩu của bạn.",
     "delete-account": "Xóa tài khoản",
     "delete-account-description": "Xóa tài khoản của bạn.",
-    "delete-account-message": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản.",
+    "delete-account-message": "Tài khoản của bạn sẽ bị xóa vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản.",
     "new_avatar": "Hình đại diện mới",
     "upload_avatar": "Hình đại diện mới",
     "remove_avatar": "Xóa hình đại diện",
@@ -3522,10 +3544,18 @@
     "edit": "Chỉnh sửa khóa học",
     "name": "Tên khóa học",
     "edit_description": "Chỉnh sửa khóa học hiện có",
-    "delete_confirm_title": "Xác nhận xoá \"{name}\"",
     "course_description": "Mô tả khóa học",
     "card_view": "Dạng thẻ",
-    "table_view": "Dạng bảng"
+    "table_view": "Dạng bảng",
+    "no_courses_found": "Chưa có khóa học nào",
+    "no_description_provided": "Không có mô tả",
+    "delete_confirm_title": "Xác nhận xóa \"{name}\"",
+    "certificate_template": "Mẫu chứng chỉ",
+    "select_certificate_template": "Chọn một mẫu chứng chỉ",
+    "image_preview_not_available": "Chưa có mẫu xem trước",
+    "image_preview_not_available_description": "Ảnh xem trước của mẫu chứng chỉ không có sẵn.",
+    "hide_certificate_preview": "Ẩn xem mẫu chứng chỉ",
+    "show_certificate_preview": "Hiển thị xem mẫu chứng chỉ"
   },
   "ws-crawlers": {
     "plural": "Công cụ cào dữ liệu",
@@ -3817,9 +3847,40 @@
     "edit": "Chỉnh sửa bộ trắc nghiệm",
     "question": "Câu hỏi",
     "answer": "Câu trả lời",
+    "question_status_title": "Tiến độ câu hỏi",
+    "answered_status_short": "đã trả lời",
+    "quiz_progress_label": "Tiến độ bài kiểm tra",
+    "question_navigation_label": "Điều hướng câu hỏi",
+    "jump_to_question_aria": "Câu hỏi {{number}}, {{status}}",
+    "answered_state": "Đã trả lời",
+    "unanswered_state": "Chưa trả lời",
+    "answered_icon": "✓",
+    "unanswered_icon": "⚪",
+    "time_elapsed": "Đã trôi qua",
+    "hidden_time_elapsed": "Đã ẩn thời gian",
+    "hidden_time_remaining": "Ẩn đếm ngược",
     "edit_description": "Chỉnh sửa bài kiểm tra hiện có",
     "generation_error": "Đã xảy ra lỗi khi tạo bộ câu hỏi.",
-    "generation_accepted": "Các bộ câu hỏi do AI tạo ra đã được chấp nhận!"
+    "generation_accepted": "Các bộ câu hỏi do AI tạo ra đã được chấp nhận!",
+    "please_answer_all": "Vui lòng trả lời tất cả các câu hỏi.",
+    "loading": "Đang tải...",
+    "results": "Kết quả",
+    "attempt": "Lần thử",
+    "of": "của",
+    "unlimited": "Không giới hạn số lần thi",
+    "score": "Điểm số",
+    "done": "Hoàn thành",
+    "attempts": "Số lần thử",
+    "time_limit": "Giới hạn thời gian",
+    "no_time_limit": "Không giới hạn thời gian",
+    "minutes": "Phút",
+    "take_quiz": "Làm bài kiểm tra",
+    "time_remaining": "Thời gian còn lại",
+    "points": "Điểm",
+    "submitting": "Đang gửi...",
+    "submit": "Nộp bài",
+    "due_on": "Hạn nộp",
+    "quiz_past_due": "Bài kiểm tra đã quá hạn"
   },
   "ws-reports": {
     "report": "Báo cáo",
@@ -4131,7 +4192,5 @@
     "empty_state_description": "Hoàn thành các khóa học để giành chứng chỉ và thể hiện thành tích của bạn.",
     "browse_courses": "Xem các khóa học",
     "certified": "Được chứng nhận"
-  },
-  "no-courses-found": "Chưa có khóa học nào",
-  "no-description-provided": "Không có mô tả"
+  }
 }

@@ -43,7 +43,7 @@ const statusLabels: Record<TaskBoardStatus, string> = {
   closed: 'Closed',
 };
 
-const statusIcons = {
+export const statusIcons = {
   not_started: <CircleDashed className="h-4 w-4" />,
   active: <Circle className="h-4 w-4" />,
   done: <CircleCheck className="h-4 w-4" />,
