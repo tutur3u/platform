@@ -21,6 +21,7 @@ export default async function BillingPage({
   params: Promise<{ wsId: string }>;
 }) {
   const products = await fetchProducts();
+  console.log('Fetched products:', products);
   const { wsId } = await params;
   const currentPlan = {
     name: 'Pro',
@@ -121,7 +122,7 @@ export default async function BillingPage({
             </thead>
             <tbody className="divide-y divide-border">
               {products && products.length > 0 ? (
-                products.map((product) => (
+                products.map((product: any) => (
                   <tr key={product.id}>
                     <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
                       {product.name}
@@ -142,7 +143,7 @@ export default async function BillingPage({
                         asChild
                       >
                         <PurchaseLink
-                          productId={product.id}
+                          productId={product.product_id}
                           wsId={wsId}
                           customerEmail="t@test.com"
                           theme="auto"
