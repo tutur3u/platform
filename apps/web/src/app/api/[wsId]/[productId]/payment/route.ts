@@ -2,6 +2,7 @@
 // THIS IS THE NEW, CORRECT CODE THAT ADDS METADATA
 import { api } from '@/lib/polar';
 import { Checkout } from '@polar-sh/nextjs';
+
 // console.log('Polar Access Token:', process.env.NEXT_PUBLIC_POLAR_ACCESS_TOKEN);
 // export const GET = Checkout({
 //   accessToken:
@@ -35,4 +36,3 @@ import { Checkout } from '@polar-sh/nextjs';
 //   // Return the session details to the Polar Embed script so it can show the popup
 //   return NextResponse.redirect(checkoutSession.url);
 // }
-
