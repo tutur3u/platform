@@ -4,7 +4,7 @@ import { ActivityHeatmap } from './components/activity-heatmap';
 import { CategoryManager } from './components/category-manager';
 import { GoalManager } from './components/goal-manager';
 import { SessionHistory } from './components/session-history';
-import { StatsOverview } from './components/stats-overview';
+
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
@@ -16,7 +16,15 @@ import type {
 } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+
+import { Input } from '@tuturuuu/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import {
   AlertCircle,
   Calendar,
@@ -36,6 +44,8 @@ import {
   Settings,
   Timer,
   RefreshCw,
+  MapPin,
+  Tag,
 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -101,7 +111,7 @@ export default function TimeTrackerContent({
   initialData,
 }: TimeTrackerContentProps) {
   const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState('history');
+  const [activeTab, setActiveTab] = useState('timer');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   // Use React Query for running session to sync with command palette
@@ -380,7 +390,7 @@ export default function TimeTrackerContent({
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [fetchData, isLoading, retryCount]);
+  }, [isLoading, retryCount]); // Remove fetchData dependency
 
   // Timer effect with better cleanup
   useEffect(() => {
@@ -411,7 +421,7 @@ export default function TimeTrackerContent({
   // Load data on mount and when dependencies change
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [wsId, currentUserId, selectedUserId]); // Only depend on actual values, not the function
 
   // Online/offline detection
   useEffect(() => {
@@ -430,7 +440,7 @@ export default function TimeTrackerContent({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [fetchData, retryCount]);
+  }, [retryCount]); // Remove fetchData dependency
 
   // Cleanup on unmount
   useEffect(() => {
@@ -459,7 +469,7 @@ export default function TimeTrackerContent({
   // Retry function with exponential backoff
   const handleRetry = useCallback(() => {
     fetchData(true, true);
-  }, [fetchData]);
+  }, []); // Remove fetchData dependency
 
   // Quick Actions Carousel
   const [carouselView, setCarouselView] = useState(0);
@@ -479,6 +489,16 @@ export default function TimeTrackerContent({
 
   // Sidebar View Switching
   const [sidebarView, setSidebarView] = useState<'analytics' | 'tasks' | 'reports' | 'settings'>('analytics');
+  
+  // Drag and drop state for highlighting drop zones
+  const [isDraggingTask, setIsDraggingTask] = useState(false);
+
+  // Tasks sidebar search and filter state
+  const [tasksSidebarSearch, setTasksSidebarSearch] = useState('');
+  const [tasksSidebarFilters, setTasksSidebarFilters] = useState({
+    board: 'all',
+    list: 'all',
+  });
 
   if (isLoadingUser || !currentUserId) {
     return (
@@ -503,25 +523,25 @@ export default function TimeTrackerContent({
       {/* Enhanced Header with Quick Stats */}
       <div className="space-y-6">
         {/* Main Header Section */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex-1 space-y-3">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
                 <Timer className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                  Time Tracker
-                </h1>
-                <p className="text-sm text-muted-foreground sm:text-base">
-                  {isViewingOtherUser
-                    ? "Viewing another user's time tracking data"
-                    : 'Track and manage your time across projects'}
-                </p>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            Time Tracker
+          </h1>
+          <p className="text-sm text-muted-foreground sm:text-base">
+            {isViewingOtherUser
+              ? "Viewing another user's time tracking data"
+              : 'Track and manage your time across projects'}
+          </p>
               </div>
             </div>
             
-            {!isViewingOtherUser && (
+          {!isViewingOtherUser && (
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <div className="h-2 w-2 rounded-full bg-green-500"></div>
@@ -532,11 +552,11 @@ export default function TimeTrackerContent({
                   <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                   <span>Times updated in real-time</span>
                 </div>
-                {(() => {
-                  const today = new Date();
-                  const dayOfWeek = today.getDay();
+              {(() => {
+                const today = new Date();
+                const dayOfWeek = today.getDay();
 
-                  if (dayOfWeek === 1) {
+                if (dayOfWeek === 1) {
                     return (
                       <>
                         <span>•</span>
@@ -546,59 +566,59 @@ export default function TimeTrackerContent({
                         </div>
                       </>
                     );
-                  } else if (dayOfWeek === 0) {
+                } else if (dayOfWeek === 0) {
                     return (
                       <>
                         <span>•</span>
                         <span>Week resets tomorrow</span>
                       </>
                     );
-                  } else {
+                } else {
                     return (
                       <>
                         <span>•</span>
                         <span>Week resets Monday</span>
                       </>
                     );
-                  }
-                })()}
+                }
+              })()}
               </div>
-            )}
+          )}
             
-            {lastRefresh && (
+          {lastRefresh && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
-                {isOffline && (
+              {isOffline && (
                   <div className="flex items-center gap-1 text-amber-600">
-                    <WifiOff className="h-3 w-3" />
+                  <WifiOff className="h-3 w-3" />
                     <span>Offline</span>
                   </div>
-                )}
+              )}
               </div>
-            )}
-          </div>
+          )}
+        </div>
           
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchData(true, false)}
-              disabled={isLoading}
-              className="gap-2"
-            >
-              <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
-            <UserSelector
-              wsId={wsId}
-              selectedUserId={selectedUserId}
-              onUserChange={handleUserChange}
-              currentUserId={currentUserId}
-              apiCall={apiCall}
-            />
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchData(true, false)}
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+          <UserSelector
+            wsId={wsId}
+            selectedUserId={selectedUserId}
+            onUserChange={handleUserChange}
+            currentUserId={currentUserId}
+            apiCall={apiCall}
+          />
         </div>
+      </div>
 
         {/* Quick Actions Carousel */}
         {!isViewingOtherUser && (
@@ -966,96 +986,263 @@ export default function TimeTrackerContent({
            </div>
          )}
 
-         {/* Error Alert with better UX */}
-        {error && (
-          <Alert
-            variant={isOffline ? 'default' : 'destructive'}
-            className="duration-300 animate-in slide-in-from-top"
-          >
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <div className="flex-1">
-                <span>
-                  {isOffline
-                    ? 'You are offline. Some features may not work.'
-                    : error}
-                </span>
-                {retryCount > 0 && (
-                  <p className="mt-1 text-xs opacity-75">
-                    Retried {retryCount} time{retryCount > 1 ? 's' : ''}
-                  </p>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRetry}
-                disabled={isLoading}
-                className="ml-4 flex-shrink-0"
-              >
-                {isLoading ? 'Retrying...' : 'Try Again'}
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+      {/* Error Alert with better UX */}
+      {error && (
+        <Alert
+          variant={isOffline ? 'default' : 'destructive'}
+          className="duration-300 animate-in slide-in-from-top"
+        >
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <div className="flex-1">
+              <span>
+                {isOffline
+                  ? 'You are offline. Some features may not work.'
+                  : error}
+              </span>
+              {retryCount > 0 && (
+                <p className="mt-1 text-xs opacity-75">
+                  Retried {retryCount} time{retryCount > 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetry}
+              disabled={isLoading}
+              className="ml-4 flex-shrink-0"
+            >
+              {isLoading ? 'Retrying...' : 'Try Again'}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
         {/* New Layout: Analytics sidebar on left, Timer controls and tabs on right */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-          {/* Left Side: Switchable Sidebar Views */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Sidebar View Switcher */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
-                <button
-                  onClick={() => setSidebarView('analytics')}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
-                    sidebarView === 'analytics'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+        <div className="grid grid-cols-1 gap-6 pb-6 lg:grid-cols-5 lg:items-start">
+          {/* Right Side: Tabs with Timer Controls - First on mobile */}
+          <div className="order-1 lg:order-2 lg:col-span-3">
+            <div className="space-y-6">
+              {/* Tab Navigation - Styled like sidebar switcher */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
+                  {!isViewingOtherUser && (
+                    <button
+                      onClick={() => setActiveTab('timer')}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                        activeTab === 'timer'
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Timer className="h-3 w-3" />
+                      Timer
+                    </button>
                   )}
-                >
-                  <TrendingUp className="h-3 w-3" />
-                  Analytics
-                </button>
-                <button
-                  onClick={() => setSidebarView('tasks')}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
-                    sidebarView === 'tasks'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                  <button
+                    onClick={() => setActiveTab('history')}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                      activeTab === 'history'
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Clock className="h-3 w-3" />
+                    History
+                  </button>
+                  {!isViewingOtherUser && (
+                    <button
+                      onClick={() => setActiveTab('categories')}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                        activeTab === 'categories'
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Settings className="h-3 w-3" />
+                      Categories
+                    </button>
                   )}
-                >
-                  <CheckCircle className="h-3 w-3" />
-                  Tasks
-                </button>
-                <button
-                  onClick={() => setSidebarView('reports')}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
-                    sidebarView === 'reports'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <History className="h-3 w-3" />
-                  Reports
-                </button>
-                <button
-                  onClick={() => setSidebarView('settings')}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
-                    sidebarView === 'settings'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Settings className="h-3 w-3" />
-                  Settings
-                </button>
+                  <button
+                    onClick={() => setActiveTab('goals')}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                      activeTab === 'goals'
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <TrendingUp className="h-3 w-3" />
+                    Goals
+                  </button>
+                </div>
               </div>
+
+              {/* Main Tabs - Timer, History, Categories, Goals */}
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+              >
+
+              {/* Tab Content */}
+              {!isViewingOtherUser && (
+                <TabsContent
+                  value="timer"
+                  className="duration-300 animate-in fade-in-50"
+                >
+                  <div data-timer-controls>
+                    <TimerControls
+                      wsId={wsId}
+                      currentSession={currentSession}
+                      setCurrentSession={setCurrentSession}
+                      elapsedTime={elapsedTime}
+                      setElapsedTime={setElapsedTime}
+                      isRunning={isRunning}
+                      setIsRunning={setIsRunning}
+                      categories={categories}
+                      tasks={tasks}
+                      onSessionUpdate={() => fetchData(false)}
+                      formatTime={formatTime}
+                      formatDuration={formatDuration}
+                      apiCall={apiCall}
+                      isDraggingTask={isDraggingTask}
+                      onGoToTasksTab={() => {
+                        setSidebarView('tasks');
+                        toast.success('Switched to Tasks tab - create your first task!');
+                      }}
+                    />
+                  </div>
+                </TabsContent>
+              )}
+
+              <TabsContent
+                value="history"
+                className="duration-300 animate-in fade-in-50"
+              >
+                {isViewingOtherUser && (
+                  <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
+                    <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+                      <Calendar className="h-4 w-4" />
+                      You're viewing another user's session history. You can see their
+                      sessions but cannot edit them.
+                    </p>
+                  </div>
+                )}
+                <SessionHistory
+                  wsId={wsId}
+                  sessions={recentSessions}
+                  categories={categories}
+                  tasks={tasks}
+                  onSessionUpdate={() => fetchData(false)}
+                  readOnly={isViewingOtherUser}
+                  formatDuration={formatDuration}
+                  apiCall={apiCall}
+                />
+              </TabsContent>
+
+              {!isViewingOtherUser && (
+                <TabsContent
+                  value="categories"
+                  className="duration-300 animate-in fade-in-50"
+                >
+                  <CategoryManager
+                    wsId={wsId}
+                    categories={categories}
+                    onCategoriesUpdate={() => fetchData(false)}
+                    readOnly={isViewingOtherUser}
+                    apiCall={apiCall}
+                  />
+                </TabsContent>
+              )}
+
+              <TabsContent
+                value="goals"
+                className="duration-300 animate-in fade-in-50"
+              >
+                {isViewingOtherUser && (
+                  <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
+                    <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+                      <TrendingUp className="h-4 w-4" />
+                      You're viewing another user's goals. You can see their progress
+                      but cannot edit their goals.
+                    </p>
+                  </div>
+                )}
+                <GoalManager
+                  wsId={wsId}
+                  goals={goals}
+                  categories={categories}
+                  timerStats={timerStats}
+                  onGoalsUpdate={() => fetchData(false)}
+                  readOnly={isViewingOtherUser}
+                  formatDuration={formatDuration}
+                  apiCall={apiCall}
+                />
+              </TabsContent>
+              </Tabs>
             </div>
+          </div>
+
+          {/* Left Side: Switchable Sidebar Views - Second on mobile */}
+          <div className="order-2 lg:order-1 lg:col-span-2">
+            <div className="space-y-6">
+              {/* Sidebar View Switcher */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
+                  <button
+                    onClick={() => setSidebarView('analytics')}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                      sidebarView === 'analytics'
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <TrendingUp className="h-3 w-3" />
+                    Analytics
+                  </button>
+                  <button
+                    onClick={() => setSidebarView('tasks')}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                      sidebarView === 'tasks'
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <CheckCircle className="h-3 w-3" />
+                    Tasks
+                  </button>
+                  <button
+                    onClick={() => setSidebarView('reports')}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                      sidebarView === 'reports'
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <History className="h-3 w-3" />
+                    Reports
+                  </button>
+                  <button
+                    onClick={() => setSidebarView('settings')}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all",
+                      sidebarView === 'settings'
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Settings className="h-3 w-3" />
+                    Settings
+                  </button>
+                </div>
+              </div>
 
             {/* Sidebar Content */}
             {sidebarView === 'analytics' && (
@@ -1167,7 +1354,7 @@ export default function TimeTrackerContent({
             </div>
             
             {/* Activity Heatmap - Enhanced with better header */}
-            {timerStats.dailyActivity && (
+      {timerStats.dailyActivity && (
               <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
                 <div className="mb-4">
                   <div className="flex items-center gap-3">
@@ -1191,10 +1378,10 @@ export default function TimeTrackerContent({
                 </div>
                 {/* Remove the original header from ActivityHeatmap component */}
                 <div className="[&>div>div:first-child]:hidden">
-                  <ActivityHeatmap
-                    dailyActivity={timerStats.dailyActivity}
-                    formatDuration={formatDuration}
-                  />
+        <ActivityHeatmap
+          dailyActivity={timerStats.dailyActivity}
+          formatDuration={formatDuration}
+        />
                 </div>
               </div>
             )}
@@ -1205,9 +1392,10 @@ export default function TimeTrackerContent({
             {sidebarView === 'tasks' && (
               <div className="space-y-6">
                 {/* Tasks Header */}
-                <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
-                  <div className="mb-4">
-                    <div className="flex items-center gap-3">
+                <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-6 shadow-sm dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                  {/* Header Section */}
+                  <div className="mb-6">
+                    <div className="flex items-center gap-3 mb-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
                         <CheckCircle className="h-5 w-5 text-white" />
                       </div>
@@ -1215,78 +1403,191 @@ export default function TimeTrackerContent({
                         <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
                           Task Workspace
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                           Drag tasks to timer to start tracking 🎯
                         </p>
                       </div>
                     </div>
                   </div>
                   
-                  {/* Task List */}
-                  <div className="space-y-3">
-                    {tasks.length === 0 ? (
-                      <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
-                        <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          No tasks available. Create tasks in your project boards to see them here.
-                        </p>
+                  {/* Search and Filter Bar */}
+                  <div className="space-y-4 mb-5">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Search tasks..."
+                          value={tasksSidebarSearch}
+                          onChange={(e) => setTasksSidebarSearch(e.target.value)}
+                          className="h-8 text-xs"
+                        />
                       </div>
-                    ) : (
-                      tasks.slice(0, 10).map((task) => (
-                        <div
-                          key={task.id}
-                          className="group cursor-grab rounded-lg border border-gray-200/60 bg-white p-3 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:cursor-grabbing dark:border-gray-700/60 dark:bg-gray-800/50"
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData('application/json', JSON.stringify({
-                              type: 'task',
-                              task: task
-                            }));
-                          }}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50">
-                              <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {task.name}
-                              </h4>
-                              {task.description && (
-                                <p className="mt-1 line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
-                                  {task.description}
-                                </p>
-                              )}
-                              {task.board_name && task.list_name && (
-                                <div className="mt-2 flex items-center gap-2">
-                                  <div className="flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 dark:bg-gray-700">
-                                    <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                                      {task.board_name}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 dark:bg-blue-900/30">
-                                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                                      {task.list_name}
-                                    </span>
+                      <Select
+                        value={tasksSidebarFilters.board}
+                        onValueChange={(value) => setTasksSidebarFilters(prev => ({ ...prev, board: value }))}
+                      >
+                        <SelectTrigger className="h-8 w-24 text-xs">
+                          <SelectValue placeholder="Board" />
+                        </SelectTrigger>
+                                                  <SelectContent>
+                            <SelectItem value="all">All Boards</SelectItem>
+                          {[...new Set(tasks.map(task => task.board_name).filter((name): name is string => Boolean(name)))].map((board) => (
+                            <SelectItem key={board} value={board}>
+                              {board}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={tasksSidebarFilters.list}
+                        onValueChange={(value) => setTasksSidebarFilters(prev => ({ ...prev, list: value }))}
+                      >
+                        <SelectTrigger className="h-8 w-20 text-xs">
+                          <SelectValue placeholder="List" />
+                        </SelectTrigger>
+                                                  <SelectContent>
+                            <SelectItem value="all">All Lists</SelectItem>
+                          {[...new Set(tasks.map(task => task.list_name).filter((name): name is string => Boolean(name)))].map((list) => (
+                            <SelectItem key={list} value={list}>
+                              {list}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Task List with Scrollable Container */}
+                  <div className="space-y-4">
+                    {(() => {
+                      // Filter tasks for sidebar
+                      const filteredSidebarTasks = tasks.filter((task) => {
+                        if (tasksSidebarSearch && !task.name?.toLowerCase().includes(tasksSidebarSearch.toLowerCase())) {
+                          return false;
+                        }
+                        if (tasksSidebarFilters.board && tasksSidebarFilters.board !== 'all' && task.board_name !== tasksSidebarFilters.board) {
+                          return false;
+                        }
+                        if (tasksSidebarFilters.list && tasksSidebarFilters.list !== 'all' && task.list_name !== tasksSidebarFilters.list) {
+                          return false;
+                        }
+                        return true;
+                      });
+
+                      if (tasks.length === 0) {
+                        return (
+                          <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
+                            <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              No tasks available. Create tasks in your project boards to see them here.
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      if (filteredSidebarTasks.length === 0) {
+                        return (
+                          <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
+                            <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              No tasks found matching your criteria.
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <>
+                          {/* Task Count Header */}
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 px-1">
+                            <span>
+                              {filteredSidebarTasks.length} task{filteredSidebarTasks.length !== 1 ? 's' : ''} available
+                              {(tasksSidebarSearch || (tasksSidebarFilters.board && tasksSidebarFilters.board !== 'all') || (tasksSidebarFilters.list && tasksSidebarFilters.list !== 'all')) && 
+                                ` (filtered from ${tasks.length} total)`
+                              }
+                            </span>
+                            <span className="text-blue-600 dark:text-blue-400 font-medium">
+                              Drag to timer →
+                            </span>
+                          </div>
+
+                          {/* Scrollable Task Container */}
+                          <div className="max-h-[400px] overflow-y-auto rounded-lg border border-gray-200/40 bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
+                            <div className="space-y-4">
+                              {filteredSidebarTasks.map((task) => (
+                                <div
+                                  key={task.id}
+                                  className={cn(
+                                    "group cursor-grab rounded-lg border border-gray-200/60 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.01] active:cursor-grabbing dark:border-gray-700/60 dark:bg-gray-800/80",
+                                    isDraggingTask && "ring-1 ring-blue-400/30 shadow-md shadow-blue-500/10"
+                                  )}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.setData('application/json', JSON.stringify({
+                                      type: 'task',
+                                      task: task
+                                    }));
+                                    setIsDraggingTask(true);
+                                  }}
+                                  onDragEnd={() => {
+                                    setIsDraggingTask(false);
+                                  }}
+                                >
+                                  <div className="flex items-start gap-4">
+                                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50">
+                                      <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                                        {task.name}
+                                      </h4>
+                                      {task.description && (
+                                        <p className="line-clamp-2 text-xs text-gray-600 dark:text-gray-400 mb-3">
+                                          {task.description}
+                                        </p>
+                                      )}
+                                      {task.board_name && task.list_name && (
+                                        <div className="flex items-center gap-2">
+                                          <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">
+                                            <MapPin className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                                            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                                              {task.board_name}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
+                                            <Tag className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                              {task.list_name}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-shrink-0 items-center gap-1.5 text-xs text-gray-400 opacity-0 transition-opacity group-hover:opacity-100">
+                                      <span className="font-medium">Drag</span>
+                                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                                      </svg>
+                                    </div>
                                   </div>
                                 </div>
-                              )}
+                              ))}
                             </div>
-                            <div className="text-xs text-gray-400 opacity-0 transition-opacity group-hover:opacity-100">
-                              Drag to timer
-                            </div>
+                            
+                            {/* Scroll indicator */}
+                            {filteredSidebarTasks.length > 5 && (
+                              <div className="mt-2 text-center">
+                                <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                  <span>Scroll for more</span>
+                                  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))
-                    )}
-                    
-                    {tasks.length > 10 && (
-                      <div className="text-center">
-                        <p className="text-xs text-muted-foreground">
-                          Showing 10 of {tasks.length} tasks
-                        </p>
-                      </div>
-                    )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1351,133 +1652,7 @@ export default function TimeTrackerContent({
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Right Side: Timer Controls and Tabs */}
-          <div className="lg:col-span-3">
-            {/* Timer Controls - Always visible for current user */}
-            {!isViewingOtherUser && (
-              <div className="mb-6" data-timer-controls>
-                <TimerControls
-                  wsId={wsId}
-                  currentSession={currentSession}
-                  setCurrentSession={setCurrentSession}
-                  elapsedTime={elapsedTime}
-                  setElapsedTime={setElapsedTime}
-                  isRunning={isRunning}
-                  setIsRunning={setIsRunning}
-                  categories={categories}
-                  tasks={tasks}
-                  onSessionUpdate={() => fetchData(false)}
-                  formatTime={formatTime}
-                  formatDuration={formatDuration}
-                  apiCall={apiCall}
-                />
-              </div>
-            )}
-
-            {/* Tabs for additional functionality */}
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="space-y-6"
-            >
-              <TabsList
-                className={cn(
-                  'grid w-full bg-muted/30 backdrop-blur-sm',
-                  isViewingOtherUser ? 'grid-cols-3' : 'grid-cols-3'
-                )}
-              >
-                <TabsTrigger
-                  value="history"
-                  className="flex items-center gap-2 text-xs transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
-                >
-                  <Clock className="h-4 w-4" />
-                  <span className="hidden sm:inline">History</span>
-                </TabsTrigger>
-                {!isViewingOtherUser && (
-                  <TabsTrigger
-                    value="categories"
-                    className="flex items-center gap-2 text-xs transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span className="hidden sm:inline">Categories</span>
-                  </TabsTrigger>
-                )}
-                <TabsTrigger
-                  value="goals"
-                  className="flex items-center gap-2 text-xs transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
-                >
-                  <TrendingUp className="h-4 w-4" />
-                  <span className="hidden sm:inline">Goals</span>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent
-                value="history"
-                className="duration-300 animate-in fade-in-50"
-              >
-                {isViewingOtherUser && (
-                  <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
-                    <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
-                      <Calendar className="h-4 w-4" />
-                      You're viewing another user's session history. You can see their
-                      sessions but cannot edit them.
-                    </p>
-                  </div>
-                )}
-                <SessionHistory
-                  wsId={wsId}
-                  sessions={recentSessions}
-                  categories={categories}
-                  tasks={tasks}
-                  onSessionUpdate={() => fetchData(false)}
-                  readOnly={isViewingOtherUser}
-                  formatDuration={formatDuration}
-                  apiCall={apiCall}
-                />
-              </TabsContent>
-
-              {!isViewingOtherUser && (
-                <TabsContent
-                  value="categories"
-                  className="duration-300 animate-in fade-in-50"
-                >
-                  <CategoryManager
-                    wsId={wsId}
-                    categories={categories}
-                    onCategoriesUpdate={() => fetchData(false)}
-                    readOnly={isViewingOtherUser}
-                    apiCall={apiCall}
-                  />
-                </TabsContent>
-              )}
-
-              <TabsContent
-                value="goals"
-                className="duration-300 animate-in fade-in-50"
-              >
-                {isViewingOtherUser && (
-                  <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
-                    <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
-                      <TrendingUp className="h-4 w-4" />
-                      You're viewing another user's goals. You can see their progress
-                      but cannot edit their goals.
-                    </p>
-                  </div>
-                )}
-                <GoalManager
-                  wsId={wsId}
-                  goals={goals}
-                  categories={categories}
-                  timerStats={timerStats}
-                  onGoalsUpdate={() => fetchData(false)}
-                  readOnly={isViewingOtherUser}
-                  formatDuration={formatDuration}
-                  apiCall={apiCall}
-                />
-              </TabsContent>
-            </Tabs>
+            </div>
           </div>
         </div>
       </div>
