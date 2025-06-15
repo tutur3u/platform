@@ -1,13 +1,14 @@
 import { BillingClient } from './billing-client';
 import PurchaseLink from './data-polar-checkout';
+import { payment } from '@/lib/payment';
 import { api } from '@/lib/polar';
 import { Button } from '@tuturuuu/ui/button';
 import { CreditCard, Receipt } from 'lucide-react';
 
 const fetchProducts = async () => {
   try {
-    const res = await api.products.list({ isArchived: false });
-    return res.result.items ?? [];
+    const res = await payment.products.list();
+    return res.items ?? [];
   } catch (err) {
     console.error('Failed to fetch products:', err);
     return [];
@@ -36,20 +37,6 @@ export default async function BillingPage({
     ],
   };
 
-  // const planHistory = [
-  //   {
-  //     planName: products[0]?.name,
-  //     price: products[0]?.name == 'Enterprise' ? '$Custom' : '$19.99',
-  //   },
-  //   {
-  //     planName: 'Basic',
-  //     price: '$9.99',
-  //     startDate: 'Jan 1, 2022',
-  //     endDate: 'Dec 31, 2022',
-  //     status: 'inactive',
-  //   },
-  // ];
-
   const paymentHistory = [
     {
       id: 'INV-2023-06',
@@ -71,7 +58,6 @@ export default async function BillingPage({
     },
   ];
 
-  // This data is needed by the client component, so we'll pass it as a prop
   const upgradePlans = [
     {
       id: 'pro_monthly',
@@ -141,7 +127,9 @@ export default async function BillingPage({
                       {product.name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                      {product.name === 'Enterprise' ? 'Custom Pricing' : `$8`}
+                      {product.price_details?.type === 'one_time_price'
+                        ? `$${(product.price_details.price / 100).toFixed(2)}`
+                        : 'Custom Pricing'}
                     </td>
                     <td className="max-w-md truncate px-4 py-3 text-card-foreground">
                       {product.description || '-'}

@@ -14,7 +14,6 @@ interface PurchaseLinkProps {
 const PurchaseLink = ({
   productId,
   wsId,
-  customerEmail,
   theme = 'auto',
   className,
   children,
