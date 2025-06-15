@@ -1,7 +1,5 @@
 'use client';
 
-import { tasks } from '@trigger.dev/sdk/v3';
-import { helloWorldTask } from '@tuturuuu/trigger';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Progress } from '@tuturuuu/ui/progress';
