@@ -35,4 +35,3 @@
 // //   // Return the session details to the Polar Embed script so it can show the popup
 // //   return NextResponse.json(checkoutSession);
 // // }
-
