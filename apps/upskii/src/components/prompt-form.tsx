@@ -1,4 +1,5 @@
 import { DEV_MODE } from '@/constants/common';
+import { StorageObjectForm } from './ai-chat/file-upload';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import { type UseChatHelpers } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types/db';
@@ -207,7 +208,7 @@ export function PromptForm({
   //   paragraphQuiz?: boolean;
   //   flashcards?: boolean;
   // }>({});
-
+  const storagePath = `${chat?.id}/resources/`;
   const [element, setElement] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
