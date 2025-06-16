@@ -1,6 +1,8 @@
 'use client';
 
-import BeforeTakingQuizWhole, { AttemptSummary } from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
+import BeforeTakingQuizWhole, {
+  AttemptSummary,
+} from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
 import QuizStatusSidebar from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/quiz-status-sidebar';
 import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/time-elapsed-status';
 import { Button } from '@tuturuuu/ui/button';
@@ -296,10 +298,7 @@ export default function TakingQuizClient({
           <button onClick={() => setSidebarVisible(!sidebarVisible)}>
             <ListCheck size={32} className="text-dynamic-purple" />
           </button>
-          <TimeElapsedStatus
-            timeLeft={timeLeft}
-            isCountdown={isCountdown}
-          />
+          <TimeElapsedStatus timeLeft={timeLeft} isCountdown={isCountdown} />
         </div>
         {sidebarVisible && quizMeta && (
           <QuizStatusSidebar
@@ -432,10 +431,7 @@ export default function TakingQuizClient({
 
       <aside className="order-1 hidden w-full lg:order-2 lg:block lg:w-5/12">
         <div className="sticky top-4 space-y-2">
-          <TimeElapsedStatus
-            timeLeft={timeLeft}
-            isCountdown={isCountdown}
-          />
+          <TimeElapsedStatus timeLeft={timeLeft} isCountdown={isCountdown} />
           <QuizStatusSidebar
             questions={quizMeta.questions}
             selectedAnswers={selectedAnswers}
