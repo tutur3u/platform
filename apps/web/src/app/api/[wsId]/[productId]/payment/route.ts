@@ -1,14 +1,4 @@
 // Dodo payment legacy
-// File: src/app/checkout/route.ts
-// THIS IS THE NEW, CORRECT CODE THAT ADDS METADATA
-// console.log('Polar Access Token:', process.env.NEXT_PUBLIC_POLAR_ACCESS_TOKEN);
-// export const GET = Checkout({
-//   accessToken:
-//     process.env.NEXT_PUBLIC_POLAR_ACCESS_TOKEN ||
-//     'polar_oat_vabJzIQyCsDOIhjr9QBaLKELCNpdRuOe60E9m1h4PFt',
-//   successUrl: '/success',
-//   server: 'sandbox',
-// });// File: src/app/api/[wsId]/[productId]/route.ts
 // import { dodopayments } from '@/lib/payment';
 // import { api } from '@/lib/polar';
 // import { Checkout } from '@polar-sh/nextjs';
@@ -50,21 +40,10 @@
 //   // Return the session details to the Polar Embed script so it can show the popup
 //   return NextResponse.json(checkoutSession);
 // }
-// File: src/app/checkout/route.ts
 // THIS IS THE NEW, CORRECT CODE THAT ADDS METADATA
 import { api } from '@/lib/polar';
-import { Checkout } from '@polar-sh/nextjs';
-// Your configured Polar SDK client
 import { NextRequest, NextResponse } from 'next/server';
 
-// console.log('Polar Access Token:', process.env.NEXT_PUBLIC_POLAR_ACCESS_TOKEN);
-// export const GET = Checkout({
-//   accessToken:
-//     process.env.NEXT_PUBLIC_POLAR_ACCESS_TOKEN ||
-//     'polar_oat_vabJzIQyCsDOIhjr9QBaLKELCNpdRuOe60E9m1h4PFt',
-//   successUrl: '/success',
-//   server: 'sandbox',
-// });
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ wsId: string; productId: string }> }
@@ -81,12 +60,11 @@ export async function GET(
   const checkoutSession = await api.checkouts.create({
     products: [productId],
     successUrl: `http://localhost:7803/${wsId}/billing/success`,
-    // Attach your internal workspaceId so you can get it back in the webhook
+
     metadata: {
       wsId: wsId,
     },
   });
 
-  // Return the session details to the Polar Embed script so it can show the popup
   return NextResponse.redirect(checkoutSession.url);
 }
