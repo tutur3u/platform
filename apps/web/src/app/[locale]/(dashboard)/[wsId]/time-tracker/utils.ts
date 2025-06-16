@@ -1,10 +1,17 @@
+import type {
+  ExtendedWorkspaceTask,
+  TaskFilters,
+  TaskSidebarFilters,
+} from './types';
 import { useMemo } from 'react';
-import type { ExtendedWorkspaceTask, TaskFilters, TaskSidebarFilters } from './types';
 
 /**
  * Shared task sorting logic - prioritizes user's assigned tasks, then by priority, then by creation date
  */
-export function sortTasks(a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask): number {
+export function sortTasks(
+  a: ExtendedWorkspaceTask,
+  b: ExtendedWorkspaceTask
+): number {
   // Prioritize user's assigned tasks
   if (a.is_assigned_to_current_user && !b.is_assigned_to_current_user) {
     return -1;
@@ -12,16 +19,19 @@ export function sortTasks(a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask): n
   if (!a.is_assigned_to_current_user && b.is_assigned_to_current_user) {
     return 1;
   }
-  
+
   // Then sort by priority (higher priority first)
   const aPriority = a.priority || 0;
   const bPriority = b.priority || 0;
   if (aPriority !== bPriority) {
     return bPriority - aPriority;
   }
-  
+
   // Finally sort by creation date (newest first)
-  return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+  return (
+    new Date(b.created_at || 0).getTime() -
+    new Date(a.created_at || 0).getTime()
+  );
 }
 
 /**
@@ -33,31 +43,28 @@ export function filterTasksForTimer(
   filters: TaskFilters
 ): ExtendedWorkspaceTask[] {
   return tasks.filter((task) => {
-    const matchesSearch = task.name
-      ?.toLowerCase()
-      .includes(searchQuery.toLowerCase()) ||
-      task.description
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase());
-    
+    const matchesSearch =
+      task.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesPriority =
-      filters.priority === 'all' ||
-      String(task.priority) === filters.priority;
-    
+      filters.priority === 'all' || String(task.priority) === filters.priority;
+
     const matchesStatus =
       filters.status === 'all' ||
       (task.completed ? 'completed' : 'active') === filters.status;
-    
+
     const matchesBoard =
       filters.board === 'all' || task.board_name === filters.board;
-    
+
     const matchesList =
       filters.list === 'all' || task.list_name === filters.list;
-    
+
     const matchesAssignee =
       filters.assignee === 'all' ||
       (filters.assignee === 'mine' && task.is_assigned_to_current_user) ||
-      (filters.assignee === 'unassigned' && (!task.assignees || task.assignees.length === 0));
+      (filters.assignee === 'unassigned' &&
+        (!task.assignees || task.assignees.length === 0));
 
     return (
       matchesSearch &&
@@ -82,12 +89,8 @@ export function filterTasksForSidebar(
     // Search filter
     if (
       searchQuery &&
-      !task.name
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase()) &&
-      !task.description
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase())
+      !task.name?.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !task.description?.toLowerCase().includes(searchQuery.toLowerCase())
     ) {
       return false;
     }
@@ -115,10 +118,7 @@ export function filterTasksForSidebar(
       return task.is_assigned_to_current_user;
     } else if (filters.assignee === 'unassigned') {
       return !task.assignees || task.assignees.length === 0;
-    } else if (
-      filters.assignee &&
-      filters.assignee !== 'all'
-    ) {
+    } else if (filters.assignee && filters.assignee !== 'all') {
       return task.assignees?.some(
         (assignee) => assignee.id === filters.assignee
       );
@@ -158,11 +158,11 @@ export function useTaskCounts(tasks: ExtendedWorkspaceTask[]) {
     const myTasksCount = tasks.filter(
       (task) => task.is_assigned_to_current_user
     ).length;
-    
+
     const unassignedCount = tasks.filter(
       (task) => !task.assignees || task.assignees.length === 0
     ).length;
-    
+
     return {
       myTasksCount,
       unassignedCount,
@@ -173,6 +173,13 @@ export function useTaskCounts(tasks: ExtendedWorkspaceTask[]) {
 /**
  * Generate initials from assignee name or email consistently
  */
-export function generateAssigneeInitials(assignee: { display_name?: string; email?: string }): string {
-  return (assignee.display_name?.[0] || assignee.email?.[0] || '?').toUpperCase();
-} 
+export function generateAssigneeInitials(assignee: {
+  display_name?: string;
+  email?: string;
+}): string {
+  return (
+    assignee.display_name?.[0] ||
+    assignee.email?.[0] ||
+    '?'
+  ).toUpperCase();
+}

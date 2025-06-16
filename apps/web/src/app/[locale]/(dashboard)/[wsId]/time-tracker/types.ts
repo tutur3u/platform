@@ -24,4 +24,4 @@ export interface TaskSidebarFilters {
   board: string;
   list: string;
   assignee: string;
-} 
+}

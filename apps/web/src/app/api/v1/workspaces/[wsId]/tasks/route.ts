@@ -109,18 +109,18 @@ export async function GET(
         board_name: task.task_lists?.workspace_boards?.name,
         list_name: task.task_lists?.name,
         // Add assignee information
-        assignees: task.assignees
-          ?.map((a: any) => a.user)
-          .filter(
-            (user: any, index: number, self: any[]) =>
-              user &&
-              user.id &&
-              self.findIndex((u: any) => u.id === user.id) === index
-          ) || [],
+        assignees:
+          task.assignees
+            ?.map((a: any) => a.user)
+            .filter(
+              (user: any, index: number, self: any[]) =>
+                user &&
+                user.id &&
+                self.findIndex((u: any) => u.id === user.id) === index
+            ) || [],
         // Add helper field to identify if current user is assigned
-        is_assigned_to_current_user: task.assignees?.some(
-          (a: any) => a.user?.id === user.id
-        ) || false,
+        is_assigned_to_current_user:
+          task.assignees?.some((a: any) => a.user?.id === user.id) || false,
       })) || [];
 
     return NextResponse.json({ tasks });
