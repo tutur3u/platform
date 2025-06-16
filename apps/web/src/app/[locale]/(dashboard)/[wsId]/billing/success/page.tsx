@@ -1,26 +1,70 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
+import { format } from 'date-fns';
 import { ArrowLeft, CheckCircle, CreditCard, Download } from 'lucide-react';
 import Link from 'next/link';
 
+/**
+ * Fetches the workspace subscription data for receipt information.
+ * @param wsId The workspace ID
+ */
+const fetchWorkspaceSubscription = async (
+  wsId: string
+): Promise<any | null> => {
+  try {
+    const supabase = await createClient();
+
+    const { data: subscription, error } = await supabase
+      .from('workspace_subscriptions')
+      .select('*')
+      .eq('ws_id', wsId)
+      .single();
+
+    if (error) {
+      console.error('Failed to fetch workspace subscription:', error);
+      return null;
+    }
+
+    return subscription;
+  } catch (err) {
+    console.error('Failed to fetch workspace subscription:', err);
+    return null;
+  }
+};
+
 export default async function SuccessPage({
   params,
+  searchParams,
 }: {
-  params: Promise<{ wsId: string }>;
+  params: { wsId: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const { wsId } = await params;
+  const { wsId } = params;
 
-  // Mock data - in real app, get from search params or API
-  const paymentDetails = {
-    planName: 'Pro Monthly',
-    amount: '$25.00',
-    invoiceId: 'INV-2024-001',
-    date: new Date().toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }),
-    paymentMethod: '**** **** **** 1234',
-  };
+  // Fetch the workspace subscription data
+  const subscription = await fetchWorkspaceSubscription(wsId);
+
+  // Create paymentDetails from the subscription data, or use defaults if not found
+  const paymentDetails = subscription
+    ? {
+        planName: subscription.plan_name || 'Pro Plan',
+        amount: subscription.price
+          ? `$${(subscription.price / 100).toFixed(2)}`
+          : '--',
+        invoiceId: subscription.id || 'N/A',
+        date: subscription.created_at
+          ? format(new Date(subscription.created_at), 'MMMM d, yyyy')
+          : format(new Date(), 'MMMM d, yyyy'),
+        paymentMethod: 'Card',
+      }
+    : {
+
+        planName: 'Subscription Confirmed',
+        amount: '--',
+        invoiceId: 'N/A',
+        date: format(new Date(), 'MMMM d, yyyy'),
+        paymentMethod: '--',
+      };
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">

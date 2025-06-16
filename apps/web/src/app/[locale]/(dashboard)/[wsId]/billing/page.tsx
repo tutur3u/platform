@@ -1,9 +1,7 @@
 import { BillingClient } from './billing-client';
-import PurchaseLink from './data-polar-checkout';
 import { api } from '@/lib/polar';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Button } from '@tuturuuu/ui/button';
-import { CreditCard, Receipt } from 'lucide-react';
+import { Receipt } from 'lucide-react';
 
 const fetchProducts = async () => {
   try {
@@ -160,77 +158,6 @@ export default async function BillingPage({
         upgradePlans={upgradePlans}
         wsId={wsId}
       />
-
-      {/* <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
-        <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
-          Plan History
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Plan
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Price
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Description
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {products && products.length > 0 ? (
-                products.map((product) => (
-                  <tr key={product.id}>
-                    <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                      {product.name}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                      {product.name === 'Enterprise' ? 'Custom Pricing' : `$8`}
-                    </td>
-                    <td className="max-w-md truncate px-4 py-3 text-card-foreground">
-                      {product.description || '-'}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-1 hover:bg-primary/10"
-                        asChild
-                      >
-                        <PurchaseLink
-                          productId={product.id}
-                          wsId={wsId}
-                          customerEmail="t@test.com"
-                          theme="auto"
-                          className="flex items-center"
-                        >
-                          <CreditCard className="mr-1 h-4 w-4" />
-                          Subscribe
-                        </PurchaseLink>
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-4 py-5 text-center text-muted-foreground"
-                  >
-                    No available plans found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div> */}
 
       {/* Payment History (Static) */}
       <div className="rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
