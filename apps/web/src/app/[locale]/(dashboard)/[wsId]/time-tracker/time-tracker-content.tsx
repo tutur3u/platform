@@ -708,26 +708,93 @@ export default function TimeTrackerContent({
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
                     {/* Continue Last Session */}
                     <button
-                      onClick={() => {
-                        // TODO: Implement continue last session
-                        toast.info('Continue last session - Coming soon!');
+                      onClick={async () => {
+                        if (!recentSessions[0]) {
+                          toast.info('No recent session to continue');
+                          return;
+                        }
+                        
+                        try {
+                          const response = await apiCall(
+                            `/api/v1/workspaces/${wsId}/time-tracking/sessions/${recentSessions[0].id}`,
+                            { 
+                              method: 'PATCH', 
+                              body: JSON.stringify({ action: 'resume' }) 
+                            }
+                          );
+                          
+                          setCurrentSession(response.session);
+                          setIsRunning(true);
+                          setElapsedTime(0);
+                          
+                          // Update data
+                          await fetchData();
+                          
+                          toast.success(`Resumed: "${recentSessions[0].title}"`);
+                        } catch (error) {
+                          console.error('Error resuming session:', error);
+                          toast.error('Failed to resume session');
+                        }
                       }}
-                      className="group rounded-lg border border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20"
+                      disabled={!recentSessions[0]}
+                      className={cn(
+                        "group rounded-lg border p-3 text-left transition-all duration-300",
+                        recentSessions[0] 
+                          ? "border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:scale-105 hover:shadow-md dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20" 
+                          : "border-muted bg-muted/30 cursor-not-allowed opacity-60"
+                      )}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-blue-500/20 p-1.5">
-                          <RotateCcw className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                      <div className="flex items-start gap-2">
+                        <div className={cn(
+                          "rounded-full p-1.5 flex-shrink-0",
+                          recentSessions[0] 
+                            ? "bg-blue-500/20" 
+                            : "bg-muted-foreground/20"
+                        )}>
+                          <RotateCcw className={cn(
+                            "h-3 w-3",
+                            recentSessions[0] 
+                              ? "text-blue-600 dark:text-blue-400" 
+                              : "text-muted-foreground"
+                          )} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                          <p className={cn(
+                            "text-xs font-medium",
+                            recentSessions[0] 
+                              ? "text-blue-700 dark:text-blue-300" 
+                              : "text-muted-foreground"
+                          )}>
                             Continue Last
                           </p>
-                          <p className="text-sm font-bold text-blue-900 dark:text-blue-100">
-                            {recentSessions[0]?.title?.slice(0, 15) ||
-                              'No recent session'}
-                          </p>
+                          {recentSessions[0] ? (
+                            <>
+                              <p className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100" title={recentSessions[0].title}>
+                                {recentSessions[0].title}
+                              </p>
+                              {recentSessions[0].category && (
+                                <div className="mt-1 flex items-center gap-1">
+                                  <div className={cn(
+                                    "h-2 w-2 rounded-full",
+                                    recentSessions[0].category.color ? 
+                                      `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70` : 
+                                      'bg-blue-500/70'
+                                  )} />
+                                  <span className="text-xs text-blue-700/80 dark:text-blue-300/80 truncate">
+                                    {recentSessions[0].category.name}
+                                  </span>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-sm font-bold text-muted-foreground">
+                              No recent session
+                            </p>
+                          )}
                         </div>
-                        <span className="text-sm opacity-70">🔄</span>
+                        <span className="text-sm opacity-70 flex-shrink-0">
+                          {recentSessions[0] ? '🔄' : '💤'}
+                        </span>
                       </div>
                     </button>
 
