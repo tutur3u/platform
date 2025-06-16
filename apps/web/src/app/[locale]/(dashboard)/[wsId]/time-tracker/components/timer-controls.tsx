@@ -1,12 +1,16 @@
 'use client';
 
+import type { ExtendedWorkspaceTask, TaskFilters } from '../types';
+import {
+  generateAssigneeInitials,
+  getFilteredAndSortedTasks,
+  useTaskCounts,
+} from '../utils';
 import type {
   TimeTrackingCategory,
   TimeTrackingSession,
   WorkspaceTask,
 } from '@tuturuuu/types/db';
-import type { ExtendedWorkspaceTask, TaskFilters } from '../types';
-import { getFilteredAndSortedTasks, useTaskCounts, generateAssigneeInitials } from '../utils';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -45,8 +49,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-
 
 interface SessionWithRelations extends TimeTrackingSession {
   category: TimeTrackingCategory | null;
@@ -1325,7 +1327,7 @@ export function TimerControls({
                                 <div className="text-xs font-medium text-muted-foreground">
                                   Quick Filters
                                 </div>
-                                
+
                                 {/* Assignee Filters */}
                                 <div className="flex flex-wrap gap-1">
                                   <button
@@ -1335,7 +1337,10 @@ export function TimerControls({
                                       e.stopPropagation();
                                       setTaskFilters((prev) => ({
                                         ...prev,
-                                        assignee: prev.assignee === 'mine' ? 'all' : 'mine',
+                                        assignee:
+                                          prev.assignee === 'mine'
+                                            ? 'all'
+                                            : 'mine',
                                       }));
                                     }}
                                     className={cn(
@@ -1360,7 +1365,10 @@ export function TimerControls({
                                       e.stopPropagation();
                                       setTaskFilters((prev) => ({
                                         ...prev,
-                                        assignee: prev.assignee === 'unassigned' ? 'all' : 'unassigned',
+                                        assignee:
+                                          prev.assignee === 'unassigned'
+                                            ? 'all'
+                                            : 'unassigned',
                                       }));
                                     }}
                                     className={cn(
@@ -1370,8 +1378,18 @@ export function TimerControls({
                                         : 'border-border bg-background hover:bg-muted'
                                     )}
                                   >
-                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    <svg
+                                      className="h-3 w-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                      />
                                     </svg>
                                     Unassigned
                                     {unassignedCount > 0 && (
@@ -1551,29 +1569,39 @@ export function TimerControls({
                                       }}
                                       className="w-full p-0 text-left transition-colors hover:bg-muted/50 focus:bg-muted/50 focus:outline-none"
                                     >
-                                      <div className={cn(
-                                        "flex w-full items-start gap-3 p-3 hover:bg-muted/30",
-                                        task.is_assigned_to_current_user && "bg-blue-50/50 dark:bg-blue-950/20"
-                                      )}>
-                                        <div className={cn(
-                                          "flex h-8 w-8 items-center justify-center rounded-lg border",
-                                          task.is_assigned_to_current_user
-                                            ? "border-blue-400/50 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700"
-                                            : "border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10"
-                                        )}>
-                                          <CheckCircle className={cn(
-                                            "h-4 w-4",
+                                      <div
+                                        className={cn(
+                                          'flex w-full items-start gap-3 p-3 hover:bg-muted/30',
+                                          task.is_assigned_to_current_user &&
+                                            'bg-blue-50/50 dark:bg-blue-950/20'
+                                        )}
+                                      >
+                                        <div
+                                          className={cn(
+                                            'flex h-8 w-8 items-center justify-center rounded-lg border',
                                             task.is_assigned_to_current_user
-                                              ? "text-blue-700 dark:text-blue-300"
-                                              : "text-dynamic-blue"
-                                          )} />
+                                              ? 'border-blue-400/50 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                              : 'border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10'
+                                          )}
+                                        >
+                                          <CheckCircle
+                                            className={cn(
+                                              'h-4 w-4',
+                                              task.is_assigned_to_current_user
+                                                ? 'text-blue-700 dark:text-blue-300'
+                                                : 'text-dynamic-blue'
+                                            )}
+                                          />
                                         </div>
                                         <div className="min-w-0 flex-1">
                                           <div className="flex items-center gap-2">
-                                            <span className={cn(
-                                              "text-sm font-medium",
-                                              task.is_assigned_to_current_user && "text-blue-900 dark:text-blue-100"
-                                            )}>
+                                            <span
+                                              className={cn(
+                                                'text-sm font-medium',
+                                                task.is_assigned_to_current_user &&
+                                                  'text-blue-900 dark:text-blue-100'
+                                              )}
+                                            >
                                               {task.name}
                                               {task.is_assigned_to_current_user && (
                                                 <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
@@ -1588,41 +1616,59 @@ export function TimerControls({
                                               {task.description}
                                             </p>
                                           )}
-                                          
+
                                           {/* Assignees Display */}
-                                          {task.assignees && task.assignees.length > 0 && (
-                                            <div className="mt-2 flex items-center gap-2">
-                                              <div className="flex -space-x-1">
-                                                {task.assignees.slice(0, 3).map((assignee) => (
-                                                  <div
-                                                    key={assignee.id}
-                                                    className="h-4 w-4 rounded-full border border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
-                                                    title={assignee.display_name || assignee.email}
-                                                  >
-                                                    {assignee.avatar_url ? (
-                                                      <img
-                                                        src={assignee.avatar_url}
-                                                        alt={assignee.display_name || assignee.email || ''}
-                                                        className="h-full w-full rounded-full object-cover"
-                                                      />
-                                                    ) : (
-                                                                                                             <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
-                                                         {generateAssigneeInitials(assignee)}
-                                                       </div>
-                                                    )}
-                                                  </div>
-                                                ))}
-                                                {task.assignees.length > 3 && (
-                                                  <div className="flex h-4 w-4 items-center justify-center rounded-full border border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                                    +{task.assignees.length - 3}
-                                                  </div>
-                                                )}
+                                          {task.assignees &&
+                                            task.assignees.length > 0 && (
+                                              <div className="mt-2 flex items-center gap-2">
+                                                <div className="flex -space-x-1">
+                                                  {task.assignees
+                                                    .slice(0, 3)
+                                                    .map((assignee) => (
+                                                      <div
+                                                        key={assignee.id}
+                                                        className="h-4 w-4 rounded-full border border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                        title={
+                                                          assignee.display_name ||
+                                                          assignee.email
+                                                        }
+                                                      >
+                                                        {assignee.avatar_url ? (
+                                                          <img
+                                                            src={
+                                                              assignee.avatar_url
+                                                            }
+                                                            alt={
+                                                              assignee.display_name ||
+                                                              assignee.email ||
+                                                              ''
+                                                            }
+                                                            className="h-full w-full rounded-full object-cover"
+                                                          />
+                                                        ) : (
+                                                          <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
+                                                            {generateAssigneeInitials(
+                                                              assignee
+                                                            )}
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                    ))}
+                                                  {task.assignees.length >
+                                                    3 && (
+                                                    <div className="flex h-4 w-4 items-center justify-center rounded-full border border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                      +
+                                                      {task.assignees.length -
+                                                        3}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <span className="text-xs text-muted-foreground">
+                                                  {task.assignees.length}{' '}
+                                                  assigned
+                                                </span>
                                               </div>
-                                              <span className="text-xs text-muted-foreground">
-                                                {task.assignees.length} assigned
-                                              </span>
-                                            </div>
-                                          )}
+                                            )}
 
                                           {task.board_name &&
                                             task.list_name && (

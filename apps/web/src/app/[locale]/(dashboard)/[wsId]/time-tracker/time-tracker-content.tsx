@@ -7,14 +7,18 @@ import { SessionHistory } from './components/session-history';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
+import type { ExtendedWorkspaceTask, TaskSidebarFilters } from './types';
+import {
+  generateAssigneeInitials,
+  getFilteredAndSortedSidebarTasks,
+  useTaskCounts,
+} from './utils';
 import { useQuery } from '@tanstack/react-query';
 import type {
   TimeTrackingCategory,
   TimeTrackingSession,
   WorkspaceTask,
 } from '@tuturuuu/types/db';
-import type { ExtendedWorkspaceTask, TaskSidebarFilters } from './types';
-import { getFilteredAndSortedSidebarTasks, useTaskCounts, generateAssigneeInitials } from './utils';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -91,8 +95,6 @@ export interface TimeTrackingGoal {
   is_active: boolean | null;
   category: TimeTrackingCategory | null;
 }
-
-
 
 export interface TimeTrackerData {
   categories: TimeTrackingCategory[];
@@ -495,24 +497,33 @@ export default function TimeTrackerContent({
 
   // Tasks sidebar search and filter state with persistence
   const [tasksSidebarSearch, setTasksSidebarSearch] = useState('');
-  const [tasksSidebarFilters, setTasksSidebarFilters] = useState<TaskSidebarFilters>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`time-tracker-filters-${wsId}`);
-      if (saved) {
-        try {
-          return { ...{ board: 'all', list: 'all', assignee: 'all' }, ...JSON.parse(saved) };
-        } catch {
-          return { board: 'all', list: 'all', assignee: 'all' };
+  const [tasksSidebarFilters, setTasksSidebarFilters] =
+    useState<TaskSidebarFilters>(() => {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(`time-tracker-filters-${wsId}`);
+        if (saved) {
+          try {
+            return {
+              board: 'all',
+              list: 'all',
+              assignee: 'all',
+              ...JSON.parse(saved),
+            };
+          } catch {
+            return { board: 'all', list: 'all', assignee: 'all' };
+          }
         }
       }
-    }
-    return { board: 'all', list: 'all', assignee: 'all' };
-  });
+      return { board: 'all', list: 'all', assignee: 'all' };
+    });
 
   // Save filters to localStorage when they change
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`time-tracker-filters-${wsId}`, JSON.stringify(tasksSidebarFilters));
+      localStorage.setItem(
+        `time-tracker-filters-${wsId}`,
+        JSON.stringify(tasksSidebarFilters)
+      );
     }
   }, [tasksSidebarFilters, wsId]);
 
@@ -713,24 +724,26 @@ export default function TimeTrackerContent({
                           toast.info('No recent session to continue');
                           return;
                         }
-                        
+
                         try {
                           const response = await apiCall(
                             `/api/v1/workspaces/${wsId}/time-tracking/sessions/${recentSessions[0].id}`,
-                            { 
-                              method: 'PATCH', 
-                              body: JSON.stringify({ action: 'resume' }) 
+                            {
+                              method: 'PATCH',
+                              body: JSON.stringify({ action: 'resume' }),
                             }
                           );
-                          
+
                           setCurrentSession(response.session);
                           setIsRunning(true);
                           setElapsedTime(0);
-                          
+
                           // Update data
                           await fetchData();
-                          
-                          toast.success(`Resumed: "${recentSessions[0].title}"`);
+
+                          toast.success(
+                            `Resumed: "${recentSessions[0].title}"`
+                          );
                         } catch (error) {
                           console.error('Error resuming session:', error);
                           toast.error('Failed to resume session');
@@ -738,49 +751,60 @@ export default function TimeTrackerContent({
                       }}
                       disabled={!recentSessions[0]}
                       className={cn(
-                        "group rounded-lg border p-3 text-left transition-all duration-300",
-                        recentSessions[0] 
-                          ? "border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:scale-105 hover:shadow-md dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20" 
-                          : "border-muted bg-muted/30 cursor-not-allowed opacity-60"
+                        'group rounded-lg border p-3 text-left transition-all duration-300',
+                        recentSessions[0]
+                          ? 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:scale-105 hover:shadow-md dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
+                          : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                       )}
                     >
                       <div className="flex items-start gap-2">
-                        <div className={cn(
-                          "rounded-full p-1.5 flex-shrink-0",
-                          recentSessions[0] 
-                            ? "bg-blue-500/20" 
-                            : "bg-muted-foreground/20"
-                        )}>
-                          <RotateCcw className={cn(
-                            "h-3 w-3",
-                            recentSessions[0] 
-                              ? "text-blue-600 dark:text-blue-400" 
-                              : "text-muted-foreground"
-                          )} />
+                        <div
+                          className={cn(
+                            'flex-shrink-0 rounded-full p-1.5',
+                            recentSessions[0]
+                              ? 'bg-blue-500/20'
+                              : 'bg-muted-foreground/20'
+                          )}
+                        >
+                          <RotateCcw
+                            className={cn(
+                              'h-3 w-3',
+                              recentSessions[0]
+                                ? 'text-blue-600 dark:text-blue-400'
+                                : 'text-muted-foreground'
+                            )}
+                          />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className={cn(
-                            "text-xs font-medium",
-                            recentSessions[0] 
-                              ? "text-blue-700 dark:text-blue-300" 
-                              : "text-muted-foreground"
-                          )}>
+                          <p
+                            className={cn(
+                              'text-xs font-medium',
+                              recentSessions[0]
+                                ? 'text-blue-700 dark:text-blue-300'
+                                : 'text-muted-foreground'
+                            )}
+                          >
                             Continue Last
                           </p>
                           {recentSessions[0] ? (
                             <>
-                              <p className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100" title={recentSessions[0].title}>
+                              <p
+                                className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100"
+                                title={recentSessions[0].title}
+                              >
                                 {recentSessions[0].title}
                               </p>
                               {recentSessions[0].category && (
                                 <div className="mt-1 flex items-center gap-1">
-                                  <div className={cn(
-                                    "h-2 w-2 rounded-full",
-                                    recentSessions[0].category.color ? 
-                                      `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70` : 
-                                      'bg-blue-500/70'
-                                  )} />
-                                  <span className="text-xs text-blue-700/80 dark:text-blue-300/80 truncate">
+                                  <div
+                                    className={cn(
+                                      'h-2 w-2 rounded-full',
+                                      recentSessions[0].category.color
+                                        ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
+                                        : 'bg-blue-500/70'
+                                    )}
+                                  />
+                                  <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
                                     {recentSessions[0].category.name}
                                   </span>
                                 </div>
@@ -792,7 +816,7 @@ export default function TimeTrackerContent({
                             </p>
                           )}
                         </div>
-                        <span className="text-sm opacity-70 flex-shrink-0">
+                        <span className="flex-shrink-0 text-sm opacity-70">
                           {recentSessions[0] ? '🔄' : '💤'}
                         </span>
                       </div>
@@ -1571,7 +1595,8 @@ export default function TimeTrackerContent({
                           onClick={() =>
                             setTasksSidebarFilters((prev) => ({
                               ...prev,
-                              assignee: prev.assignee === 'mine' ? 'all' : 'mine',
+                              assignee:
+                                prev.assignee === 'mine' ? 'all' : 'mine',
                             }))
                           }
                           className={cn(
@@ -1593,7 +1618,10 @@ export default function TimeTrackerContent({
                           onClick={() =>
                             setTasksSidebarFilters((prev) => ({
                               ...prev,
-                              assignee: prev.assignee === 'unassigned' ? 'all' : 'unassigned',
+                              assignee:
+                                prev.assignee === 'unassigned'
+                                  ? 'all'
+                                  : 'unassigned',
                             }))
                           }
                           className={cn(
@@ -1603,8 +1631,18 @@ export default function TimeTrackerContent({
                               : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
                           )}
                         >
-                          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          <svg
+                            className="h-3 w-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
                           </svg>
                           Unassigned
                           {unassignedCount > 0 && (
@@ -1693,7 +1731,9 @@ export default function TimeTrackerContent({
                         tasksSidebarFilters.list !== 'all' ||
                         tasksSidebarFilters.assignee !== 'all') && (
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Active filters:</span>
+                          <span className="text-xs text-muted-foreground">
+                            Active filters:
+                          </span>
                           {tasksSidebarSearch && (
                             <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               Search: "{tasksSidebarSearch}"
@@ -1739,9 +1779,11 @@ export default function TimeTrackerContent({
                           )}
                           {tasksSidebarFilters.assignee !== 'all' && (
                             <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-xs text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                              {tasksSidebarFilters.assignee === 'mine' ? 'My Tasks' : 
-                               tasksSidebarFilters.assignee === 'unassigned' ? 'Unassigned' : 
-                               'Assignee Filter'}
+                              {tasksSidebarFilters.assignee === 'mine'
+                                ? 'My Tasks'
+                                : tasksSidebarFilters.assignee === 'unassigned'
+                                  ? 'Unassigned'
+                                  : 'Assignee Filter'}
                               <button
                                 onClick={() =>
                                   setTasksSidebarFilters((prev) => ({
@@ -1776,11 +1818,12 @@ export default function TimeTrackerContent({
                     <div className="space-y-4">
                       {(() => {
                         // Filter and sort tasks for sidebar with user prioritization
-                                                const filteredSidebarTasks = getFilteredAndSortedSidebarTasks(
-                          tasks,
-                          tasksSidebarSearch,
-                          tasksSidebarFilters
-                        );
+                        const filteredSidebarTasks =
+                          getFilteredAndSortedSidebarTasks(
+                            tasks,
+                            tasksSidebarSearch,
+                            tasksSidebarFilters
+                          );
 
                         if (tasks.length === 0) {
                           return (
@@ -1857,75 +1900,95 @@ export default function TimeTrackerContent({
                                     }}
                                   >
                                     <div className="flex items-start gap-4">
-                                      <div className={cn(
-                                        'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
-                                        task.is_assigned_to_current_user
-                                          ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
-                                          : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
-                                      )}>
-                                        <CheckCircle className={cn(
-                                          'h-4 w-4',
+                                      <div
+                                        className={cn(
+                                          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
                                           task.is_assigned_to_current_user
-                                            ? 'text-blue-700 dark:text-blue-300'
-                                            : 'text-blue-600 dark:text-blue-400'
-                                        )} />
+                                            ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                            : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
+                                        )}
+                                      >
+                                        <CheckCircle
+                                          className={cn(
+                                            'h-4 w-4',
+                                            task.is_assigned_to_current_user
+                                              ? 'text-blue-700 dark:text-blue-300'
+                                              : 'text-blue-600 dark:text-blue-400'
+                                          )}
+                                        />
                                       </div>
                                       <div className="min-w-0 flex-1">
                                         <div className="flex items-start justify-between gap-2">
-                                          <h4 className={cn(
-                                            'mb-1 text-sm font-medium',
-                                            task.is_assigned_to_current_user
-                                              ? 'text-blue-900 dark:text-blue-100'
-                                              : 'text-gray-900 dark:text-gray-100'
-                                          )}>
-                                          {task.name}
+                                          <h4
+                                            className={cn(
+                                              'mb-1 text-sm font-medium',
+                                              task.is_assigned_to_current_user
+                                                ? 'text-blue-900 dark:text-blue-100'
+                                                : 'text-gray-900 dark:text-gray-100'
+                                            )}
+                                          >
+                                            {task.name}
                                             {task.is_assigned_to_current_user && (
                                               <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
                                                 Assigned to you
                                               </span>
                                             )}
-                                        </h4>
+                                          </h4>
                                         </div>
                                         {task.description && (
                                           <p className="mb-3 line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
                                             {task.description}
                                           </p>
                                         )}
-                                        
+
                                         {/* Assignees Display */}
-                                        {task.assignees && task.assignees.length > 0 && (
-                                          <div className="mb-2 flex items-center gap-2">
-                                            <div className="flex -space-x-1">
-                                              {task.assignees.slice(0, 3).map((assignee) => (
-                                                <div
-                                                  key={assignee.id}
-                                                  className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
-                                                  title={assignee.display_name || assignee.email}
-                                                >
-                                                  {assignee.avatar_url ? (
-                                                    <img
-                                                      src={assignee.avatar_url}
-                                                      alt={assignee.display_name || assignee.email || ''}
-                                                      className="h-full w-full rounded-full object-cover"
-                                                    />
-                                                  ) : (
-                                                    <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
-                                                      {generateAssigneeInitials(assignee)}
+                                        {task.assignees &&
+                                          task.assignees.length > 0 && (
+                                            <div className="mb-2 flex items-center gap-2">
+                                              <div className="flex -space-x-1">
+                                                {task.assignees
+                                                  .slice(0, 3)
+                                                  .map((assignee) => (
+                                                    <div
+                                                      key={assignee.id}
+                                                      className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                      title={
+                                                        assignee.display_name ||
+                                                        assignee.email
+                                                      }
+                                                    >
+                                                      {assignee.avatar_url ? (
+                                                        <img
+                                                          src={
+                                                            assignee.avatar_url
+                                                          }
+                                                          alt={
+                                                            assignee.display_name ||
+                                                            assignee.email ||
+                                                            ''
+                                                          }
+                                                          className="h-full w-full rounded-full object-cover"
+                                                        />
+                                                      ) : (
+                                                        <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
+                                                          {generateAssigneeInitials(
+                                                            assignee
+                                                          )}
+                                                        </div>
+                                                      )}
                                                     </div>
-                                                  )}
-                                                </div>
-                                              ))}
-                                              {task.assignees.length > 3 && (
-                                                <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                                  +{task.assignees.length - 3}
-                                                </div>
-                                              )}
+                                                  ))}
+                                                {task.assignees.length > 3 && (
+                                                  <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                    +{task.assignees.length - 3}
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <span className="text-xs text-muted-foreground">
+                                                {task.assignees.length} assigned
+                                              </span>
                                             </div>
-                                            <span className="text-xs text-muted-foreground">
-                                              {task.assignees.length} assigned
-                                            </span>
-                                          </div>
-                                        )}
+                                          )}
 
                                         {task.board_name && task.list_name && (
                                           <div className="flex items-center gap-2">
