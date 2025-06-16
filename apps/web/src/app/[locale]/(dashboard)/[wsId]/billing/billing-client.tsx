@@ -1,5 +1,6 @@
 'use client';
 
+import PurchaseLink from './data-polar-checkout';
 import { Button } from '@tuturuuu/ui/button';
 import { ArrowUpCircle, CheckCircle, CreditCard } from 'lucide-react';
 import { useState } from 'react';
@@ -22,25 +23,21 @@ interface UpgradePlan {
   billingCycle: string;
   popular: boolean;
   features: string[];
+  isEnterprise?: boolean;
 }
 
 interface BillingClientProps {
   currentPlan: Plan;
   upgradePlans: UpgradePlan[];
+  wsId: string;
 }
 
 export function BillingClient({
   currentPlan,
   upgradePlans,
+  wsId,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
-
-  // Function to handle plan upgrade
-  const handleUpgradePlan = (planId: string) => {
-    console.log(`Upgrading to plan: ${planId}`);
-    // In a real application, this would navigate to checkout or process the upgrade
-    alert(`Plan upgrade to ${planId} will be processed. This is a demo.`);
-  };
 
   return (
     <>
@@ -191,17 +188,36 @@ export function BillingClient({
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    onClick={() => handleUpgradePlan(plan.id)}
-                    className={`w-full ${
-                      plan.popular
-                        ? ''
-                        : 'border-primary bg-transparent text-primary hover:bg-primary/10'
-                    }`}
-                    variant={plan.popular ? 'default' : 'outline'}
-                  >
-                    Select {plan.name}
-                  </Button>
+                  {plan.isEnterprise ? (
+                    <Button className="w-full" variant="outline" disabled>
+                      Contact Sales
+                    </Button>
+                  ) : (
+                    <Button
+                      variant={plan.popular ? 'default' : 'outline'}
+                      className={`w-full ${
+                        plan.popular
+                          ? ''
+                          : 'border-primary bg-transparent text-primary hover:bg-primary/10'
+                      }`}
+                      asChild
+                    >
+                      <PurchaseLink
+                        productId={plan.id}
+                        wsId={wsId}
+                        customerEmail="t@test.com"
+                        theme="auto"
+                        className="flex w-full items-center justify-center"
+                      >
+                        Select {plan.name}
+                      </PurchaseLink>
+                    </Button>
+                  )}
+                  {plan.isEnterprise && (
+                    <p className="mt-2 text-center text-xs text-muted-foreground">
+                      Please contact our sales team for Enterprise pricing
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

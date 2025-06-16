@@ -122,35 +122,31 @@ export default async function BillingPage({
     },
   ];
 
-  const upgradePlans = [
-    {
-      id: 'pro_monthly',
-      name: 'Pro Monthly',
-      price: '$25',
-      billingCycle: 'month',
-      popular: false,
-      features: [
-        'Everything in Free',
-        'Advanced analytics',
-        'Up to 10 team members',
-        'Email & chat support',
-      ],
-    },
-    {
-      id: 'business_monthly',
-      name: 'Business',
-      price: '$80',
-      billingCycle: 'month',
-      popular: true,
-      features: [
-        'Everything in Pro',
-        'Unlimited team members',
-        'Dedicated account manager',
-        '24/7 priority support',
-        'Custom branding',
-      ],
-    },
-  ];
+  const upgradePlans = products.map((product, index) => ({
+    id: product.id,
+    name: product.name,
+    price:
+      product.prices && product.prices.length > 0
+        ? product.prices[0] && 'priceAmount' in product.prices[0]
+          ? `$${((product.prices[0] as any).priceAmount / 100).toFixed(2)}`
+          : 'Free'
+        : 'Custom',
+    billingCycle:
+      product.prices && product.prices.length > 0
+        ? product.prices[0]?.type === 'recurring'
+          ? product.prices[0]?.recurringInterval || 'month'
+          : 'one-time'
+        : 'month',
+    popular: index === 1, // Make the second product popular as example
+    features: product.description
+      ? [product.description, 'Customer support', 'Access to platform features']
+      : [
+          'Standard features',
+          'Customer support',
+          'Access to platform features',
+        ],
+    isEnterprise: product.name.toLowerCase().includes('enterprise'),
+  }));
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
@@ -159,9 +155,13 @@ export default async function BillingPage({
         Manage your billing information and subscriptions here.
       </p>
 
-      <BillingClient currentPlan={currentPlan} upgradePlans={upgradePlans} />
+      <BillingClient
+        currentPlan={currentPlan}
+        upgradePlans={upgradePlans}
+        wsId={wsId}
+      />
 
-      <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
+      {/* <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
         <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
           Plan History
         </h2>
@@ -230,7 +230,7 @@ export default async function BillingPage({
             </tbody>
           </table>
         </div>
-      </div>
+      </div> */}
 
       {/* Payment History (Static) */}
       <div className="rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
