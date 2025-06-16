@@ -1,6 +1,7 @@
 import { BillingClient } from './billing-client';
 import PurchaseLink from './data-polar-checkout';
 import { api } from '@/lib/polar';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { CreditCard, Receipt } from 'lucide-react';
 
@@ -14,41 +15,91 @@ const fetchProducts = async () => {
   }
 };
 
+const fetchSubscription = async (wsId: string) => {
+  const sbAdmin = await createClient();
+
+  // 1. Get the subscription record from your DB
+  const { data: dbSub, error } = await sbAdmin
+    .from('workspace_subscription')
+    .select('*')
+    .eq('ws_id', wsId)
+    .single();
+
+  if (error || !dbSub) {
+    console.error(
+      'Error fetching subscription or subscription not found:',
+      error
+    );
+    return null;
+  }
+
+  // 2. If it exists, get the full product details from Polar
+  const polarProduct = dbSub.product_id
+    ? await api.products.get({ id: dbSub.product_id })
+    : null;
+
+  if (!polarProduct) {
+    return null; // Can't proceed without product details
+  }
+
+  // 3. Combine the data into one clean object
+  return {
+    status: dbSub.status,
+    currentPeriodStart: dbSub.current_period_start,
+    currentPeriodEnd: dbSub.current_period_end,
+    product: {
+      id: polarProduct.id,
+      name: polarProduct.name,
+      description: polarProduct.description,
+      price: polarProduct.prices[0] || null,
+    },
+  };
+};
+
 export default async function BillingPage({
   params,
 }: {
   params: Promise<{ wsId: string }>;
 }) {
   const products = await fetchProducts();
-  const { wsId } = await params;
-  const currentPlan = {
-    name: 'Pro',
-    price: '$19.99',
-    billingCycle: 'month',
-    startDate: 'Jan 1, 2023',
-    nextBillingDate: 'Jan 1, 2024',
-    status: 'active',
-    features: [
-      'Unlimited projects',
-      'Advanced collaboration tools',
-      'Priority support',
-      'AI-powered insights',
-    ],
-  };
+  const subscription = await fetchSubscription((await params).wsId);
 
-  // const planHistory = [
-  //   {
-  //     planName: products[0]?.name,
-  //     price: products[0]?.name == 'Enterprise' ? '$Custom' : '$19.99',
-  //   },
-  //   {
-  //     planName: 'Basic',
-  //     price: '$9.99',
-  //     startDate: 'Jan 1, 2022',
-  //     endDate: 'Dec 31, 2022',
-  //     status: 'inactive',
-  //   },
-  // ];
+  const { wsId } = await params;
+
+  const currentPlan = subscription?.product
+    ? {
+        name: subscription.product.name || 'No Plan',
+        price:
+          subscription.product.price &&
+          'priceAmount' in subscription.product.price
+            ? `$${(subscription.product.price.priceAmount / 100).toFixed(2)}`
+            : 'Free',
+        billingCycle:
+          subscription.product.price?.type === 'recurring'
+            ? subscription.product.price?.recurringInterval || 'month'
+            : 'one-time',
+        startDate: subscription.currentPeriodStart
+          ? new Date(subscription.currentPeriodStart).toLocaleDateString()
+          : '-',
+        nextBillingDate: subscription.currentPeriodEnd
+          ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
+          : '-',
+        status: subscription.status || 'inactive',
+        features: [
+          subscription.product.description || 'Standard features',
+          'Customer support',
+          'Access to platform features',
+        ],
+      }
+    : {
+        name: 'Free Plan',
+        price: '$0',
+        billingCycle: 'month',
+        startDate: '-',
+        nextBillingDate: '-',
+        status: 'active',
+        features: ['Basic features', 'Limited usage', 'Community support'],
+      };
 
   const paymentHistory = [
     {
@@ -71,7 +122,6 @@ export default async function BillingPage({
     },
   ];
 
-  // This data is needed by the client component, so we'll pass it as a prop
   const upgradePlans = [
     {
       id: 'pro_monthly',
