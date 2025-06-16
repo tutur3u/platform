@@ -1,4 +1,3 @@
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/result/page.tsx
 'use client';
 
 import ShowAttemptDetailSection, {
@@ -14,8 +13,6 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-// File: app/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/[setId]/result/page.tsx
 
 // const dummyAttemptDetail: AttemptDetailDTO = {
 //   attemptId: "att_123456",
@@ -239,7 +236,6 @@ export default function QuizResultPage({
       <div className="space-y-8 p-6">
         {/* Summary */}
         <ShowResultSummarySection
-          t={t}
           submitResult={{
             attemptNumber: detail.attemptNumber,
             totalScore: detail.totalScore,
@@ -250,6 +246,7 @@ export default function QuizResultPage({
             setName: '', // you can pass down setName if desired
             attemptsSoFar: 0,
             timeLimitMinutes: null,
+            completedAt: detail.completedAt || null, // Optional, if you want to show when the quiz was completed
           }}
           wsId={wsId}
           courseId={courseId}
@@ -258,7 +255,7 @@ export default function QuizResultPage({
         />
 
         {/* Detailed per-question breakdown */}
-        <ShowAttemptDetailSection t={t} detail={detail} />
+        <ShowAttemptDetailSection detail={detail} />
       </div>
     );
   }
@@ -266,4 +263,31 @@ export default function QuizResultPage({
   return (
     <AttemptSummaryView summary={detail} backToTakeQuiz={backToTakeQuizPage} />
   );
+
+  // return (
+  //   <div className="space-y-8 p-6">
+  //     {/* Summary */}
+  //     <ShowResultSummarySection
+  //       submitResult={{
+  //         attemptNumber: dummyAttemptDetail.attemptNumber,
+  //         totalScore: dummyAttemptDetail.totalScore,
+  //         maxPossibleScore: dummyAttemptDetail.maxPossibleScore,
+  //       }}
+  //       quizMeta={{
+  //         completedAt: dummyAttemptDetail.completedAt,
+  //         attemptLimit: null, // or fetch/passthrough as needed
+  //         setName: '', // you can pass down setName if desired
+  //         attemptsSoFar: 0,
+  //         timeLimitMinutes: null,
+  //       }}
+  //       wsId={wsId}
+  //       courseId={courseId}
+  //       moduleId={moduleId}
+  //       setId={setId}
+  //     />
+
+  //     {/* Detailed per-question breakdown */}
+  //     <ShowAttemptDetailSection detail={dummyAttemptDetail} />
+  //   </div>
+  // );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import React, { useCallback } from 'react';
 
 export type Question = {
@@ -12,14 +13,13 @@ export type Question = {
 interface QuizStatusSidebarProps {
   questions: Question[];
   selectedAnswers: Record<string, string | string[]>;
-  t: (key: string, options?: Record<string, any>) => string;
 }
 
 export default function QuizStatusSidebar({
   questions,
   selectedAnswers,
-  t,
 }: QuizStatusSidebarProps) {
+  const t = useTranslations('ws-quizzes.quiz-status');
   // Count how many questions have at least one selected answer
   const answeredCount = questions.reduce((count, q) => {
     const sel = selectedAnswers[q.quizId];
@@ -28,15 +28,6 @@ export default function QuizStatusSidebar({
     }
     return count;
   }, 0);
-
-  // Translation helper (falls back to defaultText if t(key) === key)
-  const translate = useCallback(
-    (key: string, defaultText: string, options: Record<string, any> = {}) => {
-      const msg = t(key, options);
-      return msg === key ? defaultText : msg;
-    },
-    [t]
-  );
 
   // Scroll smoothly to the question container
   const onQuestionJump = useCallback((idx: number) => {
@@ -54,20 +45,16 @@ export default function QuizStatusSidebar({
   return (
     <aside
       className="h-fit max-h-96 w-full rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
-      aria-label={translate(
-        'ws-quizzes.sidebar_aria',
-        'Quiz progress navigation'
-      )}
+      aria-label={t('sidebar_aria')}
     >
       <h2 className="mb-4 text-lg font-semibold">
-        {translate('ws-quizzes.question_status_title', 'Question Progress')}
+        {t('question_status_title')}
       </h2>
 
       {/* Progress overview */}
       <div className="mb-4">
         <p className="mb-1 text-sm text-muted-foreground">
-          {answeredCount} / {questions.length}{' '}
-          {translate('ws-quizzes.answered_status_short', 'answered')}
+          {answeredCount} / {questions.length} {t('answered_status_short')}
         </p>
         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div
@@ -77,10 +64,7 @@ export default function QuizStatusSidebar({
             aria-valuenow={answeredCount}
             aria-valuemin={0}
             aria-valuemax={questions.length}
-            aria-label={translate(
-              'ws-quizzes.quiz_progress_label',
-              'Quiz Progress'
-            )}
+            aria-label={t('quiz_progress_label')}
           />
         </div>
       </div>
@@ -88,31 +72,22 @@ export default function QuizStatusSidebar({
       {/* Question jump grid */}
       <nav
         className="grid grid-cols-5 gap-2 md:grid-cols-6 lg:grid-cols-4 xl:grid-cols-5"
-        aria-label={translate(
-          'ws-quizzes.question_navigation_label',
-          'Jump to question'
-        )}
+        aria-label={t('question_navigation_label')}
       >
         {questions.map((q, idx) => {
           const answered = Array.isArray(selectedAnswers[q.quizId])
             ? (selectedAnswers[q.quizId] as string[]).length > 0
             : Boolean(selectedAnswers[q.quizId]);
           const labelText = answered
-            ? translate('ws-quizzes.answered_state', 'Answered')
-            : translate('ws-quizzes.unanswered_state', 'Unanswered');
-          const icon = answered
-            ? translate('ws-quizzes.answered_icon', '✓')
-            : translate('ws-quizzes.unanswered_icon', '○');
+            ? t('answered_state')
+            : t('unanswered_state');
+          const icon = answered ? t('answered_icon') : t('unanswered_icon');
 
           return (
             <button
               key={q.quizId}
               onClick={() => onQuestionJump(idx)}
-              aria-label={`${translate(
-                'ws-quizzes.jump_to_question',
-                'Jump to question',
-                { number: idx + 1 }
-              )} ${idx + 1}, ${labelText}`}
+              aria-label={`${t('jump_to_question')} ${idx + 1}, ${labelText}`}
               className={
                 `flex h-9 w-full items-center justify-center rounded-md border text-xs font-medium transition ` +
                 (answered

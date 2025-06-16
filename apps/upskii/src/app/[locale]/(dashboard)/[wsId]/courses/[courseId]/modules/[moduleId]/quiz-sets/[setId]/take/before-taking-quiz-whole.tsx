@@ -22,6 +22,7 @@ import {
   Play,
   RotateCcw,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -86,6 +87,7 @@ export default function BeforeTakingQuizWhole({
   courseId,
   moduleId,
 }: BeforeTakingQuizWholeProps) {
+  const t = useTranslations('ws-quizzes');
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
 
@@ -137,9 +139,7 @@ export default function BeforeTakingQuizWhole({
           <h1 className="text-3xl font-bold text-primary">
             {quizData.setName}
           </h1>
-          <p className="text-secondary-foreground">
-            Review the information below before starting your exam
-          </p>
+          <p className="text-secondary-foreground">{t('quiz.review-info')}</p>
 
           {/* Start Button */}
           {canRetake && (
@@ -152,25 +152,17 @@ export default function BeforeTakingQuizWhole({
                 {isStarting ? (
                   <>
                     <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
-                    Starting Quiz...
+                    {t('quiz.starting-quiz')}
                   </>
                 ) : (
                   <>
                     <Play className="mr-2 h-5 w-5" />
-                    Start Quiz
+                    {t('quiz.start-quiz')}
                   </>
                 )}
               </Button>
               <p className="mt-2 text-sm text-secondary-foreground">
-                {canRetake
-                  ? 'Click to begin your attempt'
-                  : quizData.resultsReleased
-                    ? 'Results are out—no further attempts'
-                    : isPastDue
-                      ? 'Quiz is past due'
-                      : !isAvailable
-                        ? 'Quiz not yet available'
-                        : 'No attempts remaining'}
+                {t('quiz.click-to-begin')}
               </p>
             </div>
           )}
@@ -185,17 +177,17 @@ export default function BeforeTakingQuizWhole({
                 }}
                 className="border border-dynamic-purple bg-dynamic-purple/20 px-8 py-3 text-lg text-primary hover:bg-primary-foreground hover:text-dynamic-purple"
               >
-                View Result
+                {t('quiz.view-result')}
               </Button>
               <p className="mt-2 text-sm text-secondary-foreground">
-                View result of your final attempt
+                {t('quiz.view-final-attempt')}
               </p>
             </div>
           )}
           {!isAvailable ? (
             <Alert variant="default" className="mt-4">
               <AlertDescription>
-                This quiz is not yet available. Please check back later.
+                {t('quiz.quiz-not-available-message')}
               </AlertDescription>
             </Alert>
           ) : (
@@ -204,8 +196,8 @@ export default function BeforeTakingQuizWhole({
               <Alert variant="destructive" className="mt-4">
                 <AlertDescription>
                   {isPastDue
-                    ? 'This quiz is past its due date. You cannot start a new attempt at this time.'
-                    : 'You have no attempts remaining for this quiz.'}
+                    ? t('quiz.quiz-past-due-message')
+                    : t('quiz.no-attempts-message')}
                 </AlertDescription>
               </Alert>
             )
@@ -219,13 +211,13 @@ export default function BeforeTakingQuizWhole({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Info className="h-5 w-5" />
-                Quiz Information
+                {t('info.quiz-information')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-secondary-foreground">
-                  Quiz ID
+                  {t('info.quiz-id')}
                 </span>
                 <Badge variant="outline">{quizData.setId}</Badge>
               </div>
@@ -233,20 +225,20 @@ export default function BeforeTakingQuizWhole({
               <Separator />
               <div className="flex justify-between">
                 <span className="text-sm font-medium text-secondary-foreground">
-                  Time Limit
+                  {t('info.time-limit')}
                 </span>
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4 text-dynamic-light-purple" />
                   <span className="text-sm">
                     {quizData.timeLimitMinutes
-                      ? `${quizData.timeLimitMinutes} minutes`
-                      : 'No time limit'}
+                      ? `${quizData.timeLimitMinutes} ${t('info.minutes')}`
+                      : t('info.no-time-limit')}
                   </span>
                 </div>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm font-medium text-secondary-foreground">
-                  Attempts Used
+                  {t('info.attempts-used')}
                 </span>
                 <div className="flex items-center gap-1">
                   <RotateCcw className="h-4 w-4 text-dynamic-light-purple" />
@@ -258,14 +250,14 @@ export default function BeforeTakingQuizWhole({
               </div>
               <div className="flex justify-between">
                 <span className="text-sm font-medium text-secondary-foreground">
-                  Explanations
+                  {t('info.explanations')}
                 </span>
                 <span>
                   {quizData.explanationMode === 0
-                    ? 'None'
+                    ? t('info.explanation-modes.none')
                     : quizData.explanationMode === 1
-                      ? 'Correct only after release'
-                      : 'All after release'}
+                      ? t('info.explanation-modes.correct-after-release')
+                      : t('info.explanation-modes.all-after-release')}
                 </span>
               </div>
             </CardContent>
@@ -275,14 +267,14 @@ export default function BeforeTakingQuizWhole({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Schedule
+                {t('info.schedule')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <div className="mb-1 flex items-center gap-2">
                   <span className="text-sm font-medium text-secondary-foreground">
-                    Available From
+                    {t('info.available-from')}
                   </span>
                   {isAvailable && (
                     <CheckCircle className="h-4 w-4 text-green-500" />
@@ -294,7 +286,7 @@ export default function BeforeTakingQuizWhole({
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-secondary-foreground">
-                    Due Date
+                    {t('info.due-date')}
                   </span>
                   {isPastDue && (
                     <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -306,8 +298,10 @@ export default function BeforeTakingQuizWhole({
                 <>
                   <Separator />
                   <p className="text-center text-sm text-primary">
-                    {attemptsRemaining} attempt
-                    {attemptsRemaining !== 1 ? 's' : ''} remaining
+                    {attemptsRemaining}{' '}
+                    {attemptsRemaining !== 1
+                      ? t('info.attempts-remaining')
+                      : t('info.attempt-remaining')}
                   </p>
                 </>
               )}
@@ -318,8 +312,8 @@ export default function BeforeTakingQuizWhole({
         {/* Instructions */}
         <Card>
           <CardHeader>
-            <CardTitle>Instructions</CardTitle>
-            <CardDescription>Read before you begin</CardDescription>
+            <CardTitle>{t('instructions.title')}</CardTitle>
+            <CardDescription>{t('instructions.subtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
             {quizData.instruction ? (
@@ -330,12 +324,17 @@ export default function BeforeTakingQuizWhole({
               />
             ) : (
               <div className="space-y-2 text-sm text-secondary-foreground">
-                <p>• Make sure you have a stable internet connection</p>
-                <p>• You cannot pause the quiz once started</p>
-                <p>• All questions must be answered before submitting</p>
-                <p>• Your progress will be automatically saved</p>
+                <p>• {t('instructions.default.stable-connection')}</p>
+                <p>• {t('instructions.default.cannot-pause')}</p>
+                <p>• {t('instructions.default.answer-all')}</p>
+                <p>• {t('instructions.default.auto-save')}</p>
                 {quizData.timeLimitMinutes && (
-                  <li>You have {quizData.timeLimitMinutes} minutes</li>
+                  <p>
+                    •{' '}
+                    {t('instructions.default.time-limit', {
+                      minutes: quizData.timeLimitMinutes,
+                    })}
+                  </p>
                 )}
               </div>
             )}
@@ -346,13 +345,13 @@ export default function BeforeTakingQuizWhole({
         {quizData.attemptsSoFar > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Past Attempts</CardTitle>
+              <CardTitle>{t('past-attempts.title')}</CardTitle>
               <CardDescription>
                 {canViewOldAttemptsNoResults
-                  ? 'Click “View Details” to view your answers'
+                  ? t('past-attempts.view-answers')
                   : canViewOldAttemptsResults
-                    ? 'Click “View Details” to view your results'
-                    : 'Results pending release'}
+                    ? t('past-attempts.view-results')
+                    : t('past-attempts.results-pending')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -362,16 +361,21 @@ export default function BeforeTakingQuizWhole({
                   className="flex items-center justify-between"
                 >
                   <div>
-                    <strong>#{att.attemptNumber}</strong> at{' '}
+                    {t('past-attempts.attempt-info', {
+                      number: att.attemptNumber,
+                      date: formatDate(att.submittedAt),
+                      duration: formatDuration(att.durationSeconds),
+                    })}
+                {/* <strong>#{att.attemptNumber}</strong> at{' '}
                     {formatDate(att.submittedAt)} (
-                    {formatDuration(att.durationSeconds)})
+                    {formatDuration(att.durationSeconds)}) */}
                   </div>
                   {(canViewOldAttemptsResults ||
                     canViewOldAttemptsNoResults) && (
                     <Button size="sm" onClick={() => viewAttempt(att)}>
                       {canViewOldAttemptsResults
-                        ? 'View Results'
-                        : 'View Details'}
+                        ? t('past-attempts.view-results-button')
+                        : t('past-attempts.view-details-button')}
                     </Button>
                   )}
                 </div>

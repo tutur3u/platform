@@ -1,6 +1,5 @@
 'use client';
 
-
 import BeforeTakingQuizWhole, { AttemptSummary } from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
 import QuizStatusSidebar from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/quiz-status-sidebar';
 import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/time-elapsed-status';
@@ -56,7 +55,7 @@ export default function TakingQuizClient({
   moduleId: string;
   setId: string;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('ws-quizzes');
   const router = useRouter();
 
   // ─── STATE ────────────────────────────────────────────────────────────────
@@ -69,9 +68,9 @@ export default function TakingQuizClient({
   const [hasStarted, setHasStarted] = useState(false);
   const [isPastDue, setIsPastDue] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
-  const [dueDateStr, setDueDateStr] = useState<string | null>(null);
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  // eslint-disable-next-line no-undef
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Now can be string (radio) or string[] (checkbox)
@@ -92,7 +91,9 @@ export default function TakingQuizClient({
   const clearStartTimestamp = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
-    } catch {}
+    } catch {
+      // Ignore
+    }
   };
 
   const computeElapsedSeconds = (startTs: number) =>
@@ -109,11 +110,12 @@ export default function TakingQuizClient({
       .flat(),
   });
 
-  useEffect(() => {
-    localStorage.removeItem(ANSWERS_KEY);
-    localStorage.removeItem(STORAGE_KEY);
-    clearStartTimestamp();
-  }, [setId]);
+  // Only for debugging purposes
+  // useEffect(() => {
+  //   localStorage.removeItem(ANSWERS_KEY);
+  //   localStorage.removeItem(STORAGE_KEY);
+  //   clearStartTimestamp();
+  // }, [setId]);
 
   // ─── FETCH METADATA ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -126,7 +128,7 @@ export default function TakingQuizClient({
         const json: TakeResponse | { error: string } = await res.json();
 
         if (!res.ok) {
-          setMetaError((json as any).error || 'Unknown error');
+          setMetaError((json as any).error || t('errors.unknown-error'));
           return setLoadingMeta(false);
         }
 
@@ -137,11 +139,12 @@ export default function TakingQuizClient({
         if (saved) {
           try {
             setSelectedAnswers(JSON.parse(saved));
-          } catch {}
+          } catch {
+            // Ignore JSON parse errors
+          }
         }
         // due date
         if ('dueDate' in json && json.dueDate) {
-          setDueDateStr(json.dueDate);
           if (new Date(json.dueDate) < new Date()) {
             setIsPastDue(true);
           }
@@ -167,7 +170,7 @@ export default function TakingQuizClient({
           }
         }
       } catch {
-        setMetaError('Network error');
+        setMetaError(t('errors.network-error'));
       } finally {
         setLoadingMeta(false);
       }
@@ -176,7 +179,6 @@ export default function TakingQuizClient({
     return () => {
       timerRef.current && clearInterval(timerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setId]);
 
   // ─── TIMER LOGIC ─────────────────────────────────────────────────────────────
@@ -218,7 +220,7 @@ export default function TakingQuizClient({
     try {
       localStorage.setItem(STORAGE_KEY, nowMs.toString());
     } catch {
-      console.warn('Failed to save start timestamp to localStorage');
+      // Ignore localStorage errors
       // Fallback: use session storage
     }
     setHasStarted(true);
@@ -242,7 +244,7 @@ export default function TakingQuizClient({
       const json: SubmitResult | { error: string } = await res.json();
 
       if (!res.ok) {
-        setSubmitError((json as any).error || 'Submission failed.');
+        setSubmitError((json as any).error || t('errors.submission-failed'));
         return setSubmitting(false);
       }
 
@@ -256,7 +258,7 @@ export default function TakingQuizClient({
       }
       // setSubmitResult(json as SubmitResult);
     } catch {
-      setSubmitError('Network error submitting.');
+      setSubmitError(t('errors.network-error-submitting'));
     } finally {
       setSubmitting(false);
     }
@@ -297,14 +299,12 @@ export default function TakingQuizClient({
           <TimeElapsedStatus
             timeLeft={timeLeft}
             isCountdown={isCountdown}
-            t={t}
           />
         </div>
         {sidebarVisible && quizMeta && (
           <QuizStatusSidebar
             questions={quizMeta.questions}
             selectedAnswers={selectedAnswers}
-            t={t}
           />
         )}
       </div>
@@ -328,7 +328,7 @@ export default function TakingQuizClient({
                   <CardTitle>
                     {idx + 1}. {q.question}{' '}
                     <span className="text-sm text-muted-foreground">
-                      ({t('ws-quizzes.points')}: {q.score})
+                      ({t('points')}: {q.score})
                     </span>
                   </CardTitle>
                 </CardHeader>
@@ -357,7 +357,9 @@ export default function TakingQuizClient({
                                 ANSWERS_KEY,
                                 JSON.stringify(nextState)
                               );
-                            } catch {}
+                            } catch {
+                              // Ignore localStorage errors
+                            }
                           }}
                         />
                         <Label htmlFor={`${q.quizId}-${opt.id}`}>
@@ -378,7 +380,9 @@ export default function TakingQuizClient({
                             ANSWERS_KEY,
                             JSON.stringify(next)
                           );
-                        } catch {}
+                        } catch {
+                          // Ignore localStorage errors
+                        }
                       }}
                       className="space-y-2"
                     >
@@ -419,8 +423,8 @@ export default function TakingQuizClient({
               }`}
             >
               {submitting
-                ? t('ws-quizzes.submitting') || 'Submitting...'
-                : t('ws-quizzes.submit') || 'Submit'}
+                ? t('submitting') || 'Submitting...'
+                : t('submit') || 'Submit'}
             </Button>
           </div>
         </form>
@@ -431,12 +435,10 @@ export default function TakingQuizClient({
           <TimeElapsedStatus
             timeLeft={timeLeft}
             isCountdown={isCountdown}
-            t={t}
           />
           <QuizStatusSidebar
             questions={quizMeta.questions}
             selectedAnswers={selectedAnswers}
-            t={t}
           />
         </div>
       </aside>

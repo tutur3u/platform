@@ -14,6 +14,7 @@ import {
   Timer,
   XCircle,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export interface AttemptSummaryDTO {
   attemptId: string;
@@ -35,6 +36,7 @@ export default function AttemptSummaryView({
   summary: AttemptSummaryDTO;
   backToTakeQuiz: () => void;
 }) {
+  const t = useTranslations('ws-quizzes');
   const fmtDate = (iso: string | null) =>
     iso
       ? new Date(iso).toLocaleString('en-US', {
@@ -84,16 +86,16 @@ export default function AttemptSummaryView({
     <div className="mx-auto max-w-4xl space-y-6 p-2 md:p-6">
       {/* Header */}
       <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold text-primary">Attempt Summary</h1>
-        <p className="text-secondary-foreground">
-          Review your quiz attempt details and responses
-        </p>
+        <h1 className="text-3xl font-bold text-primary">
+          {t('summary.title')}
+        </h1>
+        <p className="text-secondary-foreground">{t('summary.description')}</p>
         <Button
           variant="outline"
-          className="mt-3 border border-dynamic-purple bg-dynamic-purple/20 md:w-auto w-1/2"
+          className="mt-3 w-1/2 border border-dynamic-purple bg-dynamic-purple/20 md:w-auto"
           onClick={backToTakeQuiz}
         >
-          Back to Quiz
+          {t('summary.back_to_quiz')}
         </Button>
       </div>
 
@@ -102,7 +104,9 @@ export default function AttemptSummaryView({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Hash className="h-5 w-5 text-dynamic-light-purple" />
-            Attempt #{summary.attemptNumber}
+            {t('summary.attempt_number', {
+              number: summary.attemptNumber,
+            })}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -113,7 +117,9 @@ export default function AttemptSummaryView({
                 <Calendar className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-primary">Submitted</p>
+                <p className="text-sm font-medium text-primary">
+                  {t('summary.submitted')}
+                </p>
                 <p className="text-sm text-secondary-foreground">
                   {fmtDate(summary.submittedAt)}
                 </p>
@@ -126,7 +132,9 @@ export default function AttemptSummaryView({
                 <Timer className="h-5 w-5 text-dynamic-light-purple" />
               </div>
               <div>
-                <p className="text-sm font-medium text-primary">Duration</p>
+                <p className="text-sm font-medium text-primary">
+                  {t('summary.duration')}
+                </p>
                 <p className="text-sm text-secondary-foreground">
                   {fmtDur(summary.durationSeconds)}
                 </p>
@@ -139,9 +147,15 @@ export default function AttemptSummaryView({
                 <FileText className="h-5 w-5 text-dynamic-light-orange" />
               </div>
               <div>
-                <p className="text-sm font-medium text-primary">Completion</p>
+                <p className="text-sm font-medium text-primary">
+                  {t('summary.completion')}
+                </p>
                 <p className="text-sm text-secondary-foreground">
-                  {answeredQuestions} of {totalQuestions} questions
+                  {/* {answeredQuestions} of {totalQuestions} questions */}
+                  {t('summary.answered_of_total', {
+                    answered: answeredQuestions,
+                    total: totalQuestions,
+                  })}
                 </p>
               </div>
             </div>
@@ -151,7 +165,7 @@ export default function AttemptSummaryView({
           <div className="mt-6 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-secondary-foreground">
-                Progress
+                {t('summary.progress')}
               </span>
               <Badge variant={completionRate === 100 ? 'default' : 'secondary'}>
                 {completionRate}%
@@ -168,10 +182,12 @@ export default function AttemptSummaryView({
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-secondary-foreground" />
             <h2 className="text-xl font-semibold text-primary">
-              Questions & Responses
+              {t('summary.questions_and_responses')}
             </h2>
             <Badge variant="secondary">
-              {summary.questions.length} questions
+              {t('summary.questions_count', {
+                count: summary.questions.length,
+              })}
             </Badge>
           </div>
 
@@ -205,7 +221,7 @@ export default function AttemptSummaryView({
                               variant="default"
                               className="bg-dynamic-green"
                             >
-                              Answered
+                              {t('summary.answered')}
                             </Badge>
                           </div>
                         ) : (
@@ -215,7 +231,7 @@ export default function AttemptSummaryView({
                               variant="secondary"
                               className="bg-orange-100 text-orange-700"
                             >
-                              Skipped
+                              {t('summary.skipped')}
                             </Badge>
                           </div>
                         )}
@@ -228,7 +244,7 @@ export default function AttemptSummaryView({
                     {/* Selected Answer */}
                     <div className="space-y-2">
                       <span className="text-sm font-medium text-card-foreground">
-                        Your Response:
+                        {t('summary.your_response')}
                       </span>
                       {isAnswered && selectedOptionText ? (
                         <div className="mt-1 rounded-lg border border-dynamic-purple bg-dynamic-purple/20 p-3">
@@ -246,7 +262,7 @@ export default function AttemptSummaryView({
                           <div className="flex items-center gap-2">
                             <XCircle className="h-4 w-4 text-orange-500" />
                             <span className="text-sm text-secondary-foreground italic">
-                              No answer provided
+                              {t('summary.no_answer')}
                             </span>
                           </div>
                         </div>
@@ -256,7 +272,7 @@ export default function AttemptSummaryView({
                     {/* All Options */}
                     <div className="space-y-2">
                       <span className="text-sm font-medium text-secondary-foreground">
-                        Available Options:
+                        {t('summary.available_options')}
                       </span>
                       <div className="space-y-2.5">
                         {q.options.map((option) => {
@@ -309,7 +325,9 @@ export default function AttemptSummaryView({
                 {summary.attemptNumber}
               </div>
               <div className="text-sm text-secondary-foreground">
-                Attempt Number
+                {t('summary.summary_stats.attempt_number', {
+                  number: summary.attemptNumber,
+                })}
               </div>
             </div>
             <div>
@@ -317,7 +335,7 @@ export default function AttemptSummaryView({
                 {answeredQuestions}
               </div>
               <div className="text-sm text-secondary-foreground">
-                Questions Answered
+                {t('summary.summary_stats.answered')}
               </div>
             </div>
             <div>
@@ -325,7 +343,7 @@ export default function AttemptSummaryView({
                 {totalQuestions - answeredQuestions}
               </div>
               <div className="text-sm text-secondary-foreground">
-                Questions Skipped
+                {t('summary.summary_stats.skipped')}
               </div>
             </div>
             <div>
@@ -333,7 +351,7 @@ export default function AttemptSummaryView({
                 {fmtDur(summary.durationSeconds)}
               </div>
               <div className="text-sm text-secondary-foreground">
-                Time Taken
+                {t('summary.summary_stats.time_taken')}
               </div>
             </div>
           </div>
@@ -345,7 +363,7 @@ export default function AttemptSummaryView({
           className="mt-3 w-full border border-dynamic-purple bg-dynamic-purple/20 md:w-auto"
           onClick={backToTakeQuiz}
         >
-          Back to Quiz
+          {t('summary.back_to_quiz')}
         </Button>
       </div>
     </div>

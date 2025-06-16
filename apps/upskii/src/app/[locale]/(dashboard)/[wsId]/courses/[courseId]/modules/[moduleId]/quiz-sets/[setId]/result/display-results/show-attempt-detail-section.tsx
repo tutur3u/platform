@@ -1,10 +1,9 @@
-// File: app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/result/show-attempt-detail-section.tsx
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { CheckCircle, Circle, XCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-// File: app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/result/show-attempt-detail-section.tsx
 
 export interface AttemptDetailDTO {
   attemptId: string;
@@ -33,14 +32,13 @@ export interface AttemptDetailDTO {
 }
 
 export interface ShowAttemptDetailProps {
-  t: (key: string) => string;
   detail: AttemptDetailDTO;
 }
 
 export default function ShowAttemptDetailSection({
-  t,
   detail,
 }: ShowAttemptDetailProps) {
+  const t = useTranslations('ws-quizzes');
   const fmtDate = (iso: string | null) =>
     iso ? new Date(iso).toLocaleString() : '—';
   const fmtDuration = (secs: number) => {
@@ -56,17 +54,17 @@ export default function ShowAttemptDetailSection({
       {/* Metadata */}
       <div className="space-y-1 text-sm text-secondary-foreground">
         <div>
-          {t('ws-quizzes.started_at') || 'Started at'}:{' '}
+          {t('results.started_at') || 'Started at'}:{' '}
           {fmtDate(detail.startedAt)}
         </div>
         {detail.completedAt && (
           <div>
-            {t('ws-quizzes.completed_at') || 'Completed at'}:{' '}
+            {t('results.completed_at') || 'Completed at'}:{' '}
             {fmtDate(detail.completedAt)}
           </div>
         )}
         <div>
-          {t('ws-quizzes.duration') || 'Duration'}:{' '}
+          {t('results.duration') || 'Duration'}:{' '}
           {fmtDuration(detail.durationSeconds)}
         </div>
       </div>
@@ -87,7 +85,7 @@ export default function ShowAttemptDetailSection({
               <CardTitle>
                 {idx + 1}. {q.question}{' '}
                 <span className="text-sm text-muted-foreground">
-                  ({t('ws-quizzes.points') || 'Points'}: {q.scoreWeight})
+                  ({t('results.points') || 'Points'}: {q.scoreWeight})
                 </span>
               </CardTitle>
             </CardHeader>
@@ -100,9 +98,9 @@ export default function ShowAttemptDetailSection({
                     className="flex items-center space-x-2 rounded-md border border-dynamic-purple/40 p-2 transition-colors hover:bg-secondary/10 md:space-x-4 md:p-4"
                     aria-label={`${opt.value} ${
                       opt.isCorrect
-                        ? t('ws-quizzes.correct_option') || '(Correct)'
+                        ? t('results.correct_option') || '(Correct)'
                         : chosen
-                          ? t('ws-quizzes.your_answer') || '(Your answer)'
+                          ? t('results.your_answer') || '(Your answer)'
                           : ''
                     }`}
                   >
@@ -118,12 +116,12 @@ export default function ShowAttemptDetailSection({
                         {opt.value}{' '}
                         {opt.isCorrect && (
                           <small className="text-green-600">
-                            {t('ws-quizzes.correct') || '(Correct)'}
+                            {t('results.correct') || '(Correct)'}
                           </small>
                         )}
                         {chosen && !opt.isCorrect && (
                           <small className="text-dynamic-light-red">
-                            {t('ws-quizzes.your_answer') || '(Your answer)'}
+                            {t('results.your_answer') || '(Your answer)'}
                           </small>
                         )}
                       </span>
@@ -138,7 +136,7 @@ export default function ShowAttemptDetailSection({
               })}
 
               <div className={`mt-3 text-sm text-center md:text-right ${q.isCorrect ? "text-green-600" : "text-dynamic-light-red"}`}>
-                {t('ws-quizzes.score_awarded') || 'Score Awarded'}:{' '}
+                {t('results.score_awarded') || 'Score Awarded'}:{' '}
                 <strong>
                   {q.scoreAwarded} / {q.scoreWeight}
                 </strong>

@@ -5,16 +5,11 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
-import {
-  CheckCircle,
-  RotateCcw,
-  Target,
-  Trophy,
-} from 'lucide-react';
+import { CheckCircle, RotateCcw, Target, Trophy } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 export interface ShowResultSummarySectionProps {
-  t: (key: string) => string;
   submitResult: {
     attemptNumber: number;
     totalScore: number;
@@ -25,6 +20,7 @@ export interface ShowResultSummarySectionProps {
     setName: string;
     attemptsSoFar: number;
     timeLimitMinutes: number | null;
+    completedAt: string | null; // Optional, if you want to show when the quiz was completed
   };
   wsId: string;
   courseId: string;
@@ -33,7 +29,6 @@ export interface ShowResultSummarySectionProps {
 }
 
 export default function ShowResultSummarySection({
-  t,
   submitResult,
   quizMeta,
   wsId,
@@ -41,6 +36,7 @@ export default function ShowResultSummarySection({
   moduleId,
   setId,
 }: ShowResultSummarySectionProps) {
+  const t = useTranslations('ws-quizzes');
   const router = useRouter();
 
   const scorePercentage = Math.round(
@@ -75,7 +71,7 @@ export default function ShowResultSummarySection({
           </div>
         </div>
         <h1 className="text-3xl font-bold text-primary">
-          {t('ws-quizzes.quiz-completed') || 'Quiz Completed!'}
+          {t('results.quiz-completed') || 'Quiz Completed!'}
         </h1>
         <p className="text-secondary-foreground">{quizMeta.setName}</p>
       </div>
@@ -85,7 +81,7 @@ export default function ShowResultSummarySection({
         <CardHeader className="pb-2 text-center">
           <CardTitle className="flex items-center justify-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-600" />
-            {t('ws-quizzes.your-score') || 'Your Score'}
+            {t('results.your-score') || 'Your Score'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -123,12 +119,12 @@ export default function ShowResultSummarySection({
               </div>
               <div>
                 <p className="text-sm font-medium text-primary">
-                  {t('ws-quizzes.attempt') || 'Attempt'}
+                  {t('results.attempt') || 'Attempt'}
                 </p>
                 <p className="text-sm text-secondary-foreground">
-                  #{submitResult.attemptNumber} {t('ws-quizzes.of') || 'of'}{' '}
+                  #{submitResult.attemptNumber} {t('results.of') || 'of'}{' '}
                   {quizMeta.attemptLimit ??
-                    (t('ws-quizzes.unlimited') || 'Unlimited')}
+                    (t('results.unlimited') || 'Unlimited')}
                 </p>
               </div>
             </div>
@@ -140,10 +136,10 @@ export default function ShowResultSummarySection({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-primary">
-                    {t('ws-quizzes.attempts-remaining') || 'Attempts Remaining'}
+                    {t('results.attempts-remaining') || 'Attempts Remaining'}
                   </p>
                   <p className="text-sm text-secondary-foreground">
-                    {attemptsRemaining} {t('ws-quizzes.left') || 'left'}
+                    {attemptsRemaining} {t('results.left') || 'left'}
                   </p>
                 </div>
               </div>
@@ -158,24 +154,24 @@ export default function ShowResultSummarySection({
           <div className="space-y-2 text-center">
             <h3 className="font-semibold text-primary">
               {scorePercentage >= 90
-                ? t('ws-quizzes.excellent-work') || 'Excellent Work!'
+                ? t('results.excellent-work') || 'Excellent Work!'
                 : scorePercentage >= 70
-                  ? t('ws-quizzes.good-job') || 'Good Job!'
+                  ? t('results.good-job') || 'Good Job!'
                   : scorePercentage >= 50
-                    ? t('ws-quizzes.keep-practicing') || 'Keep Practicing!'
-                    : t('ws-quizzes.needs-improvement') || 'Needs Improvement'}
+                    ? t('results.keep-practicing') || 'Keep Practicing!'
+                    : t('results.needs-improvement') || 'Needs Improvement'}
             </h3>
             <p className="text-sm text-secondary-foreground">
               {scorePercentage >= 90
-                ? t('ws-quizzes.outstanding-performance') ||
+                ? t('results.outstanding-performance') ||
                   'Outstanding performance! You have mastered this material.'
                 : scorePercentage >= 70
-                  ? t('ws-quizzes.solid-understanding') ||
+                  ? t('results.solid-understanding') ||
                     'You show a solid understanding of the material.'
                   : scorePercentage >= 50
-                    ? t('ws-quizzes.room-for-improvement') ||
+                    ? t('results.room-for-improvement') ||
                       "There's room for improvement. Consider reviewing the material."
-                    : t('ws-quizzes.review-recommended') ||
+                    : t('results.review-recommended') ||
                       'We recommend reviewing the material and trying again.'}
             </p>
           </div>
@@ -188,24 +184,30 @@ export default function ShowResultSummarySection({
       <div className="flex flex-col justify-center gap-3 sm:flex-row">
         <Button
           variant="outline"
-          onClick={() => router.push(`/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${setId}/take`)}
+          onClick={() =>
+            router.push(
+              `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${setId}/take`
+            )
+          }
           className="flex items-center gap-2"
         >
           <RotateCcw className="h-4 w-4" />
-          {t('ws-quizzes.back-take-quiz') || 'Back to Quiz Page'}
+          {t('results.back-take-quiz') || 'Back to Quiz Page'}
         </Button>
       </div>
 
       {/* Additional Info */}
       <div className="space-y-1 text-center text-sm text-muted-foreground">
-        <p>
-          {t('ws-quizzes.quiz-completed-at') || 'Quiz completed at'}{' '}
-          {new Date().toLocaleString()}
-        </p>
+        {quizMeta.completedAt && (
+          <p>
+            {t('results.quiz-completed-at') || 'Quiz completed at'}{' '}
+            {new Date(quizMeta.completedAt).toLocaleString()}
+          </p>
+        )}
         {quizMeta.timeLimitMinutes && (
           <p>
-            {t('ws-quizzes.time-limit') || 'Time limit'}:{' '}
-            {quizMeta.timeLimitMinutes} {t('ws-quizzes.minutes') || 'minutes'}
+            {t('results.time-limit') || 'Time limit'}:{' '}
+            {quizMeta.timeLimitMinutes} {t('results.minutes') || 'minutes'}
           </p>
         )}
       </div>
