@@ -42,3 +42,6 @@ next-env.d.ts
 .trigger.env
 .env.local
 .env.*.local
+
+# Trigger.dev
+.trigger/
