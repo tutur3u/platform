@@ -1,14 +1,13 @@
 import { BillingClient } from './billing-client';
 import PurchaseLink from './data-polar-checkout';
-import { dodopayments } from '@/lib/payment';
 import { api } from '@/lib/polar';
 import { Button } from '@tuturuuu/ui/button';
 import { CreditCard, Receipt } from 'lucide-react';
 
 const fetchProducts = async () => {
   try {
-    const res = await dodopayments.products.list();
-    return res.items ?? [];
+    const res = await api.products.list({ isArchived: false });
+    return res.result.items ?? [];
   } catch (err) {
     console.error('Failed to fetch products:', err);
     return [];
@@ -21,7 +20,6 @@ export default async function BillingPage({
   params: Promise<{ wsId: string }>;
 }) {
   const products = await fetchProducts();
-  console.log('Fetched products:', products);
   const { wsId } = await params;
   const currentPlan = {
     name: 'Pro',
@@ -37,6 +35,20 @@ export default async function BillingPage({
       'AI-powered insights',
     ],
   };
+
+  // const planHistory = [
+  //   {
+  //     planName: products[0]?.name,
+  //     price: products[0]?.name == 'Enterprise' ? '$Custom' : '$19.99',
+  //   },
+  //   {
+  //     planName: 'Basic',
+  //     price: '$9.99',
+  //     startDate: 'Jan 1, 2022',
+  //     endDate: 'Dec 31, 2022',
+  //     status: 'inactive',
+  //   },
+  // ];
 
   const paymentHistory = [
     {
@@ -59,6 +71,7 @@ export default async function BillingPage({
     },
   ];
 
+  // This data is needed by the client component, so we'll pass it as a prop
   const upgradePlans = [
     {
       id: 'pro_monthly',
@@ -122,15 +135,13 @@ export default async function BillingPage({
             </thead>
             <tbody className="divide-y divide-border">
               {products && products.length > 0 ? (
-                products.map((product: any) => (
+                products.map((product) => (
                   <tr key={product.id}>
                     <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
                       {product.name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                      {product.price_details?.type === 'one_time_price'
-                        ? `$${(product.price_details.price / 100).toFixed(2)}`
-                        : 'Custom Pricing'}
+                      {product.name === 'Enterprise' ? 'Custom Pricing' : `$8`}
                     </td>
                     <td className="max-w-md truncate px-4 py-3 text-card-foreground">
                       {product.description || '-'}
@@ -143,7 +154,7 @@ export default async function BillingPage({
                         asChild
                       >
                         <PurchaseLink
-                          productId={product.product_id}
+                          productId={product.id}
                           wsId={wsId}
                           customerEmail="t@test.com"
                           theme="auto"
