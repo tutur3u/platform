@@ -1,4 +1,4 @@
-import EmailInput from '../../../../settings-email-input';
+import EmailInput from '../../../settings-email-input';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import {

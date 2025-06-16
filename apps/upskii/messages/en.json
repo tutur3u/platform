@@ -210,7 +210,7 @@
     "api-key-valid-desc": "API Key succesfully validated and has been saved",
     "api-key-invalid-title": "Invalid API Key",
     "api-key-invalid-desc": "Please provide a valid API Key or try again",
-    "api-key-required": "Please provide a valid key format",
+    "api-key-required-format": "Please provide a valid key format",
     "api-key-saved-title": "API key saved",
     "api-key-saved-desc": "Your API Key has been saved. Please refresh the page to start using the AI.",
     "validate": "Validate",
@@ -220,7 +220,9 @@
     "api_input_description": "Input your API Key to access AI features",
     "delete-api-key": "Delete API Key",
     "api-key-deleted-title": "API Key Deleted",
-    "api-key-deleted-desc": "Your API Key has been successfully deleted"
+    "api-key-deleted-desc": "Your API Key has been successfully deleted",
+    "api-key-required": "Please provide your API Key to continue",
+    "get-api-key-from": "Get your API Key from"
   },
   "api-key-data-table": {
     "id": "ID",
