@@ -5,6 +5,8 @@ import type {
   TimeTrackingSession,
   WorkspaceTask,
 } from '@tuturuuu/types/db';
+import type { ExtendedWorkspaceTask, TaskFilters } from '../types';
+import { getFilteredAndSortedTasks, useTaskCounts, generateAssigneeInitials } from '../utils';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -44,17 +46,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-interface ExtendedWorkspaceTask extends Partial<WorkspaceTask> {
-  board_name?: string;
-  list_name?: string;
-  assignees?: Array<{
-    id: string;
-    display_name?: string;
-    avatar_url?: string;
-    email?: string;
-  }>;
-  is_assigned_to_current_user?: boolean;
-}
+
 
 interface SessionWithRelations extends TimeTrackingSession {
   category: TimeTrackingCategory | null;
@@ -145,7 +137,7 @@ export function TimerControls({
 
   // Task search and filter state
   const [taskSearchQuery, setTaskSearchQuery] = useState('');
-  const [taskFilters, setTaskFilters] = useState({
+  const [taskFilters, setTaskFilters] = useState<TaskFilters>({
     priority: 'all',
     status: 'all',
     board: 'all',
@@ -172,6 +164,9 @@ export function TimerControls({
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [isCreatingTask, setIsCreatingTask] = useState(false);
+
+  // Use memoized task counts
+  const { myTasksCount, unassignedCount } = useTaskCounts(tasks);
 
   // Fetch boards with lists
   const fetchBoards = useCallback(async () => {
@@ -602,59 +597,9 @@ export function TimerControls({
   const selectedBoard = boards.find((board) => board.id === selectedBoardId);
   const availableLists = selectedBoard?.task_lists || [];
 
-  // Filter and sort tasks with user prioritization
+  // Use shared task filtering and sorting utility
   const getFilteredTasks = () => {
-    return tasks
-      .filter((task) => {
-        const matchesSearch = task.name
-          ?.toLowerCase()
-          .includes(taskSearchQuery.toLowerCase()) ||
-          task.description
-            ?.toLowerCase()
-            .includes(taskSearchQuery.toLowerCase());
-        const matchesPriority =
-          taskFilters.priority === 'all' ||
-          String(task.priority) === taskFilters.priority;
-        const matchesStatus =
-          taskFilters.status === 'all' ||
-          (task.completed ? 'completed' : 'active') === taskFilters.status;
-        const matchesBoard =
-          taskFilters.board === 'all' || task.board_name === taskFilters.board;
-        const matchesList =
-          taskFilters.list === 'all' || task.list_name === taskFilters.list;
-        const matchesAssignee =
-          taskFilters.assignee === 'all' ||
-          (taskFilters.assignee === 'mine' && task.is_assigned_to_current_user) ||
-          (taskFilters.assignee === 'unassigned' && (!task.assignees || task.assignees.length === 0));
-
-        return (
-          matchesSearch &&
-          matchesPriority &&
-          matchesStatus &&
-          matchesBoard &&
-          matchesList &&
-          matchesAssignee
-        );
-      })
-      .sort((a, b) => {
-        // Prioritize user's assigned tasks
-        if (a.is_assigned_to_current_user && !b.is_assigned_to_current_user) {
-          return -1;
-        }
-        if (!a.is_assigned_to_current_user && b.is_assigned_to_current_user) {
-          return 1;
-        }
-        
-        // Then sort by priority (higher priority first)
-        const aPriority = a.priority || 0;
-        const bPriority = b.priority || 0;
-        if (aPriority !== bPriority) {
-          return bPriority - aPriority;
-        }
-        
-        // Finally sort by creation date (newest first)
-        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-      });
+    return getFilteredAndSortedTasks(tasks, taskSearchQuery, taskFilters);
   };
 
   // Get unique boards and lists for filter options
@@ -1402,16 +1347,11 @@ export function TimerControls({
                                   >
                                     <CheckCircle className="h-3 w-3" />
                                     My Tasks
-                                    {(() => {
-                                      const myTasksCount = tasks.filter(
-                                        (task) => task.is_assigned_to_current_user
-                                      ).length;
-                                      return myTasksCount > 0 ? (
-                                        <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                                          {myTasksCount}
-                                        </span>
-                                      ) : null;
-                                    })()}
+                                    {myTasksCount > 0 && (
+                                      <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                                        {myTasksCount}
+                                      </span>
+                                    )}
                                   </button>
                                   <button
                                     type="button"
@@ -1434,16 +1374,11 @@ export function TimerControls({
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                     Unassigned
-                                    {(() => {
-                                      const unassignedCount = tasks.filter(
-                                        (task) => !task.assignees || task.assignees.length === 0
-                                      ).length;
-                                      return unassignedCount > 0 ? (
-                                        <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                                          {unassignedCount}
-                                        </span>
-                                      ) : null;
-                                    })()}
+                                    {unassignedCount > 0 && (
+                                      <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                                        {unassignedCount}
+                                      </span>
+                                    )}
                                   </button>
                                 </div>
 
@@ -1672,7 +1607,7 @@ export function TimerControls({
                                                       />
                                                     ) : (
                                                                                                              <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
-                                                         {(assignee.display_name?.[0] || assignee.email?.[0] || '?').toUpperCase()}
+                                                         {generateAssigneeInitials(assignee)}
                                                        </div>
                                                     )}
                                                   </div>

@@ -352,7 +352,7 @@ export function ActivityHeatmap({
   };
 
   return (
-    <div className="space-y-4 rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:space-y-5 sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+    <div className="space-y-4 sm:space-y-5">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">

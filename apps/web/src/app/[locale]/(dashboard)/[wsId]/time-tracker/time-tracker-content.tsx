@@ -13,6 +13,8 @@ import type {
   TimeTrackingSession,
   WorkspaceTask,
 } from '@tuturuuu/types/db';
+import type { ExtendedWorkspaceTask, TaskSidebarFilters } from './types';
+import { getFilteredAndSortedSidebarTasks, useTaskCounts, generateAssigneeInitials } from './utils';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -90,17 +92,7 @@ export interface TimeTrackingGoal {
   category: TimeTrackingCategory | null;
 }
 
-interface ExtendedWorkspaceTask extends Partial<WorkspaceTask> {
-  board_name?: string;
-  list_name?: string;
-  assignees?: Array<{
-    id: string;
-    display_name?: string;
-    avatar_url?: string;
-    email?: string;
-  }>;
-  is_assigned_to_current_user?: boolean;
-}
+
 
 export interface TimeTrackerData {
   categories: TimeTrackingCategory[];
@@ -503,7 +495,7 @@ export default function TimeTrackerContent({
 
   // Tasks sidebar search and filter state with persistence
   const [tasksSidebarSearch, setTasksSidebarSearch] = useState('');
-  const [tasksSidebarFilters, setTasksSidebarFilters] = useState(() => {
+  const [tasksSidebarFilters, setTasksSidebarFilters] = useState<TaskSidebarFilters>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(`time-tracker-filters-${wsId}`);
       if (saved) {
@@ -523,6 +515,9 @@ export default function TimeTrackerContent({
       localStorage.setItem(`time-tracker-filters-${wsId}`, JSON.stringify(tasksSidebarFilters));
     }
   }, [tasksSidebarFilters, wsId]);
+
+  // Use memoized task counts
+  const { myTasksCount, unassignedCount } = useTaskCounts(tasks);
 
   if (isLoadingUser || !currentUserId) {
     return (
@@ -1302,7 +1297,7 @@ export default function TimeTrackerContent({
               {sidebarView === 'analytics' && (
                 <>
                   {/* Stats Overview - Enhanced for sidebar */}
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     <div className="mb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
@@ -1321,9 +1316,9 @@ export default function TimeTrackerContent({
                     {/* Custom sidebar-optimized stats layout */}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {/* Today */}
-                      <div className="rounded-lg border border-dynamic-blue/30 bg-gradient-to-br from-blue-50 to-blue-100 p-3 transition-all duration-300 hover:shadow-md dark:from-blue-950/20 dark:to-blue-900/20">
+                      <div className="rounded-lg border border-dynamic-blue/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
                         <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
                             <Calendar className="h-4 w-4 text-blue-500" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1351,9 +1346,9 @@ export default function TimeTrackerContent({
                       </div>
 
                       {/* This Week */}
-                      <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-br from-green-50 to-green-100 p-3 transition-all duration-300 hover:shadow-md dark:from-green-950/20 dark:to-green-900/20">
+                      <div className="rounded-lg border border-dynamic-green/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
                         <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <div className="rounded-full bg-dynamic-green/10 p-2 shadow-sm">
                             <TrendingUp className="h-4 w-4 text-green-500" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1386,9 +1381,9 @@ export default function TimeTrackerContent({
                       </div>
 
                       {/* This Month */}
-                      <div className="rounded-lg border border-dynamic-purple/30 bg-gradient-to-br from-purple-50 to-purple-100 p-3 transition-all duration-300 hover:shadow-md dark:from-purple-950/20 dark:to-purple-900/20">
+                      <div className="rounded-lg border border-dynamic-purple/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
                         <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <div className="rounded-full bg-dynamic-purple/10 p-2 shadow-sm">
                             <Zap className="h-4 w-4 text-purple-500" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1412,9 +1407,9 @@ export default function TimeTrackerContent({
                       </div>
 
                       {/* Streak */}
-                      <div className="rounded-lg border border-dynamic-orange/30 bg-gradient-to-br from-orange-50 to-orange-100 p-3 transition-all duration-300 hover:shadow-md dark:from-orange-950/20 dark:to-orange-900/20">
+                      <div className="rounded-lg border border-dynamic-orange/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
                         <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <div className="rounded-full bg-dynamic-orange/10 p-2 shadow-sm">
                             <Clock className="h-4 w-4 text-orange-500" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1442,7 +1437,7 @@ export default function TimeTrackerContent({
 
                   {/* Activity Heatmap - Enhanced with better header */}
                   {timerStats.dailyActivity && (
-                    <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                    <div className="rounded-xl border border-gray-200/60 bg-background/50 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-background/80">
                       <div className="mb-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
@@ -1483,7 +1478,7 @@ export default function TimeTrackerContent({
               {sidebarView === 'tasks' && (
                 <div className="space-y-6">
                   {/* Tasks Header */}
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-6 shadow-sm dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-6 shadow-sm dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     {/* Header Section */}
                     <div className="mb-6">
                       <div className="mb-3 flex items-center gap-3">
@@ -1521,16 +1516,11 @@ export default function TimeTrackerContent({
                         >
                           <CheckCircle className="h-3 w-3" />
                           My Tasks
-                          {(() => {
-                            const myTasksCount = tasks.filter(
-                              (task) => task.is_assigned_to_current_user
-                            ).length;
-                            return myTasksCount > 0 ? (
-                              <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                                {myTasksCount}
-                              </span>
-                            ) : null;
-                          })()}
+                          {myTasksCount > 0 && (
+                            <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                              {myTasksCount}
+                            </span>
+                          )}
                         </button>
                         <button
                           onClick={() =>
@@ -1550,16 +1540,11 @@ export default function TimeTrackerContent({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
                           Unassigned
-                          {(() => {
-                            const unassignedCount = tasks.filter(
-                              (task) => !task.assignees || task.assignees.length === 0
-                            ).length;
-                            return unassignedCount > 0 ? (
-                              <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                                {unassignedCount}
-                              </span>
-                            ) : null;
-                          })()}
+                          {unassignedCount > 0 && (
+                            <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                              {unassignedCount}
+                            </span>
+                          )}
                         </button>
                       </div>
 
@@ -1724,74 +1709,11 @@ export default function TimeTrackerContent({
                     <div className="space-y-4">
                       {(() => {
                         // Filter and sort tasks for sidebar with user prioritization
-                        const filteredSidebarTasks = tasks
-                          .filter((task) => {
-                            // Search filter
-                            if (
-                              tasksSidebarSearch &&
-                              !task.name
-                                ?.toLowerCase()
-                                .includes(tasksSidebarSearch.toLowerCase()) &&
-                              !task.description
-                                ?.toLowerCase()
-                                .includes(tasksSidebarSearch.toLowerCase())
-                            ) {
-                              return false;
-                            }
-                            
-                            // Board filter
-                            if (
-                              tasksSidebarFilters.board &&
-                              tasksSidebarFilters.board !== 'all' &&
-                              task.board_name !== tasksSidebarFilters.board
-                            ) {
-                              return false;
-                            }
-                            
-                            // List filter
-                            if (
-                              tasksSidebarFilters.list &&
-                              tasksSidebarFilters.list !== 'all' &&
-                              task.list_name !== tasksSidebarFilters.list
-                            ) {
-                              return false;
-                            }
-                            
-                            // Assignee filter
-                            if (tasksSidebarFilters.assignee === 'mine') {
-                              return task.is_assigned_to_current_user;
-                            } else if (tasksSidebarFilters.assignee === 'unassigned') {
-                              return !task.assignees || task.assignees.length === 0;
-                            } else if (
-                              tasksSidebarFilters.assignee &&
-                              tasksSidebarFilters.assignee !== 'all'
-                            ) {
-                              return task.assignees?.some(
-                                (assignee) => assignee.id === tasksSidebarFilters.assignee
-                              );
-                            }
-                            
-                            return true;
-                          })
-                          .sort((a, b) => {
-                            // Prioritize user's assigned tasks
-                            if (a.is_assigned_to_current_user && !b.is_assigned_to_current_user) {
-                              return -1;
-                            }
-                            if (!a.is_assigned_to_current_user && b.is_assigned_to_current_user) {
-                              return 1;
-                            }
-                            
-                            // Then sort by priority (higher priority first)
-                            const aPriority = a.priority || 0;
-                            const bPriority = b.priority || 0;
-                            if (aPriority !== bPriority) {
-                              return bPriority - aPriority;
-                            }
-                            
-                            // Finally sort by creation date (newest first)
-                            return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-                          });
+                                                const filteredSidebarTasks = getFilteredAndSortedSidebarTasks(
+                          tasks,
+                          tasksSidebarSearch,
+                          tasksSidebarFilters
+                        );
 
                         if (tasks.length === 0) {
                           return (
@@ -1889,13 +1811,13 @@ export default function TimeTrackerContent({
                                               ? 'text-blue-900 dark:text-blue-100'
                                               : 'text-gray-900 dark:text-gray-100'
                                           )}>
-                                            {task.name}
+                                          {task.name}
                                             {task.is_assigned_to_current_user && (
                                               <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
                                                 Assigned to you
                                               </span>
                                             )}
-                                          </h4>
+                                        </h4>
                                         </div>
                                         {task.description && (
                                           <p className="mb-3 line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
@@ -1921,7 +1843,7 @@ export default function TimeTrackerContent({
                                                     />
                                                   ) : (
                                                     <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
-                                                      {(assignee.display_name || assignee.email || '?')[0].toUpperCase()}
+                                                      {generateAssigneeInitials(assignee)}
                                                     </div>
                                                   )}
                                                 </div>
@@ -2011,7 +1933,7 @@ export default function TimeTrackerContent({
               {/* Reports View */}
               {sidebarView === 'reports' && (
                 <div className="space-y-6">
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     <div className="mb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg">
@@ -2043,7 +1965,7 @@ export default function TimeTrackerContent({
               {/* Settings View */}
               {sidebarView === 'settings' && (
                 <div className="space-y-6">
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     <div className="mb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gray-500 to-gray-700 shadow-lg">
