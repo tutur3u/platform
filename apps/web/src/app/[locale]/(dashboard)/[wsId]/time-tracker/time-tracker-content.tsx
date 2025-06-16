@@ -93,6 +93,13 @@ export interface TimeTrackingGoal {
 interface ExtendedWorkspaceTask extends Partial<WorkspaceTask> {
   board_name?: string;
   list_name?: string;
+  assignees?: Array<{
+    id: string;
+    display_name?: string;
+    avatar_url?: string;
+    email?: string;
+  }>;
+  is_assigned_to_current_user?: boolean;
 }
 
 export interface TimeTrackerData {
@@ -494,12 +501,28 @@ export default function TimeTrackerContent({
   // Drag and drop state for highlighting drop zones
   const [isDraggingTask, setIsDraggingTask] = useState(false);
 
-  // Tasks sidebar search and filter state
+  // Tasks sidebar search and filter state with persistence
   const [tasksSidebarSearch, setTasksSidebarSearch] = useState('');
-  const [tasksSidebarFilters, setTasksSidebarFilters] = useState({
-    board: 'all',
-    list: 'all',
+  const [tasksSidebarFilters, setTasksSidebarFilters] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`time-tracker-filters-${wsId}`);
+      if (saved) {
+        try {
+          return { ...{ board: 'all', list: 'all', assignee: 'all' }, ...JSON.parse(saved) };
+        } catch {
+          return { board: 'all', list: 'all', assignee: 'all' };
+        }
+      }
+    }
+    return { board: 'all', list: 'all', assignee: 'all' };
   });
+
+  // Save filters to localStorage when they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`time-tracker-filters-${wsId}`, JSON.stringify(tasksSidebarFilters));
+    }
+  }, [tasksSidebarFilters, wsId]);
 
   if (isLoadingUser || !currentUserId) {
     return (
@@ -1478,8 +1501,69 @@ export default function TimeTrackerContent({
                       </div>
                     </div>
 
-                    {/* Search and Filter Bar */}
+                    {/* Enhanced Search and Filter Bar */}
                     <div className="mb-5 space-y-4">
+                      {/* Quick Filter Buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() =>
+                            setTasksSidebarFilters((prev) => ({
+                              ...prev,
+                              assignee: prev.assignee === 'mine' ? 'all' : 'mine',
+                            }))
+                          }
+                          className={cn(
+                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                            tasksSidebarFilters.assignee === 'mine'
+                              ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          )}
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                          My Tasks
+                          {(() => {
+                            const myTasksCount = tasks.filter(
+                              (task) => task.is_assigned_to_current_user
+                            ).length;
+                            return myTasksCount > 0 ? (
+                              <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                                {myTasksCount}
+                              </span>
+                            ) : null;
+                          })()}
+                        </button>
+                        <button
+                          onClick={() =>
+                            setTasksSidebarFilters((prev) => ({
+                              ...prev,
+                              assignee: prev.assignee === 'unassigned' ? 'all' : 'unassigned',
+                            }))
+                          }
+                          className={cn(
+                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                            tasksSidebarFilters.assignee === 'unassigned'
+                              ? 'bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:ring-orange-800'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          )}
+                        >
+                          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Unassigned
+                          {(() => {
+                            const unassignedCount = tasks.filter(
+                              (task) => !task.assignees || task.assignees.length === 0
+                            ).length;
+                            return unassignedCount > 0 ? (
+                              <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                                {unassignedCount}
+                              </span>
+                            ) : null;
+                          })()}
+                        </button>
+                      </div>
+
+                      {/* Search and Dropdown Filters */}
                       <div className="flex gap-2">
                         <div className="flex-1">
                           <Input
@@ -1550,37 +1634,164 @@ export default function TimeTrackerContent({
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {/* Active Filters Display */}
+                      {(tasksSidebarSearch ||
+                        tasksSidebarFilters.board !== 'all' ||
+                        tasksSidebarFilters.list !== 'all' ||
+                        tasksSidebarFilters.assignee !== 'all') && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Active filters:</span>
+                          {tasksSidebarSearch && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                              Search: "{tasksSidebarSearch}"
+                              <button
+                                onClick={() => setTasksSidebarSearch('')}
+                                className="hover:text-blue-900 dark:hover:text-blue-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          {tasksSidebarFilters.board !== 'all' && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                              Board: {tasksSidebarFilters.board}
+                              <button
+                                onClick={() =>
+                                  setTasksSidebarFilters((prev) => ({
+                                    ...prev,
+                                    board: 'all',
+                                  }))
+                                }
+                                className="hover:text-green-900 dark:hover:text-green-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          {tasksSidebarFilters.list !== 'all' && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-xs text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                              List: {tasksSidebarFilters.list}
+                              <button
+                                onClick={() =>
+                                  setTasksSidebarFilters((prev) => ({
+                                    ...prev,
+                                    list: 'all',
+                                  }))
+                                }
+                                className="hover:text-purple-900 dark:hover:text-purple-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          {tasksSidebarFilters.assignee !== 'all' && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-xs text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                              {tasksSidebarFilters.assignee === 'mine' ? 'My Tasks' : 
+                               tasksSidebarFilters.assignee === 'unassigned' ? 'Unassigned' : 
+                               'Assignee Filter'}
+                              <button
+                                onClick={() =>
+                                  setTasksSidebarFilters((prev) => ({
+                                    ...prev,
+                                    assignee: 'all',
+                                  }))
+                                }
+                                className="hover:text-orange-900 dark:hover:text-orange-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          <button
+                            onClick={() => {
+                              setTasksSidebarSearch('');
+                              setTasksSidebarFilters({
+                                board: 'all',
+                                list: 'all',
+                                assignee: 'all',
+                              });
+                            }}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            Clear all
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Task List with Scrollable Container */}
                     <div className="space-y-4">
                       {(() => {
-                        // Filter tasks for sidebar
-                        const filteredSidebarTasks = tasks.filter((task) => {
-                          if (
-                            tasksSidebarSearch &&
-                            !task.name
-                              ?.toLowerCase()
-                              .includes(tasksSidebarSearch.toLowerCase())
-                          ) {
-                            return false;
-                          }
-                          if (
-                            tasksSidebarFilters.board &&
-                            tasksSidebarFilters.board !== 'all' &&
-                            task.board_name !== tasksSidebarFilters.board
-                          ) {
-                            return false;
-                          }
-                          if (
-                            tasksSidebarFilters.list &&
-                            tasksSidebarFilters.list !== 'all' &&
-                            task.list_name !== tasksSidebarFilters.list
-                          ) {
-                            return false;
-                          }
-                          return true;
-                        });
+                        // Filter and sort tasks for sidebar with user prioritization
+                        const filteredSidebarTasks = tasks
+                          .filter((task) => {
+                            // Search filter
+                            if (
+                              tasksSidebarSearch &&
+                              !task.name
+                                ?.toLowerCase()
+                                .includes(tasksSidebarSearch.toLowerCase()) &&
+                              !task.description
+                                ?.toLowerCase()
+                                .includes(tasksSidebarSearch.toLowerCase())
+                            ) {
+                              return false;
+                            }
+                            
+                            // Board filter
+                            if (
+                              tasksSidebarFilters.board &&
+                              tasksSidebarFilters.board !== 'all' &&
+                              task.board_name !== tasksSidebarFilters.board
+                            ) {
+                              return false;
+                            }
+                            
+                            // List filter
+                            if (
+                              tasksSidebarFilters.list &&
+                              tasksSidebarFilters.list !== 'all' &&
+                              task.list_name !== tasksSidebarFilters.list
+                            ) {
+                              return false;
+                            }
+                            
+                            // Assignee filter
+                            if (tasksSidebarFilters.assignee === 'mine') {
+                              return task.is_assigned_to_current_user;
+                            } else if (tasksSidebarFilters.assignee === 'unassigned') {
+                              return !task.assignees || task.assignees.length === 0;
+                            } else if (
+                              tasksSidebarFilters.assignee &&
+                              tasksSidebarFilters.assignee !== 'all'
+                            ) {
+                              return task.assignees?.some(
+                                (assignee) => assignee.id === tasksSidebarFilters.assignee
+                              );
+                            }
+                            
+                            return true;
+                          })
+                          .sort((a, b) => {
+                            // Prioritize user's assigned tasks
+                            if (a.is_assigned_to_current_user && !b.is_assigned_to_current_user) {
+                              return -1;
+                            }
+                            if (!a.is_assigned_to_current_user && b.is_assigned_to_current_user) {
+                              return 1;
+                            }
+                            
+                            // Then sort by priority (higher priority first)
+                            const aPriority = a.priority || 0;
+                            const bPriority = b.priority || 0;
+                            if (aPriority !== bPriority) {
+                              return bPriority - aPriority;
+                            }
+                            
+                            // Finally sort by creation date (newest first)
+                            return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+                          });
 
                         if (tasks.length === 0) {
                           return (
@@ -1616,10 +1827,9 @@ export default function TimeTrackerContent({
                                   : ''}{' '}
                                 available
                                 {(tasksSidebarSearch ||
-                                  (tasksSidebarFilters.board &&
-                                    tasksSidebarFilters.board !== 'all') ||
-                                  (tasksSidebarFilters.list &&
-                                    tasksSidebarFilters.list !== 'all')) &&
+                                  tasksSidebarFilters.board !== 'all' ||
+                                  tasksSidebarFilters.list !== 'all' ||
+                                  tasksSidebarFilters.assignee !== 'all') &&
                                   ` (filtered from ${tasks.length} total)`}
                               </span>
                               <span className="font-medium text-blue-600 dark:text-blue-400">
@@ -1634,7 +1844,11 @@ export default function TimeTrackerContent({
                                   <div
                                     key={task.id}
                                     className={cn(
-                                      'group cursor-grab rounded-lg border border-gray-200/60 bg-white p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing dark:border-gray-700/60 dark:bg-gray-800/80',
+                                      'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
+                                      // Enhanced styling for assigned tasks
+                                      task.is_assigned_to_current_user
+                                        ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
+                                        : 'border-gray-200/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
                                       isDraggingTask &&
                                         'shadow-md ring-1 shadow-blue-500/10 ring-blue-400/30'
                                     )}
@@ -1654,18 +1868,76 @@ export default function TimeTrackerContent({
                                     }}
                                   >
                                     <div className="flex items-start gap-4">
-                                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50">
-                                        <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                      <div className={cn(
+                                        'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
+                                        task.is_assigned_to_current_user
+                                          ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                          : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
+                                      )}>
+                                        <CheckCircle className={cn(
+                                          'h-4 w-4',
+                                          task.is_assigned_to_current_user
+                                            ? 'text-blue-700 dark:text-blue-300'
+                                            : 'text-blue-600 dark:text-blue-400'
+                                        )} />
                                       </div>
                                       <div className="min-w-0 flex-1">
-                                        <h4 className="mb-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                          {task.name}
-                                        </h4>
+                                        <div className="flex items-start justify-between gap-2">
+                                          <h4 className={cn(
+                                            'mb-1 text-sm font-medium',
+                                            task.is_assigned_to_current_user
+                                              ? 'text-blue-900 dark:text-blue-100'
+                                              : 'text-gray-900 dark:text-gray-100'
+                                          )}>
+                                            {task.name}
+                                            {task.is_assigned_to_current_user && (
+                                              <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                                                Assigned to you
+                                              </span>
+                                            )}
+                                          </h4>
+                                        </div>
                                         {task.description && (
                                           <p className="mb-3 line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
                                             {task.description}
                                           </p>
                                         )}
+                                        
+                                        {/* Assignees Display */}
+                                        {task.assignees && task.assignees.length > 0 && (
+                                          <div className="mb-2 flex items-center gap-2">
+                                            <div className="flex -space-x-1">
+                                              {task.assignees.slice(0, 3).map((assignee) => (
+                                                <div
+                                                  key={assignee.id}
+                                                  className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                  title={assignee.display_name || assignee.email}
+                                                >
+                                                  {assignee.avatar_url ? (
+                                                    <img
+                                                      src={assignee.avatar_url}
+                                                      alt={assignee.display_name || assignee.email || ''}
+                                                      className="h-full w-full rounded-full object-cover"
+                                                    />
+                                                  ) : (
+                                                    <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
+                                                      {(assignee.display_name || assignee.email || '?')[0].toUpperCase()}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ))}
+                                              {task.assignees.length > 3 && (
+                                                <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                  +{task.assignees.length - 3}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <span className="text-xs text-muted-foreground">
+                                              {task.assignees.length} assigned
+                                            </span>
+                                          </div>
+                                        )}
+
                                         {task.board_name && task.list_name && (
                                           <div className="flex items-center gap-2">
                                             <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">

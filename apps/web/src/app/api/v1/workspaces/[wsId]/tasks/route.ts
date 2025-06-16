@@ -42,7 +42,7 @@ export async function GET(
     const boardId = url.searchParams.get('boardId');
     const listId = url.searchParams.get('listId');
 
-    // Build the query for fetching tasks
+    // Build the query for fetching tasks with assignee information
     let query = supabase
       .from('tasks')
       .select(
@@ -64,6 +64,14 @@ export async function GET(
             id,
             name,
             ws_id
+          )
+        ),
+        assignees:task_assignees(
+          user:users(
+            id,
+            display_name,
+            avatar_url,
+            email
           )
         )
       `
@@ -100,6 +108,19 @@ export async function GET(
         // Add board information for context
         board_name: task.task_lists?.workspace_boards?.name,
         list_name: task.task_lists?.name,
+        // Add assignee information
+        assignees: task.assignees
+          ?.map((a: any) => a.user)
+          .filter(
+            (user: any, index: number, self: any[]) =>
+              user &&
+              user.id &&
+              self.findIndex((u: any) => u.id === user.id) === index
+          ) || [],
+        // Add helper field to identify if current user is assigned
+        is_assigned_to_current_user: task.assignees?.some(
+          (a: any) => a.user?.id === user.id
+        ) || false,
       })) || [];
 
     return NextResponse.json({ tasks });

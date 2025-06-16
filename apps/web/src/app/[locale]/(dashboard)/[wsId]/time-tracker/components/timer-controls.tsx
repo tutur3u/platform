@@ -47,6 +47,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 interface ExtendedWorkspaceTask extends Partial<WorkspaceTask> {
   board_name?: string;
   list_name?: string;
+  assignees?: Array<{
+    id: string;
+    display_name?: string;
+    avatar_url?: string;
+    email?: string;
+  }>;
+  is_assigned_to_current_user?: boolean;
 }
 
 interface SessionWithRelations extends TimeTrackingSession {
@@ -143,6 +150,7 @@ export function TimerControls({
     status: 'all',
     board: 'all',
     list: 'all',
+    assignee: 'all',
   });
   const [isTaskDropdownOpen, setIsTaskDropdownOpen] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
@@ -594,31 +602,59 @@ export function TimerControls({
   const selectedBoard = boards.find((board) => board.id === selectedBoardId);
   const availableLists = selectedBoard?.task_lists || [];
 
-  // Filter tasks based on search and filters
+  // Filter and sort tasks with user prioritization
   const getFilteredTasks = () => {
-    return tasks.filter((task) => {
-      const matchesSearch = task.name
-        ?.toLowerCase()
-        .includes(taskSearchQuery.toLowerCase());
-      const matchesPriority =
-        taskFilters.priority === 'all' ||
-        String(task.priority) === taskFilters.priority;
-      const matchesStatus =
-        taskFilters.status === 'all' ||
-        (task.completed ? 'completed' : 'active') === taskFilters.status;
-      const matchesBoard =
-        taskFilters.board === 'all' || task.board_name === taskFilters.board;
-      const matchesList =
-        taskFilters.list === 'all' || task.list_name === taskFilters.list;
+    return tasks
+      .filter((task) => {
+        const matchesSearch = task.name
+          ?.toLowerCase()
+          .includes(taskSearchQuery.toLowerCase()) ||
+          task.description
+            ?.toLowerCase()
+            .includes(taskSearchQuery.toLowerCase());
+        const matchesPriority =
+          taskFilters.priority === 'all' ||
+          String(task.priority) === taskFilters.priority;
+        const matchesStatus =
+          taskFilters.status === 'all' ||
+          (task.completed ? 'completed' : 'active') === taskFilters.status;
+        const matchesBoard =
+          taskFilters.board === 'all' || task.board_name === taskFilters.board;
+        const matchesList =
+          taskFilters.list === 'all' || task.list_name === taskFilters.list;
+        const matchesAssignee =
+          taskFilters.assignee === 'all' ||
+          (taskFilters.assignee === 'mine' && task.is_assigned_to_current_user) ||
+          (taskFilters.assignee === 'unassigned' && (!task.assignees || task.assignees.length === 0));
 
-      return (
-        matchesSearch &&
-        matchesPriority &&
-        matchesStatus &&
-        matchesBoard &&
-        matchesList
-      );
-    });
+        return (
+          matchesSearch &&
+          matchesPriority &&
+          matchesStatus &&
+          matchesBoard &&
+          matchesList &&
+          matchesAssignee
+        );
+      })
+      .sort((a, b) => {
+        // Prioritize user's assigned tasks
+        if (a.is_assigned_to_current_user && !b.is_assigned_to_current_user) {
+          return -1;
+        }
+        if (!a.is_assigned_to_current_user && b.is_assigned_to_current_user) {
+          return 1;
+        }
+        
+        // Then sort by priority (higher priority first)
+        const aPriority = a.priority || 0;
+        const bPriority = b.priority || 0;
+        if (aPriority !== bPriority) {
+          return bPriority - aPriority;
+        }
+        
+        // Finally sort by creation date (newest first)
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      });
   };
 
   // Get unique boards and lists for filter options
@@ -1344,6 +1380,74 @@ export function TimerControls({
                                 <div className="text-xs font-medium text-muted-foreground">
                                   Quick Filters
                                 </div>
+                                
+                                {/* Assignee Filters */}
+                                <div className="flex flex-wrap gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setTaskFilters((prev) => ({
+                                        ...prev,
+                                        assignee: prev.assignee === 'mine' ? 'all' : 'mine',
+                                      }));
+                                    }}
+                                    className={cn(
+                                      'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                                      taskFilters.assignee === 'mine'
+                                        ? 'border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                        : 'border-border bg-background hover:bg-muted'
+                                    )}
+                                  >
+                                    <CheckCircle className="h-3 w-3" />
+                                    My Tasks
+                                    {(() => {
+                                      const myTasksCount = tasks.filter(
+                                        (task) => task.is_assigned_to_current_user
+                                      ).length;
+                                      return myTasksCount > 0 ? (
+                                        <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                                          {myTasksCount}
+                                        </span>
+                                      ) : null;
+                                    })()}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setTaskFilters((prev) => ({
+                                        ...prev,
+                                        assignee: prev.assignee === 'unassigned' ? 'all' : 'unassigned',
+                                      }));
+                                    }}
+                                    className={cn(
+                                      'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                                      taskFilters.assignee === 'unassigned'
+                                        ? 'border-orange-200 bg-orange-100 text-orange-700 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                                        : 'border-border bg-background hover:bg-muted'
+                                    )}
+                                  >
+                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    Unassigned
+                                    {(() => {
+                                      const unassignedCount = tasks.filter(
+                                        (task) => !task.assignees || task.assignees.length === 0
+                                      ).length;
+                                      return unassignedCount > 0 ? (
+                                        <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                                          {unassignedCount}
+                                        </span>
+                                      ) : null;
+                                    })()}
+                                  </button>
+                                </div>
+
+                                {/* Board Filters */}
                                 <div className="flex flex-wrap gap-1">
                                   <button
                                     type="button"
@@ -1434,7 +1538,8 @@ export function TimerControls({
 
                                 {(taskSearchQuery ||
                                   taskFilters.board !== 'all' ||
-                                  taskFilters.list !== 'all') && (
+                                  taskFilters.list !== 'all' ||
+                                  taskFilters.assignee !== 'all') && (
                                   <div className="flex items-center justify-between text-xs">
                                     <span className="text-muted-foreground">
                                       {getFilteredTasks().length} of{' '}
@@ -1451,6 +1556,7 @@ export function TimerControls({
                                           list: 'all',
                                           priority: 'all',
                                           status: 'all',
+                                          assignee: 'all',
                                         });
                                       }}
                                       className="text-muted-foreground hover:text-foreground"
@@ -1467,7 +1573,8 @@ export function TimerControls({
                                   <div className="p-6 text-center text-sm text-muted-foreground">
                                     {taskSearchQuery ||
                                     taskFilters.board !== 'all' ||
-                                    taskFilters.list !== 'all' ? (
+                                    taskFilters.list !== 'all' ||
+                                    taskFilters.assignee !== 'all' ? (
                                       <>
                                         <div className="mb-2">
                                           No tasks found matching your criteria
@@ -1483,6 +1590,7 @@ export function TimerControls({
                                               list: 'all',
                                               priority: 'all',
                                               status: 'all',
+                                              assignee: 'all',
                                             });
                                           }}
                                           className="text-xs text-primary hover:underline"
@@ -1508,14 +1616,35 @@ export function TimerControls({
                                       }}
                                       className="w-full p-0 text-left transition-colors hover:bg-muted/50 focus:bg-muted/50 focus:outline-none"
                                     >
-                                      <div className="flex w-full items-start gap-3 p-3 hover:bg-muted/30">
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10">
-                                          <CheckCircle className="h-4 w-4 text-dynamic-blue" />
+                                      <div className={cn(
+                                        "flex w-full items-start gap-3 p-3 hover:bg-muted/30",
+                                        task.is_assigned_to_current_user && "bg-blue-50/50 dark:bg-blue-950/20"
+                                      )}>
+                                        <div className={cn(
+                                          "flex h-8 w-8 items-center justify-center rounded-lg border",
+                                          task.is_assigned_to_current_user
+                                            ? "border-blue-400/50 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700"
+                                            : "border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10"
+                                        )}>
+                                          <CheckCircle className={cn(
+                                            "h-4 w-4",
+                                            task.is_assigned_to_current_user
+                                              ? "text-blue-700 dark:text-blue-300"
+                                              : "text-dynamic-blue"
+                                          )} />
                                         </div>
                                         <div className="min-w-0 flex-1">
                                           <div className="flex items-center gap-2">
-                                            <span className="text-sm font-medium">
+                                            <span className={cn(
+                                              "text-sm font-medium",
+                                              task.is_assigned_to_current_user && "text-blue-900 dark:text-blue-100"
+                                            )}>
                                               {task.name}
+                                              {task.is_assigned_to_current_user && (
+                                                <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                                                  Assigned to you
+                                                </span>
+                                              )}
                                             </span>
                                             <ExternalLink className="h-3 w-3 text-muted-foreground" />
                                           </div>
@@ -1524,6 +1653,42 @@ export function TimerControls({
                                               {task.description}
                                             </p>
                                           )}
+                                          
+                                          {/* Assignees Display */}
+                                          {task.assignees && task.assignees.length > 0 && (
+                                            <div className="mt-2 flex items-center gap-2">
+                                              <div className="flex -space-x-1">
+                                                {task.assignees.slice(0, 3).map((assignee) => (
+                                                  <div
+                                                    key={assignee.id}
+                                                    className="h-4 w-4 rounded-full border border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                    title={assignee.display_name || assignee.email}
+                                                  >
+                                                    {assignee.avatar_url ? (
+                                                      <img
+                                                        src={assignee.avatar_url}
+                                                        alt={assignee.display_name || assignee.email || ''}
+                                                        className="h-full w-full rounded-full object-cover"
+                                                      />
+                                                    ) : (
+                                                                                                             <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
+                                                         {(assignee.display_name?.[0] || assignee.email?.[0] || '?').toUpperCase()}
+                                                       </div>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                                {task.assignees.length > 3 && (
+                                                  <div className="flex h-4 w-4 items-center justify-center rounded-full border border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                    +{task.assignees.length - 3}
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <span className="text-xs text-muted-foreground">
+                                                {task.assignees.length} assigned
+                                              </span>
+                                            </div>
+                                          )}
+
                                           {task.board_name &&
                                             task.list_name && (
                                               <div className="mt-2 flex items-center gap-2">
