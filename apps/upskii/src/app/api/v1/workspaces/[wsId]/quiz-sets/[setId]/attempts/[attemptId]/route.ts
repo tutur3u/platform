@@ -2,11 +2,15 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { setId: string; attemptId: string } }
-) {
-  const { setId, attemptId } = params;
+interface Params {
+  params: Promise<{
+    setId: string;
+    attemptId: string;
+  }>;
+}
+
+export async function GET(_req: NextRequest, { params }: Params) {
+  const { setId, attemptId } = await params;
   const sb = await createClient();
 
   // 1) Authenticate
@@ -66,7 +70,10 @@ export async function GET(
     .select('quiz_id, selected_option_id, is_correct, score_awarded')
     .eq('attempt_id', attemptId);
   if (ansErr || !ansRows) {
-    return NextResponse.json({ error: 'Error fetching answers' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error fetching answers' },
+      { status: 500 }
+    );
   }
   const ansMap = new Map(ansRows.map((a) => [a.quiz_id, a]));
 
@@ -75,7 +82,8 @@ export async function GET(
     // re-fetch questions including options
     const { data: sumQRaw, error: sumQErr } = await sb
       .from('quiz_set_quizzes')
-      .select(`
+      .select(
+        `
         quiz_id,
         workspace_quizzes (
           question,
@@ -84,10 +92,14 @@ export async function GET(
             value
           )
         )
-      `)
+      `
+      )
       .eq('set_id', setId);
     if (sumQErr || !sumQRaw) {
-      return NextResponse.json({ error: 'Error fetching summary questions' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Error fetching summary questions' },
+        { status: 500 }
+      );
     }
 
     type SumRow = {
@@ -127,7 +139,8 @@ export async function GET(
   // 7a) we need each question’s options, weights, explanations
   const { data: fullQRaw, error: fullQErr } = await sb
     .from('quiz_set_quizzes')
-    .select(`
+    .select(
+      `
       quiz_id,
       workspace_quizzes (
         question,
@@ -139,10 +152,14 @@ export async function GET(
           explanation
         )
       )
-    `)
+    `
+    )
     .eq('set_id', setId);
   if (fullQErr || !fullQRaw) {
-    return NextResponse.json({ error: 'Error fetching full questions' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error fetching full questions' },
+      { status: 500 }
+    );
   }
   type FullRow = {
     quiz_id: string;

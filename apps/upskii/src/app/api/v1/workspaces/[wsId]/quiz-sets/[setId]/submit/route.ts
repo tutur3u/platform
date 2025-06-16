@@ -9,11 +9,17 @@ type SubmissionBody = {
   }>;
 };
 
+interface Params {
+  params: Promise<{
+    setId: string;
+  }>;
+}
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: { setId: string } }
+  { params }: Params
 ) {
-  const { setId } = params;
+  const { setId } = await params;
   const sb = await createClient();
 
   // 1) Authenticate

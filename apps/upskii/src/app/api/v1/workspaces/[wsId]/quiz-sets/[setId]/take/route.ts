@@ -18,11 +18,14 @@ type AttemptSummary = {
   durationSeconds: number;
 };
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { setId: string } }
-) {
-  const setId = params.setId;
+interface Params {
+  params: Promise<{
+    setId: string;
+  }>;
+}
+
+export async function GET(_req: NextRequest, { params }: Params) {
+  const { setId } = await params;
   const sb = await createClient();
 
   // 1) Auth

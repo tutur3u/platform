@@ -1,4 +1,3 @@
-import ResultClient from '@/app/[locale]/(dashboard)/[wsId]/challenges/[challengeId]/results/client';
 import QuizResultClient from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/result/quiz-result-client';
 
 export default async function QuizResultPage({
