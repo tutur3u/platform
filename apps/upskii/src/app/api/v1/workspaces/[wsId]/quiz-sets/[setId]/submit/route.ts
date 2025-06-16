@@ -14,10 +14,7 @@ interface Params {
   }>;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: Params
-) {
+export async function POST(request: NextRequest, { params }: Params) {
   const { setId } = await params;
   const sb = await createClient();
 

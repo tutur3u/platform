@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { CheckCircle, Circle, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-
 export interface AttemptDetailDTO {
   attemptId: string;
   attemptNumber: number;
@@ -54,8 +53,7 @@ export default function ShowAttemptDetailSection({
       {/* Metadata */}
       <div className="space-y-1 text-sm text-secondary-foreground">
         <div>
-          {t('results.started_at') || 'Started at'}:{' '}
-          {fmtDate(detail.startedAt)}
+          {t('results.started_at') || 'Started at'}: {fmtDate(detail.startedAt)}
         </div>
         {detail.completedAt && (
           <div>
@@ -135,7 +133,9 @@ export default function ShowAttemptDetailSection({
                 );
               })}
 
-              <div className={`mt-3 text-sm text-center md:text-right ${q.isCorrect ? "text-green-600" : "text-dynamic-light-red"}`}>
+              <div
+                className={`mt-3 text-center text-sm md:text-right ${q.isCorrect ? 'text-green-600' : 'text-dynamic-light-red'}`}
+              >
                 {t('results.score_awarded') || 'Score Awarded'}:{' '}
                 <strong>
                   {q.scoreAwarded} / {q.scoreWeight}
