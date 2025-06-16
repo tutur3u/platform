@@ -951,6 +951,7 @@ const PurchaseLink = ({
   className,
   children,
 }: PropsWithChildren<PurchaseLinkProps>) => {
+  // if want to change embed checkout theme,
   // useEffect(() => {
   //   PolarEmbedCheckout.init();
   // }, []);
