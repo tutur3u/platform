@@ -138,6 +138,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
             <div className="grid gap-4 pt-2 md:grid-cols-2">
               <ClientQuizzes
                 wsId={wsId}
+                courseId={courseId}
                 moduleId={moduleId}
                 quizSets={quizSets}
                 previewMode

@@ -47,7 +47,7 @@ export async function GET(
       time_limit_minutes,
       available_date,
       due_date,
-      release_points_immediately,
+      allow_view_old_attempts,
       results_released,
       explanation_mode,
       instruction
@@ -64,7 +64,7 @@ export async function GET(
     time_limit_minutes: timeLimitMinutes,
     available_date: availableDate,
     due_date: dueDate,
-    release_points_immediately: releasePointsImmediately,
+    allow_view_old_attempts: allowViewOldAttempts,
     results_released: resultsReleased,
     explanation_mode: explanationMode,
     instruction,
@@ -113,9 +113,6 @@ export async function GET(
     );
   }
 
-  // 6) Build `allowViewResults` from immediate‐release flag
-  const allowViewResults = Boolean(releasePointsImmediately) || resultsReleased;
-
   // 7) Fetch all previous attempts summary
   const { data: rawAttempts, error: attErr } = await sb
     .from('workspace_quiz_attempts')
@@ -144,24 +141,24 @@ export async function GET(
   });
 
   // 8) Early‐exit if they’ve already done one attempt _and_ results are viewable
-  if (allowViewResults && attemptsSoFar > 0) {
-    return NextResponse.json({
-      setId,
-      setName,
-      timeLimitMinutes,
-      releasePointsImmediately,
-      resultsReleased,
-      attemptLimit,
-      attemptsSoFar,
-      allowViewResults,
-      availableDate,
-      dueDate,
-      attempts,
-      explanationMode,
-      instruction,
-      questions: [], // no need to send questions
-    });
-  }
+  // if (allowViewResults && attemptsSoFar > 0) {
+  //   return NextResponse.json({
+  //     setId,
+  //     setName,
+  //     timeLimitMinutes,
+  //     releasePointsImmediately,
+  //     resultsReleased,
+  //     attemptLimit,
+  //     attemptsSoFar,
+  //     allowViewResults,
+  //     availableDate,
+  //     dueDate,
+  //     attempts,
+  //     explanationMode,
+  //     instruction,
+  //     questions: [], // no need to send questions
+  //   });
+  // }
 
   // 9) Otherwise fetch questions+options as before
   const { data: rawQ, error: qErr } = await sb
@@ -206,11 +203,11 @@ export async function GET(
     setId,
     setName,
     timeLimitMinutes,
-    releasePointsImmediately,
+    allowViewOldAttempts,
     attemptLimit,
     attemptsSoFar,
     resultsReleased,
-    allowViewResults,
+    // allowViewResults,
     availableDate,
     dueDate,
     attempts,

@@ -5915,6 +5915,7 @@ export type Database = {
       };
       workspace_quiz_sets: {
         Row: {
+          allow_view_old_attempts: boolean;
           allow_view_results: boolean;
           attempt_limit: number | null;
           available_date: string;
@@ -5924,12 +5925,12 @@ export type Database = {
           id: string;
           instruction: Json | null;
           name: string;
-          release_points_immediately: boolean;
           results_released: boolean;
           time_limit_minutes: number | null;
           ws_id: string | null;
         };
         Insert: {
+          allow_view_old_attempts?: boolean;
           allow_view_results?: boolean;
           attempt_limit?: number | null;
           available_date?: string;
@@ -5939,12 +5940,12 @@ export type Database = {
           id?: string;
           instruction?: Json | null;
           name?: string;
-          release_points_immediately?: boolean;
           results_released?: boolean;
           time_limit_minutes?: number | null;
           ws_id?: string | null;
         };
         Update: {
+          allow_view_old_attempts?: boolean;
           allow_view_results?: boolean;
           attempt_limit?: number | null;
           available_date?: string;
@@ -5954,7 +5955,6 @@ export type Database = {
           id?: string;
           instruction?: Json | null;
           name?: string;
-          release_points_immediately?: boolean;
           results_released?: boolean;
           time_limit_minutes?: number | null;
           ws_id?: string | null;

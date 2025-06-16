@@ -1,15 +1,15 @@
-// File: app/api/quiz-sets/[setId]/attempts/[attemptId]/route.ts
+// app/api/quiz-sets/[setId]/attempts/[attemptId]/route.ts
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  _request: NextRequest,
+  _req: NextRequest,
   { params }: { params: { setId: string; attemptId: string } }
 ) {
   const { setId, attemptId } = params;
   const sb = await createClient();
 
-  // 1) Auth
+  // 1) Authenticate
   const {
     data: { user },
     error: uErr,
@@ -19,28 +19,25 @@ export async function GET(
   }
   const userId = user.id;
 
-  // 2) Check allow_view_results
+  // 2) Load our two flags
   const { data: setRow, error: sErr } = await sb
     .from('workspace_quiz_sets')
-    .select('release_points_immediately, results_released, explanation_mode')
+    .select('allow_view_old_attempts, results_released, explanation_mode')
     .eq('id', setId)
     .maybeSingle();
   if (sErr || !setRow) {
     return NextResponse.json({ error: 'Quiz set not found' }, { status: 404 });
   }
-  const { release_points_immediately, results_released, explanation_mode } =
-    setRow;
-  if (!release_points_immediately && !results_released) {
-    return NextResponse.json(
-      { error: 'Results are not yet released' },
-      { status: 403 }
-    );
-  }
+  const {
+    allow_view_old_attempts: allowViewOldAttempts,
+    results_released: allowViewResult,
+    explanation_mode,
+  } = setRow;
 
-  // 3) Load attempt (ensure user & set match)
+  // 3) Load attempt header
   const { data: attRow, error: attErr } = await sb
     .from('workspace_quiz_attempts')
-    .select('id,attempt_number,total_score,started_at,completed_at')
+    .select('id, attempt_number, started_at, completed_at')
     .eq('id', attemptId)
     .eq('user_id', userId)
     .eq('set_id', setId)
@@ -48,106 +45,158 @@ export async function GET(
   if (attErr || !attRow) {
     return NextResponse.json({ error: 'Attempt not found' }, { status: 404 });
   }
-
-  // Compute duration
-  const started = new Date(attRow.started_at).getTime();
-  const completed = attRow.completed_at
+  const startedMs = new Date(attRow.started_at).getTime();
+  const completedMs = attRow.completed_at
     ? new Date(attRow.completed_at).getTime()
     : Date.now();
-  const durationSeconds = Math.round((completed - started) / 1000);
+  const durationSeconds = Math.round((completedMs - startedMs) / 1000);
 
-  // 4) Fetch all questions + options + weight
-  const { data: qRaw, error: qErr } = await sb
-    .from('quiz_set_quizzes')
-    .select(
-      `
-      quiz_id,
-      workspace_quizzes ( question, score ),
-      quiz_options ( id, value, is_correct, explanation )
-    `
-    )
-    .eq('set_id', setId);
-  if (qErr) {
-    return NextResponse.json(
-      { error: 'Error fetching questions' },
-      { status: 500 }
-    );
+  // 4) Branch #1: neither summary‐only nor full detail allowed ⇒ return only summary
+  if (!allowViewOldAttempts && !allowViewResult) {
+    return NextResponse.json({
+      attemptId: attRow.id,
+      attemptNumber: attRow.attempt_number,
+      submittedAt: attRow.completed_at,
+      durationSeconds,
+    });
   }
 
-  type QRow = {
-    quiz_id: string;
-    workspace_quizzes: { question: string; score: number };
-    quiz_options: Array<{
-      id: string;
-      value: string;
-      is_correct: boolean;
-      explanation: string | null;
-    }>;
-  };
-  const questionsInfo = (qRaw as QRow[]).map((r) => ({
-    quizId: r.quiz_id,
-    question: r.workspace_quizzes.question,
-    scoreWeight: r.workspace_quizzes.score,
-    options: r.quiz_options.map((o) => ({
-      id: o.id,
-      value: o.value,
-      isCorrect: o.is_correct,
-      explanation: o.explanation,
-    })),
-  }));
-  const maxPossibleScore = questionsInfo.reduce(
-    (sum, q) => sum + q.scoreWeight,
-    0
-  );
-
-  // 5) Load this attempt’s answers
   const { data: ansRows, error: ansErr } = await sb
     .from('workspace_quiz_attempt_answers')
     .select('quiz_id, selected_option_id, is_correct, score_awarded')
     .eq('attempt_id', attemptId);
-  if (ansErr) {
-    return NextResponse.json(
-      { error: 'Error fetching answers' },
-      { status: 500 }
-    );
+  if (ansErr || !ansRows) {
+    return NextResponse.json({ error: 'Error fetching answers' }, { status: 500 });
   }
   const ansMap = new Map(ansRows.map((a) => [a.quiz_id, a]));
 
-  // 6) Build detailed questions
-  const detailed = questionsInfo.map((q) => {
-    const a = ansMap.get(q.quizId);
+  // 6) Branch #2: summary‐only allowed (old attempts) ⇒ show question+user‐answer, but no correctness or points
+  if (allowViewOldAttempts && !allowViewResult) {
+    // re-fetch questions including options
+    const { data: sumQRaw, error: sumQErr } = await sb
+      .from('quiz_set_quizzes')
+      .select(`
+        quiz_id,
+        workspace_quizzes (
+          question,
+          quiz_options (
+            id,
+            value
+          )
+        )
+      `)
+      .eq('set_id', setId);
+    if (sumQErr || !sumQRaw) {
+      return NextResponse.json({ error: 'Error fetching summary questions' }, { status: 500 });
+    }
+
+    type SumRow = {
+      quiz_id: string;
+      workspace_quizzes: {
+        question: string;
+        quiz_options: Array<{
+          id: string;
+          value: string;
+        }>;
+      };
+    };
+
+    const questions = (sumQRaw as SumRow[]).map((r) => {
+      const a = ansMap.get(r.quiz_id);
+      return {
+        quizId: r.quiz_id,
+        question: r.workspace_quizzes.question,
+        selectedOptionId: a?.selected_option_id ?? null,
+        options: r.workspace_quizzes.quiz_options.map((opt) => ({
+          id: opt.id,
+          value: opt.value,
+        })),
+      };
+    });
+
+    return NextResponse.json({
+      attemptId: attRow.id,
+      attemptNumber: attRow.attempt_number,
+      submittedAt: attRow.completed_at,
+      durationSeconds,
+      questions,
+    });
+  }
+
+  // 7) Branch #3: full detail allowed (results_released) ⇒ include correctness, score, explanations
+  // 7a) we need each question’s options, weights, explanations
+  const { data: fullQRaw, error: fullQErr } = await sb
+    .from('quiz_set_quizzes')
+    .select(`
+      quiz_id,
+      workspace_quizzes (
+        question,
+        score,
+        quiz_options (
+          id,
+          value,
+          is_correct,
+          explanation
+        )
+      )
+    `)
+    .eq('set_id', setId);
+  if (fullQErr || !fullQRaw) {
+    return NextResponse.json({ error: 'Error fetching full questions' }, { status: 500 });
+  }
+  type FullRow = {
+    quiz_id: string;
+    workspace_quizzes: {
+      question: string;
+      score: number;
+      quiz_options: Array<{
+        id: string;
+        value: string;
+        is_correct: boolean;
+        explanation: string | null;
+      }>;
+    };
+  };
+  const detailedQuestions = (fullQRaw as FullRow[]).map((r) => {
+    const a = ansMap.get(r.quiz_id);
     return {
-      quizId: q.quizId,
-      question: q.question,
-      scoreWeight: q.scoreWeight,
-      selectedOptionId: a?.selected_option_id || null,
+      quizId: r.quiz_id,
+      question: r.workspace_quizzes.question,
+      scoreWeight: r.workspace_quizzes.score,
+      selectedOptionId: a?.selected_option_id ?? null,
       isCorrect: a?.is_correct ?? false,
       scoreAwarded: a?.score_awarded ?? 0,
-      options: q.options.map((opt) => {
-        // Only show explanation per explanation_mode:
+      options: r.workspace_quizzes.quiz_options.map((opt) => {
         let explanation: string | null = null;
-        if (explanation_mode === 2) explanation = opt.explanation;
-        else if (explanation_mode === 1 && opt.isCorrect)
+        if (explanation_mode === 2) {
           explanation = opt.explanation;
+        } else if (explanation_mode === 1 && opt.is_correct) {
+          explanation = opt.explanation;
+        }
         return {
           id: opt.id,
           value: opt.value,
-          isCorrect: opt.isCorrect,
+          isCorrect: opt.is_correct,
           explanation,
         };
       }),
     };
   });
 
+  const maxPossibleScore = detailedQuestions.reduce(
+    (sum, q) => sum + q.scoreWeight,
+    0
+  );
+
   return NextResponse.json({
     attemptId: attRow.id,
     attemptNumber: attRow.attempt_number,
-    totalScore: attRow.total_score ?? 0,
+    totalScore: ansRows.reduce((sum, a) => sum + (a.score_awarded ?? 0), 0),
     maxPossibleScore,
     startedAt: attRow.started_at,
     completedAt: attRow.completed_at,
     durationSeconds,
     explanationMode: explanation_mode,
-    questions: detailed,
+    questions: detailedQuestions,
   });
 }

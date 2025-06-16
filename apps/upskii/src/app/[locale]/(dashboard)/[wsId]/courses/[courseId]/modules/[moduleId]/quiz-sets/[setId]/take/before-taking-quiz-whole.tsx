@@ -1,4 +1,5 @@
-/* eslint-disable no-undef */
+'use client';
+
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -10,6 +11,8 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
+import { JSONContent } from '@tuturuuu/ui/tiptap';
 import {
   AlertTriangle,
   Calendar,
@@ -37,70 +40,92 @@ interface QuizData {
   attemptLimit: number | null;
   attemptsSoFar: number;
   timeLimitMinutes: number | null;
+  allowViewOldAttempts: boolean;
   explanationMode: 0 | 1 | 2;
   instruction: string | null;
-  releasePointsImmediately: boolean;
+  resultsReleased: boolean;
   attempts: AttemptSummary[];
 }
 
 interface BeforeTakingQuizWholeProps {
+  wsId: string;
+  courseId: string;
+  moduleId: string;
+  setId: string;
   quizData: QuizData;
   isPastDue: boolean;
   isAvailable: boolean;
   onStart: () => void;
 }
 
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return null;
+function formatDate(dateString: string | null) {
+  if (!dateString) return '—';
   return new Date(dateString).toLocaleString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
+    weekday: 'short',
+    month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
-};
-const formatDuration = (secs: number) => {
-  const m = Math.floor(secs / 60)
+}
+
+function formatDuration(sec: number) {
+  const m = Math.floor(sec / 60)
     .toString()
     .padStart(2, '0');
-  const s = (secs % 60).toString().padStart(2, '0');
+  const s = (sec % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
-};
+}
 
 export default function BeforeTakingQuizWhole({
   quizData,
   isPastDue,
   isAvailable,
   onStart,
+  wsId,
+  courseId,
+  moduleId,
 }: BeforeTakingQuizWholeProps) {
-  const [isStarting, setIsStarting] = useState(false);
   const router = useRouter();
+  const [isStarting, setIsStarting] = useState(false);
 
   const attemptsRemaining = quizData.attemptLimit
     ? quizData.attemptLimit - quizData.attemptsSoFar
     : null;
 
-  // You cannot start again if points are released
+  // MARK: modify if logic change to (cannot retake if result release)
+  // once results are released, no more attempts allowed
   const canRetake =
     isAvailable &&
     !isPastDue &&
-    !((attemptsRemaining == 0) && quizData.releasePointsImmediately);
+    (attemptsRemaining == null || attemptsRemaining > 0);
+  // && !quizData.resultsReleased;
+
+  // MARK: modify if logic changes to (can view result even not past due and attempt remain > 0)
+  // At that time, add 1 variable to check view old attempts with result released
+  const canViewResult =
+    isAvailable &&
+    quizData.resultsReleased &&
+    (isPastDue || (!isPastDue && attemptsRemaining == 0));
+
+  const canViewOldAttemptsNoResults =
+    quizData.attemptsSoFar > 0 &&
+    quizData.allowViewOldAttempts &&
+    !quizData.resultsReleased;
+
+  const canViewOldAttemptsResults = quizData.resultsReleased;
 
   const handleStartQuiz = () => {
     setIsStarting(true);
-    // Simulate navigation delay
     setTimeout(() => {
-      alert('Starting quiz... (This would navigate to the actual quiz)');
       setIsStarting(false);
-      onStart(); // Call the onStart callback to handle actual quiz start logic
-    }, 2000);
+      onStart();
+    }, 500);
   };
 
-  const viewAttemptDetailed = (att: AttemptSummary) => {
+  const viewAttempt = (att: AttemptSummary) => {
     router.push(
-      `/dashboard/quizzes/${quizData.setId}/attempts/${att.attemptId}`
+      `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${quizData.setId}/result?attemptId=${att.attemptId}`
     );
   };
 
@@ -117,50 +142,77 @@ export default function BeforeTakingQuizWhole({
           </p>
 
           {/* Start Button */}
-          <div className="text-center">
-            <Button
-              size="lg"
-              onClick={handleStartQuiz}
-              disabled={!canRetake || isStarting}
-              className="border border-dynamic-purple bg-dynamic-purple/20 px-8 py-3 text-lg text-primary hover:bg-primary-foreground hover:text-dynamic-purple"
-            >
-              {isStarting ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
-                  Starting Quiz...
-                </>
-              ) : (
-                <>
-                  <Play className="mr-2 h-5 w-5" />
-                  Start Quiz
-                </>
-              )}
-            </Button>
-
-            <p className="mt-2 text-sm text-secondary-foreground">
-              {canRetake
-                ? "Click the button above when you're ready to begin"
-                : quizData.releasePointsImmediately
-                  ? 'Points have been released—no further attempts allowed.'
-                  : 'You cannot start at this time.'}
-            </p>
-          </div>
+          {canRetake && (
+            <div className="text-center">
+              <Button
+                size="lg"
+                onClick={handleStartQuiz}
+                className="border border-dynamic-purple bg-dynamic-purple/20 px-8 py-3 text-lg text-primary hover:bg-primary-foreground hover:text-dynamic-purple"
+              >
+                {isStarting ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+                    Starting Quiz...
+                  </>
+                ) : (
+                  <>
+                    <Play className="mr-2 h-5 w-5" />
+                    Start Quiz
+                  </>
+                )}
+              </Button>
+              <p className="mt-2 text-sm text-secondary-foreground">
+                {canRetake
+                  ? 'Click to begin your attempt'
+                  : quizData.resultsReleased
+                    ? 'Results are out—no further attempts'
+                    : isPastDue
+                      ? 'Quiz is past due'
+                      : !isAvailable
+                        ? 'Quiz not yet available'
+                        : 'No attempts remaining'}
+              </p>
+            </div>
+          )}
+          {canViewResult && (
+            <div className="text-center">
+              <Button
+                size="lg"
+                onClick={() => {
+                  router.push(
+                    `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${quizData.setId}/result?attemptId=${quizData.attempts[0]?.attemptId}`
+                  );
+                }}
+                className="border border-dynamic-purple bg-dynamic-purple/20 px-8 py-3 text-lg text-primary hover:bg-primary-foreground hover:text-dynamic-purple"
+              >
+                View Result
+              </Button>
+              <p className="mt-2 text-sm text-secondary-foreground">
+                View result of your final attempt
+              </p>
+            </div>
+          )}
+          {!isAvailable ? (
+            <Alert variant="default" className="mt-4">
+              <AlertDescription>
+                This quiz is not yet available. Please check back later.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            !quizData.resultsReleased &&
+            (isPastDue || attemptsRemaining == 0) && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertDescription>
+                  {isPastDue
+                    ? 'This quiz is past its due date. You cannot start a new attempt at this time.'
+                    : 'You have no attempts remaining for this quiz.'}
+                </AlertDescription>
+              </Alert>
+            )
+          )}
         </div>
 
-        {/* Status Alert */}
-        {!canRetake && !quizData.releasePointsImmediately && (
-          <Alert variant={isPastDue ? 'destructive' : 'default'}>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              {isPastDue
-                ? 'This quiz is overdue and can no longer be taken.'
-                : !isAvailable
-                  ? 'This quiz is not yet available.'
-                  : 'You have no remaining attempts for this quiz.'}
-            </AlertDescription>
-          </Alert>
-        )}
-
+        {/* Info & Schedule */}
         <div className="grid gap-6 md:grid-cols-2">
           {/* Quiz Information */}
           <Card>
@@ -179,8 +231,7 @@ export default function BeforeTakingQuizWhole({
               </div>
 
               <Separator />
-
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between">
                 <span className="text-sm font-medium text-secondary-foreground">
                   Time Limit
                 </span>
@@ -193,36 +244,33 @@ export default function BeforeTakingQuizWhole({
                   </span>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between">
                 <span className="text-sm font-medium text-secondary-foreground">
-                  Attempts
+                  Attempts Used
                 </span>
                 <div className="flex items-center gap-1">
                   <RotateCcw className="h-4 w-4 text-dynamic-light-purple" />
                   <span className="text-sm">
-                    {quizData.attemptsSoFar} of{' '}
-                    {quizData.attemptLimit || 'unlimited'} used
+                    {quizData.attemptsSoFar} /{' '}
+                    {quizData.attemptLimit || '∞'}{' '}
                   </span>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between">
                 <span className="text-sm font-medium text-secondary-foreground">
                   Explanations
                 </span>
-                <span className="text-sm">
+                <span>
                   {quizData.explanationMode === 0
-                    ? 'None during or after'
+                    ? 'None'
                     : quizData.explanationMode === 1
-                      ? 'Correct-only after release'
+                      ? 'Correct only after release'
                       : 'All after release'}
                 </span>
               </div>
             </CardContent>
           </Card>
 
-          {/* Schedule Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -240,37 +288,27 @@ export default function BeforeTakingQuizWhole({
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   )}
                 </div>
-                <p className="text-sm text-primary">
-                  {formatDate(quizData.availableDate) ||
-                    'Immediately available'}
-                </p>
+                <p>{formatDate(quizData.availableDate)}</p>
               </div>
-
               <Separator />
-
               <div>
-                <div className="mb-1 flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-secondary-foreground">
                     Due Date
                   </span>
                   {isPastDue && (
-                    <AlertTriangle className="h-4 w-4 text-dynamic-light-red" />
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
                   )}
                 </div>
-                <p className="text-sm text-primary">
-                  {formatDate(quizData.dueDate) || 'No due date set'}
-                </p>
+                <p>{formatDate(quizData.dueDate)}</p>
               </div>
-
-              {attemptsRemaining !== null && (
+              {attemptsRemaining != null && (
                 <>
                   <Separator />
-                  <div className="rounded-lg border border-dynamic-purple/40 bg-transparent p-3 text-center">
-                    <p className="text-sm font-medium text-dynamic-purple">
-                      {attemptsRemaining} attempt
-                      {attemptsRemaining !== 1 ? 's' : ''} remaining
-                    </p>
-                  </div>
+                  <p className="text-center text-sm text-primary">
+                    {attemptsRemaining} attempt
+                    {attemptsRemaining !== 1 ? 's' : ''} remaining
+                  </p>
                 </>
               )}
             </CardContent>
@@ -281,15 +319,15 @@ export default function BeforeTakingQuizWhole({
         <Card>
           <CardHeader>
             <CardTitle>Instructions</CardTitle>
-            <CardDescription>
-              Please read carefully before starting
-            </CardDescription>
+            <CardDescription>Read before you begin</CardDescription>
           </CardHeader>
           <CardContent>
             {quizData.instruction ? (
-              <p className="text-sm text-secondary-foreground">
-                {quizData.instruction}
-              </p>
+              // <p>{quizData.instruction}</p>
+              <RichTextEditor
+                content={quizData.instruction as unknown as JSONContent}
+                readOnly
+              />
             ) : (
               <div className="space-y-2 text-sm text-secondary-foreground">
                 <p>• Make sure you have a stable internet connection</p>
@@ -297,27 +335,24 @@ export default function BeforeTakingQuizWhole({
                 <p>• All questions must be answered before submitting</p>
                 <p>• Your progress will be automatically saved</p>
                 {quizData.timeLimitMinutes && (
-                  <p>
-                    • You have {quizData.timeLimitMinutes} minutes to complete
-                    this quiz
-                  </p>
-                )}
-                {quizData.explanationMode === 0 && (
-                  <p>• Answer explanations will be shown after submission</p>
+                  <li>You have {quizData.timeLimitMinutes} minutes</li>
                 )}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {quizData.attempts.length > 0 && (
+        {/* Past Attempts */}
+        {quizData.attemptsSoFar > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Past Attempts</CardTitle>
               <CardDescription>
-                {quizData.releasePointsImmediately
-                  ? 'You can review your detailed answers below.'
-                  : 'You can view summary until points are released.'}
+                {canViewOldAttemptsNoResults
+                  ? 'Click “View Details” to view your answers'
+                  : canViewOldAttemptsResults
+                    ? 'Click “View Details” to view your results'
+                    : 'Results pending release'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -327,15 +362,18 @@ export default function BeforeTakingQuizWhole({
                   className="flex items-center justify-between"
                 >
                   <div>
-                    <strong>Attempt #{att.attemptNumber}</strong> —{' '}
-                    {formatDate(att.submittedAt)} — duration{' '}
-                    {formatDuration(att.durationSeconds)}
+                    <strong>#{att.attemptNumber}</strong> at{' '}
+                    {formatDate(att.submittedAt)} (
+                    {formatDuration(att.durationSeconds)})
                   </div>
-                  {quizData.releasePointsImmediately ? (
-                    <Button size="sm" onClick={() => viewAttemptDetailed(att)}>
-                      View Details
+                  {(canViewOldAttemptsResults ||
+                    canViewOldAttemptsNoResults) && (
+                    <Button size="sm" onClick={() => viewAttempt(att)}>
+                      {canViewOldAttemptsResults
+                        ? 'View Results'
+                        : 'View Details'}
                     </Button>
-                  ) : null}
+                  )}
                 </div>
               ))}
             </CardContent>

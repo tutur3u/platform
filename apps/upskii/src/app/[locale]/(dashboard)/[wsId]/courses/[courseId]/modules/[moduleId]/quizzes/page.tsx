@@ -40,7 +40,7 @@ export interface RenderedQuizzesSets {
 }
 
 export default async function ModuleQuizzesPage({ params }: Props) {
-  const { wsId, moduleId } = await params;
+  const { wsId, courseId, moduleId } = await params;
   const t = await getTranslations();
   const quizSets = await getQuizzes(moduleId);
   const moduleName = await getModuleName(moduleId);
@@ -63,9 +63,19 @@ export default async function ModuleQuizzesPage({ params }: Props) {
       />
 
       <div className="hello-quizzz flex flex-col gap-4">
-        <ClientQuizzes wsId={wsId} moduleId={moduleId} quizSets={quizSets} />
+        <ClientQuizzes
+          wsId={wsId}
+          moduleId={moduleId}
+          quizSets={quizSets}
+          courseId={courseId}
+        />
         <div className="col-span-full">
-          <AIQuizzes wsId={wsId} moduleId={moduleId} moduleName={moduleName} />
+          <AIQuizzes
+            wsId={wsId}
+            moduleId={moduleId}
+            courseId={courseId}
+            moduleName={moduleName}
+          />
         </div>
       </div>
       {/* <div className="grid gap-4 md:grid-cols-2">
@@ -81,7 +91,7 @@ export default async function ModuleQuizzesPage({ params }: Props) {
         )}
 
         <div className="col-span-full">
-          <AIQuizzes wsId={wsId} moduleId={moduleId} moduleName={moduleName} />
+          <AIQuizzes wsId={wsId} moduleId={moduleId} courseId={courseId} moduleName={moduleName} />
         </div>
       </div> */}
     </div>

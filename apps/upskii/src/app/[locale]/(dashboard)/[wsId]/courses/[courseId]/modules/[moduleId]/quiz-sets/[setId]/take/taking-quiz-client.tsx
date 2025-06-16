@@ -1,13 +1,9 @@
 'use client';
 
-import BeforeTakingQuizWhole, { AttemptSummary } from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
-import QuizStatusSidebar, {
-  Question,
-} from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/quiz-status-sidebar';
-import BeforeTakeQuizSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/before-take-quiz-section';
-import PastDueSection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/past-due-section';
-import ShowResultSummarySection from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/sections/show-result-summary-section';
-import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/time-elapsed-status';
+
+import BeforeTakingQuizWhole, { AttemptSummary } from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
+import QuizStatusSidebar from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/quiz-status-sidebar';
+import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/time-elapsed-status';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -26,7 +22,7 @@ type TakeResponse = {
   releasePointsImmediately: boolean;
   attemptLimit: number | null;
   attemptsSoFar: number;
-  allowViewResults: boolean;
+  allowViewOldAttempts: boolean;
   availableDate: string | null;
   dueDate: string | null;
   resultsReleased: boolean;
@@ -84,7 +80,6 @@ export default function TakingQuizClient({
   >({});
 
   const [submitting, setSubmitting] = useState(false);
-  const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // ─── HELPERS ────────────────────────────────────────────────────────────────
@@ -113,6 +108,12 @@ export default function TakingQuizClient({
       })
       .flat(),
   });
+
+  useEffect(() => {
+    localStorage.removeItem(ANSWERS_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    clearStartTimestamp();
+  }, [setId]);
 
   // ─── FETCH METADATA ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -245,8 +246,15 @@ export default function TakingQuizClient({
         return setSubmitting(false);
       }
 
+      localStorage.removeItem(ANSWERS_KEY);
+      localStorage.removeItem(STORAGE_KEY);
       clearStartTimestamp();
-      setSubmitResult(json as SubmitResult);
+      if ('attemptId' in json) {
+        router.push(
+          `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${setId}/result?attemptId=${json.attemptId}`
+        );
+      }
+      // setSubmitResult(json as SubmitResult);
     } catch {
       setSubmitError('Network error submitting.');
     } finally {
@@ -259,116 +267,18 @@ export default function TakingQuizClient({
   if (metaError) return <p className="p-4 text-red-600">{metaError}</p>;
   if (!quizMeta) return null;
 
-  // After submit
-  if (submitResult) {
-    return (
-      <ShowResultSummarySection
-        t={t}
-        submitResult={submitResult}
-        quizMeta={{
-          attemptLimit: quizMeta.attemptLimit,
-          setName: quizMeta.setName,
-          attemptsSoFar: quizMeta.attemptsSoFar,
-          timeLimitMinutes: quizMeta.timeLimitMinutes,
-        }}
-        wsId={wsId}
-        courseId={courseId}
-        moduleId={moduleId}
-        router={router}
-      />
-    );
-  }
-
-  // Immediate-release
-  if (!hasStarted && quizMeta.allowViewResults && quizMeta.attemptsSoFar > 0) {
-    return (
-      <div className="mx-auto max-w-lg p-6 text-center">
-        <h1 className="text-3xl font-bold">{quizMeta.setName}</h1>
-        <p className="mt-4 text-lg">
-          {t('ws-quizzes.results_available') ||
-            'Your previous attempt(s) have been scored.'}
-        </p>
-        <Button
-          className="mt-6 bg-green-600 text-white hover:bg-green-700"
-          onClick={() =>
-            router.push(
-              `/dashboard/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes/${setId}/results`
-            )
-          }
-        >
-          {t('ws-quizzes.view_results') || 'View Results'}
-        </Button>
-        {dueDateStr && (
-          <p className="mt-2 text-sm text-gray-500">
-            {t('ws-quizzes.due_on') || 'Due on'}:{' '}
-            {new Date(dueDateStr).toLocaleString()}
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  // No attempts left
-  if (
-    !hasStarted &&
-    quizMeta.attemptLimit != null &&
-    quizMeta.attemptsSoFar >= quizMeta.attemptLimit
-  ) {
-    return (
-      <div className="mx-auto flex max-w-lg flex-col items-center space-y-4 p-6">
-        <h1 className="text-3xl font-bold">{quizMeta.setName}</h1>
-        {dueDateStr && (
-          <p className="text-base text-gray-600">
-            {t('ws-quizzes.due_on') || 'Due on'}:{' '}
-            {new Date(dueDateStr).toLocaleString()}
-          </p>
-        )}
-        <p className="text-lg">
-          {t('ws-quizzes.attempts') || 'Attempts'}: {quizMeta.attemptsSoFar} /{' '}
-          {quizMeta.attemptLimit}
-        </p>
-        {quizMeta.allowViewResults ? (
-          <Button
-            className="bg-green-600 text-white hover:bg-green-700"
-            onClick={() =>
-              router.push(
-                `/dashboard/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes/${setId}/results`
-              )
-            }
-          >
-            {t('ws-quizzes.view_results') || 'View Results'}
-          </Button>
-        ) : (
-          <p className="text-red-600">
-            {t('ws-quizzes.no_attempts_left') || 'You have no attempts left.'}
-          </p>
-        )}
-      </div>
-    );
-  }
-
   // Take Quiz button + instruction
   if (!hasStarted) {
-    // return (
-    //   <BeforeTakeQuizSection
-    //     t={t}
-    //     quizMeta={{
-    //       setName: quizMeta.setName,
-    //       attemptsSoFar: quizMeta.attemptsSoFar,
-    //       attemptLimit: quizMeta.attemptLimit,
-    //       timeLimitMinutes: quizMeta.timeLimitMinutes,
-    //     }}
-    //     dueDateStr={dueDateStr}
-    //     onClickStart={onClickStart}
-    //     instruction={quizMeta.instruction}
-    //   />
-    // );
     return (
       <BeforeTakingQuizWhole
         quizData={quizMeta}
         isPastDue={isPastDue}
         isAvailable={isAvailable}
         onStart={onClickStart}
+        wsId={wsId}
+        courseId={courseId}
+        moduleId={moduleId}
+        setId={setId}
       />
     );
   }
@@ -502,7 +412,7 @@ export default function TakingQuizClient({
             <Button
               type="submit"
               disabled={submitting || (isCountdown && timeLeft === 0)}
-              className={`w-full rounded px-6 py-5 text-white md:py-4 lg:w-fit lg:py-2 ${
+              className={`w-full rounded px-6 py-5 text-primary md:py-4 lg:w-fit lg:py-2 ${
                 submitting || (isCountdown && timeLeft === 0)
                   ? 'cursor-not-allowed bg-gray-400'
                   : 'border border-dynamic-purple bg-dynamic-purple/20 hover:bg-dynamic-purple/40'
