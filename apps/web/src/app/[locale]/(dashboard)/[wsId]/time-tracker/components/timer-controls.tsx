@@ -117,7 +117,7 @@ interface PomodoroSettings {
 
 type TimerMode = 'stopwatch' | 'pomodoro' | 'custom';
 type SessionType = 'focus' | 'short-break' | 'long-break';
-type CustomTimerType = 'stopwatch' | 'countdown' | 'pomodoro-custom';
+type CustomTimerType = 'enhanced-stopwatch' | 'traditional-countdown';
 
 interface CountdownState {
   targetTime: number; // in seconds
@@ -129,15 +129,36 @@ interface CountdownState {
 
 interface CustomTimerSettings {
   type: CustomTimerType;
-  duration: number; // in minutes (for countdown/pomodoro-custom)
-  autoRestart: boolean;
-  enableBreakReminders: boolean;
-  playCompletionSound: boolean;
-  showNotifications: boolean;
-  // For custom pomodoro
-  focusTime?: number;
-  breakTime?: number;
-  cycles?: number;
+  
+  // Enhanced Stopwatch Settings
+  targetDuration?: number; // in minutes - goal to reach
+  enableIntervalBreaks?: boolean;
+  intervalBreakDuration?: number; // in minutes (default: 5)
+  intervalFrequency?: number; // break every X minutes (default: 25)
+  showProgressToTarget?: boolean;
+  enableTargetNotification?: boolean;
+  autoStopAtTarget?: boolean;
+  
+  // Traditional Countdown Settings
+  countdownDuration?: number; // in minutes
+  autoRestart?: boolean;
+  showTimeRemaining?: boolean;
+  
+  // Shared Settings
+  enableBreakReminders?: boolean;
+  playCompletionSound?: boolean;
+  showNotifications?: boolean;
+  enableMotivationalMessages?: boolean;
+}
+
+interface StopwatchSettings {
+  enableBreakReminders?: boolean;
+  enable2020Rule?: boolean; // 20-20-20 eye rest rule
+  enableMovementReminder?: boolean;
+  showProductivityInsights?: boolean;
+  enableNotifications?: boolean;
+  enableSessionMilestones?: boolean; // notifications at 30min, 1hr, 2hr etc
+  playCompletionSound?: boolean;
 }
 
 // Default Pomodoro settings
@@ -151,6 +172,17 @@ const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
   enableNotifications: true,
   enable2020Rule: true,
   enableMovementReminder: true,
+};
+
+// Default Stopwatch settings
+const DEFAULT_STOPWATCH_SETTINGS: StopwatchSettings = {
+  enableBreakReminders: true,
+  enable2020Rule: true,
+  enableMovementReminder: true,
+  showProductivityInsights: true,
+  enableNotifications: true,
+  enableSessionMilestones: true,
+  playCompletionSound: true,
 };
 
 export function TimerControls({
@@ -199,19 +231,40 @@ export function TimerControls({
   });
 
   const [customTimerSettings, setCustomTimerSettings] = useState<CustomTimerSettings>({
-    type: 'countdown',
-    duration: 25,
+    type: 'enhanced-stopwatch',
+    
+    // Enhanced Stopwatch defaults
+    targetDuration: 60, // 1 hour goal
+    enableIntervalBreaks: true,
+    intervalBreakDuration: 5,
+    intervalFrequency: 25, // break every 25 minutes
+    showProgressToTarget: true,
+    enableTargetNotification: true,
+    autoStopAtTarget: false,
+    
+    // Traditional Countdown defaults
+    countdownDuration: 25,
     autoRestart: false,
+    showTimeRemaining: true,
+    
+    // Shared defaults
     enableBreakReminders: true,
     playCompletionSound: true,
     showNotifications: true,
-    focusTime: 25,
-    breakTime: 5,
-    cycles: 4,
+    enableMotivationalMessages: true,
   });
   const [lastNotificationTime, setLastNotificationTime] = useState<number>(0);
   const [showPomodoroSettings, setShowPomodoroSettings] = useState(false);
   const [showCustomSettings, setShowCustomSettings] = useState(false);
+  const [showStopwatchSettings, setShowStopwatchSettings] = useState(false);
+  
+  // Enhanced stopwatch state
+  const [lastIntervalBreakTime, setLastIntervalBreakTime] = useState<number>(Date.now());
+  const [intervalBreaksCount, setIntervalBreaksCount] = useState<number>(0);
+  const [hasReachedTarget, setHasReachedTarget] = useState<boolean>(false);
+  
+  // Stopwatch settings state
+  const [stopwatchSettings, setStopwatchSettings] = useState<StopwatchSettings>(DEFAULT_STOPWATCH_SETTINGS);
   
   // Break reminders state
   const [lastEyeBreakTime, setLastEyeBreakTime] = useState<number>(Date.now());
@@ -530,9 +583,9 @@ export function TimerControls({
 
 
 
-  // Update countdown timer
+  // Update countdown timer (for pomodoro and traditional countdown modes)
   useEffect(() => {
-    if ((timerMode === 'pomodoro' || (timerMode === 'custom' && customTimerSettings.type !== 'stopwatch')) && isRunning && countdownState.remainingTime > 0) {
+    if ((timerMode === 'pomodoro' || (timerMode === 'custom' && customTimerSettings.type === 'traditional-countdown')) && isRunning && countdownState.remainingTime > 0) {
       const interval = setInterval(() => {
         setCountdownState(prev => {
           const newRemainingTime = prev.remainingTime - 1;
@@ -540,104 +593,118 @@ export function TimerControls({
           if (newRemainingTime <= 0) {
             if (timerMode === 'pomodoro') {
               handlePomodoroComplete();
-            } else if (timerMode === 'custom') {
-              // Handle custom timer completion
-              if (customTimerSettings.type === 'countdown') {
-                showNotification(
-                  'Countdown Complete! ⏰',
-                  'Your custom countdown has finished - great work!',
-                  customTimerSettings.autoRestart ? [{
-                    title: 'Restarting...',
-                    action: () => {}
-                  }] : undefined
-                );
-                
-                if (customTimerSettings.playCompletionSound) {
-                  // Play completion sound
-                  const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBm/G8O3LtykFInGx8l2VmQQOXqw='); 
-                  audio.play().catch(() => {});
-                }
-                
-                if (customTimerSettings.autoRestart) {
-                  // Restart the countdown
-                  const restartDuration = customTimerSettings.duration * 60;
-                  return {
+            } else if (timerMode === 'custom' && customTimerSettings.type === 'traditional-countdown') {
+              // Handle traditional countdown completion
+              showNotification(
+                'Countdown Complete! ⏰',
+                customTimerSettings.enableMotivationalMessages 
+                  ? 'Great work! You\'ve completed your custom countdown timer.' 
+                  : 'Your countdown has finished.',
+                customTimerSettings.autoRestart ? [{
+                  title: 'Auto-restart in 3s...',
+                  action: () => {}
+                }] : undefined
+              );
+              
+              if (customTimerSettings.playCompletionSound) {
+                playNotificationSound();
+              }
+              
+              if (customTimerSettings.autoRestart) {
+                // Auto-restart after 3 seconds
+                setTimeout(() => {
+                  const restartDuration = (customTimerSettings.countdownDuration || 25) * 60;
+                  setCountdownState(prev => ({
                     ...prev,
                     targetTime: restartDuration,
                     remainingTime: restartDuration
-                  };
-                } else {
-                  setIsRunning(false);
-                }
-                              } else if (customTimerSettings.type === 'pomodoro-custom') {
-                  // Handle custom pomodoro completion inline
-                  const currentSession = countdownState.pomodoroSession;
-                  const maxSessions = customTimerSettings.cycles || 4;
-                  
-                  if (countdownState.sessionType === 'focus') {
-                    // Focus session complete, start break
-                    const isLongBreak = currentSession === maxSessions;
-                    const nextSessionType: SessionType = isLongBreak ? 'long-break' : 'short-break';
-                    const breakDuration = (customTimerSettings.breakTime || 5) * 60;
-                    
-                    showNotification(
-                      `🍅 Focus session ${currentSession} complete!`,
-                      `Time for a ${isLongBreak ? 'long' : 'short'} break`
-                    );
-                    
-                    setCountdownState(prev => ({
-                      ...prev,
-                      targetTime: breakDuration,
-                      remainingTime: breakDuration,
-                      sessionType: nextSessionType,
-                    }));
-                    return { ...prev, remainingTime: breakDuration };
-                  } else {
-                    // Break complete
-                    if (countdownState.pomodoroSession >= maxSessions) {
-                      // All cycles complete
-                      showNotification(
-                        '🎉 Custom Pomodoro Complete!',
-                        `Finished ${maxSessions} focus sessions - excellent work!`
-                      );
-                      setIsRunning(false);
-                    } else {
-                      // Start next focus session
-                      const focusDuration = (customTimerSettings.focusTime || 25) * 60;
-                      const nextSession = countdownState.pomodoroSession + 1;
-                      
-                      showNotification(
-                        '☕ Break complete!',
-                        `Starting focus session ${nextSession}`
-                      );
-                      
-                      setCountdownState(prev => ({
-                        ...prev,
-                        targetTime: focusDuration,
-                        remainingTime: focusDuration,
-                        sessionType: 'focus',
-                        pomodoroSession: nextSession,
-                      }));
-                      return { ...prev, remainingTime: focusDuration };
-                    }
-                  }
-                }
+                  }));
+                }, 3000);
+              } else {
+                setIsRunning(false);
+              }
             }
             return { ...prev, remainingTime: 0 };
           }
           
           return { ...prev, remainingTime: newRemainingTime };
         });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [timerMode, isRunning, countdownState.remainingTime, customTimerSettings, handlePomodoroComplete, showNotification, playNotificationSound]);
+
+  // Enhanced stopwatch interval breaks and target monitoring
+  useEffect(() => {
+    if (timerMode === 'custom' && customTimerSettings.type === 'enhanced-stopwatch' && isRunning) {
+      const interval = setInterval(() => {
+        const currentTime = Date.now();
+        const elapsedMinutes = Math.floor(elapsedTime / 60);
+        const targetMinutes = customTimerSettings.targetDuration || 60;
         
-        // Check for break reminders (only during focus sessions and if enabled)
-        if (countdownState.sessionType === 'focus' && customTimerSettings.enableBreakReminders) {
+        // Check for interval breaks
+        if (customTimerSettings.enableIntervalBreaks) {
+          const intervalFreq = customTimerSettings.intervalFrequency || 25;
+          const timeSinceLastBreak = Math.floor((currentTime - lastIntervalBreakTime) / (1000 * 60));
+          
+          if (timeSinceLastBreak >= intervalFreq) {
+            const breakDuration = customTimerSettings.intervalBreakDuration || 5;
+            setIntervalBreaksCount(prev => prev + 1);
+            setLastIntervalBreakTime(currentTime);
+            
+            showNotification(
+              `🕒 Interval Break Time! (${intervalBreaksCount + 1})`,
+              `Take a ${breakDuration}-minute break - you've been working for ${intervalFreq} minutes`,
+              [{
+                title: 'Got it!',
+                action: () => {}
+              }]
+            );
+            
+            if (customTimerSettings.playCompletionSound) {
+              playNotificationSound();
+            }
+          }
+        }
+        
+        // Check for target achievement
+        if (!hasReachedTarget && elapsedMinutes >= targetMinutes) {
+          setHasReachedTarget(true);
+          
+          if (customTimerSettings.enableTargetNotification) {
+            showNotification(
+              `🎯 Target Achieved! (${targetMinutes} min)`,
+              customTimerSettings.enableMotivationalMessages 
+                ? 'Congratulations! You\'ve reached your target duration. Keep going or take a well-deserved break!'
+                : `You've completed your ${targetMinutes}-minute goal.`,
+              [{
+                title: customTimerSettings.autoStopAtTarget ? 'Timer Stopped' : 'Keep Going',
+                action: () => {}
+              }]
+            );
+            
+            if (customTimerSettings.playCompletionSound) {
+              playNotificationSound();
+            }
+            
+            if (customTimerSettings.autoStopAtTarget) {
+              setIsRunning(false);
+              // Optionally stop the session completely
+              // stopTimer();
+            }
+          }
+        }
+        
+        // Check for break reminders (if enabled)
+        if (customTimerSettings.enableBreakReminders) {
           checkBreakReminders();
         }
       }, 1000);
 
       return () => clearInterval(interval);
     }
-      }, [timerMode, isRunning, countdownState.remainingTime, countdownState.sessionType, customTimerSettings, handlePomodoroComplete, checkBreakReminders, showNotification]);
+  }, [timerMode, customTimerSettings, isRunning, elapsedTime, lastIntervalBreakTime, intervalBreaksCount, hasReachedTarget, showNotification, playNotificationSound, checkBreakReminders]);
 
   // Fetch boards with lists
   const fetchBoards = useCallback(async () => {
@@ -908,27 +975,28 @@ export function TimerControls({
         startPomodoroSession('focus');
       } else if (timerMode === 'custom') {
         // Initialize custom timer based on type
-        if (customTimerSettings.type === 'countdown') {
-          const customDuration = customTimerSettings.duration * 60;
+        if (customTimerSettings.type === 'traditional-countdown') {
+          const countdownDuration = (customTimerSettings.countdownDuration || 25) * 60;
           setCountdownState(prev => ({
             ...prev,
-            targetTime: customDuration,
-            remainingTime: customDuration,
+            targetTime: countdownDuration,
+            remainingTime: countdownDuration,
             sessionType: 'focus',
           }));
-        } else if (customTimerSettings.type === 'pomodoro-custom') {
-          // Initialize custom pomodoro session
-          const focusDuration = (customTimerSettings.focusTime || 25) * 60;
+        } else if (customTimerSettings.type === 'enhanced-stopwatch') {
+          // Reset enhanced stopwatch tracking
+          setLastIntervalBreakTime(Date.now());
+          setIntervalBreaksCount(0);
+          setHasReachedTarget(false);
+          
+          // No countdown for enhanced stopwatch - it counts up
           setCountdownState(prev => ({
             ...prev,
-            targetTime: focusDuration,
-            remainingTime: focusDuration,
+            targetTime: 0,
+            remainingTime: 0,
             sessionType: 'focus',
-            pomodoroSession: 1,
-            cycleCount: 0,
           }));
         }
-        // For stopwatch mode, no special initialization needed
       }
 
       setNewSessionTitle('');
@@ -1446,6 +1514,117 @@ export function TimerControls({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Timer Type Specific Settings */}
+            {customTimerSettings.type === 'enhanced-stopwatch' && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Enhanced Stopwatch Settings</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Target Duration (min)</Label>
+                    <Input
+                      type="number"
+                      min="10"
+                      max="480"
+                      value={customTimerSettings.targetDuration}
+                      onChange={(e) => setCustomTimerSettings(prev => ({
+                        ...prev,
+                        targetDuration: parseInt(e.target.value) || 60
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Break Frequency (min)</Label>
+                    <Input
+                      type="number"
+                      min="5"
+                      max="120"
+                      value={customTimerSettings.intervalFrequency}
+                      onChange={(e) => setCustomTimerSettings(prev => ({
+                        ...prev,
+                        intervalFrequency: parseInt(e.target.value) || 25
+                      }))}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Break Duration (min)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={customTimerSettings.intervalBreakDuration}
+                    onChange={(e) => setCustomTimerSettings(prev => ({
+                      ...prev,
+                      intervalBreakDuration: parseInt(e.target.value) || 5
+                    }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Auto-stop at target</Label>
+                  <input
+                    type="checkbox"
+                    checked={customTimerSettings.autoStopAtTarget}
+                    onChange={(e) => setCustomTimerSettings(prev => ({
+                      ...prev,
+                      autoStopAtTarget: e.target.checked
+                    }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Target notifications</Label>
+                  <input
+                    type="checkbox"
+                    checked={customTimerSettings.enableTargetNotification}
+                    onChange={(e) => setCustomTimerSettings(prev => ({
+                      ...prev,
+                      enableTargetNotification: e.target.checked
+                    }))}
+                  />
+                </div>
+              </div>
+            )}
+
+            {customTimerSettings.type === 'traditional-countdown' && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Traditional Countdown Settings</h4>
+                <div>
+                  <Label>Countdown Duration (min)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="480"
+                    value={customTimerSettings.countdownDuration}
+                    onChange={(e) => setCustomTimerSettings(prev => ({
+                      ...prev,
+                      countdownDuration: parseInt(e.target.value) || 25
+                    }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Auto-restart</Label>
+                  <input
+                    type="checkbox"
+                    checked={customTimerSettings.autoRestart}
+                    onChange={(e) => setCustomTimerSettings(prev => ({
+                      ...prev,
+                      autoRestart: e.target.checked
+                    }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Show time remaining</Label>
+                  <input
+                    type="checkbox"
+                    checked={customTimerSettings.showTimeRemaining}
+                    onChange={(e) => setCustomTimerSettings(prev => ({
+                      ...prev,
+                      showTimeRemaining: e.target.checked
+                    }))}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3">
               <h4 className="text-sm font-medium">Break Reminders</h4>
               <div className="flex items-center justify-between">
@@ -1491,20 +1670,20 @@ export function TimerControls({
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-sm font-medium">Automation</h4>
+              <h4 className="text-sm font-medium">Motivation & Feedback</h4>
               <div className="flex items-center justify-between">
-                <Label>Auto-restart timer</Label>
+                <Label>Motivational messages</Label>
                 <input
                   type="checkbox"
-                  checked={customTimerSettings.autoRestart}
+                  checked={customTimerSettings.enableMotivationalMessages}
                   onChange={(e) => setCustomTimerSettings(prev => ({
                     ...prev,
-                    autoRestart: e.target.checked
+                    enableMotivationalMessages: e.target.checked
                   }))}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Automatically restart the timer when it completes (great for repetitive tasks)
+                Receive encouraging messages and productivity tips during your sessions
               </p>
             </div>
 
@@ -1512,15 +1691,27 @@ export function TimerControls({
               <Button
                 variant="outline"
                 onClick={() => setCustomTimerSettings({
-                  type: 'countdown',
-                  duration: 25,
+                  type: 'enhanced-stopwatch',
+                  
+                  // Enhanced Stopwatch defaults
+                  targetDuration: 60, // 1 hour goal
+                  enableIntervalBreaks: true,
+                  intervalBreakDuration: 5,
+                  intervalFrequency: 25,
+                  showProgressToTarget: true,
+                  enableTargetNotification: true,
+                  autoStopAtTarget: false,
+                  
+                  // Traditional Countdown defaults
+                  countdownDuration: 25,
                   autoRestart: false,
+                  showTimeRemaining: true,
+                  
+                  // Shared defaults
                   enableBreakReminders: true,
                   playCompletionSound: true,
                   showNotifications: true,
-                  focusTime: 25,
-                  breakTime: 5,
-                  cycles: 4,
+                  enableMotivationalMessages: true,
                 })}
                 className="flex-1"
               >
@@ -1683,6 +1874,121 @@ export function TimerControls({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Stopwatch Settings Dialog */}
+      <Dialog open={showStopwatchSettings} onOpenChange={setShowStopwatchSettings}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>⏱️ Stopwatch Settings</DialogTitle>
+            <DialogDescription>
+              Customize your stopwatch experience and productivity features
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Break reminders</Label>
+                <input
+                  type="checkbox"
+                  checked={stopwatchSettings.enableBreakReminders}
+                  onChange={(e) => setStopwatchSettings(prev => ({
+                    ...prev,
+                    enableBreakReminders: e.target.checked
+                  }))}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label>20-20-20 eye breaks</Label>
+                <input
+                  type="checkbox"
+                  checked={stopwatchSettings.enable2020Rule}
+                  onChange={(e) => setStopwatchSettings(prev => ({
+                    ...prev,
+                    enable2020Rule: e.target.checked
+                  }))}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label>Movement reminders</Label>
+                <input
+                  type="checkbox"
+                  checked={stopwatchSettings.enableMovementReminder}
+                  onChange={(e) => setStopwatchSettings(prev => ({
+                    ...prev,
+                    enableMovementReminder: e.target.checked
+                  }))}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label>Productivity insights</Label>
+                <input
+                  type="checkbox"
+                  checked={stopwatchSettings.showProductivityInsights}
+                  onChange={(e) => setStopwatchSettings(prev => ({
+                    ...prev,
+                    showProductivityInsights: e.target.checked
+                  }))}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label>Enable notifications</Label>
+                <input
+                  type="checkbox"
+                  checked={stopwatchSettings.enableNotifications}
+                  onChange={(e) => setStopwatchSettings(prev => ({
+                    ...prev,
+                    enableNotifications: e.target.checked
+                  }))}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label>Session milestones</Label>
+                <input
+                  type="checkbox"
+                  checked={stopwatchSettings.enableSessionMilestones}
+                  onChange={(e) => setStopwatchSettings(prev => ({
+                    ...prev,
+                    enableSessionMilestones: e.target.checked
+                  }))}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label>Completion sound</Label>
+                <input
+                  type="checkbox"
+                  checked={stopwatchSettings.playCompletionSound}
+                  onChange={(e) => setStopwatchSettings(prev => ({
+                    ...prev,
+                    playCompletionSound: e.target.checked
+                  }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setStopwatchSettings(DEFAULT_STOPWATCH_SETTINGS)}
+                className="flex-1"
+              >
+                Reset Defaults
+              </Button>
+              <Button
+                onClick={() => setShowStopwatchSettings(false)}
+                className="flex-1"
+              >
+                Save Settings
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Card
         className={cn(
           'relative transition-all duration-300',
@@ -1708,6 +2014,17 @@ export function TimerControls({
                   <SelectItem value="custom">⏲️ Custom</SelectItem>
                 </SelectContent>
               </Select>
+              {timerMode === 'stopwatch' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowStopwatchSettings(true)}
+                  className="h-8 w-8 p-0"
+                  title="Stopwatch Settings"
+                >
+                  ⚙️
+                </Button>
+              )}
               {timerMode === 'pomodoro' && (
                 <Button
                   variant="ghost"
@@ -1736,7 +2053,12 @@ export function TimerControls({
             <span>
               {timerMode === 'stopwatch' && 'Track your time with detailed analytics'}
               {timerMode === 'pomodoro' && `Focus for ${pomodoroSettings.focusTime}min, break for ${pomodoroSettings.shortBreakTime}min`}
-              {timerMode === 'custom' && `Custom timer`}
+              {timerMode === 'custom' && customTimerSettings.type === 'enhanced-stopwatch' && 
+                `Enhanced stopwatch with ${customTimerSettings.targetDuration}min target${customTimerSettings.enableIntervalBreaks ? `, breaks every ${customTimerSettings.intervalFrequency}min` : ''}`
+              }
+              {timerMode === 'custom' && customTimerSettings.type === 'traditional-countdown' && 
+                `Traditional countdown for ${customTimerSettings.countdownDuration}min${customTimerSettings.autoRestart ? ' (auto-restart)' : ''}`
+              }
             </span>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="rounded bg-muted px-1.5 py-0.5">
@@ -1756,6 +2078,76 @@ export function TimerControls({
             </div>
           </div>
         </CardHeader>
+
+        {/* Custom Timer Configuration - Prominently Displayed */}
+        {timerMode === 'custom' && (
+          <div className="mx-6 mb-4 space-y-4 rounded-lg border border-border/60 bg-card/30 p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/20">
+                  {customTimerSettings.type === 'enhanced-stopwatch' ? '⏱️' : '⏲️'}
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium">
+                    {customTimerSettings.type === 'enhanced-stopwatch' ? 'Enhanced Stopwatch' : 'Traditional Countdown'}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {customTimerSettings.type === 'enhanced-stopwatch' 
+                      ? 'Target-based with interval breaks' 
+                      : 'Simple countdown timer'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Quick Timer Type Switcher */}
+            <div className="flex gap-2">
+              <Button
+                variant={customTimerSettings.type === 'enhanced-stopwatch' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCustomTimerSettings(prev => ({ ...prev, type: 'enhanced-stopwatch' }))}
+                className="flex-1 text-xs"
+              >
+                ⏱️ Stopwatch
+              </Button>
+              <Button
+                variant={customTimerSettings.type === 'traditional-countdown' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCustomTimerSettings(prev => ({ ...prev, type: 'traditional-countdown' }))}
+                className="flex-1 text-xs"
+              >
+                ⏲️ Countdown
+              </Button>
+            </div>
+
+            {/* Essential Settings Only - Interval Breaks for Enhanced Stopwatch */}
+            {customTimerSettings.type === 'enhanced-stopwatch' && (
+              <div className="rounded-md bg-muted/30 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Interval Breaks:</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={customTimerSettings.enableIntervalBreaks}
+                      onChange={(e) => setCustomTimerSettings(prev => ({
+                        ...prev,
+                        enableIntervalBreaks: e.target.checked
+                      }))}
+                      className="h-3 w-3 rounded"
+                    />
+                    {customTimerSettings.enableIntervalBreaks && (
+                      <span className="text-xs text-muted-foreground">
+                        every {customTimerSettings.intervalFrequency}min
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <CardContent className="space-y-6">
           {currentSession ? (
             <div className="space-y-6 text-center">
@@ -1791,7 +2183,7 @@ export function TimerControls({
                       ? "text-purple-600 dark:text-purple-400"
                       : "text-red-600 dark:text-red-400"
                   )}>
-                    {(timerMode === 'pomodoro' || (timerMode === 'custom' && customTimerSettings.type !== 'stopwatch')) ? formatTime(countdownState.remainingTime) : formatTime(elapsedTime)}
+                    {(timerMode === 'pomodoro' || (timerMode === 'custom' && customTimerSettings.type === 'traditional-countdown')) ? formatTime(countdownState.remainingTime) : formatTime(elapsedTime)}
                   </div>
                   
                   {/* Pomodoro Progress Indicator */}
@@ -1863,18 +2255,16 @@ export function TimerControls({
                       </span>
                     ) : timerMode === 'custom' ? (
                       <span>
-                        {customTimerSettings.type === 'countdown' ? (
+                        {customTimerSettings.type === 'traditional-countdown' ? (
                           countdownState.remainingTime > 0 ? 
                             `⏲️ ${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} remaining` : 
                             'Countdown complete!'
-                        ) : customTimerSettings.type === 'pomodoro-custom' ? (
-                          countdownState.remainingTime > 0 ? 
-                            `🍅 ${countdownState.sessionType === 'focus' ? 'Focus' : 'Break'} ${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')}` :
-                            'Session complete!'
+                        ) : customTimerSettings.type === 'enhanced-stopwatch' ? (
+                          hasReachedTarget ? 
+                            `🎯 Target achieved! (${customTimerSettings.targetDuration || 60}min)` :
+                            `⏱️ Enhanced Stopwatch ${customTimerSettings.targetDuration ? `(target: ${customTimerSettings.targetDuration}min)` : ''}`
                         ) : (
-                          customTimerSettings.duration > 0 ? 
-                            `⏱️ Stopwatch (target: ${customTimerSettings.duration}min)` :
-                            '⏱️ Open-ended timing'
+                          '⏱️ Custom Timer'
                         )}
                       </span>
                     ) : (
@@ -3034,195 +3424,7 @@ export function TimerControls({
                     />
                   </div>
 
-                  {/* Enhanced Custom Timer Configuration */}
-                  {timerMode === 'custom' && (
-                    <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm font-medium">Custom Timer Settings</Label>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowCustomSettings(true)}
-                          className="h-8 w-8 p-0"
-                          title="Advanced Settings"
-                        >
-                          ⚙️
-                        </Button>
-                      </div>
-                      
-                      {/* Timer Type Selection */}
-                      <div>
-                        <Label className="text-sm">Timer Type</Label>
-                        <Select 
-                          value={customTimerSettings.type} 
-                          onValueChange={(value: CustomTimerType) => 
-                            setCustomTimerSettings(prev => ({ ...prev, type: value }))
-                          }
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="countdown">⏲️ Countdown Timer</SelectItem>
-                            <SelectItem value="stopwatch">⏱️ Stopwatch (Count Up)</SelectItem>
-                            <SelectItem value="pomodoro-custom">🍅 Custom Pomodoro</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {customTimerSettings.type === 'countdown' && 'Count down from a set duration'}
-                          {customTimerSettings.type === 'stopwatch' && 'Count up with optional target time'}
-                          {customTimerSettings.type === 'pomodoro-custom' && 'Custom focus/break intervals'}
-                        </p>
-                      </div>
 
-                      {/* Duration Input for Countdown */}
-                      {customTimerSettings.type === 'countdown' && (
-                        <div>
-                          <Label htmlFor="countdown-minutes">Duration (minutes)</Label>
-                          <Input
-                            id="countdown-minutes"
-                            type="number"
-                            min="1"
-                            max="480"
-                            value={customTimerSettings.duration}
-                            onChange={(e) => setCustomTimerSettings(prev => ({
-                              ...prev,
-                              duration: parseInt(e.target.value) || 25
-                            }))}
-                            className="mt-1"
-                            placeholder="25"
-                          />
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Timer will count down from {customTimerSettings.duration} minute{customTimerSettings.duration !== 1 ? 's' : ''}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Target Time for Stopwatch */}
-                      {customTimerSettings.type === 'stopwatch' && (
-                        <div>
-                          <Label htmlFor="target-minutes">Target Duration (optional)</Label>
-                          <Input
-                            id="target-minutes"
-                            type="number"
-                            min="0"
-                            max="480"
-                            value={customTimerSettings.duration}
-                            onChange={(e) => setCustomTimerSettings(prev => ({
-                              ...prev,
-                              duration: parseInt(e.target.value) || 0
-                            }))}
-                            className="mt-1"
-                            placeholder="0 = no target"
-                          />
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {customTimerSettings.duration > 0 
-                              ? `Get notified when you reach ${customTimerSettings.duration} minutes`
-                              : 'Open-ended timing (no target time)'
-                            }
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Custom Pomodoro Settings */}
-                      {customTimerSettings.type === 'pomodoro-custom' && (
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <Label>Focus Time</Label>
-                              <Input
-                                type="number"
-                                min="5"
-                                max="120"
-                                value={customTimerSettings.focusTime}
-                                onChange={(e) => setCustomTimerSettings(prev => ({
-                                  ...prev,
-                                  focusTime: parseInt(e.target.value) || 25
-                                }))}
-                                className="mt-1"
-                              />
-                            </div>
-                            <div>
-                              <Label>Break Time</Label>
-                              <Input
-                                type="number"
-                                min="1"
-                                max="30"
-                                value={customTimerSettings.breakTime}
-                                onChange={(e) => setCustomTimerSettings(prev => ({
-                                  ...prev,
-                                  breakTime: parseInt(e.target.value) || 5
-                                }))}
-                                className="mt-1"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <Label>Number of Cycles</Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              max="10"
-                              value={customTimerSettings.cycles}
-                              onChange={(e) => setCustomTimerSettings(prev => ({
-                                ...prev,
-                                cycles: parseInt(e.target.value) || 4
-                              }))}
-                              className="mt-1"
-                            />
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {customTimerSettings.focusTime}min focus + {customTimerSettings.breakTime}min break × {customTimerSettings.cycles} cycles
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Quick Options */}
-                      <div className="flex flex-wrap gap-2">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="auto-restart"
-                            checked={customTimerSettings.autoRestart}
-                            onChange={(e) => setCustomTimerSettings(prev => ({
-                              ...prev,
-                              autoRestart: e.target.checked
-                            }))}
-                            className="rounded"
-                          />
-                          <Label htmlFor="auto-restart" className="text-xs">Auto-restart</Label>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="custom-notifications"
-                            checked={customTimerSettings.showNotifications}
-                            onChange={(e) => setCustomTimerSettings(prev => ({
-                              ...prev,
-                              showNotifications: e.target.checked
-                            }))}
-                            className="rounded"
-                          />
-                          <Label htmlFor="custom-notifications" className="text-xs">Notifications</Label>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="completion-sound"
-                            checked={customTimerSettings.playCompletionSound}
-                            onChange={(e) => setCustomTimerSettings(prev => ({
-                              ...prev,
-                              playCompletionSound: e.target.checked
-                            }))}
-                            className="rounded"
-                          />
-                          <Label htmlFor="completion-sound" className="text-xs">Sound</Label>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <div>
                     <Label htmlFor="category-select">Category (optional)</Label>
