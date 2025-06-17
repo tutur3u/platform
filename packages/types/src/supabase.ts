@@ -4510,6 +4510,7 @@ export type Database = {
           display_name: string | null;
           handle: string | null;
           id: string;
+          services: Database['public']['Enums']['platform_service'][];
         };
         Insert: {
           avatar_url?: string | null;
@@ -4519,6 +4520,7 @@ export type Database = {
           display_name?: string | null;
           handle?: string | null;
           id?: string;
+          services?: Database['public']['Enums']['platform_service'][];
         };
         Update: {
           avatar_url?: string | null;
@@ -4528,6 +4530,7 @@ export type Database = {
           display_name?: string | null;
           handle?: string | null;
           id?: string;
+          services?: Database['public']['Enums']['platform_service'][];
         };
         Relationships: [
           {
@@ -6159,6 +6162,50 @@ export type Database = {
           },
         ];
       };
+      workspace_subscription: {
+        Row: {
+          cancel_at_period_end: boolean | null;
+          created_at: string;
+          current_period_end: string | null;
+          current_period_start: string | null;
+          id: string;
+          polar_subscription_id: string;
+          status: Database['public']['Enums']['subscription_status'] | null;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          cancel_at_period_end?: boolean | null;
+          created_at?: string;
+          current_period_end?: string | null;
+          current_period_start?: string | null;
+          id?: string;
+          polar_subscription_id: string;
+          status?: Database['public']['Enums']['subscription_status'] | null;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          cancel_at_period_end?: boolean | null;
+          created_at?: string;
+          current_period_end?: string | null;
+          current_period_start?: string | null;
+          id?: string;
+          polar_subscription_id?: string;
+          status?: Database['public']['Enums']['subscription_status'] | null;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_subscription_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_teams: {
         Row: {
           created_at: string | null;
@@ -7349,8 +7396,12 @@ export type Database = {
     };
     Functions: {
       calculate_productivity_score: {
-        Args: { duration_seconds: number; category_color: string };
+        Args: { category_color: string; duration_seconds: number };
         Returns: number;
+      };
+      check_ws_creator: {
+        Args: { ws_id: string };
+        Returns: boolean;
       };
       cleanup_expired_cross_app_tokens: {
         Args: Record<PropertyKey, never>;
@@ -7371,23 +7422,23 @@ export type Database = {
         Returns: number;
       };
       create_ai_chat: {
-        Args: { title: string; message: string; model: string };
+        Args: { title: string; model: string; message: string };
         Returns: string;
       };
       generate_cross_app_token: {
         Args:
           | {
+              p_origin_app: string;
               p_expiry_seconds?: number;
               p_target_app: string;
-              p_origin_app: string;
               p_user_id: string;
             }
           | {
-              p_origin_app: string;
+              p_user_id: string;
               p_session_data?: Json;
               p_expiry_seconds?: number;
               p_target_app: string;
-              p_user_id: string;
+              p_origin_app: string;
             };
         Returns: string;
       };
@@ -7409,9 +7460,9 @@ export type Database = {
       get_daily_prompt_completion_tokens: {
         Args: { past_days?: number };
         Returns: {
+          total_completion_tokens: number;
           day: string;
           total_prompt_tokens: number;
-          total_completion_tokens: number;
         }[];
       };
       get_finance_invoices_count: {
@@ -7437,8 +7488,8 @@ export type Database = {
       get_hourly_prompt_completion_tokens: {
         Args: { past_hours?: number };
         Returns: {
-          total_prompt_tokens: number;
           total_completion_tokens: number;
+          total_prompt_tokens: number;
           hour: string;
         }[];
       };
@@ -7452,22 +7503,22 @@ export type Database = {
       };
       get_inventory_products: {
         Args: {
-          _has_unit?: boolean;
-          _warehouse_ids?: string[];
-          _ws_id?: string;
           _category_ids?: string[];
+          _ws_id?: string;
+          _warehouse_ids?: string[];
+          _has_unit?: boolean;
         };
         Returns: {
+          unit_id: string;
+          category: string;
+          price: number;
+          amount: number;
           ws_id: string;
           created_at: string;
-          amount: number;
-          price: number;
-          category: string;
-          unit_id: string;
           unit: string;
-          manufacturer: string;
-          name: string;
           id: string;
+          name: string;
+          manufacturer: string;
         }[];
       };
       get_inventory_products_count: {
@@ -7487,19 +7538,19 @@ export type Database = {
         Returns: number;
       };
       get_monthly_income_expense: {
-        Args: { _ws_id: string; past_months?: number };
+        Args: { past_months?: number; _ws_id: string };
         Returns: {
-          total_expense: number;
           month: string;
+          total_expense: number;
           total_income: number;
         }[];
       };
       get_monthly_prompt_completion_tokens: {
         Args: { past_months?: number };
         Returns: {
-          total_prompt_tokens: number;
           month: string;
           total_completion_tokens: number;
+          total_prompt_tokens: number;
         }[];
       };
       get_pending_event_participants: {
@@ -7509,29 +7560,29 @@ export type Database = {
       get_possible_excluded_groups: {
         Args: { included_groups: string[]; _ws_id: string };
         Returns: {
-          amount: number;
-          id: string;
           name: string;
+          id: string;
+          amount: number;
           ws_id: string;
         }[];
       };
       get_possible_excluded_tags: {
-        Args: { _ws_id: string; included_tags: string[] };
+        Args: { included_tags: string[]; _ws_id: string };
         Returns: {
+          ws_id: string;
           name: string;
           id: string;
           amount: number;
-          ws_id: string;
         }[];
       };
       get_session_statistics: {
         Args: Record<PropertyKey, never>;
         Returns: {
+          unique_users_count: number;
+          completed_count: number;
           total_count: number;
           latest_session_date: string;
-          completed_count: number;
           active_count: number;
-          unique_users_count: number;
         }[];
       };
       get_session_templates: {
@@ -7541,12 +7592,12 @@ export type Database = {
           limit_count?: number;
         };
         Returns: {
-          category_name: string;
+          category_id: string;
           title: string;
           description: string;
-          category_id: string;
           task_id: string;
           tags: string[];
+          category_name: string;
           category_color: string;
           task_name: string;
           usage_count: number;
@@ -7557,24 +7608,24 @@ export type Database = {
       get_submission_statistics: {
         Args: Record<PropertyKey, never>;
         Returns: {
-          unique_users_count: number;
           total_count: number;
           latest_submission_date: string;
+          unique_users_count: number;
         }[];
       };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
         Returns: {
-          name: string;
           amount: number;
-          created_at: string;
-          ws_id: string;
-          is_expense: boolean;
           id: string;
+          name: string;
+          is_expense: boolean;
+          ws_id: string;
+          created_at: string;
         }[];
       };
       get_user_role: {
-        Args: { user_id: string; ws_id: string };
+        Args: { ws_id: string; user_id: string };
         Returns: string;
       };
       get_user_session_stats: {
@@ -7588,26 +7639,26 @@ export type Database = {
       get_user_sessions: {
         Args: { user_id: string };
         Returns: {
-          session_id: string;
-          created_at: string;
-          updated_at: string;
-          user_agent: string;
           ip: string;
           is_current: boolean;
+          user_agent: string;
+          updated_at: string;
+          created_at: string;
+          session_id: string;
         }[];
       };
       get_user_tasks: {
         Args: { _board_id: string };
         Returns: {
-          id: string;
-          end_date: string;
           start_date: string;
-          completed: boolean;
-          priority: number;
-          description: string;
-          name: string;
           board_id: string;
+          end_date: string;
           list_id: string;
+          description: string;
+          id: string;
+          name: string;
+          priority: number;
+          completed: boolean;
         }[];
       };
       get_workspace_drive_size: {
@@ -7623,24 +7674,24 @@ export type Database = {
         Returns: number;
       };
       get_workspace_transactions_count: {
-        Args: { ws_id: string; end_date?: string; start_date?: string };
+        Args: { start_date?: string; ws_id: string; end_date?: string };
         Returns: number;
       };
       get_workspace_user_groups: {
         Args: {
-          search_query: string;
           _ws_id: string;
-          included_tags: string[];
+          search_query: string;
           excluded_tags: string[];
+          included_tags: string[];
         };
         Returns: {
-          id: string;
-          name: string;
           notes: string;
-          ws_id: string;
-          tags: string[];
+          name: string;
+          id: string;
           created_at: string;
           tag_count: number;
+          tags: string[];
+          ws_id: string;
         }[];
       };
       get_workspace_user_groups_count: {
@@ -7655,10 +7706,7 @@ export type Database = {
           _ws_id: string;
         };
         Returns: {
-          id: string;
-          updated_at: string;
-          created_at: string;
-          linked_users: Json;
+          full_name: string;
           group_count: number;
           groups: string[];
           ws_id: string;
@@ -7673,8 +7721,11 @@ export type Database = {
           phone: string;
           email: string;
           display_name: string;
-          full_name: string;
           avatar_url: string;
+          id: string;
+          updated_at: string;
+          created_at: string;
+          linked_users: Json;
         }[];
       };
       get_workspace_users_count: {
@@ -7686,11 +7737,11 @@ export type Database = {
         Returns: number;
       };
       get_workspace_wallets_expense: {
-        Args: { ws_id: string; end_date?: string; start_date?: string };
+        Args: { ws_id: string; start_date?: string; end_date?: string };
         Returns: number;
       };
       get_workspace_wallets_income: {
-        Args: { start_date?: string; ws_id: string; end_date?: string };
+        Args: { ws_id: string; end_date?: string; start_date?: string };
         Returns: number;
       };
       has_other_owner: {
@@ -7698,7 +7749,7 @@ export type Database = {
         Returns: boolean;
       };
       insert_ai_chat_message: {
-        Args: { chat_id: string; message: string; source: string };
+        Args: { chat_id: string; source: string; message: string };
         Returns: undefined;
       };
       is_list_accessible: {
@@ -7738,11 +7789,11 @@ export type Database = {
         Returns: boolean;
       };
       is_task_board_member: {
-        Args: { _board_id: string; _user_id: string };
+        Args: { _user_id: string; _board_id: string };
         Returns: boolean;
       };
       is_user_task_in_board: {
-        Args: { _user_id: string; _task_id: string };
+        Args: { _task_id: string; _user_id: string };
         Returns: boolean;
       };
       nova_get_all_challenges_with_user_stats: {
@@ -7754,7 +7805,7 @@ export type Database = {
         Returns: Json;
       };
       nova_get_user_daily_sessions: {
-        Args: { user_id: string; challenge_id: string };
+        Args: { challenge_id: string; user_id: string };
         Returns: number;
       };
       nova_get_user_total_sessions: {
@@ -7776,14 +7827,15 @@ export type Database = {
       search_users: {
         Args:
           | {
-              enabled_filter?: boolean;
-              search_query: string;
-              page_number: number;
               page_size: number;
+              enabled_filter?: boolean;
+              page_number: number;
               role_filter?: string;
+              search_query: string;
             }
           | { search_query: string; page_number: number; page_size: number };
         Returns: {
+          email: string;
           id: string;
           display_name: string;
           deleted: boolean;
@@ -7796,7 +7848,6 @@ export type Database = {
           allow_challenge_management: boolean;
           allow_manage_all_challenges: boolean;
           allow_role_management: boolean;
-          email: string;
           new_email: string;
           birthday: string;
           team_name: string[];
@@ -7804,16 +7855,16 @@ export type Database = {
       };
       search_users_by_name: {
         Args: {
+          min_similarity?: number;
           search_query: string;
           result_limit?: number;
-          min_similarity?: number;
         };
         Returns: {
-          handle: string;
-          relevance: number;
           id: string;
+          handle: string;
           display_name: string;
           avatar_url: string;
+          relevance: number;
         }[];
       };
       sum_quiz_scores: {
@@ -7827,7 +7878,7 @@ export type Database = {
         Returns: boolean;
       };
       transactions_have_same_amount: {
-        Args: { transaction_id_1: string; transaction_id_2: string };
+        Args: { transaction_id_2: string; transaction_id_1: string };
         Returns: boolean;
       };
       update_expired_sessions: {
@@ -7835,7 +7886,7 @@ export type Database = {
         Returns: undefined;
       };
       update_session_total_score: {
-        Args: { user_id_param: string; challenge_id_param: string };
+        Args: { challenge_id_param: string; user_id_param: string };
         Returns: undefined;
       };
       validate_cross_app_token: {
@@ -7843,10 +7894,10 @@ export type Database = {
         Returns: string;
       };
       validate_cross_app_token_with_session: {
-        Args: { p_target_app: string; p_token: string };
+        Args: { p_token: string; p_target_app: string };
         Returns: {
-          user_id: string;
           session_data: Json;
+          user_id: string;
         }[];
       };
     };
@@ -7863,6 +7914,8 @@ export type Database = {
       certificate_templates: 'original' | 'modern' | 'elegant';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       dataset_type: 'excel' | 'csv' | 'html';
+      platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
+      subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
       task_board_status: 'not_started' | 'active' | 'done' | 'closed';
       workspace_role_permission:
         | 'view_infrastructure'
@@ -8016,6 +8069,8 @@ export const Constants = {
       certificate_templates: ['original', 'modern', 'elegant'],
       chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
       dataset_type: ['excel', 'csv', 'html'],
+      platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
+      subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
       task_board_status: ['not_started', 'active', 'done', 'closed'],
       workspace_role_permission: [
         'view_infrastructure',
