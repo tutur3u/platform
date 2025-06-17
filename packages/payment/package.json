@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./polar/*": "./src/polar/*.ts",
+    "./polar": "./src/polar/index.ts",
+    "./polar/checkout/embed": "./src/polar/checkout/embed.ts",
+    "./polar/next": "./src/polar/next/index.ts",
     "./dodo/*": "./src/dodo/*.ts"
   },
   "dependencies": {
