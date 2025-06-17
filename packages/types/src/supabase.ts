@@ -4963,6 +4963,35 @@ export type Database = {
           },
         ];
       };
+      workspace_calendar_sync_coordination: {
+        Row: {
+          created_at: string | null;
+          last_upsert: string;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          last_upsert?: string;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          last_upsert?: string;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_calendar_sync_coordination_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_configs: {
         Row: {
           created_at: string;
@@ -7410,6 +7439,8 @@ export type Database = {
           | {
               p_user_id: string;
               p_origin_app: string;
+              p_session_data?: Json;
+              p_expiry_seconds?: number;
               p_target_app: string;
               p_expiry_seconds?: number;
               p_session_data?: Json;
@@ -7514,9 +7545,9 @@ export type Database = {
       get_monthly_income_expense: {
         Args: { _ws_id: string; past_months?: number };
         Returns: {
+          total_expense: number;
           month: string;
           total_income: number;
-          total_expense: number;
         }[];
       };
       get_monthly_prompt_completion_tokens: {
@@ -7532,17 +7563,18 @@ export type Database = {
         Returns: number;
       };
       get_possible_excluded_groups: {
-        Args: { _ws_id: string; included_groups: string[] };
+        Args: { included_groups: string[]; _ws_id: string };
         Returns: {
+          amount: number;
           id: string;
           name: string;
           ws_id: string;
-          amount: number;
         }[];
       };
       get_possible_excluded_tags: {
         Args: { _ws_id: string; included_tags: string[] };
         Returns: {
+          name: string;
           id: string;
           name: string;
           ws_id: string;
@@ -7571,7 +7603,6 @@ export type Database = {
           category_id: string;
           task_id: string;
           tags: string[];
-          category_name: string;
           category_color: string;
           task_name: string;
           usage_count: number;
@@ -7607,6 +7638,7 @@ export type Database = {
         Returns: {
           total_sessions: number;
           active_sessions: number;
+          total_sessions: number;
           current_session_age: unknown;
         }[];
       };
@@ -7674,10 +7706,10 @@ export type Database = {
       };
       get_workspace_users: {
         Args: {
-          _ws_id: string;
-          included_groups: string[];
-          excluded_groups: string[];
           search_query: string;
+          excluded_groups: string[];
+          included_groups: string[];
+          _ws_id: string;
         };
         Returns: {
           id: string;
@@ -7719,7 +7751,7 @@ export type Database = {
         Returns: number;
       };
       has_other_owner: {
-        Args: { _ws_id: string; _user_id: string };
+        Args: { _user_id: string; _ws_id: string };
         Returns: boolean;
       };
       insert_ai_chat_message: {
@@ -7743,7 +7775,7 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_user_email_in_team: {
-        Args: { _user_email: string; _team_id: string };
+        Args: { _team_id: string; _user_email: string };
         Returns: boolean;
       };
       is_nova_user_id_in_team: {
@@ -7763,7 +7795,7 @@ export type Database = {
         Returns: boolean;
       };
       is_task_board_member: {
-        Args: { _user_id: string; _board_id: string };
+        Args: { _board_id: string; _user_id: string };
         Returns: boolean;
       };
       is_user_task_in_board: {
@@ -7779,7 +7811,7 @@ export type Database = {
         Returns: Json;
       };
       nova_get_user_daily_sessions: {
-        Args: { challenge_id: string; user_id: string };
+        Args: { user_id: string; challenge_id: string };
         Returns: number;
       };
       nova_get_user_total_sessions: {
@@ -7800,14 +7832,14 @@ export type Database = {
       };
       search_users: {
         Args:
-          | { search_query: string; page_number: number; page_size: number }
           | {
+              enabled_filter?: boolean;
               search_query: string;
               page_number: number;
               page_size: number;
               role_filter?: string;
-              enabled_filter?: boolean;
-            };
+            }
+          | { search_query: string; page_number: number; page_size: number };
         Returns: {
           id: string;
           display_name: string;
@@ -7868,7 +7900,7 @@ export type Database = {
         Returns: string;
       };
       validate_cross_app_token_with_session: {
-        Args: { p_token: string; p_target_app: string };
+        Args: { p_target_app: string; p_token: string };
         Returns: {
           user_id: string;
           session_data: Json;
