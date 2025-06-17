@@ -22,4 +22,14 @@ export const defaultActiveHours: ActiveHours = {
   ],
 };
 
-export const defaultTasks: Task[] = [];
+export const defaultTasks: Task[] = [
+  {
+    id: 'task-1',
+    name: 'Task 1',
+    duration: 1,
+    minDuration: 0.25,
+    maxDuration: 2,
+    category: 'work',
+    events: [],
+  },
+];
