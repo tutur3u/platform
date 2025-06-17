@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Check, Ellipsis, Eye, Loader2, X } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -20,7 +19,6 @@ interface ApprovalRowActionsProps {
 }
 
 export function ApprovalRowActions({ row }: ApprovalRowActionsProps) {
-  const t = useTranslations();
   const approval = row.original;
   const [isLoading, setIsLoading] = useState(false);
 
