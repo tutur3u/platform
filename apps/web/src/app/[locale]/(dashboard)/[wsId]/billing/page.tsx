@@ -13,6 +13,24 @@ const fetchProducts = async () => {
   }
 };
 
+const checkCreator = async (wsId: string) => {
+  const supabase = await createClient();
+
+  // Call the 'check_ws_creator' function with the 'ws_id' argument.
+  // The keys in the second object MUST match the argument names in your function.
+  const { data, error } = await supabase.rpc('check_ws_creator', {
+    ws_id: wsId,
+  });
+
+  if (error) {
+    console.error('Error checking workspace creator status:', error);
+    // As a safe default, deny access if there's an error.
+    return false;
+  }
+
+  // The 'data' returned from the RPC will be the boolean result.
+  return data;
+};
 const fetchSubscription = async (wsId: string) => {
   const sbAdmin = await createClient();
 
@@ -21,6 +39,7 @@ const fetchSubscription = async (wsId: string) => {
     .from('workspace_subscription')
     .select('*')
     .eq('ws_id', wsId)
+    .eq('status', 'active')
     .single();
 
   if (error || !dbSub) {
@@ -62,6 +81,7 @@ export default async function BillingPage({
   const products = await fetchProducts();
   const subscription = await fetchSubscription((await params).wsId);
 
+  console.log(subscription, 'Subscription Data');
   const { wsId } = await params;
 
   const currentPlan = subscription?.product
@@ -157,6 +177,7 @@ export default async function BillingPage({
         currentPlan={currentPlan}
         upgradePlans={upgradePlans}
         wsId={wsId}
+        isCreator={await checkCreator(wsId)}
       />
 
       {/* Payment History (Static) */}

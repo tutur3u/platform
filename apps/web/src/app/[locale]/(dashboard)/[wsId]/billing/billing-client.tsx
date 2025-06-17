@@ -30,12 +30,14 @@ interface BillingClientProps {
   currentPlan: Plan;
   upgradePlans: UpgradePlan[];
   wsId: string;
+  isCreator: boolean;
 }
 
 export function BillingClient({
   currentPlan,
   upgradePlans,
   wsId,
+  isCreator,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
 
@@ -113,6 +115,7 @@ export function BillingClient({
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Button
+                disabled={!isCreator}
                 onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
                 className="flex items-center"
               >

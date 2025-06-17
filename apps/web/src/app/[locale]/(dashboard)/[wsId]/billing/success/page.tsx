@@ -4,10 +4,6 @@ import { format } from 'date-fns';
 import { ArrowLeft, CheckCircle, CreditCard, Download } from 'lucide-react';
 import Link from 'next/link';
 
-/**
- * Fetches the workspace subscription data for receipt information.
- * @param wsId The workspace ID
- */
 const fetchWorkspaceSubscription = async (
   wsId: string
 ): Promise<any | null> => {
@@ -15,7 +11,7 @@ const fetchWorkspaceSubscription = async (
     const supabase = await createClient();
 
     const { data: subscription, error } = await supabase
-      .from('workspace_subscriptions')
+      .from('workspace_subscription')
       .select('*')
       .eq('ws_id', wsId)
       .single();
@@ -58,7 +54,6 @@ export default async function SuccessPage({
         paymentMethod: 'Card',
       }
     : {
-
         planName: 'Subscription Confirmed',
         amount: '--',
         invoiceId: 'N/A',

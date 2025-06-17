@@ -6138,6 +6138,7 @@ export type Database = {
           current_period_start: string | null;
           id: string;
           polar_subscription_id: string;
+          price_id: string | null;
           product_id: string | null;
           status: Database['public']['Enums']['subscription_status'] | null;
           updated_at: string | null;
@@ -6150,6 +6151,7 @@ export type Database = {
           current_period_start?: string | null;
           id?: string;
           polar_subscription_id: string;
+          price_id?: string | null;
           product_id?: string | null;
           status?: Database['public']['Enums']['subscription_status'] | null;
           updated_at?: string | null;
@@ -6162,6 +6164,7 @@ export type Database = {
           current_period_start?: string | null;
           id?: string;
           polar_subscription_id?: string;
+          price_id?: string | null;
           product_id?: string | null;
           status?: Database['public']['Enums']['subscription_status'] | null;
           updated_at?: string | null;
@@ -7369,6 +7372,10 @@ export type Database = {
       calculate_productivity_score: {
         Args: { duration_seconds: number; category_color: string };
         Returns: number;
+      };
+      check_ws_creator: {
+        Args: { ws_id: string };
+        Returns: boolean;
       };
       cleanup_expired_cross_app_tokens: {
         Args: Record<PropertyKey, never>;
