@@ -1,15 +1,16 @@
 'use client';
 
-import type { ExtendedWorkspaceTask, TaskFilters, SessionWithRelations } from '../types';
+import type {
+  ExtendedWorkspaceTask,
+  SessionWithRelations,
+  TaskFilters,
+} from '../types';
 import {
   generateAssigneeInitials,
   getFilteredAndSortedTasks,
   useTaskCounts,
 } from '../utils';
-import type {
-  TimeTrackingCategory,
-  WorkspaceTask,
-} from '@tuturuuu/types/db';
+import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -48,8 +49,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-
 
 interface SessionTemplate {
   title: string;
@@ -132,7 +131,8 @@ export function TimerControls({
     useState<SessionWithRelations | null>(null);
 
   // Enhanced pause/resume state
-  const [pausedSession, setPausedSession] = useState<SessionWithRelations | null>(null);
+  const [pausedSession, setPausedSession] =
+    useState<SessionWithRelations | null>(null);
   const [pausedElapsedTime, setPausedElapsedTime] = useState(0);
   const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
 
@@ -142,17 +142,20 @@ export function TimerControls({
   const PAUSE_TIME_KEY = `pause-time-${wsId}-${currentUserId || 'user'}`;
 
   // Helper functions for localStorage persistence
-  const savePausedSessionToStorage = useCallback((session: SessionWithRelations, elapsed: number, pauseTime: Date) => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(PAUSED_SESSION_KEY, JSON.stringify(session));
-        localStorage.setItem(PAUSED_ELAPSED_KEY, elapsed.toString());
-        localStorage.setItem(PAUSE_TIME_KEY, pauseTime.toISOString());
-      } catch (error) {
-        console.warn('Failed to save paused session to localStorage:', error);
+  const savePausedSessionToStorage = useCallback(
+    (session: SessionWithRelations, elapsed: number, pauseTime: Date) => {
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(PAUSED_SESSION_KEY, JSON.stringify(session));
+          localStorage.setItem(PAUSED_ELAPSED_KEY, elapsed.toString());
+          localStorage.setItem(PAUSE_TIME_KEY, pauseTime.toISOString());
+        } catch (error) {
+          console.warn('Failed to save paused session to localStorage:', error);
+        }
       }
-    }
-  }, [PAUSED_SESSION_KEY, PAUSED_ELAPSED_KEY, PAUSE_TIME_KEY]);
+    },
+    [PAUSED_SESSION_KEY, PAUSED_ELAPSED_KEY, PAUSE_TIME_KEY]
+  );
 
   const loadPausedSessionFromStorage = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -187,7 +190,10 @@ export function TimerControls({
         localStorage.removeItem(PAUSED_ELAPSED_KEY);
         localStorage.removeItem(PAUSE_TIME_KEY);
       } catch (error) {
-        console.warn('Failed to clear paused session from localStorage:', error);
+        console.warn(
+          'Failed to clear paused session from localStorage:',
+          error
+        );
       }
     }
   }, [PAUSED_SESSION_KEY, PAUSED_ELAPSED_KEY, PAUSE_TIME_KEY]);
@@ -196,8 +202,11 @@ export function TimerControls({
   useEffect(() => {
     const pausedData = loadPausedSessionFromStorage();
     if (pausedData) {
-      console.log('Restored paused session from localStorage:', pausedData.session.title);
-      
+      console.log(
+        'Restored paused session from localStorage:',
+        pausedData.session.title
+      );
+
       // Show a toast to let user know their paused session was restored
       toast.success('Paused session restored!', {
         description: `${pausedData.session.title} - ${formatDuration(pausedData.elapsed)} tracked`,
@@ -210,17 +219,18 @@ export function TimerControls({
   useEffect(() => {
     return () => {
       // Only clear if we have a different user or workspace
-      const keys = Object.keys(localStorage).filter(key => 
-        key.startsWith('paused-session-') && 
-        !key.includes(`-${wsId}-${currentUserId}`)
+      const keys = Object.keys(localStorage).filter(
+        (key) =>
+          key.startsWith('paused-session-') &&
+          !key.includes(`-${wsId}-${currentUserId}`)
       );
-      keys.forEach(key => {
+      keys.forEach((key) => {
         const relatedKeys = [
           key,
           key.replace('paused-session-', 'paused-elapsed-'),
-          key.replace('paused-session-', 'pause-time-')
+          key.replace('paused-session-', 'pause-time-'),
         ];
-        relatedKeys.forEach(k => localStorage.removeItem(k));
+        relatedKeys.forEach((k) => localStorage.removeItem(k));
       });
     };
   }, [wsId, currentUserId]);
@@ -557,7 +567,7 @@ export function TimerControls({
 
       const completedSession = response.session;
       setJustCompleted(completedSession);
-      
+
       // Clear all session states
       setCurrentSession(null);
       setPausedSession(null);
@@ -565,7 +575,7 @@ export function TimerControls({
       setElapsedTime(0);
       setPausedElapsedTime(0);
       setPauseStartTime(null);
-      
+
       // Clear from localStorage since session is completed
       clearPausedSessionFromStorage();
 
@@ -608,10 +618,10 @@ export function TimerControls({
       setPausedSession(currentSession);
       setPausedElapsedTime(elapsedTime);
       setPauseStartTime(pauseTime);
-      
+
       // Save to localStorage for persistence across sessions
       savePausedSessionToStorage(currentSession, elapsedTime, pauseTime);
-      
+
       // Clear active session but keep paused state
       setCurrentSession(null);
       setIsRunning(false);
@@ -649,24 +659,25 @@ export function TimerControls({
       setCurrentSession(response.session || pausedSession);
       setElapsedTime(pausedElapsedTime);
       setIsRunning(true);
-      
+
       // Clear paused state
       setPausedSession(null);
       setPausedElapsedTime(0);
       setPauseStartTime(null);
-      
+
       // Clear from localStorage since session is now active
       clearPausedSessionFromStorage();
 
-      const pauseDuration = pauseStartTime 
+      const pauseDuration = pauseStartTime
         ? Math.floor((new Date().getTime() - pauseStartTime.getTime()) / 1000)
         : 0;
 
       onSessionUpdate();
       toast.success('Timer resumed!', {
-        description: pauseDuration > 0 
-          ? `Paused for ${formatDuration(pauseDuration)}`
-          : 'Welcome back to your session',
+        description:
+          pauseDuration > 0
+            ? `Paused for ${formatDuration(pauseDuration)}`
+            : 'Welcome back to your session',
         duration: 3000,
       });
     } catch (error) {
@@ -1145,7 +1156,7 @@ export function TimerControls({
                 {/* Productivity Insights */}
                 {elapsedTime > 600 && (
                   <div className="rounded-lg border border-green-200/60 bg-green-50/30 p-3 dark:border-green-800/60 dark:bg-green-950/10">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="mb-2 flex items-center gap-2">
                       <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400" />
                       <span className="text-sm font-medium text-green-800 dark:text-green-200">
                         Session Insights
@@ -1155,17 +1166,21 @@ export function TimerControls({
                       <div>
                         <span className="font-medium">Duration:</span>
                         <span className="ml-1">
-                          {elapsedTime < 1500 ? 'Warming up' : 
-                           elapsedTime < 3600 ? 'Focused session' : 
-                           'Deep work zone!'}
+                          {elapsedTime < 1500
+                            ? 'Warming up'
+                            : elapsedTime < 3600
+                              ? 'Focused session'
+                              : 'Deep work zone!'}
                         </span>
                       </div>
                       <div>
                         <span className="font-medium">Productivity:</span>
                         <span className="ml-1">
-                          {elapsedTime < 900 ? 'Getting started' :
-                           elapsedTime < 2700 ? 'In the flow' :
-                           'Exceptional focus'}
+                          {elapsedTime < 900
+                            ? 'Getting started'
+                            : elapsedTime < 2700
+                              ? 'In the flow'
+                              : 'Exceptional focus'}
                         </span>
                       </div>
                     </div>
@@ -1195,10 +1210,12 @@ export function TimerControls({
                 </div>
 
                 {/* Quick Actions during session */}
-                <div className="flex gap-2 justify-center text-xs text-muted-foreground">
+                <div className="flex justify-center gap-2 text-xs text-muted-foreground">
                   <span className="rounded bg-muted px-2 py-1">⌘/Ctrl + P</span>
                   <span>for break</span>
-                  <span className="rounded bg-muted px-2 py-1">⌘/Ctrl + Enter</span>
+                  <span className="rounded bg-muted px-2 py-1">
+                    ⌘/Ctrl + Enter
+                  </span>
                   <span>to complete</span>
                 </div>
               </div>
@@ -1223,12 +1240,20 @@ export function TimerControls({
                       Paused at {pauseStartTime?.toLocaleTimeString()}
                       {pauseStartTime && (
                         <span className="ml-2">
-                          • Break: {formatDuration(Math.floor((new Date().getTime() - pauseStartTime.getTime()) / 1000))}
+                          • Break:{' '}
+                          {formatDuration(
+                            Math.floor(
+                              (new Date().getTime() -
+                                pauseStartTime.getTime()) /
+                                1000
+                            )
+                          )}
                         </span>
                       )}
                     </div>
                     <div className="text-xs">
-                      Session was running for {formatDuration(pausedElapsedTime)} before pause
+                      Session was running for{' '}
+                      {formatDuration(pausedElapsedTime)} before pause
                     </div>
                   </div>
                 </div>
@@ -1262,7 +1287,10 @@ export function TimerControls({
                       </div>
                     </div>
                   )}
-                  <Badge variant="outline" className="text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-300 dark:border-amber-800 dark:bg-amber-950/20">
+                  <Badge
+                    variant="outline"
+                    className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300"
+                  >
                     On break
                   </Badge>
                 </div>
@@ -1273,7 +1301,7 @@ export function TimerControls({
                 <Button
                   onClick={resumeTimer}
                   disabled={isLoading}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  className="flex-1 bg-green-600 text-white hover:bg-green-700"
                 >
                   <Play className="mr-2 h-4 w-4" />
                   Resume Session
@@ -1291,7 +1319,7 @@ export function TimerControls({
 
               {/* Quick Break Suggestions */}
               <div className="rounded-lg border border-amber-200/60 bg-amber-50/30 p-4 dark:border-amber-800/60 dark:bg-amber-950/10">
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                <p className="mb-2 text-sm font-medium text-amber-800 dark:text-amber-200">
                   💡 Break suggestions:
                 </p>
                 <div className="flex flex-wrap gap-2 text-xs text-amber-700 dark:text-amber-300">

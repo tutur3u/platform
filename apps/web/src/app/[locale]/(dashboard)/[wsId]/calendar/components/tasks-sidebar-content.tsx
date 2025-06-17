@@ -2,15 +2,12 @@
 
 import Chat from '../../chat/chat';
 import { TaskBoardForm } from '../../tasks/boards/form';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import QuickTaskTimer from './quick-task-timer';
 import { TaskForm } from './task-form';
 import { TaskListForm } from './task-list-form';
 import TimeTracker from './time-tracker';
-import type {
-  AIChat,
-  WorkspaceTaskBoard,
-} from '@tuturuuu/types/db';
-import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import type { AIChat, WorkspaceTaskBoard } from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,
@@ -191,15 +188,18 @@ export default function TasksSidebarContent({
       board.lists?.forEach((list) => {
         if (list.tasks) {
           // Transform Partial<WorkspaceTask> to ExtendedWorkspaceTask
-          const extendedTasks = list.tasks.map((task) => ({
-            ...task,
-            board_name: board.name,
-            list_name: list.name,
-            assignee_name: undefined,
-            assignee_avatar: undefined,
-            is_assigned_to_current_user: undefined,
-            assignees: undefined,
-          } as ExtendedWorkspaceTask));
+          const extendedTasks = list.tasks.map(
+            (task) =>
+              ({
+                ...task,
+                board_name: board.name,
+                list_name: list.name,
+                assignee_name: undefined,
+                assignee_avatar: undefined,
+                is_assigned_to_current_user: undefined,
+                assignees: undefined,
+              }) as ExtendedWorkspaceTask
+          );
           tasks.push(...extendedTasks);
         }
       });
