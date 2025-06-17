@@ -23,15 +23,21 @@ import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
   AlertCircle,
+  BarChart2,
+  Brain,
   Calendar,
   CheckCircle,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
   Clock,
   Copy,
   History,
+  LayoutDashboard,
   MapPin,
   Pause,
+  Play,
+  PlusCircle,
   RefreshCw,
   RotateCcw,
   Settings,
@@ -54,7 +60,13 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface TimeTrackerContentProps {
   wsId: string;
@@ -178,6 +190,12 @@ export default function TimeTrackerContent({
     initialData.tasks || []
   );
 
+  // Quick actions state
+  const [showContinueConfirm, setShowContinueConfirm] = useState(false);
+  const [showTaskSelector, setShowTaskSelector] = useState(false);
+  const [availableTasks, setAvailableTasks] = useState<ExtendedWorkspaceTask[]>([]);
+  const [nextTaskPreview, setNextTaskPreview] = useState<ExtendedWorkspaceTask | null>(null);
+
   // Enhanced loading and error states
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -194,6 +212,111 @@ export default function TimeTrackerContent({
 
   // Whether we're viewing another user's data
   const isViewingOtherUser = selectedUserId !== null;
+
+  // Get user timezone
+  const userTimezone = dayjs.tz.guess();
+
+  // Calculate focus score for sessions
+  const calculateFocusScore = useCallback((session: SessionWithRelations): number => {
+    if (!session.duration_seconds) return 0;
+    
+    // Base score from duration (longer sessions = higher focus)
+    const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
+    
+    // Bonus for consistency (sessions without interruptions)
+    const consistencyBonus = session.description?.includes('resumed') ? 0 : 20;
+    
+    // Time of day bonus (peak hours get bonus)
+    const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+    const peakHoursBonus = (sessionHour >= 9 && sessionHour <= 11) || (sessionHour >= 14 && sessionHour <= 16) ? 20 : 0;
+    
+    // Category bonus (work categories get slight bonus)
+    const categoryBonus = session.category?.name?.toLowerCase().includes('work') ? 10 : 0;
+    
+    // Task completion bonus
+    const taskBonus = session.task_id ? 10 : 0;
+    
+    return Math.min(durationScore + consistencyBonus + peakHoursBonus + categoryBonus + taskBonus, 100);
+  }, [userTimezone]);
+
+  // Calculate productivity metrics
+  const productivityMetrics = useMemo(() => {
+    if (!recentSessions.length) {
+      return {
+        avgFocusScore: 0,
+        todaySessionCount: 0
+      };
+    }
+
+    const today = dayjs().tz(userTimezone);
+    const todaySessions = recentSessions.filter(session => {
+      const sessionDate = dayjs.utc(session.start_time).tz(userTimezone);
+      return sessionDate.isSame(today, 'day');
+    });
+
+    const focusScores = recentSessions.slice(0, 10).map(session => calculateFocusScore(session));
+    const avgFocusScore = focusScores.length > 0 
+      ? Math.round(focusScores.reduce((sum, score) => sum + score, 0) / focusScores.length)
+      : 0;
+
+    return {
+      avgFocusScore,
+      todaySessionCount: todaySessions.length
+    };
+  }, [recentSessions, calculateFocusScore, userTimezone]);
+
+  // Function to fetch next tasks with smart priority logic
+  const fetchNextTasks = useCallback(async () => {
+    try {
+      const response = await apiCall(`/api/v1/workspaces/${wsId}/tasks?limit=100`);
+      let prioritizedTasks = [];
+      
+      // 1. First priority: Urgent tasks (priority 1) assigned to current user
+      const myUrgentTasks = response.tasks.filter((task: ExtendedWorkspaceTask) => {
+        const isUrgent = task.priority === 1; // Priority 1 = Urgent
+        const isNotCompleted = !task.completed;
+        const isAssignedToMe = task.is_assigned_to_current_user;
+        return isUrgent && isNotCompleted && isAssignedToMe;
+      });
+      
+      // 2. Second priority: Urgent unassigned tasks (user can assign themselves)
+      const urgentUnassigned = response.tasks.filter((task: ExtendedWorkspaceTask) => {
+        const isUrgent = task.priority === 1; // Priority 1 = Urgent
+        const isNotCompleted = !task.completed;
+        const isUnassigned = !task.assignees || task.assignees.length === 0;
+        return isUrgent && isNotCompleted && isUnassigned;
+      });
+      
+      // 3. Third priority: Other tasks assigned to current user (High → Medium → Low)
+      const myOtherTasks = response.tasks.filter((task: ExtendedWorkspaceTask) => {
+        const isNotUrgent = !task.priority || task.priority > 1; // Priority 2,3,4 = High, Medium, Low
+        const isNotCompleted = !task.completed;
+        const isAssignedToMe = task.is_assigned_to_current_user;
+        return isNotUrgent && isNotCompleted && isAssignedToMe;
+      });
+      
+      // Combine and sort by priority within each group (lower number = higher priority)
+      prioritizedTasks = [
+        ...myUrgentTasks.sort((a, b) => (a.priority || 99) - (b.priority || 99)),
+        ...urgentUnassigned.sort((a, b) => (a.priority || 99) - (b.priority || 99)),
+        ...myOtherTasks.sort((a, b) => (a.priority || 99) - (b.priority || 99))
+      ];
+      
+      setAvailableTasks(prioritizedTasks);
+      setNextTaskPreview(prioritizedTasks[0] || null);
+    } catch (error) {
+      console.error('Error fetching next tasks:', error);
+      setAvailableTasks([]);
+      setNextTaskPreview(null);
+    }
+  }, [wsId]);
+
+  // Fetch next task preview on mount
+  useEffect(() => {
+    if (!isViewingOtherUser) {
+      fetchNextTasks();
+    }
+  }, [fetchNextTasks, isViewingOtherUser]);
 
   // Memoized formatters
   const formatTime = useCallback((seconds: number): string => {
@@ -288,7 +411,7 @@ export default function TimeTrackerContent({
             name: 'running',
             call: () => !isViewingOtherUser
               ? apiCall(`/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`)
-              : Promise.resolve({ session: null }),
+            : Promise.resolve({ session: null }),
             fallback: { session: null }
           },
           {
@@ -687,449 +810,300 @@ export default function TimeTrackerContent({
           </div>
         </div>
 
-        {/* Quick Actions Carousel */}
+        {/* Enhanced Quick Actions - Single Row */}
         {!isViewingOtherUser && (
-          <div className="space-y-4">
-            {/* Carousel Navigation */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setCarouselView((prev) => (prev === 0 ? 2 : prev - 1));
-                    setLastUserInteraction(Date.now());
-                  }}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-
-                <div className="flex items-center gap-1">
-                  {[0, 1, 2].map((index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setCarouselView(index);
-                        setLastUserInteraction(Date.now());
-                      }}
-                      className={cn(
-                        'h-2 w-2 rounded-full transition-all duration-200',
-                        carouselView === index
-                          ? 'w-6 bg-primary'
-                          : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                      )}
-                    />
-                  ))}
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setCarouselView((prev) => (prev === 2 ? 0 : prev + 1));
-                    setLastUserInteraction(Date.now());
-                  }}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
+              <h3 className="text-sm font-medium text-foreground">⚡ Quick Actions</h3>
               <div className="text-xs text-muted-foreground">
-                {carouselView === 0 && 'Smart Quick Actions'}
-                {carouselView === 1 && 'Context-Aware Dashboard'}
-                {carouselView === 2 && 'Productivity Command Center'}
+                {(() => {
+                  const hour = new Date().getHours();
+                  const isPeakTime = (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
+                  return isPeakTime ? '🧠 Peak focus time' : '📈 Building momentum';
+                })()}
               </div>
             </div>
 
-            {/* Carousel Content */}
-            <div className="relative overflow-hidden">
-              <div
-                className="flex transition-transform duration-300 ease-in-out"
-                style={{ transform: `translateX(-${carouselView * 100}%)` }}
-              >
-                {/* View 0: Smart Quick Actions */}
-                <div className="w-full flex-shrink-0">
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+            {/* Action Grid with proper spacing to prevent cutoff */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4 p-1">
                     {/* Continue Last Session */}
                     <button
-                      onClick={async () => {
+                onClick={() => {
                         if (!recentSessions[0]) {
                           toast.info('No recent session to continue');
                           return;
                         }
-
-                        try {
-                          const response = await apiCall(
-                            `/api/v1/workspaces/${wsId}/time-tracking/sessions/${recentSessions[0].id}`,
-                            {
-                              method: 'PATCH',
-                              body: JSON.stringify({ action: 'resume' }),
-                            }
-                          );
-
-                          setCurrentSession(response.session);
-                          setIsRunning(true);
-                          setElapsedTime(0);
-
-                          // Update data
-                          await fetchData();
-
-                          toast.success(
-                            `Resumed: "${recentSessions[0].title}"`
-                          );
-                        } catch (error) {
-                          console.error('Error resuming session:', error);
-                          toast.error('Failed to resume session');
+                        if (isRunning) {
+                          toast.info('Timer is already running');
+                          return;
                         }
+                  setShowContinueConfirm(true);
                       }}
-                      disabled={!recentSessions[0]}
+                      disabled={!recentSessions[0] || isRunning}
                       className={cn(
-                        'group rounded-lg border p-3 text-left transition-all duration-300',
-                        recentSessions[0]
-                          ? 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:scale-105 hover:shadow-md dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
+                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                  'hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98]',
+                        recentSessions[0] && !isRunning
+                    ? 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:-translate-y-1 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
                           : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                       )}
                     >
                       <div className="flex items-start gap-2">
-                        <div
-                          className={cn(
-                            'flex-shrink-0 rounded-full p-1.5',
-                            recentSessions[0]
-                              ? 'bg-blue-500/20'
-                              : 'bg-muted-foreground/20'
-                          )}
-                        >
-                          <RotateCcw
-                            className={cn(
-                              'h-3 w-3',
-                              recentSessions[0]
-                                ? 'text-blue-600 dark:text-blue-400'
-                                : 'text-muted-foreground'
-                            )}
-                          />
+                  <div className={cn(
+                    'flex-shrink-0 rounded-full p-1.5 transition-colors',
+                    recentSessions[0] && !isRunning ? 'bg-blue-500/20 group-hover:bg-blue-500/30' : 'bg-muted-foreground/20'
+                  )}>
+                    <RotateCcw className={cn(
+                      'h-3 w-3 transition-transform group-hover:rotate-12',
+                      recentSessions[0] && !isRunning ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'
+                    )} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p
-                            className={cn(
+                    <p className={cn(
                               'text-xs font-medium',
-                              recentSessions[0]
-                                ? 'text-blue-700 dark:text-blue-300'
-                                : 'text-muted-foreground'
-                            )}
-                          >
+                      recentSessions[0] && !isRunning ? 'text-blue-700 dark:text-blue-300' : 'text-muted-foreground'
+                    )}>
                             Continue Last
                           </p>
                           {recentSessions[0] ? (
                             <>
-                              <p
-                                className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100"
-                                title={recentSessions[0].title}
-                              >
+                        <p className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100" title={recentSessions[0].title}>
                                 {recentSessions[0].title}
                               </p>
                               {recentSessions[0].category && (
                                 <div className="mt-1 flex items-center gap-1">
-                                  <div
-                                    className={cn(
+                            <div className={cn(
                                       'h-2 w-2 rounded-full',
                                       recentSessions[0].category.color
                                         ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
                                         : 'bg-blue-500/70'
-                                    )}
-                                  />
+                            )} />
                                   <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
                                     {recentSessions[0].category.name}
                                   </span>
                                 </div>
                               )}
+                        {/* Focus Score Badge */}
+                        {recentSessions[0] && (
+                          <div className="mt-1 flex items-center gap-1">
+                            <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-800">
+                              <div 
+                                className="h-1 rounded-full bg-blue-500 transition-all"
+                                style={{ width: `${Math.round(calculateFocusScore(recentSessions[0]))}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                              Focus: {Math.round(calculateFocusScore(recentSessions[0]))}%
+                            </span>
+                          </div>
+                        )}
                             </>
                           ) : (
-                            <p className="text-sm font-bold text-muted-foreground">
-                              No recent session
-                            </p>
+                      <p className="text-sm font-bold text-muted-foreground">No recent session</p>
                           )}
                         </div>
-                        <span className="flex-shrink-0 text-sm opacity-70">
-                          {recentSessions[0] ? '🔄' : '💤'}
-                        </span>
                       </div>
+                {recentSessions[0] && (
+                  <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="text-lg">🔄</span>
+                        </div>
+                )}
                     </button>
 
-                    {/* Start Most Used Task */}
-                    <button
-                      onClick={() => {
-                        // TODO: Implement start most used task
-                        toast.info('Start most used task - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-green-500/20 p-1.5">
-                          <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-green-700 dark:text-green-300">
-                            Most Used
-                          </p>
-                          <p className="text-sm font-bold text-green-900 dark:text-green-100">
-                            Quick Start
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">⚡</span>
-                      </div>
-                    </button>
+                            {/* Next Task */}
+              <button
+                onClick={async () => {
+                  await fetchNextTasks();
+                  
+                  if (availableTasks.length === 0) {
+                    // No tasks available - show overlay to create tasks or view boards
+                    setShowTaskSelector(true);
+                    return;
+                  }
+                  
+                  if (availableTasks.length === 1) {
+                    // Single task - auto-start
+                    const task = availableTasks[0];
+                    const isUnassigned = !task.assignees || task.assignees.length === 0;
+                    
+                    try {
+                      // If task is unassigned, assign to current user first
+                      if (isUnassigned) {
+                        const { createClient } = await import('@tuturuuu/supabase/next/client');
+                        const supabase = createClient();
+                        
+                        const { error: assignError } = await supabase
+                          .from('task_assignees')
+                          .insert({
+                            task_id: task.id,
+                            user_id: currentUserId,
+                          });
 
-                    {/* Quick 25min Focus */}
-                    <button
-                      onClick={() => {
-                        // TODO: Implement quick focus timer
-                        toast.info('Quick 25min focus - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-purple-500/20 p-1.5">
-                          <Clock className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                            Quick Focus
-                          </p>
-                          <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
-                            25 minutes
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">🎯</span>
-                      </div>
-                    </button>
+                        if (assignError) {
+                          console.error('Task assignment error:', assignError);
+                          throw new Error(assignError.message || 'Failed to assign task');
+                        }
+                        
+                        toast.success(`Assigned task "${task.name}" to yourself`);
+                      }
+                      
+                      // Start session
+                      const response = await apiCall(
+                        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+                        {
+                          method: 'POST',
+                          body: JSON.stringify({
+                            title: task.name,
+                            description: task.description || `Working on: ${task.name}`,
+                            task_id: task.id,
+                            category_id: categories.find(c => c.name.toLowerCase().includes('work'))?.id || null
+                          }),
+                        }
+                      );
 
-                    {/* From Template */}
-                    <button
-                      onClick={() => {
-                        // TODO: Implement template selection
-                        toast.info('Start from template - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-orange-200/60 bg-gradient-to-br from-orange-50 to-orange-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-orange-800/60 dark:from-orange-950/30 dark:to-orange-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-orange-500/20 p-1.5">
-                          <Copy className="h-3 w-3 text-orange-600 dark:text-orange-400" />
+                      setCurrentSession(response.session);
+                      setIsRunning(true);
+                      setElapsedTime(0);
+                      await fetchData();
+
+                      toast.success(`Started: ${task.name}`);
+                    } catch (error) {
+                      console.error('Error starting task:', error);
+                      toast.error('Failed to start task session');
+                    }
+                  } else {
+                    // Multiple tasks - show selector
+                    setShowTaskSelector(true);
+                  }
+                }}
+                disabled={isRunning}
+                className={cn(
+                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                  'hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98]',
+                  !isRunning
+                    ? 'border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:-translate-y-1 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20'
+                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                )}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 rounded-full bg-purple-500/20 p-1.5 transition-colors group-hover:bg-purple-500/30">
+                    <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-orange-700 dark:text-orange-300">
-                            Template
-                          </p>
-                          <p className="text-sm font-bold text-orange-900 dark:text-orange-100">
-                            Quick Start
-                          </p>
+                                          <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-purple-700 dark:text-purple-300">Next Task</p>
+                    {nextTaskPreview ? (
+                      <>
+                        <p className="truncate text-sm font-bold text-purple-900 dark:text-purple-100">
+                          {nextTaskPreview.name}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <span className={cn(
+                            'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium',
+                            nextTaskPreview.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
+                            nextTaskPreview.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' :
+                            nextTaskPreview.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                            nextTaskPreview.priority === 4 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' :
+                            'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
+                          )}>
+                            {nextTaskPreview.priority === 1 ? 'Urgent' :
+                             nextTaskPreview.priority === 2 ? 'High' :
+                             nextTaskPreview.priority === 3 ? 'Medium' :
+                             nextTaskPreview.priority === 4 ? 'Low' : 'No Priority'}
+                          </span>
+                          {nextTaskPreview.is_assigned_to_current_user ? (
+                            <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                              • Assigned to you
+                            </span>
+                          ) : (
+                            <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                              • Can assign to yourself
+                            </span>
+                          )}
                         </div>
-                        <span className="text-sm opacity-70">📋</span>
-                      </div>
-                    </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-bold text-purple-900 dark:text-purple-100">No tasks available</p>
+                        <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                          Create or assign tasks
+                        </p>
+                      </>
+                    )}
                   </div>
-                </div>
-
-                {/* View 1: Context-Aware Dashboard */}
-                <div className="w-full flex-shrink-0">
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
-                    {/* Today's Calendar */}
-                    <button
-                      onClick={() => {
-                        toast.info(
-                          "Today's calendar integration - Coming soon!"
-                        );
-                      }}
-                      className="group rounded-lg border border-indigo-200/60 bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-indigo-800/60 dark:from-indigo-950/30 dark:to-indigo-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-indigo-500/20 p-1.5">
-                          <Calendar className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                            Calendar
-                          </p>
-                          <p className="text-sm font-bold text-indigo-900 dark:text-indigo-100">
-                            Today's Events
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">📅</span>
                       </div>
-                    </button>
-
-                    {/* Suggested Tasks */}
-                    <button
-                      onClick={() => {
-                        toast.info('AI task suggestions - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-emerald-800/60 dark:from-emerald-950/30 dark:to-emerald-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-emerald-500/20 p-1.5">
-                          <Sparkles className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                            Suggested
-                          </p>
-                          <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
-                            Smart Tasks
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">✨</span>
-                      </div>
-                    </button>
-
-                    {/* Goal Progress */}
-                    <button
-                      onClick={() => {
-                        setActiveTab('goals');
-                      }}
-                      className="group rounded-lg border border-rose-200/60 bg-gradient-to-br from-rose-50 to-rose-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-rose-800/60 dark:from-rose-950/30 dark:to-rose-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-rose-500/20 p-1.5">
-                          <Target className="h-3 w-3 text-rose-600 dark:text-rose-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-rose-700 dark:text-rose-300">
-                            Goals
-                          </p>
-                          <p className="text-sm font-bold text-rose-900 dark:text-rose-100">
-                            View Progress
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">🎯</span>
-                      </div>
-                    </button>
-
-                    {/* Quick Actions */}
-                    <button
-                      onClick={() => {
-                        // Scroll to timer controls
-                        document
-                          .querySelector('[data-timer-controls]')
-                          ?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="group rounded-lg border border-cyan-200/60 bg-gradient-to-br from-cyan-50 to-cyan-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-cyan-800/60 dark:from-cyan-950/30 dark:to-cyan-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-cyan-500/20 p-1.5">
-                          <Zap className="h-3 w-3 text-cyan-600 dark:text-cyan-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-cyan-700 dark:text-cyan-300">
-                            Quick
-                          </p>
-                          <p className="text-sm font-bold text-cyan-900 dark:text-cyan-100">
-                            Start Timer
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">⚡</span>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* View 2: Productivity Command Center */}
-                <div className="w-full flex-shrink-0">
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
-                    {/* Active Tasks */}
-                    <button
-                      onClick={() => {
-                        toast.info('Active tasks view - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-violet-200/60 bg-gradient-to-br from-violet-50 to-violet-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-violet-800/60 dark:from-violet-950/30 dark:to-violet-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-violet-500/20 p-1.5">
-                          <CheckCircle className="h-3 w-3 text-violet-600 dark:text-violet-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-violet-700 dark:text-violet-300">
-                            Active
-                          </p>
-                          <p className="text-sm font-bold text-violet-900 dark:text-violet-100">
-                            {tasks.length} Tasks
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">📋</span>
-                      </div>
-                    </button>
-
-                    {/* Focus Score */}
-                    <button
-                      onClick={() => {
-                        toast.info('Focus score analytics - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-amber-500/20 p-1.5">
-                          <TrendingUp className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                            Focus
-                          </p>
-                          <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-                            Score: 85%
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">🧠</span>
+                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-lg">🎯</span>
                       </div>
                     </button>
 
                     {/* Break Timer */}
                     <button
                       onClick={() => {
-                        toast.info('Break timer - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-teal-200/60 bg-gradient-to-br from-teal-50 to-teal-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-teal-800/60 dark:from-teal-950/30 dark:to-teal-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-teal-500/20 p-1.5">
-                          <Pause className="h-3 w-3 text-teal-600 dark:text-teal-400" />
+                  // Scroll to timer controls and pre-fill with break session
+                  document.querySelector('[data-timer-controls]')?.scrollIntoView({ behavior: 'smooth' });
+                  
+                  setTimeout(() => {
+                    const titleInput = document.querySelector('[data-title-input]') as HTMLInputElement;
+                    if (titleInput) {
+                      titleInput.value = 'Break Time';
+                      titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+                      titleInput.focus();
+                    }
+                  }, 300);
+                  
+                  toast.success('Break session ready! Take 5-15 minutes to recharge.');
+                }}
+                disabled={isRunning}
+                className={cn(
+                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                  'hover:shadow-lg hover:shadow-green-500/20 active:scale-[0.98]',
+                  !isRunning
+                    ? 'border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 hover:-translate-y-1 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20'
+                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                )}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 rounded-full bg-green-500/20 p-1.5 transition-colors group-hover:bg-green-500/30">
+                    <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-teal-700 dark:text-teal-300">
-                            Break
-                          </p>
-                          <p className="text-sm font-bold text-teal-900 dark:text-teal-100">
-                            Take 5min
+                    <p className="text-xs font-medium text-green-700 dark:text-green-300">Break Timer</p>
+                    <p className="text-sm font-bold text-green-900 dark:text-green-100">Take 5 min</p>
+                    <p className="text-xs text-green-600/80 dark:text-green-400/80">
+                      Recharge session
                           </p>
                         </div>
-                        <span className="text-sm opacity-70">☕</span>
+                </div>
+                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-lg">☕</span>
                       </div>
                     </button>
 
-                    {/* Session History */}
+              {/* Analytics Dashboard */}
                     <button
                       onClick={() => {
                         setActiveTab('history');
                       }}
-                      className="group rounded-lg border border-slate-200/60 bg-gradient-to-br from-slate-50 to-slate-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-slate-800/60 dark:from-slate-950/30 dark:to-slate-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-slate-500/20 p-1.5">
-                          <History className="h-3 w-3 text-slate-600 dark:text-slate-400" />
+                className="group relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/20 active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
+                    <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                            History
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Analytics</p>
+                    <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                      Focus: {productivityMetrics.avgFocusScore}%
                           </p>
-                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            View All
+                    <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
+                      {productivityMetrics.todaySessionCount} sessions today
                           </p>
                         </div>
-                        <span className="text-sm opacity-70">📊</span>
+                </div>
+                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-lg">📊</span>
                       </div>
                     </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -1381,18 +1355,18 @@ export default function TimeTrackerContent({
                     Analytics
                   </button>
                   {!isViewingOtherUser && (
-                    <button
-                      onClick={() => setSidebarView('tasks')}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                        sidebarView === 'tasks'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <CheckCircle className="h-3 w-3" />
-                      Tasks
-                    </button>
+                  <button
+                    onClick={() => setSidebarView('tasks')}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      sidebarView === 'tasks'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <CheckCircle className="h-3 w-3" />
+                    Tasks
+                  </button>
                   )}
                   <button
                     onClick={() => setSidebarView('reports')}
@@ -2163,6 +2137,304 @@ export default function TimeTrackerContent({
           </div>
         </div>
       </div>
+
+      {/* Continue Last Session Confirmation Dialog */}
+      {showContinueConfirm && recentSessions[0] && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-xl border bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
+                <Play className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+    </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                  Continue Last Session?
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Resume your previous work session
+                </p>
+              </div>
+            </div>
+            
+            <div className="mb-4 rounded-lg border p-3 dark:border-gray-700">
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                {recentSessions[0].title}
+              </p>
+              {recentSessions[0].description && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {recentSessions[0].description}
+                </p>
+              )}
+              {recentSessions[0].category && (
+                <div className="mt-2 flex items-center gap-2">
+                  <div className={cn(
+                    'h-2 w-2 rounded-full',
+                    recentSessions[0].category.color
+                      ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
+                      : 'bg-blue-500/70'
+                  )} />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    {recentSessions[0].category.name}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowContinueConfirm(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    const response = await apiCall(
+                      `/api/v1/workspaces/${wsId}/time-tracking/sessions/${recentSessions[0].id}`,
+                      {
+                        method: 'PATCH',
+                        body: JSON.stringify({ action: 'resume' }),
+                      }
+                    );
+
+                    setCurrentSession(response.session);
+                    setIsRunning(true);
+                    setElapsedTime(0);
+                    await fetchData();
+
+                    toast.success(`Resumed: "${recentSessions[0].title}"`);
+                    setShowContinueConfirm(false);
+                  } catch (error) {
+                    console.error('Error resuming session:', error);
+                    toast.error('Failed to resume session');
+                  }
+                }}
+                className="flex-1"
+              >
+                Continue Session
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Selector Dialog */}
+      {showTaskSelector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-2xl rounded-xl border bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30">
+                <CheckSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                  Choose Your Next Task
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Tasks prioritized: Your urgent tasks → Urgent unassigned → Your other tasks
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-4 max-h-96 space-y-2 overflow-y-auto">
+              {availableTasks.length === 0 ? (
+                // No tasks available - show creation options
+                <div className="space-y-4">
+                  <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
+                    <CheckSquare className="mx-auto mb-3 h-8 w-8 text-gray-400" />
+                    <h4 className="mb-2 font-medium text-gray-900 dark:text-gray-100">
+                      No Tasks Available
+                    </h4>
+                    <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                      You don't have any assigned tasks. Create a new task or check available boards.
+                    </p>
+                    
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                      <Button
+                        onClick={() => {
+                          // Open command palette to create task
+                          setShowTaskSelector(false);
+                          // Simulate Ctrl+K to open command palette
+                          const event = new KeyboardEvent('keydown', {
+                            key: 'k',
+                            ctrlKey: true,
+                            metaKey: true,
+                          });
+                          document.dispatchEvent(event);
+                        }}
+                        className="gap-2"
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        Create Task
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowTaskSelector(false);
+                          window.location.href = `/${wsId}/tasks/boards`;
+                        }}
+                        className="gap-2"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        View Boards
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                availableTasks.map((task) => {
+                  const getPriorityBadge = (priority: number | null | undefined) => {
+                    switch (priority) {
+                      case 1:
+                        return { text: 'Urgent', color: 'bg-red-500' };
+                      case 2:
+                        return { text: 'High', color: 'bg-orange-500' };
+                      case 3:
+                        return { text: 'Medium', color: 'bg-yellow-500' };
+                      case 4:
+                        return { text: 'Low', color: 'bg-green-500' };
+                      default:
+                        return { text: 'No Priority', color: 'bg-gray-500' };
+                    }
+                  };
+
+                  const priorityBadge = getPriorityBadge(task.priority);
+                  const isUnassigned = !task.assignees || task.assignees.length === 0;
+
+                return (
+                  <button
+                    key={task.id}
+                    onClick={async () => {
+                      try {
+                        // If task is unassigned, assign to current user first
+                        if (isUnassigned) {
+                          const { createClient } = await import('@tuturuuu/supabase/next/client');
+                          const supabase = createClient();
+                          
+                          const { error: assignError } = await supabase
+                            .from('task_assignees')
+                            .insert({
+                              task_id: task.id,
+                              user_id: currentUserId,
+                            });
+
+                          if (assignError) {
+                            console.error('Task assignment error:', assignError);
+                            throw new Error(assignError.message || 'Failed to assign task');
+                          }
+                          
+                          toast.success(`Assigned "${task.name}" to yourself`);
+                        }
+
+                        // Start session
+                        const response = await apiCall(
+                          `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+                          {
+                            method: 'POST',
+                            body: JSON.stringify({
+                              title: task.name,
+                              description: task.description || `Working on: ${task.name}`,
+                              task_id: task.id,
+                              category_id: categories.find(c => c.name.toLowerCase().includes('work'))?.id || null
+                            }),
+                          }
+                        );
+
+                        setCurrentSession(response.session);
+                        setIsRunning(true);
+                        setElapsedTime(0);
+                        await fetchData();
+
+                        toast.success(`Started: ${task.name}`);
+                        setShowTaskSelector(false);
+                      } catch (error) {
+                        console.error('Error starting task session:', error);
+                        toast.error('Failed to start task session');
+                      }
+                    }}
+                    className="group flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all hover:border-purple-300 hover:bg-purple-50 dark:border-gray-700 dark:hover:border-purple-600 dark:hover:bg-purple-900/20"
+                  >
+                    <div className={cn(
+                      'mt-0.5 h-2 w-2 rounded-full',
+                      priorityBadge.color
+                    )} />
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                          {task.name}
+                        </h4>
+                        <span className={cn(
+                          'rounded-full px-2 py-0.5 text-xs font-medium text-white',
+                          priorityBadge.color
+                        )}>
+                          {priorityBadge.text}
+                        </span>
+                        {isUnassigned && (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                            Will assign to you
+                          </span>
+                        )}
+                      </div>
+                      {task.description && (
+                        <p className="mb-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
+                          {task.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        {task.board_name && task.list_name && (
+                          <>
+                            <span>{task.board_name}</span>
+                            <span>•</span>
+                            <span>{task.list_name}</span>
+                            <span>•</span>
+                          </>
+                        )}
+                        <span className={cn(
+                          isUnassigned ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'
+                        )}>
+                          {isUnassigned ? 'Unassigned' : 'Assigned to you'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="ml-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Play className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                  </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={() => setShowTaskSelector(false)}
+              >
+                Cancel
+              </Button>
+              {availableTasks.length > 0 && (
+                <div className="flex items-center gap-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {availableTasks.length} task{availableTasks.length !== 1 ? 's' : ''} prioritized
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setShowTaskSelector(false);
+                      window.location.href = `/${wsId}/tasks/boards`;
+                    }}
+                  >
+                    View All Tasks
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

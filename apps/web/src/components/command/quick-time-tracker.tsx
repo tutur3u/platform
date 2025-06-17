@@ -10,6 +10,7 @@ import { CheckCircle, ExternalLink, Play, Square, Timer } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { cn } from '@tuturuuu/utils/format';
 
 interface QuickTimeTrackerProps {
   wsId: string;
@@ -349,24 +350,101 @@ export function QuickTimeTracker({
                 )}
               </div>
 
-              {/* Category and Task Info */}
-              <div className="flex flex-wrap gap-2">
-                {runningSession.category && (
-                  <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/10 px-2 py-1">
-                    <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
-                    <span className="text-xs font-medium text-dynamic-blue">
-                      {runningSession.category.name}
+              {/* Enhanced Analytics Display */}
+              <div className="space-y-2">
+                {/* Category and Task Info */}
+                <div className="flex flex-wrap gap-2">
+                  {runningSession.category && (
+                    <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/10 px-2 py-1">
+                      <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
+                      <span className="text-xs font-medium text-dynamic-blue">
+                        {runningSession.category.name}
+                      </span>
+                    </div>
+                  )}
+                  {runningSession.task && (
+                    <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-dynamic-green/10 px-2 py-1">
+                      <CheckCircle className="h-3 w-3 text-dynamic-green" />
+                      <span className="max-w-[100px] truncate text-xs font-medium text-dynamic-green">
+                        {runningSession.task.name}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Focus Score */}
+                <div className="rounded-md bg-muted/30 p-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Live Focus Score</span>
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "h-1.5 w-16 rounded-full",
+                        elapsedTime >= 7200 ? "bg-green-500" :
+                        elapsedTime >= 3600 ? "bg-blue-500" :
+                        elapsedTime >= 1800 ? "bg-yellow-500" : "bg-gray-500"
+                      )}>
+                        <div 
+                          className="h-1.5 rounded-full bg-current opacity-80 transition-all duration-1000"
+                          style={{ 
+                            width: `${Math.min((elapsedTime / 7200) * 100, 100)}%` 
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold">
+                        {(() => {
+                          // Real-time focus score calculation
+                          const durationScore = Math.min(elapsedTime / 7200, 1) * 40;
+                          const consistencyBonus = 20; // Assume consistent for live session
+                          const timeBonus = (() => {
+                            const hour = new Date().getHours();
+                            return (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16) ? 20 : 0;
+                          })();
+                          const categoryBonus = runningSession.category?.name?.toLowerCase().includes('work') ? 10 : 0;
+                          const taskBonus = runningSession.task_id ? 10 : 0;
+                          return Math.min(Math.round(durationScore + consistencyBonus + timeBonus + categoryBonus + taskBonus), 100);
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Productivity Tips */}
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {elapsedTime >= 7200 ? (
+                      <span className="text-green-600">🧠 Deep work mode! Excellent focus.</span>
+                    ) : elapsedTime >= 3600 ? (
+                      <span className="text-blue-600">🎯 Great focus! Consider a break soon.</span>
+                    ) : elapsedTime >= 1800 ? (
+                      <span className="text-yellow-600">📈 Building momentum! Keep going.</span>
+                    ) : elapsedTime >= 900 ? (
+                      <span className="text-gray-600">⏰ Good start! Focus is building.</span>
+                    ) : (
+                      <span className="text-gray-500">🚀 Just started! Focus will improve.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Session Type Indicator */}
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">Session Type:</span>
+                  <div className={cn(
+                    "flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium",
+                    elapsedTime >= 3600 ? "text-green-600 bg-green-100" :
+                    elapsedTime >= 1800 ? "text-blue-600 bg-blue-100" :
+                    elapsedTime >= 900 ? "text-yellow-600 bg-yellow-100" :
+                    "text-gray-600 bg-gray-100"
+                  )}>
+                    <span>
+                      {elapsedTime >= 3600 ? '🧠' :
+                       elapsedTime >= 1800 ? '🎯' :
+                       elapsedTime >= 900 ? '📋' : '⚡'}
+                    </span>
+                    <span>
+                      {elapsedTime >= 3600 ? 'Deep Work' :
+                       elapsedTime >= 1800 ? 'Focused' :
+                       elapsedTime >= 900 ? 'Standard' : 'Quick Task'}
                     </span>
                   </div>
-                )}
-                {runningSession.task && (
-                  <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-dynamic-green/10 px-2 py-1">
-                    <CheckCircle className="h-3 w-3 text-dynamic-green" />
-                    <span className="max-w-[100px] truncate text-xs font-medium text-dynamic-green">
-                      {runningSession.task.name}
-                    </span>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
 

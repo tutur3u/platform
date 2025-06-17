@@ -1266,57 +1266,57 @@ export function SessionHistory({
                       
                       {/* Basic Filters */}
                       <div className="grid grid-cols-1 gap-3">
-                        <div>
+                      <div>
                           <Label className="text-sm font-medium flex items-center gap-2">
                             <Tag className="h-3 w-3" />
                             Category
                           </Label>
-                          <Select
-                            value={filterCategoryId}
-                            onValueChange={setFilterCategoryId}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="All categories" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All categories</SelectItem>
-                              {categories.map((category) => (
-                                <SelectItem key={category.id} value={category.id}>
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className={cn(
-                                        'h-3 w-3 rounded-full',
-                                        getCategoryColor(category.color || 'BLUE')
-                                      )}
-                                    />
-                                    {category.name}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        <Select
+                          value={filterCategoryId}
+                          onValueChange={setFilterCategoryId}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="All categories" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All categories</SelectItem>
+                            {categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className={cn(
+                                      'h-3 w-3 rounded-full',
+                                      getCategoryColor(category.color || 'BLUE')
+                                    )}
+                                  />
+                                  {category.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                        <div>
+                      <div>
                           <Label className="text-sm font-medium flex items-center gap-2">
                             <Clock className="h-3 w-3" />
                             Duration Type
                           </Label>
-                          <Select
+                        <Select
                             value={filterDuration}
                             onValueChange={setFilterDuration}
-                          >
-                            <SelectTrigger>
+                        >
+                          <SelectTrigger>
                               <SelectValue placeholder="All durations" />
-                            </SelectTrigger>
-                            <SelectContent>
+                          </SelectTrigger>
+                          <SelectContent>
                               <SelectItem value="all">All durations</SelectItem>
                               <SelectItem value="short">🏃 Short (&lt; 30 min)</SelectItem>
                               <SelectItem value="medium">🚶 Medium (30 min - 2h)</SelectItem>
                               <SelectItem value="long">🏔️ Long (2+ hours)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       </div>
 
                       {/* Advanced Filters */}
@@ -1647,8 +1647,8 @@ export function SessionHistory({
                             </div>
                             <span className="font-bold text-lg">
                               {Math.round(periodStats.avgFocusScore)}
-                            </span>
-                          </div>
+                          </span>
+                        </div>
                         </div>
 
                         {/* Best Time of Day */}
@@ -1717,7 +1717,7 @@ export function SessionHistory({
                                 />
                               ) : null;
                             })}
-                          </div>
+                        </div>
                           <div className="flex justify-between text-xs text-muted-foreground">
                             <span>🧠 Deep: {periodStats.productivityBreakdown['deep-work']}</span>
                             <span>🎯 Focus: {periodStats.productivityBreakdown['focused']}</span>
@@ -1736,7 +1736,7 @@ export function SessionHistory({
                         AI Productivity Insights
                       </h3>
                       <div className="space-y-3">
-                        {(() => {
+                            {(() => {
                           const insights = [];
                           
                           // Focus Score Analysis
@@ -1828,7 +1828,7 @@ export function SessionHistory({
                           }
                           
                           return null;
-                        })()}
+                            })()}
                       </div>
                     </div>
                   </div>

@@ -1773,6 +1773,7 @@ export function TimerControls({
                     </Label>
                     <Input
                       id="session-title"
+                      data-title-input
                       placeholder="Enter session title..."
                       value={newSessionTitle}
                       onChange={(e) => handleManualTitleChange(e.target.value)}
