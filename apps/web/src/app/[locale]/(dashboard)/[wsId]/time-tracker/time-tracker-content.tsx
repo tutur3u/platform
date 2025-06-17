@@ -7,7 +7,14 @@ import { SessionHistory } from './components/session-history';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
-import type { ExtendedWorkspaceTask, TaskSidebarFilters } from './types';
+import type { 
+  ExtendedWorkspaceTask, 
+  TaskSidebarFilters, 
+  TimerStats,
+  SessionWithRelations,
+  TimeTrackingGoal,
+  TimeTrackerData
+} from './types';
 import {
   generateAssigneeInitials,
   getFilteredAndSortedSidebarTasks,
@@ -16,7 +23,6 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import type {
   TimeTrackingCategory,
-  TimeTrackingSession,
   WorkspaceTask,
 } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
@@ -24,14 +30,10 @@ import { Button } from '@tuturuuu/ui/button';
 import {
   AlertCircle,
   BarChart2,
-  Brain,
   Calendar,
   CheckCircle,
   CheckSquare,
-  ChevronLeft,
-  ChevronRight,
   Clock,
-  Copy,
   History,
   LayoutDashboard,
   MapPin,
@@ -41,7 +43,6 @@ import {
   RefreshCw,
   RotateCcw,
   Settings,
-  Sparkles,
   Tag,
   Target,
   Timer,
@@ -71,50 +72,6 @@ dayjs.extend(timezone);
 interface TimeTrackerContentProps {
   wsId: string;
   initialData: TimeTrackerData;
-}
-
-interface TimerStats {
-  todayTime: number;
-  weekTime: number;
-  monthTime: number;
-  streak: number;
-  categoryBreakdown?: {
-    today: Record<string, number>;
-    week: Record<string, number>;
-    month: Record<string, number>;
-  };
-  dailyActivity?: Array<{
-    date: string;
-    duration: number;
-    sessions: number;
-  }>;
-}
-
-// Unified SessionWithRelations type that matches both TimerControls and SessionHistory expectations
-export interface SessionWithRelations extends TimeTrackingSession {
-  category: TimeTrackingCategory | null;
-  task: WorkspaceTask | null;
-}
-
-// Unified TimeTrackingGoal type that matches GoalManager expectations
-export interface TimeTrackingGoal {
-  id: string;
-  ws_id: string;
-  user_id: string;
-  category_id: string | null;
-  daily_goal_minutes: number;
-  weekly_goal_minutes: number | null;
-  is_active: boolean | null;
-  category: TimeTrackingCategory | null;
-}
-
-export interface TimeTrackerData {
-  categories: TimeTrackingCategory[];
-  runningSession: SessionWithRelations | null;
-  recentSessions: SessionWithRelations[] | null;
-  goals: TimeTrackingGoal[] | null;
-  tasks: ExtendedWorkspaceTask[];
-  stats: TimerStats;
 }
 
 export default function TimeTrackerContent({
@@ -628,22 +585,7 @@ export default function TimeTrackerContent({
     fetchData(true, true);
   }, []); // Remove fetchData dependency
 
-  // Quick Actions Carousel
-  const [carouselView, setCarouselView] = useState(0);
-  const [lastUserInteraction, setLastUserInteraction] = useState(Date.now());
 
-  // Auto-advance carousel every 15 seconds (pauses when user interacts)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const timeSinceLastInteraction = Date.now() - lastUserInteraction;
-      if (timeSinceLastInteraction >= 15000) {
-        // 15 seconds
-        setCarouselView((prev) => (prev === 2 ? 0 : prev + 1));
-      }
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [lastUserInteraction]);
 
   // Sidebar View Switching
   const [sidebarView, setSidebarView] = useState<

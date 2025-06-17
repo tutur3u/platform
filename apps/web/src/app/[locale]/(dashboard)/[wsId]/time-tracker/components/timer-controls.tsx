@@ -1,6 +1,6 @@
 'use client';
 
-import type { ExtendedWorkspaceTask, TaskFilters } from '../types';
+import type { ExtendedWorkspaceTask, TaskFilters, SessionWithRelations } from '../types';
 import {
   generateAssigneeInitials,
   getFilteredAndSortedTasks,
@@ -8,7 +8,6 @@ import {
 } from '../utils';
 import type {
   TimeTrackingCategory,
-  TimeTrackingSession,
   WorkspaceTask,
 } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -50,10 +49,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-interface SessionWithRelations extends TimeTrackingSession {
-  category: TimeTrackingCategory | null;
-  task: WorkspaceTask | null;
-}
+
 
 interface SessionTemplate {
   title: string;

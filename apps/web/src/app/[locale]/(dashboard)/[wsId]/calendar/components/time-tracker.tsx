@@ -70,27 +70,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useState } from 'react';
-
-interface ExtendedWorkspaceTask extends Partial<WorkspaceTask> {
-  board_name?: string;
-  list_name?: string;
-}
+import type { ExtendedWorkspaceTask, TimerStats, SessionWithRelations } from '../../time-tracker/types';
 
 interface TimeTrackerProps {
   wsId: string;
   tasks?: ExtendedWorkspaceTask[];
-}
-
-interface TimerStats {
-  todayTime: number;
-  weekTime: number;
-  monthTime: number;
-  streak: number;
-}
-
-interface SessionWithRelations extends TimeTrackingSession {
-  category?: TimeTrackingCategory;
-  task?: WorkspaceTask;
 }
 
 interface SessionTemplate {

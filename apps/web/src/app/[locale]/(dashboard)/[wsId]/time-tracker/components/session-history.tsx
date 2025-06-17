@@ -1,6 +1,6 @@
 'use client';
 
-import type { SessionWithRelations } from '../time-tracker-content';
+import type { SessionWithRelations } from '../types';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import {
   AlertDialog,

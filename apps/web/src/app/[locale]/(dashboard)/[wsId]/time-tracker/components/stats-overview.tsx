@@ -4,18 +4,7 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Calendar, Clock, TrendingUp, Zap } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo } from 'react';
-
-interface TimerStats {
-  todayTime: number;
-  weekTime: number;
-  monthTime: number;
-  streak: number;
-  dailyActivity?: Array<{
-    date: string;
-    duration: number;
-    sessions: number;
-  }>;
-}
+import type { TimerStats } from '../types';
 
 interface StatsOverviewProps {
   timerStats: TimerStats;
