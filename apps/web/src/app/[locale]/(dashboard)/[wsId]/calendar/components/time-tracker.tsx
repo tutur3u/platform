@@ -1114,7 +1114,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                             <Button
                               onClick={startTimer}
                               disabled={isLoading}
-                              className="w-full"
+                              className="w-full bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-accent dark:bg-muted dark:hover:bg-accent dark:text-foreground"
                               size="lg"
                             >
                               <Play className="mr-2 h-4 w-4" />
@@ -1292,7 +1292,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                             <Button
                               onClick={startTimer}
                               disabled={!newSessionTitle.trim() || isLoading}
-                              className="w-full"
+                              className="w-full bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-accent dark:bg-muted dark:hover:bg-accent dark:text-foreground"
                               size="lg"
                             >
                               <Play className="mr-2 h-4 w-4" />
@@ -1959,7 +1959,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                 disabled={
                   isCreatingTask || !newTaskName.trim() || !selectedListId
                 }
-                className="flex-1"
+                className="flex-1 bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-accent dark:bg-muted dark:hover:bg-accent dark:text-foreground"
               >
                 {isCreatingTask ? (
                   <>

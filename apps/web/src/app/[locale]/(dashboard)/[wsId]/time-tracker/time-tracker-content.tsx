@@ -826,9 +826,9 @@ export default function TimeTrackerContent({
                         {/* Focus Score Badge */}
                         {recentSessions[0] && (
                           <div className="mt-1 flex items-center gap-1">
-                            <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-800">
+                            <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-900/50">
                               <div 
-                                className="h-1 rounded-full bg-blue-500 transition-all"
+                                className="h-1 rounded-full bg-blue-500 dark:bg-blue-400 transition-all"
                                 style={{ width: `${Math.round(calculateFocusScore(recentSessions[0]))}%` }}
                               />
                             </div>

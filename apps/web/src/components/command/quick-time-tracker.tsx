@@ -379,9 +379,9 @@ export function QuickTimeTracker({
                     <div className="flex items-center gap-2">
                       <div className={cn(
                         "h-1.5 w-16 rounded-full",
-                        elapsedTime >= 7200 ? "bg-green-500" :
-                        elapsedTime >= 3600 ? "bg-blue-500" :
-                        elapsedTime >= 1800 ? "bg-yellow-500" : "bg-gray-500"
+                        elapsedTime >= 7200 ? "bg-green-500 dark:bg-green-600" :
+                        elapsedTime >= 3600 ? "bg-blue-500 dark:bg-blue-600" :
+                        elapsedTime >= 1800 ? "bg-yellow-500 dark:bg-yellow-600" : "bg-gray-500 dark:bg-gray-600"
                       )}>
                         <div 
                           className="h-1.5 rounded-full bg-current opacity-80 transition-all duration-1000"
@@ -410,15 +410,15 @@ export function QuickTimeTracker({
                   {/* Productivity Tips */}
                   <div className="mt-2 text-xs text-muted-foreground">
                     {elapsedTime >= 7200 ? (
-                      <span className="text-green-600">🧠 Deep work mode! Excellent focus.</span>
+                      <span className="text-green-700 dark:text-green-300">🧠 Deep work mode! Excellent focus.</span>
                     ) : elapsedTime >= 3600 ? (
-                      <span className="text-blue-600">🎯 Great focus! Consider a break soon.</span>
+                      <span className="text-blue-700 dark:text-blue-300">🎯 Great focus! Consider a break soon.</span>
                     ) : elapsedTime >= 1800 ? (
-                      <span className="text-yellow-600">📈 Building momentum! Keep going.</span>
+                      <span className="text-yellow-700 dark:text-yellow-300">📈 Building momentum! Keep going.</span>
                     ) : elapsedTime >= 900 ? (
-                      <span className="text-gray-600">⏰ Good start! Focus is building.</span>
+                      <span className="text-gray-700 dark:text-gray-300">⏰ Good start! Focus is building.</span>
                     ) : (
-                      <span className="text-gray-500">🚀 Just started! Focus will improve.</span>
+                      <span className="text-gray-600 dark:text-gray-400">🚀 Just started! Focus will improve.</span>
                     )}
                   </div>
                 </div>
@@ -428,10 +428,10 @@ export function QuickTimeTracker({
                   <span className="text-muted-foreground">Session Type:</span>
                   <div className={cn(
                     "flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium",
-                    elapsedTime >= 3600 ? "text-green-600 bg-green-100" :
-                    elapsedTime >= 1800 ? "text-blue-600 bg-blue-100" :
-                    elapsedTime >= 900 ? "text-yellow-600 bg-yellow-100" :
-                    "text-gray-600 bg-gray-100"
+                    elapsedTime >= 3600 ? "text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-950/30" :
+                    elapsedTime >= 1800 ? "text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-950/30" :
+                    elapsedTime >= 900 ? "text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-950/30" :
+                    "text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-950/30"
                   )}>
                     <span>
                       {elapsedTime >= 3600 ? '🧠' :

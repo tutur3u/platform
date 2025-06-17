@@ -273,11 +273,11 @@ const StackedSessionItem: FC<{
 
   const getProductivityColor = (type: string) => {
     switch (type) {
-      case 'deep-work': return 'text-green-600 bg-green-50 border-green-200';
-      case 'focused': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'scattered': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'interrupted': return 'text-red-600 bg-red-50 border-red-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'deep-work': return 'text-green-700 bg-green-100 border-green-300 dark:text-green-300 dark:bg-green-950/30 dark:border-green-800';
+      case 'focused': return 'text-blue-700 bg-blue-100 border-blue-300 dark:text-blue-300 dark:bg-blue-950/30 dark:border-blue-800';
+      case 'scattered': return 'text-yellow-700 bg-yellow-100 border-yellow-300 dark:text-yellow-300 dark:bg-yellow-950/30 dark:border-yellow-800';
+      case 'interrupted': return 'text-red-700 bg-red-100 border-red-300 dark:text-red-300 dark:bg-red-950/30 dark:border-red-800';
+      default: return 'text-gray-700 bg-gray-100 border-gray-300 dark:text-gray-300 dark:bg-gray-950/30 dark:border-gray-800';
     }
   };
 
@@ -334,10 +334,10 @@ const StackedSessionItem: FC<{
               {/* Focus Score Badge */}
               <div className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium",
-                avgFocusScore >= 80 ? "text-green-600 bg-green-50 border-green-200" :
-                avgFocusScore >= 60 ? "text-blue-600 bg-blue-50 border-blue-200" :
-                avgFocusScore >= 40 ? "text-yellow-600 bg-yellow-50 border-yellow-200" :
-                "text-red-600 bg-red-50 border-red-200"
+                avgFocusScore >= 80 ? "text-green-700 bg-green-100 border-green-300 dark:text-green-300 dark:bg-green-950/30 dark:border-green-800" :
+                avgFocusScore >= 60 ? "text-blue-700 bg-blue-100 border-blue-300 dark:text-blue-300 dark:bg-blue-950/30 dark:border-blue-800" :
+                avgFocusScore >= 40 ? "text-yellow-700 bg-yellow-100 border-yellow-300 dark:text-yellow-300 dark:bg-yellow-950/30 dark:border-yellow-800" :
+                "text-red-700 bg-red-100 border-red-300 dark:text-red-300 dark:bg-red-950/30 dark:border-red-800"
               )}>
                 <Brain className="h-3 w-3" />
                 <span>Focus {avgFocusScore}</span>
@@ -1638,9 +1638,9 @@ export function SessionHistory({
                           <div className="flex items-center gap-2">
                             <div className={cn(
                               "h-2 w-16 rounded-full",
-                              periodStats.avgFocusScore >= 80 ? "bg-green-500" :
-                              periodStats.avgFocusScore >= 60 ? "bg-yellow-500" :
-                              periodStats.avgFocusScore >= 40 ? "bg-orange-500" : "bg-red-500"
+                              periodStats.avgFocusScore >= 80 ? "bg-green-500 dark:bg-green-600" :
+                              periodStats.avgFocusScore >= 60 ? "bg-yellow-500 dark:bg-yellow-600" :
+                              periodStats.avgFocusScore >= 40 ? "bg-orange-500 dark:bg-orange-600" : "bg-red-500 dark:bg-red-600"
                             )}>
                               <div 
                                 className="h-2 rounded-full bg-current opacity-80"
@@ -1709,10 +1709,10 @@ export function SessionHistory({
                                   key={type}
                                   className={cn(
                                     "h-2 rounded-full",
-                                    type === 'deep-work' ? "bg-green-500" :
-                                    type === 'focused' ? "bg-blue-500" :
-                                    type === 'standard' ? "bg-gray-500" :
-                                    type === 'scattered' ? "bg-yellow-500" : "bg-red-500"
+                                    type === 'deep-work' ? "bg-green-500 dark:bg-green-600" :
+                                    type === 'focused' ? "bg-blue-500 dark:bg-blue-600" :
+                                    type === 'standard' ? "bg-gray-500 dark:bg-gray-600" :
+                                    type === 'scattered' ? "bg-yellow-500 dark:bg-yellow-600" : "bg-red-500 dark:bg-red-600"
                                   )}
                                   style={{ width: `${percentage}%` }}
                                   title={`${type}: ${count} sessions (${percentage.toFixed(1)}%)`}

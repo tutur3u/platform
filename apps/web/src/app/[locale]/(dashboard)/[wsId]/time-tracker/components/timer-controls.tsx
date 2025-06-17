@@ -1262,7 +1262,7 @@ export function TimerControls({
                       </div>
                     </div>
                   )}
-                  <Badge variant="outline" className="text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-300 dark:border-amber-800 dark:bg-amber-950/20">
+                  <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-100 dark:text-amber-300 dark:border-amber-800 dark:bg-amber-950/30">
                     On break
                   </Badge>
                 </div>
@@ -2069,7 +2069,7 @@ export function TimerControls({
                   <Button
                     onClick={startTimer}
                     disabled={isLoading}
-                    className="w-full"
+                    className="w-full bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-accent dark:bg-muted dark:hover:bg-accent dark:text-foreground"
                     size="lg"
                   >
                     <Play className="mr-2 h-4 w-4" />
@@ -2253,7 +2253,7 @@ export function TimerControls({
                   <Button
                     onClick={startTimer}
                     disabled={!newSessionTitle.trim() || isLoading}
-                    className="w-full"
+                    className="w-full bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-accent dark:bg-muted dark:hover:bg-accent dark:text-foreground"
                     size="lg"
                   >
                     <Play className="mr-2 h-5 w-5" />
@@ -2415,7 +2415,7 @@ export function TimerControls({
                 disabled={
                   isCreatingTask || !newTaskName.trim() || !selectedListId
                 }
-                className="flex-1"
+                className="flex-1 bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-accent dark:bg-muted dark:hover:bg-accent dark:text-foreground"
               >
                 {isCreatingTask ? (
                   <>
