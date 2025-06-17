@@ -1,31 +1,43 @@
 'use client';
 
+import { AlgorithmInsights } from './components/AlgorithmInsights';
+import { ScheduleDisplay } from './components/ScheduleDisplay';
+import { TaskList } from './components/TaskList';
+import { TaskModal } from './components/TaskModal';
+import { TemplateScenarios } from './components/TemplateScenarios';
+import { scheduleTasks } from '@tuturuuu/ai/scheduling/algorithm';
 import {
+  defaultActiveHours,
+  defaultTasks,
+} from '@tuturuuu/ai/scheduling/default';
+import type {
   ActiveHours,
-  type DateRange,
+  DateRange,
   Event,
   Log,
   Task,
-  defaultActiveHours,
-  defaultTasks,
-  scheduleTasks,
-} from '@tuturuuu/ai/scheduling/algorithm';
-import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
-import { Button } from '@tuturuuu/ui/button';
+  TemplateScenario,
+} from '@tuturuuu/ai/scheduling/types';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
-import { AlertTriangleIcon, InfoIcon, XCircleIcon, XIcon } from 'lucide-react';
+import {
+  BrainIcon,
+  CalendarIcon,
+  ClockIcon,
+  SettingsIcon,
+  SparklesIcon,
+} from 'lucide-react';
 import { useState } from 'react';
-import { useMemo } from 'react';
 
 function SchedulerPage() {
   const [tasks, setTasks] = useState<Task[]>(defaultTasks);
@@ -33,25 +45,36 @@ function SchedulerPage() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [activeHours, setActiveHours] =
     useState<ActiveHours>(defaultActiveHours);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
-  // States for the new task form
-  const [newTaskName, setNewTaskName] = useState('');
-  const [newTaskDuration, setNewTaskDuration] = useState(1);
-  const [newTaskDeadline, setNewTaskDeadline] = useState('');
+  const loadTemplate = (template: TemplateScenario) => {
+    setTasks(
+      template.tasks.map((task) => ({
+        ...task,
+        id: `${task.id}-${Date.now()}`,
+      }))
+    );
+    setEvents([]);
+    setLogs([]);
+    if (template.activeHours) {
+      setActiveHours({ ...activeHours, ...template.activeHours });
+    }
+  };
 
-  const addTask = () => {
-    if (!newTaskName.trim() || newTaskDuration <= 0) return;
+  const clearAll = () => {
+    setTasks([]);
+    setEvents([]);
+    setLogs([]);
+  };
+
+  const addTask = (taskData: Omit<Task, 'id' | 'events'>) => {
     const newTask: Task = {
+      ...taskData,
       id: `task-${Date.now()}`,
-      name: newTaskName,
-      duration: newTaskDuration,
-      deadline: newTaskDeadline ? dayjs(newTaskDeadline) : undefined,
       events: [],
     };
     setTasks([...tasks, newTask]);
-    setNewTaskName('');
-    setNewTaskDuration(1);
-    setNewTaskDeadline('');
   };
 
   const updateTask = (id: string, updatedTask: Partial<Task>) => {
@@ -62,15 +85,23 @@ function SchedulerPage() {
 
   const deleteTask = (id: string) => {
     setTasks(tasks.filter((task) => task.id !== id));
+    // Also clear related events and logs
+    setEvents(events.filter((event) => event.taskId !== id));
+    setLogs([]);
   };
 
-  const handleSchedule = () => {
-    const { events: scheduledEvents, logs: scheduleLogs } = scheduleTasks(
-      tasks,
-      activeHours
-    );
-    setEvents(scheduledEvents);
-    setLogs(scheduleLogs);
+  const handleSchedule = async () => {
+    setIsScheduling(true);
+    // Add a small delay to show loading state
+    setTimeout(() => {
+      const { events: scheduledEvents, logs: scheduleLogs } = scheduleTasks(
+        tasks,
+        activeHours
+      );
+      setEvents(scheduledEvents);
+      setLogs(scheduleLogs);
+      setIsScheduling(false);
+    }, 500);
   };
 
   const handleActiveHoursChange = (
@@ -85,259 +116,227 @@ function SchedulerPage() {
     setActiveHours(newActiveHours);
   };
 
-  const groupedEvents = useMemo(() => {
-    return events.reduce(
-      (acc, event) => {
-        const date = event.range.start.format('YYYY-MM-DD');
-        if (!acc[date]) {
-          acc[date] = [];
-        }
-        acc[date].push(event);
-        return acc;
-      },
-      {} as Record<string, Event[]>
-    );
-  }, [events]);
+  const getCategoryColor = (category: 'work' | 'personal' | 'meeting') => {
+    switch (category) {
+      case 'work':
+        return 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/30';
+      case 'personal':
+        return 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/30';
+      case 'meeting':
+        return 'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/30';
+      default:
+        return 'bg-dynamic-gray/10 text-dynamic-gray border-dynamic-gray/30';
+    }
+  };
 
   return (
-    <div className="relative flex min-h-screen flex-col gap-8 overflow-y-auto p-4 pt-16 md:p-8 md:pt-20 lg:p-12 lg:pt-20">
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 xl:grid-cols-3">
-        {/* Column 1: Configuration */}
-        <div className="flex flex-col gap-8">
-          {/* Active Hours Configuration */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Hours</CardTitle>
-              <CardDescription>
-                Set your available time ranges for scheduling.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              {Object.entries(activeHours).map(
-                ([category, ranges]: [string, DateRange[]]) => (
-                  <div key={category}>
-                    <h3 className="mb-2 text-lg font-medium capitalize">
-                      {category}
-                    </h3>
-                    {ranges.map((range, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <Input
-                          type="time"
-                          value={range.start.format('HH:mm')}
-                          onChange={(e) =>
-                            handleActiveHoursChange(
-                              category as keyof ActiveHours,
-                              index,
-                              'start',
-                              e.target.value
-                            )
-                          }
-                        />
-                        <span>-</span>
-                        <Input
-                          type="time"
-                          value={range.end.format('HH:mm')}
-                          onChange={(e) =>
-                            handleActiveHoursChange(
-                              category as keyof ActiveHours,
-                              index,
-                              'end',
-                              e.target.value
-                            )
-                          }
-                        />
+    <TooltipProvider>
+      <div className="relative flex min-h-screen flex-col gap-8 overflow-y-auto p-4 pt-16 md:p-8 md:pt-20 lg:p-12 lg:pt-20">
+        {/* Header */}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-dynamic-blue to-dynamic-purple text-white">
+              <SparklesIcon className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="bg-gradient-to-r from-dynamic-blue to-dynamic-purple bg-clip-text text-3xl font-bold text-transparent">
+                AI Task Scheduler
+              </h1>
+              <p className="text-muted-foreground">
+                Intelligently schedule your tasks with advanced splitting and
+                optimization
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Tabs defaultValue="tasks" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="tasks" className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              Tasks
+            </TabsTrigger>
+            <TabsTrigger value="schedule" className="flex items-center gap-2">
+              <ClockIcon className="h-4 w-4" />
+              Schedule
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="flex items-center gap-2">
+              <BrainIcon className="h-4 w-4" />
+              Insights
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <SettingsIcon className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="tasks" className="space-y-6">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
+              <div className="xl:col-span-2">
+                <TaskList
+                  tasks={tasks}
+                  events={events}
+                  isScheduling={isScheduling}
+                  onAddTask={() => setIsTaskModalOpen(true)}
+                  onUpdateTask={updateTask}
+                  onDeleteTask={deleteTask}
+                  onSchedule={handleSchedule}
+                />
+              </div>
+              <div>
+                <TemplateScenarios
+                  onLoadTemplate={loadTemplate}
+                  onClearAll={clearAll}
+                />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="schedule" className="space-y-6">
+            <ScheduleDisplay events={events} />
+          </TabsContent>
+
+          <TabsContent value="insights" className="space-y-6">
+            <AlgorithmInsights tasks={tasks} events={events} logs={logs} />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Active Hours Configuration */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ClockIcon className="h-5 w-5" />
+                    Active Hours
+                  </CardTitle>
+                  <CardDescription>
+                    Configure your available time ranges for different
+                    activities
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {Object.entries(activeHours).map(
+                    ([category, ranges]: [string, DateRange[]]) => (
+                      <div key={category} className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`rounded-full px-3 py-1 text-sm font-medium ${getCategoryColor(
+                              category as 'work' | 'personal' | 'meeting'
+                            )}`}
+                          >
+                            {category.charAt(0).toUpperCase() +
+                              category.slice(1)}
+                          </div>
+                        </div>
+                        {ranges.map((range, index) => (
+                          <div key={index} className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label className="text-sm text-muted-foreground">
+                                Start Time
+                              </Label>
+                              <Input
+                                type="time"
+                                value={range.start.format('HH:mm')}
+                                onChange={(e) =>
+                                  handleActiveHoursChange(
+                                    category as keyof ActiveHours,
+                                    index,
+                                    'start',
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm text-muted-foreground">
+                                End Time
+                              </Label>
+                              <Input
+                                type="time"
+                                value={range.end.format('HH:mm')}
+                                onChange={(e) =>
+                                  handleActiveHoursChange(
+                                    category as keyof ActiveHours,
+                                    index,
+                                    'end',
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Settings Overview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Scheduler Settings</CardTitle>
+                  <CardDescription>
+                    Current configuration and preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Time Allocation</h4>
+                    <div className="space-y-2 text-sm">
+                      {Object.entries(activeHours).map(([category, ranges]) => {
+                        const totalHours = ranges.reduce(
+                          (sum: number, range: DateRange) =>
+                            sum + range.end.diff(range.start, 'hour', true),
+                          0
+                        );
+                        return (
+                          <div key={category} className="flex justify-between">
+                            <span className="capitalize">{category}</span>
+                            <span className="font-medium">
+                              {totalHours}h/day
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                )
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Task Creation Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Create a new task</CardTitle>
-              <CardDescription>
-                Add tasks with their duration and an optional deadline.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="space-y-1">
-                <Label htmlFor="task-name">Name</Label>
-                <Input
-                  id="task-name"
-                  placeholder="e.g., Design the new logo"
-                  value={newTaskName}
-                  onChange={(e) => setNewTaskName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="task-duration">Duration (hours)</Label>
-                <Input
-                  id="task-duration"
-                  type="number"
-                  value={newTaskDuration}
-                  min={1}
-                  onChange={(e) =>
-                    setNewTaskDuration(parseInt(e.target.value, 10))
-                  }
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="task-deadline">Deadline (Optional)</Label>
-                <Input
-                  id="task-deadline"
-                  type="datetime-local"
-                  value={newTaskDeadline}
-                  onChange={(e) => setNewTaskDeadline(e.target.value)}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={addTask} className="w-full">
-                Add Task
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-
-        {/* Column 2: Task List and Scheduling */}
-        <div className="flex flex-col gap-8">
-          <Card className="flex h-full flex-col">
-            <CardHeader>
-              <CardTitle>Task List</CardTitle>
-              <CardDescription>
-                Your current list of tasks to be scheduled. Click schedule when
-                ready.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <div className="flex flex-col gap-2">
-                {tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center gap-4 rounded-md border p-2"
-                  >
-                    <Input
-                      className="border-none"
-                      value={task.name}
-                      onChange={(e) =>
-                        updateTask(task.id, { name: e.target.value })
-                      }
-                    />
-                    <Input
-                      className="w-24 border-none"
-                      type="number"
-                      value={task.duration}
-                      min={1}
-                      onChange={(e) =>
-                        updateTask(task.id, {
-                          duration: parseInt(e.target.value, 10),
-                        })
-                      }
-                    />
-                    <Input
-                      className="border-none"
-                      type="datetime-local"
-                      value={
-                        task.deadline
-                          ? task.deadline.format('YYYY-MM-DDTHH:mm')
-                          : ''
-                      }
-                      onChange={(e) =>
-                        updateTask(task.id, {
-                          deadline: e.target.value
-                            ? dayjs(e.target.value)
-                            : undefined,
-                        })
-                      }
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteTask(task.id)}
-                    >
-                      <XIcon className="h-4 w-4" />
-                    </Button>
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Algorithm Features</h4>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-dynamic-green"></div>
+                        <span>Task splitting based on min/max duration</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-dynamic-blue"></div>
+                        <span>Deadline-aware prioritization</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-dynamic-orange"></div>
+                        <span>Category-based time management</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-dynamic-purple"></div>
+                        <span>Intelligent conflict resolution</span>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSchedule} size="lg" className="w-full">
-                Schedule My Day
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
 
-        {/* Column 3: Schedule and Logs */}
-        <div className="flex flex-col gap-8">
-          {/* Scheduled Events */}
-          {events.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Scheduled Day</CardTitle>
-                <CardDescription>
-                  Here is your optimized schedule.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {Object.entries(groupedEvents).map(([date, dailyEvents]) => (
-                  <div key={date} className="mb-4">
-                    <h3 className="mb-2 font-semibold">
-                      {dayjs(date).format('dddd, MMMM D')}
-                    </h3>
-                    <ul className="list-disc space-y-2 pl-5">
-                      {dailyEvents.map((event) => (
-                        <li key={event.id} className="flex items-center gap-2">
-                          {event.isPastDeadline && (
-                            <AlertTriangleIcon className="h-4 w-4 text-yellow-500" />
-                          )}
-                          <span className="font-semibold">{event.name}</span>:{' '}
-                          {event.range.start.format('HH:mm')} -{' '}
-                          {event.range.end.format('HH:mm')}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Logs */}
-          {logs.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Logs</CardTitle>
-                <CardDescription>
-                  Warnings and errors from the scheduling process.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2">
-                {logs.map((log, index) => (
-                  <Alert
-                    key={index}
-                    variant={log.type === 'error' ? 'destructive' : 'default'}
-                  >
-                    {log.type === 'warning' && <InfoIcon className="h-4 w-4" />}
-                    {log.type === 'error' && (
-                      <XCircleIcon className="h-4 w-4" />
-                    )}
-                    <AlertTitle>
-                      {log.type.charAt(0).toUpperCase() + log.type.slice(1)}
-                    </AlertTitle>
-                    <AlertDescription>{log.message}</AlertDescription>
-                  </Alert>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {/* Task Modal */}
+        <TaskModal
+          isOpen={isTaskModalOpen}
+          onClose={() => setIsTaskModalOpen(false)}
+          onAddTask={addTask}
+        />
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 

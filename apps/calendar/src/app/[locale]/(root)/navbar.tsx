@@ -60,6 +60,7 @@ export default async function Navbar({
       }
       separator={<NavbarSeparator />}
       onlyOnMobile={onlyOnMobile}
+      className="bg-background"
     />
   );
 }
