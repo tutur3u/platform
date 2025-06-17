@@ -4510,6 +4510,7 @@ export type Database = {
           display_name: string | null;
           handle: string | null;
           id: string;
+          services: Database['public']['Enums']['platform_service'][] | null;
         };
         Insert: {
           avatar_url?: string | null;
@@ -4519,6 +4520,7 @@ export type Database = {
           display_name?: string | null;
           handle?: string | null;
           id?: string;
+          services?: Database['public']['Enums']['platform_service'][] | null;
         };
         Update: {
           avatar_url?: string | null;
@@ -4528,6 +4530,7 @@ export type Database = {
           display_name?: string | null;
           handle?: string | null;
           id?: string;
+          services?: Database['public']['Enums']['platform_service'][] | null;
         };
         Relationships: [
           {
@@ -7437,9 +7440,9 @@ export type Database = {
       get_hourly_prompt_completion_tokens: {
         Args: { past_hours?: number };
         Returns: {
+          hour: string;
           total_prompt_tokens: number;
           total_completion_tokens: number;
-          hour: string;
         }[];
       };
       get_inventory_batches_count: {
@@ -7489,9 +7492,9 @@ export type Database = {
       get_monthly_income_expense: {
         Args: { _ws_id: string; past_months?: number };
         Returns: {
-          total_expense: number;
           month: string;
           total_income: number;
+          total_expense: number;
         }[];
       };
       get_monthly_prompt_completion_tokens: {
@@ -7507,7 +7510,7 @@ export type Database = {
         Returns: number;
       };
       get_possible_excluded_groups: {
-        Args: { included_groups: string[]; _ws_id: string };
+        Args: { _ws_id: string; included_groups: string[] };
         Returns: {
           amount: number;
           id: string;
@@ -7541,7 +7544,6 @@ export type Database = {
           limit_count?: number;
         };
         Returns: {
-          category_name: string;
           title: string;
           description: string;
           category_id: string;
@@ -7557,9 +7559,9 @@ export type Database = {
       get_submission_statistics: {
         Args: Record<PropertyKey, never>;
         Returns: {
-          unique_users_count: number;
           total_count: number;
           latest_submission_date: string;
+          unique_users_count: number;
         }[];
       };
       get_transaction_categories_with_amount: {
@@ -7694,7 +7696,7 @@ export type Database = {
         Returns: number;
       };
       has_other_owner: {
-        Args: { _user_id: string; _ws_id: string };
+        Args: { _ws_id: string; _user_id: string };
         Returns: boolean;
       };
       insert_ai_chat_message: {
@@ -7718,7 +7720,7 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_user_email_in_team: {
-        Args: { _team_id: string; _user_email: string };
+        Args: { _user_email: string; _team_id: string };
         Returns: boolean;
       };
       is_nova_user_id_in_team: {
@@ -7738,7 +7740,7 @@ export type Database = {
         Returns: boolean;
       };
       is_task_board_member: {
-        Args: { _board_id: string; _user_id: string };
+        Args: { _user_id: string; _board_id: string };
         Returns: boolean;
       };
       is_user_task_in_board: {
@@ -7750,7 +7752,7 @@ export type Database = {
         Returns: Json;
       };
       nova_get_challenge_with_user_stats: {
-        Args: { user_id: string; challenge_id: string };
+        Args: { challenge_id: string; user_id: string };
         Returns: Json;
       };
       nova_get_user_daily_sessions: {
@@ -7775,6 +7777,7 @@ export type Database = {
       };
       search_users: {
         Args:
+          | { search_query: string; page_number: number; page_size: number }
           | {
               enabled_filter?: boolean;
               search_query: string;
@@ -7835,7 +7838,7 @@ export type Database = {
         Returns: undefined;
       };
       update_session_total_score: {
-        Args: { user_id_param: string; challenge_id_param: string };
+        Args: { challenge_id_param: string; user_id_param: string };
         Returns: undefined;
       };
       validate_cross_app_token: {
@@ -7843,7 +7846,7 @@ export type Database = {
         Returns: string;
       };
       validate_cross_app_token_with_session: {
-        Args: { p_target_app: string; p_token: string };
+        Args: { p_token: string; p_target_app: string };
         Returns: {
           user_id: string;
           session_data: Json;
@@ -7863,6 +7866,7 @@ export type Database = {
       certificate_templates: 'original' | 'modern' | 'elegant';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       dataset_type: 'excel' | 'csv' | 'html';
+      platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
       task_board_status: 'not_started' | 'active' | 'done' | 'closed';
       workspace_role_permission:
         | 'view_infrastructure'
@@ -8016,6 +8020,7 @@ export const Constants = {
       certificate_templates: ['original', 'modern', 'elegant'],
       chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
       dataset_type: ['excel', 'csv', 'html'],
+      platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
       task_board_status: ['not_started', 'active', 'done', 'closed'],
       workspace_role_permission: [
         'view_infrastructure',

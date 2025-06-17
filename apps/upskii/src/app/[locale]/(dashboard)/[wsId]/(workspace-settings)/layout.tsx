@@ -72,6 +72,11 @@ export default async function Layout({ children, params }: LayoutProps) {
       disabled: withoutPermission('manage_workspace_audit_logs'),
       requireRootWorkspace: true,
     },
+    {
+      title: 'Approvals',
+      href: `/${wsId}/approvals`,
+      requireRootWorkspace: true,
+    },
   ];
 
   return (
