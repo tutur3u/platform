@@ -1,5 +1,4 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import dayjs from 'dayjs';
 
 // Const of 4 weeks from the current week, this can be used for startDate and endDate in google calendar background sync
@@ -14,11 +13,15 @@ export const BACKGROUND_SYNC_RANGE = 4 * 7;
  */
 export const canProceedWithSync = async (
   wsId: string,
-  supabase?: any
+  supabase?: any,
+  dates?: Date[]
 ): Promise<boolean> => {
   try {
     // Check if the current view is within the background sync range
-    const { dates } = useCalendarSync();
+    if (!dates) {
+      console.log('No dates provided: Can proceed with active sync');
+      return true;
+    }
 
     const startDate = dayjs(dates[0]);
     const endDate = dayjs(dates[dates.length - 1]);

@@ -9,7 +9,6 @@ import type {
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
   canProceedWithSync,
-  isWithinBackgroundSyncRange,
   updateLastUpsert,
 } from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';

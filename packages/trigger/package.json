@@ -7,12 +7,12 @@
   "types": "./google-calendar-background-sync.ts",
   "exports": {
     ".": {
-      "types": "./google-calendar-background-sync.ts",
-      "import": "./google-calendar-background-sync.ts"
+      "types": "./example.ts",
+      "import": "./example.ts"
     },
-    "./google-calendar-background-sync": {
-      "types": "./google-calendar-background-sync.ts",
-      "import": "./google-calendar-background-sync.ts"
+    "./example": {
+      "types": "./example.ts",
+      "import": "./example.ts"
     }
   },
   "dependencies": {

@@ -2,9 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 import { schedules } from '@trigger.dev/sdk/v3';
 import {
   BACKGROUND_SYNC_RANGE,
-  canProceedWithSync,
   updateLastUpsert,
 } from '@tuturuuu/utils/calendar-sync-coordination';
+import dayjs from 'dayjs';
 import 'dotenv/config';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
@@ -101,21 +101,14 @@ const syncGoogleCalendarEvents = async (supabase: any) => {
       }
 
       try {
-        // Check if we can proceed with sync for this workspace
-        const canProceed = await canProceedWithSync(ws_id, supabase);
-        if (!canProceed) {
-          console.log(
-            `Skipping background sync for wsId ${ws_id} due to 30-second cooldown`
-          );
-          continue;
-        }
-
         const auth = getGoogleAuthClient(token);
         const calendar = google.calendar({ version: 'v3', auth });
 
-        const timeMin = new Date();
-        const timeMax = new Date();
-        timeMax.setDate(timeMax.getDate() + BACKGROUND_SYNC_RANGE);
+        const startOfCurrentWeek = dayjs().startOf('week');
+        const timeMin = startOfCurrentWeek.toDate();
+        const timeMax = startOfCurrentWeek
+          .add(BACKGROUND_SYNC_RANGE, 'day')
+          .toDate();
 
         const response = await calendar.events.list({
           calendarId: 'primary',
