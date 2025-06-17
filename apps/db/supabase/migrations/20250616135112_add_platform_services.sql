@@ -2,7 +2,9 @@ create type "public"."platform_service" as enum ('TUTURUUU', 'REWISE', 'NOVA', '
 
 alter table "public"."users" add column "services" platform_service[];
 
-alter table "public"."users" alter column "services" set default '{TUTURUUU}';
+ALTER TABLE public.users
+  ALTER COLUMN services SET DEFAULT '{TUTURUUU}',
+  ALTER COLUMN services SET NOT NULL;
 
 -- Update existing users to have the default service if they don't have any services
 UPDATE public.users 
