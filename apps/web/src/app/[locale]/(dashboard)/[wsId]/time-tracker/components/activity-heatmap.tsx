@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem
 } from '@tuturuuu/ui/dropdown-menu';
-import { Settings, Calendar, Grid3X3, Info, ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
+import { Settings, Calendar, Grid3X3, Info, ChevronLeft, ChevronRight, LayoutDashboard } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -19,7 +19,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import isBetween from 'dayjs/plugin/isBetween';
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -38,7 +38,7 @@ interface ActivityHeatmapProps {
   settings?: HeatmapSettings;
 }
 
-type HeatmapViewMode = 'original' | 'hybrid' | 'calendar-only';
+type HeatmapViewMode = 'original' | 'hybrid' | 'calendar-only' | 'compact-cards';
 
 interface HeatmapSettings {
   viewMode: HeatmapViewMode;
@@ -57,8 +57,155 @@ export function ActivityHeatmap({
     showOnboardingTips: true,
   });
 
+  // Smart onboarding tips state - separate from general settings for better control
+  const [onboardingState, setOnboardingState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('time-tracker-onboarding');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // Check if user dismissed tips recently (within 7 days)
+          if (parsed.dismissedAt) {
+            const dismissedDate = new Date(parsed.dismissedAt);
+            const daysSinceDismissed = Math.floor((Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            // If dismissed recently, don't show tips
+            if (daysSinceDismissed < 7) {
+              return { 
+                showTips: false, 
+                dismissedAt: parsed.dismissedAt,
+                viewCount: parsed.viewCount || 0,
+                lastViewMode: parsed.lastViewMode || 'original'
+              };
+            }
+          }
+          return { 
+            showTips: true, 
+            dismissedAt: null,
+            viewCount: parsed.viewCount || 0,
+            lastViewMode: parsed.lastViewMode || 'original'
+          };
+        } catch {
+          // Fall through to default
+        }
+      }
+    }
+    return { 
+      showTips: true, 
+      dismissedAt: null,
+      viewCount: 0,
+      lastViewMode: 'original'
+    };
+  });
+
   // Use external settings if provided, otherwise use internal settings
   const settings = externalSettings || internalSettings;
+  
+  // Auto-hide tips after 30 seconds of inactivity (optional enhancement)
+  const [tipAutoHideTimer, setTipAutoHideTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  // Smart logic: Only show onboarding tips when appropriate
+  const shouldShowOnboardingTips = useMemo(() => {
+    // Don't show if user explicitly disabled in settings
+    if (!settings.showOnboardingTips) return false;
+    
+    // Don't show if recently dismissed
+    if (!onboardingState.showTips) return false;
+    
+    // Show for new users (< 3 views) or when switching view modes
+    const isNewUser = onboardingState.viewCount < 3;
+    const changedViewMode = onboardingState.lastViewMode !== settings.viewMode;
+    
+    // Show for experienced users occasionally (every 14 days after 10+ views)
+    const isPeriodicReminder = onboardingState.viewCount >= 10 && 
+      (!onboardingState.dismissedAt || 
+       Math.floor((Date.now() - new Date(onboardingState.dismissedAt).getTime()) / (1000 * 60 * 60 * 24)) >= 14);
+    
+    return isNewUser || changedViewMode || isPeriodicReminder;
+  }, [settings.showOnboardingTips, onboardingState, settings.viewMode]);
+
+  // Track view mode changes and update count
+  useEffect(() => {
+    if (settings.viewMode !== onboardingState.lastViewMode) {
+      const newState = {
+        ...onboardingState,
+        viewCount: onboardingState.viewCount + 1,
+        lastViewMode: settings.viewMode,
+        showTips: true, // Reset to show tips when view mode changes
+        dismissedAt: null
+      };
+      setOnboardingState(newState);
+      
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('time-tracker-onboarding', JSON.stringify(newState));
+      }
+    }
+  }, [settings.viewMode, onboardingState]);
+
+  // Handle tip dismissal
+  const handleDismissTips = useCallback(() => {
+    const newState = {
+      ...onboardingState,
+      showTips: false,
+      dismissedAt: new Date().toISOString()
+    };
+    setOnboardingState(newState);
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('time-tracker-onboarding', JSON.stringify(newState));
+    }
+
+    // Also update parent settings if external settings provided
+    if (externalSettings && typeof window !== 'undefined') {
+      const currentHeatmapSettings = localStorage.getItem('heatmap-settings');
+      if (currentHeatmapSettings) {
+        try {
+          const parsed = JSON.parse(currentHeatmapSettings);
+          const updated = { ...parsed, showOnboardingTips: false };
+          localStorage.setItem('heatmap-settings', JSON.stringify(updated));
+          
+          // Dispatch a custom event to notify parent component
+          window.dispatchEvent(new CustomEvent('heatmap-settings-changed', { 
+            detail: updated 
+          }));
+        } catch {
+          // Silently fail
+        }
+      }
+    }
+
+    // Clear auto-hide timer if active
+    if (tipAutoHideTimer) {
+      clearTimeout(tipAutoHideTimer);
+      setTipAutoHideTimer(null);
+    }
+  }, [onboardingState, externalSettings, tipAutoHideTimer]);
+
+  // Set up auto-hide timer when tips are shown (optional - can be disabled)
+  useEffect(() => {
+    if (shouldShowOnboardingTips && onboardingState.viewCount >= 5) {
+      // Only auto-hide for users who've seen tips multiple times
+      const timer = setTimeout(() => {
+        handleDismissTips();
+      }, 45000); // Auto-hide after 45 seconds for experienced users
+      
+      setTipAutoHideTimer(timer);
+      
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [shouldShowOnboardingTips, onboardingState.viewCount, handleDismissTips]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (tipAutoHideTimer) {
+        clearTimeout(tipAutoHideTimer);
+      }
+    };
+  }, [tipAutoHideTimer]);
+
   const [currentMonth, setCurrentMonth] = useState(dayjs().tz(dayjs.tz.guess()));
 
   const userTimezone = dayjs.tz.guess();
@@ -317,7 +464,7 @@ export function ActivityHeatmap({
                   <div className="space-y-2.5">
                     <div className="font-semibold text-gray-900 dark:text-gray-100">
                       {day.date.format('dddd, MMMM D, YYYY')}
-                      {settings.showTimeReference === 'both' && (
+                                              {settings.timeReference === 'smart' && (
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {day.date.fromNow()} • {day.date.format('MMM D')}
                         </div>
@@ -599,6 +746,496 @@ export function ActivityHeatmap({
     );
   };
 
+  const renderCompactCards = () => {
+    // Group data by month for compact card display
+    const monthlyData = weeks.reduce((acc, week) => {
+      week.forEach(day => {
+        // Add null check for day and day.activity
+        if (day && day.activity) {
+          const monthKey = day.date.format('YYYY-MM');
+          const monthName = day.date.format('MMM YYYY');
+          
+          if (!acc[monthKey]) {
+            acc[monthKey] = {
+              name: monthName,
+              totalDuration: 0,
+              activeDays: 0,
+              totalSessions: 0,
+              dates: [] as typeof day[],
+              weekdays: 0,
+              weekends: 0,
+              bestDay: { duration: 0, date: '' },
+              longestStreak: 0,
+              currentStreak: 0,
+            };
+          }
+          
+          acc[monthKey].totalDuration += day.activity.duration;
+          acc[monthKey].totalSessions += day.activity.sessions;
+          acc[monthKey].activeDays += 1;
+          acc[monthKey].dates.push(day);
+          
+          // Track weekday vs weekend activity
+          if (day.date.day() === 0 || day.date.day() === 6) {
+            acc[monthKey].weekends += 1;
+          } else {
+            acc[monthKey].weekdays += 1;
+          }
+          
+          // Track best day
+          if (day.activity.duration > acc[monthKey].bestDay.duration) {
+            acc[monthKey].bestDay = {
+              duration: day.activity.duration,
+              date: day.date.format('MMM D'),
+            };
+          }
+        }
+      });
+      return acc;
+    }, {} as Record<string, {
+      name: string;
+      totalDuration: number;
+      activeDays: number;
+      totalSessions: number;
+      dates: any[];
+      weekdays: number;
+      weekends: number;
+      bestDay: { duration: number; date: string };
+      longestStreak: number;
+      currentStreak: number;
+    }>);
+
+    // Calculate streaks for each month
+    Object.values(monthlyData).forEach(monthData => {
+      let currentStreak = 0;
+      let longestStreak = 0;
+      
+      // Sort dates chronologically
+      const sortedDates = monthData.dates.sort((a, b) => a.date.valueOf() - b.date.valueOf());
+      
+      for (let i = 0; i < sortedDates.length; i++) {
+        if (sortedDates[i] && sortedDates[i].activity && sortedDates[i].activity.duration > 0) {
+          currentStreak += 1;
+          longestStreak = Math.max(longestStreak, currentStreak);
+        } else {
+          currentStreak = 0;
+        }
+      }
+      
+      monthData.longestStreak = longestStreak;
+      monthData.currentStreak = currentStreak;
+    });
+
+    // Sort months chronologically (most recent first)
+    const sortedMonths = Object.entries(monthlyData)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .slice(0, 12); // Show last 12 months
+
+    // Calculate trends (compare with previous month)
+    const monthsWithTrends = sortedMonths.map(([monthKey, data], index) => {
+      const previousMonth = sortedMonths[index + 1];
+      let trend = 'neutral' as 'up' | 'down' | 'neutral';
+      let trendValue = 0;
+      
+      if (previousMonth) {
+        const prevData = previousMonth[1];
+        const currentAvg = data.totalDuration / Math.max(data.activeDays, 1);
+        const prevAvg = prevData.totalDuration / Math.max(prevData.activeDays, 1);
+        
+        if (currentAvg > prevAvg * 1.1) trend = 'up';
+        else if (currentAvg < prevAvg * 0.9) trend = 'down';
+        
+        trendValue = ((currentAvg - prevAvg) / Math.max(prevAvg, 1)) * 100;
+      }
+      
+      return { monthKey, data, trend, trendValue };
+    });
+
+    // Calculate overall statistics for summary card
+    const totalOverallDuration = sortedMonths.reduce((sum, [, data]) => sum + data.totalDuration, 0);
+    const totalOverallSessions = sortedMonths.reduce((sum, [, data]) => sum + data.totalSessions, 0);
+    const totalActiveDays = sortedMonths.reduce((sum, [, data]) => sum + data.activeDays, 0);
+    const avgDailyOverall = totalActiveDays > 0 ? totalOverallDuration / totalActiveDays : 0;
+    const avgSessionLength = totalOverallSessions > 0 ? totalOverallDuration / totalOverallSessions : 0;
+    const overallFocusScore = avgSessionLength > 0 ? Math.min(100, Math.round((avgSessionLength / 3600) * 25)) : 0;
+
+    // Determine if user is "established" enough to show upcoming month suggestions
+    const isEstablishedUser = totalActiveDays >= 7 && totalOverallSessions >= 10 && sortedMonths.length >= 1;
+    const hasRecentActivity = sortedMonths.length > 0 && dayjs().diff(dayjs().startOf('month'), 'day') < 15; // Active this month
+    const shouldShowUpcoming = isEstablishedUser && hasRecentActivity;
+
+    // Create all cards
+    const allCards = [];
+    
+    // Add summary card if we have meaningful data (more than just a few sessions)
+    if (sortedMonths.length > 0 && totalActiveDays >= 3) {
+      allCards.push({
+        type: 'summary',
+        data: {
+          totalDuration: totalOverallDuration,
+          totalSessions: totalOverallSessions,
+          activeDays: totalActiveDays,
+          avgDaily: avgDailyOverall,
+          avgSession: avgSessionLength,
+          focusScore: overallFocusScore,
+          monthCount: sortedMonths.length
+        }
+      });
+    }
+
+    // Add monthly data cards
+    monthsWithTrends.forEach(({ monthKey, data, trend, trendValue }) => {
+      allCards.push({
+        type: 'monthly',
+        monthKey,
+        data,
+        trend,
+        trendValue
+      });
+    });
+
+    // Only add upcoming months if user is established and we have space
+    if (shouldShowUpcoming && allCards.length < 4) {
+      const currentMonth = dayjs();
+      const nextMonth = currentMonth.add(1, 'month');
+      
+      // Only add 1 upcoming month as a subtle suggestion
+      allCards.push({
+        type: 'upcoming',
+        monthKey: nextMonth.format('YYYY-MM'),
+        name: nextMonth.format('MMM YYYY'),
+        isSubtle: true
+      });
+    }
+
+    // Add getting started card if no meaningful data
+    if (sortedMonths.length === 0 || totalActiveDays < 3) {
+      allCards.unshift({
+        type: 'getting-started'
+      });
+    }
+
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const maxVisibleCards = 4;
+    const totalCards = allCards.length;
+    const canScrollLeft = currentIndex > 0;
+    const canScrollRight = currentIndex < totalCards - maxVisibleCards;
+
+    const scrollLeft = () => {
+      if (canScrollLeft) {
+        setCurrentIndex(prev => Math.max(0, prev - 1));
+      }
+    };
+
+    const scrollRight = () => {
+      if (canScrollRight) {
+        setCurrentIndex(prev => Math.min(totalCards - maxVisibleCards, prev + 1));
+      }
+    };
+
+    const visibleCards = allCards.slice(currentIndex, currentIndex + maxVisibleCards);
+
+    return (
+      <div className="relative">
+        {/* Navigation Arrows - Only show if needed */}
+        {totalCards > maxVisibleCards && (
+          <>
+            <button
+              onClick={scrollLeft}
+              disabled={!canScrollLeft}
+              className={cn(
+                'absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full border bg-background/80 backdrop-blur-sm shadow-md transition-all',
+                canScrollLeft 
+                  ? 'border-border hover:bg-accent hover:border-accent-foreground/20 text-foreground'
+                  : 'border-muted text-muted-foreground cursor-not-allowed opacity-50'
+              )}
+              aria-label="Previous cards"
+            >
+              <ChevronLeft className="h-4 w-4 mx-auto" />
+            </button>
+            
+            <button
+              onClick={scrollRight}
+              disabled={!canScrollRight}
+              className={cn(
+                'absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full border bg-background/80 backdrop-blur-sm shadow-md transition-all',
+                canScrollRight 
+                  ? 'border-border hover:bg-accent hover:border-accent-foreground/20 text-foreground'
+                  : 'border-muted text-muted-foreground cursor-not-allowed opacity-50'
+              )}
+              aria-label="Next cards"
+            >
+              <ChevronRight className="h-4 w-4 mx-auto" />
+            </button>
+          </>
+        )}
+
+        {/* Cards Container */}
+        <div className={cn("transition-all duration-300", totalCards > maxVisibleCards ? "mx-8" : "mx-0")}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {visibleCards.map((card) => {
+              if (card.type === 'summary' && card.data) {
+                return (
+                  <div
+                    key="summary"
+                    className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-blue-950/20 dark:to-indigo-950/20 dark:border-blue-800/30"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">Overall</h4>
+                        <span className="text-xs text-blue-600 dark:text-blue-300">{card.data.monthCount} month{card.data.monthCount > 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                        {card.data.focusScore}%
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                      <div>
+                        <div className="text-blue-600 dark:text-blue-400">Total</div>
+                        <div className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(card.data.totalDuration)}</div>
+                      </div>
+                      <div>
+                        <div className="text-blue-600 dark:text-blue-400">Daily</div>
+                        <div className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(Math.round(card.data.avgDaily))}</div>
+                      </div>
+                      <div>
+                        <div className="text-blue-600 dark:text-blue-400">Sessions</div>
+                        <div className="font-medium text-blue-900 dark:text-blue-100">{card.data.totalSessions}</div>
+                      </div>
+                      <div>
+                        <div className="text-blue-600 dark:text-blue-400">Days</div>
+                        <div className="font-medium text-blue-900 dark:text-blue-100">{card.data.activeDays}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        {card.data.activeDays < 7 ? 
+                          `Great start! Building momentum.` :
+                          `Avg session: ${formatDuration(Math.round(card.data.avgSession))}`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (card.type === 'monthly' && card.data) {
+                const avgDailyDuration = card.data.activeDays > 0 ? card.data.totalDuration / card.data.activeDays : 0;
+                const avgSessionLength = card.data.totalSessions > 0 ? card.data.totalDuration / card.data.totalSessions : 0;
+                const focusScore = avgSessionLength > 0 ? Math.min(100, Math.round((avgSessionLength / 3600) * 25)) : 0;
+                const consistencyScore = card.data.activeDays > 0 ? Math.round((card.data.activeDays / 31) * 100) : 0;
+                
+                return (
+                  <div
+                    key={(card as any).monthKey}
+                    className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-green-950/20 dark:to-emerald-950/20 dark:border-green-800/30"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-sm text-green-900 dark:text-green-100">{(card.data as any).name}</h4>
+                        <div className="flex items-center gap-1">
+                          <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                          {(card as any).trend !== 'neutral' && (
+                            <span className={cn(
+                              'text-xs font-medium',
+                              (card as any).trend === 'up' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                            )}>
+                              {(card as any).trend === 'up' ? '↗' : '↘'}{Math.abs((card as any).trendValue).toFixed(0)}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                        {focusScore}%
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                      <div>
+                        <div className="text-green-600 dark:text-green-400">Total</div>
+                        <div className="font-medium text-green-900 dark:text-green-100">{formatDuration(card.data.totalDuration)}</div>
+                      </div>
+                      <div>
+                        <div className="text-green-600 dark:text-green-400">Daily</div>
+                        <div className="font-medium text-green-900 dark:text-green-100">{formatDuration(Math.round(avgDailyDuration))}</div>
+                      </div>
+                      <div>
+                        <div className="text-green-600 dark:text-green-400">Sessions</div>
+                        <div className="font-medium text-green-900 dark:text-green-100">{card.data.totalSessions}</div>
+                      </div>
+                      <div>
+                        <div className="text-green-600 dark:text-green-400">Days</div>
+                        <div className="font-medium text-green-900 dark:text-green-100">{card.data.activeDays}</div>
+                      </div>
+                    </div>
+
+                    {/* Mini Heatmap */}
+                    <div className="mb-2">
+                      <div className="grid grid-cols-7 gap-px">
+                        {Array.from({ length: 7 * 4 }, (_, i) => {
+                          const monthStart = dayjs((card as any).monthKey + '-01');
+                          const dayOffset = i - monthStart.day();
+                          const currentDay = monthStart.add(dayOffset, 'day');
+                          
+                          const dayActivity = (card.data as any).dates.find((d: any) => 
+                            d && d.date && d.date.format('YYYY-MM-DD') === currentDay.format('YYYY-MM-DD')
+                          );
+                          
+                          const isCurrentMonth = currentDay.month() === monthStart.month();
+                          const dayIntensity = dayActivity && dayActivity.activity ? getIntensity(dayActivity.activity.duration) : 0;
+                          
+                          return (
+                            <div
+                              key={i}
+                              className={cn(
+                                'aspect-square rounded-[1px] transition-all',
+                                isCurrentMonth
+                                  ? (dayActivity && dayActivity.activity)
+                                    ? getColorClass(dayIntensity)
+                                    : 'bg-green-100 dark:bg-green-900/30'
+                                  : 'bg-transparent'
+                              )}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2 border-t border-green-200 dark:border-green-800">
+                      <p className="text-xs text-green-700 dark:text-green-300">
+                        {consistencyScore >= 80 ? 'Excellent consistency!' : 
+                         consistencyScore >= 50 ? 'Good habits forming' :
+                         'Building momentum'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (card.type === 'upcoming') {
+                return (
+                  <div
+                    key={`upcoming-${(card as any).monthKey}`}
+                    className="group relative overflow-hidden rounded-lg border border-muted/40 bg-gradient-to-br from-muted/20 to-muted/10 p-3 transition-all hover:from-muted/30 hover:to-muted/20 backdrop-blur-sm opacity-60 hover:opacity-80"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-sm text-muted-foreground/80">{(card as any).name}</h4>
+                        <span className="text-xs text-muted-foreground/60">Next month</span>
+                      </div>
+                      <div className="px-2 py-1 rounded-full text-xs font-medium bg-muted/50 text-muted-foreground/70 backdrop-blur-sm">
+                        Plan
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-2 opacity-50">
+                      <div>
+                        <div className="text-muted-foreground/60">Target</div>
+                        <div className="font-medium text-muted-foreground/60">Set goal</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground/60">Focus</div>
+                        <div className="font-medium text-muted-foreground/60">Stay consistent</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground/60">Sessions</div>
+                        <div className="font-medium text-muted-foreground/60">Plan ahead</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground/60">Growth</div>
+                        <div className="font-medium text-muted-foreground/60">Keep going</div>
+                      </div>
+                    </div>
+
+                    <div className="mb-2 opacity-30">
+                      <div className="grid grid-cols-7 gap-px">
+                        {Array.from({ length: 7 * 4 }, (_, i) => (
+                          <div
+                            key={i}
+                            className="aspect-square rounded-[1px] bg-muted/50"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2 border-t border-muted/30">
+                      <p className="text-xs text-muted-foreground/60">
+                        Keep the momentum going! 🚀
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (card.type === 'getting-started') {
+                return (
+                  <div
+                    key="getting-started"
+                    className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-purple-50 to-violet-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-purple-950/20 dark:to-violet-950/20 dark:border-purple-800/30"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">Get Started</h4>
+                        <span className="text-xs text-purple-600 dark:text-purple-300">Begin journey</span>
+                      </div>
+                      <div className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+                        New
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1 w-1 rounded-full bg-purple-500" />
+                        <span className="text-purple-700 dark:text-purple-300">Start timer session</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1 w-1 rounded-full bg-purple-500" />
+                        <span className="text-purple-700 dark:text-purple-300">Build daily habits</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1 w-1 rounded-full bg-purple-500" />
+                        <span className="text-purple-700 dark:text-purple-300">Track progress</span>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2 border-t border-purple-200 dark:border-purple-800 mt-3">
+                      <p className="text-xs text-purple-700 dark:text-purple-300">
+                        💡 Try 25-min Pomodoro sessions
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+
+              return null;
+            })}
+          </div>
+        </div>
+
+        {/* Pagination Dots - Only show if needed */}
+        {totalCards > maxVisibleCards && (
+          <div className="flex justify-center mt-3 gap-1">
+            {Array.from({ length: Math.ceil(totalCards / maxVisibleCards) }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentIndex(i * maxVisibleCards)}
+                className={cn(
+                  'h-2 w-2 rounded-full transition-all',
+                  Math.floor(currentIndex / maxVisibleCards) === i
+                    ? 'bg-primary'
+                    : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                )}
+                aria-label={`Go to page ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="relative space-y-4 overflow-visible sm:space-y-5">
       {/* Header */}
@@ -656,6 +1293,15 @@ export function ActivityHeatmap({
                 Calendar Only
                 {settings.viewMode === 'calendar-only' && <span className="ml-auto">✓</span>}
               </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-xs"
+                onClick={() => !externalSettings && setInternalSettings(prev => ({ ...prev, viewMode: 'compact-cards' }))}
+                disabled={!!externalSettings}
+              >
+                <LayoutDashboard className="mr-2 h-3 w-3" />
+                Compact Cards
+                {settings.viewMode === 'compact-cards' && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-xs">Options</DropdownMenuLabel>
               <DropdownMenuCheckboxItem
@@ -704,27 +1350,44 @@ export function ActivityHeatmap({
         </div>
       </div>
 
-      {/* Onboarding Tips */}
-      {settings.showOnboardingTips && (
-        <div className="rounded-lg border border-blue-200/60 bg-blue-50/50 p-3 dark:border-blue-800/60 dark:bg-blue-950/30">
+      {/* Smart Onboarding Tips */}
+      {shouldShowOnboardingTips && (
+        <div className="rounded-lg border border-blue-200/60 bg-blue-50/50 p-3 shadow-sm dark:border-blue-800/60 dark:bg-blue-950/30">
           <div className="flex items-start gap-2">
             <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-            <div className="space-y-1 text-sm">
-              <p className="font-medium text-blue-900 dark:text-blue-100">
-                💡 Heatmap Guide
+            <div className="space-y-2 text-sm flex-1">
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-blue-900 dark:text-blue-100">
+                  💡 {settings.viewMode === 'original' && 'GitHub-style Heatmap'}
+                  {settings.viewMode === 'hybrid' && 'Interactive Hybrid View'}
+                  {settings.viewMode === 'calendar-only' && 'Monthly Calendar View'}
+                  {settings.viewMode === 'compact-cards' && 'Compact Card Overview'}
+                </p>
+                {onboardingState.viewCount > 0 && (
+                  <span className="text-xs text-blue-600 dark:text-blue-400 opacity-75">
+                    View #{onboardingState.viewCount + 1}
+                  </span>
+                )}
+              </div>
+              <p className="text-blue-700 dark:text-blue-300 leading-relaxed">
+                {settings.viewMode === 'original' && "Track your productivity with GitHub-style visualization. Darker squares = more active days. Hover over any day for details, and use the View menu above to explore other layouts!"}
+                {settings.viewMode === 'hybrid' && "Best of both worlds! Click any month bar in the year overview to jump to that month's detailed calendar below. Perfect for spotting patterns across the year."}
+                {settings.viewMode === 'calendar-only' && "Navigate months with arrow buttons to see your activity patterns. Each colored square represents your activity level that day. Great for detailed daily analysis."}
+                {settings.viewMode === 'compact-cards' && "Monthly summaries at a glance! Each card shows key stats with a mini heatmap preview. Scroll horizontally to see different months and track your progress over time."}
               </p>
-              <p className="text-blue-700 dark:text-blue-300">
-                {settings.viewMode === 'original' && "Darker colors = more activity. Use the View menu to try different layouts!"}
-                {settings.viewMode === 'hybrid' && "Click on any month bar above to view that month's calendar below."}
-                {settings.viewMode === 'calendar-only' && "Navigate between months using the arrow buttons. Each day shows your activity level."}
-              </p>
+              {onboardingState.viewCount >= 3 && (
+                <p className="text-xs text-blue-600 dark:text-blue-400 opacity-80">
+                  💭 Tip: You can always toggle these tips on/off in the View menu or Settings panel.
+                </p>
+              )}
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 dark:text-blue-400"
-              onClick={() => !externalSettings && setInternalSettings(prev => ({ ...prev, showOnboardingTips: false }))}
-              disabled={!!externalSettings}
+              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
+              onClick={handleDismissTips}
+              title="Hide for 7 days (tips will return when switching view modes or after a week)"
+              aria-label="Close onboarding tips"
             >
               ×
             </Button>
@@ -837,6 +1500,8 @@ export function ActivityHeatmap({
           {renderMonthlyCalendar()}
         </div>
       )}
+
+      {settings.viewMode === 'compact-cards' && renderCompactCards()}
     </div>
   );
 }

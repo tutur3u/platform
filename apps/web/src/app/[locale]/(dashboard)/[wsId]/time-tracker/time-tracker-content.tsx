@@ -179,6 +179,21 @@ export default function TimeTrackerContent({
     };
   });
 
+  // Listen for heatmap settings changes from child components
+  useEffect(() => {
+    const handleSettingsChange = (event: CustomEvent) => {
+      setHeatmapSettings(event.detail);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('heatmap-settings-changed', handleSettingsChange as EventListener);
+      
+      return () => {
+        window.removeEventListener('heatmap-settings-changed', handleSettingsChange as EventListener);
+      };
+    }
+  }, []);
+
   // Refs for cleanup
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
@@ -2128,12 +2143,19 @@ export default function TimeTrackerContent({
                                     <span>Calendar Only</span>
                                   </div>
                                 </SelectItem>
+                                <SelectItem value="compact-cards">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-sm bg-orange-500" />
+                                    <span>Compact Cards</span>
+                                  </div>
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                             <p className="text-xs text-muted-foreground">
                               {heatmapSettings.viewMode === 'original' && 'GitHub-style grid view with day labels'}
                               {heatmapSettings.viewMode === 'hybrid' && 'Year overview plus monthly calendar details'}
                               {heatmapSettings.viewMode === 'calendar-only' && 'Traditional calendar interface'}
+                              {heatmapSettings.viewMode === 'compact-cards' && 'Monthly summary cards with key metrics and mini previews'}
                             </p>
                           </div>
 
