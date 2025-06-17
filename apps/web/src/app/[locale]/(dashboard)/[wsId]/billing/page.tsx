@@ -57,9 +57,7 @@ const fetchSubscription = async (wsId: string) => {
   }
 
   // 2. If it exists, get the full product details from Polar
-  const polarProduct = dbSub.product_id
-    ? await api.products.get({ id: dbSub.product_id })
-    : null;
+  const polarProduct = await api.products.get({ id: 'test-product-id' });
 
   if (!polarProduct) {
     return null; // Can't proceed without product details
