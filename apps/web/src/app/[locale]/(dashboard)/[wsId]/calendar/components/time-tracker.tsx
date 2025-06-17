@@ -2,7 +2,6 @@
 
 import type {
   TimeTrackingCategory,
-  TimeTrackingSession,
   WorkspaceTask,
 } from '@tuturuuu/types/db';
 import {

@@ -11,6 +11,7 @@ import type {
   WorkspaceTask,
   WorkspaceTaskBoard,
 } from '@tuturuuu/types/db';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import {
   Accordion,
   AccordionContent,
@@ -186,11 +187,21 @@ export default function TasksSidebarContent({
 
   // Get all tasks from all boards for time tracker
   const allTasks = useMemo(() => {
-    const tasks: Partial<WorkspaceTask>[] = [];
+    const tasks: ExtendedWorkspaceTask[] = [];
     initialTaskBoards.forEach((board) => {
       board.lists?.forEach((list) => {
         if (list.tasks) {
-          tasks.push(...list.tasks);
+          // Transform Partial<WorkspaceTask> to ExtendedWorkspaceTask
+          const extendedTasks = list.tasks.map((task) => ({
+            ...task,
+            board_name: board.name,
+            list_name: list.name,
+            assignee_name: undefined,
+            assignee_avatar: undefined,
+            is_assigned_to_current_user: undefined,
+            assignees: undefined,
+          } as ExtendedWorkspaceTask));
+          tasks.push(...extendedTasks);
         }
       });
     });

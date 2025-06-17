@@ -23,7 +23,6 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import type {
   TimeTrackingCategory,
-  WorkspaceTask,
 } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
@@ -44,7 +43,6 @@ import {
   RotateCcw,
   Settings,
   Tag,
-  Target,
   Timer,
   TrendingUp,
   WifiOff,
