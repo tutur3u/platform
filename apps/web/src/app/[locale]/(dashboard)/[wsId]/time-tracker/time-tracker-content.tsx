@@ -277,25 +277,48 @@ export default function TimeTrackerContent({
           ? `?userId=${selectedUserId}`
           : '';
 
-        const promises = [
-          apiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`),
-          !isViewingOtherUser
-            ? apiCall(
-                `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
-              )
-            : Promise.resolve({ session: null }),
-          apiCall(
-            `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=recent&limit=50${userParam}`
-          ),
-          apiCall(
-            `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats${userParam}`
-          ),
-          apiCall(
-            `/api/v1/workspaces/${wsId}/time-tracking/goals${goalsUserParam}`
-          ),
-          apiCall(`/api/v1/workspaces/${wsId}/tasks?limit=100`),
+        // Individual API calls with error handling for each
+        const apiCalls = [
+          {
+            name: 'categories',
+            call: () => apiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`),
+            fallback: { categories: [] }
+          },
+          {
+            name: 'running',
+            call: () => !isViewingOtherUser
+              ? apiCall(`/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`)
+              : Promise.resolve({ session: null }),
+            fallback: { session: null }
+          },
+          {
+            name: 'recent',
+            call: () => apiCall(`/api/v1/workspaces/${wsId}/time-tracking/sessions?type=recent&limit=50${userParam}`),
+            fallback: { sessions: [] }
+          },
+          {
+            name: 'stats',
+            call: () => apiCall(`/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats${userParam}`),
+            fallback: { stats: { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 } }
+          },
+          {
+            name: 'goals',
+            call: () => apiCall(`/api/v1/workspaces/${wsId}/time-tracking/goals${goalsUserParam}`),
+            fallback: { goals: [] }
+          },
+          {
+            name: 'tasks',
+            call: () => apiCall(`/api/v1/workspaces/${wsId}/tasks?limit=100`),
+            fallback: { tasks: [] }
+          }
         ];
 
+        // Execute API calls with individual error handling
+        const results = await Promise.allSettled(
+          apiCalls.map(({ call }) => call())
+        );
+
+        // Process results with fallbacks for failed calls
         const [
           categoriesRes,
           runningRes,
@@ -303,7 +326,19 @@ export default function TimeTrackerContent({
           statsRes,
           goalsRes,
           tasksRes,
-        ] = await Promise.all(promises);
+        ] = results.map((result, index) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          } else {
+            const { name, fallback } = apiCalls[index]!;
+            console.warn(`API call for ${name} failed:`, result.reason);
+            // Only show error toast for critical failures, not for tasks
+            if (name !== 'tasks') {
+              toast.error(`Failed to load ${name}: ${result.reason.message || 'Unknown error'}`);
+            }
+            return fallback;
+          }
+        });
 
         if (!isMountedRef.current) return;
 
@@ -1345,18 +1380,20 @@ export default function TimeTrackerContent({
                     <TrendingUp className="h-3 w-3" />
                     Analytics
                   </button>
-                  <button
-                    onClick={() => setSidebarView('tasks')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                      sidebarView === 'tasks'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <CheckCircle className="h-3 w-3" />
-                    Tasks
-                  </button>
+                  {!isViewingOtherUser && (
+                    <button
+                      onClick={() => setSidebarView('tasks')}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                        sidebarView === 'tasks'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <CheckCircle className="h-3 w-3" />
+                      Tasks
+                    </button>
+                  )}
                   <button
                     onClick={() => setSidebarView('reports')}
                     className={cn(

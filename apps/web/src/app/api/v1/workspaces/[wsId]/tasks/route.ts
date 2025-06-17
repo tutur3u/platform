@@ -56,11 +56,11 @@ export async function GET(
         end_date,
         created_at,
         list_id,
-        task_lists!inner (
+        task_lists (
           id,
           name,
           board_id,
-          workspace_boards!inner (
+          workspace_boards (
             id,
             name,
             ws_id
@@ -70,8 +70,7 @@ export async function GET(
           user:users(
             id,
             display_name,
-            avatar_url,
-            email
+            avatar_url
           )
         )
       `
@@ -91,37 +90,50 @@ export async function GET(
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error in tasks query:', error);
+      throw error;
+    }
+
+    // Handle case where no tasks exist or workspace has no boards/lists
+    if (!data) {
+      return NextResponse.json({ tasks: [] });
+    }
 
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
-      data?.map((task: any) => ({
-        id: task.id,
-        name: task.name,
-        description: task.description,
-        priority: task.priority,
-        completed: task.completed,
-        start_date: task.start_date,
-        end_date: task.end_date,
-        created_at: task.created_at,
-        list_id: task.list_id,
-        // Add board information for context
-        board_name: task.task_lists?.workspace_boards?.name,
-        list_name: task.task_lists?.name,
-        // Add assignee information
-        assignees:
-          task.assignees
-            ?.map((a: any) => a.user)
-            .filter(
-              (user: any, index: number, self: any[]) =>
-                user &&
-                user.id &&
-                self.findIndex((u: any) => u.id === user.id) === index
-            ) || [],
-        // Add helper field to identify if current user is assigned
-        is_assigned_to_current_user:
-          task.assignees?.some((a: any) => a.user?.id === user.id) || false,
-      })) || [];
+      data
+        ?.filter((task: any) => {
+          // Filter out tasks that don't belong to this workspace
+          return task.task_lists?.workspace_boards?.ws_id === wsId;
+        })
+        ?.map((task: any) => ({
+          id: task.id,
+          name: task.name,
+          description: task.description,
+          priority: task.priority,
+          completed: task.completed,
+          start_date: task.start_date,
+          end_date: task.end_date,
+          created_at: task.created_at,
+          list_id: task.list_id,
+          // Add board information for context
+          board_name: task.task_lists?.workspace_boards?.name,
+          list_name: task.task_lists?.name,
+          // Add assignee information
+          assignees:
+            task.assignees
+              ?.map((a: any) => a.user)
+              .filter(
+                (user: any, index: number, self: any[]) =>
+                  user &&
+                  user.id &&
+                  self.findIndex((u: any) => u.id === user.id) === index
+              ) || [],
+          // Add helper field to identify if current user is assigned
+          is_assigned_to_current_user:
+            task.assignees?.some((a: any) => a.user?.id === user.id) || false,
+        })) || [];
 
     return NextResponse.json({ tasks });
   } catch (error) {
