@@ -49,6 +49,11 @@ import {
   Search,
   Tag,
   Trash2,
+  TrendingUp,
+  Sun,
+  Briefcase,
+  Star,
+  Brain,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -221,6 +226,10 @@ const StackedSessionItem: FC<{
     board_name?: string;
     list_name?: string;
   })[];
+  // eslint-disable-next-line no-unused-vars
+  calculateFocusScore: (session: SessionWithRelations) => number;
+  // eslint-disable-next-line no-unused-vars
+  getSessionProductivityType: (session: SessionWithRelations) => string;
 }> = ({
   stackedSession,
   readOnly,
@@ -230,6 +239,8 @@ const StackedSessionItem: FC<{
   onDelete,
   actionStates,
   tasks,
+  calculateFocusScore,
+  getSessionProductivityType,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const userTimezone = dayjs.tz.guess();
@@ -242,6 +253,33 @@ const StackedSessionItem: FC<{
 
   const latestSession =
     stackedSession.sessions[stackedSession.sessions.length - 1]!;
+
+  // Calculate average focus score for stacked sessions
+  const avgFocusScore = stackedSession.isStacked 
+    ? Math.round(stackedSession.sessions.reduce((sum, s) => sum + calculateFocusScore(s), 0) / stackedSession.sessions.length)
+    : calculateFocusScore(latestSession);
+
+  const productivityType = getSessionProductivityType(latestSession);
+
+  const getProductivityIcon = (type: string) => {
+    switch (type) {
+      case 'deep-work': return '🧠';
+      case 'focused': return '🎯';
+      case 'scattered': return '🔀';
+      case 'interrupted': return '⚡';
+      default: return '📋';
+    }
+  };
+
+  const getProductivityColor = (type: string) => {
+    switch (type) {
+      case 'deep-work': return 'text-green-600 bg-green-50 border-green-200';
+      case 'focused': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'scattered': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'interrupted': return 'text-red-600 bg-red-50 border-red-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
 
   return (
     <div className="group rounded-lg border transition-all hover:bg-accent/50 hover:shadow-sm">
@@ -292,6 +330,28 @@ const StackedSessionItem: FC<{
                   </Button>
                 </div>
               )}
+              
+              {/* Focus Score Badge */}
+              <div className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium",
+                avgFocusScore >= 80 ? "text-green-600 bg-green-50 border-green-200" :
+                avgFocusScore >= 60 ? "text-blue-600 bg-blue-50 border-blue-200" :
+                avgFocusScore >= 40 ? "text-yellow-600 bg-yellow-50 border-yellow-200" :
+                "text-red-600 bg-red-50 border-red-200"
+              )}>
+                <Brain className="h-3 w-3" />
+                <span>Focus {avgFocusScore}</span>
+              </div>
+
+              {/* Productivity Type Badge */}
+              <div className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium",
+                getProductivityColor(productivityType)
+              )}>
+                <span>{getProductivityIcon(productivityType)}</span>
+                <span className="capitalize">{productivityType.replace('-', ' ')}</span>
+              </div>
+
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 <span>
@@ -712,7 +772,12 @@ export function SessionHistory({
 }: SessionHistoryProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState<string>('all');
-  const [filterTaskId, setFilterTaskId] = useState<string>('all');
+  const [filterDuration, setFilterDuration] = useState<string>('all');
+  const [filterProductivity, setFilterProductivity] = useState<string>('all');
+  const [filterTimeOfDay, setFilterTimeOfDay] = useState<string>('all');
+  const [filterProjectContext, setFilterProjectContext] = useState<string>('all');
+  const [filterSessionQuality, setFilterSessionQuality] = useState<string>('all');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [sessionToDelete, setSessionToDelete] =
     useState<SessionWithRelations | null>(null);
   const [sessionToEdit, setSessionToEdit] =
@@ -727,6 +792,74 @@ export function SessionHistory({
 
   const userTimezone = dayjs.tz.guess();
   const today = dayjs().tz(userTimezone);
+
+  // Advanced analytics functions
+  const calculateFocusScore = (session: SessionWithRelations): number => {
+    if (!session.duration_seconds) return 0;
+    
+    // Base score from duration (longer sessions = higher focus)
+    const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
+    
+    // Bonus for consistency (sessions without interruptions)
+    const consistencyBonus = session.description?.includes('resumed') ? 0 : 20;
+    
+    // Time of day bonus (peak hours get bonus)
+    const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+    const peakHoursBonus = (sessionHour >= 9 && sessionHour <= 11) || (sessionHour >= 14 && sessionHour <= 16) ? 20 : 0;
+    
+    // Category bonus (work categories get slight bonus)
+    const categoryBonus = session.category?.name?.toLowerCase().includes('work') ? 10 : 0;
+    
+    // Task completion bonus
+    const taskBonus = session.task_id ? 10 : 0;
+    
+    return Math.min(durationScore + consistencyBonus + peakHoursBonus + categoryBonus + taskBonus, 100);
+  };
+
+  const getSessionProductivityType = (session: SessionWithRelations): string => {
+    const duration = session.duration_seconds || 0;
+    const focusScore = calculateFocusScore(session);
+    
+    if (focusScore >= 80 && duration >= 3600) return 'deep-work';
+    if (focusScore >= 60 && duration >= 1800) return 'focused';
+    if (duration < 900 && focusScore < 40) return 'interrupted';
+    if (duration >= 1800 && focusScore < 50) return 'scattered';
+    return 'standard';
+  };
+
+  const getTimeOfDayCategory = (session: SessionWithRelations): string => {
+    const hour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+    if (hour >= 6 && hour < 12) return 'morning';
+    if (hour >= 12 && hour < 18) return 'afternoon';
+    if (hour >= 18 && hour < 24) return 'evening';
+    return 'night';
+  };
+
+  const getProjectContext = (session: SessionWithRelations): string => {
+    if (session.task_id) {
+      const task = tasks.find(t => t.id === session.task_id);
+      return task?.board_name || 'project-work';
+    }
+    if (session.category?.name?.toLowerCase().includes('meeting')) return 'meetings';
+    if (session.category?.name?.toLowerCase().includes('learn')) return 'learning';
+    if (session.category?.name?.toLowerCase().includes('admin')) return 'administrative';
+    return 'general';
+  };
+
+  const getDurationCategory = (session: SessionWithRelations): string => {
+    const duration = session.duration_seconds || 0;
+    if (duration < 1800) return 'short'; // < 30 min
+    if (duration < 7200) return 'medium'; // 30 min - 2 hours
+    return 'long'; // 2+ hours
+  };
+
+  const getSessionQuality = (session: SessionWithRelations): string => {
+    const focusScore = calculateFocusScore(session);
+    if (focusScore >= 80) return 'excellent';
+    if (focusScore >= 60) return 'good';
+    if (focusScore >= 40) return 'average';
+    return 'needs-improvement';
+  };
 
   const goToPrevious = () => {
     setCurrentDate(currentDate.subtract(1, viewMode));
@@ -758,6 +891,7 @@ export function SessionHistory({
   const filteredSessions = useMemo(
     () =>
       sessions.filter((session) => {
+        // Search filter
         if (
           searchQuery &&
           !session.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -767,16 +901,37 @@ export function SessionHistory({
         ) {
           return false;
         }
+        
+        // Category filter
         if (
           filterCategoryId !== 'all' &&
           session.category_id !== filterCategoryId
         )
           return false;
-        if (filterTaskId !== 'all' && session.task_id !== filterTaskId)
+        
+        // Duration filter
+        if (filterDuration !== 'all' && getDurationCategory(session) !== filterDuration)
           return false;
+        
+        // Productivity filter
+        if (filterProductivity !== 'all' && getSessionProductivityType(session) !== filterProductivity)
+          return false;
+        
+        // Time of day filter
+        if (filterTimeOfDay !== 'all' && getTimeOfDayCategory(session) !== filterTimeOfDay)
+          return false;
+        
+        // Project context filter
+        if (filterProjectContext !== 'all' && getProjectContext(session) !== filterProjectContext)
+          return false;
+        
+        // Session quality filter
+        if (filterSessionQuality !== 'all' && getSessionQuality(session) !== filterSessionQuality)
+          return false;
+        
         return true;
       }),
-    [sessions, searchQuery, filterCategoryId, filterTaskId]
+    [sessions, searchQuery, filterCategoryId, filterDuration, filterProductivity, filterTimeOfDay, filterProjectContext, filterSessionQuality, tasks]
   );
 
   const { startOfPeriod, endOfPeriod } = useMemo(() => {
@@ -807,6 +962,37 @@ export function SessionHistory({
       [id: string]: { name: string; duration: number; color: string };
     } = {};
 
+    // Enhanced analytics
+    const focusScores = sessionsForPeriod.map(s => calculateFocusScore(s));
+    const avgFocusScore = focusScores.length > 0 ? focusScores.reduce((sum, score) => sum + score, 0) / focusScores.length : 0;
+    
+    const productivityBreakdown = {
+      'deep-work': sessionsForPeriod.filter(s => getSessionProductivityType(s) === 'deep-work').length,
+      'focused': sessionsForPeriod.filter(s => getSessionProductivityType(s) === 'focused').length,
+      'standard': sessionsForPeriod.filter(s => getSessionProductivityType(s) === 'standard').length,
+      'scattered': sessionsForPeriod.filter(s => getSessionProductivityType(s) === 'scattered').length,
+      'interrupted': sessionsForPeriod.filter(s => getSessionProductivityType(s) === 'interrupted').length,
+    };
+
+    const timeOfDayBreakdown = {
+      morning: sessionsForPeriod.filter(s => getTimeOfDayCategory(s) === 'morning').length,
+      afternoon: sessionsForPeriod.filter(s => getTimeOfDayCategory(s) === 'afternoon').length,
+      evening: sessionsForPeriod.filter(s => getTimeOfDayCategory(s) === 'evening').length,
+      night: sessionsForPeriod.filter(s => getTimeOfDayCategory(s) === 'night').length,
+    };
+
+    const bestTimeOfDay = Object.entries(timeOfDayBreakdown).reduce((a, b) => 
+      timeOfDayBreakdown[a[0]] > timeOfDayBreakdown[b[0]] ? a : b
+    )[0];
+
+    const longestSession = sessionsForPeriod.reduce((longest, session) => 
+      (session.duration_seconds || 0) > (longest.duration_seconds || 0) ? session : longest
+    , sessionsForPeriod[0]);
+
+    const shortSessions = sessionsForPeriod.filter(s => (s.duration_seconds || 0) < 1800).length;
+    const mediumSessions = sessionsForPeriod.filter(s => (s.duration_seconds || 0) >= 1800 && (s.duration_seconds || 0) < 7200).length;
+    const longSessions = sessionsForPeriod.filter(s => (s.duration_seconds || 0) >= 7200).length;
+
     sessionsForPeriod.forEach((s) => {
       const id = s.category?.id || 'uncategorized';
       const name = s.category?.name || 'No Category';
@@ -821,7 +1007,20 @@ export function SessionHistory({
     const breakdown = Object.values(categoryDurations)
       .filter((c) => c.duration > 0)
       .sort((a, b) => b.duration - a.duration);
-    return { totalDuration, breakdown };
+
+    return { 
+      totalDuration, 
+      breakdown, 
+      avgFocusScore,
+      productivityBreakdown,
+      timeOfDayBreakdown,
+      bestTimeOfDay,
+      longestSession,
+      shortSessions,
+      mediumSessions,
+      longSessions,
+      sessionCount: sessionsForPeriod.length
+    };
   }, [sessionsForPeriod]);
 
   const groupedStackedSessions = useMemo(() => {
@@ -1042,79 +1241,221 @@ export function SessionHistory({
                     <Button variant="outline" size="sm">
                       <Filter className="mr-2 h-4 w-4" />
                       {(filterCategoryId !== 'all' ||
-                        filterTaskId !== 'all') && (
+                        filterDuration !== 'all' ||
+                        filterProductivity !== 'all' ||
+                        filterTimeOfDay !== 'all' ||
+                        filterProjectContext !== 'all' ||
+                        filterSessionQuality !== 'all') && (
                         <div className="ml-1 h-2 w-2 rounded-full bg-primary" />
                       )}
-                      Filter
+                      Smart Filters
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80" align="end">
+                  <PopoverContent className="w-96" align="end">
                     <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-medium">Category</Label>
-                        <Select
-                          value={filterCategoryId}
-                          onValueChange={setFilterCategoryId}
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Advanced Analytics Filters</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All categories" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All categories</SelectItem>
-                            {categories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className={cn(
-                                      'h-3 w-3 rounded-full',
-                                      getCategoryColor(category.color || 'BLUE')
-                                    )}
-                                  />
-                                  {category.name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          {showAdvancedFilters ? 'Simple' : 'Advanced'}
+                        </Button>
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium">Task</Label>
-                        <Select
-                          value={filterTaskId}
-                          onValueChange={setFilterTaskId}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All tasks" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All tasks</SelectItem>
-                            {tasks.map((task) => (
-                              <SelectItem key={task.id} value={task.id!}>
-                                {task.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      
+                      {/* Basic Filters */}
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <Label className="text-sm font-medium flex items-center gap-2">
+                            <Tag className="h-3 w-3" />
+                            Category
+                          </Label>
+                          <Select
+                            value={filterCategoryId}
+                            onValueChange={setFilterCategoryId}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="All categories" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All categories</SelectItem>
+                              {categories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={cn(
+                                        'h-3 w-3 rounded-full',
+                                        getCategoryColor(category.color || 'BLUE')
+                                      )}
+                                    />
+                                    {category.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium flex items-center gap-2">
+                            <Clock className="h-3 w-3" />
+                            Duration Type
+                          </Label>
+                          <Select
+                            value={filterDuration}
+                            onValueChange={setFilterDuration}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="All durations" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All durations</SelectItem>
+                              <SelectItem value="short">🏃 Short (&lt; 30 min)</SelectItem>
+                              <SelectItem value="medium">🚶 Medium (30 min - 2h)</SelectItem>
+                              <SelectItem value="long">🏔️ Long (2+ hours)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="pt-2">
+
+                      {/* Advanced Filters */}
+                      {showAdvancedFilters && (
+                        <div className="space-y-3 border-t pt-3">
+                          <div>
+                            <Label className="text-sm font-medium flex items-center gap-2">
+                              <TrendingUp className="h-3 w-3" />
+                              Productivity Type
+                            </Label>
+                            <Select
+                              value={filterProductivity}
+                              onValueChange={setFilterProductivity}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All productivity types" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All types</SelectItem>
+                                <SelectItem value="deep-work">🧠 Deep Work (80+ focus)</SelectItem>
+                                <SelectItem value="focused">🎯 Focused (60+ focus)</SelectItem>
+                                <SelectItem value="standard">📋 Standard work</SelectItem>
+                                <SelectItem value="scattered">🔀 Scattered (low focus)</SelectItem>
+                                <SelectItem value="interrupted">⚡ Interrupted (&lt; 15 min)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-medium flex items-center gap-2">
+                              <Sun className="h-3 w-3" />
+                              Time of Day
+                            </Label>
+                            <Select
+                              value={filterTimeOfDay}
+                              onValueChange={setFilterTimeOfDay}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All times" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All times</SelectItem>
+                                <SelectItem value="morning">🌅 Morning (6 AM - 12 PM)</SelectItem>
+                                <SelectItem value="afternoon">☀️ Afternoon (12 PM - 6 PM)</SelectItem>
+                                <SelectItem value="evening">🌇 Evening (6 PM - 12 AM)</SelectItem>
+                                <SelectItem value="night">🌙 Night (12 AM - 6 AM)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-medium flex items-center gap-2">
+                              <Briefcase className="h-3 w-3" />
+                              Project Context
+                            </Label>
+                            <Select
+                              value={filterProjectContext}
+                              onValueChange={setFilterProjectContext}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All contexts" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All contexts</SelectItem>
+                                <SelectItem value="project-work">📁 Project Work</SelectItem>
+                                <SelectItem value="meetings">👥 Meetings</SelectItem>
+                                <SelectItem value="learning">📚 Learning</SelectItem>
+                                <SelectItem value="administrative">📋 Administrative</SelectItem>
+                                <SelectItem value="general">🔧 General Tasks</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-medium flex items-center gap-2">
+                              <Star className="h-3 w-3" />
+                              Session Quality
+                            </Label>
+                            <Select
+                              value={filterSessionQuality}
+                              onValueChange={setFilterSessionQuality}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All qualities" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All qualities</SelectItem>
+                                <SelectItem value="excellent">⭐ Excellent (80+ score)</SelectItem>
+                                <SelectItem value="good">👍 Good (60-79 score)</SelectItem>
+                                <SelectItem value="average">👌 Average (40-59 score)</SelectItem>
+                                <SelectItem value="needs-improvement">📈 Needs Improvement (&lt; 40)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pt-3 border-t">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => {
                             setFilterCategoryId('all');
-                            setFilterTaskId('all');
+                            setFilterDuration('all');
+                            setFilterProductivity('all');
+                            setFilterTimeOfDay('all');
+                            setFilterProjectContext('all');
+                            setFilterSessionQuality('all');
                           }}
                           className="w-full"
                         >
-                          Clear Filters
+                          🧹 Clear All Filters
                         </Button>
                       </div>
+                      
+                      {/* Quick Analytics Preview */}
+                      {filteredSessions.length > 0 && (
+                        <div className="bg-muted/30 rounded-lg p-3 border-t">
+                          <div className="text-xs font-medium text-muted-foreground mb-2">📊 Filter Analytics</div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="font-bold text-primary">{filteredSessions.length}</div>
+                              <div className="text-muted-foreground">Sessions</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-primary">
+                                {Math.round(filteredSessions.reduce((sum, s) => sum + calculateFocusScore(s), 0) / filteredSessions.length)}
+                              </div>
+                              <div className="text-muted-foreground">Avg Focus</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </PopoverContent>
                 </Popover>
                 {sessionsForPeriod.length > 0 && (
                   <Button variant="outline" size="sm" onClick={exportToCSV}>
-                    Export CSV
+                    📊 Export CSV
                   </Button>
                 )}
               </div>
@@ -1283,90 +1624,211 @@ export function SessionHistory({
 
                     <div className="rounded-lg border p-4">
                       <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
-                        <Clock className="h-5 w-5" />
+                        <Brain className="h-5 w-5" />
                         Productivity Insights
                       </h3>
                       <div className="space-y-4">
+                        {/* Focus Score */}
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">
-                            Daily Average
+                            Average Focus Score
                           </span>
-                          <span className="font-medium">
-                            {formatDuration(
-                              Math.floor(
-                                periodStats.totalDuration /
-                                  Math.max(
-                                    1,
-                                    new Set(
-                                      sessionsForPeriod.map((s) =>
-                                        dayjs
-                                          .utc(s.start_time)
-                                          .tz(userTimezone)
-                                          .format('YYYY-MM-DD')
-                                      )
-                                    ).size
-                                  )
-                              )
-                            )}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className={cn(
+                              "h-2 w-16 rounded-full",
+                              periodStats.avgFocusScore >= 80 ? "bg-green-500" :
+                              periodStats.avgFocusScore >= 60 ? "bg-yellow-500" :
+                              periodStats.avgFocusScore >= 40 ? "bg-orange-500" : "bg-red-500"
+                            )}>
+                              <div 
+                                className="h-2 rounded-full bg-current opacity-80"
+                                style={{ width: `${periodStats.avgFocusScore}%` }}
+                              />
+                            </div>
+                            <span className="font-bold text-lg">
+                              {Math.round(periodStats.avgFocusScore)}
+                            </span>
+                          </div>
                         </div>
+
+                        {/* Best Time of Day */}
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">
-                            Active Days
+                            Most Productive Time
                           </span>
                           <span className="font-medium">
-                            {
-                              new Set(
-                                sessionsForPeriod.map((s) =>
-                                  dayjs
-                                    .utc(s.start_time)
-                                    .tz(userTimezone)
-                                    .format('YYYY-MM-DD')
-                                )
-                              ).size
-                            }{' '}
-                            days
+                            {periodStats.bestTimeOfDay === 'morning' && '🌅 Morning'}
+                            {periodStats.bestTimeOfDay === 'afternoon' && '☀️ Afternoon'}
+                            {periodStats.bestTimeOfDay === 'evening' && '🌇 Evening'}
+                            {periodStats.bestTimeOfDay === 'night' && '🌙 Night'}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Avg Session Length
-                          </span>
-                          <span className="font-medium">
-                            {formatDuration(
-                              Math.floor(
-                                periodStats.totalDuration /
-                                  Math.max(1, sessionsForPeriod.length)
-                              )
-                            )}
-                          </span>
+
+                        {/* Session Types Breakdown */}
+                        <div className="space-y-2">
+                          <div className="text-sm text-muted-foreground">Session Types</div>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="font-bold text-green-600">{periodStats.longSessions}</div>
+                              <div className="text-muted-foreground">Deep (2h+)</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-blue-600">{periodStats.mediumSessions}</div>
+                              <div className="text-muted-foreground">Focus (30m-2h)</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-orange-600">{periodStats.shortSessions}</div>
+                              <div className="text-muted-foreground">Quick (&lt;30m)</div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Most Productive Day
-                          </span>
-                          <span className="font-medium">
-                            {(() => {
-                              const dailyTotals = sessionsForPeriod.reduce(
-                                (acc, session) => {
-                                  const day = dayjs
-                                    .utc(session.start_time)
-                                    .tz(userTimezone)
-                                    .format('dddd');
-                                  acc[day] =
-                                    (acc[day] || 0) +
-                                    (session.duration_seconds || 0);
-                                  return acc;
-                                },
-                                {} as Record<string, number>
-                              );
-                              const topDay = Object.entries(dailyTotals).sort(
-                                ([, a], [, b]) => b - a
-                              )[0];
-                              return topDay ? topDay[0] : 'N/A';
-                            })()}
-                          </span>
+
+                        {/* Longest Session Highlight */}
+                        {periodStats.longestSession && (
+                          <div className="rounded-md bg-muted/30 p-3">
+                            <div className="text-xs text-muted-foreground mb-1">🏆 Longest Session</div>
+                            <div className="font-medium text-sm">{periodStats.longestSession.title}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatDuration(periodStats.longestSession.duration_seconds || 0)} • 
+                              Focus: {Math.round(calculateFocusScore(periodStats.longestSession))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Productivity Pattern */}
+                        <div className="space-y-2">
+                          <div className="text-sm text-muted-foreground">Work Pattern</div>
+                          <div className="flex gap-1">
+                            {Object.entries(periodStats.productivityBreakdown).map(([type, count]) => {
+                              const total = periodStats.sessionCount;
+                              const percentage = total > 0 ? (count / total) * 100 : 0;
+                              return percentage > 0 ? (
+                                <div
+                                  key={type}
+                                  className={cn(
+                                    "h-2 rounded-full",
+                                    type === 'deep-work' ? "bg-green-500" :
+                                    type === 'focused' ? "bg-blue-500" :
+                                    type === 'standard' ? "bg-gray-500" :
+                                    type === 'scattered' ? "bg-yellow-500" : "bg-red-500"
+                                  )}
+                                  style={{ width: `${percentage}%` }}
+                                  title={`${type}: ${count} sessions (${percentage.toFixed(1)}%)`}
+                                />
+                              ) : null;
+                            })}
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>🧠 Deep: {periodStats.productivityBreakdown['deep-work']}</span>
+                            <span>🎯 Focus: {periodStats.productivityBreakdown['focused']}</span>
+                            <span>⚡ Quick: {periodStats.productivityBreakdown['interrupted']}</span>
+                          </div>
                         </div>
+                      </div>
+                    </div>
+
+                    {/* AI Insights Section */}
+                    <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 p-4 dark:from-purple-950/20 dark:to-pink-950/20">
+                      <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs">
+                          ✨
+                        </div>
+                        AI Productivity Insights
+                      </h3>
+                      <div className="space-y-3">
+                        {(() => {
+                          const insights = [];
+                          
+                          // Focus Score Analysis
+                          if (periodStats.avgFocusScore >= 80) {
+                            insights.push("🎯 Excellent focus this month! You're maintaining deep work consistently.");
+                          } else if (periodStats.avgFocusScore >= 60) {
+                            insights.push("👍 Good focus patterns. Consider blocking longer time chunks for deeper work.");
+                          } else if (periodStats.avgFocusScore < 40) {
+                            insights.push("💡 Focus opportunity: Try the 25-minute Pomodoro technique for better concentration.");
+                          }
+
+                          // Session Length Analysis
+                          const deepWorkRatio = periodStats.longSessions / Math.max(1, periodStats.sessionCount);
+                          if (deepWorkRatio > 0.3) {
+                            insights.push("🏔️ Great job on deep work sessions! You're building strong focus habits.");
+                          } else if (periodStats.shortSessions > periodStats.longSessions + periodStats.mediumSessions) {
+                            insights.push("⚡ Many short sessions detected. Consider batching similar tasks for efficiency.");
+                          }
+
+                          // Time of Day Analysis
+                          if (periodStats.bestTimeOfDay === 'morning') {
+                            insights.push("🌅 You're a morning person! Schedule your most important work before 11 AM.");
+                          } else if (periodStats.bestTimeOfDay === 'night') {
+                            insights.push("🌙 Night owl detected! Just ensure you're getting enough rest for sustained productivity.");
+                          }
+
+                          // Productivity Type Analysis
+                          const interruptedRatio = periodStats.productivityBreakdown['interrupted'] / Math.max(1, periodStats.sessionCount);
+                          if (interruptedRatio > 0.3) {
+                            insights.push("🔕 High interruption rate detected. Try enabling 'Do Not Disturb' mode during work blocks.");
+                          }
+
+                          const deepWorkCount = periodStats.productivityBreakdown['deep-work'];
+                          const focusedCount = periodStats.productivityBreakdown['focused'];
+                          if (deepWorkCount + focusedCount > periodStats.sessionCount * 0.6) {
+                            insights.push("🧠 Outstanding focused work ratio! You're in the productivity zone.");
+                          }
+
+                          // Consistency Analysis
+                          const activeDays = new Set(
+                            sessionsForPeriod.map((s) =>
+                              dayjs.utc(s.start_time).tz(userTimezone).format('YYYY-MM-DD')
+                            )
+                          ).size;
+                          const daysInPeriod = currentDate.daysInMonth();
+                          const consistencyRatio = activeDays / daysInPeriod;
+                          
+                          if (consistencyRatio > 0.8) {
+                            insights.push("🔥 Amazing consistency! You're showing up almost every day.");
+                          } else if (consistencyRatio < 0.3) {
+                            insights.push("📅 Opportunity for more consistency. Even 15 minutes daily builds momentum.");
+                          }
+
+                          // Duration vs Focus Correlation
+                          const avgDurationPerSession = periodStats.totalDuration / Math.max(1, periodStats.sessionCount);
+                          if (avgDurationPerSession > 7200 && periodStats.avgFocusScore > 70) {
+                            insights.push("🏆 Perfect combo: Long sessions with high focus. You've mastered deep work!");
+                          }
+
+                          return insights.slice(0, 3); // Show max 3 insights
+                        })().map((insight, index) => (
+                          <div key={index} className="flex items-start gap-3 text-sm">
+                            <div className="mt-0.5 h-1.5 w-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
+                            <span className="text-purple-700 dark:text-purple-300">{insight}</span>
+                          </div>
+                        ))}
+                        
+                        {(() => {
+                          // Predictive suggestion based on patterns
+                          const totalHours = periodStats.totalDuration / 3600;
+                          const avgHoursPerDay = totalHours / Math.max(1, new Set(
+                            sessionsForPeriod.map((s) =>
+                              dayjs.utc(s.start_time).tz(userTimezone).format('YYYY-MM-DD')
+                            )
+                          ).size);
+                          
+                          if (avgHoursPerDay > 6) {
+                            return (
+                              <div className="mt-4 rounded-md bg-gradient-to-r from-purple-100 to-pink-100 p-3 dark:from-purple-900/30 dark:to-pink-900/30">
+                                <div className="flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-300">
+                                  <span>🚀</span>
+                                  <span>Power User Detected!</span>
+                                </div>
+                                <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+                                  You're averaging {avgHoursPerDay.toFixed(1)} hours/day. Consider setting up automated time tracking for even better insights!
+                                </p>
+                              </div>
+                            );
+                          }
+                          
+                          return null;
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -1577,6 +2039,8 @@ export function SessionHistory({
                                   onDelete={setSessionToDelete}
                                   actionStates={actionStates}
                                   tasks={tasks}
+                                  calculateFocusScore={calculateFocusScore}
+                                  getSessionProductivityType={getSessionProductivityType}
                                 />
                               ))}
                             </div>
