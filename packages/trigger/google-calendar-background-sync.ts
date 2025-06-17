@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { schedules } from '@trigger.dev/sdk/v3';
 import {
-  FOUR_WEEKS_FROM_CURRENT_WEEK,
+  BACKGROUND_SYNC_RANGE,
   canProceedWithSync,
   updateLastUpsert,
 } from '@tuturuuu/utils/calendar-sync-coordination';
@@ -115,7 +115,7 @@ const syncGoogleCalendarEvents = async (supabase: any) => {
 
         const timeMin = new Date();
         const timeMax = new Date();
-        timeMax.setDate(timeMax.getDate() + FOUR_WEEKS_FROM_CURRENT_WEEK);
+        timeMax.setDate(timeMax.getDate() + BACKGROUND_SYNC_RANGE);
 
         const response = await calendar.events.list({
           calendarId: 'primary',

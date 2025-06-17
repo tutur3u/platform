@@ -9,7 +9,7 @@ import type {
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
   canProceedWithSync,
-  isWithin4WeeksFromCurrentWeek,
+  isWithinBackgroundSyncRange,
   updateLastUpsert,
 } from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
@@ -340,26 +340,6 @@ export const CalendarSyncProvider = ({
     ) => {
       setIsSyncing(true);
       try {
-        // Check if current view is within 4 weeks from current week
-        if (dates.length > 0) {
-          const startDate = dates[0];
-          const endDate = dates[dates.length - 1];
-
-          if (startDate && endDate) {
-            const isWithinRange = isWithin4WeeksFromCurrentWeek(
-              startDate,
-              endDate
-            );
-
-            if (!isWithinRange) {
-              console.log(
-                'Sync blocked: Current view is outside 4 weeks from current week'
-              );
-              return;
-            }
-          }
-        }
-
         // Check if we can proceed with sync
         const canProceed = await canProceedWithSync(wsId);
         if (!canProceed) {

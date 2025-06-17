@@ -1,9 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import dayjs from 'dayjs';
 
 // Const of 4 weeks from the current week, this can be used for startDate and endDate in google calendar background sync
 // and check if the current view is within this range
-export const FOUR_WEEKS_FROM_CURRENT_WEEK = 4 * 7;
+export const BACKGROUND_SYNC_RANGE = 4 * 7;
 
 /**
  * Check if we can proceed with sync (30-second cooldown)
@@ -16,6 +17,19 @@ export const canProceedWithSync = async (
   supabase?: any
 ): Promise<boolean> => {
   try {
+    // Check if the current view is within the background sync range
+    const { dates } = useCalendarSync();
+
+    const startDate = dayjs(dates[0]);
+    const endDate = dayjs(dates[dates.length - 1]);
+
+    const isWithinRange = isWithinBackgroundSyncRange(startDate, endDate);
+
+    if (!isWithinRange) {
+      console.log('Out of background sync range: Can proceed with active sync');
+      return true;
+    }
+
     const client = supabase || createClient();
 
     // Get or create sync coordination record
@@ -71,14 +85,14 @@ export const canProceedWithSync = async (
  * @param endDate - End date to check
  * @returns boolean - true if within 4 weeks from current week, false otherwise
  */
-export const isWithin4WeeksFromCurrentWeek = (
-  startDate: Date,
-  endDate: Date
+export const isWithinBackgroundSyncRange = (
+  startDate: dayjs.Dayjs,
+  endDate: dayjs.Dayjs
 ): boolean => {
   const now = dayjs();
   const startOfCurrentWeek = now.startOf('week');
-  const endOf4WeeksFromCurrentWeek = startOfCurrentWeek.add(
-    FOUR_WEEKS_FROM_CURRENT_WEEK,
+  const endOfBackgroundSyncRange = startOfCurrentWeek.add(
+    BACKGROUND_SYNC_RANGE,
     'day'
   );
 
@@ -87,8 +101,7 @@ export const isWithin4WeeksFromCurrentWeek = (
 
   // Check if the date range overlaps with the 4-week period from current week
   const isWithinRange =
-    start.isBefore(endOf4WeeksFromCurrentWeek) &&
-    end.isAfter(startOfCurrentWeek);
+    start.isBefore(endOfBackgroundSyncRange) && end.isAfter(startOfCurrentWeek);
 
   return isWithinRange;
 };
