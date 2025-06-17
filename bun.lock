@@ -553,6 +553,7 @@
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "ai": "^4.3.16",
+        "dayjs": "^1.11.13",
         "eslint": "^9.29.0",
         "next": "15.3.3",
         "react": "^19.1.0",
