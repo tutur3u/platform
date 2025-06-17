@@ -102,6 +102,57 @@ interface TimerControlsProps {
   currentUserId?: string;
 }
 
+// Pomodoro timer types and interfaces
+interface PomodoroSettings {
+  focusTime: number; // in minutes
+  shortBreakTime: number; // in minutes
+  longBreakTime: number; // in minutes
+  sessionsUntilLongBreak: number;
+  autoStartBreaks: boolean;
+  autoStartFocus: boolean;
+  enableNotifications: boolean;
+  enable2020Rule: boolean; // 20-20-20 eye rest rule
+  enableMovementReminder: boolean;
+}
+
+type TimerMode = 'stopwatch' | 'pomodoro' | 'custom';
+type SessionType = 'focus' | 'short-break' | 'long-break';
+type CustomTimerType = 'stopwatch' | 'countdown' | 'pomodoro-custom';
+
+interface CountdownState {
+  targetTime: number; // in seconds
+  remainingTime: number; // in seconds
+  sessionType: SessionType;
+  pomodoroSession: number; // current session number (1-4)
+  cycleCount: number; // number of completed pomodoro cycles
+}
+
+interface CustomTimerSettings {
+  type: CustomTimerType;
+  duration: number; // in minutes (for countdown/pomodoro-custom)
+  autoRestart: boolean;
+  enableBreakReminders: boolean;
+  playCompletionSound: boolean;
+  showNotifications: boolean;
+  // For custom pomodoro
+  focusTime?: number;
+  breakTime?: number;
+  cycles?: number;
+}
+
+// Default Pomodoro settings
+const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
+  focusTime: 25,
+  shortBreakTime: 5,
+  longBreakTime: 15,
+  sessionsUntilLongBreak: 4,
+  autoStartBreaks: false,
+  autoStartFocus: false,
+  enableNotifications: true,
+  enable2020Rule: true,
+  enableMovementReminder: true,
+};
+
 export function TimerControls({
   wsId,
   currentSession,
@@ -135,6 +186,36 @@ export function TimerControls({
   const [pausedSession, setPausedSession] = useState<SessionWithRelations | null>(null);
   const [pausedElapsedTime, setPausedElapsedTime] = useState(0);
   const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
+
+  // Pomodoro and timer mode state
+  const [timerMode, setTimerMode] = useState<TimerMode>('stopwatch');
+  const [pomodoroSettings, setPomodoroSettings] = useState<PomodoroSettings>(DEFAULT_POMODORO_SETTINGS);
+  const [countdownState, setCountdownState] = useState<CountdownState>({
+    targetTime: 25 * 60, // 25 minutes in seconds
+    remainingTime: 25 * 60,
+    sessionType: 'focus',
+    pomodoroSession: 1,
+    cycleCount: 0,
+  });
+
+  const [customTimerSettings, setCustomTimerSettings] = useState<CustomTimerSettings>({
+    type: 'countdown',
+    duration: 25,
+    autoRestart: false,
+    enableBreakReminders: true,
+    playCompletionSound: true,
+    showNotifications: true,
+    focusTime: 25,
+    breakTime: 5,
+    cycles: 4,
+  });
+  const [lastNotificationTime, setLastNotificationTime] = useState<number>(0);
+  const [showPomodoroSettings, setShowPomodoroSettings] = useState(false);
+  const [showCustomSettings, setShowCustomSettings] = useState(false);
+  
+  // Break reminders state
+  const [lastEyeBreakTime, setLastEyeBreakTime] = useState<number>(Date.now());
+  const [lastMovementBreakTime, setLastMovementBreakTime] = useState<number>(Date.now());
 
   // localStorage keys for persistence
   const PAUSED_SESSION_KEY = `paused-session-${wsId}-${currentUserId || 'user'}`;
@@ -261,6 +342,302 @@ export function TimerControls({
 
   // Use memoized task counts
   const { myTasksCount, unassignedCount } = useTaskCounts(tasks);
+
+  // Notification and sound functions
+  const playNotificationSound = useCallback(() => {
+    if ('Audio' in window) {
+      try {
+        // Create a simple notification beep using Web Audio API
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+      } catch (error) {
+        console.warn('Could not play notification sound:', error);
+      }
+    }
+  }, []);
+
+  const showNotification = useCallback((title: string, body: string, actions?: { title: string; action: () => void }[]) => {
+    // Check if notifications are enabled and supported
+    if (!pomodoroSettings.enableNotifications || !('Notification' in window)) {
+      return;
+    }
+
+    // Request permission if needed
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      const notification = new Notification(title, {
+        body,
+        icon: '/favicon.ico',
+        tag: 'pomodoro-timer',
+        requireInteraction: true,
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+
+      // Auto-close after 10 seconds
+      setTimeout(() => notification.close(), 10000);
+    }
+
+    // Also show a toast notification
+    toast.info(title, {
+      description: body,
+      duration: 5000,
+      action: actions?.[0] ? {
+        label: actions[0].title,
+        onClick: actions[0].action,
+      } : undefined,
+    });
+
+    playNotificationSound();
+  }, [pomodoroSettings.enableNotifications, playNotificationSound]);
+
+  // Pomodoro timer logic
+  const startPomodoroSession = useCallback((sessionType: SessionType) => {
+    let duration: number;
+    
+    switch (sessionType) {
+      case 'focus':
+        duration = pomodoroSettings.focusTime * 60;
+        break;
+      case 'short-break':
+        duration = pomodoroSettings.shortBreakTime * 60;
+        break;
+      case 'long-break':
+        duration = pomodoroSettings.longBreakTime * 60;
+        break;
+    }
+
+    setCountdownState(prev => ({
+      ...prev,
+      targetTime: duration,
+      remainingTime: duration,
+      sessionType,
+    }));
+
+    const sessionName = sessionType === 'focus' ? 'Focus Session' : 
+                       sessionType === 'short-break' ? 'Short Break' : 'Long Break';
+    
+    showNotification(
+      `${sessionName} Started!`,
+      `${Math.floor(duration / 60)} minutes of ${sessionType === 'focus' ? 'focused work' : 'break time'}`
+    );
+  }, [pomodoroSettings, showNotification]);
+
+  const handlePomodoroComplete = useCallback(() => {
+    const { sessionType, pomodoroSession } = countdownState;
+    
+    if (sessionType === 'focus') {
+      // Focus session completed
+      const nextSession = pomodoroSession + 1;
+      const isTimeForLongBreak = nextSession > pomodoroSettings.sessionsUntilLongBreak;
+      
+      setCountdownState(prev => ({
+        ...prev,
+        pomodoroSession: isTimeForLongBreak ? 1 : nextSession,
+        cycleCount: isTimeForLongBreak ? prev.cycleCount + 1 : prev.cycleCount,
+      }));
+
+      showNotification(
+        'Focus Session Complete! 🎉',
+        `Great work! Time for a ${isTimeForLongBreak ? 'long' : 'short'} break.`,
+        [{
+          title: 'Start Break',
+          action: () => startPomodoroSession(isTimeForLongBreak ? 'long-break' : 'short-break')
+        }]
+      );
+
+      if (!pomodoroSettings.autoStartBreaks) {
+        // Pause timer and wait for user action
+        setIsRunning(false);
+      } else {
+        startPomodoroSession(isTimeForLongBreak ? 'long-break' : 'short-break');
+      }
+    } else {
+      // Break completed
+      showNotification(
+        'Break Complete! ⚡',
+        'Ready to focus again?',
+        [{
+          title: 'Start Focus',
+          action: () => startPomodoroSession('focus')
+        }]
+      );
+
+      if (!pomodoroSettings.autoStartFocus) {
+        setIsRunning(false);
+      } else {
+        startPomodoroSession('focus');
+      }
+    }
+  }, [countdownState, pomodoroSettings, showNotification, startPomodoroSession, setIsRunning]);
+
+  // Break reminder logic
+  const checkBreakReminders = useCallback(() => {
+    const now = Date.now();
+    
+    // 20-20-20 rule: Every 20 minutes, look at something 20 feet away for 20 seconds
+    if (pomodoroSettings.enable2020Rule && 
+        now - lastEyeBreakTime > 20 * 60 * 1000 && // 20 minutes
+        isRunning &&
+        countdownState.sessionType === 'focus') {
+      
+      if (now - lastNotificationTime > 5 * 60 * 1000) { // Don't spam notifications
+        showNotification(
+          'Eye Break Time! 👁️',
+          'Look at something 20 feet away for 20 seconds'
+        );
+        setLastEyeBreakTime(now);
+        setLastNotificationTime(now);
+      }
+    }
+
+    // Movement reminder: Every 60 minutes
+    if (pomodoroSettings.enableMovementReminder && 
+        now - lastMovementBreakTime > 60 * 60 * 1000 && // 60 minutes
+        isRunning &&
+        countdownState.sessionType === 'focus') {
+      
+      if (now - lastNotificationTime > 5 * 60 * 1000) {
+        showNotification(
+          'Movement Break! 🚶',
+          'Time to stand up and stretch for a few minutes'
+        );
+        setLastMovementBreakTime(now);
+        setLastNotificationTime(now);
+      }
+    }
+  }, [pomodoroSettings, lastEyeBreakTime, lastMovementBreakTime, lastNotificationTime, isRunning, countdownState.sessionType, showNotification]);
+
+
+
+  // Update countdown timer
+  useEffect(() => {
+    if ((timerMode === 'pomodoro' || (timerMode === 'custom' && customTimerSettings.type !== 'stopwatch')) && isRunning && countdownState.remainingTime > 0) {
+      const interval = setInterval(() => {
+        setCountdownState(prev => {
+          const newRemainingTime = prev.remainingTime - 1;
+          
+          if (newRemainingTime <= 0) {
+            if (timerMode === 'pomodoro') {
+              handlePomodoroComplete();
+            } else if (timerMode === 'custom') {
+              // Handle custom timer completion
+              if (customTimerSettings.type === 'countdown') {
+                showNotification(
+                  'Countdown Complete! ⏰',
+                  'Your custom countdown has finished - great work!',
+                  customTimerSettings.autoRestart ? [{
+                    title: 'Restarting...',
+                    action: () => {}
+                  }] : undefined
+                );
+                
+                if (customTimerSettings.playCompletionSound) {
+                  // Play completion sound
+                  const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBm/G8O3LtykFInGx8l2VmQQOXqw='); 
+                  audio.play().catch(() => {});
+                }
+                
+                if (customTimerSettings.autoRestart) {
+                  // Restart the countdown
+                  const restartDuration = customTimerSettings.duration * 60;
+                  return {
+                    ...prev,
+                    targetTime: restartDuration,
+                    remainingTime: restartDuration
+                  };
+                } else {
+                  setIsRunning(false);
+                }
+                              } else if (customTimerSettings.type === 'pomodoro-custom') {
+                  // Handle custom pomodoro completion inline
+                  const currentSession = countdownState.pomodoroSession;
+                  const maxSessions = customTimerSettings.cycles || 4;
+                  
+                  if (countdownState.sessionType === 'focus') {
+                    // Focus session complete, start break
+                    const isLongBreak = currentSession === maxSessions;
+                    const nextSessionType: SessionType = isLongBreak ? 'long-break' : 'short-break';
+                    const breakDuration = (customTimerSettings.breakTime || 5) * 60;
+                    
+                    showNotification(
+                      `🍅 Focus session ${currentSession} complete!`,
+                      `Time for a ${isLongBreak ? 'long' : 'short'} break`
+                    );
+                    
+                    setCountdownState(prev => ({
+                      ...prev,
+                      targetTime: breakDuration,
+                      remainingTime: breakDuration,
+                      sessionType: nextSessionType,
+                    }));
+                    return { ...prev, remainingTime: breakDuration };
+                  } else {
+                    // Break complete
+                    if (countdownState.pomodoroSession >= maxSessions) {
+                      // All cycles complete
+                      showNotification(
+                        '🎉 Custom Pomodoro Complete!',
+                        `Finished ${maxSessions} focus sessions - excellent work!`
+                      );
+                      setIsRunning(false);
+                    } else {
+                      // Start next focus session
+                      const focusDuration = (customTimerSettings.focusTime || 25) * 60;
+                      const nextSession = countdownState.pomodoroSession + 1;
+                      
+                      showNotification(
+                        '☕ Break complete!',
+                        `Starting focus session ${nextSession}`
+                      );
+                      
+                      setCountdownState(prev => ({
+                        ...prev,
+                        targetTime: focusDuration,
+                        remainingTime: focusDuration,
+                        sessionType: 'focus',
+                        pomodoroSession: nextSession,
+                      }));
+                      return { ...prev, remainingTime: focusDuration };
+                    }
+                  }
+                }
+            }
+            return { ...prev, remainingTime: 0 };
+          }
+          
+          return { ...prev, remainingTime: newRemainingTime };
+        });
+        
+        // Check for break reminders (only during focus sessions and if enabled)
+        if (countdownState.sessionType === 'focus' && customTimerSettings.enableBreakReminders) {
+          checkBreakReminders();
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+      }, [timerMode, isRunning, countdownState.remainingTime, countdownState.sessionType, customTimerSettings, handlePomodoroComplete, checkBreakReminders, showNotification]);
 
   // Fetch boards with lists
   const fetchBoards = useCallback(async () => {
@@ -524,13 +901,43 @@ export function TimerControls({
       setCurrentSession(response.session);
       setIsRunning(true);
       setElapsedTime(0);
+
+      // Initialize timer mode specific settings
+      if (timerMode === 'pomodoro') {
+        // Start first Pomodoro focus session
+        startPomodoroSession('focus');
+      } else if (timerMode === 'custom') {
+        // Initialize custom timer based on type
+        if (customTimerSettings.type === 'countdown') {
+          const customDuration = customTimerSettings.duration * 60;
+          setCountdownState(prev => ({
+            ...prev,
+            targetTime: customDuration,
+            remainingTime: customDuration,
+            sessionType: 'focus',
+          }));
+        } else if (customTimerSettings.type === 'pomodoro-custom') {
+          // Initialize custom pomodoro session
+          const focusDuration = (customTimerSettings.focusTime || 25) * 60;
+          setCountdownState(prev => ({
+            ...prev,
+            targetTime: focusDuration,
+            remainingTime: focusDuration,
+            sessionType: 'focus',
+            pomodoroSession: 1,
+            cycleCount: 0,
+          }));
+        }
+        // For stopwatch mode, no special initialization needed
+      }
+
       setNewSessionTitle('');
       setNewSessionDescription('');
       setSelectedCategoryId('none');
       setSelectedTaskId('none');
 
       onSessionUpdate();
-      toast.success('Timer started!');
+      toast.success(`Timer started${timerMode === 'pomodoro' ? ' - Focus time!' : ''}`);
     } catch (error) {
       console.error('Error starting timer:', error);
       toast.error('Failed to start timer');
@@ -676,6 +1083,8 @@ export function TimerControls({
       setIsLoading(false);
     }
   };
+
+
 
   // Start from template
   const startFromTemplate = async (template: SessionTemplate) => {
@@ -1023,8 +1432,257 @@ export function TimerControls({
     sessionMode,
   ]);
 
+
+
   return (
     <>
+      {/* Custom Timer Advanced Settings Dialog */}
+      <Dialog open={showCustomSettings} onOpenChange={setShowCustomSettings}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>⚙️ Advanced Custom Timer Settings</DialogTitle>
+            <DialogDescription>
+              Fine-tune your custom timer experience with advanced options
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">Break Reminders</h4>
+              <div className="flex items-center justify-between">
+                <Label>Enable break reminders</Label>
+                <input
+                  type="checkbox"
+                  checked={customTimerSettings.enableBreakReminders}
+                  onChange={(e) => setCustomTimerSettings(prev => ({
+                    ...prev,
+                    enableBreakReminders: e.target.checked
+                  }))}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Get reminded to take eye breaks (20-20-20 rule) and movement breaks during long sessions
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">Audio & Notifications</h4>
+              <div className="flex items-center justify-between">
+                <Label>Play completion sound</Label>
+                <input
+                  type="checkbox"
+                  checked={customTimerSettings.playCompletionSound}
+                  onChange={(e) => setCustomTimerSettings(prev => ({
+                    ...prev,
+                    playCompletionSound: e.target.checked
+                  }))}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Browser notifications</Label>
+                <input
+                  type="checkbox"
+                  checked={customTimerSettings.showNotifications}
+                  onChange={(e) => setCustomTimerSettings(prev => ({
+                    ...prev,
+                    showNotifications: e.target.checked
+                  }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">Automation</h4>
+              <div className="flex items-center justify-between">
+                <Label>Auto-restart timer</Label>
+                <input
+                  type="checkbox"
+                  checked={customTimerSettings.autoRestart}
+                  onChange={(e) => setCustomTimerSettings(prev => ({
+                    ...prev,
+                    autoRestart: e.target.checked
+                  }))}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Automatically restart the timer when it completes (great for repetitive tasks)
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCustomTimerSettings({
+                  type: 'countdown',
+                  duration: 25,
+                  autoRestart: false,
+                  enableBreakReminders: true,
+                  playCompletionSound: true,
+                  showNotifications: true,
+                  focusTime: 25,
+                  breakTime: 5,
+                  cycles: 4,
+                })}
+                className="flex-1"
+              >
+                Reset Defaults
+              </Button>
+              <Button
+                onClick={() => setShowCustomSettings(false)}
+                className="flex-1"
+              >
+                Save Settings
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pomodoro Settings Dialog */}
+      <Dialog open={showPomodoroSettings} onOpenChange={setShowPomodoroSettings}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>🍅 Pomodoro Settings</DialogTitle>
+            <DialogDescription>
+              Customize your focus and break durations
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label>Focus (min)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={pomodoroSettings.focusTime}
+                  onChange={(e) => setPomodoroSettings(prev => ({
+                    ...prev,
+                    focusTime: parseInt(e.target.value) || 25
+                  }))}
+                />
+              </div>
+              <div>
+                <Label>Short Break</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={pomodoroSettings.shortBreakTime}
+                  onChange={(e) => setPomodoroSettings(prev => ({
+                    ...prev,
+                    shortBreakTime: parseInt(e.target.value) || 5
+                  }))}
+                />
+              </div>
+              <div>
+                <Label>Long Break</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={pomodoroSettings.longBreakTime}
+                  onChange={(e) => setPomodoroSettings(prev => ({
+                    ...prev,
+                    longBreakTime: parseInt(e.target.value) || 15
+                  }))}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label>Sessions until long break</Label>
+              <Input
+                type="number"
+                min="2"
+                max="8"
+                value={pomodoroSettings.sessionsUntilLongBreak}
+                onChange={(e) => setPomodoroSettings(prev => ({
+                  ...prev,
+                  sessionsUntilLongBreak: parseInt(e.target.value) || 4
+                }))}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Auto-start breaks</Label>
+                <input
+                  type="checkbox"
+                  checked={pomodoroSettings.autoStartBreaks}
+                  onChange={(e) => setPomodoroSettings(prev => ({
+                    ...prev,
+                    autoStartBreaks: e.target.checked
+                  }))}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label>Auto-start focus</Label>
+                <input
+                  type="checkbox"
+                  checked={pomodoroSettings.autoStartFocus}
+                  onChange={(e) => setPomodoroSettings(prev => ({
+                    ...prev,
+                    autoStartFocus: e.target.checked
+                  }))}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label>Enable notifications</Label>
+                <input
+                  type="checkbox"
+                  checked={pomodoroSettings.enableNotifications}
+                  onChange={(e) => setPomodoroSettings(prev => ({
+                    ...prev,
+                    enableNotifications: e.target.checked
+                  }))}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label>20-20-20 eye breaks</Label>
+                <input
+                  type="checkbox"
+                  checked={pomodoroSettings.enable2020Rule}
+                  onChange={(e) => setPomodoroSettings(prev => ({
+                    ...prev,
+                    enable2020Rule: e.target.checked
+                  }))}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label>Movement reminders</Label>
+                <input
+                  type="checkbox"
+                  checked={pomodoroSettings.enableMovementReminder}
+                  onChange={(e) => setPomodoroSettings(prev => ({
+                    ...prev,
+                    enableMovementReminder: e.target.checked
+                  }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setPomodoroSettings(DEFAULT_POMODORO_SETTINGS)}
+                className="flex-1"
+              >
+                Reset Defaults
+              </Button>
+              <Button
+                onClick={() => setShowPomodoroSettings(false)}
+                className="flex-1"
+              >
+                Save Settings
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Card
         className={cn(
           'relative transition-all duration-300',
@@ -1033,12 +1691,53 @@ export function TimerControls({
         )}
       >
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Timer className="h-5 w-5" />
-            Time Tracker
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Timer className="h-5 w-5" />
+              Time Tracker
+            </div>
+            {/* Timer Mode Selector */}
+            <div className="flex items-center gap-2">
+              <Select value={timerMode} onValueChange={(value: TimerMode) => setTimerMode(value)}>
+                <SelectTrigger className="w-32 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="stopwatch">⏱️ Stopwatch</SelectItem>
+                  <SelectItem value="pomodoro">🍅 Pomodoro</SelectItem>
+                  <SelectItem value="custom">⏲️ Custom</SelectItem>
+                </SelectContent>
+              </Select>
+              {timerMode === 'pomodoro' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPomodoroSettings(true)}
+                  className="h-8 w-8 p-0"
+                  title="Pomodoro Settings"
+                >
+                  ⚙️
+                </Button>
+              )}
+              {timerMode === 'custom' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCustomSettings(true)}
+                  className="h-8 w-8 p-0"
+                  title="Custom Timer Settings"
+                >
+                  ⚙️
+                </Button>
+              )}
+            </div>
           </CardTitle>
           <div className="space-y-1 text-sm text-muted-foreground">
-            <span>Track your time with detailed analytics</span>
+            <span>
+              {timerMode === 'stopwatch' && 'Track your time with detailed analytics'}
+              {timerMode === 'pomodoro' && `Focus for ${pomodoroSettings.focusTime}min, break for ${pomodoroSettings.shortBreakTime}min`}
+              {timerMode === 'custom' && `Custom timer`}
+            </span>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="rounded bg-muted px-1.5 py-0.5">
                 ⌘/Ctrl + Enter
@@ -1061,20 +1760,133 @@ export function TimerControls({
           {currentSession ? (
             <div className="space-y-6 text-center">
               {/* Enhanced Active Session Display */}
-              <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-red-50 to-red-100 p-6 dark:from-red-950/20 dark:to-red-900/20">
-                <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-red-500/10 to-transparent opacity-30"></div>
+              <div className={cn(
+                "relative overflow-hidden rounded-lg p-6",
+                timerMode === 'pomodoro' && countdownState.sessionType === 'focus' 
+                  ? "bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-900/20"
+                  : timerMode === 'pomodoro' && countdownState.sessionType !== 'focus'
+                  ? "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20"
+                  : timerMode === 'custom'
+                  ? "bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20"
+                  : "bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/20 dark:to-red-900/20"
+              )}>
+                <div className={cn(
+                  "absolute inset-0 animate-pulse bg-gradient-to-r opacity-30",
+                  timerMode === 'pomodoro' && countdownState.sessionType === 'focus' 
+                    ? "from-green-500/10 to-transparent"
+                    : timerMode === 'pomodoro' && countdownState.sessionType !== 'focus'
+                    ? "from-blue-500/10 to-transparent"
+                    : timerMode === 'custom'
+                    ? "from-purple-500/10 to-transparent"
+                    : "from-red-500/10 to-transparent"
+                )}></div>
                 <div className="relative">
-                  <div className="font-mono text-4xl font-bold text-red-600 transition-all duration-300 dark:text-red-400">
-                    {formatTime(elapsedTime)}
+                  <div className={cn(
+                    "font-mono text-4xl font-bold transition-all duration-300",
+                    timerMode === 'pomodoro' && countdownState.sessionType === 'focus' 
+                      ? "text-green-600 dark:text-green-400"
+                      : timerMode === 'pomodoro' && countdownState.sessionType !== 'focus'
+                      ? "text-blue-600 dark:text-blue-400"
+                      : timerMode === 'custom'
+                      ? "text-purple-600 dark:text-purple-400"
+                      : "text-red-600 dark:text-red-400"
+                  )}>
+                    {(timerMode === 'pomodoro' || (timerMode === 'custom' && customTimerSettings.type !== 'stopwatch')) ? formatTime(countdownState.remainingTime) : formatTime(elapsedTime)}
                   </div>
-                  <div className="mt-2 flex items-center justify-center gap-2 text-sm text-red-600/70 dark:text-red-400/70">
-                    <div className="h-2 w-2 animate-pulse rounded-full bg-red-500"></div>
-                    Started at{' '}
-                    {new Date(currentSession.start_time).toLocaleTimeString()}
-                    {elapsedTime > 1800 && (
-                      <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300">
-                        {elapsedTime > 3600 ? 'Long session!' : 'Deep work'}
+                  
+                  {/* Pomodoro Progress Indicator */}
+                  {timerMode === 'pomodoro' && (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center justify-center gap-2 text-sm">
+                        <span className="font-medium">
+                          {countdownState.sessionType === 'focus' ? `🍅 Focus ${countdownState.pomodoroSession}` : 
+                           countdownState.sessionType === 'short-break' ? '☕ Short Break' : 
+                           '🌟 Long Break'}
+                        </span>
+                      </div>
+                      
+                      {/* Progress bar for current session */}
+                      <div className="w-full bg-white/30 rounded-full h-2">
+                        <div 
+                          className={cn(
+                            "h-2 rounded-full transition-all duration-1000",
+                            countdownState.sessionType === 'focus' ? "bg-green-500" : "bg-blue-500"
+                          )}
+                          style={{ 
+                            width: `${((countdownState.targetTime - countdownState.remainingTime) / countdownState.targetTime) * 100}%` 
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Pomodoro sessions indicator */}
+                      {countdownState.sessionType === 'focus' && (
+                        <div className="flex justify-center gap-1 mt-2">
+                          {Array.from({ length: pomodoroSettings.sessionsUntilLongBreak }, (_, i) => (
+                            <div
+                              key={i}
+                              className={cn(
+                                "w-3 h-3 rounded-full",
+                                i < countdownState.pomodoroSession - 1 ? "bg-green-500" : 
+                                i === countdownState.pomodoroSession - 1 ? "bg-green-400 animate-pulse" : 
+                                "bg-white/30"
+                              )}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className={cn(
+                    "mt-2 flex items-center justify-center gap-2 text-sm",
+                    timerMode === 'pomodoro' && countdownState.sessionType === 'focus' 
+                      ? "text-green-600/70 dark:text-green-400/70"
+                      : timerMode === 'pomodoro' && countdownState.sessionType !== 'focus'
+                      ? "text-blue-600/70 dark:text-blue-400/70"
+                      : timerMode === 'custom'
+                      ? "text-purple-600/70 dark:text-purple-400/70"
+                      : "text-red-600/70 dark:text-red-400/70"
+                  )}>
+                    <div className={cn(
+                      "h-2 w-2 animate-pulse rounded-full",
+                      timerMode === 'pomodoro' && countdownState.sessionType === 'focus' ? "bg-green-500" :
+                      timerMode === 'pomodoro' && countdownState.sessionType !== 'focus' ? "bg-blue-500" :
+                      timerMode === 'custom' ? "bg-purple-500" :
+                      "bg-red-500"
+                    )}></div>
+                    {timerMode === 'pomodoro' ? (
+                      <span>
+                        {countdownState.remainingTime > 0 ? 
+                          `${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} remaining` : 
+                          'Session complete!'
+                        }
                       </span>
+                    ) : timerMode === 'custom' ? (
+                      <span>
+                        {customTimerSettings.type === 'countdown' ? (
+                          countdownState.remainingTime > 0 ? 
+                            `⏲️ ${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} remaining` : 
+                            'Countdown complete!'
+                        ) : customTimerSettings.type === 'pomodoro-custom' ? (
+                          countdownState.remainingTime > 0 ? 
+                            `🍅 ${countdownState.sessionType === 'focus' ? 'Focus' : 'Break'} ${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')}` :
+                            'Session complete!'
+                        ) : (
+                          customTimerSettings.duration > 0 ? 
+                            `⏱️ Stopwatch (target: ${customTimerSettings.duration}min)` :
+                            '⏱️ Open-ended timing'
+                        )}
+                      </span>
+                    ) : (
+                      <>
+                        Started at{' '}
+                        {new Date(currentSession.start_time).toLocaleTimeString()}
+                        {elapsedTime > 1800 && (
+                          <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                            {elapsedTime > 3600 ? 'Long session!' : 'Deep work'}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -2221,6 +3033,196 @@ export function TimerControls({
                       className="mt-1"
                     />
                   </div>
+
+                  {/* Enhanced Custom Timer Configuration */}
+                  {timerMode === 'custom' && (
+                    <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">Custom Timer Settings</Label>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowCustomSettings(true)}
+                          className="h-8 w-8 p-0"
+                          title="Advanced Settings"
+                        >
+                          ⚙️
+                        </Button>
+                      </div>
+                      
+                      {/* Timer Type Selection */}
+                      <div>
+                        <Label className="text-sm">Timer Type</Label>
+                        <Select 
+                          value={customTimerSettings.type} 
+                          onValueChange={(value: CustomTimerType) => 
+                            setCustomTimerSettings(prev => ({ ...prev, type: value }))
+                          }
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="countdown">⏲️ Countdown Timer</SelectItem>
+                            <SelectItem value="stopwatch">⏱️ Stopwatch (Count Up)</SelectItem>
+                            <SelectItem value="pomodoro-custom">🍅 Custom Pomodoro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {customTimerSettings.type === 'countdown' && 'Count down from a set duration'}
+                          {customTimerSettings.type === 'stopwatch' && 'Count up with optional target time'}
+                          {customTimerSettings.type === 'pomodoro-custom' && 'Custom focus/break intervals'}
+                        </p>
+                      </div>
+
+                      {/* Duration Input for Countdown */}
+                      {customTimerSettings.type === 'countdown' && (
+                        <div>
+                          <Label htmlFor="countdown-minutes">Duration (minutes)</Label>
+                          <Input
+                            id="countdown-minutes"
+                            type="number"
+                            min="1"
+                            max="480"
+                            value={customTimerSettings.duration}
+                            onChange={(e) => setCustomTimerSettings(prev => ({
+                              ...prev,
+                              duration: parseInt(e.target.value) || 25
+                            }))}
+                            className="mt-1"
+                            placeholder="25"
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Timer will count down from {customTimerSettings.duration} minute{customTimerSettings.duration !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Target Time for Stopwatch */}
+                      {customTimerSettings.type === 'stopwatch' && (
+                        <div>
+                          <Label htmlFor="target-minutes">Target Duration (optional)</Label>
+                          <Input
+                            id="target-minutes"
+                            type="number"
+                            min="0"
+                            max="480"
+                            value={customTimerSettings.duration}
+                            onChange={(e) => setCustomTimerSettings(prev => ({
+                              ...prev,
+                              duration: parseInt(e.target.value) || 0
+                            }))}
+                            className="mt-1"
+                            placeholder="0 = no target"
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {customTimerSettings.duration > 0 
+                              ? `Get notified when you reach ${customTimerSettings.duration} minutes`
+                              : 'Open-ended timing (no target time)'
+                            }
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Custom Pomodoro Settings */}
+                      {customTimerSettings.type === 'pomodoro-custom' && (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label>Focus Time</Label>
+                              <Input
+                                type="number"
+                                min="5"
+                                max="120"
+                                value={customTimerSettings.focusTime}
+                                onChange={(e) => setCustomTimerSettings(prev => ({
+                                  ...prev,
+                                  focusTime: parseInt(e.target.value) || 25
+                                }))}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <Label>Break Time</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                max="30"
+                                value={customTimerSettings.breakTime}
+                                onChange={(e) => setCustomTimerSettings(prev => ({
+                                  ...prev,
+                                  breakTime: parseInt(e.target.value) || 5
+                                }))}
+                                className="mt-1"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Number of Cycles</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="10"
+                              value={customTimerSettings.cycles}
+                              onChange={(e) => setCustomTimerSettings(prev => ({
+                                ...prev,
+                                cycles: parseInt(e.target.value) || 4
+                              }))}
+                              className="mt-1"
+                            />
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {customTimerSettings.focusTime}min focus + {customTimerSettings.breakTime}min break × {customTimerSettings.cycles} cycles
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Quick Options */}
+                      <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="auto-restart"
+                            checked={customTimerSettings.autoRestart}
+                            onChange={(e) => setCustomTimerSettings(prev => ({
+                              ...prev,
+                              autoRestart: e.target.checked
+                            }))}
+                            className="rounded"
+                          />
+                          <Label htmlFor="auto-restart" className="text-xs">Auto-restart</Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="custom-notifications"
+                            checked={customTimerSettings.showNotifications}
+                            onChange={(e) => setCustomTimerSettings(prev => ({
+                              ...prev,
+                              showNotifications: e.target.checked
+                            }))}
+                            className="rounded"
+                          />
+                          <Label htmlFor="custom-notifications" className="text-xs">Notifications</Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="completion-sound"
+                            checked={customTimerSettings.playCompletionSound}
+                            onChange={(e) => setCustomTimerSettings(prev => ({
+                              ...prev,
+                              playCompletionSound: e.target.checked
+                            }))}
+                            className="rounded"
+                          />
+                          <Label htmlFor="completion-sound" className="text-xs">Sound</Label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <Label htmlFor="category-select">Category (optional)</Label>
