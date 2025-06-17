@@ -69,8 +69,8 @@ export default function SettingsNav({ className }: SettingsNavProps) {
               'group relative flex items-center justify-between rounded-lg bg-background px-3 py-3 text-sm font-medium transition-all duration-200 ease-in-out',
               'hover:scale-[1.02] hover:shadow-sm active:scale-[0.98]',
               isActive
-                ? 'border border-dynamic-blue/30 bg-dynamic-blue/5 text-dynamic-blue shadow-sm ring-1 ring-dynamic-blue/20'
-                : 'hover:border-dynamic-border hover:text-dynamic-foreground border border-transparent text-foreground hover:bg-foreground/8'
+                ? 'border border-dynamic-blue/40 bg-dynamic-blue/15 text-dynamic-blue shadow-sm ring-1 ring-dynamic-blue/20'
+                : 'hover:border-dynamic-border border border-transparent text-foreground hover:bg-foreground/8 hover:text-foreground'
             )}
           >
             <div className="flex min-w-0 flex-1 items-center space-x-3">
@@ -79,7 +79,7 @@ export default function SettingsNav({ className }: SettingsNavProps) {
                   'flex-shrink-0 rounded-md p-1.5 transition-colors',
                   isActive
                     ? 'bg-dynamic-blue/20 text-dynamic-blue'
-                    : 'group-hover:text-dynamic-foreground bg-foreground/10 text-foreground group-hover:bg-foreground/20'
+                    : 'bg-foreground/10 text-foreground group-hover:bg-foreground/20 group-hover:text-foreground'
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -88,7 +88,7 @@ export default function SettingsNav({ className }: SettingsNavProps) {
                 <div
                   className={cn(
                     'truncate font-semibold',
-                    isActive ? 'text-dynamic-blue' : 'text-dynamic-foreground'
+                    isActive ? 'text-dynamic-blue' : 'text-foreground'
                   )}
                 >
                   {t(`${item.key}.name`)}

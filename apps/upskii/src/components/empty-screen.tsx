@@ -14,14 +14,17 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 export function EmptyScreen({
   // chats,
   setInput,
   locale,
+  hasApiKey,
 }: Pick<UseChatHelpers, 'setInput'> & {
   chats?: AIChat[];
   locale: string;
+  hasApiKey: boolean;
 }) {
   dayjs.extend(relativeTime);
   dayjs.locale(locale);
@@ -93,7 +96,13 @@ export function EmptyScreen({
                   'w-full items-center justify-center gap-2 border p-2 text-left text-sm md:p-8',
                   message.color
                 )}
-                onClick={() => setInput(message.message)}
+                onClick={() => {
+                  if (hasApiKey) {
+                    setInput(message.message);
+                  } else {
+                    toast.error(t('api_key_required'));
+                  }
+                }}
               >
                 {message.icon}
                 <div className="line-clamp-1 break-all whitespace-normal">

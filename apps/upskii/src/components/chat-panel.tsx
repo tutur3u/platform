@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import React, { useState } from 'react';
 
 interface PresenceUser {
@@ -189,11 +190,27 @@ export function ChatPanel({
                 : t('chat_visibility')}
           </DialogTitle>
           <DialogDescription>
-            {dialogType === 'files'
-              ? t('upload_file_description')
-              : dialogType === 'api'
-                ? t('api_input_description')
-                : t('chat_visibility_description')}
+            {dialogType === 'files' ? (
+              t('upload_file_description')
+            ) : dialogType === 'api' ? (
+              <span className="flex flex-col gap-2">
+                {t('api_input_description')}
+                <br />
+                <span className="flex items-center gap-2">
+                  {t('get-api-key-from')}:
+                  <Link
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline hover:no-underline"
+                  >
+                    Google AI Studio
+                  </Link>
+                </span>
+              </span>
+            ) : (
+              t('chat_visibility_description')
+            )}
           </DialogDescription>
         </DialogHeader>
 

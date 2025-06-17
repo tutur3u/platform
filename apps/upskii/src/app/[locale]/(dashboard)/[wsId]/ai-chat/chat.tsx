@@ -331,7 +331,12 @@ const Chat = ({
             {t('common.coming_soon')} ✨
           </div>
         ) : (
-          <EmptyScreen chats={chats} setInput={setInput} locale={locale} />
+          <EmptyScreen
+            chats={chats}
+            setInput={setInput}
+            locale={locale}
+            hasApiKey={!!initialApiKey}
+          />
         )}
       </div>
 
