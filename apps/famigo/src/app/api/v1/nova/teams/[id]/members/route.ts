@@ -20,8 +20,6 @@ export async function GET(
       .eq('id', id)
       .single();
 
-
-
     if (teamError) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     }
