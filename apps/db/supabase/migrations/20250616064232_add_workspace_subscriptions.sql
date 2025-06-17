@@ -97,7 +97,7 @@ using ((auth.uid() = ( SELECT workspaces.creator_id
 create policy "only allow owner of the user to buy subscription"
 on "public"."workspace_subscription"
 as permissive
-for select
+for insert
 to public
 using ((auth.uid() = ( SELECT workspaces.creator_id
    FROM workspaces
