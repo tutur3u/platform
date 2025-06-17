@@ -30,7 +30,6 @@ export default async function ApprovalsPage({ params, searchParams }: Props) {
   if (withoutPermission('view_infrastructure')) redirect(`/${wsId}/settings`);
 
   const approvals = await getApprovalRequests(await searchParams);
-  const t = await getTranslations();
 
   return (
     <>
