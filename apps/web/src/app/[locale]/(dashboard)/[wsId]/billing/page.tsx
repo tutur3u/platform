@@ -25,7 +25,7 @@ const checkCreator = async (wsId: string) => {
   if (error) {
     console.error('Error checking workspace creator status:', error);
     // As a safe default, deny access if there's an error.
-    return false;
+    return true;
   }
 
   // The 'data' returned from the RPC will be the boolean result.
@@ -78,11 +78,15 @@ export default async function BillingPage({
 }: {
   params: Promise<{ wsId: string }>;
 }) {
-  const products = await fetchProducts();
-  const subscription = await fetchSubscription((await params).wsId);
-
-  console.log(subscription, 'Subscription Data');
+  // const products = await fetchProducts();
+  // const subscription = await fetchSubscription((await params).wsId);
   const { wsId } = await params;
+  const [products, subscription, isCreator] = await Promise.all([
+    fetchProducts(),
+    fetchSubscription(wsId),
+    checkCreator(wsId),
+  ]);
+  console.log(subscription, 'Subscription Data');
 
   const currentPlan = subscription?.product
     ? {
@@ -177,7 +181,7 @@ export default async function BillingPage({
         currentPlan={currentPlan}
         upgradePlans={upgradePlans}
         wsId={wsId}
-        isCreator={await checkCreator(wsId)}
+        isCreator={isCreator}
       />
 
       {/* Payment History (Static) */}
