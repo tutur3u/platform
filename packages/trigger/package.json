@@ -3,19 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "./example.ts",
-  "types": "./example.ts",
+  "main": "./google-calendar-background-sync.ts",
+  "types": "./google-calendar-background-sync.ts",
   "exports": {
     ".": {
-      "types": "./example.ts",
-      "import": "./example.ts"
+      "types": "./google-calendar-background-sync.ts",
+      "import": "./google-calendar-background-sync.ts"
     },
-    "./example": {
-      "types": "./example.ts",
-      "import": "./example.ts"
+    "./google-calendar-background-sync": {
+      "types": "./google-calendar-background-sync.ts",
+      "import": "./google-calendar-background-sync.ts"
     }
   },
   "dependencies": {
-    "@trigger.dev/sdk": "^3.0.0"
+    "@trigger.dev/sdk": "^3.3.17"
+  },
+  "devDependencies": {
+    "@trigger.dev/build": "^3.3.17"
   }
 }

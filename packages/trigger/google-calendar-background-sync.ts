@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { schedules } from '@trigger.dev/sdk/v3';
+import 'dotenv/config';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 
