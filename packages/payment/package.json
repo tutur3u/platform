@@ -1,0 +1,19 @@
+{
+  "name": "@tuturuuu/payment",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./polar": "./src/polar/index.ts",
+    "./polar/checkout/embed": "./src/polar/checkout/embed.ts",
+    "./polar/next": "./src/polar/next/index.ts",
+    "./dodo/*": "./src/dodo/*.ts"
+  },
+  "dependencies": {
+    "@polar-sh/checkout": "^0.1.11",
+    "@polar-sh/nextjs": "^0.4.0",
+    "@polar-sh/sdk": "^0.33.2",
+    "dodopayments": "^1.32.0",
+    "dodopayments-checkout": "^1.0.1"
+  }
+}

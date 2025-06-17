@@ -45,6 +45,7 @@
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/transactional": "workspace:*",
+    "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
