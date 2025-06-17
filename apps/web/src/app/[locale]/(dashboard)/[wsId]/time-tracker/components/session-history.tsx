@@ -985,9 +985,11 @@ export function SessionHistory({
       timeOfDayBreakdown[a[0] as keyof typeof timeOfDayBreakdown] > timeOfDayBreakdown[b[0] as keyof typeof timeOfDayBreakdown] ? a : b
     )[0];
 
-    const longestSession = sessionsForPeriod.reduce((longest, session) => 
-      (session.duration_seconds || 0) > (longest.duration_seconds || 0) ? session : longest
-    , sessionsForPeriod[0]);
+    const longestSession = sessionsForPeriod.length > 0 
+      ? sessionsForPeriod.reduce((longest, session) => 
+          (session.duration_seconds || 0) > (longest.duration_seconds || 0) ? session : longest
+        )
+      : null;
 
     const shortSessions = sessionsForPeriod.filter(s => (s.duration_seconds || 0) < 1800).length;
     const mediumSessions = sessionsForPeriod.filter(s => (s.duration_seconds || 0) >= 1800 && (s.duration_seconds || 0) < 7200).length;
