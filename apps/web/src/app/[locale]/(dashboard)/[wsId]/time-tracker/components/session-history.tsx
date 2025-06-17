@@ -982,7 +982,7 @@ export function SessionHistory({
     };
 
     const bestTimeOfDay = Object.entries(timeOfDayBreakdown).reduce((a, b) => 
-      timeOfDayBreakdown[a[0]] > timeOfDayBreakdown[b[0]] ? a : b
+      timeOfDayBreakdown[a[0] as keyof typeof timeOfDayBreakdown] > timeOfDayBreakdown[b[0] as keyof typeof timeOfDayBreakdown] ? a : b
     )[0];
 
     const longestSession = sessionsForPeriod.reduce((longest, session) => 

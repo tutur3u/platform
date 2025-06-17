@@ -103,6 +103,7 @@ interface TimerControlsProps {
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
   isDraggingTask?: boolean;
   onGoToTasksTab?: () => void;
+  currentUserId?: string;
 }
 
 export function TimerControls({
@@ -121,6 +122,7 @@ export function TimerControls({
   apiCall,
   isDraggingTask = false,
   onGoToTasksTab,
+  currentUserId,
 }: TimerControlsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [newSessionTitle, setNewSessionTitle] = useState('');
@@ -132,6 +134,100 @@ export function TimerControls({
   const [templates, setTemplates] = useState<SessionTemplate[]>([]);
   const [justCompleted, setJustCompleted] =
     useState<SessionWithRelations | null>(null);
+
+  // Enhanced pause/resume state
+  const [pausedSession, setPausedSession] = useState<SessionWithRelations | null>(null);
+  const [pausedElapsedTime, setPausedElapsedTime] = useState(0);
+  const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
+
+  // localStorage keys for persistence
+  const PAUSED_SESSION_KEY = `paused-session-${wsId}-${currentUserId || 'user'}`;
+  const PAUSED_ELAPSED_KEY = `paused-elapsed-${wsId}-${currentUserId || 'user'}`;
+  const PAUSE_TIME_KEY = `pause-time-${wsId}-${currentUserId || 'user'}`;
+
+  // Helper functions for localStorage persistence
+  const savePausedSessionToStorage = useCallback((session: SessionWithRelations, elapsed: number, pauseTime: Date) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(PAUSED_SESSION_KEY, JSON.stringify(session));
+        localStorage.setItem(PAUSED_ELAPSED_KEY, elapsed.toString());
+        localStorage.setItem(PAUSE_TIME_KEY, pauseTime.toISOString());
+      } catch (error) {
+        console.warn('Failed to save paused session to localStorage:', error);
+      }
+    }
+  }, [PAUSED_SESSION_KEY, PAUSED_ELAPSED_KEY, PAUSE_TIME_KEY]);
+
+  const loadPausedSessionFromStorage = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionData = localStorage.getItem(PAUSED_SESSION_KEY);
+        const elapsedData = localStorage.getItem(PAUSED_ELAPSED_KEY);
+        const pauseTimeData = localStorage.getItem(PAUSE_TIME_KEY);
+
+        if (sessionData && elapsedData && pauseTimeData) {
+          const session = JSON.parse(sessionData);
+          const elapsed = parseInt(elapsedData);
+          const pauseTime = new Date(pauseTimeData);
+
+          setPausedSession(session);
+          setPausedElapsedTime(elapsed);
+          setPauseStartTime(pauseTime);
+
+          return { session, elapsed, pauseTime };
+        }
+      } catch (error) {
+        console.warn('Failed to load paused session from localStorage:', error);
+        clearPausedSessionFromStorage();
+      }
+    }
+    return null;
+  }, [PAUSED_SESSION_KEY, PAUSED_ELAPSED_KEY, PAUSE_TIME_KEY]);
+
+  const clearPausedSessionFromStorage = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(PAUSED_SESSION_KEY);
+        localStorage.removeItem(PAUSED_ELAPSED_KEY);
+        localStorage.removeItem(PAUSE_TIME_KEY);
+      } catch (error) {
+        console.warn('Failed to clear paused session from localStorage:', error);
+      }
+    }
+  }, [PAUSED_SESSION_KEY, PAUSED_ELAPSED_KEY, PAUSE_TIME_KEY]);
+
+  // Load paused session on component mount
+  useEffect(() => {
+    const pausedData = loadPausedSessionFromStorage();
+    if (pausedData) {
+      console.log('Restored paused session from localStorage:', pausedData.session.title);
+      
+      // Show a toast to let user know their paused session was restored
+      toast.success('Paused session restored!', {
+        description: `${pausedData.session.title} - ${formatDuration(pausedData.elapsed)} tracked`,
+        duration: 5000,
+      });
+    }
+  }, [loadPausedSessionFromStorage, formatDuration]);
+
+  // Cleanup paused session if user changes or component unmounts
+  useEffect(() => {
+    return () => {
+      // Only clear if we have a different user or workspace
+      const keys = Object.keys(localStorage).filter(key => 
+        key.startsWith('paused-session-') && 
+        !key.includes(`-${wsId}-${currentUserId}`)
+      );
+      keys.forEach(key => {
+        const relatedKeys = [
+          key,
+          key.replace('paused-session-', 'paused-elapsed-'),
+          key.replace('paused-session-', 'pause-time-')
+        ];
+        relatedKeys.forEach(k => localStorage.removeItem(k));
+      });
+    };
+  }, [wsId, currentUserId]);
 
   // Drag and drop state
   const [isDragOver, setIsDragOver] = useState(false);
@@ -447,15 +543,16 @@ export function TimerControls({
     }
   };
 
-  // Stop timer
+  // Stop timer - handle both active and paused sessions
   const stopTimer = async () => {
-    if (!currentSession) return;
+    const sessionToStop = currentSession || pausedSession;
+    if (!sessionToStop) return;
 
     setIsLoading(true);
 
     try {
       const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${currentSession.id}`,
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToStop.id}`,
         {
           method: 'PATCH',
           body: JSON.stringify({ action: 'stop' }),
@@ -464,9 +561,17 @@ export function TimerControls({
 
       const completedSession = response.session;
       setJustCompleted(completedSession);
+      
+      // Clear all session states
       setCurrentSession(null);
+      setPausedSession(null);
       setIsRunning(false);
       setElapsedTime(0);
+      setPausedElapsedTime(0);
+      setPauseStartTime(null);
+      
+      // Clear from localStorage since session is completed
+      clearPausedSessionFromStorage();
 
       // Show completion celebration
       setTimeout(() => setJustCompleted(null), 3000);
@@ -486,7 +591,7 @@ export function TimerControls({
     }
   };
 
-  // Pause timer
+  // Pause timer - properly maintain session state
   const pauseTimer = async () => {
     if (!currentSession) return;
 
@@ -501,15 +606,76 @@ export function TimerControls({
         }
       );
 
+      const pauseTime = new Date();
+
+      // Store paused session data instead of clearing it
+      setPausedSession(currentSession);
+      setPausedElapsedTime(elapsedTime);
+      setPauseStartTime(pauseTime);
+      
+      // Save to localStorage for persistence across sessions
+      savePausedSessionToStorage(currentSession, elapsedTime, pauseTime);
+      
+      // Clear active session but keep paused state
       setCurrentSession(null);
       setIsRunning(false);
       setElapsedTime(0);
 
       onSessionUpdate();
-      toast.success('Timer paused');
+      toast.success('Timer paused - Click Resume to continue', {
+        description: `Session: ${currentSession.title}`,
+        duration: 4000,
+      });
     } catch (error) {
       console.error('Error pausing timer:', error);
       toast.error('Failed to pause timer');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Resume paused timer
+  const resumeTimer = async () => {
+    if (!pausedSession) return;
+
+    setIsLoading(true);
+
+    try {
+      const response = await apiCall(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ action: 'resume' }),
+        }
+      );
+
+      // Restore session from paused state
+      setCurrentSession(response.session || pausedSession);
+      setElapsedTime(pausedElapsedTime);
+      setIsRunning(true);
+      
+      // Clear paused state
+      setPausedSession(null);
+      setPausedElapsedTime(0);
+      setPauseStartTime(null);
+      
+      // Clear from localStorage since session is now active
+      clearPausedSessionFromStorage();
+
+      const pauseDuration = pauseStartTime 
+        ? Math.floor((new Date().getTime() - pauseStartTime.getTime()) / 1000)
+        : 0;
+
+      onSessionUpdate();
+      toast.success('Timer resumed!', {
+        description: pauseDuration > 0 
+          ? `Paused for ${formatDuration(pauseDuration)}`
+          : 'Welcome back to your session',
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Error resuming timer:', error);
+      toast.error('Failed to resume timer');
     } finally {
       setIsLoading(false);
     }
@@ -773,10 +939,14 @@ export function TimerControls({
         }
       }
 
-      // Ctrl/Cmd + P to pause
-      if ((event.ctrlKey || event.metaKey) && event.key === 'p' && isRunning) {
+      // Ctrl/Cmd + P to pause/resume
+      if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
         event.preventDefault();
-        pauseTimer();
+        if (isRunning) {
+          pauseTimer();
+        } else if (pausedSession) {
+          resumeTimer();
+        }
       }
 
       // Ctrl/Cmd + T to open task dropdown
@@ -849,6 +1019,8 @@ export function TimerControls({
     startTimer,
     stopTimer,
     pauseTimer,
+    resumeTimer,
+    pausedSession,
     isTaskDropdownOpen,
     isDraggingTask,
     selectedTaskId,
@@ -877,7 +1049,7 @@ export function TimerControls({
               </span>
               to start/stop
               <span className="rounded bg-muted px-1.5 py-0.5">⌘/Ctrl + P</span>
-              to pause
+              to pause/resume
               <span className="rounded bg-muted px-1.5 py-0.5">⌘/Ctrl + T</span>
               for tasks
               <span className="rounded bg-muted px-1.5 py-0.5">⌘/Ctrl + M</span>
@@ -892,6 +1064,7 @@ export function TimerControls({
         <CardContent className="space-y-6">
           {currentSession ? (
             <div className="space-y-6 text-center">
+              {/* Enhanced Active Session Display */}
               <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-red-50 to-red-100 p-6 dark:from-red-950/20 dark:to-red-900/20">
                 <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-red-500/10 to-transparent opacity-30"></div>
                 <div className="relative">
@@ -902,6 +1075,11 @@ export function TimerControls({
                     <div className="h-2 w-2 animate-pulse rounded-full bg-red-500"></div>
                     Started at{' '}
                     {new Date(currentSession.start_time).toLocaleTimeString()}
+                    {elapsedTime > 1800 && (
+                      <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                        {elapsedTime > 3600 ? 'Long session!' : 'Deep work'}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -966,15 +1144,143 @@ export function TimerControls({
                   })()}
               </div>
 
+              {/* Enhanced Session Controls */}
+              <div className="space-y-4">
+                {/* Productivity Insights */}
+                {elapsedTime > 600 && (
+                  <div className="rounded-lg border border-green-200/60 bg-green-50/30 p-3 dark:border-green-800/60 dark:bg-green-950/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                        Session Insights
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-xs text-green-700 dark:text-green-300">
+                      <div>
+                        <span className="font-medium">Duration:</span>
+                        <span className="ml-1">
+                          {elapsedTime < 1500 ? 'Warming up' : 
+                           elapsedTime < 3600 ? 'Focused session' : 
+                           'Deep work zone!'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Productivity:</span>
+                        <span className="ml-1">
+                          {elapsedTime < 900 ? 'Getting started' :
+                           elapsedTime < 2700 ? 'In the flow' :
+                           'Exceptional focus'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Enhanced Control Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={pauseTimer}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="flex-1 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300 dark:hover:bg-amber-950/40"
+                  >
+                    <Pause className="mr-2 h-4 w-4" />
+                    Take Break
+                  </Button>
+                  <Button
+                    onClick={stopTimer}
+                    disabled={isLoading}
+                    variant="destructive"
+                    className="flex-1"
+                  >
+                    <Square className="mr-2 h-4 w-4" />
+                    Complete
+                  </Button>
+                </div>
+
+                {/* Quick Actions during session */}
+                <div className="flex gap-2 justify-center text-xs text-muted-foreground">
+                  <span className="rounded bg-muted px-2 py-1">⌘/Ctrl + P</span>
+                  <span>for break</span>
+                  <span className="rounded bg-muted px-2 py-1">⌘/Ctrl + Enter</span>
+                  <span>to complete</span>
+                </div>
+              </div>
+            </div>
+          ) : pausedSession ? (
+            /* Paused Session Display */
+            <div className="space-y-6 text-center">
+              <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-amber-50 to-amber-100 p-6 dark:from-amber-950/20 dark:to-amber-900/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent"></div>
+                <div className="relative">
+                  <div className="mb-3 flex items-center justify-center gap-2">
+                    <Pause className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    <span className="text-lg font-semibold text-amber-700 dark:text-amber-300">
+                      Session Paused
+                    </span>
+                  </div>
+                  <div className="font-mono text-3xl font-bold text-amber-600 dark:text-amber-400">
+                    {formatTime(pausedElapsedTime)}
+                  </div>
+                  <div className="mt-2 space-y-1 text-sm text-amber-600/80 dark:text-amber-400/80">
+                    <div>
+                      Paused at {pauseStartTime?.toLocaleTimeString()}
+                      {pauseStartTime && (
+                        <span className="ml-2">
+                          • Break: {formatDuration(Math.floor((new Date().getTime() - pauseStartTime.getTime()) / 1000))}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs">
+                      Session was running for {formatDuration(pausedElapsedTime)} before pause
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-left">
+                <h3 className="text-lg font-medium">{pausedSession.title}</h3>
+                {pausedSession.description && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {pausedSession.description}
+                  </p>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {pausedSession.category && (
+                    <Badge
+                      className={cn(
+                        'text-sm',
+                        getCategoryColor(pausedSession.category.color || 'BLUE')
+                      )}
+                    >
+                      {pausedSession.category.name}
+                    </Badge>
+                  )}
+                  {pausedSession.task && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
+                        <CheckCircle className="h-3 w-3 text-dynamic-blue" />
+                        <span className="text-sm font-medium text-dynamic-blue">
+                          {pausedSession.task.name}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <Badge variant="outline" className="text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-300 dark:border-amber-800 dark:bg-amber-950/20">
+                    On break
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Enhanced Resume/Stop buttons */}
               <div className="flex gap-3">
                 <Button
-                  onClick={pauseTimer}
+                  onClick={resumeTimer}
                   disabled={isLoading}
-                  variant="outline"
-                  className="flex-1"
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 >
-                  <Pause className="mr-2 h-4 w-4" />
-                  Pause
+                  <Play className="mr-2 h-4 w-4" />
+                  Resume Session
                 </Button>
                 <Button
                   onClick={stopTimer}
@@ -983,8 +1289,22 @@ export function TimerControls({
                   className="flex-1"
                 >
                   <Square className="mr-2 h-4 w-4" />
-                  Stop
+                  End Session
                 </Button>
+              </div>
+
+              {/* Quick Break Suggestions */}
+              <div className="rounded-lg border border-amber-200/60 bg-amber-50/30 p-4 dark:border-amber-800/60 dark:bg-amber-950/10">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                  💡 Break suggestions:
+                </p>
+                <div className="flex flex-wrap gap-2 text-xs text-amber-700 dark:text-amber-300">
+                  <span>🚶 Short walk</span>
+                  <span>💧 Hydrate</span>
+                  <span>👁️ Rest eyes (20-20-20)</span>
+                  <span>🧘 Quick meditation</span>
+                  <span>🍎 Healthy snack</span>
+                </div>
               </div>
             </div>
           ) : (

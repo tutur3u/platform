@@ -1263,6 +1263,7 @@ export default function TimeTrackerContent({
                             'Switched to Tasks tab - create your first task!'
                           );
                         }}
+                        currentUserId={currentUserId}
                       />
                     </div>
                   </TabsContent>
