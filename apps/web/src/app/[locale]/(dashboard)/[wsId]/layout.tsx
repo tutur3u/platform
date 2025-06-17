@@ -381,8 +381,8 @@ export default async function Layout({ children, params }: LayoutProps) {
       title: t('sidebar_tabs.billing'),
       href: `/${wsId}/billing`,
       icon: <Receipt className="h-5 w-5" />,
-      // disabled: ENABLE_AI_ONLY ,
-      shortcut: 'B',
+      requireRootWorkspace: true,
+      requireRootMember: true,
     },
     {
       title: t('common.settings'),

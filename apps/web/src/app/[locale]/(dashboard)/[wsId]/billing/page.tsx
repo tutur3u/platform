@@ -1,4 +1,5 @@
 import { BillingClient } from './billing-client';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { api } from '@/lib/polar';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Receipt } from 'lucide-react';
@@ -15,6 +16,11 @@ const fetchProducts = async () => {
 
 const checkCreator = async (wsId: string) => {
   const supabase = await createClient();
+
+  if (wsId !== ROOT_WORKSPACE_ID) {
+    console.error('Billing page is only available for root workspace');
+    return false;
+  }
 
   // Call the 'check_ws_creator' function with the 'ws_id' argument.
   // The keys in the second object MUST match the argument names in your function.
