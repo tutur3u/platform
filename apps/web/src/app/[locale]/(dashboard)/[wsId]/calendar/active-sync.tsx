@@ -54,6 +54,12 @@ const InnerComponent = () => {
     }
   };
 
+  const triggerHelloWorld = async () => {
+    const res = await fetch('/api/hello-world');
+    const data = await res.json();
+    console.log(data);
+  };
+
   return (
     <div>
       <div className="mb-4 flex gap-2">
@@ -85,6 +91,7 @@ const InnerComponent = () => {
         >
           Switch to month
         </Button>
+        <Button onClick={() => triggerHelloWorld()}>Trigger Hello World</Button>
       </div>
 
       {/* Add sync progress bar when syncing */}
