@@ -7396,7 +7396,7 @@ export type Database = {
     };
     Functions: {
       calculate_productivity_score: {
-        Args: { duration_seconds: number; category_color: string };
+        Args: { category_color: string; duration_seconds: number };
         Returns: number;
       };
       check_ws_creator: {
@@ -7422,7 +7422,7 @@ export type Database = {
         Returns: number;
       };
       create_ai_chat: {
-        Args: { title: string; message: string; model: string };
+        Args: { model: string; message: string; title: string };
         Returns: string;
       };
       generate_cross_app_token: {
@@ -7569,10 +7569,10 @@ export type Database = {
       get_possible_excluded_tags: {
         Args: { included_tags: string[]; _ws_id: string };
         Returns: {
-          name: string;
           id: string;
           amount: number;
           ws_id: string;
+          name: string;
         }[];
       };
       get_session_statistics: {
@@ -7625,15 +7625,15 @@ export type Database = {
         }[];
       };
       get_user_role: {
-        Args: { user_id: string; ws_id: string };
+        Args: { ws_id: string; user_id: string };
         Returns: string;
       };
       get_user_session_stats: {
         Args: { user_id: string };
         Returns: {
-          active_sessions: number;
-          total_sessions: number;
           current_session_age: unknown;
+          total_sessions: number;
+          active_sessions: number;
         }[];
       };
       get_user_sessions: {
@@ -7769,7 +7769,7 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_user_email_in_team: {
-        Args: { _user_email: string; _team_id: string };
+        Args: { _team_id: string; _user_email: string };
         Returns: boolean;
       };
       is_nova_user_id_in_team: {
@@ -7789,7 +7789,7 @@ export type Database = {
         Returns: boolean;
       };
       is_task_board_member: {
-        Args: { _user_id: string; _board_id: string };
+        Args: { _board_id: string; _user_id: string };
         Returns: boolean;
       };
       is_user_task_in_board: {
@@ -7801,11 +7801,11 @@ export type Database = {
         Returns: Json;
       };
       nova_get_challenge_with_user_stats: {
-        Args: { challenge_id: string; user_id: string };
+        Args: { user_id: string; challenge_id: string };
         Returns: Json;
       };
       nova_get_user_daily_sessions: {
-        Args: { user_id: string; challenge_id: string };
+        Args: { challenge_id: string; user_id: string };
         Returns: number;
       };
       nova_get_user_total_sessions: {
@@ -7847,7 +7847,6 @@ export type Database = {
           created_at: string;
           user_id: string;
           enabled: boolean;
-          allow_challenge_management: boolean;
           allow_manage_all_challenges: boolean;
           allow_role_management: boolean;
           email: string;
