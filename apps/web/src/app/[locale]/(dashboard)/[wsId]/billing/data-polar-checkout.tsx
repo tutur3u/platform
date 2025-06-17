@@ -966,6 +966,7 @@ const PurchaseLink = ({
 
   return (
     <a
+    
       href={checkoutUrl.toString()}
       data-polar-checkout
       data-polar-checkout-theme={theme}

@@ -86,7 +86,7 @@ export default async function BillingPage({
     fetchSubscription(wsId),
     checkCreator(wsId),
   ]);
-  console.log(subscription, 'Subscription Data');
+  // console.log(subscription, 'Subscription Data');
 
   const currentPlan = subscription?.product
     ? {
