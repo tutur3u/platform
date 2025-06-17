@@ -7,6 +7,11 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import {
+  canProceedWithSync,
+  isWithin4WeeksFromCurrentWeek,
+  updateLastUpsert,
+} from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
 import {
   createContext,
@@ -335,6 +340,33 @@ export const CalendarSyncProvider = ({
     ) => {
       setIsSyncing(true);
       try {
+        // Check if current view is within 4 weeks from current week
+        if (dates.length > 0) {
+          const startDate = dates[0];
+          const endDate = dates[dates.length - 1];
+
+          if (startDate && endDate) {
+            const isWithinRange = isWithin4WeeksFromCurrentWeek(
+              startDate,
+              endDate
+            );
+
+            if (!isWithinRange) {
+              console.log(
+                'Sync blocked: Current view is outside 4 weeks from current week'
+              );
+              return;
+            }
+          }
+        }
+
+        // Check if we can proceed with sync
+        const canProceed = await canProceedWithSync(wsId);
+        if (!canProceed) {
+          console.log('Sync blocked due to 30-second cooldown');
+          return;
+        }
+
         const supabase = createClient();
 
         // Use the exact range from dates array
@@ -559,6 +591,9 @@ export const CalendarSyncProvider = ({
         } else {
           setError(null);
           console.log('Upsert status: Finished');
+
+          // Update lastUpsert timestamp after successful upsert
+          await updateLastUpsert(wsId);
         }
 
         // Refresh the cache to trigger queryClient to refetch the data from database

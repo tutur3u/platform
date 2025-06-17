@@ -1,5 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { schedules } from '@trigger.dev/sdk/v3';
+import {
+  FOUR_WEEKS_FROM_CURRENT_WEEK,
+  canProceedWithSync,
+  updateLastUpsert,
+} from '@tuturuuu/utils/calendar-sync-coordination';
 import 'dotenv/config';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
@@ -96,12 +101,21 @@ const syncGoogleCalendarEvents = async (supabase: any) => {
       }
 
       try {
+        // Check if we can proceed with sync for this workspace
+        const canProceed = await canProceedWithSync(ws_id, supabase);
+        if (!canProceed) {
+          console.log(
+            `Skipping background sync for wsId ${ws_id} due to 30-second cooldown`
+          );
+          continue;
+        }
+
         const auth = getGoogleAuthClient(token);
         const calendar = google.calendar({ version: 'v3', auth });
 
         const timeMin = new Date();
         const timeMax = new Date();
-        timeMax.setDate(timeMax.getDate() + 28);
+        timeMax.setDate(timeMax.getDate() + FOUR_WEEKS_FROM_CURRENT_WEEK);
 
         const response = await calendar.events.list({
           calendarId: 'primary',
@@ -139,6 +153,9 @@ const syncGoogleCalendarEvents = async (supabase: any) => {
           });
         if (error) {
           console.error('Error upserting events:', error);
+        } else {
+          // Update lastUpsert timestamp after successful upsert
+          await updateLastUpsert(ws_id, supabase);
         }
       } catch (error) {
         console.error('Error fetching Google Calendar events:', error);
