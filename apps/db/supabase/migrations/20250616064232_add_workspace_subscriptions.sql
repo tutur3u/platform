@@ -67,4 +67,38 @@ grant truncate on table "public"."workspace_subscription" to "service_role";
 
 grant update on table "public"."workspace_subscription" to "service_role";
 
+set check_function_bodies = off;
 
+CREATE OR REPLACE FUNCTION public.check_ws_creator(ws_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+AS $function$BEGIN
+  RETURN (
+     (SELECT creator_id FROM public.workspaces WHERE id = ws_id) = auth.uid()
+
+    AND NOT EXISTS (
+      SELECT 1 FROM public.workspace_subscription
+      WHERE public.workspace_subscription.ws_id = ws_id
+    );
+  )
+END$function$
+;
+
+create policy "allow select for users that are in the workspace"
+on "public"."workspace_subscription"
+as permissive
+for select
+to authenticated
+using ((auth.uid() = ( SELECT workspaces.creator_id
+   FROM workspaces
+  WHERE (workspaces.id = workspace_subscription.ws_id))));
+
+
+create policy "only allow owner of the user to buy subscription"
+on "public"."workspace_subscription"
+as permissive
+for select
+to public
+using ((auth.uid() = ( SELECT workspaces.creator_id
+   FROM workspaces
+  WHERE (workspaces.id = workspace_subscription.ws_id))));
