@@ -30,12 +30,11 @@ const fetchWorkspaceSubscription = async (
 
 export default async function SuccessPage({
   params,
-  searchParams,
 }: {
-  params: { wsId: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ wsId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { wsId } = params;
+  const { wsId } = await params;
 
   // Fetch the workspace subscription data
   const subscription = await fetchWorkspaceSubscription(wsId);
