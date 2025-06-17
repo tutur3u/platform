@@ -37,9 +37,7 @@
     "ANALYZE",
     "NODE_ENV",
     "TRIGGER_SECRET_KEY",
-    "GOOGLE_CLIENT_ID",
-    "GOOGLE_CLIENT_SECRET",
-    "GOOGLE_REDIRECT_URI"
+    "POLAR_WEBHOOK_SECRET"
   ],
   "tasks": {
     "build": {

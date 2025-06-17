@@ -1,5 +1,5 @@
-import { Webhooks } from '@polar-sh/nextjs';
-import { Polar } from '@polar-sh/sdk';
+import { Polar } from '@tuturuuu/payment/polar';
+import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 // Initialize a Polar ADMIN client with your secret token
@@ -10,7 +10,7 @@ const polarAdmin = new Polar({
 });
 
 export const POST = Webhooks({
-  webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
+  webhookSecret: process.env.POLAR_WEBHOOK_SECRET || '',
 
   onSubscriptionActive: async (payload) => {
     try {
