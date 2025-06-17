@@ -1,4 +1,5 @@
-import { LinkedIdentitiesCard, SecuritySettingsCard } from '../components';
+import LinkedIdentitiesCard from './linked-identities-card';
+import SecuritySettingsCard from './security-settings-card';
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export default async function SecurityPage() {

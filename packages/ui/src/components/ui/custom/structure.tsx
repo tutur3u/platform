@@ -141,10 +141,12 @@ export function Structure({
               </Button>
             )}
           </aside>
+          {/* Main content area - overflow-y-auto removed to prevent double scrollbars */}
+          {/* Body element now handles page-level scrolling */}
           <main
             id="main-content"
             className={cn(
-              'relative flex h-full min-h-screen flex-col overflow-x-hidden overflow-y-auto transition-all duration-300 ease-in-out',
+              'relative flex h-full min-h-screen flex-col overflow-x-hidden transition-all duration-300 ease-in-out',
               isCollapsed ? 'md:pl-16' : 'md:pl-72'
             )}
           >

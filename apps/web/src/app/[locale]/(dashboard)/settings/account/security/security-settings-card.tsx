@@ -1,4 +1,5 @@
-import ResetPasswordDialog from '../reset-password-dialog';
+import MFAMethodList from './mfa-method-list';
+import ResetPasswordDialog from './reset-password-dialog';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -182,7 +183,7 @@ export default async function SecuritySettingsCard({
             description={t('password-management-description')}
             icon={<KeyRound className="h-4 w-4" />}
           >
-            <ResetPasswordDialog user={user} />
+            <ResetPasswordDialog />
           </SettingItemTab>
 
           <Separator />
@@ -193,10 +194,7 @@ export default async function SecuritySettingsCard({
             description={t('two-factor-authentication-description')}
             icon={<Smartphone className="h-4 w-4" />}
           >
-            <Button variant="outline" size="sm" disabled>
-              <Shield className="mr-2 h-4 w-4" />
-              {t('setup-2fa')} ({t('coming-soon')})
-            </Button>
+            <MFAMethodList />
           </SettingItemTab>
 
           <Separator />

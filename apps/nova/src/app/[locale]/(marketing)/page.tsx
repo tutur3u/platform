@@ -56,7 +56,7 @@ export default function MarketingPage() {
         ease: 'easeOut',
       },
     },
-  };
+  } satisfies Variants;
 
   const cardVariants = {
     hidden: { scale: 0.95, opacity: 0, y: 20 },
@@ -79,7 +79,7 @@ export default function MarketingPage() {
         damping: 10,
       },
     },
-  };
+  } satisfies Variants;
 
   // Enhanced floating effect variants with reduced movement for better performance
   const floatingVariants = {
@@ -93,7 +93,7 @@ export default function MarketingPage() {
         ease: 'easeInOut',
       },
     },
-  } as Variants;
+  } satisfies Variants;
 
   return (
     <>
