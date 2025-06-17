@@ -1,15 +1,31 @@
 'use client';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { Button } from '@tuturuuu/ui/button';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem
+} from '@tuturuuu/ui/dropdown-menu';
+import { Settings, Calendar, Grid3X3, Info, ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import isBetween from 'dayjs/plugin/isBetween';
+import { useState } from 'react';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isoWeek);
+dayjs.extend(relativeTime);
+dayjs.extend(isBetween);
 
 interface ActivityHeatmapProps {
   dailyActivity: Array<{
@@ -19,12 +35,32 @@ interface ActivityHeatmapProps {
   }>;
   // eslint-disable-next-line no-unused-vars
   formatDuration: (seconds: number) => string;
+  settings?: HeatmapSettings;
+}
+
+type HeatmapViewMode = 'original' | 'hybrid' | 'calendar-only';
+
+interface HeatmapSettings {
+  viewMode: HeatmapViewMode;
+  timeReference: 'relative' | 'absolute' | 'smart';
+  showOnboardingTips: boolean;
 }
 
 export function ActivityHeatmap({
   dailyActivity,
   formatDuration,
+  settings: externalSettings,
 }: ActivityHeatmapProps) {
+  const [internalSettings, setInternalSettings] = useState<HeatmapSettings>({
+    viewMode: 'original',
+    timeReference: 'smart',
+    showOnboardingTips: true,
+  });
+
+  // Use external settings if provided, otherwise use internal settings
+  const settings = externalSettings || internalSettings;
+  const [currentMonth, setCurrentMonth] = useState(dayjs().tz(dayjs.tz.guess()));
+
   const userTimezone = dayjs.tz.guess();
   const today = dayjs().tz(userTimezone);
 
@@ -188,7 +224,7 @@ export function ActivityHeatmap({
       globalOffset = desktopFirstRow.flat().length;
 
     return (
-      <div className={cn('space-y-1.5', isMobile ? 'space-y-1' : 'space-y-2')}>
+      <div className={cn('relative space-y-1.5 overflow-visible', isMobile ? 'space-y-1' : 'space-y-2')}>
         {/* Month Labels */}
         <div
           className="grid text-xs font-medium text-gray-500 dark:text-gray-400"
@@ -215,9 +251,9 @@ export function ActivityHeatmap({
             </div>
           ))}
         </div>
-        {/* Grid */}
+        {/* Grid with improved overflow handling */}
         <div
-          className="grid grid-flow-col grid-rows-7"
+          className="relative grid grid-flow-col grid-rows-7 overflow-visible"
           style={{
             gridTemplateColumns: `repeat(${weeksSubset.length}, minmax(0, 1fr))`,
             gap: isMobile ? '1.5px' : '2.5px',
@@ -231,7 +267,7 @@ export function ActivityHeatmap({
                 <div
                   key={globalIndex}
                   className={cn(
-                    'aspect-square rounded-[2px] bg-gray-100/80 dark:bg-gray-800/60',
+                    'aspect-square rounded-[2px] border border-gray-200/30 bg-gray-100/80 dark:border-gray-700/30 dark:bg-gray-800/60',
                     isMobile
                       ? 'min-h-[11px] min-w-[11px]'
                       : 'min-h-[13px] min-w-[13px] sm:min-h-[15px] sm:min-w-[15px]'
@@ -248,14 +284,21 @@ export function ActivityHeatmap({
                 <TooltipTrigger asChild>
                   <button
                     className={cn(
-                      'aspect-square rounded-[2px] transition-all duration-200 ease-out hover:shadow-sm focus:ring-2 focus:ring-emerald-400/50 focus:ring-offset-1 focus:outline-none',
+                      'relative aspect-square rounded-[2px] transition-all duration-200 ease-out focus:outline-none',
                       isMobile
-                        ? 'min-h-[11px] min-w-[11px] hover:scale-[1.15]'
-                        : 'min-h-[13px] min-w-[13px] hover:scale-110 sm:min-h-[15px] sm:min-w-[15px] sm:hover:scale-105',
+                        ? 'min-h-[11px] min-w-[11px]'
+                        : 'min-h-[13px] min-w-[13px] sm:min-h-[15px] sm:min-w-[15px]',
                       getColorClass(intensity),
-                      'hover:ring-2 hover:ring-emerald-400/60 hover:ring-offset-1 dark:hover:ring-emerald-500/50 dark:hover:ring-offset-gray-900',
+                      // Enhanced hover and focus states with better z-index
+                      'hover:z-10 hover:scale-110 hover:shadow-lg hover:ring-2 hover:ring-emerald-400/60 hover:ring-offset-1',
+                      'focus:z-10 focus:scale-110 focus:ring-2 focus:ring-emerald-400/50 focus:ring-offset-1',
+                      'dark:hover:ring-emerald-500/50 dark:hover:ring-offset-gray-900',
+                      'dark:focus:ring-emerald-500/50 dark:focus:ring-offset-gray-900',
+                      // Today indicator with higher z-index
                       isToday &&
-                        'shadow-md ring-2 ring-blue-500/80 ring-offset-2 dark:ring-blue-400/70 dark:ring-offset-gray-900'
+                        'z-20 shadow-lg ring-2 ring-blue-500/80 ring-offset-2 dark:ring-blue-400/70 dark:ring-offset-gray-900',
+                      // Mobile specific hover states
+                      isMobile && 'hover:scale-[1.2] sm:hover:scale-110'
                     )}
                     aria-label={`Activity for ${day.date.format('MMMM D, YYYY')}: ${
                       day.activity
@@ -266,12 +309,19 @@ export function ActivityHeatmap({
                 </TooltipTrigger>
                 <TooltipContent
                   side="top"
-                  className="pointer-events-none max-w-sm border-0 bg-white/96 p-3 shadow-xl backdrop-blur-md dark:bg-gray-900/96"
+                  className="z-50 pointer-events-none max-w-sm border border-border/20 bg-white/98 p-3 shadow-2xl backdrop-blur-lg dark:bg-gray-900/98"
                   sideOffset={8}
+                  avoidCollisions={true}
+                  collisionPadding={8}
                 >
                   <div className="space-y-2.5">
                     <div className="font-semibold text-gray-900 dark:text-gray-100">
                       {day.date.format('dddd, MMMM D, YYYY')}
+                      {settings.showTimeReference === 'both' && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {day.date.fromNow()} • {day.date.format('MMM D')}
+                        </div>
+                      )}
                     </div>
                     {day.activity ? (
                       <div className="space-y-2 text-sm">
@@ -351,8 +401,206 @@ export function ActivityHeatmap({
     );
   };
 
+  // Render year overview bars (simplified GitHub-style)
+  const renderYearOverview = () => {
+    const monthlyData = Array.from({ length: 12 }, (_, monthIndex) => {
+      const monthStart = today.startOf('year').add(monthIndex, 'month');
+      const monthEnd = monthStart.endOf('month');
+      
+      const monthActivity = dailyActivity?.filter(day => {
+        const dayDate = dayjs.utc(day.date).tz(userTimezone);
+        return dayDate.isBetween(monthStart, monthEnd, 'day', '[]');
+      }) || [];
+      
+      const totalDuration = monthActivity.reduce((sum, day) => sum + day.duration, 0);
+      const totalSessions = monthActivity.reduce((sum, day) => sum + day.sessions, 0);
+      
+      return {
+        month: monthStart,
+        duration: totalDuration,
+        sessions: totalSessions,
+        intensity: getIntensity(totalDuration / monthActivity.length || 0)
+      };
+    });
+
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {today.format('YYYY')} Activity Pattern
+          </h4>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {dailyActivity?.length || 0} active days
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-12 gap-2">
+          {monthlyData.map((month, index) => (
+            <Tooltip key={index}>
+              <TooltipTrigger asChild>
+                <button
+                  className={cn(
+                    'h-12 rounded-md transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400/50',
+                    getColorClass(month.intensity),
+                    'flex flex-col items-center justify-center text-xs font-medium'
+                  )}
+                  onClick={() => setCurrentMonth(month.month)}
+                >
+                  <span className="text-[10px] opacity-60">
+                    {month.month.format('MMM')}
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={4}>
+                <div className="text-center">
+                  <div className="font-medium">{month.month.format('MMMM YYYY')}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {formatDuration(month.duration)} • {month.sessions} sessions
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Render monthly calendar view
+  const renderMonthlyCalendar = () => {
+    const monthStart = currentMonth.startOf('month');
+    const monthEnd = currentMonth.endOf('month');
+    const calendarStart = monthStart.startOf('week');
+    const calendarEnd = monthEnd.endOf('week');
+    
+    const days = [];
+    let currentDay = calendarStart;
+    
+    while (currentDay.isBefore(calendarEnd) || currentDay.isSame(calendarEnd, 'day')) {
+      const dayActivity = dailyActivity?.find(activity => {
+        const activityDate = dayjs.utc(activity.date).tz(userTimezone);
+        return activityDate.isSame(currentDay, 'day');
+      });
+      
+      days.push({
+        date: currentDay,
+        activity: dayActivity || null,
+        isCurrentMonth: currentDay.isSame(currentMonth, 'month'),
+        isToday: currentDay.isSame(today, 'day')
+      });
+      
+      currentDay = currentDay.add(1, 'day');
+    }
+
+    const monthlyStats = {
+      activeDays: days.filter(day => day.activity && day.isCurrentMonth).length,
+      totalDuration: days
+        .filter(day => day.isCurrentMonth && day.activity)
+        .reduce((sum, day) => sum + (day.activity?.duration || 0), 0),
+      totalSessions: days
+        .filter(day => day.isCurrentMonth && day.activity)
+        .reduce((sum, day) => sum + (day.activity?.sessions || 0), 0)
+    };
+
+    return (
+      <div className="space-y-3">
+        {/* Month Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              {currentMonth.format('MMMM YYYY')}
+            </h4>
+            <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+              <span>{monthlyStats.activeDays} active days</span>
+              <span>{formatDuration(monthlyStats.totalDuration)} tracked</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCurrentMonth(currentMonth.subtract(1, 'month'))}
+              className="h-7 w-7"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCurrentMonth(currentMonth.add(1, 'month'))}
+              className="h-7 w-7"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="space-y-2">
+          {/* Day Headers */}
+          <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} className="py-1 text-center">{day}</div>
+            ))}
+          </div>
+          
+          {/* Calendar Days */}
+          <div className="grid grid-cols-7 gap-1.5">
+            {days.map((day, index) => {
+              const intensity = getIntensity(day.activity?.duration || 0);
+              
+              return (
+                <Tooltip key={index}>
+                  <TooltipTrigger asChild>
+                    <button
+                      className={cn(
+                        'relative h-8 w-full rounded-md text-xs font-medium transition-all focus:outline-none',
+                        'hover:scale-105 hover:z-10 focus:scale-105 focus:z-10',
+                        day.isCurrentMonth 
+                          ? 'text-gray-900 dark:text-gray-100' 
+                          : 'text-gray-400 dark:text-gray-600',
+                        day.activity 
+                          ? getColorClass(intensity)
+                          : 'bg-gray-100/50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800',
+                        day.isToday && 'ring-2 ring-blue-500 ring-offset-1',
+                        'flex items-center justify-center'
+                      )}
+                    >
+                      {day.date.format('D')}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={4}>
+                    <div className="space-y-1">
+                      <div className="font-medium">
+                        {day.date.format('dddd, MMMM D, YYYY')}
+                        {settings.timeReference === 'smart' && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {day.date.fromNow()}
+                          </div>
+                        )}
+                      </div>
+                      {day.activity ? (
+                        <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                          {formatDuration(day.activity.duration)} • {day.activity.sessions} sessions
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          No activity recorded
+                        </div>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div className="relative space-y-4 overflow-visible sm:space-y-5">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
@@ -365,104 +613,230 @@ export function ActivityHeatmap({
               : 'Start tracking to see your activity pattern'}
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2 text-xs text-gray-600 shadow-sm sm:gap-3 dark:bg-gray-800/60 dark:text-gray-400">
-          <span className="hidden font-medium sm:inline">Less</span>
-          <div className="flex items-center gap-1">
-            {[0, 1, 2, 3, 4].map((intensity) => (
-              <div
-                key={intensity}
-                className={cn(
-                  'h-2.5 w-2.5 rounded-[2px] transition-transform hover:scale-125 sm:h-3 sm:w-3',
-                  getColorClass(intensity)
-                )}
-                title={`Level ${intensity} intensity`}
-              />
-            ))}
-          </div>
-          <span className="hidden font-medium sm:inline">More</span>
-        </div>
-      </div>
-
-      {/* Mobile: Three-row layout */}
-      <div className="block lg:hidden">
-        <div className="space-y-6">
-          {/* Day labels for mobile */}
-          <div className="flex items-center gap-3">
-            <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
-              <span className="leading-none">M</span>
-              <span className="leading-none">T</span>
-              <span className="leading-none">W</span>
-              <span className="leading-none">T</span>
-              <span className="leading-none">F</span>
-              <span className="leading-none">S</span>
-              <span className="leading-none">S</span>
+        <div className="flex items-center gap-2">
+          {/* View Mode Settings */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 px-2 gap-1">
+                <Settings className="h-3 w-3" />
+                <span className="hidden sm:inline text-xs">View</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel className="text-xs">Display Mode</DropdownMenuLabel>
+              {externalSettings && (
+                <div className="px-2 py-1 text-xs text-muted-foreground">
+                  Controlled by Timer Settings
+                </div>
+              )}
+              <DropdownMenuItem 
+                className="text-xs"
+                onClick={() => !externalSettings && setInternalSettings(prev => ({ ...prev, viewMode: 'original' }))}
+                disabled={!!externalSettings}
+              >
+                <Grid3X3 className="mr-2 h-3 w-3" />
+                Original Grid
+                {settings.viewMode === 'original' && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-xs"
+                onClick={() => !externalSettings && setInternalSettings(prev => ({ ...prev, viewMode: 'hybrid' }))}
+                disabled={!!externalSettings}
+              >
+                <Calendar className="mr-2 h-3 w-3" />
+                Hybrid View
+                {settings.viewMode === 'hybrid' && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-xs"
+                onClick={() => !externalSettings && setInternalSettings(prev => ({ ...prev, viewMode: 'calendar-only' }))}
+                disabled={!!externalSettings}
+              >
+                <Calendar className="mr-2 h-3 w-3" />
+                Calendar Only
+                {settings.viewMode === 'calendar-only' && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs">Options</DropdownMenuLabel>
+              <DropdownMenuCheckboxItem
+                className="text-xs"
+                checked={settings.timeReference === 'smart'}
+                onCheckedChange={(checked) => 
+                  !externalSettings && setInternalSettings(prev => ({ 
+                    ...prev, 
+                    timeReference: checked ? 'smart' : 'relative' 
+                  }))
+                }
+                disabled={!!externalSettings}
+              >
+                Show smart time references
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                className="text-xs"
+                checked={settings.showOnboardingTips}
+                onCheckedChange={(checked) => 
+                  !externalSettings && setInternalSettings(prev => ({ ...prev, showOnboardingTips: checked }))
+                }
+                disabled={!!externalSettings}
+              >
+                Show helpful tips
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Legend */}
+          <div className="flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-xs text-gray-600 shadow-sm ring-1 ring-gray-200/50 sm:gap-3 dark:bg-gray-800/80 dark:text-gray-400 dark:ring-gray-700/50">
+            <span className="hidden font-medium sm:inline">Less</span>
+            <div className="flex items-center gap-1">
+              {[0, 1, 2, 3, 4].map((intensity) => (
+                <div
+                  key={intensity}
+                  className={cn(
+                    'h-2.5 w-2.5 rounded-[2px] transition-transform hover:scale-125 sm:h-3 sm:w-3',
+                    getColorClass(intensity)
+                  )}
+                  title={`Level ${intensity} intensity`}
+                />
+              ))}
             </div>
-            <div className="flex-1">
-              {renderHeatmapSection(mobileFirstRow, 'mobile-first', true)}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
-              <span className="leading-none">M</span>
-              <span className="leading-none">T</span>
-              <span className="leading-none">W</span>
-              <span className="leading-none">T</span>
-              <span className="leading-none">F</span>
-              <span className="leading-none">S</span>
-              <span className="leading-none">S</span>
-            </div>
-            <div className="flex-1">
-              {renderHeatmapSection(mobileSecondRow, 'mobile-second', true)}
-            </div>
-          </div>
-
-          {/* Third row for mobile */}
-          <div className="flex items-center gap-3">
-            <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
-              <span className="leading-none">M</span>
-              <span className="leading-none">T</span>
-              <span className="leading-none">W</span>
-              <span className="leading-none">T</span>
-              <span className="leading-none">F</span>
-              <span className="leading-none">S</span>
-              <span className="leading-none">S</span>
-            </div>
-            <div className="flex-1">
-              {renderHeatmapSection(mobileThirdRow, 'mobile-third', true)}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop: Two-row layout */}
-      <div className="hidden lg:block">
-        <div className="space-y-6">
-          {/* Row 1: First 6 months */}
-          <div className="flex gap-4">
-            <div className="flex flex-col justify-between text-sm font-semibold text-gray-500 dark:text-gray-400">
-              <span className="leading-none">Mon</span>
-              <span className="leading-none">Wed</span>
-              <span className="leading-none">Fri</span>
-            </div>
-            <div className="flex-1">
-              {renderHeatmapSection(desktopFirstRow, 'desktop-first', false)}
-            </div>
-          </div>
-
-          {/* Row 2: Last 6 months */}
-          <div className="flex gap-4">
-            <div className="flex flex-col justify-between text-sm font-semibold text-gray-500 dark:text-gray-400">
-              <span className="leading-none">Mon</span>
-              <span className="leading-none">Wed</span>
-              <span className="leading-none">Fri</span>
-            </div>
-            <div className="flex-1">
-              {renderHeatmapSection(desktopSecondRow, 'desktop-second', false)}
-            </div>
+            <span className="hidden font-medium sm:inline">More</span>
           </div>
         </div>
       </div>
+
+      {/* Onboarding Tips */}
+      {settings.showOnboardingTips && (
+        <div className="rounded-lg border border-blue-200/60 bg-blue-50/50 p-3 dark:border-blue-800/60 dark:bg-blue-950/30">
+          <div className="flex items-start gap-2">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+            <div className="space-y-1 text-sm">
+              <p className="font-medium text-blue-900 dark:text-blue-100">
+                💡 Heatmap Guide
+              </p>
+              <p className="text-blue-700 dark:text-blue-300">
+                {settings.viewMode === 'original' && "Darker colors = more activity. Use the View menu to try different layouts!"}
+                {settings.viewMode === 'hybrid' && "Click on any month bar above to view that month's calendar below."}
+                {settings.viewMode === 'calendar-only' && "Navigate between months using the arrow buttons. Each day shows your activity level."}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              onClick={() => !externalSettings && setInternalSettings(prev => ({ ...prev, showOnboardingTips: false }))}
+              disabled={!!externalSettings}
+            >
+              ×
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Render Different Views Based on Settings */}
+      {settings.viewMode === 'original' && (
+        <>
+          {/* Mobile: Three-row layout */}
+          <div className="block overflow-visible lg:hidden">
+            <div className="space-y-6">
+              {/* Day labels for mobile */}
+              <div className="flex items-start gap-3 overflow-visible">
+                <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span className="leading-none">M</span>
+                  <span className="leading-none">T</span>
+                  <span className="leading-none">W</span>
+                  <span className="leading-none">T</span>
+                  <span className="leading-none">F</span>
+                  <span className="leading-none">S</span>
+                  <span className="leading-none">S</span>
+                </div>
+                <div className="flex-1 overflow-visible">
+                  {renderHeatmapSection(mobileFirstRow, 'mobile-first', true)}
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 overflow-visible">
+                <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span className="leading-none">M</span>
+                  <span className="leading-none">T</span>
+                  <span className="leading-none">W</span>
+                  <span className="leading-none">T</span>
+                  <span className="leading-none">F</span>
+                  <span className="leading-none">S</span>
+                  <span className="leading-none">S</span>
+                </div>
+                <div className="flex-1 overflow-visible">
+                  {renderHeatmapSection(mobileSecondRow, 'mobile-second', true)}
+                </div>
+              </div>
+
+              {/* Third row for mobile */}
+              <div className="flex items-start gap-3 overflow-visible">
+                <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span className="leading-none">M</span>
+                  <span className="leading-none">T</span>
+                  <span className="leading-none">W</span>
+                  <span className="leading-none">T</span>
+                  <span className="leading-none">F</span>
+                  <span className="leading-none">S</span>
+                  <span className="leading-none">S</span>
+                </div>
+                <div className="flex-1 overflow-visible">
+                  {renderHeatmapSection(mobileThirdRow, 'mobile-third', true)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop: Two-row layout */}
+          <div className="hidden overflow-visible lg:block">
+            <div className="space-y-6">
+              {/* Row 1: First 6 months */}
+              <div className="flex gap-4 overflow-visible">
+                <div className="flex flex-col justify-between text-sm font-semibold text-gray-500 dark:text-gray-400">
+                  <span className="leading-none">Mon</span>
+                  <span className="leading-none">Wed</span>
+                  <span className="leading-none">Fri</span>
+                </div>
+                <div className="flex-1 overflow-visible">
+                  {renderHeatmapSection(desktopFirstRow, 'desktop-first', false)}
+                </div>
+              </div>
+
+              {/* Row 2: Last 6 months */}
+              <div className="flex gap-4 overflow-visible">
+                <div className="flex flex-col justify-between text-sm font-semibold text-gray-500 dark:text-gray-400">
+                  <span className="leading-none">Mon</span>
+                  <span className="leading-none">Wed</span>
+                  <span className="leading-none">Fri</span>
+                </div>
+                <div className="flex-1 overflow-visible">
+                  {renderHeatmapSection(desktopSecondRow, 'desktop-second', false)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {settings.viewMode === 'hybrid' && (
+        <div className="space-y-4">
+          {/* Year Overview */}
+          <div className="rounded-lg border border-gray-200/60 bg-gray-50/50 p-3 dark:border-gray-700/60 dark:bg-gray-800/30">
+            {renderYearOverview()}
+          </div>
+          
+          {/* Monthly Calendar */}
+          <div className="rounded-lg border border-gray-200/60 bg-white/50 p-3 dark:border-gray-700/60 dark:bg-gray-900/30">
+            {renderMonthlyCalendar()}
+          </div>
+        </div>
+      )}
+
+      {settings.viewMode === 'calendar-only' && (
+        <div className="rounded-lg border border-gray-200/60 bg-white/50 p-3 dark:border-gray-700/60 dark:bg-gray-900/30">
+          {renderMonthlyCalendar()}
+        </div>
+      )}
     </div>
   );
 }
