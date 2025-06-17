@@ -113,7 +113,7 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'overflow-y-scroll bg-background antialiased',
+          'overflow-y-scroll bg-root-background antialiased',
           font.className
         )}
       >
