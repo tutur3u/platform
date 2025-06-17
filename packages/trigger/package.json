@@ -3,16 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "./google-calendar-background-sync.ts",
-  "types": "./google-calendar-background-sync.ts",
+  "main": "./example.ts",
+  "types": "./example.ts",
   "exports": {
     ".": {
       "types": "./example.ts",
       "import": "./example.ts"
     },
-    "./google-calendar-background-sync": {
-      "types": "./google-calendar-background-sync.ts",
-      "import": "./google-calendar-background-sync.ts"
+    "./example": {
+      "types": "./example.ts",
+      "import": "./example.ts"
     }
   },
   "dependencies": {
