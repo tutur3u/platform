@@ -1,6 +1,6 @@
 create type "public"."platform_service" as enum ('TUTURUUU', 'REWISE', 'NOVA', 'UPSKII');
 
-alter table "public"."users" add column "services" platform_service[];
+alter table "public"."users" add column "services" platform_service[] DEFAULT '{TUTURUUU}';
 
 ALTER TABLE public.users
   ALTER COLUMN services SET DEFAULT '{TUTURUUU}',
