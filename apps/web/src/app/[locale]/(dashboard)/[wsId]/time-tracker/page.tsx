@@ -1,4 +1,5 @@
-import TimeTrackerContent, { TimeTrackerData } from './time-tracker-content';
+import TimeTrackerContent from './time-tracker-content';
+import type { TimeTrackerData } from './types';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { getWorkspace, verifySecret } from '@/lib/workspace-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';

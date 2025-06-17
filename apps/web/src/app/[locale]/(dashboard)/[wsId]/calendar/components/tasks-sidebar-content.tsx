@@ -8,7 +8,6 @@ import { TaskListForm } from './task-list-form';
 import TimeTracker from './time-tracker';
 import type {
   AIChat,
-  WorkspaceTask,
   WorkspaceTaskBoard,
 } from '@tuturuuu/types/db';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';

@@ -252,9 +252,9 @@ export default function TimeTrackerContent({
       
       // Combine and sort by priority within each group (lower number = higher priority)
       prioritizedTasks = [
-        ...myUrgentTasks.sort((a, b) => (a.priority || 99) - (b.priority || 99)),
-        ...urgentUnassigned.sort((a, b) => (a.priority || 99) - (b.priority || 99)),
-        ...myOtherTasks.sort((a, b) => (a.priority || 99) - (b.priority || 99))
+        ...myUrgentTasks.sort((a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) => (a.priority || 99) - (b.priority || 99)),
+        ...urgentUnassigned.sort((a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) => (a.priority || 99) - (b.priority || 99)),
+        ...myOtherTasks.sort((a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) => (a.priority || 99) - (b.priority || 99))
       ];
       
       setAvailableTasks(prioritizedTasks);
@@ -864,10 +864,11 @@ export default function TimeTrackerContent({
                   if (availableTasks.length === 1) {
                     // Single task - auto-start
                     const task = availableTasks[0];
-                    const isUnassigned = !task.assignees || task.assignees.length === 0;
+                    const isUnassigned = !task || !task.assignees || task.assignees.length === 0;
                     
                     try {
                       // If task is unassigned, assign to current user first
+                      if (!task) return;
                       if (isUnassigned) {
                         const { createClient } = await import('@tuturuuu/supabase/next/client');
                         const supabase = createClient();
@@ -2131,6 +2132,7 @@ export default function TimeTrackerContent({
               </Button>
               <Button
                 onClick={async () => {
+                  if (!recentSessions[0]) return;
                   try {
                     const response = await apiCall(
                       `/api/v1/workspaces/${wsId}/time-tracking/sessions/${recentSessions[0].id}`,
@@ -2242,7 +2244,7 @@ export default function TimeTrackerContent({
                   };
 
                   const priorityBadge = getPriorityBadge(task.priority);
-                  const isUnassigned = !task.assignees || task.assignees.length === 0;
+                  const isUnassigned = !task || !task.assignees || task.assignees.length === 0;
 
                 return (
                   <button
@@ -2250,6 +2252,7 @@ export default function TimeTrackerContent({
                     onClick={async () => {
                       try {
                         // If task is unassigned, assign to current user first
+                        if (!task) return;
                         if (isUnassigned) {
                           const { createClient } = await import('@tuturuuu/supabase/next/client');
                           const supabase = createClient();

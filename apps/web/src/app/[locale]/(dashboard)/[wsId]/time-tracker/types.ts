@@ -62,10 +62,9 @@ export interface TaskFilters {
 
 // Sidebar task filters
 export interface TaskSidebarFilters {
-  status: 'all' | 'todo' | 'in_progress' | 'done';
-  priority: 'all' | 'high' | 'medium' | 'low';
-  assignee: 'all' | 'me' | string;
-  project: 'all' | string;
+  board: string;
+  list: string;
+  assignee: string;
 }
 
 // Complete time tracker data structure
