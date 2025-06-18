@@ -38,17 +38,6 @@ export async function GET(
     });
   }
 
-  // const { data: dbSub, error: dbError } = await supabase
-  //   .from('users')
-  //   .select('display_name')
-  //   .eq('id', user?.id || '');
-
-  // if (dbError) {
-  // console.error('Error fetching user display name:', dbError);
-  // return new Response('Error fetching user display name', {
-  //   status: 500,
-  // });
-
   if (!isCreatorAllowed) {
     console.warn(
       `User (auth.uid()) is not authorized to create subscription for wsId: ${wsId} or subscription already exists.`
@@ -71,7 +60,7 @@ export async function GET(
   const checkoutSession = await api.checkouts.create({
     products: [productId],
     successUrl: `http://localhost:7803/${wsId}/billing/success`,
-
+    customerExternalId: user?.id || '',
     metadata: {
       wsId: wsId,
     },

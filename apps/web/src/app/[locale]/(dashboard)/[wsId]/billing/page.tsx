@@ -7,7 +7,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 const fetchProducts = async () => {
   try {
     const res = await api.products.list({ isArchived: false });
-    console.log(res.result.items, 'fetched products from polar');
+
     return res.result.items ?? [];
   } catch (err) {
     console.error('Failed to fetch products:', err);
@@ -58,6 +58,7 @@ const fetchSubscription = async (wsId: string) => {
     status: dbSub.status,
     currentPeriodStart: dbSub.current_period_start,
     currentPeriodEnd: dbSub.current_period_end,
+    polar_subscription_id: dbSub.polar_subscription_id,
     product: {
       id: polarProduct.id,
       name: polarProduct.name,
@@ -201,8 +202,10 @@ export default async function BillingPage({
 
       <BillingClient
         currentPlan={currentPlan}
+        product_id={subscription?.product.id || ''}
         upgradePlans={upgradePlans}
         wsId={wsId}
+        activeSubscriptionId={subscription?.polar_subscription_id || ''}
         isCreator={isCreator}
       />
 

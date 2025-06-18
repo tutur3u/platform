@@ -30,7 +30,9 @@ interface BillingClientProps {
   currentPlan: Plan;
   upgradePlans: UpgradePlan[];
   wsId: string;
+  product_id: string;
   isCreator: boolean;
+  activeSubscriptionId?: string;
 }
 
 export function BillingClient({
@@ -38,8 +40,41 @@ export function BillingClient({
   upgradePlans,
   wsId,
   isCreator,
+  product_id,
+  activeSubscriptionId,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleCancelSubscription = async () => {
+    setIsLoading(true);
+    setMessage('');
+
+    const response = await fetch(`/api/${wsId}/${product_id}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+
+      body: JSON.stringify({ polarSubscriptionId: activeSubscriptionId }),
+    });
+
+    setIsLoading(false);
+
+    if (response.ok) {
+      setMessage(
+        'Your subscription will be canceled at the end of your billing period.'
+      );
+      // Reload the page to show the updated subscription status
+      window.location.reload();
+    } else {
+      const errorData = await response.json();
+      setMessage(
+        `Error: ${errorData.error || 'Could not cancel subscription.'}`
+      );
+    }
+  };
 
   return (
     <>
@@ -113,6 +148,18 @@ export function BillingClient({
               </ul>
             </div>
 
+            {message && (
+              <div
+                className={`mb-4 rounded-lg p-3 text-sm ${
+                  message.includes('Error')
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                    : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                }`}
+              >
+                {message}
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-3">
               <Button
                 disabled={!isCreator}
@@ -123,8 +170,14 @@ export function BillingClient({
                 <ArrowUpCircle className="mr-2 h-5 w-5" />
                 {showUpgradeOptions ? 'Hide Upgrade Options' : 'Upgrade Plan'}
               </Button>
-              <Button variant="outline" size="lg" className="border-border">
-                Cancel Subscription
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-border"
+                onClick={handleCancelSubscription}
+                disabled={isLoading || !activeSubscriptionId}
+              >
+                {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
               </Button>
             </div>
           </div>

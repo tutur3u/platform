@@ -11,6 +11,7 @@ export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET || '',
 
   onSubscriptionActive: async (payload) => {
+    console.log(payload, 'Received subscription active webhook payload');
     try {
       const sbAdmin = await createAdminClient();
       const subscriptionPayload = payload.data;
@@ -66,19 +67,17 @@ export const POST = Webhooks({
 
       // --- 2. REPORT INITIAL USAGE (The fix to make the meter work) ---
       try {
-        // Count the users in the workspace at the moment of subscribing
         const { count: initialUserCount, error: countError } = await sbAdmin
           .from('workspace_users')
           .select('*', { count: 'exact', head: true })
           .eq('ws_id', ws_id);
 
-        if (countError) throw countError; // This error will be caught below
-        console.log(initialUserCount, 'users found in workspace');
-        // Report this initial count to your Polar Meter
+        if (countError) throw countError;
+
         await polarAdmin.events.ingest({
           events: [
             {
-              name: 'workspace.seats.sync', // Must match the Event Name in your Meter
+              name: 'workspace.seats.sync',
               customerId: payload.data.customer.id,
               metadata: {
                 seat_count: initialUserCount ?? 0, // Must match the Property Name in your Meter
