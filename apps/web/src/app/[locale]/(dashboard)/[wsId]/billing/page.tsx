@@ -22,14 +22,15 @@ const checkCreator = async (wsId: string) => {
     console.error('Billing page is only available for root workspace');
     return false;
   }
-  console.log(wsId, 'checking workspace creator status');
   const { data, error } = await supabase.rpc('check_ws_creator', {
     ws_id: wsId,
   });
 
   if (error) {
-    console.error('Error checking workspace creator status:', error);
-    // As a safe default, deny access if there's an error.
+    console.error(
+      'Error checking workspace creator status or there are no subcription yet ',
+      error
+    );
     return true;
   }
 
