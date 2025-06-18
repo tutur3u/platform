@@ -18,6 +18,7 @@ import {
   Calendar,
   CheckCircle,
   Clock,
+  FileChartColumnIncreasing,
   Info,
   Play,
   RotateCcw,
@@ -31,6 +32,7 @@ export interface AttemptSummary {
   attemptId: string;
   attemptNumber: number;
   submittedAt: string; // ISO timestamp
+  totalScore: number | null; // null if not graded yet
   durationSeconds: number;
 }
 
@@ -46,6 +48,7 @@ interface QuizData {
   explanationMode: 0 | 1 | 2;
   instruction: string | null;
   resultsReleased: boolean;
+  maxScore: number;
   attempts: AttemptSummary[];
 }
 
@@ -96,8 +99,7 @@ export default function BeforeTakingQuizWhole({
     ? quizData.attemptLimit - quizData.attemptsSoFar
     : null;
 
-  // MARK: modify if logic change to (cannot retake if result release)
-  // once results are released, no more attempts allowed
+  // Determine if the quiz can be retaken
   const canRetake =
     isAvailable &&
     !isPastDue &&
@@ -106,17 +108,25 @@ export default function BeforeTakingQuizWhole({
 
   // MARK: modify if logic changes to (can view result even not past due and attempt remain > 0)
   // At that time, add 1 variable to check view old attempts with result released
-  const canViewResult =
+  const canViewResult = isAvailable && quizData.resultsReleased;
+  // (isPastDue || (!isPastDue && attemptsRemaining == 0));
+
+  // Can view old attempts details (but no points or only can view total points only)
+  const canViewOldAttemptsNoResults =
+    quizData.attemptsSoFar > 0 && quizData.allowViewOldAttempts;
+  // !quizData.resultsReleased;
+
+  const canViewTotalPointsOnly = quizData.resultsReleased;
+
+  console.log('Test', quizData.attempts[0]);
+
+  // const canViewOldAttemptsResults = quizData.resultsReleased;
+  // can view attempts with points in detailed explanation
+  const canViewOldAttemptsResults =
     isAvailable &&
     quizData.resultsReleased &&
-    (isPastDue || (!isPastDue && attemptsRemaining == 0));
-
-  const canViewOldAttemptsNoResults =
-    quizData.attemptsSoFar > 0 &&
-    quizData.allowViewOldAttempts &&
-    !quizData.resultsReleased;
-
-  const canViewOldAttemptsResults = quizData.resultsReleased;
+    (quizData.allowViewOldAttempts ||
+      (!quizData.allowViewOldAttempts && isPastDue));
 
   const handleStartQuiz = () => {
     setIsStarting(true);
@@ -167,24 +177,49 @@ export default function BeforeTakingQuizWhole({
               </p>
             </div>
           )}
-          {canViewResult && (
-            <div className="text-center">
-              <Button
-                size="lg"
-                onClick={() => {
-                  router.push(
-                    `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${quizData.setId}/result?attemptId=${quizData.attempts[0]?.attemptId}`
-                  );
-                }}
-                className="border border-dynamic-purple bg-dynamic-purple/20 px-8 py-3 text-lg text-primary hover:bg-primary-foreground hover:text-dynamic-purple"
+
+          {quizData.attempts[0] &&
+            quizData.attempts[0].totalScore != null &&
+            canViewTotalPointsOnly && (
+              <Alert
+                variant={null}
+                className={`mt-4 border ${quizData.attempts[0]?.totalScore / quizData.maxScore < 0.5 ? 'border-dynamic-light-red bg-dynamic-pink/20' : 'border-dynamic-light-purple bg-dynamic-purple/30'}`}
               >
-                {t('quiz.view-result')}
-              </Button>
-              <p className="mt-2 text-sm text-secondary-foreground">
-                {t('quiz.view-final-attempt')}
-              </p>
-            </div>
-          )}
+                <AlertDescription className="flex flex-col items-center justify-between md:flex-row">
+                  <div className="flex flex-col items-start text-center md:items-center md:text-left">
+                    <h4 className="w-full text-lg font-bold">
+                      {quizData.attempts[0].totalScore} / {quizData.maxScore}
+                    </h4>
+
+                    <p className="line-clamp-2 w-full text-secondary-foreground">
+                      {t(
+                        canViewResult
+                          ? 'quiz.view-final-attempt'
+                          : 'quiz.view-final-total-score',
+                        {
+                          score: quizData.attempts[0]?.totalScore ?? '—',
+                          maxScore: quizData.maxScore,
+                        }
+                      )}
+                    </p>
+                  </div>
+                  {canViewResult && (
+                    <Button
+                      size="lg"
+                      onClick={() => {
+                        router.push(
+                          `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${quizData.setId}/result?attemptId=${quizData.attempts[0]?.attemptId}`
+                        );
+                      }}
+                      className={`border ${!canRetake ? 'border-dynamic-purple bg-dynamic-purple/20 hover:bg-primary-foreground' : 'border-dynamic-purple/20 bg-primary-foreground/30 hover:bg-dynamic-purple/10'} mt-3 px-5 py-1.5 text-primary hover:text-dynamic-purple md:mt-0`}
+                    >
+                      <FileChartColumnIncreasing className="mr-0.5 h-3 w-3" />
+                      {t('quiz.view-result')}
+                    </Button>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
           {!isAvailable ? (
             <Alert variant="default" className="mt-4">
               <AlertDescription>
@@ -194,10 +229,12 @@ export default function BeforeTakingQuizWhole({
           ) : (
             !quizData.resultsReleased &&
             (isPastDue || attemptsRemaining == 0) && (
-              <Alert variant="destructive" className="mt-4 font-bold text-dynamic-red
-              bg-dynamic-light-pink/30">
+              <Alert
+                variant="destructive"
+                className="mt-4 bg-dynamic-light-pink/30 font-bold text-dynamic-red"
+              >
                 <AlertDescription>
-                  <TriangleAlert className="inline h-5 w-5 mr-2" />
+                  <TriangleAlert className="mr-2 inline h-5 w-5" />
                   {isPastDue
                     ? t('quiz.quiz-past-due-message')
                     : t('quiz.no-attempts-message')}
@@ -208,7 +245,7 @@ export default function BeforeTakingQuizWhole({
         </div>
 
         {/* Info & Schedule */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Quiz Information */}
           <Card>
             <CardHeader>
@@ -361,17 +398,30 @@ export default function BeforeTakingQuizWhole({
               {quizData.attempts.map((att) => (
                 <div
                   key={att.attemptId}
-                  className="flex items-center justify-between"
+                  className="flex flex-col items-center justify-between gap-2 border-b border-secondary-foreground/20 py-3 last:border-b-0 md:flex-row"
                 >
-                  <div>
-                    {t('past-attempts.attempt-info', {
-                      number: att.attemptNumber,
-                      date: formatDate(att.submittedAt),
-                      duration: formatDuration(att.durationSeconds),
-                    })}
-                    {/* <strong>#{att.attemptNumber}</strong> at{' '}
-                    {formatDate(att.submittedAt)} (
-                    {formatDuration(att.durationSeconds)}) */}
+                  <div className="text-center md:text-left">
+                    <p>
+                      {canViewTotalPointsOnly ? (
+                        <>
+                          <span className="font-semibold">
+                            {att.totalScore} / {quizData.maxScore}
+                          </span>{' '}
+                        </>
+                      ) : (
+                        t('past-attempts.results-pending')
+                      )}
+                    </p>
+                    <h4>
+                      <span className="text-dynamic-purple">
+                        #{att.attemptNumber}
+                      </span>
+                      {t('past-attempts.attempt-info', {
+                        number: att.attemptNumber,
+                        date: formatDate(att.submittedAt),
+                        duration: formatDuration(att.durationSeconds),
+                      })}
+                    </h4>
                   </div>
                   {(canViewOldAttemptsResults ||
                     canViewOldAttemptsNoResults) && (

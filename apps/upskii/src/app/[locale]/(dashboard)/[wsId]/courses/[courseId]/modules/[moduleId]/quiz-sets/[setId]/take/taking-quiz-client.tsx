@@ -5,6 +5,7 @@ import BeforeTakingQuizWhole, {
 } from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
 import QuizStatusSidebar from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/quiz-status-sidebar';
 import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/time-elapsed-status';
+import { Json } from '@tuturuuu/types/supabase';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -21,19 +22,20 @@ type TakeResponse = {
   setId: string;
   setName: string;
   timeLimitMinutes: number | null;
-  releasePointsImmediately: boolean;
   attemptLimit: number | null;
   attemptsSoFar: number;
   allowViewOldAttempts: boolean;
   availableDate: string | null;
   dueDate: string | null;
   resultsReleased: boolean;
-  attempts: AttemptSummary[];
   explanationMode: 0 | 1 | 2;
   instruction: any;
+  attempts: AttemptSummary[];
+  maxScore: number;
   questions: Array<{
     quizId: string;
     question: string;
+    instruction: Json;
     score: number;
     multiple: boolean;
     options: { id: string; value: string }[];

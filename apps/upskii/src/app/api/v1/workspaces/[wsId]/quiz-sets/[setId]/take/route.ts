@@ -1,10 +1,12 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { Json } from '@tuturuuu/types/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 
 export type AttemptSummary = {
   attemptId: string;
   attemptNumber: number;
-  submittedAt: string;     // ISO
+  submittedAt: string;
+  totalScore: number | null;
   durationSeconds: number;
 };
 
@@ -21,20 +23,24 @@ export interface TakeResponse {
   explanationMode: 0 | 1 | 2;
   instruction: any;
   attempts: AttemptSummary[];
+  maxScore: number;
   questions: Array<{
     quizId: string;
     question: string;
+    instruction: Json;
     score: number;
     multiple: boolean;
     options: { id: string; value: string }[];
   }>;
-  // NEW: explicit flags for UI
   isAvailable: boolean;
   isPastDue: boolean;
   hasReachedMax: boolean;
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { setId: string } }) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { setId: string } }
+) {
   const { setId } = params;
   const sb = await createClient();
 
@@ -48,7 +54,7 @@ export async function GET(_req: NextRequest, { params }: { params: { setId: stri
   }
   const userId = user.id;
 
-  // 2) Fetch quiz set metadata
+  // 2) Fetch metadata
   const { data: setRow, error: sErr } = await sb
     .from('workspace_quiz_sets')
     .select(
@@ -70,7 +76,6 @@ export async function GET(_req: NextRequest, { params }: { params: { setId: stri
   if (sErr || !setRow) {
     return NextResponse.json({ error: 'Quiz set not found' }, { status: 404 });
   }
-
   const {
     name: setName,
     attempt_limit: attemptLimit,
@@ -83,41 +88,48 @@ export async function GET(_req: NextRequest, { params }: { params: { setId: stri
     instruction,
   } = setRow;
 
-  // 3) Count attempts so far
-  const { data: prevAttempts, error: aErr } = await sb
+  // 3) Count attempts
+  const { data: prev, error: aErr } = await sb
     .from('workspace_quiz_attempts')
     .select('attempt_number', { head: false })
     .eq('user_id', userId)
     .eq('set_id', setId);
   if (aErr) {
-    return NextResponse.json({ error: 'Error counting attempts' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error counting attempts' },
+      { status: 500 }
+    );
   }
-  const attemptsSoFar = prevAttempts?.length ?? 0;
+  const attemptsSoFar = prev?.length ?? 0;
 
-  // 4) Build summaries of past attempts
+  // 4) Summaries
   const { data: rawAttempts, error: attErr } = await sb
     .from('workspace_quiz_attempts')
-    .select('id,attempt_number,started_at,completed_at')
+    .select('id,attempt_number,started_at,completed_at,total_score')
     .eq('user_id', userId)
     .eq('set_id', setId)
     .order('attempt_number', { ascending: false });
   if (attErr) {
-    return NextResponse.json({ error: 'Error fetching attempts' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error fetching attempts' },
+      { status: 500 }
+    );
   }
-  const attempts: AttemptSummary[] = (rawAttempts || []).map((row) => {
-    const started = new Date(row.started_at).getTime();
-    const completed = row.completed_at
+  const attempts = (rawAttempts || []).map((row) => {
+    const startMs = new Date(row.started_at).getTime();
+    const endMs = row.completed_at
       ? new Date(row.completed_at).getTime()
       : Date.now();
     return {
       attemptId: row.id,
+      totalScore: resultsReleased ? row.total_score : null,
       attemptNumber: row.attempt_number,
       submittedAt: row.completed_at ?? row.started_at,
-      durationSeconds: Math.floor((completed - started) / 1000),
+      durationSeconds: Math.floor((endMs - startMs) / 1000),
     };
   });
 
-  // 5) Fetch questions & options
+  // 5) Questions
   const { data: rawQ, error: qErr } = await sb
     .from('quiz_set_quizzes')
     .select(
@@ -137,28 +149,33 @@ export async function GET(_req: NextRequest, { params }: { params: { setId: stri
     )
     .eq('set_id', setId);
   if (qErr) {
-    return NextResponse.json({ error: 'Error fetching questions' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error fetching questions' },
+      { status: 500 }
+    );
   }
-
-  const questions = (rawQ || []).map((r: any) => ({
+  const questions = (rawQ || []).map((r) => ({
     quizId: r.quiz_id,
     question: r.workspace_quizzes.question,
     score: r.workspace_quizzes.score,
+    instruction: r.workspace_quizzes.instruction,
     multiple:
-      r.workspace_quizzes.quiz_options.filter((o: any) => o.is_correct).length > 1,
-    options: r.workspace_quizzes.quiz_options.map((o: any) => ({
+      r.workspace_quizzes.quiz_options.filter((o) => o.is_correct).length > 1,
+    options: r.workspace_quizzes.quiz_options.map((o) => ({
       id: o.id,
       value: o.value,
     })),
   }));
 
-  // 6) Derive UI flags
+  const maxScore = questions.reduce((a, c) => a + c.score, 0);
+
+  // 6) Flags
   const now = new Date();
   const isAvailable = !availableDate || new Date(availableDate) <= now;
   const isPastDue = !!dueDate && new Date(dueDate) < now;
   const hasReachedMax = attemptLimit !== null && attemptsSoFar >= attemptLimit;
 
-  // 7) Return unified 200 response
+  // 7) Payload
   const payload: TakeResponse = {
     setId,
     setName,
@@ -172,6 +189,7 @@ export async function GET(_req: NextRequest, { params }: { params: { setId: stri
     explanationMode: explanationMode as 0 | 1 | 2,
     instruction,
     attempts,
+    maxScore,
     questions,
     isAvailable,
     isPastDue,

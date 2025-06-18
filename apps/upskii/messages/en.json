@@ -3895,7 +3895,8 @@
       "quiz-not-available": "Quiz not yet available",
       "no-attempts-remaining": "No attempts remaining",
       "view-result": "View Result",
-      "view-final-attempt": "View result of your final attempt",
+      "view-final-total-score": "You got {score} over {maxScore} for your recent attempt.",
+      "view-final-attempt": "You got {score} over {maxScore} for your recent attempt. Click `View Result` to view your score details",
       "quiz-not-available-message": "This quiz is not yet available. Please check back later.",
       "quiz-past-due-message": "This quiz is past its due date. You cannot start a new attempt at this time.",
       "no-attempts-message": "You have no attempts remaining for this quiz."
@@ -3937,7 +3938,7 @@
       "results-pending": "Results pending release",
       "view-results-button": "View Results",
       "view-details-button": "View Details",
-      "attempt-info": "#{number} at {date} ({duration})"
+      "attempt-info": " at {date} ({duration})"
     },
     "summary": {
       "title": "Attempt Summary",

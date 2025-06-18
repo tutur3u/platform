@@ -3898,7 +3898,8 @@
       "quiz-not-available": "Bài kiểm tra chưa mở",
       "no-attempts-remaining": "Không còn lần làm bài nào",
       "view-result": "Xem kết quả",
-      "view-final-attempt": "Xem kết quả lần làm bài cuối cùng",
+      "view-final-total-score": "Bạn đạt được {score} trên {maxScore}.",
+      "view-final-attempt": "Bạn đạt được {score} trên {maxScore}. Xem kết quả lần làm bài gần đây nhất",
       "quiz-not-available-message": "Bài kiểm tra này chưa mở. Vui lòng quay lại sau.",
       "quiz-past-due-message": "Bài kiểm tra này đã quá hạn nộp. Bạn không thể bắt đầu lần làm bài mới vào lúc này.",
       "no-attempts-message": "Bạn không còn lần làm bài nào cho bài kiểm tra này."
@@ -3940,7 +3941,7 @@
       "results-pending": "Kết quả đang chờ công bố",
       "view-results-button": "Xem kết quả",
       "view-details-button": "Xem chi tiết",
-      "attempt-info": "#{number} lúc {date} ({duration})"
+      "attempt-info": " lúc {date} ({duration})"
     },
     "summary": {
       "title": "Tóm tắt lần làm bài",
