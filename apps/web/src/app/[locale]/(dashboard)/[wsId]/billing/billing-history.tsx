@@ -108,7 +108,7 @@ export default function BillingHistory({
                       {subscription.product ? (
                         <div>
                           <div className="font-medium">
-                            ${subscription.product.price.toFixed(2)}
+                            ${subscription.product.price}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             per {subscription.product.recurring_interval}
@@ -128,12 +128,12 @@ export default function BillingHistory({
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <button
+                      <p
                         className="text-primary hover:text-primary/80"
                         title="Download Receipt"
                       >
                         <Receipt className="h-5 w-5" />
-                      </button>
+                      </p>
                     </td>
                   </tr>
                 ))}
