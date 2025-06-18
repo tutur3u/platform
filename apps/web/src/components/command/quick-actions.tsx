@@ -8,7 +8,7 @@ import {
   PlusCircle,
   Timer,
   TrendingUp,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
 import { useMemo } from 'react';
 
 // Peak productivity hours configuration

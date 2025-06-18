@@ -1,7 +1,7 @@
 'use client';
 
 import { CommandEmpty } from '@tuturuuu/ui/command';
-import { Search } from 'lucide-react';
+import { Search } from '@tuturuuu/ui/icons';
 
 export function EmptyState() {
   return (

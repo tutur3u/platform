@@ -24,7 +24,7 @@ import {
   TrendingUpIcon,
   UsersIcon,
   ZapIcon,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
 
 interface TemplateScenarioProps {
   onLoadTemplate: (template: TemplateScenario) => void;

@@ -25,18 +25,18 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { TooltipProvider } from '@tuturuuu/ui/tooltip';
-import dayjs from 'dayjs';
 import {
   BrainIcon,
   CalendarIcon,
   ClockIcon,
   SettingsIcon,
   SparklesIcon,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { TooltipProvider } from '@tuturuuu/ui/tooltip';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 
 function SchedulerPage() {

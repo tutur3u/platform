@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { CalendarIcon, ClockIcon, PlusIcon, TagIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -22,7 +23,6 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import dayjs from 'dayjs';
-import { CalendarIcon, ClockIcon, PlusIcon, TagIcon } from 'lucide-react';
 import { useState } from 'react';
 
 interface TaskModalProps {

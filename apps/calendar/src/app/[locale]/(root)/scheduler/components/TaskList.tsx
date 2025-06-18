@@ -10,6 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import {
+  CalendarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  PlusIcon,
+  Trash2Icon,
+  ZapIcon,
+} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
@@ -22,14 +30,6 @@ import {
 } from '@tuturuuu/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
-import {
-  CalendarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  PlusIcon,
-  Trash2Icon,
-  ZapIcon,
-} from 'lucide-react';
 import { useMemo } from 'react';
 
 interface TaskListProps {

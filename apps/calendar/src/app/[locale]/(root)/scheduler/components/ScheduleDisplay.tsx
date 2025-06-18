@@ -9,16 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import {
   AlertTriangleIcon,
   CalendarIcon,
   ClockIcon,
   SparklesIcon,
   TrendingUpIcon,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { useMemo } from 'react';
 
 dayjs.extend(relativeTime);

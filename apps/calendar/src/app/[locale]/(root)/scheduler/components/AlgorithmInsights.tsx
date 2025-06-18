@@ -10,8 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Progress } from '@tuturuuu/ui/progress';
-import { Separator } from '@tuturuuu/ui/separator';
 import {
   BrainIcon,
   CheckCircleIcon,
@@ -21,7 +19,9 @@ import {
   TrendingUpIcon,
   XCircleIcon,
   ZapIcon,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Progress } from '@tuturuuu/ui/progress';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useMemo } from 'react';
 
 interface AlgorithmInsightsProps {
