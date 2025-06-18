@@ -65,8 +65,8 @@ export function BillingClient({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 gap-8">
+          <div>
             <div className="mb-6">
               <h3 className="mb-1 text-xl font-bold text-card-foreground">
                 {currentPlan.name}
@@ -79,7 +79,7 @@ export function BillingClient({
               </p>
             </div>
 
-            <div className="mb-6 grid grid-cols-2 gap-4">
+            <div className="mb-6 grid grid-cols-2 gap-6 md:grid-cols-4">
               <div>
                 <p className="text-sm text-muted-foreground">Start Date</p>
                 <p className="font-medium text-card-foreground">
@@ -96,58 +96,35 @@ export function BillingClient({
               </div>
             </div>
 
-            <div className="mb-6">
-              <h4 className="mb-2 font-medium text-card-foreground">
-                Features:
+            <div className="mb-8">
+              <h4 className="mb-4 font-medium text-card-foreground">
+                Plan Features:
               </h4>
-              <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {currentPlan.features?.map((feature, index) => (
                   <li
                     key={index}
                     className="flex items-center text-card-foreground"
                   >
-                    <CheckCircle className="mr-2 h-5 w-5 text-primary" />
-                    {feature}
+                    <CheckCircle className="mr-3 h-5 w-5 flex-shrink-0 text-primary" />
+                    <span className="text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3">
               <Button
                 disabled={!isCreator}
                 onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
                 className="flex items-center"
+                size="lg"
               >
-                <ArrowUpCircle className="mr-1 h-5 w-5" />
-                {showUpgradeOptions ? 'Hide Options' : 'Upgrade Plan'}
+                <ArrowUpCircle className="mr-2 h-5 w-5" />
+                {showUpgradeOptions ? 'Hide Upgrade Options' : 'Upgrade Plan'}
               </Button>
-              <Button variant="outline" className="border-border">
+              <Button variant="outline" size="lg" className="border-border">
                 Cancel Subscription
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-accent/30 p-6">
-            <h3 className="mb-4 text-lg font-semibold text-card-foreground">
-              Payment Method
-            </h3>
-            <div className="mb-4 flex items-center">
-              <CreditCard className="mr-3 h-8 w-8 text-muted-foreground" />
-              <div>
-                <p className="font-medium text-card-foreground">
-                  Visa ending in 4242
-                </p>
-                <p className="text-sm text-muted-foreground">Expires 05/2025</p>
-              </div>
-            </div>
-            <div className="mt-6">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-sm font-medium"
-              >
-                Update payment method
               </Button>
             </div>
           </div>
