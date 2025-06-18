@@ -8,24 +8,46 @@ export async function GET(
   { params }: { params: Promise<{ wsId: string; productId: string }> }
 ) {
   // const sbAdmin = await createAdminClient();
-  // const user = await getCurrentSupabaseUser();
+  const user = await getCurrentSupabaseUser();
 
   const { wsId, productId } = await params;
   const supabase = await createClient();
 
+  const { data, error } = await supabase
+    .from('users')
+    .select('display_name')
+    .eq('id', user?.id || '')
+    .single();
+
+  if (error) {
+    console.error('Error fetching user display name:', error);
+    return new Response('Error fetching user display name', {
+      status: 500,
+    });
+  }
   const { data: isCreatorAllowed, error: rpcError } = await supabase.rpc(
     'check_ws_creator',
     {
       ws_id: wsId,
     }
   );
-
   if (rpcError) {
     console.error('Error checking workspace creator:', rpcError);
     return new Response(`Error checking creator status: ${rpcError.message}`, {
       status: 500,
     });
   }
+
+  // const { data: dbSub, error: dbError } = await supabase
+  //   .from('users')
+  //   .select('display_name')
+  //   .eq('id', user?.id || '');
+
+  // if (dbError) {
+  // console.error('Error fetching user display name:', dbError);
+  // return new Response('Error fetching user display name', {
+  //   status: 500,
+  // });
 
   if (!isCreatorAllowed) {
     console.warn(
@@ -55,5 +77,8 @@ export async function GET(
     },
   });
 
-  return NextResponse.redirect(checkoutSession.url);
+  return NextResponse.redirect(
+    checkoutSession.url +
+      `?customerEmail=${user?.email}&customer_name=${data.display_name}`
+  );
 }
