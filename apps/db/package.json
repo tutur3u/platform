@@ -3,8 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "bun supabase start",
-    "stop": "bun supabase stop",
     "sb:status": "bun supabase status",
     "sb:start": "bun supabase start",
     "sb:stop": "bun supabase stop",
