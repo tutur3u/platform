@@ -22,21 +22,19 @@ const checkCreator = async (wsId: string) => {
     console.error('Billing page is only available for root workspace');
     return false;
   }
+
   const { data, error } = await supabase.rpc('check_ws_creator', {
     ws_id: wsId,
   });
 
   if (error) {
-    console.error(
-      'Error checking workspace creator status or there are no subcription yet ',
-      error
-    );
+    console.error('Error checking workspace creator:', error);
     return true;
   }
 
-  // The 'data' returned from the RPC will be the boolean result.
   return data;
 };
+
 const fetchSubscription = async (wsId: string) => {
   const sbAdmin = await createClient();
 
@@ -48,21 +46,13 @@ const fetchSubscription = async (wsId: string) => {
     .single();
 
   if (error || !dbSub) {
-    console.error(
-      'Error fetching subscription or subscription not found:',
-      error
-    );
+    console.error('Error fetching subscription:', error);
     return null;
   }
 
-  console.log(dbSub, 'fetched subscription from database');
-  const polarProduct = await api.products.get({
-    id: dbSub.product_id || '',
-  });
+  const polarProduct = await api.products.get({ id: dbSub.product_id || '' });
 
-  if (!polarProduct) {
-    return null;
-  }
+  if (!polarProduct) return null;
 
   return {
     status: dbSub.status,
@@ -77,16 +67,17 @@ const fetchSubscription = async (wsId: string) => {
   };
 };
 
-const fetchedWorksapceSubscriptions = async (wsId: string) => {
+const fetchWorkspaceSubscriptions = async (wsId: string) => {
   const sbAdmin = await createClient();
 
-  const { data: history, error } = await sbAdmin
+  const { data, error } = await sbAdmin
     .from('workspace_subscription')
     .select(
       `
-      created_at, 
-      product_id, 
-      status, 
+      id,
+      created_at,
+      product_id,
+      status,
       cancel_at_period_end,
       workspace_subscription_products (
         name,
@@ -105,7 +96,7 @@ const fetchedWorksapceSubscriptions = async (wsId: string) => {
     return [];
   }
 
-  return history || [];
+  return data ?? [];
 };
 
 export default async function BillingPage({
@@ -114,12 +105,13 @@ export default async function BillingPage({
   params: Promise<{ wsId: string }>;
 }) {
   const { wsId } = await params;
+
   const [products, subscription, isCreator, subscriptionHistory] =
     await Promise.all([
       fetchProducts(),
       fetchSubscription(wsId),
       checkCreator(wsId),
-      fetchedWorksapceSubscriptions(wsId),
+      fetchWorkspaceSubscriptions(wsId),
     ]);
 
   const currentPlan = subscription?.product
@@ -158,12 +150,20 @@ export default async function BillingPage({
       };
 
   const billingHistory = subscriptionHistory.map((sub, index) => ({
-    id: `SUB-${sub.product_id?.slice(-6) || index}`,
+    id: sub.id ?? `SUB-${sub.product_id?.slice(-6) || index}`,
     created_at: sub.created_at,
     product_id: sub.product_id,
-    status: sub.status,
+    status: sub.status ?? 'unknown',
     cancel_at_period_end: sub.cancel_at_period_end,
-    product: sub.workspace_subscription_products || null,
+    product: sub.workspace_subscription_products
+      ? {
+          name: sub.workspace_subscription_products.name || 'Unknown Plan',
+          description: sub.workspace_subscription_products.description,
+          price: sub.workspace_subscription_products.price || 0,
+          recurring_interval:
+            sub.workspace_subscription_products.recurring_interval || 'month',
+        }
+      : null,
   }));
 
   const upgradePlans = products.map((product, index) => ({
