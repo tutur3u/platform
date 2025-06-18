@@ -589,6 +589,15 @@ export function TimerControls({
     };
   }, [wsId, currentUserId]);
 
+  // Cleanup AudioContext on component unmount
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
   // Drag and drop state
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounterRef = useRef(0);
@@ -619,6 +628,9 @@ export function TimerControls({
   const hasReachedTargetRef = useRef(hasReachedTarget);
   const getCurrentBreakStateRef = useRef(getCurrentBreakState);
   const updateCurrentBreakStateRef = useRef(updateCurrentBreakState);
+
+  // Ref for singleton AudioContext to prevent resource leaks
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   // Update refs when values change
   useEffect(() => {
@@ -653,8 +665,18 @@ export function TimerControls({
   const playNotificationSound = useCallback(() => {
     if ('Audio' in window) {
       try {
-        // Create a simple notification beep using Web Audio API
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        // Lazily create a singleton AudioContext to prevent resource leaks
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        
+        const audioContext = audioContextRef.current;
+        
+        // Resume context if suspended (required for some browsers)
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
