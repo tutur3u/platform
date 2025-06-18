@@ -115,7 +115,7 @@ export async function PATCH(
     }
 
     if (action === 'resume') {
-      // Create a new session with the same details
+      // Create a new session with the same details, marking it as resumed
       const { data, error } = await adminSupabase
         .from('time_tracking_sessions')
         .insert({
@@ -127,6 +127,7 @@ export async function PATCH(
           task_id: session.task_id,
           start_time: new Date().toISOString(),
           is_running: true,
+          was_resumed: true, // Mark this session as resumed
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })

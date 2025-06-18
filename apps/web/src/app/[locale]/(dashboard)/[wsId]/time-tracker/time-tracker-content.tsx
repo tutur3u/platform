@@ -7,37 +7,47 @@ import { SessionHistory } from './components/session-history';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
-import { useQuery } from '@tanstack/react-query';
 import type {
-  TimeTrackingCategory,
-  TimeTrackingSession,
-  WorkspaceTask,
-} from '@tuturuuu/types/db';
+  ExtendedWorkspaceTask,
+  SessionWithRelations,
+  TaskSidebarFilters,
+  TimeTrackerData,
+  TimeTrackingGoal,
+  TimerStats,
+} from './types';
+import {
+  generateAssigneeInitials,
+  getFilteredAndSortedSidebarTasks,
+  useTaskCounts,
+} from './utils';
+import { useQuery } from '@tanstack/react-query';
+import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
   AlertCircle,
+  BarChart2,
   Calendar,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
+  CheckSquare,
   Clock,
-  Copy,
   History,
+  LayoutDashboard,
   MapPin,
   Pause,
+  Play,
+  PlusCircle,
   RefreshCw,
   RotateCcw,
   Settings,
-  Sparkles,
   Tag,
-  Target,
   Timer,
   TrendingUp,
   WifiOff,
   Zap,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -46,62 +56,20 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface TimeTrackerContentProps {
   wsId: string;
   initialData: TimeTrackerData;
-}
-
-interface TimerStats {
-  todayTime: number;
-  weekTime: number;
-  monthTime: number;
-  streak: number;
-  categoryBreakdown?: {
-    today: Record<string, number>;
-    week: Record<string, number>;
-    month: Record<string, number>;
-  };
-  dailyActivity?: Array<{
-    date: string;
-    duration: number;
-    sessions: number;
-  }>;
-}
-
-// Unified SessionWithRelations type that matches both TimerControls and SessionHistory expectations
-export interface SessionWithRelations extends TimeTrackingSession {
-  category: TimeTrackingCategory | null;
-  task: WorkspaceTask | null;
-}
-
-// Unified TimeTrackingGoal type that matches GoalManager expectations
-export interface TimeTrackingGoal {
-  id: string;
-  ws_id: string;
-  user_id: string;
-  category_id: string | null;
-  daily_goal_minutes: number;
-  weekly_goal_minutes: number | null;
-  is_active: boolean | null;
-  category: TimeTrackingCategory | null;
-}
-
-interface ExtendedWorkspaceTask extends Partial<WorkspaceTask> {
-  board_name?: string;
-  list_name?: string;
-}
-
-export interface TimeTrackerData {
-  categories: TimeTrackingCategory[];
-  runningSession: SessionWithRelations | null;
-  recentSessions: SessionWithRelations[] | null;
-  goals: TimeTrackingGoal[] | null;
-  tasks: ExtendedWorkspaceTask[];
-  stats: TimerStats;
 }
 
 export default function TimeTrackerContent({
@@ -177,12 +145,61 @@ export default function TimeTrackerContent({
     initialData.tasks || []
   );
 
+  // Quick actions state
+  const [showContinueConfirm, setShowContinueConfirm] = useState(false);
+  const [showTaskSelector, setShowTaskSelector] = useState(false);
+  const [availableTasks, setAvailableTasks] = useState<ExtendedWorkspaceTask[]>(
+    []
+  );
+  const [nextTaskPreview, setNextTaskPreview] =
+    useState<ExtendedWorkspaceTask | null>(null);
+
   // Enhanced loading and error states
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [retryCount, setRetryCount] = useState(0);
+
+  // Heatmap settings state
+  const [heatmapSettings, setHeatmapSettings] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('heatmap-settings');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          // Fall through to default
+        }
+      }
+    }
+    return {
+      viewMode: 'original' as 'original' | 'hybrid' | 'calendar-only',
+      timeReference: 'smart' as 'relative' | 'absolute' | 'smart',
+      showOnboardingTips: true,
+    };
+  });
+
+  // Listen for heatmap settings changes from child components
+  useEffect(() => {
+    const handleSettingsChange = (event: CustomEvent) => {
+      setHeatmapSettings(event.detail);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener(
+        'heatmap-settings-changed',
+        handleSettingsChange as EventListener
+      );
+
+      return () => {
+        window.removeEventListener(
+          'heatmap-settings-changed',
+          handleSettingsChange as EventListener
+        );
+      };
+    }
+  }, []);
 
   // Refs for cleanup
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -193,6 +210,154 @@ export default function TimeTrackerContent({
 
   // Whether we're viewing another user's data
   const isViewingOtherUser = selectedUserId !== null;
+
+  // Get user timezone
+  const userTimezone = dayjs.tz.guess();
+
+  // Calculate focus score for sessions
+  const calculateFocusScore = useCallback(
+    (session: SessionWithRelations): number => {
+      if (!session.duration_seconds) return 0;
+
+      // Base score from duration (longer sessions = higher focus)
+      const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
+
+      // Bonus for consistency (sessions without interruptions)
+      const consistencyBonus = session.description?.includes('resumed')
+        ? 0
+        : 20;
+
+      // Time of day bonus (peak hours get bonus)
+      const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+      const peakHoursBonus =
+        (sessionHour >= 9 && sessionHour <= 11) ||
+        (sessionHour >= 14 && sessionHour <= 16)
+          ? 20
+          : 0;
+
+      // Category bonus (work categories get slight bonus)
+      const categoryBonus = session.category?.name
+        ?.toLowerCase()
+        .includes('work')
+        ? 10
+        : 0;
+
+      // Task completion bonus
+      const taskBonus = session.task_id ? 10 : 0;
+
+      return Math.min(
+        durationScore +
+          consistencyBonus +
+          peakHoursBonus +
+          categoryBonus +
+          taskBonus,
+        100
+      );
+    },
+    [userTimezone]
+  );
+
+  // Calculate productivity metrics
+  const productivityMetrics = useMemo(() => {
+    if (!recentSessions.length) {
+      return {
+        avgFocusScore: 0,
+        todaySessionCount: 0,
+      };
+    }
+
+    const today = dayjs().tz(userTimezone);
+    const todaySessions = recentSessions.filter((session) => {
+      const sessionDate = dayjs.utc(session.start_time).tz(userTimezone);
+      return sessionDate.isSame(today, 'day');
+    });
+
+    const focusScores = recentSessions
+      .slice(0, 10)
+      .map((session) => calculateFocusScore(session));
+    const avgFocusScore =
+      focusScores.length > 0
+        ? Math.round(
+            focusScores.reduce((sum, score) => sum + score, 0) /
+              focusScores.length
+          )
+        : 0;
+
+    return {
+      avgFocusScore,
+      todaySessionCount: todaySessions.length,
+    };
+  }, [recentSessions, calculateFocusScore, userTimezone]);
+
+  // Function to fetch next tasks with smart priority logic
+  const fetchNextTasks = useCallback(async () => {
+    try {
+      const response = await apiCall(
+        `/api/v1/workspaces/${wsId}/tasks?limit=100`
+      );
+      let prioritizedTasks = [];
+
+      // 1. First priority: Urgent tasks (priority 1) assigned to current user
+      const myUrgentTasks = response.tasks.filter(
+        (task: ExtendedWorkspaceTask) => {
+          const isUrgent = task.priority === 1; // Priority 1 = Urgent
+          const isNotCompleted = !task.completed;
+          const isAssignedToMe = task.is_assigned_to_current_user;
+          return isUrgent && isNotCompleted && isAssignedToMe;
+        }
+      );
+
+      // 2. Second priority: Urgent unassigned tasks (user can assign themselves)
+      const urgentUnassigned = response.tasks.filter(
+        (task: ExtendedWorkspaceTask) => {
+          const isUrgent = task.priority === 1; // Priority 1 = Urgent
+          const isNotCompleted = !task.completed;
+          const isUnassigned = !task.assignees || task.assignees.length === 0;
+          return isUrgent && isNotCompleted && isUnassigned;
+        }
+      );
+
+      // 3. Third priority: Other tasks assigned to current user (High → Medium → Low)
+      const myOtherTasks = response.tasks.filter(
+        (task: ExtendedWorkspaceTask) => {
+          const isNotUrgent = !task.priority || task.priority > 1; // Priority 2,3,4 = High, Medium, Low
+          const isNotCompleted = !task.completed;
+          const isAssignedToMe = task.is_assigned_to_current_user;
+          return isNotUrgent && isNotCompleted && isAssignedToMe;
+        }
+      );
+
+      // Combine and sort by priority within each group (lower number = higher priority)
+      prioritizedTasks = [
+        ...myUrgentTasks.sort(
+          (a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) =>
+            (a.priority || 99) - (b.priority || 99)
+        ),
+        ...urgentUnassigned.sort(
+          (a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) =>
+            (a.priority || 99) - (b.priority || 99)
+        ),
+        ...myOtherTasks.sort(
+          (a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) =>
+            (a.priority || 99) - (b.priority || 99)
+        ),
+      ];
+
+      setAvailableTasks(prioritizedTasks);
+      setNextTaskPreview(prioritizedTasks[0] || null);
+    } catch (error) {
+      console.error('Error fetching next tasks:', error);
+      setAvailableTasks([]);
+      setNextTaskPreview(null);
+    }
+  }, [wsId]);
+
+  // Fetch next task preview on mount
+  useEffect(() => {
+    if (!isViewingOtherUser) {
+      fetchNextTasks();
+    }
+  }, [fetchNextTasks, isViewingOtherUser]);
 
   // Memoized formatters
   const formatTime = useCallback((seconds: number): string => {
@@ -276,25 +441,63 @@ export default function TimeTrackerContent({
           ? `?userId=${selectedUserId}`
           : '';
 
-        const promises = [
-          apiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`),
-          !isViewingOtherUser
-            ? apiCall(
-                `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
-              )
-            : Promise.resolve({ session: null }),
-          apiCall(
-            `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=recent&limit=50${userParam}`
-          ),
-          apiCall(
-            `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats${userParam}`
-          ),
-          apiCall(
-            `/api/v1/workspaces/${wsId}/time-tracking/goals${goalsUserParam}`
-          ),
-          apiCall(`/api/v1/workspaces/${wsId}/tasks?limit=100`),
+        // Individual API calls with error handling for each
+        const apiCalls = [
+          {
+            name: 'categories',
+            call: () =>
+              apiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`),
+            fallback: { categories: [] },
+          },
+          {
+            name: 'running',
+            call: () =>
+              !isViewingOtherUser
+                ? apiCall(
+                    `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
+                  )
+                : Promise.resolve({ session: null }),
+            fallback: { session: null },
+          },
+          {
+            name: 'recent',
+            call: () =>
+              apiCall(
+                `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=recent&limit=50${userParam}`
+              ),
+            fallback: { sessions: [] },
+          },
+          {
+            name: 'stats',
+            call: () =>
+              apiCall(
+                `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats${userParam}`
+              ),
+            fallback: {
+              stats: { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 },
+            },
+          },
+          {
+            name: 'goals',
+            call: () =>
+              apiCall(
+                `/api/v1/workspaces/${wsId}/time-tracking/goals${goalsUserParam}`
+              ),
+            fallback: { goals: [] },
+          },
+          {
+            name: 'tasks',
+            call: () => apiCall(`/api/v1/workspaces/${wsId}/tasks?limit=100`),
+            fallback: { tasks: [] },
+          },
         ];
 
+        // Execute API calls with individual error handling
+        const results = await Promise.allSettled(
+          apiCalls.map(({ call }) => call())
+        );
+
+        // Process results with fallbacks for failed calls
         const [
           categoriesRes,
           runningRes,
@@ -302,7 +505,21 @@ export default function TimeTrackerContent({
           statsRes,
           goalsRes,
           tasksRes,
-        ] = await Promise.all(promises);
+        ] = results.map((result, index) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          } else {
+            const { name, fallback } = apiCalls[index]!;
+            console.warn(`API call for ${name} failed:`, result.reason);
+            // Only show error toast for critical failures, not for tasks
+            if (name !== 'tasks') {
+              toast.error(
+                `Failed to load ${name}: ${result.reason.message || 'Unknown error'}`
+              );
+            }
+            return fallback;
+          }
+        });
 
         if (!isMountedRef.current) return;
 
@@ -469,23 +686,6 @@ export default function TimeTrackerContent({
     fetchData(true, true);
   }, []); // Remove fetchData dependency
 
-  // Quick Actions Carousel
-  const [carouselView, setCarouselView] = useState(0);
-  const [lastUserInteraction, setLastUserInteraction] = useState(Date.now());
-
-  // Auto-advance carousel every 15 seconds (pauses when user interacts)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const timeSinceLastInteraction = Date.now() - lastUserInteraction;
-      if (timeSinceLastInteraction >= 15000) {
-        // 15 seconds
-        setCarouselView((prev) => (prev === 2 ? 0 : prev + 1));
-      }
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [lastUserInteraction]);
-
   // Sidebar View Switching
   const [sidebarView, setSidebarView] = useState<
     'analytics' | 'tasks' | 'reports' | 'settings'
@@ -494,12 +694,40 @@ export default function TimeTrackerContent({
   // Drag and drop state for highlighting drop zones
   const [isDraggingTask, setIsDraggingTask] = useState(false);
 
-  // Tasks sidebar search and filter state
+  // Tasks sidebar search and filter state with persistence
   const [tasksSidebarSearch, setTasksSidebarSearch] = useState('');
-  const [tasksSidebarFilters, setTasksSidebarFilters] = useState({
-    board: 'all',
-    list: 'all',
-  });
+  const [tasksSidebarFilters, setTasksSidebarFilters] =
+    useState<TaskSidebarFilters>(() => {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(`time-tracker-filters-${wsId}`);
+        if (saved) {
+          try {
+            return {
+              board: 'all',
+              list: 'all',
+              assignee: 'all',
+              ...JSON.parse(saved),
+            };
+          } catch {
+            return { board: 'all', list: 'all', assignee: 'all' };
+          }
+        }
+      }
+      return { board: 'all', list: 'all', assignee: 'all' };
+    });
+
+  // Save filters to localStorage when they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        `time-tracker-filters-${wsId}`,
+        JSON.stringify(tasksSidebarFilters)
+      );
+    }
+  }, [tasksSidebarFilters, wsId]);
+
+  // Use memoized task counts
+  const { myTasksCount, unassignedCount } = useTaskCounts(tasks);
 
   if (isLoadingUser || !currentUserId) {
     return (
@@ -623,369 +851,371 @@ export default function TimeTrackerContent({
           </div>
         </div>
 
-        {/* Quick Actions Carousel */}
+        {/* Enhanced Quick Actions - Single Row */}
         {!isViewingOtherUser && (
-          <div className="space-y-4">
-            {/* Carousel Navigation */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setCarouselView((prev) => (prev === 0 ? 2 : prev - 1));
-                    setLastUserInteraction(Date.now());
-                  }}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-
-                <div className="flex items-center gap-1">
-                  {[0, 1, 2].map((index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setCarouselView(index);
-                        setLastUserInteraction(Date.now());
-                      }}
-                      className={cn(
-                        'h-2 w-2 rounded-full transition-all duration-200',
-                        carouselView === index
-                          ? 'w-6 bg-primary'
-                          : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                      )}
-                    />
-                  ))}
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setCarouselView((prev) => (prev === 2 ? 0 : prev + 1));
-                    setLastUserInteraction(Date.now());
-                  }}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
+              <h3 className="text-sm font-medium text-foreground">
+                ⚡ Quick Actions
+              </h3>
               <div className="text-xs text-muted-foreground">
-                {carouselView === 0 && 'Smart Quick Actions'}
-                {carouselView === 1 && 'Context-Aware Dashboard'}
-                {carouselView === 2 && 'Productivity Command Center'}
+                {(() => {
+                  const hour = new Date().getHours();
+                  const isPeakTime =
+                    (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
+                  return isPeakTime
+                    ? '🧠 Peak focus time'
+                    : '📈 Building momentum';
+                })()}
               </div>
             </div>
 
-            {/* Carousel Content */}
-            <div className="relative overflow-hidden">
-              <div
-                className="flex transition-transform duration-300 ease-in-out"
-                style={{ transform: `translateX(-${carouselView * 100}%)` }}
+            {/* Action Grid with proper spacing to prevent cutoff */}
+            <div className="grid grid-cols-2 gap-3 p-1 sm:grid-cols-4 lg:gap-4">
+              {/* Continue Last Session */}
+              <button
+                onClick={() => {
+                  if (!recentSessions[0]) {
+                    toast.info('No recent session to continue');
+                    return;
+                  }
+                  if (isRunning) {
+                    toast.info('Timer is already running');
+                    return;
+                  }
+                  setShowContinueConfirm(true);
+                }}
+                disabled={!recentSessions[0] || isRunning}
+                className={cn(
+                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                  'hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98]',
+                  recentSessions[0] && !isRunning
+                    ? 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:-translate-y-1 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
+                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                )}
               >
-                {/* View 0: Smart Quick Actions */}
-                <div className="w-full flex-shrink-0">
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
-                    {/* Continue Last Session */}
-                    <button
-                      onClick={() => {
-                        // TODO: Implement continue last session
-                        toast.info('Continue last session - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20"
+                <div className="flex items-start gap-2">
+                  <div
+                    className={cn(
+                      'flex-shrink-0 rounded-full p-1.5 transition-colors',
+                      recentSessions[0] && !isRunning
+                        ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
+                        : 'bg-muted-foreground/20'
+                    )}
+                  >
+                    <RotateCcw
+                      className={cn(
+                        'h-3 w-3 transition-transform group-hover:rotate-12',
+                        recentSessions[0] && !isRunning
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-muted-foreground'
+                      )}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={cn(
+                        'text-xs font-medium',
+                        recentSessions[0] && !isRunning
+                          ? 'text-blue-700 dark:text-blue-300'
+                          : 'text-muted-foreground'
+                      )}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-blue-500/20 p-1.5">
-                          <RotateCcw className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                            Continue Last
-                          </p>
-                          <p className="text-sm font-bold text-blue-900 dark:text-blue-100">
-                            {recentSessions[0]?.title?.slice(0, 15) ||
-                              'No recent session'}
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">🔄</span>
-                      </div>
-                    </button>
-
-                    {/* Start Most Used Task */}
-                    <button
-                      onClick={() => {
-                        // TODO: Implement start most used task
-                        toast.info('Start most used task - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-green-500/20 p-1.5">
-                          <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-green-700 dark:text-green-300">
-                            Most Used
-                          </p>
-                          <p className="text-sm font-bold text-green-900 dark:text-green-100">
-                            Quick Start
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">⚡</span>
-                      </div>
-                    </button>
-
-                    {/* Quick 25min Focus */}
-                    <button
-                      onClick={() => {
-                        // TODO: Implement quick focus timer
-                        toast.info('Quick 25min focus - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-purple-500/20 p-1.5">
-                          <Clock className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                            Quick Focus
-                          </p>
-                          <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
-                            25 minutes
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">🎯</span>
-                      </div>
-                    </button>
-
-                    {/* From Template */}
-                    <button
-                      onClick={() => {
-                        // TODO: Implement template selection
-                        toast.info('Start from template - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-orange-200/60 bg-gradient-to-br from-orange-50 to-orange-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-orange-800/60 dark:from-orange-950/30 dark:to-orange-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-orange-500/20 p-1.5">
-                          <Copy className="h-3 w-3 text-orange-600 dark:text-orange-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-orange-700 dark:text-orange-300">
-                            Template
-                          </p>
-                          <p className="text-sm font-bold text-orange-900 dark:text-orange-100">
-                            Quick Start
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">📋</span>
-                      </div>
-                    </button>
+                      Continue Last
+                    </p>
+                    {recentSessions[0] ? (
+                      <>
+                        <p
+                          className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100"
+                          title={recentSessions[0].title}
+                        >
+                          {recentSessions[0].title}
+                        </p>
+                        {recentSessions[0].category && (
+                          <div className="mt-1 flex items-center gap-1">
+                            <div
+                              className={cn(
+                                'h-2 w-2 rounded-full',
+                                recentSessions[0].category.color
+                                  ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
+                                  : 'bg-blue-500/70'
+                              )}
+                            />
+                            <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
+                              {recentSessions[0].category.name}
+                            </span>
+                          </div>
+                        )}
+                        {/* Focus Score Badge */}
+                        {recentSessions[0] && (
+                          <div className="mt-1 flex items-center gap-1">
+                            <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-900/50">
+                              <div
+                                className="h-1 rounded-full bg-blue-500 transition-all dark:bg-blue-400"
+                                style={{
+                                  width: `${Math.round(calculateFocusScore(recentSessions[0]))}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                              Focus:{' '}
+                              {Math.round(
+                                calculateFocusScore(recentSessions[0])
+                              )}
+                              %
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm font-bold text-muted-foreground">
+                        No recent session
+                      </p>
+                    )}
                   </div>
                 </div>
+                {recentSessions[0] && (
+                  <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="text-lg">🔄</span>
+                  </div>
+                )}
+              </button>
 
-                {/* View 1: Context-Aware Dashboard */}
-                <div className="w-full flex-shrink-0">
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
-                    {/* Today's Calendar */}
-                    <button
-                      onClick={() => {
-                        toast.info(
-                          "Today's calendar integration - Coming soon!"
+              {/* Next Task */}
+              <button
+                onClick={async () => {
+                  await fetchNextTasks();
+
+                  if (availableTasks.length === 0) {
+                    // No tasks available - show overlay to create tasks or view boards
+                    setShowTaskSelector(true);
+                    return;
+                  }
+
+                  if (availableTasks.length === 1) {
+                    // Single task - auto-start
+                    const task = availableTasks[0];
+                    const isUnassigned =
+                      !task || !task.assignees || task.assignees.length === 0;
+
+                    try {
+                      // If task is unassigned, assign to current user first
+                      if (!task) return;
+                      if (isUnassigned) {
+                        const { createClient } = await import(
+                          '@tuturuuu/supabase/next/client'
                         );
-                      }}
-                      className="group rounded-lg border border-indigo-200/60 bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-indigo-800/60 dark:from-indigo-950/30 dark:to-indigo-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-indigo-500/20 p-1.5">
-                          <Calendar className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                            Calendar
-                          </p>
-                          <p className="text-sm font-bold text-indigo-900 dark:text-indigo-100">
-                            Today's Events
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">📅</span>
-                      </div>
-                    </button>
+                        const supabase = createClient();
 
-                    {/* Suggested Tasks */}
-                    <button
-                      onClick={() => {
-                        toast.info('AI task suggestions - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-emerald-800/60 dark:from-emerald-950/30 dark:to-emerald-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-emerald-500/20 p-1.5">
-                          <Sparkles className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                            Suggested
-                          </p>
-                          <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
-                            Smart Tasks
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">✨</span>
-                      </div>
-                    </button>
+                        const { error: assignError } = await supabase
+                          .from('task_assignees')
+                          .insert({
+                            task_id: task.id,
+                            user_id: currentUserId,
+                          });
 
-                    {/* Goal Progress */}
-                    <button
-                      onClick={() => {
-                        setActiveTab('goals');
-                      }}
-                      className="group rounded-lg border border-rose-200/60 bg-gradient-to-br from-rose-50 to-rose-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-rose-800/60 dark:from-rose-950/30 dark:to-rose-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-rose-500/20 p-1.5">
-                          <Target className="h-3 w-3 text-rose-600 dark:text-rose-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-rose-700 dark:text-rose-300">
-                            Goals
-                          </p>
-                          <p className="text-sm font-bold text-rose-900 dark:text-rose-100">
-                            View Progress
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">🎯</span>
-                      </div>
-                    </button>
+                        if (assignError) {
+                          console.error('Task assignment error:', assignError);
+                          throw new Error(
+                            assignError.message || 'Failed to assign task'
+                          );
+                        }
 
-                    {/* Quick Actions */}
-                    <button
-                      onClick={() => {
-                        // Scroll to timer controls
-                        document
-                          .querySelector('[data-timer-controls]')
-                          ?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="group rounded-lg border border-cyan-200/60 bg-gradient-to-br from-cyan-50 to-cyan-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-cyan-800/60 dark:from-cyan-950/30 dark:to-cyan-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-cyan-500/20 p-1.5">
-                          <Zap className="h-3 w-3 text-cyan-600 dark:text-cyan-400" />
+                        toast.success(
+                          `Assigned task "${task.name}" to yourself`
+                        );
+                      }
+
+                      // Start session
+                      const response = await apiCall(
+                        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+                        {
+                          method: 'POST',
+                          body: JSON.stringify({
+                            title: task.name,
+                            description:
+                              task.description || `Working on: ${task.name}`,
+                            task_id: task.id,
+                            category_id:
+                              categories.find((c) =>
+                                c.name.toLowerCase().includes('work')
+                              )?.id || null,
+                          }),
+                        }
+                      );
+
+                      setCurrentSession(response.session);
+                      setIsRunning(true);
+                      setElapsedTime(0);
+                      await fetchData();
+
+                      toast.success(`Started: ${task.name}`);
+                    } catch (error) {
+                      console.error('Error starting task:', error);
+                      toast.error('Failed to start task session');
+                    }
+                  } else {
+                    // Multiple tasks - show selector
+                    setShowTaskSelector(true);
+                  }
+                }}
+                disabled={isRunning}
+                className={cn(
+                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                  'hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98]',
+                  !isRunning
+                    ? 'border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:-translate-y-1 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20'
+                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                )}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 rounded-full bg-purple-500/20 p-1.5 transition-colors group-hover:bg-purple-500/30">
+                    <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                      Next Task
+                    </p>
+                    {nextTaskPreview ? (
+                      <>
+                        <p className="truncate text-sm font-bold text-purple-900 dark:text-purple-100">
+                          {nextTaskPreview.name}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <span
+                            className={cn(
+                              'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium',
+                              nextTaskPreview.priority === 1
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                : nextTaskPreview.priority === 2
+                                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                                  : nextTaskPreview.priority === 3
+                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                    : nextTaskPreview.priority === 4
+                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                      : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
+                            )}
+                          >
+                            {nextTaskPreview.priority === 1
+                              ? 'Urgent'
+                              : nextTaskPreview.priority === 2
+                                ? 'High'
+                                : nextTaskPreview.priority === 3
+                                  ? 'Medium'
+                                  : nextTaskPreview.priority === 4
+                                    ? 'Low'
+                                    : 'No Priority'}
+                          </span>
+                          {nextTaskPreview.is_assigned_to_current_user ? (
+                            <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                              • Assigned to you
+                            </span>
+                          ) : (
+                            <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                              • Can assign to yourself
+                            </span>
+                          )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-cyan-700 dark:text-cyan-300">
-                            Quick
-                          </p>
-                          <p className="text-sm font-bold text-cyan-900 dark:text-cyan-100">
-                            Start Timer
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">⚡</span>
-                      </div>
-                    </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
+                          No tasks available
+                        </p>
+                        <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                          Create or assign tasks
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
+                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-lg">🎯</span>
+                </div>
+              </button>
 
-                {/* View 2: Productivity Command Center */}
-                <div className="w-full flex-shrink-0">
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
-                    {/* Active Tasks */}
-                    <button
-                      onClick={() => {
-                        toast.info('Active tasks view - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-violet-200/60 bg-gradient-to-br from-violet-50 to-violet-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-violet-800/60 dark:from-violet-950/30 dark:to-violet-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-violet-500/20 p-1.5">
-                          <CheckCircle className="h-3 w-3 text-violet-600 dark:text-violet-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-violet-700 dark:text-violet-300">
-                            Active
-                          </p>
-                          <p className="text-sm font-bold text-violet-900 dark:text-violet-100">
-                            {tasks.length} Tasks
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">📋</span>
-                      </div>
-                    </button>
+              {/* Break Timer */}
+              <button
+                onClick={() => {
+                  // Scroll to timer controls and pre-fill with break session
+                  document
+                    .querySelector('[data-timer-controls]')
+                    ?.scrollIntoView({ behavior: 'smooth' });
 
-                    {/* Focus Score */}
-                    <button
-                      onClick={() => {
-                        toast.info('Focus score analytics - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-amber-500/20 p-1.5">
-                          <TrendingUp className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                            Focus
-                          </p>
-                          <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-                            Score: 85%
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">🧠</span>
-                      </div>
-                    </button>
+                  setTimeout(() => {
+                    const titleInput = document.querySelector(
+                      '[data-title-input]'
+                    ) as HTMLInputElement;
+                    if (titleInput) {
+                      titleInput.value = 'Break Time';
+                      titleInput.dispatchEvent(
+                        new Event('input', { bubbles: true })
+                      );
+                      titleInput.focus();
+                    }
+                  }, 300);
 
-                    {/* Break Timer */}
-                    <button
-                      onClick={() => {
-                        toast.info('Break timer - Coming soon!');
-                      }}
-                      className="group rounded-lg border border-teal-200/60 bg-gradient-to-br from-teal-50 to-teal-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-teal-800/60 dark:from-teal-950/30 dark:to-teal-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-teal-500/20 p-1.5">
-                          <Pause className="h-3 w-3 text-teal-600 dark:text-teal-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-teal-700 dark:text-teal-300">
-                            Break
-                          </p>
-                          <p className="text-sm font-bold text-teal-900 dark:text-teal-100">
-                            Take 5min
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">☕</span>
-                      </div>
-                    </button>
-
-                    {/* Session History */}
-                    <button
-                      onClick={() => {
-                        setActiveTab('history');
-                      }}
-                      className="group rounded-lg border border-slate-200/60 bg-gradient-to-br from-slate-50 to-slate-100/50 p-3 text-left transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-slate-800/60 dark:from-slate-950/30 dark:to-slate-900/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-slate-500/20 p-1.5">
-                          <History className="h-3 w-3 text-slate-600 dark:text-slate-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                            History
-                          </p>
-                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            View All
-                          </p>
-                        </div>
-                        <span className="text-sm opacity-70">📊</span>
-                      </div>
-                    </button>
+                  toast.success(
+                    'Break session ready! Take 5-15 minutes to recharge.'
+                  );
+                }}
+                disabled={isRunning}
+                className={cn(
+                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                  'hover:shadow-lg hover:shadow-green-500/20 active:scale-[0.98]',
+                  !isRunning
+                    ? 'border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 hover:-translate-y-1 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20'
+                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                )}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 rounded-full bg-green-500/20 p-1.5 transition-colors group-hover:bg-green-500/30">
+                    <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-green-700 dark:text-green-300">
+                      Break Timer
+                    </p>
+                    <p className="text-sm font-bold text-green-900 dark:text-green-100">
+                      Take 5 min
+                    </p>
+                    <p className="text-xs text-green-600/80 dark:text-green-400/80">
+                      Recharge session
+                    </p>
                   </div>
                 </div>
-              </div>
+                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-lg">☕</span>
+                </div>
+              </button>
+
+              {/* Analytics Dashboard */}
+              <button
+                onClick={() => {
+                  setActiveTab('history');
+                }}
+                className="group relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/20 active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
+                    <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                      Analytics
+                    </p>
+                    <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                      Focus: {productivityMetrics.avgFocusScore}%
+                    </p>
+                    <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
+                      {productivityMetrics.todaySessionCount} sessions today
+                    </p>
+                  </div>
+                </div>
+                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-lg">📊</span>
+                </div>
+              </button>
             </div>
           </div>
         )}
@@ -1145,6 +1375,7 @@ export default function TimeTrackerContent({
                             'Switched to Tasks tab - create your first task!'
                           );
                         }}
+                        currentUserId={currentUserId}
                       />
                     </div>
                   </TabsContent>
@@ -1236,18 +1467,20 @@ export default function TimeTrackerContent({
                     <TrendingUp className="h-3 w-3" />
                     Analytics
                   </button>
-                  <button
-                    onClick={() => setSidebarView('tasks')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                      sidebarView === 'tasks'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <CheckCircle className="h-3 w-3" />
-                    Tasks
-                  </button>
+                  {!isViewingOtherUser && (
+                    <button
+                      onClick={() => setSidebarView('tasks')}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                        sidebarView === 'tasks'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <CheckCircle className="h-3 w-3" />
+                      Tasks
+                    </button>
+                  )}
                   <button
                     onClick={() => setSidebarView('reports')}
                     className={cn(
@@ -1279,7 +1512,7 @@ export default function TimeTrackerContent({
               {sidebarView === 'analytics' && (
                 <>
                   {/* Stats Overview - Enhanced for sidebar */}
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     <div className="mb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
@@ -1298,9 +1531,9 @@ export default function TimeTrackerContent({
                     {/* Custom sidebar-optimized stats layout */}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {/* Today */}
-                      <div className="rounded-lg border border-dynamic-blue/30 bg-gradient-to-br from-blue-50 to-blue-100 p-3 transition-all duration-300 hover:shadow-md dark:from-blue-950/20 dark:to-blue-900/20">
+                      <div className="rounded-lg border border-dynamic-blue/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
                         <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
                             <Calendar className="h-4 w-4 text-blue-500" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1328,9 +1561,9 @@ export default function TimeTrackerContent({
                       </div>
 
                       {/* This Week */}
-                      <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-br from-green-50 to-green-100 p-3 transition-all duration-300 hover:shadow-md dark:from-green-950/20 dark:to-green-900/20">
+                      <div className="rounded-lg border border-dynamic-green/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
                         <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <div className="rounded-full bg-dynamic-green/10 p-2 shadow-sm">
                             <TrendingUp className="h-4 w-4 text-green-500" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1363,9 +1596,9 @@ export default function TimeTrackerContent({
                       </div>
 
                       {/* This Month */}
-                      <div className="rounded-lg border border-dynamic-purple/30 bg-gradient-to-br from-purple-50 to-purple-100 p-3 transition-all duration-300 hover:shadow-md dark:from-purple-950/20 dark:to-purple-900/20">
+                      <div className="rounded-lg border border-dynamic-purple/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
                         <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <div className="rounded-full bg-dynamic-purple/10 p-2 shadow-sm">
                             <Zap className="h-4 w-4 text-purple-500" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1389,9 +1622,9 @@ export default function TimeTrackerContent({
                       </div>
 
                       {/* Streak */}
-                      <div className="rounded-lg border border-dynamic-orange/30 bg-gradient-to-br from-orange-50 to-orange-100 p-3 transition-all duration-300 hover:shadow-md dark:from-orange-950/20 dark:to-orange-900/20">
+                      <div className="rounded-lg border border-dynamic-orange/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
                         <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-white p-2 shadow-sm dark:bg-gray-800">
+                          <div className="rounded-full bg-dynamic-orange/10 p-2 shadow-sm">
                             <Clock className="h-4 w-4 text-orange-500" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1419,8 +1652,8 @@ export default function TimeTrackerContent({
 
                   {/* Activity Heatmap - Enhanced with better header */}
                   {timerStats.dailyActivity && (
-                    <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
-                      <div className="mb-4">
+                    <div className="relative overflow-visible rounded-xl border border-gray-200/60 bg-background/50 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-background/80">
+                      <div className="mb-6">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
                             <Calendar className="h-5 w-5 text-white" />
@@ -1444,11 +1677,12 @@ export default function TimeTrackerContent({
                           </div>
                         </div>
                       </div>
-                      {/* Remove the original header from ActivityHeatmap component */}
-                      <div className="[&>div>div:first-child]:hidden">
+                      {/* Remove the original header from ActivityHeatmap component and provide overflow space */}
+                      <div className="relative overflow-visible [&>div>div:first-child]:hidden">
                         <ActivityHeatmap
                           dailyActivity={timerStats.dailyActivity}
                           formatDuration={formatDuration}
+                          settings={heatmapSettings}
                         />
                       </div>
                     </div>
@@ -1460,7 +1694,7 @@ export default function TimeTrackerContent({
               {sidebarView === 'tasks' && (
                 <div className="space-y-6">
                   {/* Tasks Header */}
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-6 shadow-sm dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-6 shadow-sm dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     {/* Header Section */}
                     <div className="mb-6">
                       <div className="mb-3 flex items-center gap-3">
@@ -1478,8 +1712,73 @@ export default function TimeTrackerContent({
                       </div>
                     </div>
 
-                    {/* Search and Filter Bar */}
+                    {/* Enhanced Search and Filter Bar */}
                     <div className="mb-5 space-y-4">
+                      {/* Quick Filter Buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() =>
+                            setTasksSidebarFilters((prev) => ({
+                              ...prev,
+                              assignee:
+                                prev.assignee === 'mine' ? 'all' : 'mine',
+                            }))
+                          }
+                          className={cn(
+                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                            tasksSidebarFilters.assignee === 'mine'
+                              ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          )}
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                          My Tasks
+                          {myTasksCount > 0 && (
+                            <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                              {myTasksCount}
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() =>
+                            setTasksSidebarFilters((prev) => ({
+                              ...prev,
+                              assignee:
+                                prev.assignee === 'unassigned'
+                                  ? 'all'
+                                  : 'unassigned',
+                            }))
+                          }
+                          className={cn(
+                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                            tasksSidebarFilters.assignee === 'unassigned'
+                              ? 'bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:ring-orange-800'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          )}
+                        >
+                          <svg
+                            className="h-3 w-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                          Unassigned
+                          {unassignedCount > 0 && (
+                            <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                              {unassignedCount}
+                            </span>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Search and Dropdown Filters */}
                       <div className="flex gap-2">
                         <div className="flex-1">
                           <Input
@@ -1550,37 +1849,106 @@ export default function TimeTrackerContent({
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {/* Active Filters Display */}
+                      {(tasksSidebarSearch ||
+                        tasksSidebarFilters.board !== 'all' ||
+                        tasksSidebarFilters.list !== 'all' ||
+                        tasksSidebarFilters.assignee !== 'all') && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            Active filters:
+                          </span>
+                          {tasksSidebarSearch && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                              Search: "{tasksSidebarSearch}"
+                              <button
+                                onClick={() => setTasksSidebarSearch('')}
+                                className="hover:text-blue-900 dark:hover:text-blue-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          {tasksSidebarFilters.board !== 'all' && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                              Board: {tasksSidebarFilters.board}
+                              <button
+                                onClick={() =>
+                                  setTasksSidebarFilters((prev) => ({
+                                    ...prev,
+                                    board: 'all',
+                                  }))
+                                }
+                                className="hover:text-green-900 dark:hover:text-green-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          {tasksSidebarFilters.list !== 'all' && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-xs text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                              List: {tasksSidebarFilters.list}
+                              <button
+                                onClick={() =>
+                                  setTasksSidebarFilters((prev) => ({
+                                    ...prev,
+                                    list: 'all',
+                                  }))
+                                }
+                                className="hover:text-purple-900 dark:hover:text-purple-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          {tasksSidebarFilters.assignee !== 'all' && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-xs text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                              {tasksSidebarFilters.assignee === 'mine'
+                                ? 'My Tasks'
+                                : tasksSidebarFilters.assignee === 'unassigned'
+                                  ? 'Unassigned'
+                                  : 'Assignee Filter'}
+                              <button
+                                onClick={() =>
+                                  setTasksSidebarFilters((prev) => ({
+                                    ...prev,
+                                    assignee: 'all',
+                                  }))
+                                }
+                                className="hover:text-orange-900 dark:hover:text-orange-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          <button
+                            onClick={() => {
+                              setTasksSidebarSearch('');
+                              setTasksSidebarFilters({
+                                board: 'all',
+                                list: 'all',
+                                assignee: 'all',
+                              });
+                            }}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            Clear all
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Task List with Scrollable Container */}
                     <div className="space-y-4">
                       {(() => {
-                        // Filter tasks for sidebar
-                        const filteredSidebarTasks = tasks.filter((task) => {
-                          if (
-                            tasksSidebarSearch &&
-                            !task.name
-                              ?.toLowerCase()
-                              .includes(tasksSidebarSearch.toLowerCase())
-                          ) {
-                            return false;
-                          }
-                          if (
-                            tasksSidebarFilters.board &&
-                            tasksSidebarFilters.board !== 'all' &&
-                            task.board_name !== tasksSidebarFilters.board
-                          ) {
-                            return false;
-                          }
-                          if (
-                            tasksSidebarFilters.list &&
-                            tasksSidebarFilters.list !== 'all' &&
-                            task.list_name !== tasksSidebarFilters.list
-                          ) {
-                            return false;
-                          }
-                          return true;
-                        });
+                        // Filter and sort tasks for sidebar with user prioritization
+                        const filteredSidebarTasks =
+                          getFilteredAndSortedSidebarTasks(
+                            tasks,
+                            tasksSidebarSearch,
+                            tasksSidebarFilters
+                          );
 
                         if (tasks.length === 0) {
                           return (
@@ -1616,10 +1984,9 @@ export default function TimeTrackerContent({
                                   : ''}{' '}
                                 available
                                 {(tasksSidebarSearch ||
-                                  (tasksSidebarFilters.board &&
-                                    tasksSidebarFilters.board !== 'all') ||
-                                  (tasksSidebarFilters.list &&
-                                    tasksSidebarFilters.list !== 'all')) &&
+                                  tasksSidebarFilters.board !== 'all' ||
+                                  tasksSidebarFilters.list !== 'all' ||
+                                  tasksSidebarFilters.assignee !== 'all') &&
                                   ` (filtered from ${tasks.length} total)`}
                               </span>
                               <span className="font-medium text-blue-600 dark:text-blue-400">
@@ -1634,7 +2001,11 @@ export default function TimeTrackerContent({
                                   <div
                                     key={task.id}
                                     className={cn(
-                                      'group cursor-grab rounded-lg border border-gray-200/60 bg-white p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing dark:border-gray-700/60 dark:bg-gray-800/80',
+                                      'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
+                                      // Enhanced styling for assigned tasks
+                                      task.is_assigned_to_current_user
+                                        ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
+                                        : 'border-gray-200/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
                                       isDraggingTask &&
                                         'shadow-md ring-1 shadow-blue-500/10 ring-blue-400/30'
                                     )}
@@ -1654,18 +2025,96 @@ export default function TimeTrackerContent({
                                     }}
                                   >
                                     <div className="flex items-start gap-4">
-                                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50">
-                                        <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                      <div
+                                        className={cn(
+                                          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
+                                          task.is_assigned_to_current_user
+                                            ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                            : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
+                                        )}
+                                      >
+                                        <CheckCircle
+                                          className={cn(
+                                            'h-4 w-4',
+                                            task.is_assigned_to_current_user
+                                              ? 'text-blue-700 dark:text-blue-300'
+                                              : 'text-blue-600 dark:text-blue-400'
+                                          )}
+                                        />
                                       </div>
                                       <div className="min-w-0 flex-1">
-                                        <h4 className="mb-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                          {task.name}
-                                        </h4>
+                                        <div className="flex items-start justify-between gap-2">
+                                          <h4
+                                            className={cn(
+                                              'mb-1 text-sm font-medium',
+                                              task.is_assigned_to_current_user
+                                                ? 'text-blue-900 dark:text-blue-100'
+                                                : 'text-gray-900 dark:text-gray-100'
+                                            )}
+                                          >
+                                            {task.name}
+                                            {task.is_assigned_to_current_user && (
+                                              <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                                                Assigned to you
+                                              </span>
+                                            )}
+                                          </h4>
+                                        </div>
                                         {task.description && (
                                           <p className="mb-3 line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
                                             {task.description}
                                           </p>
                                         )}
+
+                                        {/* Assignees Display */}
+                                        {task.assignees &&
+                                          task.assignees.length > 0 && (
+                                            <div className="mb-2 flex items-center gap-2">
+                                              <div className="flex -space-x-1">
+                                                {task.assignees
+                                                  .slice(0, 3)
+                                                  .map((assignee) => (
+                                                    <div
+                                                      key={assignee.id}
+                                                      className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                      title={
+                                                        assignee.display_name ||
+                                                        assignee.email
+                                                      }
+                                                    >
+                                                      {assignee.avatar_url ? (
+                                                        <img
+                                                          src={
+                                                            assignee.avatar_url
+                                                          }
+                                                          alt={
+                                                            assignee.display_name ||
+                                                            assignee.email ||
+                                                            ''
+                                                          }
+                                                          className="h-full w-full rounded-full object-cover"
+                                                        />
+                                                      ) : (
+                                                        <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
+                                                          {generateAssigneeInitials(
+                                                            assignee
+                                                          )}
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  ))}
+                                                {task.assignees.length > 3 && (
+                                                  <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                    +{task.assignees.length - 3}
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <span className="text-xs text-muted-foreground">
+                                                {task.assignees.length} assigned
+                                              </span>
+                                            </div>
+                                          )}
+
                                         {task.board_name && task.list_name && (
                                           <div className="flex items-center gap-2">
                                             <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">
@@ -1739,7 +2188,7 @@ export default function TimeTrackerContent({
               {/* Reports View */}
               {sidebarView === 'reports' && (
                 <div className="space-y-6">
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     <div className="mb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg">
@@ -1771,7 +2220,7 @@ export default function TimeTrackerContent({
               {/* Settings View */}
               {sidebarView === 'settings' && (
                 <div className="space-y-6">
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:from-gray-900/80 dark:to-gray-900/40">
+                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     <div className="mb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gray-500 to-gray-700 shadow-lg">
@@ -1788,12 +2237,155 @@ export default function TimeTrackerContent({
                       </div>
                     </div>
 
-                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
-                      <Settings className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        Timer settings and preferences will be available here.
-                        Configure notifications, default categories, and more.
-                      </p>
+                    <div className="space-y-6">
+                      {/* Activity Heatmap Settings */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <h4 className="font-medium">
+                            Activity Heatmap Display
+                          </h4>
+                        </div>
+
+                        <div className="grid gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="heatmap-view">
+                              Heatmap View Style
+                            </Label>
+                            <Select
+                              value={heatmapSettings.viewMode}
+                              onValueChange={(
+                                value: 'original' | 'hybrid' | 'calendar-only'
+                              ) => {
+                                const newSettings = {
+                                  ...heatmapSettings,
+                                  viewMode: value,
+                                };
+                                setHeatmapSettings(newSettings);
+                                localStorage.setItem(
+                                  'heatmap-settings',
+                                  JSON.stringify(newSettings)
+                                );
+                              }}
+                            >
+                              <SelectTrigger id="heatmap-view">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="original">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-sm bg-blue-500" />
+                                    <span>Original Grid</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="hybrid">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-sm bg-green-500" />
+                                    <span>Hybrid (Year + Calendar)</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="calendar-only">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-sm bg-purple-500" />
+                                    <span>Calendar Only</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="compact-cards">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-sm bg-orange-500" />
+                                    <span>Compact Cards</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                              {heatmapSettings.viewMode === 'original' &&
+                                'GitHub-style grid view with day labels'}
+                              {heatmapSettings.viewMode === 'hybrid' &&
+                                'Year overview plus monthly calendar details'}
+                              {heatmapSettings.viewMode === 'calendar-only' &&
+                                'Traditional calendar interface'}
+                              {heatmapSettings.viewMode === 'compact-cards' &&
+                                'Monthly summary cards with key metrics and mini previews'}
+                            </p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="time-reference">
+                              Time Reference
+                            </Label>
+                            <Select
+                              value={heatmapSettings.timeReference}
+                              onValueChange={(
+                                value: 'relative' | 'absolute' | 'smart'
+                              ) => {
+                                const newSettings = {
+                                  ...heatmapSettings,
+                                  timeReference: value,
+                                };
+                                setHeatmapSettings(newSettings);
+                                localStorage.setItem(
+                                  'heatmap-settings',
+                                  JSON.stringify(newSettings)
+                                );
+                              }}
+                            >
+                              <SelectTrigger id="time-reference">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="relative">
+                                  Relative ("2 weeks ago")
+                                </SelectItem>
+                                <SelectItem value="absolute">
+                                  Absolute ("Jan 15, 2024")
+                                </SelectItem>
+                                <SelectItem value="smart">
+                                  Smart (Both combined)
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="onboarding-tips"
+                              checked={heatmapSettings.showOnboardingTips}
+                              onCheckedChange={(checked) => {
+                                const newSettings = {
+                                  ...heatmapSettings,
+                                  showOnboardingTips: checked,
+                                };
+                                setHeatmapSettings(newSettings);
+                                localStorage.setItem(
+                                  'heatmap-settings',
+                                  JSON.stringify(newSettings)
+                                );
+                              }}
+                            />
+                            <Label
+                              htmlFor="onboarding-tips"
+                              className="text-sm"
+                            >
+                              Show onboarding tips
+                            </Label>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Coming Soon Section */}
+                      <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-4">
+                        <div className="mb-2 flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <h4 className="font-medium text-muted-foreground">
+                            More Settings Coming Soon
+                          </h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Notifications, default categories, productivity goals,
+                          and more customization options.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1802,6 +2394,336 @@ export default function TimeTrackerContent({
           </div>
         </div>
       </div>
+
+      {/* Continue Last Session Confirmation Dialog */}
+      {showContinueConfirm && recentSessions[0] && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-xl border bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
+                <Play className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                  Continue Last Session?
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Resume your previous work session
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-4 rounded-lg border p-3 dark:border-gray-700">
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                {recentSessions[0].title}
+              </p>
+              {recentSessions[0].description && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {recentSessions[0].description}
+                </p>
+              )}
+              {recentSessions[0].category && (
+                <div className="mt-2 flex items-center gap-2">
+                  <div
+                    className={cn(
+                      'h-2 w-2 rounded-full',
+                      recentSessions[0].category.color
+                        ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
+                        : 'bg-blue-500/70'
+                    )}
+                  />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    {recentSessions[0].category.name}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowContinueConfirm(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!recentSessions[0]) return;
+                  try {
+                    const response = await apiCall(
+                      `/api/v1/workspaces/${wsId}/time-tracking/sessions/${recentSessions[0].id}`,
+                      {
+                        method: 'PATCH',
+                        body: JSON.stringify({ action: 'resume' }),
+                      }
+                    );
+
+                    setCurrentSession(response.session);
+                    setIsRunning(true);
+                    setElapsedTime(0);
+                    await fetchData();
+
+                    toast.success(`Resumed: "${recentSessions[0].title}"`);
+                    setShowContinueConfirm(false);
+                  } catch (error) {
+                    console.error('Error resuming session:', error);
+                    toast.error('Failed to resume session');
+                  }
+                }}
+                className="flex-1"
+              >
+                Continue Session
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Selector Dialog */}
+      {showTaskSelector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-2xl rounded-xl border bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30">
+                <CheckSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                  Choose Your Next Task
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Tasks prioritized: Your urgent tasks → Urgent unassigned →
+                  Your other tasks
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-4 max-h-96 space-y-2 overflow-y-auto">
+              {availableTasks.length === 0 ? (
+                // No tasks available - show creation options
+                <div className="space-y-4">
+                  <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
+                    <CheckSquare className="mx-auto mb-3 h-8 w-8 text-gray-400" />
+                    <h4 className="mb-2 font-medium text-gray-900 dark:text-gray-100">
+                      No Tasks Available
+                    </h4>
+                    <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                      You don't have any assigned tasks. Create a new task or
+                      check available boards.
+                    </p>
+
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                      <Button
+                        onClick={() => {
+                          // Open command palette to create task
+                          setShowTaskSelector(false);
+                          // Simulate Ctrl+K to open command palette
+                          const event = new KeyboardEvent('keydown', {
+                            key: 'k',
+                            ctrlKey: true,
+                            metaKey: true,
+                          });
+                          document.dispatchEvent(event);
+                        }}
+                        className="gap-2"
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        Create Task
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowTaskSelector(false);
+                          window.location.href = `/${wsId}/tasks/boards`;
+                        }}
+                        className="gap-2"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        View Boards
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                availableTasks.map((task) => {
+                  const getPriorityBadge = (
+                    priority: number | null | undefined
+                  ) => {
+                    switch (priority) {
+                      case 1:
+                        return { text: 'Urgent', color: 'bg-red-500' };
+                      case 2:
+                        return { text: 'High', color: 'bg-orange-500' };
+                      case 3:
+                        return { text: 'Medium', color: 'bg-yellow-500' };
+                      case 4:
+                        return { text: 'Low', color: 'bg-green-500' };
+                      default:
+                        return { text: 'No Priority', color: 'bg-gray-500' };
+                    }
+                  };
+
+                  const priorityBadge = getPriorityBadge(task.priority);
+                  const isUnassigned =
+                    !task || !task.assignees || task.assignees.length === 0;
+
+                  return (
+                    <button
+                      key={task.id}
+                      onClick={async () => {
+                        try {
+                          // If task is unassigned, assign to current user first
+                          if (!task) return;
+                          if (isUnassigned) {
+                            const { createClient } = await import(
+                              '@tuturuuu/supabase/next/client'
+                            );
+                            const supabase = createClient();
+
+                            const { error: assignError } = await supabase
+                              .from('task_assignees')
+                              .insert({
+                                task_id: task.id,
+                                user_id: currentUserId,
+                              });
+
+                            if (assignError) {
+                              console.error(
+                                'Task assignment error:',
+                                assignError
+                              );
+                              throw new Error(
+                                assignError.message || 'Failed to assign task'
+                              );
+                            }
+
+                            toast.success(
+                              `Assigned "${task.name}" to yourself`
+                            );
+                          }
+
+                          // Start session
+                          const response = await apiCall(
+                            `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+                            {
+                              method: 'POST',
+                              body: JSON.stringify({
+                                title: task.name,
+                                description:
+                                  task.description ||
+                                  `Working on: ${task.name}`,
+                                task_id: task.id,
+                                category_id:
+                                  categories.find((c) =>
+                                    c.name.toLowerCase().includes('work')
+                                  )?.id || null,
+                              }),
+                            }
+                          );
+
+                          setCurrentSession(response.session);
+                          setIsRunning(true);
+                          setElapsedTime(0);
+                          await fetchData();
+
+                          toast.success(`Started: ${task.name}`);
+                          setShowTaskSelector(false);
+                        } catch (error) {
+                          console.error('Error starting task session:', error);
+                          toast.error('Failed to start task session');
+                        }
+                      }}
+                      className="group flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all hover:border-purple-300 hover:bg-purple-50 dark:border-gray-700 dark:hover:border-purple-600 dark:hover:bg-purple-900/20"
+                    >
+                      <div
+                        className={cn(
+                          'mt-0.5 h-2 w-2 rounded-full',
+                          priorityBadge.color
+                        )}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                            {task.name}
+                          </h4>
+                          <span
+                            className={cn(
+                              'rounded-full px-2 py-0.5 text-xs font-medium text-white',
+                              priorityBadge.color
+                            )}
+                          >
+                            {priorityBadge.text}
+                          </span>
+                          {isUnassigned && (
+                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                              Will assign to you
+                            </span>
+                          )}
+                        </div>
+                        {task.description && (
+                          <p className="mb-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
+                            {task.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                          {task.board_name && task.list_name && (
+                            <>
+                              <span>{task.board_name}</span>
+                              <span>•</span>
+                              <span>{task.list_name}</span>
+                              <span>•</span>
+                            </>
+                          )}
+                          <span
+                            className={cn(
+                              isUnassigned
+                                ? 'text-blue-600 dark:text-blue-400'
+                                : 'text-green-600 dark:text-green-400'
+                            )}
+                          >
+                            {isUnassigned ? 'Unassigned' : 'Assigned to you'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Play className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={() => setShowTaskSelector(false)}
+              >
+                Cancel
+              </Button>
+              {availableTasks.length > 0 && (
+                <div className="flex items-center gap-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {availableTasks.length} task
+                    {availableTasks.length !== 1 ? 's' : ''} prioritized
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowTaskSelector(false);
+                      window.location.href = `/${wsId}/tasks/boards`;
+                    }}
+                  >
+                    View All Tasks
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
