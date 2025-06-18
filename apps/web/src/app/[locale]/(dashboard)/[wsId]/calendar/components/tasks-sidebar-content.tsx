@@ -7,7 +7,11 @@ import QuickTaskTimer from './quick-task-timer';
 import { TaskForm } from './task-form';
 import { TaskListForm } from './task-list-form';
 import TimeTracker from './time-tracker';
-import type { AIChat, WorkspaceTask, WorkspaceTaskBoard } from '@tuturuuu/types/db';
+import type {
+  AIChat,
+  WorkspaceTask,
+  WorkspaceTaskBoard,
+} from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,

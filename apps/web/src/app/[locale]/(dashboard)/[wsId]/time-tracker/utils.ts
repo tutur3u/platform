@@ -185,7 +185,13 @@ export function generateAssigneeInitials(assignee: {
   if (name && name.length > 0) {
     // Handle names with multiple parts (e.g., "John Doe" -> "JD")
     const parts = name.split(/\s+/).filter(Boolean);
-    if (parts.length >= 2 && parts[0] && parts[1] && parts[0].length > 0 && parts[1].length > 0) {
+    if (
+      parts.length >= 2 &&
+      parts[0] &&
+      parts[1] &&
+      parts[0].length > 0 &&
+      parts[1].length > 0
+    ) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     }
     // Safe access to first character
