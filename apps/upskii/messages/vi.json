@@ -3858,8 +3858,6 @@
       "question_navigation_label": "Chuyển đến câu hỏi",
       "answered_state": "Đã trả lời",
       "unanswered_state": "Chưa trả lời",
-      "answered_icon": "✓",
-      "unanswered_icon": "○",
       "jump_to_question": "Chuyển đến câu hỏi"
     },
     "time": {
@@ -3875,6 +3873,7 @@
       "second": "giấy"
     },
     "errors": {
+      "error-type-submit": "Đã có lỗi xảy ra khi nộp bài",
       "unknown-error": "Lỗi không xác định",
       "network-error": "Lỗi mạng",
       "submission-failed": "Nộp bài thất bại",

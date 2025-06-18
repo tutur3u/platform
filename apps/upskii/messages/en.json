@@ -3857,8 +3857,6 @@
       "question_navigation_label": "Jump to question",
       "answered_state": "Answered",
       "unanswered_state": "Unanswered",
-      "answered_icon": "✓",
-      "unanswered_icon": "○",
       "jump_to_question": "Jump to question"
     },
     "time": {
@@ -3872,6 +3870,7 @@
       "second": "second"
     },
     "errors": {
+      "error-type-submit": "Error when submitting test",
       "unknown-error": "Unknown error",
       "network-error": "Network error",
       "submission-failed": "Submission failed.",

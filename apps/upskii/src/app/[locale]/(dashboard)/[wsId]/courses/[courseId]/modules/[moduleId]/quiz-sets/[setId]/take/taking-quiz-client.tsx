@@ -12,6 +12,7 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { ListCheck, TriangleAlert } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -214,6 +215,17 @@ export default function TakingQuizClient({
       handleSubmit();
     }
   }, [timeLeft, hasStarted, totalSeconds]);
+  useEffect(() => {
+    if (submitError) {
+      toast(t('errors.error-type-submit'), {
+        description: submitError,
+        action: {
+          label: 'X',
+          onClick: () => console.log('Close'),
+        },
+      });
+    }
+  }, [submitError]);
 
   // ─── EVENT HANDLERS ─────────────────────────────────────────────────────────
   const onClickStart = () => {
@@ -345,6 +357,7 @@ export default function TakingQuizClient({
                         <Checkbox
                           id={`${q.quizId}-${opt.id}`}
                           checked={selArray.includes(opt.id)}
+                          className="h-5.5 w-5.5 border-dynamic-purple/80 bg-dynamic-purple/20"
                           onCheckedChange={(checked) => {
                             let nextArr = selArray.slice();
                             if (checked) {
@@ -367,7 +380,7 @@ export default function TakingQuizClient({
                             }
                           }}
                         />
-                        <Label htmlFor={`${q.quizId}-${opt.id}`}>
+                        <Label htmlFor={`${q.quizId}-${opt.id}`} className='leading-5.5'>
                           {opt.value}
                         </Label>
                       </div>
@@ -402,8 +415,9 @@ export default function TakingQuizClient({
                             disabled={
                               submitting || (isCountdown && timeLeft === 0)
                             }
+                            className="h-5.5 w-5.5 border-dynamic-purple/80 bg-dynamic-purple/20"
                           />
-                          <Label htmlFor={`${q.quizId}-${opt.id}`}>
+                          <Label htmlFor={`${q.quizId}-${opt.id}`} className='leading-5.5'>
                             {opt.value}
                           </Label>
                         </div>
@@ -415,13 +429,11 @@ export default function TakingQuizClient({
             );
           })}
 
-          {submitError && <p className="text-red-600">{submitError}</p>}
-
-          <div className="mt-4">
+          <div className="mt-4 mb-20">
             <Button
               type="submit"
               disabled={submitting || (isCountdown && timeLeft === 0)}
-              className={`w-full rounded px-6 py-5 text-primary md:py-4 lg:w-fit lg:py-2 ${
+              className={`w-full rounded px-6 py-2 text-primary h-auto box-border ${
                 submitting || (isCountdown && timeLeft === 0)
                   ? 'cursor-not-allowed bg-gray-400'
                   : 'border border-dynamic-purple bg-dynamic-purple/20 hover:bg-dynamic-purple/40'

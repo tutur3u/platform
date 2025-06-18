@@ -1,5 +1,6 @@
 'use client';
 
+import { CheckIcon, Circle } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import React, { useCallback } from 'react';
 
@@ -56,9 +57,11 @@ export default function QuizStatusSidebar({
         <p className="mb-1 text-sm text-muted-foreground">
           {answeredCount} / {questions.length} {t('answered_status_short')}
         </p>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-dynamic-purple/20">
           <div
-            className="h-2 rounded-full bg-primary transition-all duration-300 ease-out"
+            className="h-2 rounded-full 
+            bg-gradient-to-r from-dynamic-purple/30 to-dynamic-light-purple
+            transition-all duration-300 ease-out"
             style={{ width: `${pct}%` }}
             role="progressbar"
             aria-valuenow={answeredCount}
@@ -81,7 +84,6 @@ export default function QuizStatusSidebar({
           const labelText = answered
             ? t('answered_state')
             : t('unanswered_state');
-          const icon = answered ? t('answered_icon') : t('unanswered_icon');
 
           return (
             <button
@@ -91,13 +93,24 @@ export default function QuizStatusSidebar({
               className={
                 `flex h-9 w-full items-center justify-center rounded-md border text-xs font-medium transition ` +
                 (answered
-                  ? 'border-primary bg-primary text-primary-foreground'
+                  ? 'border-primary/40 bg-dynamic-purple/25 text-primary'
                   : 'border-border bg-background text-muted-foreground hover:bg-muted')
               }
             >
-              <span className="mr-1" aria-hidden="true">
+              {/* <span className="mr-1 text-lg" aria-hidden="true">
                 {icon}
-              </span>
+              </span> */}
+              {answered ? (
+                <CheckIcon
+                  className="mr-1 h-4 w-4 text-dynamic-light-purple"
+                  strokeWidth={4}
+                />
+              ) : (
+                <Circle
+                  className="mr-1 h-4 w-4 text-muted-foreground"
+                  strokeWidth={2.5}
+                />
+              )}
               {idx + 1}
             </button>
           );
