@@ -43,10 +43,7 @@ interface Params {
   }>;
 }
 
-export async function GET(
-  _req: NextRequest,
-  { params }: Params
-) {
+export async function GET(_req: NextRequest, { params }: Params) {
   const { setId } = await params;
   const sb = await createClient();
 

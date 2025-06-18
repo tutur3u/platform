@@ -106,7 +106,10 @@ export default function CourseModuleForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 gap-3 max-h-[50vh] overflow-scroll">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="grid max-h-[50vh] grid-cols-1 gap-3 overflow-scroll"
+      >
         {/* Name */}
         <FormField
           control={form.control}

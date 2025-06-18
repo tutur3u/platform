@@ -59,9 +59,7 @@ export default function QuizStatusSidebar({
         </p>
         <div className="h-2 w-full overflow-hidden rounded-full bg-dynamic-purple/20">
           <div
-            className="h-2 rounded-full 
-            bg-gradient-to-r from-dynamic-purple/30 to-dynamic-light-purple
-            transition-all duration-300 ease-out"
+            className="h-2 rounded-full bg-gradient-to-r from-dynamic-purple/30 to-dynamic-light-purple transition-all duration-300 ease-out"
             style={{ width: `${pct}%` }}
             role="progressbar"
             aria-valuenow={answeredCount}
