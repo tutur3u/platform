@@ -2,7 +2,7 @@
 
 import PurchaseLink from './data-polar-checkout';
 import { Button } from '@tuturuuu/ui/button';
-import { ArrowUpCircle, CheckCircle, CreditCard } from 'lucide-react';
+import { ArrowUpCircle, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 
 // Define types for the props we're passing from the server component

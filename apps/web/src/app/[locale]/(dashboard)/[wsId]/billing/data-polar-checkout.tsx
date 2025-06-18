@@ -17,20 +17,7 @@ const PurchaseLink = ({
   className,
   children,
 }: PropsWithChildren<PurchaseLinkProps>) => {
-  const testEmail = 't@test.com';
-
-  // if want to change embed checkout theme,
-  // useEffect(() => {
-  //   PolarEmbedCheckout.init();
-  // }, []);
-
-  // ✅ UPDATED: Create the URL with the new dynamic path
-  const checkoutUrl = `/api/${wsId}/${productId}/payment?productId=${productId}&customerEmail=${testEmail}`;
-
-  // You can still add other details as search parameters if you need them
-  // if (customerEmail) {
-  //   checkoutUrl.searchParams.set('customerEmail', customerEmail);
-  // }
+  const checkoutUrl = `/api/${wsId}/${productId}/payment`;
 
   return (
     <a
