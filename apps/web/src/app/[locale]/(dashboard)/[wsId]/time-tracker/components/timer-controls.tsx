@@ -161,6 +161,37 @@ interface StopwatchSettings {
   playCompletionSound?: boolean;
 }
 
+// Separate break time tracking for each timer mode
+interface BreakTimeState {
+  lastEyeBreakTime: number;
+  lastMovementBreakTime: number;
+  lastIntervalBreakTime: number;
+  intervalBreaksCount: number;
+}
+
+// Session state for each timer mode to prevent data corruption
+interface TimerModeSession {
+  mode: TimerMode;
+  sessionId: string | null;
+  startTime: Date | null;
+  elapsedTime: number;
+  breakTimeState: BreakTimeState;
+  // Mode-specific data
+  pomodoroState?: CountdownState;
+  customTimerState?: {
+    hasReachedTarget: boolean;
+    targetProgress: number;
+  };
+}
+
+// Active session protection
+interface SessionProtection {
+  isActive: boolean;
+  currentMode: TimerMode;
+  canSwitchModes: boolean;
+  canModifySettings: boolean;
+}
+
 // Default Pomodoro settings
 const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
   focusTime: 25,
@@ -253,27 +284,63 @@ export function TimerControls({
     showNotifications: true,
     enableMotivationalMessages: true,
   });
-  const [lastNotificationTime, setLastNotificationTime] = useState<number>(0);
   const [showPomodoroSettings, setShowPomodoroSettings] = useState(false);
   const [showCustomSettings, setShowCustomSettings] = useState(false);
   const [showStopwatchSettings, setShowStopwatchSettings] = useState(false);
   
-  // Enhanced stopwatch state
-  const [lastIntervalBreakTime, setLastIntervalBreakTime] = useState<number>(Date.now());
-  const [intervalBreaksCount, setIntervalBreaksCount] = useState<number>(0);
+  // Enhanced stopwatch state (legacy - kept for hasReachedTarget)
   const [hasReachedTarget, setHasReachedTarget] = useState<boolean>(false);
   
   // Stopwatch settings state
   const [stopwatchSettings, setStopwatchSettings] = useState<StopwatchSettings>(DEFAULT_STOPWATCH_SETTINGS);
   
-  // Break reminders state
-  const [lastEyeBreakTime, setLastEyeBreakTime] = useState<number>(Date.now());
-  const [lastMovementBreakTime, setLastMovementBreakTime] = useState<number>(Date.now());
+  // Session protection state
+  const [sessionProtection, setSessionProtection] = useState<SessionProtection>({
+    isActive: false,
+    currentMode: 'stopwatch',
+    canSwitchModes: true,
+    canModifySettings: true,
+  });
+
+  // Separate break time tracking for each timer mode
+  const [stopwatchBreakState, setStopwatchBreakState] = useState<BreakTimeState>({
+    lastEyeBreakTime: Date.now(),
+    lastMovementBreakTime: Date.now(),
+    lastIntervalBreakTime: Date.now(),
+    intervalBreaksCount: 0,
+  });
+
+  const [pomodoroBreakState, setPomodoroBreakState] = useState<BreakTimeState>({
+    lastEyeBreakTime: Date.now(),
+    lastMovementBreakTime: Date.now(),
+    lastIntervalBreakTime: Date.now(),
+    intervalBreaksCount: 0,
+  });
+
+  const [customBreakState, setCustomBreakState] = useState<BreakTimeState>({
+    lastEyeBreakTime: Date.now(),
+    lastMovementBreakTime: Date.now(),
+    lastIntervalBreakTime: Date.now(),
+    intervalBreaksCount: 0,
+  });
+
+  // Timer mode sessions for persistence
+  const [timerModeSessions, setTimerModeSessions] = useState<{
+    [key in TimerMode]: TimerModeSession | null;
+  }>({
+    stopwatch: null,
+    pomodoro: null,
+    custom: null,
+  });
+  
+  // Legacy break reminders state (kept for lastNotificationTime only)
+  const [lastNotificationTime, setLastNotificationTime] = useState<number>(0);
 
   // localStorage keys for persistence
   const PAUSED_SESSION_KEY = `paused-session-${wsId}-${currentUserId || 'user'}`;
   const PAUSED_ELAPSED_KEY = `paused-elapsed-${wsId}-${currentUserId || 'user'}`;
   const PAUSE_TIME_KEY = `pause-time-${wsId}-${currentUserId || 'user'}`;
+  const TIMER_MODE_SESSIONS_KEY = `timer-mode-sessions-${wsId}-${currentUserId || 'user'}`;
 
   // Helper functions for localStorage persistence
   const savePausedSessionToStorage = useCallback((session: SessionWithRelations, elapsed: number, pauseTime: Date) => {
@@ -326,6 +393,155 @@ export function TimerControls({
     }
   }, [PAUSED_SESSION_KEY, PAUSED_ELAPSED_KEY, PAUSE_TIME_KEY]);
 
+  // Session protection utilities
+  const updateSessionProtection = useCallback((isActive: boolean, mode: TimerMode) => {
+    setSessionProtection({
+      isActive,
+      currentMode: mode,
+      canSwitchModes: !isActive,
+      canModifySettings: !isActive,
+    });
+  }, []);
+
+  const getCurrentBreakState = useCallback(() => {
+    switch (timerMode) {
+      case 'stopwatch':
+        return stopwatchBreakState;
+      case 'pomodoro':
+        return pomodoroBreakState;
+      case 'custom':
+        return customBreakState;
+      default:
+        return stopwatchBreakState;
+    }
+  }, [timerMode, stopwatchBreakState, pomodoroBreakState, customBreakState]);
+
+  const updateCurrentBreakState = useCallback((updates: Partial<BreakTimeState>) => {
+    switch (timerMode) {
+      case 'stopwatch':
+        setStopwatchBreakState(prev => ({ ...prev, ...updates }));
+        break;
+      case 'pomodoro':
+        setPomodoroBreakState(prev => ({ ...prev, ...updates }));
+        break;
+      case 'custom':
+        setCustomBreakState(prev => ({ ...prev, ...updates }));
+        break;
+    }
+  }, [timerMode]);
+
+  // Safe timer mode switching with validation
+  const handleTimerModeChange = useCallback((newMode: TimerMode) => {
+    // Prevent mode switching if session is active
+    if (sessionProtection.isActive) {
+      toast.error('Cannot switch timer modes during an active session', {
+        description: 'Please stop or pause your current timer first.',
+        duration: 4000,
+      });
+      return;
+    }
+
+    // Save current mode session state if exists
+    if (currentSession) {
+      const currentBreakState = getCurrentBreakState();
+      const sessionData: TimerModeSession = {
+        mode: timerMode,
+        sessionId: currentSession.id,
+        startTime: currentSession.start_time ? new Date(currentSession.start_time) : null,
+        elapsedTime: elapsedTime,
+        breakTimeState: currentBreakState,
+        pomodoroState: timerMode === 'pomodoro' ? countdownState : undefined,
+        customTimerState: timerMode === 'custom' ? {
+          hasReachedTarget,
+          targetProgress: elapsedTime / ((customTimerSettings.targetDuration || 60) * 60),
+        } : undefined,
+      };
+
+      setTimerModeSessions(prev => ({
+        ...prev,
+        [timerMode]: sessionData,
+      }));
+    }
+
+    // Switch to new mode
+    setTimerMode(newMode);
+    
+    // Restore previous session for new mode if exists
+    const previousSession = timerModeSessions[newMode];
+    if (previousSession && previousSession.sessionId) {
+      // Restore the session state
+      setElapsedTime(previousSession.elapsedTime);
+      
+      // Restore break state for new mode
+      switch (newMode) {
+        case 'stopwatch':
+          setStopwatchBreakState(previousSession.breakTimeState);
+          break;
+        case 'pomodoro':
+          setPomodoroBreakState(previousSession.breakTimeState);
+          if (previousSession.pomodoroState) {
+            setCountdownState(previousSession.pomodoroState);
+          }
+          break;
+        case 'custom':
+          setCustomBreakState(previousSession.breakTimeState);
+          if (previousSession.customTimerState) {
+            setHasReachedTarget(previousSession.customTimerState.hasReachedTarget);
+          }
+          break;
+      }
+
+      toast.success(`Switched to ${newMode} mode`, {
+        description: `Restored previous session with ${formatDuration(previousSession.elapsedTime)} tracked`,
+        duration: 3000,
+      });
+    } else {
+      toast.success(`Switched to ${newMode} mode`, {
+        description: 'Ready to start a new session',
+        duration: 2000,
+      });
+    }
+  }, [
+    sessionProtection.isActive,
+    currentSession,
+    timerMode,
+    elapsedTime,
+    getCurrentBreakState,
+    countdownState,
+    hasReachedTarget,
+    customTimerSettings.targetDuration,
+    timerModeSessions,
+    setElapsedTime,
+    formatDuration,
+  ]);
+
+  // Persistence for timer mode sessions
+  const saveTimerModeSessionsToStorage = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(TIMER_MODE_SESSIONS_KEY, JSON.stringify(timerModeSessions));
+      } catch (error) {
+        console.warn('Failed to save timer mode sessions to localStorage:', error);
+      }
+    }
+  }, [TIMER_MODE_SESSIONS_KEY, timerModeSessions]);
+
+  const loadTimerModeSessionsFromStorage = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionsData = localStorage.getItem(TIMER_MODE_SESSIONS_KEY);
+        if (sessionsData) {
+          const sessions = JSON.parse(sessionsData);
+          setTimerModeSessions(sessions);
+          return sessions;
+        }
+      } catch (error) {
+        console.warn('Failed to load timer mode sessions from localStorage:', error);
+      }
+    }
+    return null;
+  }, [TIMER_MODE_SESSIONS_KEY]);
+
   // Load paused session on component mount
   useEffect(() => {
     const pausedData = loadPausedSessionFromStorage();
@@ -338,7 +554,21 @@ export function TimerControls({
         duration: 5000,
       });
     }
-  }, [loadPausedSessionFromStorage, formatDuration]);
+
+    // Load timer mode sessions
+    loadTimerModeSessionsFromStorage();
+  }, [loadPausedSessionFromStorage, loadTimerModeSessionsFromStorage, formatDuration]);
+
+  // Update session protection when timer state changes
+  useEffect(() => {
+    const isActive = isRunning || !!currentSession || !!pausedSession;
+    updateSessionProtection(isActive, timerMode);
+  }, [isRunning, currentSession, pausedSession, timerMode, updateSessionProtection]);
+
+  // Save timer mode sessions when they change
+  useEffect(() => {
+    saveTimerModeSessionsToStorage();
+  }, [timerModeSessions, saveTimerModeSessionsToStorage]);
 
   // Cleanup paused session if user changes or component unmounts
   useEffect(() => {
@@ -544,42 +774,85 @@ export function TimerControls({
     }
   }, [countdownState, pomodoroSettings, showNotification, startPomodoroSession, setIsRunning]);
 
-  // Break reminder logic
+  // Break reminder logic - mode-aware
   const checkBreakReminders = useCallback(() => {
     const now = Date.now();
+    const currentBreakState = getCurrentBreakState();
+    
+    // Get settings based on current timer mode
+    let enableEyeBreaks = false;
+    let enableMovementBreaks = false;
+    
+    switch (timerMode) {
+      case 'stopwatch':
+        enableEyeBreaks = stopwatchSettings.enable2020Rule || false;
+        enableMovementBreaks = stopwatchSettings.enableMovementReminder || false;
+        break;
+      case 'pomodoro':
+        enableEyeBreaks = pomodoroSettings.enable2020Rule;
+        enableMovementBreaks = pomodoroSettings.enableMovementReminder;
+        break;
+      case 'custom':
+        enableEyeBreaks = customTimerSettings.enableBreakReminders || false;
+        enableMovementBreaks = customTimerSettings.enableBreakReminders || false;
+        break;
+    }
     
     // 20-20-20 rule: Every 20 minutes, look at something 20 feet away for 20 seconds
-    if (pomodoroSettings.enable2020Rule && 
-        now - lastEyeBreakTime > 20 * 60 * 1000 && // 20 minutes
+    if (enableEyeBreaks && 
+        now - currentBreakState.lastEyeBreakTime > 20 * 60 * 1000 && // 20 minutes
         isRunning &&
-        countdownState.sessionType === 'focus') {
+        (timerMode === 'stopwatch' || countdownState.sessionType === 'focus')) {
       
       if (now - lastNotificationTime > 5 * 60 * 1000) { // Don't spam notifications
         showNotification(
           'Eye Break Time! 👁️',
           'Look at something 20 feet away for 20 seconds'
         );
-        setLastEyeBreakTime(now);
+        updateCurrentBreakState({ lastEyeBreakTime: now });
         setLastNotificationTime(now);
       }
     }
 
     // Movement reminder: Every 60 minutes
-    if (pomodoroSettings.enableMovementReminder && 
-        now - lastMovementBreakTime > 60 * 60 * 1000 && // 60 minutes
+    if (enableMovementBreaks && 
+        now - currentBreakState.lastMovementBreakTime > 60 * 60 * 1000 && // 60 minutes
         isRunning &&
-        countdownState.sessionType === 'focus') {
+        (timerMode === 'stopwatch' || countdownState.sessionType === 'focus')) {
       
       if (now - lastNotificationTime > 5 * 60 * 1000) {
         showNotification(
           'Movement Break! 🚶',
           'Time to stand up and stretch for a few minutes'
         );
-        setLastMovementBreakTime(now);
+        updateCurrentBreakState({ lastMovementBreakTime: now });
         setLastNotificationTime(now);
       }
     }
-  }, [pomodoroSettings, lastEyeBreakTime, lastMovementBreakTime, lastNotificationTime, isRunning, countdownState.sessionType, showNotification]);
+
+    // Session milestones for stopwatch mode
+    if (timerMode === 'stopwatch' && stopwatchSettings.enableSessionMilestones && isRunning) {
+      const elapsedMinutes = Math.floor(elapsedTime / 60);
+      const milestones = [30, 60, 120, 180, 240]; // 30min, 1hr, 2hr, 3hr, 4hr
+      
+      for (const milestone of milestones) {
+        if (elapsedMinutes === milestone && now - lastNotificationTime > 5 * 60 * 1000) {
+          const hours = Math.floor(milestone / 60);
+          const mins = milestone % 60;
+          const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+          
+          showNotification(
+            `🎯 Session Milestone! (${timeStr})`,
+            stopwatchSettings.showProductivityInsights 
+              ? `Great focus! You've been working for ${timeStr}. Consider taking a break soon.`
+              : `You've reached ${timeStr} of focused work.`
+          );
+          setLastNotificationTime(now);
+          break;
+        }
+      }
+    }
+  }, [timerMode, getCurrentBreakState, updateCurrentBreakState, stopwatchSettings, pomodoroSettings, customTimerSettings, lastNotificationTime, isRunning, countdownState.sessionType, elapsedTime, showNotification]);
 
 
 
@@ -646,15 +919,20 @@ export function TimerControls({
         // Check for interval breaks
         if (customTimerSettings.enableIntervalBreaks) {
           const intervalFreq = customTimerSettings.intervalFrequency || 25;
-          const timeSinceLastBreak = Math.floor((currentTime - lastIntervalBreakTime) / (1000 * 60));
+          const currentBreakState = getCurrentBreakState();
+          const timeSinceLastBreak = Math.floor((currentTime - currentBreakState.lastIntervalBreakTime) / (1000 * 60));
           
           if (timeSinceLastBreak >= intervalFreq) {
             const breakDuration = customTimerSettings.intervalBreakDuration || 5;
-            setIntervalBreaksCount(prev => prev + 1);
-            setLastIntervalBreakTime(currentTime);
+            const newBreaksCount = currentBreakState.intervalBreaksCount + 1;
+            
+            updateCurrentBreakState({
+              intervalBreaksCount: newBreaksCount,
+              lastIntervalBreakTime: currentTime
+            });
             
             showNotification(
-              `🕒 Interval Break Time! (${intervalBreaksCount + 1})`,
+              `🕒 Interval Break Time! (${newBreaksCount})`,
               `Take a ${breakDuration}-minute break - you've been working for ${intervalFreq} minutes`,
               [{
                 title: 'Got it!',
@@ -704,7 +982,7 @@ export function TimerControls({
 
       return () => clearInterval(interval);
     }
-  }, [timerMode, customTimerSettings, isRunning, elapsedTime, lastIntervalBreakTime, intervalBreaksCount, hasReachedTarget, showNotification, playNotificationSound, checkBreakReminders]);
+  }, [timerMode, customTimerSettings, isRunning, elapsedTime, getCurrentBreakState, updateCurrentBreakState, hasReachedTarget, showNotification, playNotificationSound, checkBreakReminders]);
 
   // Fetch boards with lists
   const fetchBoards = useCallback(async () => {
@@ -969,6 +1247,9 @@ export function TimerControls({
       setIsRunning(true);
       setElapsedTime(0);
 
+      // Update session protection - timer is now active
+      updateSessionProtection(true, timerMode);
+
       // Initialize timer mode specific settings
       if (timerMode === 'pomodoro') {
         // Start first Pomodoro focus session
@@ -985,8 +1266,10 @@ export function TimerControls({
           }));
         } else if (customTimerSettings.type === 'enhanced-stopwatch') {
           // Reset enhanced stopwatch tracking
-          setLastIntervalBreakTime(Date.now());
-          setIntervalBreaksCount(0);
+          updateCurrentBreakState({
+            lastIntervalBreakTime: Date.now(),
+            intervalBreaksCount: 0,
+          });
           setHasReachedTarget(false);
           
           // No countdown for enhanced stopwatch - it counts up
@@ -1040,6 +1323,9 @@ export function TimerControls({
       setElapsedTime(0);
       setPausedElapsedTime(0);
       setPauseStartTime(null);
+      
+      // Clear session protection - timer is no longer active
+      updateSessionProtection(false, timerMode);
       
       // Clear from localStorage since session is completed
       clearPausedSessionFromStorage();
@@ -1124,6 +1410,9 @@ export function TimerControls({
       setCurrentSession(response.session || pausedSession);
       setElapsedTime(pausedElapsedTime);
       setIsRunning(true);
+      
+      // Restore session protection - timer is active again
+      updateSessionProtection(true, timerMode);
       
       // Clear paused state
       setPausedSession(null);
@@ -2004,23 +2293,54 @@ export function TimerControls({
             </div>
             {/* Timer Mode Selector */}
             <div className="flex items-center gap-2">
-              <Select value={timerMode} onValueChange={(value: TimerMode) => setTimerMode(value)}>
-                <SelectTrigger className="w-32 h-8 text-xs">
+              <Select 
+                value={timerMode} 
+                onValueChange={(value: TimerMode) => handleTimerModeChange(value)}
+                disabled={sessionProtection.isActive}
+              >
+                <SelectTrigger className={cn(
+                  "w-32 h-8 text-xs",
+                  sessionProtection.isActive && "opacity-50 cursor-not-allowed"
+                )}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="stopwatch">⏱️ Stopwatch</SelectItem>
-                  <SelectItem value="pomodoro">🍅 Pomodoro</SelectItem>
-                  <SelectItem value="custom">⏲️ Custom</SelectItem>
+                  <SelectItem value="stopwatch" disabled={sessionProtection.isActive}>
+                    ⏱️ Stopwatch
+                  </SelectItem>
+                  <SelectItem value="pomodoro" disabled={sessionProtection.isActive}>
+                    🍅 Pomodoro
+                  </SelectItem>
+                  <SelectItem value="custom" disabled={sessionProtection.isActive}>
+                    ⏲️ Custom
+                  </SelectItem>
                 </SelectContent>
               </Select>
+              {sessionProtection.isActive && (
+                <div className="text-xs text-muted-foreground">
+                  🔒 Active Session
+                </div>
+              )}
               {timerMode === 'stopwatch' && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowStopwatchSettings(true)}
-                  className="h-8 w-8 p-0"
-                  title="Stopwatch Settings"
+                  onClick={() => {
+                    if (sessionProtection.isActive) {
+                      toast.error('Cannot modify settings during active session', {
+                        description: 'Please stop or pause your timer first.',
+                        duration: 3000,
+                      });
+                      return;
+                    }
+                    setShowStopwatchSettings(true);
+                  }}
+                  className={cn(
+                    "h-8 w-8 p-0",
+                    sessionProtection.isActive && "opacity-50 cursor-not-allowed"
+                  )}
+                  title={sessionProtection.isActive ? "Settings locked during active session" : "Stopwatch Settings"}
+                  disabled={sessionProtection.isActive}
                 >
                   ⚙️
                 </Button>
@@ -2029,9 +2349,22 @@ export function TimerControls({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowPomodoroSettings(true)}
-                  className="h-8 w-8 p-0"
-                  title="Pomodoro Settings"
+                  onClick={() => {
+                    if (sessionProtection.isActive) {
+                      toast.error('Cannot modify settings during active session', {
+                        description: 'Please stop or pause your timer first.',
+                        duration: 3000,
+                      });
+                      return;
+                    }
+                    setShowPomodoroSettings(true);
+                  }}
+                  className={cn(
+                    "h-8 w-8 p-0",
+                    sessionProtection.isActive && "opacity-50 cursor-not-allowed"
+                  )}
+                  title={sessionProtection.isActive ? "Settings locked during active session" : "Pomodoro Settings"}
+                  disabled={sessionProtection.isActive}
                 >
                   ⚙️
                 </Button>
@@ -2040,9 +2373,22 @@ export function TimerControls({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowCustomSettings(true)}
-                  className="h-8 w-8 p-0"
-                  title="Custom Timer Settings"
+                  onClick={() => {
+                    if (sessionProtection.isActive) {
+                      toast.error('Cannot modify settings during active session', {
+                        description: 'Please stop or pause your timer first.',
+                        duration: 3000,
+                      });
+                      return;
+                    }
+                    setShowCustomSettings(true);
+                  }}
+                  className={cn(
+                    "h-8 w-8 p-0",
+                    sessionProtection.isActive && "opacity-50 cursor-not-allowed"
+                  )}
+                  title={sessionProtection.isActive ? "Settings locked during active session" : "Custom Timer Settings"}
+                  disabled={sessionProtection.isActive}
                 >
                   ⚙️
                 </Button>
@@ -2106,16 +2452,44 @@ export function TimerControls({
               <Button
                 variant={customTimerSettings.type === 'enhanced-stopwatch' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setCustomTimerSettings(prev => ({ ...prev, type: 'enhanced-stopwatch' }))}
-                className="flex-1 text-xs"
+                onClick={() => {
+                  if (sessionProtection.isActive) {
+                    toast.error('Cannot switch timer types during active session', {
+                      description: 'Please stop or pause your timer first.',
+                      duration: 3000,
+                    });
+                    return;
+                  }
+                  setCustomTimerSettings(prev => ({ ...prev, type: 'enhanced-stopwatch' }));
+                }}
+                className={cn(
+                  "flex-1 text-xs",
+                  sessionProtection.isActive && "opacity-50 cursor-not-allowed"
+                )}
+                disabled={sessionProtection.isActive}
+                title={sessionProtection.isActive ? "Type switching locked during active session" : "Enhanced Stopwatch"}
               >
                 ⏱️ Stopwatch
               </Button>
               <Button
                 variant={customTimerSettings.type === 'traditional-countdown' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setCustomTimerSettings(prev => ({ ...prev, type: 'traditional-countdown' }))}
-                className="flex-1 text-xs"
+                onClick={() => {
+                  if (sessionProtection.isActive) {
+                    toast.error('Cannot switch timer types during active session', {
+                      description: 'Please stop or pause your timer first.',
+                      duration: 3000,
+                    });
+                    return;
+                  }
+                  setCustomTimerSettings(prev => ({ ...prev, type: 'traditional-countdown' }));
+                }}
+                className={cn(
+                  "flex-1 text-xs",
+                  sessionProtection.isActive && "opacity-50 cursor-not-allowed"
+                )}
+                disabled={sessionProtection.isActive}
+                title={sessionProtection.isActive ? "Type switching locked during active session" : "Traditional Countdown"}
               >
                 ⏲️ Countdown
               </Button>
@@ -2124,25 +2498,39 @@ export function TimerControls({
             {/* Essential Settings Only - Interval Breaks for Enhanced Stopwatch */}
             {customTimerSettings.type === 'enhanced-stopwatch' && (
               <div className="rounded-md bg-muted/30 p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Interval Breaks:</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={customTimerSettings.enableIntervalBreaks}
-                      onChange={(e) => setCustomTimerSettings(prev => ({
-                        ...prev,
-                        enableIntervalBreaks: e.target.checked
-                      }))}
-                      className="h-3 w-3 rounded"
-                    />
-                    {customTimerSettings.enableIntervalBreaks && (
-                      <span className="text-xs text-muted-foreground">
-                        every {customTimerSettings.intervalFrequency}min
-                      </span>
-                    )}
+                                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Interval Breaks:</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={customTimerSettings.enableIntervalBreaks}
+                        onChange={(e) => {
+                          if (sessionProtection.isActive) {
+                            toast.error('Cannot modify break settings during active session', {
+                              description: 'Please stop or pause your timer first.',
+                              duration: 3000,
+                            });
+                            return;
+                          }
+                          setCustomTimerSettings(prev => ({
+                            ...prev,
+                            enableIntervalBreaks: e.target.checked
+                          }));
+                        }}
+                        className={cn(
+                          "h-3 w-3 rounded",
+                          sessionProtection.isActive && "opacity-50 cursor-not-allowed"
+                        )}
+                        disabled={sessionProtection.isActive}
+                        title={sessionProtection.isActive ? "Settings locked during active session" : "Enable interval breaks"}
+                      />
+                      {customTimerSettings.enableIntervalBreaks && (
+                        <span className="text-xs text-muted-foreground">
+                          every {customTimerSettings.intervalFrequency}min
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
               </div>
             )}
           </div>
