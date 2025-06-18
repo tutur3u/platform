@@ -1,6 +1,40 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Type interfaces for better type safety
+interface TaskAssigneeData {
+  user: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    email?: string;
+  } | null;
+}
+
+interface TaskListData {
+  id: string;
+  name: string | null;
+  workspace_boards: {
+    id: string;
+    name: string | null;
+    ws_id: string;
+  } | null;
+}
+
+interface RawTaskData {
+  id: string;
+  name: string;
+  description: string | null;
+  priority: number | null;
+  completed: boolean | null;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string | null;
+  list_id: string;
+  task_lists: TaskListData | null;
+  assignees?: TaskAssigneeData[];
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
@@ -34,15 +68,26 @@ export async function GET(
     }
 
     const url = new URL(request.url);
-    const limit = Math.min(
-      parseInt(url.searchParams.get('limit') || '100'),
-      200
+
+    const parsedLimit = Number.parseInt(
+      url.searchParams.get('limit') ?? '',
+      10
     );
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+    const limit =
+      Number.isFinite(parsedLimit) && parsedLimit > 0
+        ? Math.min(parsedLimit, 200)
+        : 100;
+
+    const parsedOffset = Number.parseInt(
+      url.searchParams.get('offset') ?? '',
+      10
+    );
+    const offset =
+      Number.isFinite(parsedOffset) && parsedOffset >= 0 ? parsedOffset : 0;
     const boardId = url.searchParams.get('boardId');
     const listId = url.searchParams.get('listId');
 
-    // Build the query for fetching tasks
+    // Build the query for fetching tasks with assignee information
     let query = supabase
       .from('tasks')
       .select(
@@ -65,6 +110,13 @@ export async function GET(
             name,
             ws_id
           )
+        ),
+        assignees:task_assignees(
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
         )
       `
       )
@@ -83,11 +135,14 @@ export async function GET(
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error in tasks query:', error);
+      throw new Error('TASKS_QUERY_FAILED');
+    }
 
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
-      data?.map((task: any) => ({
+      data?.map((task: RawTaskData) => ({
         id: task.id,
         name: task.name,
         description: task.description,
@@ -100,6 +155,24 @@ export async function GET(
         // Add board information for context
         board_name: task.task_lists?.workspace_boards?.name,
         list_name: task.task_lists?.name,
+        // Add assignee information
+        assignees: [
+          ...(task.assignees ?? [])
+            .map((a) => a.user)
+            .filter((u): u is NonNullable<typeof u> => !!u?.id)
+            .reduce((uniqueUsers, user) => {
+              if (!uniqueUsers.has(user.id)) {
+                uniqueUsers.set(user.id, user);
+              }
+              return uniqueUsers;
+            }, new Map<string, NonNullable<typeof task.assignees>[0]['user']>())
+            .values(),
+        ],
+        // Add helper field to identify if current user is assigned
+        is_assigned_to_current_user:
+          task.assignees?.some(
+            (a: TaskAssigneeData) => a.user?.id === user.id
+          ) || false,
       })) || [];
 
     return NextResponse.json({ tasks });

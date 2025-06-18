@@ -1,6 +1,6 @@
 'use client';
 
-import type { SessionWithRelations } from '../time-tracker-content';
+import type { SessionWithRelations } from '../types';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -31,6 +31,8 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import {
   BarChart2,
+  Brain,
+  Briefcase,
   CheckCircle,
   ChevronDown,
   ChevronLeft,
@@ -47,8 +49,11 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
+  Star,
+  Sun,
   Tag,
   Trash2,
+  TrendingUp,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -221,6 +226,10 @@ const StackedSessionItem: FC<{
     board_name?: string;
     list_name?: string;
   })[];
+  // eslint-disable-next-line no-unused-vars
+  calculateFocusScore: (session: SessionWithRelations) => number;
+  // eslint-disable-next-line no-unused-vars
+  getSessionProductivityType: (session: SessionWithRelations) => string;
 }> = ({
   stackedSession,
   readOnly,
@@ -230,8 +239,11 @@ const StackedSessionItem: FC<{
   onDelete,
   actionStates,
   tasks,
+  calculateFocusScore,
+  getSessionProductivityType,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showAllSessions, setShowAllSessions] = useState(false);
   const userTimezone = dayjs.tz.guess();
   const firstStartTime = dayjs
     .utc(stackedSession.firstStartTime)
@@ -242,6 +254,56 @@ const StackedSessionItem: FC<{
 
   const latestSession =
     stackedSession.sessions[stackedSession.sessions.length - 1]!;
+
+  // Calculate average focus score for stacked sessions
+  const avgFocusScore = stackedSession.isStacked
+    ? Math.round(
+        stackedSession.sessions.reduce(
+          (sum, s) => sum + calculateFocusScore(s),
+          0
+        ) / stackedSession.sessions.length
+      )
+    : calculateFocusScore(latestSession);
+
+  const productivityType = getSessionProductivityType(latestSession);
+
+  // Limit how many sessions to show initially
+  const INITIAL_SESSION_LIMIT = 3;
+  const hasMoreSessions =
+    stackedSession.sessions.length > INITIAL_SESSION_LIMIT;
+  const visibleSessions = showAllSessions
+    ? stackedSession.sessions
+    : stackedSession.sessions.slice(0, INITIAL_SESSION_LIMIT);
+
+  const getProductivityIcon = (type: string) => {
+    switch (type) {
+      case 'deep-work':
+        return '🧠';
+      case 'focused':
+        return '🎯';
+      case 'scattered':
+        return '🔀';
+      case 'interrupted':
+        return '⚡';
+      default:
+        return '📋';
+    }
+  };
+
+  const getProductivityColor = (type: string) => {
+    switch (type) {
+      case 'deep-work':
+        return 'text-green-700 bg-green-100 border-green-300 dark:text-green-300 dark:bg-green-950/30 dark:border-green-800';
+      case 'focused':
+        return 'text-blue-700 bg-blue-100 border-blue-300 dark:text-blue-300 dark:bg-blue-950/30 dark:border-blue-800';
+      case 'scattered':
+        return 'text-yellow-700 bg-yellow-100 border-yellow-300 dark:text-yellow-300 dark:bg-yellow-950/30 dark:border-yellow-800';
+      case 'interrupted':
+        return 'text-red-700 bg-red-100 border-red-300 dark:text-red-300 dark:bg-red-950/30 dark:border-red-800';
+      default:
+        return 'text-gray-700 bg-gray-100 border-gray-300 dark:text-gray-300 dark:bg-gray-950/30 dark:border-gray-800';
+    }
+  };
 
   return (
     <div className="group rounded-lg border transition-all hover:bg-accent/50 hover:shadow-sm">
@@ -292,6 +354,37 @@ const StackedSessionItem: FC<{
                   </Button>
                 </div>
               )}
+
+              {/* Focus Score Badge */}
+              <div
+                className={cn(
+                  'flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium',
+                  avgFocusScore >= 80
+                    ? 'border-green-300 bg-green-100 text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-300'
+                    : avgFocusScore >= 60
+                      ? 'border-blue-300 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300'
+                      : avgFocusScore >= 40
+                        ? 'border-yellow-300 bg-yellow-100 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-300'
+                        : 'border-red-300 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300'
+                )}
+              >
+                <Brain className="h-3 w-3" />
+                <span>Focus {avgFocusScore}</span>
+              </div>
+
+              {/* Productivity Type Badge */}
+              <div
+                className={cn(
+                  'flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium',
+                  getProductivityColor(productivityType)
+                )}
+              >
+                <span>{getProductivityIcon(productivityType)}</span>
+                <span className="capitalize">
+                  {productivityType.replace('-', ' ')}
+                </span>
+              </div>
+
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 <span>
@@ -502,195 +595,236 @@ const StackedSessionItem: FC<{
                   running
                 </div>
               </div>
-              <div className="space-y-2">
-                {stackedSession.sessions.map((session, index) => {
-                  const sessionStart = dayjs
-                    .utc(session.start_time)
-                    .tz(userTimezone);
-                  const sessionEnd = session.end_time
-                    ? dayjs.utc(session.end_time).tz(userTimezone)
-                    : null;
+              <div className="space-y-3">
+                {/* Sessions container with scroll for many sessions */}
+                <div
+                  className={cn(
+                    'space-y-2 transition-all duration-200',
+                    stackedSession.sessions.length > 6 &&
+                      showAllSessions &&
+                      'max-h-96 overflow-y-auto pr-2'
+                  )}
+                >
+                  {visibleSessions.map((session, index) => {
+                    const sessionStart = dayjs
+                      .utc(session.start_time)
+                      .tz(userTimezone);
+                    const sessionEnd = session.end_time
+                      ? dayjs.utc(session.end_time).tz(userTimezone)
+                      : null;
 
-                  // Calculate gap from previous session
-                  const prevSession =
-                    index > 0 ? stackedSession.sessions[index - 1] : null;
-                  const gapInSeconds =
-                    prevSession && prevSession.end_time
+                    // Calculate gap from previous session
+                    const prevSession =
+                      index > 0 ? stackedSession.sessions[index - 1] : null;
+
+                    const gapInSeconds = prevSession?.end_time
                       ? sessionStart.diff(
                           dayjs.utc(prevSession.end_time).tz(userTimezone),
                           'seconds'
                         )
                       : null;
 
-                  // Format gap duration based on length
-                  const formatGap = (seconds: number) => {
-                    if (seconds < 60) return `${seconds}s`;
-                    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-                    const hours = Math.floor(seconds / 3600);
-                    const mins = Math.floor((seconds % 3600) / 60);
-                    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-                  };
+                    // Format gap duration based on length
+                    const formatGap = (seconds: number) => {
+                      if (seconds < 60) return `${seconds}s`;
+                      if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+                      const hours = Math.floor(seconds / 3600);
+                      const mins = Math.floor((seconds % 3600) / 60);
+                      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+                    };
 
-                  // Determine gap type for styling
-                  const getGapType = (seconds: number) => {
-                    if (seconds < 60) return 'minimal'; // Less than 1 minute
-                    if (seconds < 900) return 'short'; // Less than 15 minutes
-                    return 'long'; // 15+ minutes
-                  };
+                    // Determine gap type for styling
+                    const getGapType = (seconds: number) => {
+                      if (seconds < 60) return 'minimal'; // Less than 1 minute
+                      if (seconds < 900) return 'short'; // Less than 15 minutes
+                      return 'long'; // 15+ minutes
+                    };
 
-                  // Handle edge cases for gap display
-                  const shouldShowGap =
-                    gapInSeconds !== null &&
-                    gapInSeconds > 30 &&
-                    gapInSeconds < 86400; // Only show gaps between 30 seconds and 24 hours
-                  const gapType =
-                    gapInSeconds && shouldShowGap
-                      ? getGapType(gapInSeconds)
-                      : null;
+                    // Handle edge cases for gap display
+                    const shouldShowGap =
+                      gapInSeconds !== null &&
+                      gapInSeconds > 30 &&
+                      gapInSeconds < 86400; // Only show gaps between 30 seconds and 24 hours
+                    const gapType =
+                      gapInSeconds && shouldShowGap
+                        ? getGapType(gapInSeconds)
+                        : null;
 
-                  // Detect overlapping sessions
-                  const isOverlapping =
-                    gapInSeconds !== null && gapInSeconds < 0;
+                    // Detect overlapping sessions
+                    const isOverlapping =
+                      gapInSeconds !== null && gapInSeconds < 0;
 
-                  return (
-                    <div key={session.id}>
-                      {/* Show overlap warning */}
-                      {isOverlapping && (
-                        <div className="-mt-1 mb-2 flex items-center justify-center">
-                          <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700 ring-1 ring-amber-200">
-                            <div className="h-1 w-1 rounded-full bg-amber-500" />
-                            <span className="font-medium">
-                              Overlapping session
-                            </span>
-                            <div className="h-1 w-1 rounded-full bg-amber-500" />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Show gap indicator based on duration */}
-                      {shouldShowGap && gapInSeconds && (
-                        <div className="-mt-1 mb-2 flex items-center justify-center">
-                          {gapType === 'minimal' ? (
-                            // Minimal gap - just small dots
-                            <div className="flex items-center gap-1">
-                              <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-                              <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-                              <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-                            </div>
-                          ) : gapType === 'short' ? (
-                            // Short break - simple line with time
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <div className="h-px w-6 bg-border" />
-                              <span className="rounded bg-muted px-2 py-0.5 text-xs">
-                                {formatGap(gapInSeconds)}
-                              </span>
-                              <div className="h-px w-6 bg-border" />
-                            </div>
-                          ) : (
-                            // Long break - prominent break indicator
-                            <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
-                              <div className="h-1 w-8 bg-foreground/10" />
+                    return (
+                      <div key={session.id}>
+                        {/* Show overlap warning */}
+                        {isOverlapping && (
+                          <div className="-mt-1 mb-2 flex items-center justify-center">
+                            <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800">
+                              <div className="h-1 w-1 rounded-full bg-amber-500" />
                               <span className="font-medium">
-                                {formatGap(gapInSeconds)} break
+                                Overlapping session
                               </span>
-                              <div className="h-1 w-8 bg-foreground/10" />
+                              <div className="h-1 w-1 rounded-full bg-amber-500" />
                             </div>
-                          )}
-                        </div>
-                      )}
+                          </div>
+                        )}
 
-                      <div className="flex items-center justify-between rounded-md border bg-background p-3 text-sm transition-all hover:bg-muted/50 hover:shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              'flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium',
-                              session.is_running
-                                ? 'bg-green-100 text-green-700 ring-2 ring-green-200'
-                                : 'bg-primary/10 text-primary'
-                            )}
-                          >
-                            {session.is_running ? (
-                              <div className="h-2 w-2 animate-pulse rounded-full bg-green-600" />
+                        {/* Show gap indicator based on duration */}
+                        {shouldShowGap && gapInSeconds && (
+                          <div className="-mt-1 mb-2 flex items-center justify-center">
+                            {gapType === 'minimal' ? (
+                              // Minimal gap - just small dots
+                              <div className="flex items-center gap-1">
+                                <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                                <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                                <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                              </div>
+                            ) : gapType === 'short' ? (
+                              // Short break - simple line with time
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <div className="h-px w-6 bg-border" />
+                                <span className="rounded bg-muted px-2 py-0.5 text-xs">
+                                  {formatGap(gapInSeconds)}
+                                </span>
+                                <div className="h-px w-6 bg-border" />
+                              </div>
                             ) : (
-                              index + 1
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">
-                                {sessionStart.format('h:mm A')}
-                                {sessionEnd &&
-                                  ` - ${sessionEnd.format('h:mm A')}`}
-                                {session.is_running && (
-                                  <span className="text-green-600">
-                                    {' '}
-                                    - ongoing
-                                  </span>
-                                )}
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {sessionStart.format('MMM D')}
-                              </Badge>
-                            </div>
-                            {session.description &&
-                              session.description !==
-                                stackedSession.description && (
-                                <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                                  {session.description}
-                                </p>
-                              )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <span className="text-sm font-medium">
-                              {session.duration_seconds
-                                ? formatDuration(session.duration_seconds)
-                                : '-'}
-                            </span>
-                            {session.is_running && (
-                              <div className="mt-1">
-                                <Badge variant="secondary" className="text-xs">
-                                  <div className="mr-1 h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                                  Running
-                                </Badge>
+                              // Long break - prominent break indicator
+                              <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
+                                <div className="h-1 w-8 bg-foreground/10" />
+                                <span className="font-medium">
+                                  {formatGap(gapInSeconds)} break
+                                </span>
+                                <div className="h-1 w-8 bg-foreground/10" />
                               </div>
                             )}
                           </div>
-                          {!readOnly && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                                >
-                                  <MoreHorizontal className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => onEdit(session)}
-                                >
-                                  <Edit className="mr-2 h-3 w-3" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => onDelete(session)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="mr-2 h-3 w-3" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                        )}
+
+                        <div className="flex items-center justify-between rounded-md border bg-background p-3 text-sm transition-all hover:bg-muted/50 hover:shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                'flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium',
+                                session.is_running
+                                  ? 'bg-green-100 text-green-700 ring-2 ring-green-200 dark:bg-green-950/30 dark:text-green-300 dark:ring-green-800'
+                                  : 'bg-primary/10 text-primary'
+                              )}
+                            >
+                              {session.is_running ? (
+                                <div className="h-2 w-2 animate-pulse rounded-full bg-green-600" />
+                              ) : (
+                                index + 1
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">
+                                  {sessionStart.format('h:mm A')}
+                                  {sessionEnd &&
+                                    ` - ${sessionEnd.format('h:mm A')}`}
+                                  {session.is_running && (
+                                    <span className="text-green-600">
+                                      {' '}
+                                      - ongoing
+                                    </span>
+                                  )}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  {sessionStart.format('MMM D')}
+                                </Badge>
+                              </div>
+                              {session.description &&
+                                session.description !==
+                                  stackedSession.description && (
+                                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                                    {session.description}
+                                  </p>
+                                )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <span className="text-sm font-medium">
+                                {session.duration_seconds
+                                  ? formatDuration(session.duration_seconds)
+                                  : '-'}
+                              </span>
+                              {session.is_running && (
+                                <div className="mt-1">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    <div className="mr-1 h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                                    Running
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                            {!readOnly && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                                  >
+                                    <MoreHorizontal className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => onEdit(session)}
+                                  >
+                                    <Edit className="mr-2 h-3 w-3" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => onDelete(session)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-3 w-3" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+
+                {/* Show more/less control for stacked sessions */}
+                {hasMoreSessions && (
+                  <div className="flex items-center justify-center pt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAllSessions(!showAllSessions)}
+                      className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      {showAllSessions ? (
+                        <>
+                          <ChevronUp className="mr-1 h-3 w-3" />
+                          Show less ({INITIAL_SESSION_LIMIT} of{' '}
+                          {stackedSession.sessions.length})
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="mr-1 h-3 w-3" />
+                          Show{' '}
+                          {stackedSession.sessions.length -
+                            INITIAL_SESSION_LIMIT}{' '}
+                          more sessions
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </CollapsibleContent>
@@ -712,7 +846,14 @@ export function SessionHistory({
 }: SessionHistoryProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState<string>('all');
-  const [filterTaskId, setFilterTaskId] = useState<string>('all');
+  const [filterDuration, setFilterDuration] = useState<string>('all');
+  const [filterProductivity, setFilterProductivity] = useState<string>('all');
+  const [filterTimeOfDay, setFilterTimeOfDay] = useState<string>('all');
+  const [filterProjectContext, setFilterProjectContext] =
+    useState<string>('all');
+  const [filterSessionQuality, setFilterSessionQuality] =
+    useState<string>('all');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [sessionToDelete, setSessionToDelete] =
     useState<SessionWithRelations | null>(null);
   const [sessionToEdit, setSessionToEdit] =
@@ -727,6 +868,93 @@ export function SessionHistory({
 
   const userTimezone = dayjs.tz.guess();
   const today = dayjs().tz(userTimezone);
+
+  // Advanced analytics functions
+  const calculateFocusScore = (session: SessionWithRelations): number => {
+    if (!session.duration_seconds) return 0;
+
+    // Base score from duration (longer sessions = higher focus)
+    const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
+
+    // Bonus for consistency (sessions without interruptions)
+    // was_resumed can be null in database, so check explicitly for true
+    const consistencyBonus = session.was_resumed === true ? 0 : 20;
+
+    // Time of day bonus (peak hours get bonus)
+    const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+    const peakHoursBonus =
+      (sessionHour >= 9 && sessionHour <= 11) ||
+      (sessionHour >= 14 && sessionHour <= 16)
+        ? 20
+        : 0;
+
+    // Category bonus (work categories get slight bonus)
+    const categoryBonus = session.category?.name?.toLowerCase().includes('work')
+      ? 10
+      : 0;
+
+    // Task completion bonus
+    const taskBonus = session.task_id ? 10 : 0;
+
+    return Math.min(
+      durationScore +
+        consistencyBonus +
+        peakHoursBonus +
+        categoryBonus +
+        taskBonus,
+      100
+    );
+  };
+
+  const getSessionProductivityType = (
+    session: SessionWithRelations
+  ): string => {
+    const duration = session.duration_seconds || 0;
+    const focusScore = calculateFocusScore(session);
+
+    if (focusScore >= 80 && duration >= 3600) return 'deep-work';
+    if (focusScore >= 60 && duration >= 1800) return 'focused';
+    if (duration < 900 && focusScore < 40) return 'interrupted';
+    if (duration >= 1800 && focusScore < 50) return 'scattered';
+    return 'standard';
+  };
+
+  const getTimeOfDayCategory = (session: SessionWithRelations): string => {
+    const hour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+    if (hour >= 6 && hour < 12) return 'morning';
+    if (hour >= 12 && hour < 18) return 'afternoon';
+    if (hour >= 18 && hour < 24) return 'evening';
+    return 'night';
+  };
+
+  const getProjectContext = (session: SessionWithRelations): string => {
+    if (session.task_id) {
+      const task = tasks.find((t) => t.id === session.task_id);
+      return task?.board_name || 'project-work';
+    }
+    if (session.category?.name?.toLowerCase().includes('meeting'))
+      return 'meetings';
+    if (session.category?.name?.toLowerCase().includes('learn'))
+      return 'learning';
+    if (session.category?.name?.toLowerCase().includes('admin'))
+      return 'administrative';
+    return 'general';
+  };
+
+  const getDurationCategory = (session: SessionWithRelations): string => {
+    const duration = session.duration_seconds || 0;
+    if (duration < 1800) return 'short'; // < 30 min
+    if (duration < 7200) return 'medium'; // 30 min - 2 hours
+    return 'long'; // 2+ hours
+  };
+
+  const getSessionQuality = (session: SessionWithRelations): string => {
+    const focusScore = calculateFocusScore(session);
+    if (focusScore >= 80) return 'excellent';
+    if (focusScore >= 60) return 'good';
+    if (focusScore >= 40) return 'average';
+    return 'needs-improvement';
+  };
 
   const goToPrevious = () => {
     setCurrentDate(currentDate.subtract(1, viewMode));
@@ -758,6 +986,7 @@ export function SessionHistory({
   const filteredSessions = useMemo(
     () =>
       sessions.filter((session) => {
+        // Search filter
         if (
           searchQuery &&
           !session.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -767,16 +996,62 @@ export function SessionHistory({
         ) {
           return false;
         }
+
+        // Category filter
         if (
           filterCategoryId !== 'all' &&
           session.category_id !== filterCategoryId
         )
           return false;
-        if (filterTaskId !== 'all' && session.task_id !== filterTaskId)
+
+        // Duration filter
+        if (
+          filterDuration !== 'all' &&
+          getDurationCategory(session) !== filterDuration
+        )
           return false;
+
+        // Productivity filter
+        if (
+          filterProductivity !== 'all' &&
+          getSessionProductivityType(session) !== filterProductivity
+        )
+          return false;
+
+        // Time of day filter
+        if (
+          filterTimeOfDay !== 'all' &&
+          getTimeOfDayCategory(session) !== filterTimeOfDay
+        )
+          return false;
+
+        // Project context filter
+        if (
+          filterProjectContext !== 'all' &&
+          getProjectContext(session) !== filterProjectContext
+        )
+          return false;
+
+        // Session quality filter
+        if (
+          filterSessionQuality !== 'all' &&
+          getSessionQuality(session) !== filterSessionQuality
+        )
+          return false;
+
         return true;
       }),
-    [sessions, searchQuery, filterCategoryId, filterTaskId]
+    [
+      sessions,
+      searchQuery,
+      filterCategoryId,
+      filterDuration,
+      filterProductivity,
+      filterTimeOfDay,
+      filterProjectContext,
+      filterSessionQuality,
+      tasks,
+    ]
   );
 
   const { startOfPeriod, endOfPeriod } = useMemo(() => {
@@ -807,6 +1082,75 @@ export function SessionHistory({
       [id: string]: { name: string; duration: number; color: string };
     } = {};
 
+    // Enhanced analytics
+    const focusScores = sessionsForPeriod.map((s) => calculateFocusScore(s));
+    const avgFocusScore =
+      focusScores.length > 0
+        ? focusScores.reduce((sum, score) => sum + score, 0) /
+          focusScores.length
+        : 0;
+
+    const productivityBreakdown = {
+      'deep-work': sessionsForPeriod.filter(
+        (s) => getSessionProductivityType(s) === 'deep-work'
+      ).length,
+      focused: sessionsForPeriod.filter(
+        (s) => getSessionProductivityType(s) === 'focused'
+      ).length,
+      standard: sessionsForPeriod.filter(
+        (s) => getSessionProductivityType(s) === 'standard'
+      ).length,
+      scattered: sessionsForPeriod.filter(
+        (s) => getSessionProductivityType(s) === 'scattered'
+      ).length,
+      interrupted: sessionsForPeriod.filter(
+        (s) => getSessionProductivityType(s) === 'interrupted'
+      ).length,
+    };
+
+    const timeOfDayBreakdown = {
+      morning: sessionsForPeriod.filter(
+        (s) => getTimeOfDayCategory(s) === 'morning'
+      ).length,
+      afternoon: sessionsForPeriod.filter(
+        (s) => getTimeOfDayCategory(s) === 'afternoon'
+      ).length,
+      evening: sessionsForPeriod.filter(
+        (s) => getTimeOfDayCategory(s) === 'evening'
+      ).length,
+      night: sessionsForPeriod.filter(
+        (s) => getTimeOfDayCategory(s) === 'night'
+      ).length,
+    };
+
+    const bestTimeOfDay =
+      sessionsForPeriod.length > 0
+        ? Object.entries(timeOfDayBreakdown).reduce<[string, number]>(
+            (a, b) => (a[1] > b[1] ? a : b),
+            ['morning', 0] // sensible default prevents TypeError
+          )[0]
+        : 'none';
+
+    const longestSession =
+      sessionsForPeriod.length > 0
+        ? sessionsForPeriod.reduce((longest, session) =>
+            (session.duration_seconds || 0) > (longest.duration_seconds || 0)
+              ? session
+              : longest
+          )
+        : null;
+
+    const shortSessions = sessionsForPeriod.filter(
+      (s) => (s.duration_seconds || 0) < 1800
+    ).length;
+    const mediumSessions = sessionsForPeriod.filter(
+      (s) =>
+        (s.duration_seconds || 0) >= 1800 && (s.duration_seconds || 0) < 7200
+    ).length;
+    const longSessions = sessionsForPeriod.filter(
+      (s) => (s.duration_seconds || 0) >= 7200
+    ).length;
+
     sessionsForPeriod.forEach((s) => {
       const id = s.category?.id || 'uncategorized';
       const name = s.category?.name || 'No Category';
@@ -821,7 +1165,20 @@ export function SessionHistory({
     const breakdown = Object.values(categoryDurations)
       .filter((c) => c.duration > 0)
       .sort((a, b) => b.duration - a.duration);
-    return { totalDuration, breakdown };
+
+    return {
+      totalDuration,
+      breakdown,
+      avgFocusScore,
+      productivityBreakdown,
+      timeOfDayBreakdown,
+      bestTimeOfDay,
+      longestSession,
+      shortSessions,
+      mediumSessions,
+      longSessions,
+      sessionCount: sessionsForPeriod.length,
+    };
   }, [sessionsForPeriod]);
 
   const groupedStackedSessions = useMemo(() => {
@@ -967,6 +1324,8 @@ export function SessionHistory({
       'Description',
     ];
 
+    const escape = (v: string) => (/^[=+\-@]/.test(v) ? `'${v}` : v);
+
     const csvData = sessionsForPeriod.map((session) => {
       const userTz = dayjs.tz.guess();
       const startTime = dayjs.utc(session.start_time).tz(userTz);
@@ -976,15 +1335,15 @@ export function SessionHistory({
 
       return [
         startTime.format('YYYY-MM-DD'),
-        session.title,
-        session.category?.name || '',
-        session.task?.name || '',
+        escape(session.title),
+        escape(session.category?.name || ''),
+        escape(session.task?.name || ''),
         startTime.format('HH:mm:ss'),
         endTime?.format('HH:mm:ss') || '',
         session.duration_seconds
           ? (session.duration_seconds / 3600).toFixed(2)
           : '0',
-        session.description || '',
+        escape(session.description || ''),
       ];
     });
 
@@ -1042,79 +1401,294 @@ export function SessionHistory({
                     <Button variant="outline" size="sm">
                       <Filter className="mr-2 h-4 w-4" />
                       {(filterCategoryId !== 'all' ||
-                        filterTaskId !== 'all') && (
+                        filterDuration !== 'all' ||
+                        filterProductivity !== 'all' ||
+                        filterTimeOfDay !== 'all' ||
+                        filterProjectContext !== 'all' ||
+                        filterSessionQuality !== 'all') && (
                         <div className="ml-1 h-2 w-2 rounded-full bg-primary" />
                       )}
-                      Filter
+                      Smart Filters
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80" align="end">
+                  <PopoverContent className="w-96" align="end">
                     <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-medium">Category</Label>
-                        <Select
-                          value={filterCategoryId}
-                          onValueChange={setFilterCategoryId}
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">
+                          Advanced Analytics Filters
+                        </h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setShowAdvancedFilters(!showAdvancedFilters)
+                          }
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All categories" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All categories</SelectItem>
-                            {categories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className={cn(
-                                      'h-3 w-3 rounded-full',
-                                      getCategoryColor(category.color || 'BLUE')
-                                    )}
-                                  />
-                                  {category.name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          {showAdvancedFilters ? 'Simple' : 'Advanced'}
+                        </Button>
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium">Task</Label>
-                        <Select
-                          value={filterTaskId}
-                          onValueChange={setFilterTaskId}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All tasks" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All tasks</SelectItem>
-                            {tasks.map((task) => (
-                              <SelectItem key={task.id} value={task.id!}>
-                                {task.name}
+
+                      {/* Basic Filters */}
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Tag className="h-3 w-3" />
+                            Category
+                          </Label>
+                          <Select
+                            value={filterCategoryId}
+                            onValueChange={setFilterCategoryId}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="All categories" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">
+                                All categories
                               </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                              {categories.map((category) => (
+                                <SelectItem
+                                  key={category.id}
+                                  value={category.id}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={cn(
+                                        'h-3 w-3 rounded-full',
+                                        getCategoryColor(
+                                          category.color || 'BLUE'
+                                        )
+                                      )}
+                                    />
+                                    {category.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Clock className="h-3 w-3" />
+                            Duration Type
+                          </Label>
+                          <Select
+                            value={filterDuration}
+                            onValueChange={setFilterDuration}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="All durations" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All durations</SelectItem>
+                              <SelectItem value="short">
+                                🏃 Short (&lt; 30 min)
+                              </SelectItem>
+                              <SelectItem value="medium">
+                                🚶 Medium (30 min - 2h)
+                              </SelectItem>
+                              <SelectItem value="long">
+                                🏔️ Long (2+ hours)
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="pt-2">
+
+                      {/* Advanced Filters */}
+                      {showAdvancedFilters && (
+                        <div className="space-y-3 border-t pt-3">
+                          <div>
+                            <Label className="flex items-center gap-2 text-sm font-medium">
+                              <TrendingUp className="h-3 w-3" />
+                              Productivity Type
+                            </Label>
+                            <Select
+                              value={filterProductivity}
+                              onValueChange={setFilterProductivity}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All productivity types" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All types</SelectItem>
+                                <SelectItem value="deep-work">
+                                  🧠 Deep Work (80+ focus)
+                                </SelectItem>
+                                <SelectItem value="focused">
+                                  🎯 Focused (60+ focus)
+                                </SelectItem>
+                                <SelectItem value="standard">
+                                  📋 Standard work
+                                </SelectItem>
+                                <SelectItem value="scattered">
+                                  🔀 Scattered (low focus)
+                                </SelectItem>
+                                <SelectItem value="interrupted">
+                                  ⚡ Interrupted (&lt; 15 min)
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="flex items-center gap-2 text-sm font-medium">
+                              <Sun className="h-3 w-3" />
+                              Time of Day
+                            </Label>
+                            <Select
+                              value={filterTimeOfDay}
+                              onValueChange={setFilterTimeOfDay}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All times" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All times</SelectItem>
+                                <SelectItem value="morning">
+                                  🌅 Morning (6 AM - 12 PM)
+                                </SelectItem>
+                                <SelectItem value="afternoon">
+                                  ☀️ Afternoon (12 PM - 6 PM)
+                                </SelectItem>
+                                <SelectItem value="evening">
+                                  🌇 Evening (6 PM - 12 AM)
+                                </SelectItem>
+                                <SelectItem value="night">
+                                  🌙 Night (12 AM - 6 AM)
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="flex items-center gap-2 text-sm font-medium">
+                              <Briefcase className="h-3 w-3" />
+                              Project Context
+                            </Label>
+                            <Select
+                              value={filterProjectContext}
+                              onValueChange={setFilterProjectContext}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All contexts" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">
+                                  All contexts
+                                </SelectItem>
+                                <SelectItem value="project-work">
+                                  📁 Project Work
+                                </SelectItem>
+                                <SelectItem value="meetings">
+                                  👥 Meetings
+                                </SelectItem>
+                                <SelectItem value="learning">
+                                  📚 Learning
+                                </SelectItem>
+                                <SelectItem value="administrative">
+                                  📋 Administrative
+                                </SelectItem>
+                                <SelectItem value="general">
+                                  🔧 General Tasks
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="flex items-center gap-2 text-sm font-medium">
+                              <Star className="h-3 w-3" />
+                              Session Quality
+                            </Label>
+                            <Select
+                              value={filterSessionQuality}
+                              onValueChange={setFilterSessionQuality}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All qualities" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">
+                                  All qualities
+                                </SelectItem>
+                                <SelectItem value="excellent">
+                                  ⭐ Excellent (80+ score)
+                                </SelectItem>
+                                <SelectItem value="good">
+                                  👍 Good (60-79 score)
+                                </SelectItem>
+                                <SelectItem value="average">
+                                  👌 Average (40-59 score)
+                                </SelectItem>
+                                <SelectItem value="needs-improvement">
+                                  📈 Needs Improvement (&lt; 40)
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="border-t pt-3">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => {
                             setFilterCategoryId('all');
-                            setFilterTaskId('all');
+                            setFilterDuration('all');
+                            setFilterProductivity('all');
+                            setFilterTimeOfDay('all');
+                            setFilterProjectContext('all');
+                            setFilterSessionQuality('all');
                           }}
                           className="w-full"
                         >
-                          Clear Filters
+                          🧹 Clear All Filters
                         </Button>
                       </div>
+
+                      {/* Quick Analytics Preview */}
+                      {filteredSessions.length > 0 && (
+                        <div className="rounded-lg border-t bg-muted/30 p-3">
+                          <div className="mb-2 text-xs font-medium text-muted-foreground">
+                            📊 Filter Analytics
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="font-bold text-primary">
+                                {filteredSessions.length}
+                              </div>
+                              <div className="text-muted-foreground">
+                                Sessions
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-primary">
+                                {filteredSessions.length > 0
+                                  ? Math.round(
+                                      filteredSessions.reduce(
+                                        (sum, s) =>
+                                          sum + calculateFocusScore(s),
+                                        0
+                                      ) / filteredSessions.length
+                                    )
+                                  : 0}
+                              </div>
+                              <div className="text-muted-foreground">
+                                Avg Focus
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </PopoverContent>
                 </Popover>
                 {sessionsForPeriod.length > 0 && (
                   <Button variant="outline" size="sm" onClick={exportToCSV}>
-                    Export CSV
+                    📊 Export CSV
                   </Button>
                 )}
               </div>
@@ -1283,39 +1857,297 @@ export function SessionHistory({
 
                     <div className="rounded-lg border p-4">
                       <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
-                        <Clock className="h-5 w-5" />
+                        <Brain className="h-5 w-5" />
                         Productivity Insights
                       </h3>
                       <div className="space-y-4">
+                        {/* Focus Score */}
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">
-                            Daily Average
+                            Average Focus Score
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                'h-2 w-16 rounded-full',
+                                periodStats.avgFocusScore >= 80
+                                  ? 'bg-green-500 dark:bg-green-600'
+                                  : periodStats.avgFocusScore >= 60
+                                    ? 'bg-yellow-500 dark:bg-yellow-600'
+                                    : periodStats.avgFocusScore >= 40
+                                      ? 'bg-orange-500 dark:bg-orange-600'
+                                      : 'bg-red-500 dark:bg-red-600'
+                              )}
+                            >
+                              <div
+                                className="h-2 rounded-full bg-current opacity-80"
+                                style={{
+                                  width: `${periodStats.avgFocusScore}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="text-lg font-bold">
+                              {Math.round(periodStats.avgFocusScore)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Best Time of Day */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Most Productive Time
                           </span>
                           <span className="font-medium">
-                            {formatDuration(
-                              Math.floor(
-                                periodStats.totalDuration /
-                                  Math.max(
-                                    1,
-                                    new Set(
-                                      sessionsForPeriod.map((s) =>
-                                        dayjs
-                                          .utc(s.start_time)
-                                          .tz(userTimezone)
-                                          .format('YYYY-MM-DD')
-                                      )
-                                    ).size
-                                  )
-                              )
-                            )}
+                            {periodStats.bestTimeOfDay === 'morning' &&
+                              '🌅 Morning'}
+                            {periodStats.bestTimeOfDay === 'afternoon' &&
+                              '☀️ Afternoon'}
+                            {periodStats.bestTimeOfDay === 'evening' &&
+                              '🌇 Evening'}
+                            {periodStats.bestTimeOfDay === 'night' &&
+                              '🌙 Night'}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Active Days
-                          </span>
-                          <span className="font-medium">
-                            {
+
+                        {/* Session Types Breakdown */}
+                        <div className="space-y-2">
+                          <div className="text-sm text-muted-foreground">
+                            Session Types
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="font-bold text-green-600">
+                                {periodStats.longSessions}
+                              </div>
+                              <div className="text-muted-foreground">
+                                Deep (2h+)
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-blue-600">
+                                {periodStats.mediumSessions}
+                              </div>
+                              <div className="text-muted-foreground">
+                                Focus (30m-2h)
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-orange-600">
+                                {periodStats.shortSessions}
+                              </div>
+                              <div className="text-muted-foreground">
+                                Quick (&lt;30m)
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Longest Session Highlight */}
+                        {periodStats.longestSession && (
+                          <div className="rounded-md bg-muted/30 p-3">
+                            <div className="mb-1 text-xs text-muted-foreground">
+                              🏆 Longest Session
+                            </div>
+                            <div className="text-sm font-medium">
+                              {periodStats.longestSession.title}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatDuration(
+                                periodStats.longestSession.duration_seconds || 0
+                              )}{' '}
+                              • Focus:{' '}
+                              {Math.round(
+                                calculateFocusScore(periodStats.longestSession)
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Productivity Pattern */}
+                        <div className="space-y-2">
+                          <div className="text-sm text-muted-foreground">
+                            Work Pattern
+                          </div>
+                          <div className="flex gap-1">
+                            {Object.entries(
+                              periodStats.productivityBreakdown
+                            ).map(([type, count]) => {
+                              const total = periodStats.sessionCount;
+                              const percentage =
+                                total > 0 ? (count / total) * 100 : 0;
+                              return percentage > 0 ? (
+                                <div
+                                  key={type}
+                                  className={cn(
+                                    'h-2 rounded-full',
+                                    type === 'deep-work'
+                                      ? 'bg-green-500 dark:bg-green-600'
+                                      : type === 'focused'
+                                        ? 'bg-blue-500 dark:bg-blue-600'
+                                        : type === 'standard'
+                                          ? 'bg-gray-500 dark:bg-gray-600'
+                                          : type === 'scattered'
+                                            ? 'bg-yellow-500 dark:bg-yellow-600'
+                                            : 'bg-red-500 dark:bg-red-600'
+                                  )}
+                                  style={{ width: `${percentage}%` }}
+                                  title={`${type}: ${count} sessions (${percentage.toFixed(1)}%)`}
+                                />
+                              ) : null;
+                            })}
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>
+                              🧠 Deep:{' '}
+                              {periodStats.productivityBreakdown['deep-work']}
+                            </span>
+                            <span>
+                              🎯 Focus:{' '}
+                              {periodStats.productivityBreakdown['focused']}
+                            </span>
+                            <span>
+                              ⚡ Quick:{' '}
+                              {periodStats.productivityBreakdown['interrupted']}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AI Insights Section */}
+                    <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 p-4 dark:from-purple-950/20 dark:to-pink-950/20">
+                      <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-xs text-white">
+                          ✨
+                        </div>
+                        AI Productivity Insights
+                      </h3>
+                      <div className="space-y-3">
+                        {(() => {
+                          const insights = [];
+
+                          // Focus Score Analysis
+                          if (periodStats.avgFocusScore >= 80) {
+                            insights.push(
+                              "🎯 Excellent focus this month! You're maintaining deep work consistently."
+                            );
+                          } else if (periodStats.avgFocusScore >= 60) {
+                            insights.push(
+                              '👍 Good focus patterns. Consider blocking longer time chunks for deeper work.'
+                            );
+                          } else if (periodStats.avgFocusScore < 40) {
+                            insights.push(
+                              '💡 Focus opportunity: Try the 25-minute Pomodoro technique for better concentration.'
+                            );
+                          }
+
+                          // Session Length Analysis
+                          const deepWorkRatio =
+                            periodStats.longSessions /
+                            Math.max(1, periodStats.sessionCount);
+                          if (deepWorkRatio > 0.3) {
+                            insights.push(
+                              "🏔️ Great job on deep work sessions! You're building strong focus habits."
+                            );
+                          } else if (
+                            periodStats.shortSessions >
+                            periodStats.longSessions +
+                              periodStats.mediumSessions
+                          ) {
+                            insights.push(
+                              '⚡ Many short sessions detected. Consider batching similar tasks for efficiency.'
+                            );
+                          }
+
+                          // Time of Day Analysis
+                          if (periodStats.bestTimeOfDay === 'morning') {
+                            insights.push(
+                              "🌅 You're a morning person! Schedule your most important work before 11 AM."
+                            );
+                          } else if (periodStats.bestTimeOfDay === 'night') {
+                            insights.push(
+                              "🌙 Night owl detected! Just ensure you're getting enough rest for sustained productivity."
+                            );
+                          }
+
+                          // Productivity Type Analysis
+                          const interruptedRatio =
+                            periodStats.productivityBreakdown['interrupted'] /
+                            Math.max(1, periodStats.sessionCount);
+                          if (interruptedRatio > 0.3) {
+                            insights.push(
+                              "🔕 High interruption rate detected. Try enabling 'Do Not Disturb' mode during work blocks."
+                            );
+                          }
+
+                          const deepWorkCount =
+                            periodStats.productivityBreakdown['deep-work'];
+                          const focusedCount =
+                            periodStats.productivityBreakdown['focused'];
+                          if (
+                            deepWorkCount + focusedCount >
+                            periodStats.sessionCount * 0.6
+                          ) {
+                            insights.push(
+                              "🧠 Outstanding focused work ratio! You're in the productivity zone."
+                            );
+                          }
+
+                          // Consistency Analysis
+                          const activeDays = new Set(
+                            sessionsForPeriod.map((s) =>
+                              dayjs
+                                .utc(s.start_time)
+                                .tz(userTimezone)
+                                .format('YYYY-MM-DD')
+                            )
+                          ).size;
+                          const daysInPeriod = currentDate.daysInMonth();
+                          const consistencyRatio = activeDays / daysInPeriod;
+
+                          if (consistencyRatio > 0.8) {
+                            insights.push(
+                              "🔥 Amazing consistency! You're showing up almost every day."
+                            );
+                          } else if (consistencyRatio < 0.3) {
+                            insights.push(
+                              '📅 Opportunity for more consistency. Even 15 minutes daily builds momentum.'
+                            );
+                          }
+
+                          // Duration vs Focus Correlation
+                          const avgDurationPerSession =
+                            periodStats.totalDuration /
+                            Math.max(1, periodStats.sessionCount);
+                          if (
+                            avgDurationPerSession > 7200 &&
+                            periodStats.avgFocusScore > 70
+                          ) {
+                            insights.push(
+                              "🏆 Perfect combo: Long sessions with high focus. You've mastered deep work!"
+                            );
+                          }
+
+                          return insights.slice(0, 3); // Show max 3 insights
+                        })().map((insight, index) => (
+                          <div
+                            key={index}
+                            className="flex items-start gap-3 text-sm"
+                          >
+                            <div className="mt-0.5 h-1.5 w-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
+                            <span className="text-purple-700 dark:text-purple-300">
+                              {insight}
+                            </span>
+                          </div>
+                        ))}
+
+                        {(() => {
+                          // Predictive suggestion based on patterns
+                          const totalHours = periodStats.totalDuration / 3600;
+                          const avgHoursPerDay =
+                            totalHours /
+                            Math.max(
+                              1,
                               new Set(
                                 sessionsForPeriod.map((s) =>
                                   dayjs
@@ -1324,49 +2156,26 @@ export function SessionHistory({
                                     .format('YYYY-MM-DD')
                                 )
                               ).size
-                            }{' '}
-                            days
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Avg Session Length
-                          </span>
-                          <span className="font-medium">
-                            {formatDuration(
-                              Math.floor(
-                                periodStats.totalDuration /
-                                  Math.max(1, sessionsForPeriod.length)
-                              )
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Most Productive Day
-                          </span>
-                          <span className="font-medium">
-                            {(() => {
-                              const dailyTotals = sessionsForPeriod.reduce(
-                                (acc, session) => {
-                                  const day = dayjs
-                                    .utc(session.start_time)
-                                    .tz(userTimezone)
-                                    .format('dddd');
-                                  acc[day] =
-                                    (acc[day] || 0) +
-                                    (session.duration_seconds || 0);
-                                  return acc;
-                                },
-                                {} as Record<string, number>
-                              );
-                              const topDay = Object.entries(dailyTotals).sort(
-                                ([, a], [, b]) => b - a
-                              )[0];
-                              return topDay ? topDay[0] : 'N/A';
-                            })()}
-                          </span>
-                        </div>
+                            );
+
+                          if (avgHoursPerDay > 6) {
+                            return (
+                              <div className="mt-4 rounded-md bg-gradient-to-r from-purple-100 to-pink-100 p-3 dark:from-purple-900/30 dark:to-pink-900/30">
+                                <div className="flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-300">
+                                  <span>🚀</span>
+                                  <span>Power User Detected!</span>
+                                </div>
+                                <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+                                  You're averaging {avgHoursPerDay.toFixed(1)}{' '}
+                                  hours/day. Consider setting up automated time
+                                  tracking for even better insights!
+                                </p>
+                              </div>
+                            );
+                          }
+
+                          return null;
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -1577,6 +2386,10 @@ export function SessionHistory({
                                   onDelete={setSessionToDelete}
                                   actionStates={actionStates}
                                   tasks={tasks}
+                                  calculateFocusScore={calculateFocusScore}
+                                  getSessionProductivityType={
+                                    getSessionProductivityType
+                                  }
                                 />
                               ))}
                             </div>
