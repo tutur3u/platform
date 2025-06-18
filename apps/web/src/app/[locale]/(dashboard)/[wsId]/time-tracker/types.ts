@@ -2,8 +2,11 @@ import type { TimeTrackingCategory, TimeTrackingSession, WorkspaceTask } from '@
 
 // Main timer statistics interface
 export interface TimerStats {
+  /** Duration in seconds */
   todayTime: number;
+  /** Duration in seconds */
   weekTime: number;
+  /** Duration in seconds */
   monthTime: number;
   streak: number;
   categoryBreakdown?: {
@@ -13,6 +16,7 @@ export interface TimerStats {
   };
   dailyActivity?: Array<{
     date: string;
+    /** Duration in seconds */
     duration: number;
     sessions: number;
   }>;
@@ -53,18 +57,18 @@ export interface ExtendedWorkspaceTask extends WorkspaceTask {
 
 // Task filters interface for timer controls
 export interface TaskFilters {
-  priority: string;
-  status: string;
-  board: string;
-  list: string;
-  assignee: string;
+  priority: string | null;
+  status: string | null;
+  board: string | null;
+  list: string | null;
+  assignee: string | null;
 }
 
 // Sidebar task filters
 export interface TaskSidebarFilters {
-  board: string;
-  list: string;
-  assignee: string;
+  board: string | null;
+  list: string | null;
+  assignee: string | null;
 }
 
 // Complete time tracker data structure

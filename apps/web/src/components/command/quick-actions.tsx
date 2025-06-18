@@ -2,6 +2,13 @@
 
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import { Calendar, Clock, PlusCircle, Timer, Brain, TrendingUp } from 'lucide-react';
+import { useMemo } from 'react';
+
+// Peak productivity hours configuration
+const PEAK_HOURS = {
+  morning: { start: 9, end: 11 },
+  afternoon: { start: 14, end: 16 }
+} as const;
 
 interface QuickActionsProps {
   onAddTask: () => void;
@@ -16,9 +23,14 @@ export function QuickActions({
   onQuickTimeTracker,
   onCalendar,
 }: QuickActionsProps) {
-  // Calculate current hour for productivity suggestions
-  const currentHour = new Date().getHours();
-  const isPeakHour = (currentHour >= 9 && currentHour <= 11) || (currentHour >= 14 && currentHour <= 16);
+  // Calculate current hour for productivity suggestions with memoization
+  const isPeakHour = useMemo(() => {
+    const currentHour = new Date().getHours();
+    return (
+      (currentHour >= PEAK_HOURS.morning.start && currentHour <= PEAK_HOURS.morning.end) ||
+      (currentHour >= PEAK_HOURS.afternoon.start && currentHour <= PEAK_HOURS.afternoon.end)
+    );
+  }, []);
   
   return (
     <CommandGroup heading="⚡ Quick Actions">

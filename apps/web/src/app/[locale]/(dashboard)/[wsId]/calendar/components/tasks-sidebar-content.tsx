@@ -193,16 +193,40 @@ export default function TasksSidebarContent({
           // Transform Partial<WorkspaceTask> to ExtendedWorkspaceTask
           const extendedTasks = list.tasks.map((task): ExtendedWorkspaceTask => {
             const taskAny = task as any;
-            return {
-              ...task,
-              board_name: board.name,
-              list_name: list.name,
-              // Keep existing assignee metadata if present, properly handling null/undefined
-              assignee_name: taskAny.assignee_name ? taskAny.assignee_name : undefined,
-              assignee_avatar: taskAny.assignee_avatar ? taskAny.assignee_avatar : undefined,
-              is_assigned_to_current_user: taskAny.is_assigned_to_current_user,
-              assignees: taskAny.assignees,
+            
+            // Type-safe conversion from Partial<WorkspaceTask> to ExtendedWorkspaceTask
+            // Convert undefined values to null to match the expected type constraints
+            const extendedTask: ExtendedWorkspaceTask = {
+              // Required fields (these should always be present)
+              id: task.id!,
+              name: task.name!,
+              list_id: task.list_id!,
+              
+              // Optional fields with proper null conversion
+              description: task.description ?? null,
+              priority: task.priority ?? null,
+              start_date: task.start_date ?? null,
+              end_date: task.end_date ?? null,
+              created_at: task.created_at ?? null,
+              creator_id: task.creator_id ?? null,
+              
+              // Boolean fields that should be boolean | null (not undefined)
+              archived: task.archived ?? null,
+              completed: task.completed ?? null,
+              deleted: task.deleted ?? null,
+              
+              // Extended fields for context
+              board_name: board.name ?? undefined,
+              list_name: list.name ?? undefined,
+              
+              // Keep existing assignee metadata if present
+              assignee_name: taskAny.assignee_name || undefined,
+              assignee_avatar: taskAny.assignee_avatar || undefined,
+              is_assigned_to_current_user: taskAny.is_assigned_to_current_user || undefined,
+              assignees: taskAny.assignees || undefined,
             };
+            
+            return extendedTask;
           });
           tasks.push(...extendedTasks);
         }

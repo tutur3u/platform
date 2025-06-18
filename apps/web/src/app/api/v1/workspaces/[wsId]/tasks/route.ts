@@ -129,11 +129,6 @@ export async function GET(
       throw error;
     }
 
-    // Handle case where no tasks exist or workspace has no boards/lists
-    if (!data) {
-      return NextResponse.json({ tasks: [] });
-    }
-
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
       data

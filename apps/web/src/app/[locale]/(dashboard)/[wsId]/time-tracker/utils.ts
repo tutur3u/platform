@@ -21,8 +21,8 @@ export function sortTasks(
   }
 
   // Then sort by priority (higher priority first)
-  const aPriority = a.priority || 0;
-  const bPriority = b.priority || 0;
+  const aPriority = Number(a.priority) || 0;
+  const bPriority = Number(b.priority) || 0;
   if (aPriority !== bPriority) {
     return bPriority - aPriority;
   }
@@ -35,6 +35,52 @@ export function sortTasks(
 }
 
 /**
+ * Base filters interface for common filter properties
+ */
+interface BaseFilters {
+  board: string | null;
+  list: string | null;
+  assignee: string | null;
+}
+
+/**
+ * Apply common filters that are shared between timer and sidebar filtering
+ */
+function applyCommonFilters(
+  task: ExtendedWorkspaceTask,
+  searchQuery: string,
+  filters: BaseFilters
+): boolean {
+  // Search filter
+  const matchesSearch = !searchQuery || 
+    task.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+  if (!matchesSearch) return false;
+
+  // Board filter
+  if (filters.board && filters.board !== 'all' && task.board_name !== filters.board) {
+    return false;
+  }
+
+  // List filter
+  if (filters.list && filters.list !== 'all' && task.list_name !== filters.list) {
+    return false;
+  }
+
+  // Assignee filter
+  if (filters.assignee === 'mine') {
+    return task.is_assigned_to_current_user === true;
+  } else if (filters.assignee === 'unassigned') {
+    return !task.assignees || task.assignees.length === 0;
+  } else if (filters.assignee && filters.assignee !== 'all') {
+    return task.assignees?.some(assignee => assignee.id === filters.assignee) ?? false;
+  }
+
+  return true;
+}
+
+/**
  * Filter tasks based on search query and filters for timer controls
  */
 export function filterTasksForTimer(
@@ -43,37 +89,16 @@ export function filterTasksForTimer(
   filters: TaskFilters
 ): ExtendedWorkspaceTask[] {
   return tasks.filter((task) => {
-    const matchesSearch =
-      task.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!applyCommonFilters(task, searchQuery, filters)) return false;
 
     const matchesPriority =
-      filters.priority === 'all' || String(task.priority) === filters.priority;
+      !filters.priority || filters.priority === 'all' || String(task.priority) === filters.priority;
 
     const matchesStatus =
-      filters.status === 'all' ||
+      !filters.status || filters.status === 'all' ||
       (task.completed ? 'completed' : 'active') === filters.status;
 
-    const matchesBoard =
-      filters.board === 'all' || task.board_name === filters.board;
-
-    const matchesList =
-      filters.list === 'all' || task.list_name === filters.list;
-
-    const matchesAssignee =
-      filters.assignee === 'all' ||
-      (filters.assignee === 'mine' && task.is_assigned_to_current_user) ||
-      (filters.assignee === 'unassigned' &&
-        (!task.assignees || task.assignees.length === 0));
-
-    return (
-      matchesSearch &&
-      matchesPriority &&
-      matchesStatus &&
-      matchesBoard &&
-      matchesList &&
-      matchesAssignee
-    );
+    return matchesPriority && matchesStatus;
   });
 }
 
@@ -86,45 +111,7 @@ export function filterTasksForSidebar(
   filters: TaskSidebarFilters
 ): ExtendedWorkspaceTask[] {
   return tasks.filter((task) => {
-    // Search filter
-    if (
-      searchQuery &&
-      !task.name?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !task.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    ) {
-      return false;
-    }
-
-    // Board filter
-    if (
-      filters.board &&
-      filters.board !== 'all' &&
-      task.board_name !== filters.board
-    ) {
-      return false;
-    }
-
-    // List filter
-    if (
-      filters.list &&
-      filters.list !== 'all' &&
-      task.list_name !== filters.list
-    ) {
-      return false;
-    }
-
-    // Assignee filter
-    if (filters.assignee === 'mine') {
-      return task.is_assigned_to_current_user;
-    } else if (filters.assignee === 'unassigned') {
-      return !task.assignees || task.assignees.length === 0;
-    } else if (filters.assignee && filters.assignee !== 'all') {
-      return task.assignees?.some(
-        (assignee) => assignee.id === filters.assignee
-      );
-    }
-
-    return true;
+    return applyCommonFilters(task, searchQuery, filters);
   });
 }
 
@@ -177,9 +164,23 @@ export function generateAssigneeInitials(assignee: {
   display_name?: string;
   email?: string;
 }): string {
-  return (
-    assignee.display_name?.[0] ||
-    assignee.email?.[0] ||
-    '?'
-  ).toUpperCase();
+  const name = assignee.display_name?.trim();
+  const email = assignee.email?.trim();
+  
+  if (name) {
+    // Handle names with multiple parts (e.g., "John Doe" -> "JD")
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return name[0].toUpperCase();
+  }
+  
+  if (email) {
+    // Use part before @ for email
+    const username = email.split('@')[0];
+    return username[0].toUpperCase();
+  }
+  
+  return '?';
 }

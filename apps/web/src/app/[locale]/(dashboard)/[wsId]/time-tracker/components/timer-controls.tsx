@@ -47,7 +47,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 
 
@@ -1607,26 +1607,27 @@ export function TimerControls({
   const selectedBoard = boards.find((board) => board.id === selectedBoardId);
   const availableLists = selectedBoard?.task_lists || [];
 
-  // Use shared task filtering and sorting utility
-  const getFilteredTasks = () => {
+  // Memoized filtered tasks to avoid O(N) work on every render
+  const filteredTasks = useMemo(() => {
     return getFilteredAndSortedTasks(tasks, taskSearchQuery, taskFilters);
-  };
+  }, [tasks, taskSearchQuery, taskFilters]);
 
-  // Get unique boards and lists for filter options
-  const uniqueBoards = [
+  // Get unique boards and lists for filter options (memoized)
+  const uniqueBoards = useMemo(() => [
     ...new Set(
       tasks
         .map((task) => task.board_name)
         .filter((name): name is string => Boolean(name))
     ),
-  ];
-  const uniqueLists = [
+  ], [tasks]);
+  
+  const uniqueLists = useMemo(() => [
     ...new Set(
       tasks
         .map((task) => task.list_name)
         .filter((name): name is string => Boolean(name))
     ),
-  ];
+  ], [tasks]);
 
   // Calculate dropdown position
   const calculateDropdownPosition = useCallback(() => {
@@ -1812,7 +1813,7 @@ export function TimerControls({
         (event.key === 'ArrowDown' || event.key === 'ArrowUp')
       ) {
         event.preventDefault();
-        const filteredTasks = getFilteredTasks();
+        // filteredTasks is already memoized
         if (filteredTasks.length === 0) return;
 
         const currentIndex = filteredTasks.findIndex(
@@ -3481,7 +3482,7 @@ export function TimerControls({
                                   taskFilters.assignee !== 'all') && (
                                   <div className="flex items-center justify-between text-xs">
                                     <span className="text-muted-foreground">
-                                      {getFilteredTasks().length} of{' '}
+                                      {filteredTasks.length} of{' '}
                                       {tasks.length} tasks
                                     </span>
                                     <button
@@ -3508,7 +3509,7 @@ export function TimerControls({
 
                               {/* Task List */}
                               <div className="max-h-[300px] overflow-y-auto">
-                                {getFilteredTasks().length === 0 ? (
+                                {filteredTasks.length === 0 ? (
                                   <div className="p-6 text-center text-sm text-muted-foreground">
                                     {taskSearchQuery ||
                                     taskFilters.board !== 'all' ||
@@ -3542,7 +3543,7 @@ export function TimerControls({
                                     )}
                                   </div>
                                 ) : (
-                                  getFilteredTasks().map((task) => (
+                                  filteredTasks.map((task) => (
                                     <button
                                       key={task.id}
                                       type="button"

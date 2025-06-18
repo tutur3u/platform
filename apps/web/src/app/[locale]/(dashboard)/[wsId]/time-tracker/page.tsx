@@ -34,14 +34,7 @@ export default async function TimeTrackerPage({ params }: Props) {
     const rawData = await getTimeTrackingData(wsId, user.id);
 
     // Transform data to match expected types
-    const initialData: TimeTrackerData = {
-      categories: rawData.categories,
-      runningSession: rawData.runningSession,
-      recentSessions: rawData.recentSessions,
-      goals: rawData.goals,
-      tasks: rawData.tasks,
-      stats: rawData.stats,
-    };
+    const initialData: TimeTrackerData = { ...rawData };
 
     return <TimeTrackerContent wsId={wsId} initialData={initialData} />;
   } catch (error) {
