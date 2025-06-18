@@ -8,4 +8,10 @@ alter table "public"."workspace_quiz_sets" add column "explanation_mode" smallin
 
 alter table "public"."workspace_quiz_sets" add column "instruction" jsonb;
 
+alter table "public"."workspace_quizzes" add column "instruction" jsonb;
 
+alter table "public"."workspace_quiz_sets" add column "results_released" boolean not null default false;
+
+alter table "public"."workspace_quiz_sets" drop column "release_points_immediately";
+
+alter table "public"."workspace_quiz_sets" add column "allow_view_old_attempts" boolean not null default true;
