@@ -1,9 +1,11 @@
 'use client';
 
 import type {
-  TimeTrackingCategory,
-  WorkspaceTask,
-} from '@tuturuuu/types/db';
+  ExtendedWorkspaceTask,
+  SessionWithRelations,
+  TimerStats,
+} from '../../time-tracker/types';
+import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,7 +71,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useState } from 'react';
-import type { ExtendedWorkspaceTask, TimerStats, SessionWithRelations } from '../../time-tracker/types';
 
 interface TimeTrackerProps {
   wsId: string;
@@ -1114,7 +1115,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                             <Button
                               onClick={startTimer}
                               disabled={isLoading}
-                              className="w-full bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-accent dark:bg-muted dark:hover:bg-accent dark:text-foreground"
+                              className="w-full border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80 dark:bg-muted dark:text-foreground dark:hover:bg-accent"
                               size="lg"
                             >
                               <Play className="mr-2 h-4 w-4" />
@@ -1292,7 +1293,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                             <Button
                               onClick={startTimer}
                               disabled={!newSessionTitle.trim() || isLoading}
-                              className="w-full bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-accent dark:bg-muted dark:hover:bg-accent dark:text-foreground"
+                              className="w-full border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80 dark:bg-muted dark:text-foreground dark:hover:bg-accent"
                               size="lg"
                             >
                               <Play className="mr-2 h-4 w-4" />
@@ -1959,7 +1960,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                 disabled={
                   isCreatingTask || !newTaskName.trim() || !selectedListId
                 }
-                className="flex-1 bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-accent dark:bg-muted dark:hover:bg-accent dark:text-foreground"
+                className="flex-1 border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80 dark:bg-muted dark:text-foreground dark:hover:bg-accent"
               >
                 {isCreatingTask ? (
                   <>

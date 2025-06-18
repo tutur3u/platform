@@ -1,4 +1,8 @@
-import type { TimeTrackingCategory, TimeTrackingSession, WorkspaceTask } from '@tuturuuu/types/db';
+import type {
+  TimeTrackingCategory,
+  TimeTrackingSession,
+  WorkspaceTask,
+} from '@tuturuuu/types/db';
 
 // Main timer statistics interface
 export interface TimerStats {

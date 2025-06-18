@@ -56,8 +56,6 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 
-
-
 interface GoalManagerProps {
   wsId: string;
   goals: TimeTrackingGoal[] | null;

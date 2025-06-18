@@ -7,13 +7,13 @@ import { SessionHistory } from './components/session-history';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
-import type { 
-  ExtendedWorkspaceTask, 
-  TaskSidebarFilters, 
-  TimerStats,
+import type {
+  ExtendedWorkspaceTask,
   SessionWithRelations,
+  TaskSidebarFilters,
+  TimeTrackerData,
   TimeTrackingGoal,
-  TimeTrackerData
+  TimerStats,
 } from './types';
 import {
   generateAssigneeInitials,
@@ -21,9 +21,7 @@ import {
   useTaskCounts,
 } from './utils';
 import { useQuery } from '@tanstack/react-query';
-import type {
-  TimeTrackingCategory,
-} from '@tuturuuu/types/db';
+import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -57,14 +55,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Switch } from '@tuturuuu/ui/switch';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -150,8 +148,11 @@ export default function TimeTrackerContent({
   // Quick actions state
   const [showContinueConfirm, setShowContinueConfirm] = useState(false);
   const [showTaskSelector, setShowTaskSelector] = useState(false);
-  const [availableTasks, setAvailableTasks] = useState<ExtendedWorkspaceTask[]>([]);
-  const [nextTaskPreview, setNextTaskPreview] = useState<ExtendedWorkspaceTask | null>(null);
+  const [availableTasks, setAvailableTasks] = useState<ExtendedWorkspaceTask[]>(
+    []
+  );
+  const [nextTaskPreview, setNextTaskPreview] =
+    useState<ExtendedWorkspaceTask | null>(null);
 
   // Enhanced loading and error states
   const [isLoading, setIsLoading] = useState(false);
@@ -186,10 +187,16 @@ export default function TimeTrackerContent({
     };
 
     if (typeof window !== 'undefined') {
-      window.addEventListener('heatmap-settings-changed', handleSettingsChange as EventListener);
-      
+      window.addEventListener(
+        'heatmap-settings-changed',
+        handleSettingsChange as EventListener
+      );
+
       return () => {
-        window.removeEventListener('heatmap-settings-changed', handleSettingsChange as EventListener);
+        window.removeEventListener(
+          'heatmap-settings-changed',
+          handleSettingsChange as EventListener
+        );
       };
     }
   }, []);
@@ -208,91 +215,134 @@ export default function TimeTrackerContent({
   const userTimezone = dayjs.tz.guess();
 
   // Calculate focus score for sessions
-  const calculateFocusScore = useCallback((session: SessionWithRelations): number => {
-    if (!session.duration_seconds) return 0;
-    
-    // Base score from duration (longer sessions = higher focus)
-    const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
-    
-    // Bonus for consistency (sessions without interruptions)
-    const consistencyBonus = session.description?.includes('resumed') ? 0 : 20;
-    
-    // Time of day bonus (peak hours get bonus)
-    const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();
-    const peakHoursBonus = (sessionHour >= 9 && sessionHour <= 11) || (sessionHour >= 14 && sessionHour <= 16) ? 20 : 0;
-    
-    // Category bonus (work categories get slight bonus)
-    const categoryBonus = session.category?.name?.toLowerCase().includes('work') ? 10 : 0;
-    
-    // Task completion bonus
-    const taskBonus = session.task_id ? 10 : 0;
-    
-    return Math.min(durationScore + consistencyBonus + peakHoursBonus + categoryBonus + taskBonus, 100);
-  }, [userTimezone]);
+  const calculateFocusScore = useCallback(
+    (session: SessionWithRelations): number => {
+      if (!session.duration_seconds) return 0;
+
+      // Base score from duration (longer sessions = higher focus)
+      const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
+
+      // Bonus for consistency (sessions without interruptions)
+      const consistencyBonus = session.description?.includes('resumed')
+        ? 0
+        : 20;
+
+      // Time of day bonus (peak hours get bonus)
+      const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+      const peakHoursBonus =
+        (sessionHour >= 9 && sessionHour <= 11) ||
+        (sessionHour >= 14 && sessionHour <= 16)
+          ? 20
+          : 0;
+
+      // Category bonus (work categories get slight bonus)
+      const categoryBonus = session.category?.name
+        ?.toLowerCase()
+        .includes('work')
+        ? 10
+        : 0;
+
+      // Task completion bonus
+      const taskBonus = session.task_id ? 10 : 0;
+
+      return Math.min(
+        durationScore +
+          consistencyBonus +
+          peakHoursBonus +
+          categoryBonus +
+          taskBonus,
+        100
+      );
+    },
+    [userTimezone]
+  );
 
   // Calculate productivity metrics
   const productivityMetrics = useMemo(() => {
     if (!recentSessions.length) {
       return {
         avgFocusScore: 0,
-        todaySessionCount: 0
+        todaySessionCount: 0,
       };
     }
 
     const today = dayjs().tz(userTimezone);
-    const todaySessions = recentSessions.filter(session => {
+    const todaySessions = recentSessions.filter((session) => {
       const sessionDate = dayjs.utc(session.start_time).tz(userTimezone);
       return sessionDate.isSame(today, 'day');
     });
 
-    const focusScores = recentSessions.slice(0, 10).map(session => calculateFocusScore(session));
-    const avgFocusScore = focusScores.length > 0 
-      ? Math.round(focusScores.reduce((sum, score) => sum + score, 0) / focusScores.length)
-      : 0;
+    const focusScores = recentSessions
+      .slice(0, 10)
+      .map((session) => calculateFocusScore(session));
+    const avgFocusScore =
+      focusScores.length > 0
+        ? Math.round(
+            focusScores.reduce((sum, score) => sum + score, 0) /
+              focusScores.length
+          )
+        : 0;
 
     return {
       avgFocusScore,
-      todaySessionCount: todaySessions.length
+      todaySessionCount: todaySessions.length,
     };
   }, [recentSessions, calculateFocusScore, userTimezone]);
 
   // Function to fetch next tasks with smart priority logic
   const fetchNextTasks = useCallback(async () => {
     try {
-      const response = await apiCall(`/api/v1/workspaces/${wsId}/tasks?limit=100`);
+      const response = await apiCall(
+        `/api/v1/workspaces/${wsId}/tasks?limit=100`
+      );
       let prioritizedTasks = [];
-      
+
       // 1. First priority: Urgent tasks (priority 1) assigned to current user
-      const myUrgentTasks = response.tasks.filter((task: ExtendedWorkspaceTask) => {
-        const isUrgent = task.priority === 1; // Priority 1 = Urgent
-        const isNotCompleted = !task.completed;
-        const isAssignedToMe = task.is_assigned_to_current_user;
-        return isUrgent && isNotCompleted && isAssignedToMe;
-      });
-      
+      const myUrgentTasks = response.tasks.filter(
+        (task: ExtendedWorkspaceTask) => {
+          const isUrgent = task.priority === 1; // Priority 1 = Urgent
+          const isNotCompleted = !task.completed;
+          const isAssignedToMe = task.is_assigned_to_current_user;
+          return isUrgent && isNotCompleted && isAssignedToMe;
+        }
+      );
+
       // 2. Second priority: Urgent unassigned tasks (user can assign themselves)
-      const urgentUnassigned = response.tasks.filter((task: ExtendedWorkspaceTask) => {
-        const isUrgent = task.priority === 1; // Priority 1 = Urgent
-        const isNotCompleted = !task.completed;
-        const isUnassigned = !task.assignees || task.assignees.length === 0;
-        return isUrgent && isNotCompleted && isUnassigned;
-      });
-      
+      const urgentUnassigned = response.tasks.filter(
+        (task: ExtendedWorkspaceTask) => {
+          const isUrgent = task.priority === 1; // Priority 1 = Urgent
+          const isNotCompleted = !task.completed;
+          const isUnassigned = !task.assignees || task.assignees.length === 0;
+          return isUrgent && isNotCompleted && isUnassigned;
+        }
+      );
+
       // 3. Third priority: Other tasks assigned to current user (High → Medium → Low)
-      const myOtherTasks = response.tasks.filter((task: ExtendedWorkspaceTask) => {
-        const isNotUrgent = !task.priority || task.priority > 1; // Priority 2,3,4 = High, Medium, Low
-        const isNotCompleted = !task.completed;
-        const isAssignedToMe = task.is_assigned_to_current_user;
-        return isNotUrgent && isNotCompleted && isAssignedToMe;
-      });
-      
+      const myOtherTasks = response.tasks.filter(
+        (task: ExtendedWorkspaceTask) => {
+          const isNotUrgent = !task.priority || task.priority > 1; // Priority 2,3,4 = High, Medium, Low
+          const isNotCompleted = !task.completed;
+          const isAssignedToMe = task.is_assigned_to_current_user;
+          return isNotUrgent && isNotCompleted && isAssignedToMe;
+        }
+      );
+
       // Combine and sort by priority within each group (lower number = higher priority)
       prioritizedTasks = [
-        ...myUrgentTasks.sort((a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) => (a.priority || 99) - (b.priority || 99)),
-        ...urgentUnassigned.sort((a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) => (a.priority || 99) - (b.priority || 99)),
-        ...myOtherTasks.sort((a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) => (a.priority || 99) - (b.priority || 99))
+        ...myUrgentTasks.sort(
+          (a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) =>
+            (a.priority || 99) - (b.priority || 99)
+        ),
+        ...urgentUnassigned.sort(
+          (a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) =>
+            (a.priority || 99) - (b.priority || 99)
+        ),
+        ...myOtherTasks.sort(
+          (a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) =>
+            (a.priority || 99) - (b.priority || 99)
+        ),
       ];
-      
+
       setAvailableTasks(prioritizedTasks);
       setNextTaskPreview(prioritizedTasks[0] || null);
     } catch (error) {
@@ -395,36 +445,51 @@ export default function TimeTrackerContent({
         const apiCalls = [
           {
             name: 'categories',
-            call: () => apiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`),
-            fallback: { categories: [] }
+            call: () =>
+              apiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`),
+            fallback: { categories: [] },
           },
           {
             name: 'running',
-            call: () => !isViewingOtherUser
-              ? apiCall(`/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`)
-            : Promise.resolve({ session: null }),
-            fallback: { session: null }
+            call: () =>
+              !isViewingOtherUser
+                ? apiCall(
+                    `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
+                  )
+                : Promise.resolve({ session: null }),
+            fallback: { session: null },
           },
           {
             name: 'recent',
-            call: () => apiCall(`/api/v1/workspaces/${wsId}/time-tracking/sessions?type=recent&limit=50${userParam}`),
-            fallback: { sessions: [] }
+            call: () =>
+              apiCall(
+                `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=recent&limit=50${userParam}`
+              ),
+            fallback: { sessions: [] },
           },
           {
             name: 'stats',
-            call: () => apiCall(`/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats${userParam}`),
-            fallback: { stats: { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 } }
+            call: () =>
+              apiCall(
+                `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats${userParam}`
+              ),
+            fallback: {
+              stats: { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 },
+            },
           },
           {
             name: 'goals',
-            call: () => apiCall(`/api/v1/workspaces/${wsId}/time-tracking/goals${goalsUserParam}`),
-            fallback: { goals: [] }
+            call: () =>
+              apiCall(
+                `/api/v1/workspaces/${wsId}/time-tracking/goals${goalsUserParam}`
+              ),
+            fallback: { goals: [] },
           },
           {
             name: 'tasks',
             call: () => apiCall(`/api/v1/workspaces/${wsId}/tasks?limit=100`),
-            fallback: { tasks: [] }
-          }
+            fallback: { tasks: [] },
+          },
         ];
 
         // Execute API calls with individual error handling
@@ -448,7 +513,9 @@ export default function TimeTrackerContent({
             console.warn(`API call for ${name} failed:`, result.reason);
             // Only show error toast for critical failures, not for tasks
             if (name !== 'tasks') {
-              toast.error(`Failed to load ${name}: ${result.reason.message || 'Unknown error'}`);
+              toast.error(
+                `Failed to load ${name}: ${result.reason.message || 'Unknown error'}`
+              );
             }
             return fallback;
           }
@@ -619,8 +686,6 @@ export default function TimeTrackerContent({
     fetchData(true, true);
   }, []); // Remove fetchData dependency
 
-
-
   // Sidebar View Switching
   const [sidebarView, setSidebarView] = useState<
     'analytics' | 'tasks' | 'reports' | 'settings'
@@ -790,125 +855,158 @@ export default function TimeTrackerContent({
         {!isViewingOtherUser && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-foreground">⚡ Quick Actions</h3>
+              <h3 className="text-sm font-medium text-foreground">
+                ⚡ Quick Actions
+              </h3>
               <div className="text-xs text-muted-foreground">
                 {(() => {
                   const hour = new Date().getHours();
-                  const isPeakTime = (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
-                  return isPeakTime ? '🧠 Peak focus time' : '📈 Building momentum';
+                  const isPeakTime =
+                    (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
+                  return isPeakTime
+                    ? '🧠 Peak focus time'
+                    : '📈 Building momentum';
                 })()}
               </div>
             </div>
 
             {/* Action Grid with proper spacing to prevent cutoff */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4 p-1">
-                    {/* Continue Last Session */}
-                    <button
+            <div className="grid grid-cols-2 gap-3 p-1 sm:grid-cols-4 lg:gap-4">
+              {/* Continue Last Session */}
+              <button
                 onClick={() => {
-                        if (!recentSessions[0]) {
-                          toast.info('No recent session to continue');
-                          return;
-                        }
-                        if (isRunning) {
-                          toast.info('Timer is already running');
-                          return;
-                        }
+                  if (!recentSessions[0]) {
+                    toast.info('No recent session to continue');
+                    return;
+                  }
+                  if (isRunning) {
+                    toast.info('Timer is already running');
+                    return;
+                  }
                   setShowContinueConfirm(true);
-                      }}
-                      disabled={!recentSessions[0] || isRunning}
-                      className={cn(
+                }}
+                disabled={!recentSessions[0] || isRunning}
+                className={cn(
                   'group relative rounded-lg border p-3 text-left transition-all duration-300',
                   'hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98]',
-                        recentSessions[0] && !isRunning
+                  recentSessions[0] && !isRunning
                     ? 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:-translate-y-1 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
-                          : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                )}
+              >
+                <div className="flex items-start gap-2">
+                  <div
+                    className={cn(
+                      'flex-shrink-0 rounded-full p-1.5 transition-colors',
+                      recentSessions[0] && !isRunning
+                        ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
+                        : 'bg-muted-foreground/20'
+                    )}
+                  >
+                    <RotateCcw
+                      className={cn(
+                        'h-3 w-3 transition-transform group-hover:rotate-12',
+                        recentSessions[0] && !isRunning
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-muted-foreground'
+                      )}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={cn(
+                        'text-xs font-medium',
+                        recentSessions[0] && !isRunning
+                          ? 'text-blue-700 dark:text-blue-300'
+                          : 'text-muted-foreground'
                       )}
                     >
-                      <div className="flex items-start gap-2">
-                  <div className={cn(
-                    'flex-shrink-0 rounded-full p-1.5 transition-colors',
-                    recentSessions[0] && !isRunning ? 'bg-blue-500/20 group-hover:bg-blue-500/30' : 'bg-muted-foreground/20'
-                  )}>
-                    <RotateCcw className={cn(
-                      'h-3 w-3 transition-transform group-hover:rotate-12',
-                      recentSessions[0] && !isRunning ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'
-                    )} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                    <p className={cn(
-                              'text-xs font-medium',
-                      recentSessions[0] && !isRunning ? 'text-blue-700 dark:text-blue-300' : 'text-muted-foreground'
-                    )}>
-                            Continue Last
-                          </p>
-                          {recentSessions[0] ? (
-                            <>
-                        <p className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100" title={recentSessions[0].title}>
-                                {recentSessions[0].title}
-                              </p>
-                              {recentSessions[0].category && (
-                                <div className="mt-1 flex items-center gap-1">
-                            <div className={cn(
-                                      'h-2 w-2 rounded-full',
-                                      recentSessions[0].category.color
-                                        ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
-                                        : 'bg-blue-500/70'
-                            )} />
-                                  <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
-                                    {recentSessions[0].category.name}
-                                  </span>
-                                </div>
+                      Continue Last
+                    </p>
+                    {recentSessions[0] ? (
+                      <>
+                        <p
+                          className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100"
+                          title={recentSessions[0].title}
+                        >
+                          {recentSessions[0].title}
+                        </p>
+                        {recentSessions[0].category && (
+                          <div className="mt-1 flex items-center gap-1">
+                            <div
+                              className={cn(
+                                'h-2 w-2 rounded-full',
+                                recentSessions[0].category.color
+                                  ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
+                                  : 'bg-blue-500/70'
                               )}
+                            />
+                            <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
+                              {recentSessions[0].category.name}
+                            </span>
+                          </div>
+                        )}
                         {/* Focus Score Badge */}
                         {recentSessions[0] && (
                           <div className="mt-1 flex items-center gap-1">
                             <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-900/50">
-                              <div 
-                                className="h-1 rounded-full bg-blue-500 dark:bg-blue-400 transition-all"
-                                style={{ width: `${Math.round(calculateFocusScore(recentSessions[0]))}%` }}
+                              <div
+                                className="h-1 rounded-full bg-blue-500 transition-all dark:bg-blue-400"
+                                style={{
+                                  width: `${Math.round(calculateFocusScore(recentSessions[0]))}%`,
+                                }}
                               />
                             </div>
                             <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                              Focus: {Math.round(calculateFocusScore(recentSessions[0]))}%
+                              Focus:{' '}
+                              {Math.round(
+                                calculateFocusScore(recentSessions[0])
+                              )}
+                              %
                             </span>
                           </div>
                         )}
-                            </>
-                          ) : (
-                      <p className="text-sm font-bold text-muted-foreground">No recent session</p>
-                          )}
-                        </div>
-                      </div>
+                      </>
+                    ) : (
+                      <p className="text-sm font-bold text-muted-foreground">
+                        No recent session
+                      </p>
+                    )}
+                  </div>
+                </div>
                 {recentSessions[0] && (
                   <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
                     <span className="text-lg">🔄</span>
-                        </div>
+                  </div>
                 )}
-                    </button>
+              </button>
 
-                            {/* Next Task */}
+              {/* Next Task */}
               <button
                 onClick={async () => {
                   await fetchNextTasks();
-                  
+
                   if (availableTasks.length === 0) {
                     // No tasks available - show overlay to create tasks or view boards
                     setShowTaskSelector(true);
                     return;
                   }
-                  
+
                   if (availableTasks.length === 1) {
                     // Single task - auto-start
                     const task = availableTasks[0];
-                    const isUnassigned = !task || !task.assignees || task.assignees.length === 0;
-                    
+                    const isUnassigned =
+                      !task || !task.assignees || task.assignees.length === 0;
+
                     try {
                       // If task is unassigned, assign to current user first
                       if (!task) return;
                       if (isUnassigned) {
-                        const { createClient } = await import('@tuturuuu/supabase/next/client');
+                        const { createClient } = await import(
+                          '@tuturuuu/supabase/next/client'
+                        );
                         const supabase = createClient();
-                        
+
                         const { error: assignError } = await supabase
                           .from('task_assignees')
                           .insert({
@@ -918,12 +1016,16 @@ export default function TimeTrackerContent({
 
                         if (assignError) {
                           console.error('Task assignment error:', assignError);
-                          throw new Error(assignError.message || 'Failed to assign task');
+                          throw new Error(
+                            assignError.message || 'Failed to assign task'
+                          );
                         }
-                        
-                        toast.success(`Assigned task "${task.name}" to yourself`);
+
+                        toast.success(
+                          `Assigned task "${task.name}" to yourself`
+                        );
                       }
-                      
+
                       // Start session
                       const response = await apiCall(
                         `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
@@ -931,9 +1033,13 @@ export default function TimeTrackerContent({
                           method: 'POST',
                           body: JSON.stringify({
                             title: task.name,
-                            description: task.description || `Working on: ${task.name}`,
+                            description:
+                              task.description || `Working on: ${task.name}`,
                             task_id: task.id,
-                            category_id: categories.find(c => c.name.toLowerCase().includes('work'))?.id || null
+                            category_id:
+                              categories.find((c) =>
+                                c.name.toLowerCase().includes('work')
+                              )?.id || null,
                           }),
                         }
                       );
@@ -965,27 +1071,40 @@ export default function TimeTrackerContent({
                 <div className="flex items-start gap-2">
                   <div className="flex-shrink-0 rounded-full bg-purple-500/20 p-1.5 transition-colors group-hover:bg-purple-500/30">
                     <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
-                        </div>
-                                          <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-purple-700 dark:text-purple-300">Next Task</p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                      Next Task
+                    </p>
                     {nextTaskPreview ? (
                       <>
                         <p className="truncate text-sm font-bold text-purple-900 dark:text-purple-100">
                           {nextTaskPreview.name}
                         </p>
                         <div className="flex items-center gap-1">
-                          <span className={cn(
-                            'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium',
-                            nextTaskPreview.priority === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
-                            nextTaskPreview.priority === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' :
-                            nextTaskPreview.priority === 3 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                            nextTaskPreview.priority === 4 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' :
-                            'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
-                          )}>
-                            {nextTaskPreview.priority === 1 ? 'Urgent' :
-                             nextTaskPreview.priority === 2 ? 'High' :
-                             nextTaskPreview.priority === 3 ? 'Medium' :
-                             nextTaskPreview.priority === 4 ? 'Low' : 'No Priority'}
+                          <span
+                            className={cn(
+                              'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium',
+                              nextTaskPreview.priority === 1
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                : nextTaskPreview.priority === 2
+                                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                                  : nextTaskPreview.priority === 3
+                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                    : nextTaskPreview.priority === 4
+                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                      : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
+                            )}
+                          >
+                            {nextTaskPreview.priority === 1
+                              ? 'Urgent'
+                              : nextTaskPreview.priority === 2
+                                ? 'High'
+                                : nextTaskPreview.priority === 3
+                                  ? 'Medium'
+                                  : nextTaskPreview.priority === 4
+                                    ? 'Low'
+                                    : 'No Priority'}
                           </span>
                           {nextTaskPreview.is_assigned_to_current_user ? (
                             <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
@@ -1000,35 +1119,45 @@ export default function TimeTrackerContent({
                       </>
                     ) : (
                       <>
-                        <p className="text-sm font-bold text-purple-900 dark:text-purple-100">No tasks available</p>
+                        <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
+                          No tasks available
+                        </p>
                         <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
                           Create or assign tasks
                         </p>
                       </>
                     )}
                   </div>
-                      </div>
+                </div>
                 <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
                   <span className="text-lg">🎯</span>
-                      </div>
-                    </button>
+                </div>
+              </button>
 
-                    {/* Break Timer */}
-                    <button
-                      onClick={() => {
+              {/* Break Timer */}
+              <button
+                onClick={() => {
                   // Scroll to timer controls and pre-fill with break session
-                  document.querySelector('[data-timer-controls]')?.scrollIntoView({ behavior: 'smooth' });
-                  
+                  document
+                    .querySelector('[data-timer-controls]')
+                    ?.scrollIntoView({ behavior: 'smooth' });
+
                   setTimeout(() => {
-                    const titleInput = document.querySelector('[data-title-input]') as HTMLInputElement;
+                    const titleInput = document.querySelector(
+                      '[data-title-input]'
+                    ) as HTMLInputElement;
                     if (titleInput) {
                       titleInput.value = 'Break Time';
-                      titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+                      titleInput.dispatchEvent(
+                        new Event('input', { bubbles: true })
+                      );
                       titleInput.focus();
                     }
                   }, 300);
-                  
-                  toast.success('Break session ready! Take 5-15 minutes to recharge.');
+
+                  toast.success(
+                    'Break session ready! Take 5-15 minutes to recharge.'
+                  );
                 }}
                 disabled={isRunning}
                 className={cn(
@@ -1042,45 +1171,51 @@ export default function TimeTrackerContent({
                 <div className="flex items-start gap-2">
                   <div className="flex-shrink-0 rounded-full bg-green-500/20 p-1.5 transition-colors group-hover:bg-green-500/30">
                     <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-green-700 dark:text-green-300">Break Timer</p>
-                    <p className="text-sm font-bold text-green-900 dark:text-green-100">Take 5 min</p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-green-700 dark:text-green-300">
+                      Break Timer
+                    </p>
+                    <p className="text-sm font-bold text-green-900 dark:text-green-100">
+                      Take 5 min
+                    </p>
                     <p className="text-xs text-green-600/80 dark:text-green-400/80">
                       Recharge session
-                          </p>
-                        </div>
+                    </p>
+                  </div>
                 </div>
                 <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
                   <span className="text-lg">☕</span>
-                      </div>
-                    </button>
+                </div>
+              </button>
 
               {/* Analytics Dashboard */}
-                    <button
-                      onClick={() => {
-                        setActiveTab('history');
-                      }}
+              <button
+                onClick={() => {
+                  setActiveTab('history');
+                }}
                 className="group relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/20 active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
               >
                 <div className="flex items-start gap-2">
                   <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
                     <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Analytics</p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                      Analytics
+                    </p>
                     <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
                       Focus: {productivityMetrics.avgFocusScore}%
-                          </p>
+                    </p>
                     <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
                       {productivityMetrics.todaySessionCount} sessions today
-                          </p>
-                        </div>
+                    </p>
+                  </div>
                 </div>
                 <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
                   <span className="text-lg">📊</span>
-                      </div>
-                    </button>
+                </div>
+              </button>
             </div>
           </div>
         )}
@@ -1333,18 +1468,18 @@ export default function TimeTrackerContent({
                     Analytics
                   </button>
                   {!isViewingOtherUser && (
-                  <button
-                    onClick={() => setSidebarView('tasks')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                      sidebarView === 'tasks'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <CheckCircle className="h-3 w-3" />
-                    Tasks
-                  </button>
+                    <button
+                      onClick={() => setSidebarView('tasks')}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                        sidebarView === 'tasks'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <CheckCircle className="h-3 w-3" />
+                      Tasks
+                    </button>
                   )}
                   <button
                     onClick={() => setSidebarView('reports')}
@@ -2107,18 +2242,30 @@ export default function TimeTrackerContent({
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <h4 className="font-medium">Activity Heatmap Display</h4>
+                          <h4 className="font-medium">
+                            Activity Heatmap Display
+                          </h4>
                         </div>
-                        
+
                         <div className="grid gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="heatmap-view">Heatmap View Style</Label>
-                            <Select 
-                              value={heatmapSettings.viewMode} 
-                              onValueChange={(value: 'original' | 'hybrid' | 'calendar-only') => {
-                                const newSettings = { ...heatmapSettings, viewMode: value };
+                            <Label htmlFor="heatmap-view">
+                              Heatmap View Style
+                            </Label>
+                            <Select
+                              value={heatmapSettings.viewMode}
+                              onValueChange={(
+                                value: 'original' | 'hybrid' | 'calendar-only'
+                              ) => {
+                                const newSettings = {
+                                  ...heatmapSettings,
+                                  viewMode: value,
+                                };
                                 setHeatmapSettings(newSettings);
-                                localStorage.setItem('heatmap-settings', JSON.stringify(newSettings));
+                                localStorage.setItem(
+                                  'heatmap-settings',
+                                  JSON.stringify(newSettings)
+                                );
                               }}
                             >
                               <SelectTrigger id="heatmap-view">
@@ -2152,30 +2299,50 @@ export default function TimeTrackerContent({
                               </SelectContent>
                             </Select>
                             <p className="text-xs text-muted-foreground">
-                              {heatmapSettings.viewMode === 'original' && 'GitHub-style grid view with day labels'}
-                              {heatmapSettings.viewMode === 'hybrid' && 'Year overview plus monthly calendar details'}
-                              {heatmapSettings.viewMode === 'calendar-only' && 'Traditional calendar interface'}
-                              {heatmapSettings.viewMode === 'compact-cards' && 'Monthly summary cards with key metrics and mini previews'}
+                              {heatmapSettings.viewMode === 'original' &&
+                                'GitHub-style grid view with day labels'}
+                              {heatmapSettings.viewMode === 'hybrid' &&
+                                'Year overview plus monthly calendar details'}
+                              {heatmapSettings.viewMode === 'calendar-only' &&
+                                'Traditional calendar interface'}
+                              {heatmapSettings.viewMode === 'compact-cards' &&
+                                'Monthly summary cards with key metrics and mini previews'}
                             </p>
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="time-reference">Time Reference</Label>
-                            <Select 
-                              value={heatmapSettings.timeReference} 
-                              onValueChange={(value: 'relative' | 'absolute' | 'smart') => {
-                                const newSettings = { ...heatmapSettings, timeReference: value };
+                            <Label htmlFor="time-reference">
+                              Time Reference
+                            </Label>
+                            <Select
+                              value={heatmapSettings.timeReference}
+                              onValueChange={(
+                                value: 'relative' | 'absolute' | 'smart'
+                              ) => {
+                                const newSettings = {
+                                  ...heatmapSettings,
+                                  timeReference: value,
+                                };
                                 setHeatmapSettings(newSettings);
-                                localStorage.setItem('heatmap-settings', JSON.stringify(newSettings));
+                                localStorage.setItem(
+                                  'heatmap-settings',
+                                  JSON.stringify(newSettings)
+                                );
                               }}
                             >
                               <SelectTrigger id="time-reference">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="relative">Relative ("2 weeks ago")</SelectItem>
-                                <SelectItem value="absolute">Absolute ("Jan 15, 2024")</SelectItem>
-                                <SelectItem value="smart">Smart (Both combined)</SelectItem>
+                                <SelectItem value="relative">
+                                  Relative ("2 weeks ago")
+                                </SelectItem>
+                                <SelectItem value="absolute">
+                                  Absolute ("Jan 15, 2024")
+                                </SelectItem>
+                                <SelectItem value="smart">
+                                  Smart (Both combined)
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -2185,12 +2352,21 @@ export default function TimeTrackerContent({
                               id="onboarding-tips"
                               checked={heatmapSettings.showOnboardingTips}
                               onCheckedChange={(checked) => {
-                                const newSettings = { ...heatmapSettings, showOnboardingTips: checked };
+                                const newSettings = {
+                                  ...heatmapSettings,
+                                  showOnboardingTips: checked,
+                                };
                                 setHeatmapSettings(newSettings);
-                                localStorage.setItem('heatmap-settings', JSON.stringify(newSettings));
+                                localStorage.setItem(
+                                  'heatmap-settings',
+                                  JSON.stringify(newSettings)
+                                );
                               }}
                             />
-                            <Label htmlFor="onboarding-tips" className="text-sm">
+                            <Label
+                              htmlFor="onboarding-tips"
+                              className="text-sm"
+                            >
                               Show onboarding tips
                             </Label>
                           </div>
@@ -2199,12 +2375,15 @@ export default function TimeTrackerContent({
 
                       {/* Coming Soon Section */}
                       <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-4">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="mb-2 flex items-center gap-2">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <h4 className="font-medium text-muted-foreground">More Settings Coming Soon</h4>
+                          <h4 className="font-medium text-muted-foreground">
+                            More Settings Coming Soon
+                          </h4>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Notifications, default categories, productivity goals, and more customization options.
+                          Notifications, default categories, productivity goals,
+                          and more customization options.
                         </p>
                       </div>
                     </div>
@@ -2223,7 +2402,7 @@ export default function TimeTrackerContent({
             <div className="mb-4 flex items-center gap-3">
               <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
                 <Play className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-    </div>
+              </div>
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                   Continue Last Session?
@@ -2233,7 +2412,7 @@ export default function TimeTrackerContent({
                 </p>
               </div>
             </div>
-            
+
             <div className="mb-4 rounded-lg border p-3 dark:border-gray-700">
               <p className="font-medium text-gray-900 dark:text-gray-100">
                 {recentSessions[0].title}
@@ -2245,12 +2424,14 @@ export default function TimeTrackerContent({
               )}
               {recentSessions[0].category && (
                 <div className="mt-2 flex items-center gap-2">
-                  <div className={cn(
-                    'h-2 w-2 rounded-full',
-                    recentSessions[0].category.color
-                      ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
-                      : 'bg-blue-500/70'
-                  )} />
+                  <div
+                    className={cn(
+                      'h-2 w-2 rounded-full',
+                      recentSessions[0].category.color
+                        ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
+                        : 'bg-blue-500/70'
+                    )}
+                  />
                   <span className="text-xs text-gray-600 dark:text-gray-400">
                     {recentSessions[0].category.name}
                   </span>
@@ -2312,7 +2493,8 @@ export default function TimeTrackerContent({
                   Choose Your Next Task
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Tasks prioritized: Your urgent tasks → Urgent unassigned → Your other tasks
+                  Tasks prioritized: Your urgent tasks → Urgent unassigned →
+                  Your other tasks
                 </p>
               </div>
             </div>
@@ -2327,9 +2509,10 @@ export default function TimeTrackerContent({
                       No Tasks Available
                     </h4>
                     <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                      You don't have any assigned tasks. Create a new task or check available boards.
+                      You don't have any assigned tasks. Create a new task or
+                      check available boards.
                     </p>
-                    
+
                     <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
                       <Button
                         onClick={() => {
@@ -2364,7 +2547,9 @@ export default function TimeTrackerContent({
                 </div>
               ) : (
                 availableTasks.map((task) => {
-                  const getPriorityBadge = (priority: number | null | undefined) => {
+                  const getPriorityBadge = (
+                    priority: number | null | undefined
+                  ) => {
                     switch (priority) {
                       case 1:
                         return { text: 'Urgent', color: 'bg-red-500' };
@@ -2380,108 +2565,131 @@ export default function TimeTrackerContent({
                   };
 
                   const priorityBadge = getPriorityBadge(task.priority);
-                  const isUnassigned = !task || !task.assignees || task.assignees.length === 0;
+                  const isUnassigned =
+                    !task || !task.assignees || task.assignees.length === 0;
 
-                return (
-                  <button
-                    key={task.id}
-                    onClick={async () => {
-                      try {
-                        // If task is unassigned, assign to current user first
-                        if (!task) return;
-                        if (isUnassigned) {
-                          const { createClient } = await import('@tuturuuu/supabase/next/client');
-                          const supabase = createClient();
-                          
-                          const { error: assignError } = await supabase
-                            .from('task_assignees')
-                            .insert({
-                              task_id: task.id,
-                              user_id: currentUserId,
-                            });
+                  return (
+                    <button
+                      key={task.id}
+                      onClick={async () => {
+                        try {
+                          // If task is unassigned, assign to current user first
+                          if (!task) return;
+                          if (isUnassigned) {
+                            const { createClient } = await import(
+                              '@tuturuuu/supabase/next/client'
+                            );
+                            const supabase = createClient();
 
-                          if (assignError) {
-                            console.error('Task assignment error:', assignError);
-                            throw new Error(assignError.message || 'Failed to assign task');
+                            const { error: assignError } = await supabase
+                              .from('task_assignees')
+                              .insert({
+                                task_id: task.id,
+                                user_id: currentUserId,
+                              });
+
+                            if (assignError) {
+                              console.error(
+                                'Task assignment error:',
+                                assignError
+                              );
+                              throw new Error(
+                                assignError.message || 'Failed to assign task'
+                              );
+                            }
+
+                            toast.success(
+                              `Assigned "${task.name}" to yourself`
+                            );
                           }
-                          
-                          toast.success(`Assigned "${task.name}" to yourself`);
+
+                          // Start session
+                          const response = await apiCall(
+                            `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+                            {
+                              method: 'POST',
+                              body: JSON.stringify({
+                                title: task.name,
+                                description:
+                                  task.description ||
+                                  `Working on: ${task.name}`,
+                                task_id: task.id,
+                                category_id:
+                                  categories.find((c) =>
+                                    c.name.toLowerCase().includes('work')
+                                  )?.id || null,
+                              }),
+                            }
+                          );
+
+                          setCurrentSession(response.session);
+                          setIsRunning(true);
+                          setElapsedTime(0);
+                          await fetchData();
+
+                          toast.success(`Started: ${task.name}`);
+                          setShowTaskSelector(false);
+                        } catch (error) {
+                          console.error('Error starting task session:', error);
+                          toast.error('Failed to start task session');
                         }
-
-                        // Start session
-                        const response = await apiCall(
-                          `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
-                          {
-                            method: 'POST',
-                            body: JSON.stringify({
-                              title: task.name,
-                              description: task.description || `Working on: ${task.name}`,
-                              task_id: task.id,
-                              category_id: categories.find(c => c.name.toLowerCase().includes('work'))?.id || null
-                            }),
-                          }
-                        );
-
-                        setCurrentSession(response.session);
-                        setIsRunning(true);
-                        setElapsedTime(0);
-                        await fetchData();
-
-                        toast.success(`Started: ${task.name}`);
-                        setShowTaskSelector(false);
-                      } catch (error) {
-                        console.error('Error starting task session:', error);
-                        toast.error('Failed to start task session');
-                      }
-                    }}
-                    className="group flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all hover:border-purple-300 hover:bg-purple-50 dark:border-gray-700 dark:hover:border-purple-600 dark:hover:bg-purple-900/20"
-                  >
-                    <div className={cn(
-                      'mt-0.5 h-2 w-2 rounded-full',
-                      priorityBadge.color
-                    )} />
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center gap-2">
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                          {task.name}
-                        </h4>
-                        <span className={cn(
-                          'rounded-full px-2 py-0.5 text-xs font-medium text-white',
+                      }}
+                      className="group flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all hover:border-purple-300 hover:bg-purple-50 dark:border-gray-700 dark:hover:border-purple-600 dark:hover:bg-purple-900/20"
+                    >
+                      <div
+                        className={cn(
+                          'mt-0.5 h-2 w-2 rounded-full',
                           priorityBadge.color
-                        )}>
-                          {priorityBadge.text}
-                        </span>
-                        {isUnassigned && (
-                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                            Will assign to you
+                        )}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                            {task.name}
+                          </h4>
+                          <span
+                            className={cn(
+                              'rounded-full px-2 py-0.5 text-xs font-medium text-white',
+                              priorityBadge.color
+                            )}
+                          >
+                            {priorityBadge.text}
                           </span>
+                          {isUnassigned && (
+                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                              Will assign to you
+                            </span>
+                          )}
+                        </div>
+                        {task.description && (
+                          <p className="mb-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
+                            {task.description}
+                          </p>
                         )}
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                          {task.board_name && task.list_name && (
+                            <>
+                              <span>{task.board_name}</span>
+                              <span>•</span>
+                              <span>{task.list_name}</span>
+                              <span>•</span>
+                            </>
+                          )}
+                          <span
+                            className={cn(
+                              isUnassigned
+                                ? 'text-blue-600 dark:text-blue-400'
+                                : 'text-green-600 dark:text-green-400'
+                            )}
+                          >
+                            {isUnassigned ? 'Unassigned' : 'Assigned to you'}
+                          </span>
+                        </div>
                       </div>
-                      {task.description && (
-                        <p className="mb-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
-                          {task.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                        {task.board_name && task.list_name && (
-                          <>
-                            <span>{task.board_name}</span>
-                            <span>•</span>
-                            <span>{task.list_name}</span>
-                            <span>•</span>
-                          </>
-                        )}
-                        <span className={cn(
-                          isUnassigned ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'
-                        )}>
-                          {isUnassigned ? 'Unassigned' : 'Assigned to you'}
-                        </span>
+                      <div className="ml-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Play className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                       </div>
-                    </div>
-                    <div className="ml-2 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Play className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    </div>
-                  </button>
+                    </button>
                   );
                 })
               )}
@@ -2497,10 +2705,11 @@ export default function TimeTrackerContent({
               {availableTasks.length > 0 && (
                 <div className="flex items-center gap-4">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {availableTasks.length} task{availableTasks.length !== 1 ? 's' : ''} prioritized
+                    {availableTasks.length} task
+                    {availableTasks.length !== 1 ? 's' : ''} prioritized
                   </p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => {
                       setShowTaskSelector(false);

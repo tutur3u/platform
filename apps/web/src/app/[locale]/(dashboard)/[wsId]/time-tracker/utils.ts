@@ -52,19 +52,28 @@ function applyCommonFilters(
   filters: BaseFilters
 ): boolean {
   // Search filter
-  const matchesSearch = !searchQuery || 
+  const matchesSearch =
+    !searchQuery ||
     task.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
   if (!matchesSearch) return false;
 
   // Board filter
-  if (filters.board && filters.board !== 'all' && task.board_name !== filters.board) {
+  if (
+    filters.board &&
+    filters.board !== 'all' &&
+    task.board_name !== filters.board
+  ) {
     return false;
   }
 
   // List filter
-  if (filters.list && filters.list !== 'all' && task.list_name !== filters.list) {
+  if (
+    filters.list &&
+    filters.list !== 'all' &&
+    task.list_name !== filters.list
+  ) {
     return false;
   }
 
@@ -74,7 +83,10 @@ function applyCommonFilters(
   } else if (filters.assignee === 'unassigned') {
     return !task.assignees || task.assignees.length === 0;
   } else if (filters.assignee && filters.assignee !== 'all') {
-    return task.assignees?.some(assignee => assignee.id === filters.assignee) ?? false;
+    return (
+      task.assignees?.some((assignee) => assignee.id === filters.assignee) ??
+      false
+    );
   }
 
   return true;
@@ -92,10 +104,13 @@ export function filterTasksForTimer(
     if (!applyCommonFilters(task, searchQuery, filters)) return false;
 
     const matchesPriority =
-      !filters.priority || filters.priority === 'all' || String(task.priority) === filters.priority;
+      !filters.priority ||
+      filters.priority === 'all' ||
+      String(task.priority) === filters.priority;
 
     const matchesStatus =
-      !filters.status || filters.status === 'all' ||
+      !filters.status ||
+      filters.status === 'all' ||
       (task.completed ? 'completed' : 'active') === filters.status;
 
     return matchesPriority && matchesStatus;
@@ -166,7 +181,7 @@ export function generateAssigneeInitials(assignee: {
 }): string {
   const name = assignee.display_name?.trim();
   const email = assignee.email?.trim();
-  
+
   if (name) {
     // Handle names with multiple parts (e.g., "John Doe" -> "JD")
     const parts = name.split(/\s+/).filter(Boolean);
@@ -175,12 +190,12 @@ export function generateAssigneeInitials(assignee: {
     }
     return name[0].toUpperCase();
   }
-  
+
   if (email) {
     // Use part before @ for email
     const username = email.split('@')[0];
     return username[0].toUpperCase();
   }
-  
+
   return '?';
 }

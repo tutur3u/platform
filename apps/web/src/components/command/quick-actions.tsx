@@ -1,13 +1,20 @@
 'use client';
 
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
-import { Calendar, Clock, PlusCircle, Timer, Brain, TrendingUp } from 'lucide-react';
+import {
+  Brain,
+  Calendar,
+  Clock,
+  PlusCircle,
+  Timer,
+  TrendingUp,
+} from 'lucide-react';
 import { useMemo } from 'react';
 
 // Peak productivity hours configuration
 const PEAK_HOURS = {
   morning: { start: 9, end: 11 },
-  afternoon: { start: 14, end: 16 }
+  afternoon: { start: 14, end: 16 },
 } as const;
 
 interface QuickActionsProps {
@@ -27,11 +34,13 @@ export function QuickActions({
   const isPeakHour = useMemo(() => {
     const currentHour = new Date().getHours();
     return (
-      (currentHour >= PEAK_HOURS.morning.start && currentHour <= PEAK_HOURS.morning.end) ||
-      (currentHour >= PEAK_HOURS.afternoon.start && currentHour <= PEAK_HOURS.afternoon.end)
+      (currentHour >= PEAK_HOURS.morning.start &&
+        currentHour <= PEAK_HOURS.morning.end) ||
+      (currentHour >= PEAK_HOURS.afternoon.start &&
+        currentHour <= PEAK_HOURS.afternoon.end)
     );
   }, []);
-  
+
   return (
     <CommandGroup heading="⚡ Quick Actions">
       <CommandItem
@@ -78,14 +87,16 @@ export function QuickActions({
               {isPeakHour && (
                 <div className="flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 dark:bg-amber-900/30">
                   <Brain className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                  <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Peak Time</span>
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                    Peak Time
+                  </span>
                 </div>
               )}
             </div>
             <span className="text-xs text-muted-foreground">
-              {isPeakHour 
-                ? "Perfect timing for deep focus work" 
-                : "Start tracking time instantly"}
+              {isPeakHour
+                ? 'Perfect timing for deep focus work'
+                : 'Start tracking time instantly'}
             </span>
           </div>
           <div className="text-xs text-dynamic-purple/60 opacity-0 transition-opacity group-hover:opacity-100">
@@ -112,7 +123,9 @@ export function QuickActions({
               </span>
               <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
                 <TrendingUp className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Analytics</span>
+                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                  Analytics
+                </span>
               </div>
             </div>
             <span className="text-xs text-muted-foreground">
