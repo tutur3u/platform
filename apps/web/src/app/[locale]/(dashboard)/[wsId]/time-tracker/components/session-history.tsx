@@ -243,6 +243,7 @@ const StackedSessionItem: FC<{
   getSessionProductivityType,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showAllSessions, setShowAllSessions] = useState(false);
   const userTimezone = dayjs.tz.guess();
   const firstStartTime = dayjs
     .utc(stackedSession.firstStartTime)
@@ -260,6 +261,13 @@ const StackedSessionItem: FC<{
     : calculateFocusScore(latestSession);
 
   const productivityType = getSessionProductivityType(latestSession);
+
+  // Limit how many sessions to show initially
+  const INITIAL_SESSION_LIMIT = 3;
+  const hasMoreSessions = stackedSession.sessions.length > INITIAL_SESSION_LIMIT;
+  const visibleSessions = showAllSessions 
+    ? stackedSession.sessions 
+    : stackedSession.sessions.slice(0, INITIAL_SESSION_LIMIT);
 
   const getProductivityIcon = (type: string) => {
     switch (type) {
@@ -562,195 +570,226 @@ const StackedSessionItem: FC<{
                   running
                 </div>
               </div>
-              <div className="space-y-2">
-                {stackedSession.sessions.map((session, index) => {
-                  const sessionStart = dayjs
-                    .utc(session.start_time)
-                    .tz(userTimezone);
-                  const sessionEnd = session.end_time
-                    ? dayjs.utc(session.end_time).tz(userTimezone)
-                    : null;
-
-                  // Calculate gap from previous session
-                  const prevSession =
-                    index > 0 ? stackedSession.sessions[index - 1] : null;
-                  const gapInSeconds =
-                    prevSession && prevSession.end_time
-                      ? sessionStart.diff(
-                          dayjs.utc(prevSession.end_time).tz(userTimezone),
-                          'seconds'
-                        )
+              <div className="space-y-3">
+                {/* Sessions container with scroll for many sessions */}
+                <div className={cn(
+                  "space-y-2 transition-all duration-200",
+                  stackedSession.sessions.length > 6 && showAllSessions && "max-h-96 overflow-y-auto pr-2"
+                )}>
+                  {visibleSessions.map((session, index) => {
+                    const sessionStart = dayjs
+                      .utc(session.start_time)
+                      .tz(userTimezone);
+                    const sessionEnd = session.end_time
+                      ? dayjs.utc(session.end_time).tz(userTimezone)
                       : null;
 
-                  // Format gap duration based on length
-                  const formatGap = (seconds: number) => {
-                    if (seconds < 60) return `${seconds}s`;
-                    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-                    const hours = Math.floor(seconds / 3600);
-                    const mins = Math.floor((seconds % 3600) / 60);
-                    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-                  };
+                    // Calculate gap from previous session (considering the full session list for gaps)
+                    const actualIndex = showAllSessions ? index : index;
+                    const prevSession = actualIndex > 0 ? 
+                      (showAllSessions ? stackedSession.sessions[index - 1] : stackedSession.sessions[index - 1]) : null;
+                    const gapInSeconds =
+                      prevSession && prevSession.end_time
+                        ? sessionStart.diff(
+                            dayjs.utc(prevSession.end_time).tz(userTimezone),
+                            'seconds'
+                          )
+                        : null;
 
-                  // Determine gap type for styling
-                  const getGapType = (seconds: number) => {
-                    if (seconds < 60) return 'minimal'; // Less than 1 minute
-                    if (seconds < 900) return 'short'; // Less than 15 minutes
-                    return 'long'; // 15+ minutes
-                  };
+                    // Format gap duration based on length
+                    const formatGap = (seconds: number) => {
+                      if (seconds < 60) return `${seconds}s`;
+                      if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+                      const hours = Math.floor(seconds / 3600);
+                      const mins = Math.floor((seconds % 3600) / 60);
+                      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+                    };
 
-                  // Handle edge cases for gap display
-                  const shouldShowGap =
-                    gapInSeconds !== null &&
-                    gapInSeconds > 30 &&
-                    gapInSeconds < 86400; // Only show gaps between 30 seconds and 24 hours
-                  const gapType =
-                    gapInSeconds && shouldShowGap
-                      ? getGapType(gapInSeconds)
-                      : null;
+                    // Determine gap type for styling
+                    const getGapType = (seconds: number) => {
+                      if (seconds < 60) return 'minimal'; // Less than 1 minute
+                      if (seconds < 900) return 'short'; // Less than 15 minutes
+                      return 'long'; // 15+ minutes
+                    };
 
-                  // Detect overlapping sessions
-                  const isOverlapping =
-                    gapInSeconds !== null && gapInSeconds < 0;
+                    // Handle edge cases for gap display
+                    const shouldShowGap =
+                      gapInSeconds !== null &&
+                      gapInSeconds > 30 &&
+                      gapInSeconds < 86400; // Only show gaps between 30 seconds and 24 hours
+                    const gapType =
+                      gapInSeconds && shouldShowGap
+                        ? getGapType(gapInSeconds)
+                        : null;
 
-                  return (
-                    <div key={session.id}>
-                      {/* Show overlap warning */}
-                      {isOverlapping && (
-                        <div className="-mt-1 mb-2 flex items-center justify-center">
-                          <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700 ring-1 ring-amber-200">
-                            <div className="h-1 w-1 rounded-full bg-amber-500" />
-                            <span className="font-medium">
-                              Overlapping session
-                            </span>
-                            <div className="h-1 w-1 rounded-full bg-amber-500" />
-                          </div>
-                        </div>
-                      )}
+                    // Detect overlapping sessions
+                    const isOverlapping =
+                      gapInSeconds !== null && gapInSeconds < 0;
 
-                      {/* Show gap indicator based on duration */}
-                      {shouldShowGap && gapInSeconds && (
-                        <div className="-mt-1 mb-2 flex items-center justify-center">
-                          {gapType === 'minimal' ? (
-                            // Minimal gap - just small dots
-                            <div className="flex items-center gap-1">
-                              <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-                              <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-                              <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-                            </div>
-                          ) : gapType === 'short' ? (
-                            // Short break - simple line with time
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <div className="h-px w-6 bg-border" />
-                              <span className="rounded bg-muted px-2 py-0.5 text-xs">
-                                {formatGap(gapInSeconds)}
-                              </span>
-                              <div className="h-px w-6 bg-border" />
-                            </div>
-                          ) : (
-                            // Long break - prominent break indicator
-                            <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
-                              <div className="h-1 w-8 bg-foreground/10" />
+                    return (
+                      <div key={session.id}>
+                        {/* Show overlap warning */}
+                        {isOverlapping && (
+                          <div className="-mt-1 mb-2 flex items-center justify-center">
+                            <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800">
+                              <div className="h-1 w-1 rounded-full bg-amber-500" />
                               <span className="font-medium">
-                                {formatGap(gapInSeconds)} break
+                                Overlapping session
                               </span>
-                              <div className="h-1 w-8 bg-foreground/10" />
+                              <div className="h-1 w-1 rounded-full bg-amber-500" />
                             </div>
-                          )}
-                        </div>
-                      )}
+                          </div>
+                        )}
 
-                      <div className="flex items-center justify-between rounded-md border bg-background p-3 text-sm transition-all hover:bg-muted/50 hover:shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              'flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium',
-                              session.is_running
-                                ? 'bg-green-100 text-green-700 ring-2 ring-green-200'
-                                : 'bg-primary/10 text-primary'
-                            )}
-                          >
-                            {session.is_running ? (
-                              <div className="h-2 w-2 animate-pulse rounded-full bg-green-600" />
+                        {/* Show gap indicator based on duration */}
+                        {shouldShowGap && gapInSeconds && (
+                          <div className="-mt-1 mb-2 flex items-center justify-center">
+                            {gapType === 'minimal' ? (
+                              // Minimal gap - just small dots
+                              <div className="flex items-center gap-1">
+                                <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                                <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                                <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                              </div>
+                            ) : gapType === 'short' ? (
+                              // Short break - simple line with time
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <div className="h-px w-6 bg-border" />
+                                <span className="rounded bg-muted px-2 py-0.5 text-xs">
+                                  {formatGap(gapInSeconds)}
+                                </span>
+                                <div className="h-px w-6 bg-border" />
+                              </div>
                             ) : (
-                              index + 1
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">
-                                {sessionStart.format('h:mm A')}
-                                {sessionEnd &&
-                                  ` - ${sessionEnd.format('h:mm A')}`}
-                                {session.is_running && (
-                                  <span className="text-green-600">
-                                    {' '}
-                                    - ongoing
-                                  </span>
-                                )}
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {sessionStart.format('MMM D')}
-                              </Badge>
-                            </div>
-                            {session.description &&
-                              session.description !==
-                                stackedSession.description && (
-                                <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                                  {session.description}
-                                </p>
-                              )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <span className="text-sm font-medium">
-                              {session.duration_seconds
-                                ? formatDuration(session.duration_seconds)
-                                : '-'}
-                            </span>
-                            {session.is_running && (
-                              <div className="mt-1">
-                                <Badge variant="secondary" className="text-xs">
-                                  <div className="mr-1 h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                                  Running
-                                </Badge>
+                              // Long break - prominent break indicator
+                              <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
+                                <div className="h-1 w-8 bg-foreground/10" />
+                                <span className="font-medium">
+                                  {formatGap(gapInSeconds)} break
+                                </span>
+                                <div className="h-1 w-8 bg-foreground/10" />
                               </div>
                             )}
                           </div>
-                          {!readOnly && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                                >
-                                  <MoreHorizontal className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => onEdit(session)}
-                                >
-                                  <Edit className="mr-2 h-3 w-3" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => onDelete(session)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="mr-2 h-3 w-3" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                        )}
+
+                        <div className="flex items-center justify-between rounded-md border bg-background p-3 text-sm transition-all hover:bg-muted/50 hover:shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                'flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium',
+                                session.is_running
+                                  ? 'bg-green-100 text-green-700 ring-2 ring-green-200 dark:bg-green-950/30 dark:text-green-300 dark:ring-green-800'
+                                  : 'bg-primary/10 text-primary'
+                              )}
+                            >
+                              {session.is_running ? (
+                                <div className="h-2 w-2 animate-pulse rounded-full bg-green-600" />
+                              ) : (
+                                (showAllSessions ? index : index) + 1
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">
+                                  {sessionStart.format('h:mm A')}
+                                  {sessionEnd &&
+                                    ` - ${sessionEnd.format('h:mm A')}`}
+                                  {session.is_running && (
+                                    <span className="text-green-600">
+                                      {' '}
+                                      - ongoing
+                                    </span>
+                                  )}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  {sessionStart.format('MMM D')}
+                                </Badge>
+                              </div>
+                              {session.description &&
+                                session.description !==
+                                  stackedSession.description && (
+                                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                                    {session.description}
+                                  </p>
+                                )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <span className="text-sm font-medium">
+                                {session.duration_seconds
+                                  ? formatDuration(session.duration_seconds)
+                                  : '-'}
+                              </span>
+                              {session.is_running && (
+                                <div className="mt-1">
+                                  <Badge variant="secondary" className="text-xs">
+                                    <div className="mr-1 h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                                    Running
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                            {!readOnly && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                                  >
+                                    <MoreHorizontal className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => onEdit(session)}
+                                  >
+                                    <Edit className="mr-2 h-3 w-3" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => onDelete(session)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-3 w-3" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+
+                {/* Show more/less control for stacked sessions */}
+                {hasMoreSessions && (
+                  <div className="flex items-center justify-center pt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAllSessions(!showAllSessions)}
+                      className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      {showAllSessions ? (
+                        <>
+                          <ChevronUp className="mr-1 h-3 w-3" />
+                          Show less ({INITIAL_SESSION_LIMIT} of {stackedSession.sessions.length})
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="mr-1 h-3 w-3" />
+                          Show {stackedSession.sessions.length - INITIAL_SESSION_LIMIT} more sessions
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </CollapsibleContent>
