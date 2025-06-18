@@ -192,6 +192,13 @@ interface SessionProtection {
   canModifySettings: boolean;
 }
 
+interface PausedSessionData {
+  sessionId: string;
+  elapsed: number;
+  pauseTime: string; // ISO string
+  timerMode: TimerMode;
+}
+
 // Default Pomodoro settings
 const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
   focusTime: 25,
@@ -338,40 +345,65 @@ export function TimerControls({
 
   // localStorage keys for persistence
   const PAUSED_SESSION_KEY = `paused-session-${wsId}-${currentUserId || 'user'}`;
-  const PAUSED_ELAPSED_KEY = `paused-elapsed-${wsId}-${currentUserId || 'user'}`;
-  const PAUSE_TIME_KEY = `pause-time-${wsId}-${currentUserId || 'user'}`;
   const TIMER_MODE_SESSIONS_KEY = `timer-mode-sessions-${wsId}-${currentUserId || 'user'}`;
 
-  // Helper functions for localStorage persistence
+  // Helper function to re-fetch session details by ID
+  const fetchSessionById = useCallback(async (sessionId: string): Promise<SessionWithRelations | null> => {
+    try {
+      const response = await apiCall(`/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionId}`);
+      return response.session || null;
+    } catch (error) {
+      console.warn('Failed to fetch session details:', error);
+      return null;
+    }
+  }, [apiCall, wsId]);
+
+  // Helper functions for localStorage persistence (storing only minimal data)
   const savePausedSessionToStorage = useCallback((session: SessionWithRelations, elapsed: number, pauseTime: Date) => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(PAUSED_SESSION_KEY, JSON.stringify(session));
-        localStorage.setItem(PAUSED_ELAPSED_KEY, elapsed.toString());
-        localStorage.setItem(PAUSE_TIME_KEY, pauseTime.toISOString());
+        const pausedData: PausedSessionData = {
+          sessionId: session.id,
+          elapsed,
+          pauseTime: pauseTime.toISOString(),
+          timerMode,
+        };
+        localStorage.setItem(PAUSED_SESSION_KEY, JSON.stringify(pausedData));
       } catch (error) {
         console.warn('Failed to save paused session to localStorage:', error);
       }
     }
-  }, [PAUSED_SESSION_KEY, PAUSED_ELAPSED_KEY, PAUSE_TIME_KEY]);
+  }, [PAUSED_SESSION_KEY, timerMode]);
 
-  const loadPausedSessionFromStorage = useCallback(() => {
+  const loadPausedSessionFromStorage = useCallback(async () => {
     if (typeof window !== 'undefined') {
       try {
-        const sessionData = localStorage.getItem(PAUSED_SESSION_KEY);
-        const elapsedData = localStorage.getItem(PAUSED_ELAPSED_KEY);
-        const pauseTimeData = localStorage.getItem(PAUSE_TIME_KEY);
+        const pausedDataStr = localStorage.getItem(PAUSED_SESSION_KEY);
+        
+        if (pausedDataStr) {
+          const pausedData: PausedSessionData = JSON.parse(pausedDataStr);
+          
+          // Re-fetch the full session details by ID
+          const session = await fetchSessionById(pausedData.sessionId);
+          
+          if (session) {
+            const elapsed = pausedData.elapsed;
+            const pauseTime = new Date(pausedData.pauseTime);
 
-        if (sessionData && elapsedData && pauseTimeData) {
-          const session = JSON.parse(sessionData);
-          const elapsed = parseInt(elapsedData);
-          const pauseTime = new Date(pauseTimeData);
+            setPausedSession(session);
+            setPausedElapsedTime(elapsed);
+            setPauseStartTime(pauseTime);
+            
+            // Restore timer mode if different
+            if (pausedData.timerMode !== timerMode) {
+              setTimerMode(pausedData.timerMode);
+            }
 
-          setPausedSession(session);
-          setPausedElapsedTime(elapsed);
-          setPauseStartTime(pauseTime);
-
-          return { session, elapsed, pauseTime };
+            return { session, elapsed, pauseTime };
+          } else {
+            // Session not found, clear invalid data
+            clearPausedSessionFromStorage();
+          }
         }
       } catch (error) {
         console.warn('Failed to load paused session from localStorage:', error);
@@ -379,19 +411,17 @@ export function TimerControls({
       }
     }
     return null;
-  }, [PAUSED_SESSION_KEY, PAUSED_ELAPSED_KEY, PAUSE_TIME_KEY]);
+  }, [PAUSED_SESSION_KEY, fetchSessionById, timerMode]);
 
   const clearPausedSessionFromStorage = useCallback(() => {
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem(PAUSED_SESSION_KEY);
-        localStorage.removeItem(PAUSED_ELAPSED_KEY);
-        localStorage.removeItem(PAUSE_TIME_KEY);
       } catch (error) {
         console.warn('Failed to clear paused session from localStorage:', error);
       }
     }
-  }, [PAUSED_SESSION_KEY, PAUSED_ELAPSED_KEY, PAUSE_TIME_KEY]);
+  }, [PAUSED_SESSION_KEY]);
 
   // Session protection utilities
   const updateSessionProtection = useCallback((isActive: boolean, mode: TimerMode) => {
@@ -544,19 +574,23 @@ export function TimerControls({
 
   // Load paused session on component mount
   useEffect(() => {
-    const pausedData = loadPausedSessionFromStorage();
-    if (pausedData) {
-      console.log('Restored paused session from localStorage:', pausedData.session.title);
-      
-      // Show a toast to let user know their paused session was restored
-      toast.success('Paused session restored!', {
-        description: `${pausedData.session.title} - ${formatDuration(pausedData.elapsed)} tracked`,
-        duration: 5000,
-      });
-    }
+    const loadData = async () => {
+      const pausedData = await loadPausedSessionFromStorage();
+      if (pausedData) {
+        console.log('Restored paused session from localStorage:', pausedData.session.title);
+        
+        // Show a toast to let user know their paused session was restored
+        toast.success('Paused session restored!', {
+          description: `${pausedData.session.title} - ${formatDuration(pausedData.elapsed)} tracked`,
+          duration: 5000,
+        });
+      }
 
-    // Load timer mode sessions
-    loadTimerModeSessionsFromStorage();
+      // Load timer mode sessions
+      loadTimerModeSessionsFromStorage();
+    };
+
+    loadData();
   }, [loadPausedSessionFromStorage, loadTimerModeSessionsFromStorage, formatDuration]);
 
   // Update session protection when timer state changes
@@ -579,6 +613,7 @@ export function TimerControls({
         !key.includes(`-${wsId}-${currentUserId}`)
       );
       keys.forEach(key => {
+        // Also clean up legacy keys (paused-elapsed and pause-time)
         const relatedKeys = [
           key,
           key.replace('paused-session-', 'paused-elapsed-'),
