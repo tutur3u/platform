@@ -80,7 +80,7 @@ export const POST = Webhooks({
               name: 'workspace.seats.sync',
               customerId: payload.data.customer.id,
               metadata: {
-                seat_count: initialUserCount ?? 0, // Must match the Property Name in your Meter
+                seat_count: initialUserCount ?? 0,
               },
             },
           ],
@@ -105,7 +105,6 @@ export const POST = Webhooks({
   },
 
   onSubscriptionCanceled: async (payload) => {
-    // Your cancellation logic here...
     console.log('Subscription canceled:', payload);
     throw new Response('Cancellation webhook received.', { status: 200 });
   },
