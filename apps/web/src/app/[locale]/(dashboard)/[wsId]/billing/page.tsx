@@ -7,6 +7,7 @@ import { Receipt } from 'lucide-react';
 const fetchProducts = async () => {
   try {
     const res = await api.products.list({ isArchived: false });
+
     return res.result.items ?? [];
   } catch (err) {
     console.error('Failed to fetch products:', err);
@@ -21,9 +22,7 @@ const checkCreator = async (wsId: string) => {
     console.error('Billing page is only available for root workspace');
     return false;
   }
-
-  // Call the 'check_ws_creator' function with the 'ws_id' argument.
-  // The keys in the second object MUST match the argument names in your function.
+  console.log(wsId, 'checking workspace creator status');
   const { data, error } = await supabase.rpc('check_ws_creator', {
     ws_id: wsId,
   });
@@ -40,7 +39,6 @@ const checkCreator = async (wsId: string) => {
 const fetchSubscription = async (wsId: string) => {
   const sbAdmin = await createClient();
 
-  // 1. Get the subscription record from your DB
   const { data: dbSub, error } = await sbAdmin
     .from('workspace_subscription')
     .select('*')
@@ -56,14 +54,16 @@ const fetchSubscription = async (wsId: string) => {
     return null;
   }
 
+  console.log(dbSub, 'fetched subscription from database');
   // 2. If it exists, get the full product details from Polar
-  const polarProduct = await api.products.get({ id: 'test-product-id' });
+  const polarProduct = await api.products.get({
+    id: dbSub.product_id || '',
+  });
 
   if (!polarProduct) {
-    return null; // Can't proceed without product details
+    return null;
   }
 
-  // 3. Combine the data into one clean object
   return {
     status: dbSub.status,
     currentPeriodStart: dbSub.current_period_start,
@@ -90,7 +90,6 @@ export default async function BillingPage({
     fetchSubscription(wsId),
     checkCreator(wsId),
   ]);
-  // console.log(subscription, 'Subscription Data');
 
   const currentPlan = subscription?.product
     ? {
@@ -163,7 +162,7 @@ export default async function BillingPage({
           ? product.prices[0]?.recurringInterval || 'month'
           : 'one-time'
         : 'month',
-    popular: index === 1, // Make the second product popular as example
+    popular: index === 1,
     features: product.description
       ? [product.description, 'Customer support', 'Access to platform features']
       : [

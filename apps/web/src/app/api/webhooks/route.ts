@@ -2,11 +2,9 @@ import { Polar } from '@tuturuuu/payment/polar';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
-// Initialize a Polar ADMIN client with your secret token
-// This is needed to report usage events securely.
 const polarAdmin = new Polar({
   accessToken: process.env.NEXT_PUBLIC_POLAR_ACCESS_TOKEN,
-  server: 'sandbox', // Change to 'production' in production
+  server: 'sandbox',
 });
 
 export const POST = Webhooks({
@@ -17,12 +15,11 @@ export const POST = Webhooks({
       const sbAdmin = await createAdminClient();
       const subscriptionPayload = payload.data;
 
-      // Only process subscriptions that are truly 'active'
       if (subscriptionPayload.status !== 'active') {
         console.log(
           `Ignoring subscription with status: '${subscriptionPayload.status}'.`
         );
-        // Use 'return' instead of 'throw' for proper API responses
+
         throw new Response('Webhook handled: Status not active.', {
           status: 200,
         });
@@ -45,7 +42,7 @@ export const POST = Webhooks({
         status: subscriptionPayload.status,
         polar_subscription_id: subscriptionPayload.id,
         // polar_customer_id: payload.customer.id,
-        product_id: subscriptionPayload.product.id,
+        // product_id: subscriptionPayload.product.id,
         current_period_start:
           subscriptionPayload.currentPeriodStart.toISOString(),
         current_period_end: subscriptionPayload.currentPeriodEnd
@@ -71,7 +68,7 @@ export const POST = Webhooks({
       try {
         // Count the users in the workspace at the moment of subscribing
         const { count: initialUserCount, error: countError } = await sbAdmin
-          .from('workspace_users') // Assumes you have a 'workspace_users' table
+          .from('workspace_users')
           .select('*', { count: 'exact', head: true })
           .eq('ws_id', ws_id);
 
