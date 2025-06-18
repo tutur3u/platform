@@ -113,6 +113,9 @@ export default function TakingQuizClient({
         return { quizId, selectedOptionId: val };
       })
       .flat(),
+    durationSeconds: computeElapsedSeconds(
+      Number(localStorage.getItem(STORAGE_KEY))
+    ),
   });
 
   // Only for debugging purposes
@@ -382,7 +385,10 @@ export default function TakingQuizClient({
                             }
                           }}
                         />
-                        <Label htmlFor={`${q.quizId}-${opt.id}`} className='leading-5.5'>
+                        <Label
+                          htmlFor={`${q.quizId}-${opt.id}`}
+                          className="leading-5.5"
+                        >
                           {opt.value}
                         </Label>
                       </div>
@@ -419,7 +425,10 @@ export default function TakingQuizClient({
                             }
                             className="h-5.5 w-5.5 border-dynamic-purple/80 bg-dynamic-purple/20"
                           />
-                          <Label htmlFor={`${q.quizId}-${opt.id}`} className='leading-5.5'>
+                          <Label
+                            htmlFor={`${q.quizId}-${opt.id}`}
+                            className="leading-5.5"
+                          >
                             {opt.value}
                           </Label>
                         </div>
@@ -435,7 +444,7 @@ export default function TakingQuizClient({
             <Button
               type="submit"
               disabled={submitting || (isCountdown && timeLeft === 0)}
-              className={`w-full rounded px-6 py-2 text-primary h-auto box-border ${
+              className={`box-border h-auto w-full rounded px-6 py-2 text-primary ${
                 submitting || (isCountdown && timeLeft === 0)
                   ? 'cursor-not-allowed bg-gray-400'
                   : 'border border-dynamic-purple bg-dynamic-purple/20 hover:bg-dynamic-purple/40'

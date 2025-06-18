@@ -6,6 +6,7 @@ type SubmissionBody = {
     quizId: string;
     selectedOptionId: string;
   }>;
+  durationSeconds: number;
 };
 
 interface Params {
@@ -166,7 +167,8 @@ export async function POST(request: NextRequest, { params }: Params) {
       set_id: setId,
       attempt_number: newAttemptNumber,
       total_score: totalScore,
-      duration_seconds: 0, // we’ll patch this below
+      // duration_seconds: 0, // we’ll patch this below
+      duration_seconds: body.durationSeconds, // we’ll patch this below
     })
     .select('id, started_at')
     .single();
@@ -199,9 +201,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     .from('workspace_quiz_attempts')
     .update({
       completed_at: completedAt,
-      duration_seconds: Math.floor(
-        (Date.now() - new Date(insAtt.started_at).getTime()) / 1000
-      ),
+      // duration_seconds: Math.floor(
+      //   (Date.now() - new Date(insAtt.started_at).getTime()) / 1000
+      // ),
     })
     .eq('id', insAtt.id);
 
