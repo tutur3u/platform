@@ -161,7 +161,9 @@ export async function GET(
               ) || [],
           // Add helper field to identify if current user is assigned
           is_assigned_to_current_user:
-            task.assignees?.some((a: TaskAssigneeData) => a.user?.id === user.id) || false,
+            task.assignees?.some(
+              (a: TaskAssigneeData) => a.user?.id === user.id
+            ) || false,
         })) || [];
 
     return NextResponse.json({ tasks });

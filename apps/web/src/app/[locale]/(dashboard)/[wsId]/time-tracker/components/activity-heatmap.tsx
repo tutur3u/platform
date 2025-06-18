@@ -1,25 +1,33 @@
 'use client';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { Button } from '@tuturuuu/ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuCheckboxItem
 } from '@tuturuuu/ui/dropdown-menu';
-import { Settings, Calendar, Grid3X3, Info, ChevronLeft, ChevronRight, LayoutDashboard } from '@tuturuuu/ui/icons';
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Grid3X3,
+  Info,
+  LayoutDashboard,
+  Settings,
+} from '@tuturuuu/ui/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import isBetween from 'dayjs/plugin/isBetween';
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -38,7 +46,11 @@ interface ActivityHeatmapProps {
   settings?: HeatmapSettings;
 }
 
-type HeatmapViewMode = 'original' | 'hybrid' | 'calendar-only' | 'compact-cards';
+type HeatmapViewMode =
+  | 'original'
+  | 'hybrid'
+  | 'calendar-only'
+  | 'compact-cards';
 
 interface HeatmapSettings {
   viewMode: HeatmapViewMode;
@@ -67,60 +79,68 @@ export function ActivityHeatmap({
           // Check if user dismissed tips recently (within 7 days)
           if (parsed.dismissedAt) {
             const dismissedDate = new Date(parsed.dismissedAt);
-            const daysSinceDismissed = Math.floor((Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24));
-            
+            const daysSinceDismissed = Math.floor(
+              (Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24)
+            );
+
             // If dismissed recently, don't show tips
             if (daysSinceDismissed < 7) {
-              return { 
-                showTips: false, 
+              return {
+                showTips: false,
                 dismissedAt: parsed.dismissedAt,
                 viewCount: parsed.viewCount || 0,
-                lastViewMode: parsed.lastViewMode || 'original'
+                lastViewMode: parsed.lastViewMode || 'original',
               };
             }
           }
-          return { 
-            showTips: true, 
+          return {
+            showTips: true,
             dismissedAt: null,
             viewCount: parsed.viewCount || 0,
-            lastViewMode: parsed.lastViewMode || 'original'
+            lastViewMode: parsed.lastViewMode || 'original',
           };
         } catch {
           // Fall through to default
         }
       }
     }
-    return { 
-      showTips: true, 
+    return {
+      showTips: true,
       dismissedAt: null,
       viewCount: 0,
-      lastViewMode: 'original'
+      lastViewMode: 'original',
     };
   });
 
   // Use external settings if provided, otherwise use internal settings
   const settings = externalSettings || internalSettings;
-  
+
   // Auto-hide tips after 30 seconds of inactivity (optional enhancement)
-  const [tipAutoHideTimer, setTipAutoHideTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [tipAutoHideTimer, setTipAutoHideTimer] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   // Smart logic: Only show onboarding tips when appropriate
   const shouldShowOnboardingTips = useMemo(() => {
     // Don't show if user explicitly disabled in settings
     if (!settings.showOnboardingTips) return false;
-    
+
     // Don't show if recently dismissed
     if (!onboardingState.showTips) return false;
-    
+
     // Show for new users (< 3 views) or when switching view modes
     const isNewUser = onboardingState.viewCount < 3;
     const changedViewMode = onboardingState.lastViewMode !== settings.viewMode;
-    
+
     // Show for experienced users occasionally (every 14 days after 10+ views)
-    const isPeriodicReminder = onboardingState.viewCount >= 10 && 
-      (!onboardingState.dismissedAt || 
-       Math.floor((Date.now() - new Date(onboardingState.dismissedAt).getTime()) / (1000 * 60 * 60 * 24)) >= 14);
-    
+    const isPeriodicReminder =
+      onboardingState.viewCount >= 10 &&
+      (!onboardingState.dismissedAt ||
+        Math.floor(
+          (Date.now() - new Date(onboardingState.dismissedAt).getTime()) /
+            (1000 * 60 * 60 * 24)
+        ) >= 14);
+
     return isNewUser || changedViewMode || isPeriodicReminder;
   }, [settings.showOnboardingTips, onboardingState, settings.viewMode]);
 
@@ -132,12 +152,15 @@ export function ActivityHeatmap({
         viewCount: onboardingState.viewCount + 1,
         lastViewMode: settings.viewMode,
         showTips: true, // Reset to show tips when view mode changes
-        dismissedAt: null
+        dismissedAt: null,
       };
       setOnboardingState(newState);
-      
+
       if (typeof window !== 'undefined') {
-        localStorage.setItem('time-tracker-onboarding', JSON.stringify(newState));
+        localStorage.setItem(
+          'time-tracker-onboarding',
+          JSON.stringify(newState)
+        );
       }
     }
   }, [settings.viewMode, onboardingState]);
@@ -147,10 +170,10 @@ export function ActivityHeatmap({
     const newState = {
       ...onboardingState,
       showTips: false,
-      dismissedAt: new Date().toISOString()
+      dismissedAt: new Date().toISOString(),
     };
     setOnboardingState(newState);
-    
+
     if (typeof window !== 'undefined') {
       localStorage.setItem('time-tracker-onboarding', JSON.stringify(newState));
     }
@@ -163,11 +186,13 @@ export function ActivityHeatmap({
           const parsed = JSON.parse(currentHeatmapSettings);
           const updated = { ...parsed, showOnboardingTips: false };
           localStorage.setItem('heatmap-settings', JSON.stringify(updated));
-          
+
           // Dispatch a custom event to notify parent component
-          window.dispatchEvent(new CustomEvent('heatmap-settings-changed', { 
-            detail: updated 
-          }));
+          window.dispatchEvent(
+            new CustomEvent('heatmap-settings-changed', {
+              detail: updated,
+            })
+          );
         } catch {
           // Silently fail
         }
@@ -188,9 +213,9 @@ export function ActivityHeatmap({
       const timer = setTimeout(() => {
         handleDismissTips();
       }, 45000); // Auto-hide after 45 seconds for experienced users
-      
+
       setTipAutoHideTimer(timer);
-      
+
       return () => {
         clearTimeout(timer);
       };
@@ -206,7 +231,9 @@ export function ActivityHeatmap({
     };
   }, [tipAutoHideTimer]);
 
-  const [currentMonth, setCurrentMonth] = useState(dayjs().tz(dayjs.tz.guess()));
+  const [currentMonth, setCurrentMonth] = useState(
+    dayjs().tz(dayjs.tz.guess())
+  );
 
   const userTimezone = dayjs.tz.guess();
   const today = dayjs().tz(userTimezone);
@@ -371,7 +398,12 @@ export function ActivityHeatmap({
       globalOffset = desktopFirstRow.flat().length;
 
     return (
-      <div className={cn('relative space-y-1.5 overflow-visible', isMobile ? 'space-y-1' : 'space-y-2')}>
+      <div
+        className={cn(
+          'relative space-y-1.5 overflow-visible',
+          isMobile ? 'space-y-1' : 'space-y-2'
+        )}
+      >
         {/* Month Labels */}
         <div
           className="grid text-xs font-medium text-gray-500 dark:text-gray-400"
@@ -456,7 +488,7 @@ export function ActivityHeatmap({
                 </TooltipTrigger>
                 <TooltipContent
                   side="top"
-                  className="z-50 pointer-events-none max-w-sm border border-border/20 bg-white/98 p-3 shadow-2xl backdrop-blur-lg dark:bg-gray-900/98"
+                  className="pointer-events-none z-50 max-w-sm border border-border/20 bg-white/98 p-3 shadow-2xl backdrop-blur-lg dark:bg-gray-900/98"
                   sideOffset={8}
                   avoidCollisions={true}
                   collisionPadding={8}
@@ -464,8 +496,8 @@ export function ActivityHeatmap({
                   <div className="space-y-2.5">
                     <div className="font-semibold text-gray-900 dark:text-gray-100">
                       {day.date.format('dddd, MMMM D, YYYY')}
-                                              {settings.timeReference === 'smart' && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {settings.timeReference === 'smart' && (
+                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           {day.date.fromNow()} • {day.date.format('MMM D')}
                         </div>
                       )}
@@ -553,20 +585,27 @@ export function ActivityHeatmap({
     const monthlyData = Array.from({ length: 12 }, (_, monthIndex) => {
       const monthStart = today.startOf('year').add(monthIndex, 'month');
       const monthEnd = monthStart.endOf('month');
-      
-      const monthActivity = dailyActivity?.filter(day => {
-        const dayDate = dayjs.utc(day.date).tz(userTimezone);
-        return dayDate.isBetween(monthStart, monthEnd, 'day', '[]');
-      }) || [];
-      
-      const totalDuration = monthActivity.reduce((sum, day) => sum + day.duration, 0);
-      const totalSessions = monthActivity.reduce((sum, day) => sum + day.sessions, 0);
-      
+
+      const monthActivity =
+        dailyActivity?.filter((day) => {
+          const dayDate = dayjs.utc(day.date).tz(userTimezone);
+          return dayDate.isBetween(monthStart, monthEnd, 'day', '[]');
+        }) || [];
+
+      const totalDuration = monthActivity.reduce(
+        (sum, day) => sum + day.duration,
+        0
+      );
+      const totalSessions = monthActivity.reduce(
+        (sum, day) => sum + day.sessions,
+        0
+      );
+
       return {
         month: monthStart,
         duration: totalDuration,
         sessions: totalSessions,
-        intensity: getIntensity(totalDuration / monthActivity.length || 0)
+        intensity: getIntensity(totalDuration / monthActivity.length || 0),
       };
     });
 
@@ -580,14 +619,14 @@ export function ActivityHeatmap({
             {dailyActivity?.length || 0} active days
           </span>
         </div>
-        
+
         <div className="grid grid-cols-12 gap-2">
           {monthlyData.map((month, index) => (
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 <button
                   className={cn(
-                    'h-12 rounded-md transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400/50',
+                    'h-12 rounded-md transition-all hover:scale-105 focus:ring-2 focus:ring-emerald-400/50 focus:outline-none',
                     getColorClass(month.intensity),
                     'flex flex-col items-center justify-center text-xs font-medium'
                   )}
@@ -600,7 +639,9 @@ export function ActivityHeatmap({
               </TooltipTrigger>
               <TooltipContent side="top" sideOffset={4}>
                 <div className="text-center">
-                  <div className="font-medium">{month.month.format('MMMM YYYY')}</div>
+                  <div className="font-medium">
+                    {month.month.format('MMMM YYYY')}
+                  </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     {formatDuration(month.duration)} • {month.sessions} sessions
                   </div>
@@ -619,34 +660,38 @@ export function ActivityHeatmap({
     const monthEnd = currentMonth.endOf('month');
     const calendarStart = monthStart.startOf('week');
     const calendarEnd = monthEnd.endOf('week');
-    
+
     const days = [];
     let currentDay = calendarStart;
-    
-    while (currentDay.isBefore(calendarEnd) || currentDay.isSame(calendarEnd, 'day')) {
-      const dayActivity = dailyActivity?.find(activity => {
+
+    while (
+      currentDay.isBefore(calendarEnd) ||
+      currentDay.isSame(calendarEnd, 'day')
+    ) {
+      const dayActivity = dailyActivity?.find((activity) => {
         const activityDate = dayjs.utc(activity.date).tz(userTimezone);
         return activityDate.isSame(currentDay, 'day');
       });
-      
+
       days.push({
         date: currentDay,
         activity: dayActivity || null,
         isCurrentMonth: currentDay.isSame(currentMonth, 'month'),
-        isToday: currentDay.isSame(today, 'day')
+        isToday: currentDay.isSame(today, 'day'),
       });
-      
+
       currentDay = currentDay.add(1, 'day');
     }
 
     const monthlyStats = {
-      activeDays: days.filter(day => day?.activity && day.isCurrentMonth).length,
+      activeDays: days.filter((day) => day?.activity && day.isCurrentMonth)
+        .length,
       totalDuration: days
-        .filter(day => day.isCurrentMonth && day?.activity)
+        .filter((day) => day.isCurrentMonth && day?.activity)
         .reduce((sum, day) => sum + (day.activity?.duration || 0), 0),
       totalSessions: days
-        .filter(day => day.isCurrentMonth && day?.activity)
-        .reduce((sum, day) => sum + (day.activity?.sessions || 0), 0)
+        .filter((day) => day.isCurrentMonth && day?.activity)
+        .reduce((sum, day) => sum + (day.activity?.sessions || 0), 0),
     };
 
     return (
@@ -686,27 +731,29 @@ export function ActivityHeatmap({
         <div className="space-y-2">
           {/* Day Headers */}
           <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="py-1 text-center">{day}</div>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              <div key={day} className="py-1 text-center">
+                {day}
+              </div>
             ))}
           </div>
-          
+
           {/* Calendar Days */}
           <div className="grid grid-cols-7 gap-1.5">
             {days.map((day, index) => {
               const intensity = getIntensity(day.activity?.duration || 0);
-              
+
               return (
                 <Tooltip key={index}>
                   <TooltipTrigger asChild>
                     <button
                       className={cn(
                         'relative h-8 w-full rounded-md text-xs font-medium transition-all focus:outline-none',
-                        'hover:scale-105 hover:z-10 focus:scale-105 focus:z-10',
-                        day.isCurrentMonth 
-                          ? 'text-gray-900 dark:text-gray-100' 
+                        'hover:z-10 hover:scale-105 focus:z-10 focus:scale-105',
+                        day.isCurrentMonth
+                          ? 'text-gray-900 dark:text-gray-100'
                           : 'text-gray-400 dark:text-gray-600',
-                        day.activity 
+                        day.activity
                           ? getColorClass(intensity)
                           : 'bg-gray-100/50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800',
                         day.isToday && 'ring-2 ring-blue-500 ring-offset-1',
@@ -728,7 +775,8 @@ export function ActivityHeatmap({
                       </div>
                       {day.activity ? (
                         <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                          {formatDuration(day.activity.duration)} • {day.activity.sessions} sessions
+                          {formatDuration(day.activity.duration)} •{' '}
+                          {day.activity.sessions} sessions
                         </div>
                       ) : (
                         <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -748,220 +796,290 @@ export function ActivityHeatmap({
 
   // Data processing functions
   const processMonthlyData = useCallback(() => {
-    return weeks.reduce((acc, week) => {
-      week.forEach(day => {
-        if (day?.activity) {
-          const monthKey = day.date.format('YYYY-MM');
-          const monthName = day.date.format('MMM YYYY');
-          
-          if (!acc[monthKey]) {
-            acc[monthKey] = {
-              name: monthName,
-              totalDuration: 0,
-              activeDays: 0,
-              totalSessions: 0,
-              dates: [] as typeof day[],
-              weekdays: 0,
-              weekends: 0,
-              bestDay: { duration: 0, date: '' },
-              longestStreak: 0,
-              currentStreak: 0,
-            };
+    return weeks.reduce(
+      (acc, week) => {
+        week.forEach((day) => {
+          if (day?.activity) {
+            const monthKey = day.date.format('YYYY-MM');
+            const monthName = day.date.format('MMM YYYY');
+
+            if (!acc[monthKey]) {
+              acc[monthKey] = {
+                name: monthName,
+                totalDuration: 0,
+                activeDays: 0,
+                totalSessions: 0,
+                dates: [] as (typeof day)[],
+                weekdays: 0,
+                weekends: 0,
+                bestDay: { duration: 0, date: '' },
+                longestStreak: 0,
+                currentStreak: 0,
+              };
+            }
+
+            acc[monthKey].totalDuration += day.activity.duration;
+            acc[monthKey].totalSessions += day.activity.sessions;
+            acc[monthKey].activeDays += 1;
+            acc[monthKey].dates.push(day);
+
+            // Track weekday vs weekend activity
+            if (day.date.day() === 0 || day.date.day() === 6) {
+              acc[monthKey].weekends += 1;
+            } else {
+              acc[monthKey].weekdays += 1;
+            }
+
+            // Track best day
+            if (day.activity.duration > acc[monthKey].bestDay.duration) {
+              acc[monthKey].bestDay = {
+                duration: day.activity.duration,
+                date: day.date.format('MMM D'),
+              };
+            }
           }
-          
-          acc[monthKey].totalDuration += day.activity.duration;
-          acc[monthKey].totalSessions += day.activity.sessions;
-          acc[monthKey].activeDays += 1;
-          acc[monthKey].dates.push(day);
-          
-          // Track weekday vs weekend activity
-          if (day.date.day() === 0 || day.date.day() === 6) {
-            acc[monthKey].weekends += 1;
-          } else {
-            acc[monthKey].weekdays += 1;
-          }
-          
-          // Track best day
-          if (day.activity.duration > acc[monthKey].bestDay.duration) {
-            acc[monthKey].bestDay = {
-              duration: day.activity.duration,
-              date: day.date.format('MMM D'),
-            };
-          }
+        });
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          name: string;
+          totalDuration: number;
+          activeDays: number;
+          totalSessions: number;
+          dates: any[];
+          weekdays: number;
+          weekends: number;
+          bestDay: { duration: number; date: string };
+          longestStreak: number;
+          currentStreak: number;
         }
-      });
-      return acc;
-    }, {} as Record<string, {
-      name: string;
-      totalDuration: number;
-      activeDays: number;
-      totalSessions: number;
-      dates: any[];
-      weekdays: number;
-      weekends: number;
-      bestDay: { duration: number; date: string };
-      longestStreak: number;
-      currentStreak: number;
-    }>);
+      >
+    );
   }, [weeks]);
 
-  const calculateMonthlyStats = useCallback((monthlyData: ReturnType<typeof processMonthlyData>) => {
-    // Calculate streaks for each month
-    Object.values(monthlyData).forEach(monthData => {
-      let currentStreak = 0;
-      let longestStreak = 0;
-      
-      // Sort dates chronologically
-      const sortedDates = monthData.dates.sort((a, b) => a.date.valueOf() - b.date.valueOf());
-      
-      for (let i = 0; i < sortedDates.length; i++) {
-        if (sortedDates[i]?.activity?.duration > 0) {
-          currentStreak += 1;
-          longestStreak = Math.max(longestStreak, currentStreak);
-        } else {
-          currentStreak = 0;
+  const calculateMonthlyStats = useCallback(
+    (monthlyData: ReturnType<typeof processMonthlyData>) => {
+      // Calculate streaks for each month
+      Object.values(monthlyData).forEach((monthData) => {
+        let currentStreak = 0;
+        let longestStreak = 0;
+
+        // Sort dates chronologically
+        const sortedDates = monthData.dates.sort(
+          (a, b) => a.date.valueOf() - b.date.valueOf()
+        );
+
+        for (let i = 0; i < sortedDates.length; i++) {
+          if (sortedDates[i]?.activity?.duration > 0) {
+            currentStreak += 1;
+            longestStreak = Math.max(longestStreak, currentStreak);
+          } else {
+            currentStreak = 0;
+          }
         }
-      }
-      
-      monthData.longestStreak = longestStreak;
-      monthData.currentStreak = currentStreak;
-    });
 
-    // Sort months chronologically (most recent first)
-    const sortedMonths = Object.entries(monthlyData)
-      .sort(([a], [b]) => b.localeCompare(a))
-      .slice(0, 12); // Show last 12 months
+        monthData.longestStreak = longestStreak;
+        monthData.currentStreak = currentStreak;
+      });
 
-    // Calculate trends (compare with previous month)
-    const monthsWithTrends = sortedMonths.map(([monthKey, data], index) => {
-      const previousMonth = sortedMonths[index + 1];
-      let trend = 'neutral' as 'up' | 'down' | 'neutral';
-      let trendValue = 0;
-      
-      if (previousMonth) {
-        const prevData = previousMonth[1];
-        const currentAvg = data.totalDuration / Math.max(data.activeDays, 1);
-        const prevAvg = prevData.totalDuration / Math.max(prevData.activeDays, 1);
-        
-        if (currentAvg > prevAvg * 1.1) trend = 'up';
-        else if (currentAvg < prevAvg * 0.9) trend = 'down';
-        
-        trendValue = ((currentAvg - prevAvg) / Math.max(prevAvg, 1)) * 100;
-      }
-      
-      return { monthKey, data, trend, trendValue };
-    });
+      // Sort months chronologically (most recent first)
+      const sortedMonths = Object.entries(monthlyData)
+        .sort(([a], [b]) => b.localeCompare(a))
+        .slice(0, 12); // Show last 12 months
 
-    // Calculate overall statistics for summary card
-    const totalOverallDuration = sortedMonths.reduce((sum, [, data]) => sum + data.totalDuration, 0);
-    const totalOverallSessions = sortedMonths.reduce((sum, [, data]) => sum + data.totalSessions, 0);
-    const totalActiveDays = sortedMonths.reduce((sum, [, data]) => sum + data.activeDays, 0);
-    const avgDailyOverall = totalActiveDays > 0 ? totalOverallDuration / totalActiveDays : 0;
-    const avgSessionLength = totalOverallSessions > 0 ? totalOverallDuration / totalOverallSessions : 0;
-    const overallFocusScore = avgSessionLength > 0 ? Math.min(100, Math.round((avgSessionLength / 3600) * 25)) : 0;
+      // Calculate trends (compare with previous month)
+      const monthsWithTrends = sortedMonths.map(([monthKey, data], index) => {
+        const previousMonth = sortedMonths[index + 1];
+        let trend = 'neutral' as 'up' | 'down' | 'neutral';
+        let trendValue = 0;
 
-    return {
-      sortedMonths,
-      monthsWithTrends,
-      overallStats: {
-        totalDuration: totalOverallDuration,
-        totalSessions: totalOverallSessions,
-        activeDays: totalActiveDays,
-        avgDaily: avgDailyOverall,
-        avgSession: avgSessionLength,
-        focusScore: overallFocusScore,
-        monthCount: sortedMonths.length
-      }
-    };
-  }, []);
+        if (previousMonth) {
+          const prevData = previousMonth[1];
+          const currentAvg = data.totalDuration / Math.max(data.activeDays, 1);
+          const prevAvg =
+            prevData.totalDuration / Math.max(prevData.activeDays, 1);
+
+          if (currentAvg > prevAvg * 1.1) trend = 'up';
+          else if (currentAvg < prevAvg * 0.9) trend = 'down';
+
+          trendValue = ((currentAvg - prevAvg) / Math.max(prevAvg, 1)) * 100;
+        }
+
+        return { monthKey, data, trend, trendValue };
+      });
+
+      // Calculate overall statistics for summary card
+      const totalOverallDuration = sortedMonths.reduce(
+        (sum, [, data]) => sum + data.totalDuration,
+        0
+      );
+      const totalOverallSessions = sortedMonths.reduce(
+        (sum, [, data]) => sum + data.totalSessions,
+        0
+      );
+      const totalActiveDays = sortedMonths.reduce(
+        (sum, [, data]) => sum + data.activeDays,
+        0
+      );
+      const avgDailyOverall =
+        totalActiveDays > 0 ? totalOverallDuration / totalActiveDays : 0;
+      const avgSessionLength =
+        totalOverallSessions > 0
+          ? totalOverallDuration / totalOverallSessions
+          : 0;
+      const overallFocusScore =
+        avgSessionLength > 0
+          ? Math.min(100, Math.round((avgSessionLength / 3600) * 25))
+          : 0;
+
+      return {
+        sortedMonths,
+        monthsWithTrends,
+        overallStats: {
+          totalDuration: totalOverallDuration,
+          totalSessions: totalOverallSessions,
+          activeDays: totalActiveDays,
+          avgDaily: avgDailyOverall,
+          avgSession: avgSessionLength,
+          focusScore: overallFocusScore,
+          monthCount: sortedMonths.length,
+        },
+      };
+    },
+    []
+  );
 
   // Card components
   const SummaryCard = ({ data }: { data: any }) => (
-    <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-blue-950/20 dark:to-indigo-950/20 dark:border-blue-800/30">
-      <div className="flex items-center justify-between mb-2">
+    <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-blue-800/30 dark:from-blue-950/20 dark:to-indigo-950/20">
+      <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">Overall</h4>
-          <span className="text-xs text-blue-600 dark:text-blue-300">{data.monthCount} month{data.monthCount > 1 ? 's' : ''}</span>
+          <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+            Overall
+          </h4>
+          <span className="text-xs text-blue-600 dark:text-blue-300">
+            {data.monthCount} month{data.monthCount > 1 ? 's' : ''}
+          </span>
         </div>
-        <div className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+        <div className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
           {data.focusScore}%
         </div>
       </div>
-      
-      <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+
+      <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
         <div>
           <div className="text-blue-600 dark:text-blue-400">Total</div>
-          <div className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(data.totalDuration)}</div>
+          <div className="font-medium text-blue-900 dark:text-blue-100">
+            {formatDuration(data.totalDuration)}
+          </div>
         </div>
         <div>
           <div className="text-blue-600 dark:text-blue-400">Daily</div>
-          <div className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(Math.round(data.avgDaily))}</div>
+          <div className="font-medium text-blue-900 dark:text-blue-100">
+            {formatDuration(Math.round(data.avgDaily))}
+          </div>
         </div>
         <div>
           <div className="text-blue-600 dark:text-blue-400">Sessions</div>
-          <div className="font-medium text-blue-900 dark:text-blue-100">{data.totalSessions}</div>
+          <div className="font-medium text-blue-900 dark:text-blue-100">
+            {data.totalSessions}
+          </div>
         </div>
         <div>
           <div className="text-blue-600 dark:text-blue-400">Days</div>
-          <div className="font-medium text-blue-900 dark:text-blue-100">{data.activeDays}</div>
+          <div className="font-medium text-blue-900 dark:text-blue-100">
+            {data.activeDays}
+          </div>
         </div>
       </div>
-      
-      <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+
+      <div className="border-t border-blue-200 pt-2 dark:border-blue-800">
         <p className="text-xs text-blue-700 dark:text-blue-300">
-          {data.activeDays < 7 ? 
-            `Great start! Building momentum.` :
-            `Avg session: ${formatDuration(Math.round(data.avgSession))}`
-          }
+          {data.activeDays < 7
+            ? `Great start! Building momentum.`
+            : `Avg session: ${formatDuration(Math.round(data.avgSession))}`}
         </p>
       </div>
     </div>
   );
 
-  const MonthlyCard = ({ monthKey, data, trend, trendValue }: { monthKey: string; data: any; trend: 'up' | 'down' | 'neutral'; trendValue: number }) => {
-    const avgDailyDuration = data.activeDays > 0 ? data.totalDuration / data.activeDays : 0;
-    const avgSessionLength = data.totalSessions > 0 ? data.totalDuration / data.totalSessions : 0;
-    const focusScore = avgSessionLength > 0 ? Math.min(100, Math.round((avgSessionLength / 3600) * 25)) : 0;
-    const consistencyScore = data.activeDays > 0 ? Math.round((data.activeDays / 31) * 100) : 0;
-    
+  const MonthlyCard = ({
+    monthKey,
+    data,
+    trend,
+    trendValue,
+  }: {
+    monthKey: string;
+    data: any;
+    trend: 'up' | 'down' | 'neutral';
+    trendValue: number;
+  }) => {
+    const avgDailyDuration =
+      data.activeDays > 0 ? data.totalDuration / data.activeDays : 0;
+    const avgSessionLength =
+      data.totalSessions > 0 ? data.totalDuration / data.totalSessions : 0;
+    const focusScore =
+      avgSessionLength > 0
+        ? Math.min(100, Math.round((avgSessionLength / 3600) * 25))
+        : 0;
+    const consistencyScore =
+      data.activeDays > 0 ? Math.round((data.activeDays / 31) * 100) : 0;
+
     return (
-      <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-green-950/20 dark:to-emerald-950/20 dark:border-green-800/30">
-        <div className="flex items-center justify-between mb-2">
+      <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-green-800/30 dark:from-green-950/20 dark:to-emerald-950/20">
+        <div className="mb-2 flex items-center justify-between">
           <div>
-            <h4 className="font-semibold text-sm text-green-900 dark:text-green-100">{data.name}</h4>
+            <h4 className="text-sm font-semibold text-green-900 dark:text-green-100">
+              {data.name}
+            </h4>
             <div className="flex items-center gap-1">
               <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
               {trend !== 'neutral' && (
-                <span className={cn(
-                  'text-xs font-medium',
-                  trend === 'up' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                )}>
-                  {trend === 'up' ? '↗' : '↘'}{Math.abs(trendValue).toFixed(0)}%
+                <span
+                  className={cn(
+                    'text-xs font-medium',
+                    trend === 'up'
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-red-600 dark:text-red-400'
+                  )}
+                >
+                  {trend === 'up' ? '↗' : '↘'}
+                  {Math.abs(trendValue).toFixed(0)}%
                 </span>
               )}
             </div>
           </div>
-          <div className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
+          <div className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
             {focusScore}%
           </div>
         </div>
-        
-        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+
+        <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
           <div>
             <div className="text-green-600 dark:text-green-400">Total</div>
-            <div className="font-medium text-green-900 dark:text-green-100">{formatDuration(data.totalDuration)}</div>
+            <div className="font-medium text-green-900 dark:text-green-100">
+              {formatDuration(data.totalDuration)}
+            </div>
           </div>
           <div>
             <div className="text-green-600 dark:text-green-400">Daily</div>
-            <div className="font-medium text-green-900 dark:text-green-100">{formatDuration(Math.round(avgDailyDuration))}</div>
+            <div className="font-medium text-green-900 dark:text-green-100">
+              {formatDuration(Math.round(avgDailyDuration))}
+            </div>
           </div>
           <div>
             <div className="text-green-600 dark:text-green-400">Sessions</div>
-            <div className="font-medium text-green-900 dark:text-green-100">{data.totalSessions}</div>
+            <div className="font-medium text-green-900 dark:text-green-100">
+              {data.totalSessions}
+            </div>
           </div>
           <div>
             <div className="text-green-600 dark:text-green-400">Days</div>
-            <div className="font-medium text-green-900 dark:text-green-100">{data.activeDays}</div>
+            <div className="font-medium text-green-900 dark:text-green-100">
+              {data.activeDays}
+            </div>
           </div>
         </div>
 
@@ -972,14 +1090,18 @@ export function ActivityHeatmap({
               const monthStart = dayjs(monthKey + '-01');
               const dayOffset = i - monthStart.day();
               const currentDay = monthStart.add(dayOffset, 'day');
-              
-              const dayActivity = data.dates.find((d: any) => 
-                d?.date?.format('YYYY-MM-DD') === currentDay.format('YYYY-MM-DD')
+
+              const dayActivity = data.dates.find(
+                (d: any) =>
+                  d?.date?.format('YYYY-MM-DD') ===
+                  currentDay.format('YYYY-MM-DD')
               );
-              
+
               const isCurrentMonth = currentDay.month() === monthStart.month();
-              const dayIntensity = dayActivity?.activity ? getIntensity(dayActivity.activity.duration) : 0;
-              
+              const dayIntensity = dayActivity?.activity
+                ? getIntensity(dayActivity.activity.duration)
+                : 0;
+
               return (
                 <div
                   key={i}
@@ -996,38 +1118,50 @@ export function ActivityHeatmap({
             })}
           </div>
         </div>
-        
-        <div className="pt-2 border-t border-green-200 dark:border-green-800">
+
+        <div className="border-t border-green-200 pt-2 dark:border-green-800">
           <p className="text-xs text-green-700 dark:text-green-300">
-            {consistencyScore >= 80 ? 'Excellent consistency!' : 
-             consistencyScore >= 50 ? 'Good habits forming' :
-             'Building momentum'}
+            {consistencyScore >= 80
+              ? 'Excellent consistency!'
+              : consistencyScore >= 50
+                ? 'Good habits forming'
+                : 'Building momentum'}
           </p>
         </div>
       </div>
     );
   };
 
-  const UpcomingCard = ({ monthKey, name }: { monthKey: string; name: string }) => (
-    <div className="group relative overflow-hidden rounded-lg border border-muted/40 bg-gradient-to-br from-muted/20 to-muted/10 p-3 transition-all hover:from-muted/30 hover:to-muted/20 backdrop-blur-sm opacity-60 hover:opacity-80">
-      <div className="flex items-center justify-between mb-2">
+  const UpcomingCard = ({
+    monthKey,
+    name,
+  }: {
+    monthKey: string;
+    name: string;
+  }) => (
+    <div className="group relative overflow-hidden rounded-lg border border-muted/40 bg-gradient-to-br from-muted/20 to-muted/10 p-3 opacity-60 backdrop-blur-sm transition-all hover:from-muted/30 hover:to-muted/20 hover:opacity-80">
+      <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="font-semibold text-sm text-muted-foreground/80">{name}</h4>
+          <h4 className="text-sm font-semibold text-muted-foreground/80">
+            {name}
+          </h4>
           <span className="text-xs text-muted-foreground/60">Next month</span>
         </div>
-        <div className="px-2 py-1 rounded-full text-xs font-medium bg-muted/50 text-muted-foreground/70 backdrop-blur-sm">
+        <div className="rounded-full bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground/70 backdrop-blur-sm">
           Plan
         </div>
       </div>
-      
-      <div className="grid grid-cols-2 gap-2 text-xs mb-2 opacity-50">
+
+      <div className="mb-2 grid grid-cols-2 gap-2 text-xs opacity-50">
         <div>
           <div className="text-muted-foreground/60">Target</div>
           <div className="font-medium text-muted-foreground/60">Set goal</div>
         </div>
         <div>
           <div className="text-muted-foreground/60">Focus</div>
-          <div className="font-medium text-muted-foreground/60">Stay consistent</div>
+          <div className="font-medium text-muted-foreground/60">
+            Stay consistent
+          </div>
         </div>
         <div>
           <div className="text-muted-foreground/60">Sessions</div>
@@ -1042,15 +1176,12 @@ export function ActivityHeatmap({
       <div className="mb-2 opacity-30">
         <div className="grid grid-cols-7 gap-px">
           {Array.from({ length: 7 * 4 }, (_, i) => (
-            <div
-              key={i}
-              className="aspect-square rounded-[1px] bg-muted/50"
-            />
+            <div key={i} className="aspect-square rounded-[1px] bg-muted/50" />
           ))}
         </div>
       </div>
-      
-      <div className="pt-2 border-t border-muted/30">
+
+      <div className="border-t border-muted/30 pt-2">
         <p className="text-xs text-muted-foreground/60">
           Keep the momentum going! 🚀
         </p>
@@ -1059,33 +1190,43 @@ export function ActivityHeatmap({
   );
 
   const GettingStartedCard = () => (
-    <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-purple-50 to-violet-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-purple-950/20 dark:to-violet-950/20 dark:border-purple-800/30">
-      <div className="flex items-center justify-between mb-2">
+    <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-purple-50 to-violet-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-purple-800/30 dark:from-purple-950/20 dark:to-violet-950/20">
+      <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">Get Started</h4>
-          <span className="text-xs text-purple-600 dark:text-purple-300">Begin journey</span>
+          <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+            Get Started
+          </h4>
+          <span className="text-xs text-purple-600 dark:text-purple-300">
+            Begin journey
+          </span>
         </div>
-        <div className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+        <div className="rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
           New
         </div>
       </div>
-      
+
       <div className="space-y-2 text-xs">
         <div className="flex items-center gap-2">
           <div className="h-1 w-1 rounded-full bg-purple-500" />
-          <span className="text-purple-700 dark:text-purple-300">Start timer session</span>
+          <span className="text-purple-700 dark:text-purple-300">
+            Start timer session
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-1 w-1 rounded-full bg-purple-500" />
-          <span className="text-purple-700 dark:text-purple-300">Build daily habits</span>
+          <span className="text-purple-700 dark:text-purple-300">
+            Build daily habits
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-1 w-1 rounded-full bg-purple-500" />
-          <span className="text-purple-700 dark:text-purple-300">Track progress</span>
+          <span className="text-purple-700 dark:text-purple-300">
+            Track progress
+          </span>
         </div>
       </div>
-      
-      <div className="pt-2 border-t border-purple-200 dark:border-purple-800 mt-3">
+
+      <div className="mt-3 border-t border-purple-200 pt-2 dark:border-purple-800">
         <p className="text-xs text-purple-700 dark:text-purple-300">
           💡 Try 25-min Pomodoro sessions
         </p>
@@ -1093,15 +1234,15 @@ export function ActivityHeatmap({
     </div>
   );
 
-  const CompactCardsContainer = ({ 
-    cards, 
-    currentIndex, 
-    setCurrentIndex, 
-    maxVisibleCards 
-  }: { 
-    cards: any[]; 
-    currentIndex: number; 
-    setCurrentIndex: (index: number) => void; 
+  const CompactCardsContainer = ({
+    cards,
+    currentIndex,
+    setCurrentIndex,
+    maxVisibleCards,
+  }: {
+    cards: any[];
+    currentIndex: number;
+    setCurrentIndex: (index: number) => void;
     maxVisibleCards: number;
   }) => {
     const totalCards = cards.length;
@@ -1116,11 +1257,16 @@ export function ActivityHeatmap({
 
     const scrollRight = () => {
       if (canScrollRight) {
-        setCurrentIndex(Math.min(totalCards - maxVisibleCards, currentIndex + 1));
+        setCurrentIndex(
+          Math.min(totalCards - maxVisibleCards, currentIndex + 1)
+        );
       }
     };
 
-    const visibleCards = cards.slice(currentIndex, currentIndex + maxVisibleCards);
+    const visibleCards = cards.slice(
+      currentIndex,
+      currentIndex + maxVisibleCards
+    );
 
     return (
       <div className="relative">
@@ -1131,35 +1277,40 @@ export function ActivityHeatmap({
               onClick={scrollLeft}
               disabled={!canScrollLeft}
               className={cn(
-                'absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full border bg-background/80 backdrop-blur-sm shadow-md transition-all',
-                canScrollLeft 
-                  ? 'border-border hover:bg-accent hover:border-accent-foreground/20 text-foreground'
-                  : 'border-muted text-muted-foreground cursor-not-allowed opacity-50'
+                'absolute top-1/2 left-0 z-10 h-8 w-8 -translate-y-1/2 rounded-full border bg-background/80 shadow-md backdrop-blur-sm transition-all',
+                canScrollLeft
+                  ? 'border-border text-foreground hover:border-accent-foreground/20 hover:bg-accent'
+                  : 'cursor-not-allowed border-muted text-muted-foreground opacity-50'
               )}
               aria-label="Previous cards"
             >
-              <ChevronLeft className="h-4 w-4 mx-auto" />
+              <ChevronLeft className="mx-auto h-4 w-4" />
             </button>
-            
+
             <button
               onClick={scrollRight}
               disabled={!canScrollRight}
               className={cn(
-                'absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full border bg-background/80 backdrop-blur-sm shadow-md transition-all',
-                canScrollRight 
-                  ? 'border-border hover:bg-accent hover:border-accent-foreground/20 text-foreground'
-                  : 'border-muted text-muted-foreground cursor-not-allowed opacity-50'
+                'absolute top-1/2 right-0 z-10 h-8 w-8 -translate-y-1/2 rounded-full border bg-background/80 shadow-md backdrop-blur-sm transition-all',
+                canScrollRight
+                  ? 'border-border text-foreground hover:border-accent-foreground/20 hover:bg-accent'
+                  : 'cursor-not-allowed border-muted text-muted-foreground opacity-50'
               )}
               aria-label="Next cards"
             >
-              <ChevronRight className="h-4 w-4 mx-auto" />
+              <ChevronRight className="mx-auto h-4 w-4" />
             </button>
           </>
         )}
 
         {/* Cards Container */}
-        <div className={cn("transition-all duration-300", totalCards > maxVisibleCards ? "mx-8" : "mx-0")}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div
+          className={cn(
+            'transition-all duration-300',
+            totalCards > maxVisibleCards ? 'mx-8' : 'mx-0'
+          )}
+        >
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visibleCards.map((card) => {
               if (card.type === 'summary' && card.data) {
                 return <SummaryCard key="summary" data={card.data} />;
@@ -1167,7 +1318,7 @@ export function ActivityHeatmap({
 
               if (card.type === 'monthly' && card.data) {
                 return (
-                  <MonthlyCard 
+                  <MonthlyCard
                     key={card.monthKey}
                     monthKey={card.monthKey}
                     data={card.data}
@@ -1179,7 +1330,7 @@ export function ActivityHeatmap({
 
               if (card.type === 'upcoming') {
                 return (
-                  <UpcomingCard 
+                  <UpcomingCard
                     key={`upcoming-${card.monthKey}`}
                     monthKey={card.monthKey}
                     name={card.name}
@@ -1198,76 +1349,87 @@ export function ActivityHeatmap({
 
         {/* Pagination Dots - Only show if needed */}
         {totalCards > maxVisibleCards && (
-          <div className="flex justify-center mt-3 gap-1">
-            {Array.from({ length: Math.ceil(totalCards / maxVisibleCards) }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i * maxVisibleCards)}
-                className={cn(
-                  'h-2 w-2 rounded-full transition-all',
-                  Math.floor(currentIndex / maxVisibleCards) === i
-                    ? 'bg-primary'
-                    : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                )}
-                aria-label={`Go to page ${i + 1}`}
-              />
-            ))}
+          <div className="mt-3 flex justify-center gap-1">
+            {Array.from(
+              { length: Math.ceil(totalCards / maxVisibleCards) },
+              (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentIndex(i * maxVisibleCards)}
+                  className={cn(
+                    'h-2 w-2 rounded-full transition-all',
+                    Math.floor(currentIndex / maxVisibleCards) === i
+                      ? 'bg-primary'
+                      : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                  )}
+                  aria-label={`Go to page ${i + 1}`}
+                />
+              )
+            )}
           </div>
         )}
       </div>
     );
   };
 
-  const buildCardsList = useCallback((monthlyStats: ReturnType<typeof calculateMonthlyStats>) => {
-    const { sortedMonths, monthsWithTrends, overallStats } = monthlyStats;
-    const allCards = [];
-    
-    // Determine if user is "established" enough to show upcoming month suggestions
-    const isEstablishedUser = overallStats.activeDays >= 7 && overallStats.totalSessions >= 10 && sortedMonths.length >= 1;
-    const hasRecentActivity = sortedMonths.length > 0 && dayjs().diff(dayjs().startOf('month'), 'day') < 15;
-    const shouldShowUpcoming = isEstablishedUser && hasRecentActivity;
-    
-    // Add summary card if we have meaningful data
-    if (sortedMonths.length > 0 && overallStats.activeDays >= 3) {
-      allCards.push({
-        type: 'summary',
-        data: overallStats
-      });
-    }
+  const buildCardsList = useCallback(
+    (monthlyStats: ReturnType<typeof calculateMonthlyStats>) => {
+      const { sortedMonths, monthsWithTrends, overallStats } = monthlyStats;
+      const allCards = [];
 
-    // Add monthly data cards
-    monthsWithTrends.forEach(({ monthKey, data, trend, trendValue }) => {
-      allCards.push({
-        type: 'monthly',
-        monthKey,
-        data,
-        trend,
-        trendValue
-      });
-    });
+      // Determine if user is "established" enough to show upcoming month suggestions
+      const isEstablishedUser =
+        overallStats.activeDays >= 7 &&
+        overallStats.totalSessions >= 10 &&
+        sortedMonths.length >= 1;
+      const hasRecentActivity =
+        sortedMonths.length > 0 &&
+        dayjs().diff(dayjs().startOf('month'), 'day') < 15;
+      const shouldShowUpcoming = isEstablishedUser && hasRecentActivity;
 
-    // Only add upcoming months if user is established and we have space
-    if (shouldShowUpcoming && allCards.length < 4) {
-      const currentMonth = dayjs();
-      const nextMonth = currentMonth.add(1, 'month');
-      
-      allCards.push({
-        type: 'upcoming',
-        monthKey: nextMonth.format('YYYY-MM'),
-        name: nextMonth.format('MMM YYYY'),
-        isSubtle: true
-      });
-    }
+      // Add summary card if we have meaningful data
+      if (sortedMonths.length > 0 && overallStats.activeDays >= 3) {
+        allCards.push({
+          type: 'summary',
+          data: overallStats,
+        });
+      }
 
-    // Add getting started card if no meaningful data
-    if (sortedMonths.length === 0 || overallStats.activeDays < 3) {
-      allCards.unshift({
-        type: 'getting-started'
+      // Add monthly data cards
+      monthsWithTrends.forEach(({ monthKey, data, trend, trendValue }) => {
+        allCards.push({
+          type: 'monthly',
+          monthKey,
+          data,
+          trend,
+          trendValue,
+        });
       });
-    }
 
-    return allCards;
-  }, [formatDuration, getIntensity, getColorClass]);
+      // Only add upcoming months if user is established and we have space
+      if (shouldShowUpcoming && allCards.length < 4) {
+        const currentMonth = dayjs();
+        const nextMonth = currentMonth.add(1, 'month');
+
+        allCards.push({
+          type: 'upcoming',
+          monthKey: nextMonth.format('YYYY-MM'),
+          name: nextMonth.format('MMM YYYY'),
+          isSubtle: true,
+        });
+      }
+
+      // Add getting started card if no meaningful data
+      if (sortedMonths.length === 0 || overallStats.activeDays < 3) {
+        allCards.unshift({
+          type: 'getting-started',
+        });
+      }
+
+      return allCards;
+    },
+    [formatDuration, getIntensity, getColorClass]
+  );
 
   const renderCompactCards = () => {
     const monthlyData = processMonthlyData();
@@ -1282,20 +1444,25 @@ export function ActivityHeatmap({
 
     const scrollLeft = () => {
       if (canScrollLeft) {
-        setCurrentIndex(prev => Math.max(0, prev - 1));
+        setCurrentIndex((prev) => Math.max(0, prev - 1));
       }
     };
 
     const scrollRight = () => {
       if (canScrollRight) {
-        setCurrentIndex(prev => Math.min(totalCards - maxVisibleCards, prev + 1));
+        setCurrentIndex((prev) =>
+          Math.min(totalCards - maxVisibleCards, prev + 1)
+        );
       }
     };
 
-    const visibleCards = allCards.slice(currentIndex, currentIndex + maxVisibleCards);
+    const visibleCards = allCards.slice(
+      currentIndex,
+      currentIndex + maxVisibleCards
+    );
 
     return (
-      <CompactCardsContainer 
+      <CompactCardsContainer
         cards={allCards}
         currentIndex={currentIndex}
         setCurrentIndex={setCurrentIndex}
@@ -1322,63 +1489,98 @@ export function ActivityHeatmap({
           {/* View Mode Settings */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 px-2 gap-1">
+              <Button variant="ghost" size="sm" className="h-8 gap-1 px-2">
                 <Settings className="h-3 w-3" />
-                <span className="hidden sm:inline text-xs">View</span>
+                <span className="hidden text-xs sm:inline">View</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel className="text-xs">Display Mode</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs">
+                Display Mode
+              </DropdownMenuLabel>
               {externalSettings && (
                 <div className="px-2 py-1 text-xs text-muted-foreground">
                   Controlled by Timer Settings
                 </div>
               )}
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-xs"
-                onClick={() => !externalSettings && setInternalSettings(prev => ({ ...prev, viewMode: 'original' }))}
+                onClick={() =>
+                  !externalSettings &&
+                  setInternalSettings((prev) => ({
+                    ...prev,
+                    viewMode: 'original',
+                  }))
+                }
                 disabled={!!externalSettings}
               >
                 <Grid3X3 className="mr-2 h-3 w-3" />
                 Original Grid
-                {settings.viewMode === 'original' && <span className="ml-auto">✓</span>}
+                {settings.viewMode === 'original' && (
+                  <span className="ml-auto">✓</span>
+                )}
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-xs"
-                onClick={() => !externalSettings && setInternalSettings(prev => ({ ...prev, viewMode: 'hybrid' }))}
+                onClick={() =>
+                  !externalSettings &&
+                  setInternalSettings((prev) => ({
+                    ...prev,
+                    viewMode: 'hybrid',
+                  }))
+                }
                 disabled={!!externalSettings}
               >
                 <Calendar className="mr-2 h-3 w-3" />
                 Hybrid View
-                {settings.viewMode === 'hybrid' && <span className="ml-auto">✓</span>}
+                {settings.viewMode === 'hybrid' && (
+                  <span className="ml-auto">✓</span>
+                )}
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-xs"
-                onClick={() => !externalSettings && setInternalSettings(prev => ({ ...prev, viewMode: 'calendar-only' }))}
+                onClick={() =>
+                  !externalSettings &&
+                  setInternalSettings((prev) => ({
+                    ...prev,
+                    viewMode: 'calendar-only',
+                  }))
+                }
                 disabled={!!externalSettings}
               >
                 <Calendar className="mr-2 h-3 w-3" />
                 Calendar Only
-                {settings.viewMode === 'calendar-only' && <span className="ml-auto">✓</span>}
+                {settings.viewMode === 'calendar-only' && (
+                  <span className="ml-auto">✓</span>
+                )}
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-xs"
-                onClick={() => !externalSettings && setInternalSettings(prev => ({ ...prev, viewMode: 'compact-cards' }))}
+                onClick={() =>
+                  !externalSettings &&
+                  setInternalSettings((prev) => ({
+                    ...prev,
+                    viewMode: 'compact-cards',
+                  }))
+                }
                 disabled={!!externalSettings}
               >
                 <LayoutDashboard className="mr-2 h-3 w-3" />
                 Compact Cards
-                {settings.viewMode === 'compact-cards' && <span className="ml-auto">✓</span>}
+                {settings.viewMode === 'compact-cards' && (
+                  <span className="ml-auto">✓</span>
+                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-xs">Options</DropdownMenuLabel>
               <DropdownMenuCheckboxItem
                 className="text-xs"
                 checked={settings.timeReference === 'smart'}
-                onCheckedChange={(checked) => 
-                  !externalSettings && setInternalSettings(prev => ({ 
-                    ...prev, 
-                    timeReference: checked ? 'smart' : 'relative' 
+                onCheckedChange={(checked) =>
+                  !externalSettings &&
+                  setInternalSettings((prev) => ({
+                    ...prev,
+                    timeReference: checked ? 'smart' : 'relative',
                   }))
                 }
                 disabled={!!externalSettings}
@@ -1388,8 +1590,12 @@ export function ActivityHeatmap({
               <DropdownMenuCheckboxItem
                 className="text-xs"
                 checked={settings.showOnboardingTips}
-                onCheckedChange={(checked) => 
-                  !externalSettings && setInternalSettings(prev => ({ ...prev, showOnboardingTips: checked }))
+                onCheckedChange={(checked) =>
+                  !externalSettings &&
+                  setInternalSettings((prev) => ({
+                    ...prev,
+                    showOnboardingTips: checked,
+                  }))
                 }
                 disabled={!!externalSettings}
               >
@@ -1397,7 +1603,7 @@ export function ActivityHeatmap({
               </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
+
           {/* Legend */}
           <div className="flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-xs text-gray-600 shadow-sm ring-1 ring-gray-200/50 sm:gap-3 dark:bg-gray-800/80 dark:text-gray-400 dark:ring-gray-700/50">
             <span className="hidden font-medium sm:inline">Less</span>
@@ -1422,37 +1628,45 @@ export function ActivityHeatmap({
       {shouldShowOnboardingTips && (
         <div className="rounded-lg border border-blue-200/60 bg-blue-50/50 p-3 shadow-sm dark:border-blue-800/60 dark:bg-blue-950/30">
           <div className="flex items-start gap-2">
-            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-            <div className="space-y-2 text-sm flex-1">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+            <div className="flex-1 space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <p className="font-medium text-blue-900 dark:text-blue-100">
-                  💡 {settings.viewMode === 'original' && 'GitHub-style Heatmap'}
+                  💡{' '}
+                  {settings.viewMode === 'original' && 'GitHub-style Heatmap'}
                   {settings.viewMode === 'hybrid' && 'Interactive Hybrid View'}
-                  {settings.viewMode === 'calendar-only' && 'Monthly Calendar View'}
-                  {settings.viewMode === 'compact-cards' && 'Compact Card Overview'}
+                  {settings.viewMode === 'calendar-only' &&
+                    'Monthly Calendar View'}
+                  {settings.viewMode === 'compact-cards' &&
+                    'Compact Card Overview'}
                 </p>
                 {onboardingState.viewCount > 0 && (
-                  <span className="text-xs text-blue-600 dark:text-blue-400 opacity-75">
+                  <span className="text-xs text-blue-600 opacity-75 dark:text-blue-400">
                     View #{onboardingState.viewCount + 1}
                   </span>
                 )}
               </div>
-              <p className="text-blue-700 dark:text-blue-300 leading-relaxed">
-                {settings.viewMode === 'original' && "Track your productivity with GitHub-style visualization. Darker squares = more active days. Hover over any day for details, and use the View menu above to explore other layouts!"}
-                {settings.viewMode === 'hybrid' && "Best of both worlds! Click any month bar in the year overview to jump to that month's detailed calendar below. Perfect for spotting patterns across the year."}
-                {settings.viewMode === 'calendar-only' && "Navigate months with arrow buttons to see your activity patterns. Each colored square represents your activity level that day. Great for detailed daily analysis."}
-                {settings.viewMode === 'compact-cards' && "Monthly summaries at a glance! Each card shows key stats with a mini heatmap preview. Scroll horizontally to see different months and track your progress over time."}
+              <p className="leading-relaxed text-blue-700 dark:text-blue-300">
+                {settings.viewMode === 'original' &&
+                  'Track your productivity with GitHub-style visualization. Darker squares = more active days. Hover over any day for details, and use the View menu above to explore other layouts!'}
+                {settings.viewMode === 'hybrid' &&
+                  "Best of both worlds! Click any month bar in the year overview to jump to that month's detailed calendar below. Perfect for spotting patterns across the year."}
+                {settings.viewMode === 'calendar-only' &&
+                  'Navigate months with arrow buttons to see your activity patterns. Each colored square represents your activity level that day. Great for detailed daily analysis.'}
+                {settings.viewMode === 'compact-cards' &&
+                  'Monthly summaries at a glance! Each card shows key stats with a mini heatmap preview. Scroll horizontally to see different months and track your progress over time.'}
               </p>
               {onboardingState.viewCount >= 3 && (
-                <p className="text-xs text-blue-600 dark:text-blue-400 opacity-80">
-                  💭 Tip: You can always toggle these tips on/off in the View menu or Settings panel.
+                <p className="text-xs text-blue-600 opacity-80 dark:text-blue-400">
+                  💭 Tip: You can always toggle these tips on/off in the View
+                  menu or Settings panel.
                 </p>
               )}
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
+              className="h-6 w-6 p-0 text-blue-600 transition-colors hover:bg-blue-100 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/50"
               onClick={handleDismissTips}
               title="Hide for 7 days (tips will return when switching view modes or after a week)"
               aria-label="Close onboarding tips"
@@ -1529,7 +1743,11 @@ export function ActivityHeatmap({
                   <span className="leading-none">Fri</span>
                 </div>
                 <div className="flex-1 overflow-visible">
-                  {renderHeatmapSection(desktopFirstRow, 'desktop-first', false)}
+                  {renderHeatmapSection(
+                    desktopFirstRow,
+                    'desktop-first',
+                    false
+                  )}
                 </div>
               </div>
 
@@ -1541,7 +1759,11 @@ export function ActivityHeatmap({
                   <span className="leading-none">Fri</span>
                 </div>
                 <div className="flex-1 overflow-visible">
-                  {renderHeatmapSection(desktopSecondRow, 'desktop-second', false)}
+                  {renderHeatmapSection(
+                    desktopSecondRow,
+                    'desktop-second',
+                    false
+                  )}
                 </div>
               </div>
             </div>
@@ -1555,7 +1777,7 @@ export function ActivityHeatmap({
           <div className="rounded-lg border border-gray-200/60 bg-gray-50/50 p-3 dark:border-gray-700/60 dark:bg-gray-800/30">
             {renderYearOverview()}
           </div>
-          
+
           {/* Monthly Calendar */}
           <div className="rounded-lg border border-gray-200/60 bg-white/50 p-3 dark:border-gray-700/60 dark:bg-gray-900/30">
             {renderMonthlyCalendar()}

@@ -6,11 +6,11 @@ import { CommandGroup } from '@tuturuuu/ui/command';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import { CheckCircle, ExternalLink, Play, Square, Timer } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { cn } from '@tuturuuu/utils/format';
 
 // Focus score calculation constants
 const FOCUS_SCORE_CONSTANTS = {
@@ -20,15 +20,15 @@ const FOCUS_SCORE_CONSTANTS = {
   TIME_BONUS: 20,
   CATEGORY_BONUS: 10,
   TASK_BONUS: 10,
-  PEAK_HOURS: { morning: [9, 11], afternoon: [14, 16] }
+  PEAK_HOURS: { morning: [9, 11], afternoon: [14, 16] },
 } as const;
 
 // Session duration thresholds (in seconds)
 const SESSION_THRESHOLDS = {
-  DEEP_WORK: 7200,     // 2 hours
-  FOCUSED: 3600,       // 1 hour
-  STANDARD: 1800,      // 30 minutes
-  QUICK_START: 900     // 15 minutes
+  DEEP_WORK: 7200, // 2 hours
+  FOCUSED: 3600, // 1 hour
+  STANDARD: 1800, // 30 minutes
+  QUICK_START: 900, // 15 minutes
 } as const;
 
 // Helper function to calculate focus score
@@ -38,18 +38,28 @@ const calculateFocusScore = (
   taskId: string | undefined,
   currentHour: number
 ): number => {
-  const durationScore = Math.min(elapsedTime / FOCUS_SCORE_CONSTANTS.MAX_DURATION_SECONDS, 1) * FOCUS_SCORE_CONSTANTS.DURATION_WEIGHT;
+  const durationScore =
+    Math.min(elapsedTime / FOCUS_SCORE_CONSTANTS.MAX_DURATION_SECONDS, 1) *
+    FOCUS_SCORE_CONSTANTS.DURATION_WEIGHT;
   const consistencyBonus = FOCUS_SCORE_CONSTANTS.CONSISTENCY_BONUS;
-  const timeBonus = (
-    (currentHour >= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.morning[0] && currentHour <= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.morning[1]) ||
-    (currentHour >= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.afternoon[0] && currentHour <= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.afternoon[1])
-  ) ? FOCUS_SCORE_CONSTANTS.TIME_BONUS : 0;
-  const categoryBonus = category?.name?.toLowerCase().includes('work') ? FOCUS_SCORE_CONSTANTS.CATEGORY_BONUS : 0;
+  const timeBonus =
+    (currentHour >= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.morning[0] &&
+      currentHour <= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.morning[1]) ||
+    (currentHour >= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.afternoon[0] &&
+      currentHour <= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.afternoon[1])
+      ? FOCUS_SCORE_CONSTANTS.TIME_BONUS
+      : 0;
+  const categoryBonus = category?.name?.toLowerCase().includes('work')
+    ? FOCUS_SCORE_CONSTANTS.CATEGORY_BONUS
+    : 0;
   const taskBonus = taskId ? FOCUS_SCORE_CONSTANTS.TASK_BONUS : 0;
-  
-  return Math.min(Math.round(
-    durationScore + consistencyBonus + timeBonus + categoryBonus + taskBonus
-  ), 100);
+
+  return Math.min(
+    Math.round(
+      durationScore + consistencyBonus + timeBonus + categoryBonus + taskBonus
+    ),
+    100
+  );
 };
 
 interface QuickTimeTrackerProps {
@@ -415,18 +425,26 @@ export function QuickTimeTracker({
                 {/* Live Focus Score */}
                 <div className="rounded-md bg-muted/30 p-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Live Focus Score</span>
+                    <span className="text-xs text-muted-foreground">
+                      Live Focus Score
+                    </span>
                     <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "h-1.5 w-16 rounded-full",
-                        elapsedTime >= SESSION_THRESHOLDS.DEEP_WORK ? "bg-green-500 dark:bg-green-600" :
-                        elapsedTime >= SESSION_THRESHOLDS.FOCUSED ? "bg-blue-500 dark:bg-blue-600" :
-                        elapsedTime >= SESSION_THRESHOLDS.STANDARD ? "bg-yellow-500 dark:bg-yellow-600" : "bg-gray-500 dark:bg-gray-600"
-                      )}>
-                        <div 
+                      <div
+                        className={cn(
+                          'h-1.5 w-16 rounded-full',
+                          elapsedTime >= SESSION_THRESHOLDS.DEEP_WORK
+                            ? 'bg-green-500 dark:bg-green-600'
+                            : elapsedTime >= SESSION_THRESHOLDS.FOCUSED
+                              ? 'bg-blue-500 dark:bg-blue-600'
+                              : elapsedTime >= SESSION_THRESHOLDS.STANDARD
+                                ? 'bg-yellow-500 dark:bg-yellow-600'
+                                : 'bg-gray-500 dark:bg-gray-600'
+                        )}
+                      >
+                        <div
                           className="h-1.5 rounded-full bg-current opacity-80 transition-all duration-1000"
-                          style={{ 
-                            width: `${Math.min((elapsedTime / FOCUS_SCORE_CONSTANTS.MAX_DURATION_SECONDS) * 100, 100)}%` 
+                          style={{
+                            width: `${Math.min((elapsedTime / FOCUS_SCORE_CONSTANTS.MAX_DURATION_SECONDS) * 100, 100)}%`,
                           }}
                         />
                       </div>
@@ -440,19 +458,29 @@ export function QuickTimeTracker({
                       </span>
                     </div>
                   </div>
-                  
+
                   {/* Productivity Tips */}
                   <div className="mt-2 text-xs text-muted-foreground">
                     {elapsedTime >= SESSION_THRESHOLDS.DEEP_WORK ? (
-                      <span className="text-green-700 dark:text-green-300">🧠 Deep work mode! Excellent focus.</span>
+                      <span className="text-green-700 dark:text-green-300">
+                        🧠 Deep work mode! Excellent focus.
+                      </span>
                     ) : elapsedTime >= SESSION_THRESHOLDS.FOCUSED ? (
-                      <span className="text-blue-700 dark:text-blue-300">🎯 Great focus! Consider a break soon.</span>
+                      <span className="text-blue-700 dark:text-blue-300">
+                        🎯 Great focus! Consider a break soon.
+                      </span>
                     ) : elapsedTime >= SESSION_THRESHOLDS.STANDARD ? (
-                      <span className="text-yellow-700 dark:text-yellow-300">📈 Building momentum! Keep going.</span>
+                      <span className="text-yellow-700 dark:text-yellow-300">
+                        📈 Building momentum! Keep going.
+                      </span>
                     ) : elapsedTime >= SESSION_THRESHOLDS.QUICK_START ? (
-                      <span className="text-gray-700 dark:text-gray-300">⏰ Good start! Focus is building.</span>
+                      <span className="text-gray-700 dark:text-gray-300">
+                        ⏰ Good start! Focus is building.
+                      </span>
                     ) : (
-                      <span className="text-gray-600 dark:text-gray-400">🚀 Just started! Focus will improve.</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        🚀 Just started! Focus will improve.
+                      </span>
                     )}
                   </div>
                 </div>
@@ -460,22 +488,35 @@ export function QuickTimeTracker({
                 {/* Session Type Indicator */}
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-muted-foreground">Session Type:</span>
-                  <div className={cn(
-                    "flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium",
-                    elapsedTime >= SESSION_THRESHOLDS.FOCUSED ? "text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-950/30" :
-                    elapsedTime >= SESSION_THRESHOLDS.STANDARD ? "text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-950/30" :
-                    elapsedTime >= SESSION_THRESHOLDS.QUICK_START ? "text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-950/30" :
-                    "text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-950/30"
-                  )}>
+                  <div
+                    className={cn(
+                      'flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium',
+                      elapsedTime >= SESSION_THRESHOLDS.FOCUSED
+                        ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-300'
+                        : elapsedTime >= SESSION_THRESHOLDS.STANDARD
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300'
+                          : elapsedTime >= SESSION_THRESHOLDS.QUICK_START
+                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-300'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-950/30 dark:text-gray-300'
+                    )}
+                  >
                     <span>
-                      {elapsedTime >= SESSION_THRESHOLDS.FOCUSED ? '🧠' :
-                       elapsedTime >= SESSION_THRESHOLDS.STANDARD ? '🎯' :
-                       elapsedTime >= SESSION_THRESHOLDS.QUICK_START ? '📋' : '⚡'}
+                      {elapsedTime >= SESSION_THRESHOLDS.FOCUSED
+                        ? '🧠'
+                        : elapsedTime >= SESSION_THRESHOLDS.STANDARD
+                          ? '🎯'
+                          : elapsedTime >= SESSION_THRESHOLDS.QUICK_START
+                            ? '📋'
+                            : '⚡'}
                     </span>
                     <span>
-                      {elapsedTime >= SESSION_THRESHOLDS.FOCUSED ? 'Deep Work' :
-                       elapsedTime >= SESSION_THRESHOLDS.STANDARD ? 'Focused' :
-                       elapsedTime >= SESSION_THRESHOLDS.QUICK_START ? 'Standard' : 'Quick Task'}
+                      {elapsedTime >= SESSION_THRESHOLDS.FOCUSED
+                        ? 'Deep Work'
+                        : elapsedTime >= SESSION_THRESHOLDS.STANDARD
+                          ? 'Focused'
+                          : elapsedTime >= SESSION_THRESHOLDS.QUICK_START
+                            ? 'Standard'
+                            : 'Quick Task'}
                     </span>
                   </div>
                 </div>
