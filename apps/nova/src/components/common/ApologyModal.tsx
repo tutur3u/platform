@@ -20,7 +20,7 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { motion } from 'framer-motion';
+import { type Variants, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -63,7 +63,7 @@ export function ApologyModal() {
         ease: 'easeOut',
       },
     }),
-  };
+  } satisfies Variants;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

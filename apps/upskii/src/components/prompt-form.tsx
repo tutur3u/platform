@@ -734,8 +734,8 @@ export function PromptForm({
             onChange={(e) => setInput(e.target.value)}
             placeholder={
               disabled || !apiKey
-                ? t('ai_chat.imagine_placeholder')
-                : `${t('ai_chat.send_message')}.`
+                ? t('ai_chat.api_key_required')
+                : `${t('ai_chat.send_message')}`
             }
             spellCheck={false}
             maxRows={7}

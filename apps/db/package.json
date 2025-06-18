@@ -20,5 +20,5 @@
   "devDependencies": {
     "supabase": "^2.24.3"
   },
-  "packageManager": "bun@1.2.15"
+  "packageManager": "bun@1.2.16"
 }

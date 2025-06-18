@@ -6,7 +6,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { ExternalLink, Medal, Sparkles, Trophy } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
-import { motion, useReducedMotion } from 'framer-motion';
+import { type Variants, motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -63,7 +63,7 @@ export function TopThreeCards({
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
-  };
+  } satisfies Variants;
 
   const getCardStyles = (index: number) => {
     if (index === 0) {

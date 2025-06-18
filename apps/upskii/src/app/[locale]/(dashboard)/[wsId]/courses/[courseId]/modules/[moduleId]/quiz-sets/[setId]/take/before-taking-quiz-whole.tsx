@@ -369,7 +369,7 @@ export default function BeforeTakingQuizWhole({
                       date: formatDate(att.submittedAt),
                       duration: formatDuration(att.durationSeconds),
                     })}
-                {/* <strong>#{att.attemptNumber}</strong> at{' '}
+                    {/* <strong>#{att.attemptNumber}</strong> at{' '}
                     {formatDate(att.submittedAt)} (
                     {formatDuration(att.durationSeconds)}) */}
                   </div>

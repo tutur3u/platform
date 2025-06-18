@@ -28,7 +28,7 @@ import {
   Star,
   Users,
 } from '@tuturuuu/ui/icons';
-import { motion } from 'framer-motion';
+import { type Variants, motion } from 'framer-motion';
 import Link from 'next/link';
 
 export default function HospitalityPage() {
@@ -122,7 +122,7 @@ export default function HospitalityPage() {
       opacity: 1,
       transition: { staggerChildren: 0.2 },
     },
-  };
+  } satisfies Variants;
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -131,7 +131,7 @@ export default function HospitalityPage() {
       opacity: 1,
       transition: { duration: 0.5 },
     },
-  };
+  } satisfies Variants;
 
   return (
     <motion.div

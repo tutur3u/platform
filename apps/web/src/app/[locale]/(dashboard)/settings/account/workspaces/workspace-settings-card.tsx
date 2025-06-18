@@ -1,4 +1,4 @@
-import DefaultWorkspaceSetting from '../default-workspace-setting';
+import DefaultWorkspaceSetting from './default-workspace-setting';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,
