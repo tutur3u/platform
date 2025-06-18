@@ -37,11 +37,17 @@ export interface TakeResponse {
   hasReachedMax: boolean;
 }
 
+interface Params {
+  params: Promise<{
+    setId: string;
+  }>;
+}
+
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { setId: string } }
+  { params }: Params
 ) {
-  const { setId } = params;
+  const { setId } = await params;
   const sb = await createClient();
 
   // 1) Auth
