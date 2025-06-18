@@ -1,8 +1,8 @@
 'use client';
 
 import { RequestAccessButton } from './request-access-button';
+import { BookOpenText, Sparkles } from '@tuturuuu/ui/icons';
 import clsx from 'clsx';
-import { BookOpenText, Sparkles } from 'lucide-react';
 
 interface EducationBannerProps {
   workspaceName: string;

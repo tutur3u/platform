@@ -1,7 +1,12 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  ArrowLeft,
+  CheckCircle,
+  CreditCard,
+  Download,
+} from '@tuturuuu/ui/icons';
 import { format } from 'date-fns';
-import { ArrowLeft, CheckCircle, CreditCard, Download } from 'lucide-react';
 import Link from 'next/link';
 
 const fetchWorkspaceSubscription = async (

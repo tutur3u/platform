@@ -20,8 +20,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Progress } from '@tuturuuu/ui/progress';
-import { Separator } from '@tuturuuu/ui/separator';
 import {
   Clock,
   LogOut,
@@ -30,7 +28,9 @@ import {
   Smartphone,
   Tablet,
   Trash2,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Progress } from '@tuturuuu/ui/progress';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';

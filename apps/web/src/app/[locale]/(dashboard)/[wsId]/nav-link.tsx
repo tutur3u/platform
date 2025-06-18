@@ -1,9 +1,9 @@
 'use client';
 
 import { NavLink as NavLinkType } from '@/components/navigation';
+import { ChevronRight } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 

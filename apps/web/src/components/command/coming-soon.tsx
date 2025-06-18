@@ -1,7 +1,7 @@
 'use client';
 
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
-import { Search, Zap } from 'lucide-react';
+import { Search, Zap } from '@tuturuuu/ui/icons';
 
 export function ComingSoonSection() {
   return (

@@ -2,7 +2,7 @@
 
 import PurchaseLink from './data-polar-checkout';
 import { Button } from '@tuturuuu/ui/button';
-import { ArrowUpCircle, CheckCircle, CreditCard } from 'lucide-react';
+import { ArrowUpCircle, CheckCircle } from '@tuturuuu/ui/icons';
 import { useState } from 'react';
 
 // Define types for the props we're passing from the server component
@@ -30,7 +30,9 @@ interface BillingClientProps {
   currentPlan: Plan;
   upgradePlans: UpgradePlan[];
   wsId: string;
+  product_id: string;
   isCreator: boolean;
+  activeSubscriptionId?: string;
 }
 
 export function BillingClient({
@@ -38,8 +40,41 @@ export function BillingClient({
   upgradePlans,
   wsId,
   isCreator,
+  // _product_id,
+  // activeSubscriptionId,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
+  const [_isLoading, _setIsLoading] = useState(false);
+  const [message, _setMessage] = useState('');
+
+  // const handleCancelSubscription = async () => {
+  //   setIsLoading(true);
+  //   setMessage('');
+
+  //   const response = await fetch(`/api/${wsId}/${product_id}/cancel`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+
+  //     body: JSON.stringify({ polarSubscriptionId: activeSubscriptionId }),
+  //   });
+
+  //   setIsLoading(false);
+
+  //   if (response.ok) {
+  //     setMessage(
+  //       'Your subscription will be canceled at the end of your billing period.'
+  //     );
+  //     // Reload the page to show the updated subscription status
+  //     window.location.reload();
+  //   } else {
+  //     const errorData = await response.json();
+  //     setMessage(
+  //       `Error: ${errorData.error || 'Could not cancel subscription.'}`
+  //     );
+  //   }
+  // };
 
   return (
     <>
@@ -65,8 +100,8 @@ export function BillingClient({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 gap-8">
+          <div>
             <div className="mb-6">
               <h3 className="mb-1 text-xl font-bold text-card-foreground">
                 {currentPlan.name}
@@ -79,7 +114,7 @@ export function BillingClient({
               </p>
             </div>
 
-            <div className="mb-6 grid grid-cols-2 gap-4">
+            <div className="mb-6 grid grid-cols-2 gap-6 md:grid-cols-4">
               <div>
                 <p className="text-sm text-muted-foreground">Start Date</p>
                 <p className="font-medium text-card-foreground">
@@ -96,59 +131,54 @@ export function BillingClient({
               </div>
             </div>
 
-            <div className="mb-6">
-              <h4 className="mb-2 font-medium text-card-foreground">
-                Features:
+            <div className="mb-8">
+              <h4 className="mb-4 font-medium text-card-foreground">
+                Plan Features:
               </h4>
-              <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {currentPlan.features?.map((feature, index) => (
                   <li
                     key={index}
                     className="flex items-center text-card-foreground"
                   >
-                    <CheckCircle className="mr-2 h-5 w-5 text-primary" />
-                    {feature}
+                    <CheckCircle className="mr-3 h-5 w-5 flex-shrink-0 text-primary" />
+                    <span className="text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            {message && (
+              <div
+                className={`mb-4 rounded-lg p-3 text-sm ${
+                  message.includes('Error')
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                    : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                }`}
+              >
+                {message}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-3">
               <Button
                 disabled={!isCreator}
                 onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
                 className="flex items-center"
+                size="lg"
               >
-                <ArrowUpCircle className="mr-1 h-5 w-5" />
-                {showUpgradeOptions ? 'Hide Options' : 'Upgrade Plan'}
+                <ArrowUpCircle className="mr-2 h-5 w-5" />
+                {showUpgradeOptions ? 'Hide Upgrade Options' : 'Upgrade Plan'}
               </Button>
-              <Button variant="outline" className="border-border">
-                Cancel Subscription
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-accent/30 p-6">
-            <h3 className="mb-4 text-lg font-semibold text-card-foreground">
-              Payment Method
-            </h3>
-            <div className="mb-4 flex items-center">
-              <CreditCard className="mr-3 h-8 w-8 text-muted-foreground" />
-              <div>
-                <p className="font-medium text-card-foreground">
-                  Visa ending in 4242
-                </p>
-                <p className="text-sm text-muted-foreground">Expires 05/2025</p>
-              </div>
-            </div>
-            <div className="mt-6">
-              <Button
+              {/* <Button
                 variant="outline"
-                size="sm"
-                className="text-sm font-medium"
+                size="lg"
+                className="border-border"
+                onClick={handleCancelSubscription}
+                disabled={isLoading || !activeSubscriptionId}
               >
-                Update payment method
-              </Button>
+                {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
+              </Button> */}
             </div>
           </div>
         </div>
