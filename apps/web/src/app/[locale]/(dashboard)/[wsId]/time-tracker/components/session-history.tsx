@@ -614,7 +614,8 @@ const StackedSessionItem: FC<{
                       : null;
 
                     // Calculate gap from previous session
-                    const prevSession = index > 0 ? stackedSession.sessions[index - 1] : null;
+                    const prevSession =
+                      index > 0 ? stackedSession.sessions[index - 1] : null;
 
                     const gapInSeconds = prevSession?.end_time
                       ? sessionStart.diff(
@@ -1122,12 +1123,13 @@ export function SessionHistory({
       ).length,
     };
 
-    const bestTimeOfDay = sessionsForPeriod.length > 0 
-      ? Object.entries(timeOfDayBreakdown).reduce<[string, number]>(
-          (a, b) => a[1] > b[1] ? a : b,
-          ['morning', 0] // sensible default prevents TypeError
-        )[0]
-      : 'none';
+    const bestTimeOfDay =
+      sessionsForPeriod.length > 0
+        ? Object.entries(timeOfDayBreakdown).reduce<[string, number]>(
+            (a, b) => (a[1] > b[1] ? a : b),
+            ['morning', 0] // sensible default prevents TypeError
+          )[0]
+        : 'none';
 
     const longestSession =
       sessionsForPeriod.length > 0
@@ -1322,8 +1324,7 @@ export function SessionHistory({
       'Description',
     ];
 
-    const escape = (v: string) =>
-      /^[=+\-@]/.test(v) ? `'${v}` : v;
+    const escape = (v: string) => (/^[=+\-@]/.test(v) ? `'${v}` : v);
 
     const csvData = sessionsForPeriod.map((session) => {
       const userTz = dayjs.tz.guess();

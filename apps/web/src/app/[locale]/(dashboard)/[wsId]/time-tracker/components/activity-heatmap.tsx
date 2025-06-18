@@ -601,7 +601,8 @@ export function ActivityHeatmap({
         0
       );
 
-      const avgDuration = monthActivity.length > 0 ? totalDuration / monthActivity.length : 0;
+      const avgDuration =
+        monthActivity.length > 0 ? totalDuration / monthActivity.length : 0;
 
       return {
         month: monthStart,
@@ -1143,12 +1144,7 @@ export function ActivityHeatmap({
     );
   };
 
-  const UpcomingCard = ({
-    name,
-  }: {
-    monthKey: string;
-    name: string;
-  }) => (
+  const UpcomingCard = ({ name }: { monthKey: string; name: string }) => (
     <div className="group relative overflow-hidden rounded-lg border border-muted/40 bg-gradient-to-br from-muted/20 to-muted/10 p-3 opacity-60 backdrop-blur-sm transition-all hover:from-muted/30 hover:to-muted/20 hover:opacity-80">
       <div className="mb-2 flex items-center justify-between">
         <div>
@@ -1384,7 +1380,8 @@ export function ActivityHeatmap({
 
   const buildCardsList = useCallback(
     (monthlyStatsParam: ReturnType<typeof calculateMonthlyStats>) => {
-      const { sortedMonths, monthsWithTrends, overallStats } = monthlyStatsParam;
+      const { sortedMonths, monthsWithTrends, overallStats } =
+        monthlyStatsParam;
       const allCards = [];
 
       // Determine if user is "established" enough to show upcoming month suggestions
@@ -1567,10 +1564,10 @@ export function ActivityHeatmap({
                   !externalSettings &&
                   setInternalSettings((prev) => ({
                     ...prev,
-                    timeReference: checked 
-                      ? 'smart' 
-                      : prev.timeReference === 'smart' 
-                        ? 'relative' 
+                    timeReference: checked
+                      ? 'smart'
+                      : prev.timeReference === 'smart'
+                        ? 'relative'
                         : prev.timeReference,
                   }))
                 }
@@ -1782,7 +1779,7 @@ export function ActivityHeatmap({
         </div>
       )}
 
-              {settings.viewMode === 'compact-cards' && <CompactCardsView />}
+      {settings.viewMode === 'compact-cards' && <CompactCardsView />}
     </div>
   );
 }
