@@ -60,7 +60,7 @@ export async function GET(
   const checkoutSession = await api.checkouts.create({
     products: [productId],
     successUrl: `http://localhost:7803/${wsId}/billing/success`,
-    customerExternalId: user?.id || '',
+    customerId: user?.id || '',
     metadata: {
       wsId: wsId,
     },

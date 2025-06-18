@@ -6,91 +6,106 @@ type SubmissionBody = {
     quizId: string;
     selectedOptionId: string;
   }>;
+  durationSeconds: number;
 };
 
-type RawRow = {
-  quiz_id: string;
-  workspace_quizzes: {
-    score: number;
-    quiz_options: Array<{
-      id: string;
-      is_correct: boolean;
-    }>;
-  };
-};
+interface Params {
+  params: Promise<{
+    setId: string;
+  }>;
+}
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ setId: string }> }
-) {
+export async function POST(request: NextRequest, { params }: Params) {
   const { setId } = await params;
-  const supabase = await createClient();
+  const sb = await createClient();
 
-  // 1) Get current user
+  // 1) Authenticate
   const {
     data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-  if (userErr || !user) {
+    error: uErr,
+  } = await sb.auth.getUser();
+  if (uErr || !user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
   const userId = user.id;
 
-  // 2) Parse request body
+  // 2) Parse and validate body
   let body: SubmissionBody;
   try {
     body = await request.json();
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
-  const { answers } = body;
-  if (!Array.isArray(answers) || answers.length === 0) {
+  if (!Array.isArray(body.answers) || body.answers.length === 0) {
     return NextResponse.json({ error: 'No answers provided' }, { status: 400 });
   }
 
-  // 3) Re-compute attempt_count for this user/set
-  const { data: prevAttempts, error: attErr } = await supabase
+  // 3) Count existing attempts
+  const { data: prevAtt, error: countErr } = await sb
     .from('workspace_quiz_attempts')
     .select('attempt_number', { count: 'exact', head: false })
     .eq('user_id', userId)
     .eq('set_id', setId);
-
-  if (attErr) {
+  if (countErr) {
     return NextResponse.json(
       { error: 'Error counting attempts' },
       { status: 500 }
     );
   }
-  const attemptsCount = prevAttempts?.length || 0;
+  const attemptsCount = prevAtt?.length ?? 0;
 
-  // 4) Fetch attempt_limit for this quiz set
-  const { data: setRow, error: setErr } = await supabase
+  // 4) Load quiz-set constraints & flags
+  const { data: setRow, error: setErr } = await sb
     .from('workspace_quiz_sets')
-    .select('attempt_limit')
+    .select(
+      `
+      attempt_limit,
+      time_limit_minutes,
+      available_date,
+      due_date,
+      allow_view_old_attempts,
+      results_released,
+      explanation_mode
+    `
+    )
     .eq('id', setId)
     .maybeSingle();
-
   if (setErr || !setRow) {
     return NextResponse.json({ error: 'Quiz set not found' }, { status: 404 });
   }
-  const { attempt_limit } = setRow;
-  if (
-    attempt_limit !== null &&
-    attempt_limit !== undefined &&
-    attemptsCount >= attempt_limit
-  ) {
+  const {
+    attempt_limit,
+    time_limit_minutes,
+    available_date,
+    due_date,
+    allow_view_old_attempts,
+    results_released,
+    explanation_mode,
+  } = setRow;
+
+  // 5) Enforce limits & dates
+  const now = new Date();
+  if (new Date(available_date) > now) {
     return NextResponse.json(
-      { error: 'Maximum attempts reached' },
+      { error: 'Quiz not yet available', availableDate: available_date },
+      { status: 403 }
+    );
+  }
+  if (new Date(due_date) < now) {
+    return NextResponse.json(
+      { error: 'Quiz past due', dueDate: due_date },
+      { status: 403 }
+    );
+  }
+  if (attempt_limit !== null && attemptsCount >= attempt_limit) {
+    return NextResponse.json(
+      { error: 'Maximum attempts reached', attemptsSoFar: attemptsCount },
       { status: 403 }
     );
   }
 
-  // 5) We will create a new attempt row with attempt_number = attemptsCount + 1
-  const newAttemptNumber = attemptsCount + 1;
-
-  // 6) Fetch "correct" answers + per-question score for each quiz in this set.
-  //    Notice we nest `quiz_options` under `workspace_quizzes`:
-  const { data: correctRaw, error: corrErr } = await supabase
+  // 6) Fetch correct answers & weights
+  const { data: correctRaw, error: corrErr } = await sb
     .from('quiz_set_quizzes')
     .select(
       `
@@ -105,94 +120,74 @@ export async function POST(
     `
     )
     .eq('set_id', setId);
-
   if (corrErr) {
     return NextResponse.json(
-      { error: 'Error fetching correct answers' },
+      { error: 'Error fetching answers' },
       { status: 500 }
     );
   }
-
-  // 7) Tell TypeScript: "Trust me—this matches RawRow[]"
-  const correctRows = (correctRaw as unknown as RawRow[]) ?? [];
-
-  // Build a map: quizId → { score: number, correctOptionId: string }
-  const quizMap = new Map<string, { score: number; correctOptionId: string }>();
-  correctRows.forEach((row) => {
-    const qId = row.quiz_id;
-    const weight = row.workspace_quizzes.score;
-
-    // Find exactly one correct option (is_correct = true)
-    const correctOption = row.workspace_quizzes.quiz_options.find(
-      (opt) => opt.is_correct
-    )?.id;
-
-    quizMap.set(qId, { score: weight, correctOptionId: correctOption || '' });
+  type R = {
+    quiz_id: string;
+    workspace_quizzes: {
+      score: number;
+      quiz_options: Array<{ id: string; is_correct: boolean }>;
+    };
+  };
+  const quizMap = new Map<string, { score: number; correctId: string }>();
+  (correctRaw as R[]).forEach((r) => {
+    const correctOpt =
+      r.workspace_quizzes.quiz_options.find((o) => o.is_correct)?.id || '';
+    quizMap.set(r.quiz_id, {
+      score: r.workspace_quizzes.score,
+      correctId: correctOpt,
+    });
   });
 
-  // 8) Loop through submitted answers, compare to correctOptionId, sum up total_score
+  // 7) Score each submitted answer
   let totalScore = 0;
-  const answerInserts: Array<{
-    quiz_id: string;
-    selected_option_id: string;
-    is_correct: boolean;
-    score_awarded: number;
-  }> = [];
-
-  for (const { quizId, selectedOptionId } of answers) {
-    const qInfo = quizMap.get(quizId);
-    if (!qInfo) {
-      // If the quizId isn't in our map, ignore it
-      continue;
-    }
-    const { score: weight, correctOptionId } = qInfo;
-    const isCorrect = selectedOptionId === correctOptionId;
-    const awarded = isCorrect ? weight : 0;
+  const answersToInsert = body.answers.map(({ quizId, selectedOptionId }) => {
+    const info = quizMap.get(quizId);
+    const isCorrect = info?.correctId === selectedOptionId;
+    const awarded = isCorrect ? info!.score : 0;
     totalScore += awarded;
-
-    answerInserts.push({
+    return {
       quiz_id: quizId,
       selected_option_id: selectedOptionId,
       is_correct: isCorrect,
       score_awarded: awarded,
-    });
-  }
+    };
+  });
 
-  // 9) Insert the attempt row
-  const { data: insertedAttempt, error: insErr } = await supabase
+  // 8) Create attempt
+  const newAttemptNumber = attemptsCount + 1;
+  const { data: insAtt, error: insErr } = await sb
     .from('workspace_quiz_attempts')
-    .insert([
-      {
-        user_id: userId,
-        set_id: setId,
-        attempt_number: newAttemptNumber,
-        total_score: totalScore,
-      },
-    ])
-    .select('id')
+    .insert({
+      user_id: userId,
+      set_id: setId,
+      attempt_number: newAttemptNumber,
+      total_score: totalScore,
+      // duration_seconds: 0, // we’ll patch this below
+      duration_seconds: body.durationSeconds, // we’ll patch this below
+    })
+    .select('id, started_at')
     .single();
-
-  if (insErr || !insertedAttempt) {
+  if (insErr || !insAtt) {
     return NextResponse.json(
       { error: 'Error inserting attempt' },
       { status: 500 }
     );
   }
-  const attemptId = insertedAttempt.id;
 
-  // 10) Insert each answer into workspace_quiz_attempt_answers
-  const { error: ansErr } = await supabase
+  // 9) Insert answers
+  const { error: ansErr } = await sb
     .from('workspace_quiz_attempt_answers')
     .insert(
-      answerInserts.map((a) => ({
-        attempt_id: attemptId,
-        quiz_id: a.quiz_id,
-        selected_option_id: a.selected_option_id,
-        is_correct: a.is_correct,
-        score_awarded: a.score_awarded,
+      answersToInsert.map((a) => ({
+        attempt_id: insAtt.id,
+        ...a,
       }))
     );
-
   if (ansErr) {
     return NextResponse.json(
       { error: 'Error inserting answers' },
@@ -200,25 +195,42 @@ export async function POST(
     );
   }
 
-  // 11) Mark the attempt’s completed_at timestamp
-  const { error: updErr } = await supabase
+  // 10) Mark completed_at & compute duration
+  const completedAt = new Date().toISOString();
+  await sb
     .from('workspace_quiz_attempts')
-    .update({ completed_at: new Date().toISOString() })
-    .eq('id', attemptId);
+    .update({
+      completed_at: completedAt,
+      // duration_seconds: Math.floor(
+      //   (Date.now() - new Date(insAtt.started_at).getTime()) / 1000
+      // ),
+    })
+    .eq('id', insAtt.id);
 
-  if (updErr) {
-    console.error('Warning: could not update completed_at', updErr);
-    // Not fatal—still return success
-  }
-
-  // 12) Return the result to the client
+  // 11) Build the full response DTO
   return NextResponse.json({
-    attemptId,
+    // attempt meta
+    attemptId: insAtt.id,
     attemptNumber: newAttemptNumber,
     totalScore,
     maxPossibleScore: Array.from(quizMap.values()).reduce(
-      (acc, { score }) => acc + score,
+      (sum, q) => sum + q.score,
       0
     ),
+    startedAt: insAtt.started_at,
+    completedAt,
+    durationSeconds: Math.floor(
+      (Date.now() - new Date(insAtt.started_at).getTime()) / 1000
+    ),
+
+    // quiz­set context
+    attemptLimit: attempt_limit,
+    attemptsSoFar: newAttemptNumber,
+    timeLimitMinutes: time_limit_minutes,
+    availableDate: available_date,
+    dueDate: due_date,
+    allowViewOldAttempts: allow_view_old_attempts,
+    resultsReleased: results_released,
+    explanationMode: explanation_mode,
   });
 }

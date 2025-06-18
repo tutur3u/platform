@@ -1,4 +1,4 @@
-import TakingQuizClient from '@/app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/take/taking-quiz-client';
+import TakingQuizClient from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/taking-quiz-client';
 
 export default async function TakeQuiz({
   params,

@@ -1,4 +1,5 @@
 import { Eye, EyeClosed } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 // Format seconds as MM:SS
@@ -11,23 +12,22 @@ const formatSeconds = (sec: number) => {
 };
 
 interface TimeElapsedStatusProps {
-  t: (key: string, options?: Record<string, any>) => string;
   isCountdown: boolean;
   timeLeft: number | null;
 }
 
 export default function TimeElapsedStatus({
-  t,
   isCountdown,
   timeLeft,
 }: TimeElapsedStatusProps) {
+  const t = useTranslations('ws-quizzes.time');
   const [isVisible, setIsVisible] = useState(true);
 
   const toggleVisibility = () => setIsVisible((prev) => !prev);
 
   const timerLabel = isCountdown
-    ? t('ws-quizzes.time_remaining') || 'Time Remaining'
-    : t('ws-quizzes.time_elapsed') || 'Time Elapsed';
+    ? t('remaining') || 'Time Remaining'
+    : t('elapsed') || 'Time Elapsed';
 
   const timerColorClass =
     isCountdown && timeLeft !== null && timeLeft <= 60
@@ -43,8 +43,8 @@ export default function TimeElapsedStatus({
                 timeLeft !== null ? formatSeconds(timeLeft) : '--:--'
               }`
             : timeLeft !== null
-              ? t('ws-quizzes.hidden_time_remaining') || 'Time Hidden'
-              : t('ws-quizzes.hidden_time_elapsed') || 'Time Hidden'}
+              ? t('hidden_remaining') || 'Time Hidden'
+              : t('hidden_elapsed') || 'Time Hidden'}
         </p>
         <button
           onClick={toggleVisibility}
