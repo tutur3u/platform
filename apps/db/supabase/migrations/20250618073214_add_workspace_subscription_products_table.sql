@@ -7,7 +7,6 @@ create table "public"."workspace_subscription_products" (
     "recurring_interval" text default 'month'::text
 );
 
-
 alter table "public"."workspace_subscription" add column "product_id" uuid;
 
 CREATE UNIQUE INDEX workspace_subscription_products_pkey ON public.workspace_subscription_products USING btree (id);
