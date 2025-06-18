@@ -746,12 +746,11 @@ export function ActivityHeatmap({
     );
   };
 
-  const renderCompactCards = () => {
-    // Group data by month for compact card display
-    const monthlyData = weeks.reduce((acc, week) => {
+  // Data processing functions
+  const processMonthlyData = useCallback(() => {
+    return weeks.reduce((acc, week) => {
       week.forEach(day => {
-        // Add null check for day and day.activity
-        if (day && day.activity) {
+        if (day?.activity) {
           const monthKey = day.date.format('YYYY-MM');
           const monthName = day.date.format('MMM YYYY');
           
@@ -804,7 +803,9 @@ export function ActivityHeatmap({
       longestStreak: number;
       currentStreak: number;
     }>);
+  }, [weeks]);
 
+  const calculateMonthlyStats = useCallback((monthlyData: ReturnType<typeof processMonthlyData>) => {
     // Calculate streaks for each month
     Object.values(monthlyData).forEach(monthData => {
       let currentStreak = 0;
@@ -814,7 +815,7 @@ export function ActivityHeatmap({
       const sortedDates = monthData.dates.sort((a, b) => a.date.valueOf() - b.date.valueOf());
       
       for (let i = 0; i < sortedDates.length; i++) {
-        if (sortedDates[i] && sortedDates[i].activity && sortedDates[i].activity.duration > 0) {
+        if (sortedDates[i]?.activity?.duration > 0) {
           currentStreak += 1;
           longestStreak = Math.max(longestStreak, currentStreak);
         } else {
@@ -859,81 +860,267 @@ export function ActivityHeatmap({
     const avgSessionLength = totalOverallSessions > 0 ? totalOverallDuration / totalOverallSessions : 0;
     const overallFocusScore = avgSessionLength > 0 ? Math.min(100, Math.round((avgSessionLength / 3600) * 25)) : 0;
 
-    // Determine if user is "established" enough to show upcoming month suggestions
-    const isEstablishedUser = totalActiveDays >= 7 && totalOverallSessions >= 10 && sortedMonths.length >= 1;
-    const hasRecentActivity = sortedMonths.length > 0 && dayjs().diff(dayjs().startOf('month'), 'day') < 15; // Active this month
-    const shouldShowUpcoming = isEstablishedUser && hasRecentActivity;
+    return {
+      sortedMonths,
+      monthsWithTrends,
+      overallStats: {
+        totalDuration: totalOverallDuration,
+        totalSessions: totalOverallSessions,
+        activeDays: totalActiveDays,
+        avgDaily: avgDailyOverall,
+        avgSession: avgSessionLength,
+        focusScore: overallFocusScore,
+        monthCount: sortedMonths.length
+      }
+    };
+  }, []);
 
-    // Create all cards
-    const allCards = [];
-    
-    // Add summary card if we have meaningful data (more than just a few sessions)
-    if (sortedMonths.length > 0 && totalActiveDays >= 3) {
-      allCards.push({
-        type: 'summary',
-        data: {
-          totalDuration: totalOverallDuration,
-          totalSessions: totalOverallSessions,
-          activeDays: totalActiveDays,
-          avgDaily: avgDailyOverall,
-          avgSession: avgSessionLength,
-          focusScore: overallFocusScore,
-          monthCount: sortedMonths.length
-        }
-      });
-    }
-
-    // Add monthly data cards
-    monthsWithTrends.forEach(({ monthKey, data, trend, trendValue }) => {
-      allCards.push({
-        type: 'monthly',
-        monthKey,
-        data,
-        trend,
-        trendValue
-      });
-    });
-
-    // Only add upcoming months if user is established and we have space
-    if (shouldShowUpcoming && allCards.length < 4) {
-      const currentMonth = dayjs();
-      const nextMonth = currentMonth.add(1, 'month');
+  // Card components
+  const SummaryCard = ({ data }: { data: any }) => (
+    <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-blue-950/20 dark:to-indigo-950/20 dark:border-blue-800/30">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">Overall</h4>
+          <span className="text-xs text-blue-600 dark:text-blue-300">{data.monthCount} month{data.monthCount > 1 ? 's' : ''}</span>
+        </div>
+        <div className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+          {data.focusScore}%
+        </div>
+      </div>
       
-      // Only add 1 upcoming month as a subtle suggestion
-      allCards.push({
-        type: 'upcoming',
-        monthKey: nextMonth.format('YYYY-MM'),
-        name: nextMonth.format('MMM YYYY'),
-        isSubtle: true
-      });
-    }
+      <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+        <div>
+          <div className="text-blue-600 dark:text-blue-400">Total</div>
+          <div className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(data.totalDuration)}</div>
+        </div>
+        <div>
+          <div className="text-blue-600 dark:text-blue-400">Daily</div>
+          <div className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(Math.round(data.avgDaily))}</div>
+        </div>
+        <div>
+          <div className="text-blue-600 dark:text-blue-400">Sessions</div>
+          <div className="font-medium text-blue-900 dark:text-blue-100">{data.totalSessions}</div>
+        </div>
+        <div>
+          <div className="text-blue-600 dark:text-blue-400">Days</div>
+          <div className="font-medium text-blue-900 dark:text-blue-100">{data.activeDays}</div>
+        </div>
+      </div>
+      
+      <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+        <p className="text-xs text-blue-700 dark:text-blue-300">
+          {data.activeDays < 7 ? 
+            `Great start! Building momentum.` :
+            `Avg session: ${formatDuration(Math.round(data.avgSession))}`
+          }
+        </p>
+      </div>
+    </div>
+  );
 
-    // Add getting started card if no meaningful data
-    if (sortedMonths.length === 0 || totalActiveDays < 3) {
-      allCards.unshift({
-        type: 'getting-started'
-      });
-    }
+  const MonthlyCard = ({ monthKey, data, trend, trendValue }: { monthKey: string; data: any; trend: 'up' | 'down' | 'neutral'; trendValue: number }) => {
+    const avgDailyDuration = data.activeDays > 0 ? data.totalDuration / data.activeDays : 0;
+    const avgSessionLength = data.totalSessions > 0 ? data.totalDuration / data.totalSessions : 0;
+    const focusScore = avgSessionLength > 0 ? Math.min(100, Math.round((avgSessionLength / 3600) * 25)) : 0;
+    const consistencyScore = data.activeDays > 0 ? Math.round((data.activeDays / 31) * 100) : 0;
+    
+    return (
+      <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-green-950/20 dark:to-emerald-950/20 dark:border-green-800/30">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h4 className="font-semibold text-sm text-green-900 dark:text-green-100">{data.name}</h4>
+            <div className="flex items-center gap-1">
+              <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              {trend !== 'neutral' && (
+                <span className={cn(
+                  'text-xs font-medium',
+                  trend === 'up' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                )}>
+                  {trend === 'up' ? '↗' : '↘'}{Math.abs(trendValue).toFixed(0)}%
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
+            {focusScore}%
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+          <div>
+            <div className="text-green-600 dark:text-green-400">Total</div>
+            <div className="font-medium text-green-900 dark:text-green-100">{formatDuration(data.totalDuration)}</div>
+          </div>
+          <div>
+            <div className="text-green-600 dark:text-green-400">Daily</div>
+            <div className="font-medium text-green-900 dark:text-green-100">{formatDuration(Math.round(avgDailyDuration))}</div>
+          </div>
+          <div>
+            <div className="text-green-600 dark:text-green-400">Sessions</div>
+            <div className="font-medium text-green-900 dark:text-green-100">{data.totalSessions}</div>
+          </div>
+          <div>
+            <div className="text-green-600 dark:text-green-400">Days</div>
+            <div className="font-medium text-green-900 dark:text-green-100">{data.activeDays}</div>
+          </div>
+        </div>
 
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const maxVisibleCards = 4;
-    const totalCards = allCards.length;
+        {/* Mini Heatmap */}
+        <div className="mb-2">
+          <div className="grid grid-cols-7 gap-px">
+            {Array.from({ length: 7 * 4 }, (_, i) => {
+              const monthStart = dayjs(monthKey + '-01');
+              const dayOffset = i - monthStart.day();
+              const currentDay = monthStart.add(dayOffset, 'day');
+              
+              const dayActivity = data.dates.find((d: any) => 
+                d?.date?.format('YYYY-MM-DD') === currentDay.format('YYYY-MM-DD')
+              );
+              
+              const isCurrentMonth = currentDay.month() === monthStart.month();
+              const dayIntensity = dayActivity?.activity ? getIntensity(dayActivity.activity.duration) : 0;
+              
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    'aspect-square rounded-[1px] transition-all',
+                    isCurrentMonth
+                      ? dayActivity?.activity
+                        ? getColorClass(dayIntensity)
+                        : 'bg-green-100 dark:bg-green-900/30'
+                      : 'bg-transparent'
+                  )}
+                />
+              );
+            })}
+          </div>
+        </div>
+        
+        <div className="pt-2 border-t border-green-200 dark:border-green-800">
+          <p className="text-xs text-green-700 dark:text-green-300">
+            {consistencyScore >= 80 ? 'Excellent consistency!' : 
+             consistencyScore >= 50 ? 'Good habits forming' :
+             'Building momentum'}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const UpcomingCard = ({ monthKey, name }: { monthKey: string; name: string }) => (
+    <div className="group relative overflow-hidden rounded-lg border border-muted/40 bg-gradient-to-br from-muted/20 to-muted/10 p-3 transition-all hover:from-muted/30 hover:to-muted/20 backdrop-blur-sm opacity-60 hover:opacity-80">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h4 className="font-semibold text-sm text-muted-foreground/80">{name}</h4>
+          <span className="text-xs text-muted-foreground/60">Next month</span>
+        </div>
+        <div className="px-2 py-1 rounded-full text-xs font-medium bg-muted/50 text-muted-foreground/70 backdrop-blur-sm">
+          Plan
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 text-xs mb-2 opacity-50">
+        <div>
+          <div className="text-muted-foreground/60">Target</div>
+          <div className="font-medium text-muted-foreground/60">Set goal</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground/60">Focus</div>
+          <div className="font-medium text-muted-foreground/60">Stay consistent</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground/60">Sessions</div>
+          <div className="font-medium text-muted-foreground/60">Plan ahead</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground/60">Growth</div>
+          <div className="font-medium text-muted-foreground/60">Keep going</div>
+        </div>
+      </div>
+
+      <div className="mb-2 opacity-30">
+        <div className="grid grid-cols-7 gap-px">
+          {Array.from({ length: 7 * 4 }, (_, i) => (
+            <div
+              key={i}
+              className="aspect-square rounded-[1px] bg-muted/50"
+            />
+          ))}
+        </div>
+      </div>
+      
+      <div className="pt-2 border-t border-muted/30">
+        <p className="text-xs text-muted-foreground/60">
+          Keep the momentum going! 🚀
+        </p>
+      </div>
+    </div>
+  );
+
+  const GettingStartedCard = () => (
+    <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-purple-50 to-violet-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-purple-950/20 dark:to-violet-950/20 dark:border-purple-800/30">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">Get Started</h4>
+          <span className="text-xs text-purple-600 dark:text-purple-300">Begin journey</span>
+        </div>
+        <div className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+          New
+        </div>
+      </div>
+      
+      <div className="space-y-2 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="h-1 w-1 rounded-full bg-purple-500" />
+          <span className="text-purple-700 dark:text-purple-300">Start timer session</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-1 w-1 rounded-full bg-purple-500" />
+          <span className="text-purple-700 dark:text-purple-300">Build daily habits</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-1 w-1 rounded-full bg-purple-500" />
+          <span className="text-purple-700 dark:text-purple-300">Track progress</span>
+        </div>
+      </div>
+      
+      <div className="pt-2 border-t border-purple-200 dark:border-purple-800 mt-3">
+        <p className="text-xs text-purple-700 dark:text-purple-300">
+          💡 Try 25-min Pomodoro sessions
+        </p>
+      </div>
+    </div>
+  );
+
+  const CompactCardsContainer = ({ 
+    cards, 
+    currentIndex, 
+    setCurrentIndex, 
+    maxVisibleCards 
+  }: { 
+    cards: any[]; 
+    currentIndex: number; 
+    setCurrentIndex: (index: number) => void; 
+    maxVisibleCards: number;
+  }) => {
+    const totalCards = cards.length;
     const canScrollLeft = currentIndex > 0;
     const canScrollRight = currentIndex < totalCards - maxVisibleCards;
 
     const scrollLeft = () => {
       if (canScrollLeft) {
-        setCurrentIndex(prev => Math.max(0, prev - 1));
+        setCurrentIndex(Math.max(0, currentIndex - 1));
       }
     };
 
     const scrollRight = () => {
       if (canScrollRight) {
-        setCurrentIndex(prev => Math.min(totalCards - maxVisibleCards, prev + 1));
+        setCurrentIndex(Math.min(totalCards - maxVisibleCards, currentIndex + 1));
       }
     };
 
-    const visibleCards = allCards.slice(currentIndex, currentIndex + maxVisibleCards);
+    const visibleCards = cards.slice(currentIndex, currentIndex + maxVisibleCards);
 
     return (
       <div className="relative">
@@ -975,238 +1162,33 @@ export function ActivityHeatmap({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {visibleCards.map((card) => {
               if (card.type === 'summary' && card.data) {
-                return (
-                  <div
-                    key="summary"
-                    className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-blue-950/20 dark:to-indigo-950/20 dark:border-blue-800/30"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">Overall</h4>
-                        <span className="text-xs text-blue-600 dark:text-blue-300">{card.data.monthCount} month{card.data.monthCount > 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                        {card.data.focusScore}%
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                      <div>
-                        <div className="text-blue-600 dark:text-blue-400">Total</div>
-                        <div className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(card.data.totalDuration)}</div>
-                      </div>
-                      <div>
-                        <div className="text-blue-600 dark:text-blue-400">Daily</div>
-                        <div className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(Math.round(card.data.avgDaily))}</div>
-                      </div>
-                      <div>
-                        <div className="text-blue-600 dark:text-blue-400">Sessions</div>
-                        <div className="font-medium text-blue-900 dark:text-blue-100">{card.data.totalSessions}</div>
-                      </div>
-                      <div>
-                        <div className="text-blue-600 dark:text-blue-400">Days</div>
-                        <div className="font-medium text-blue-900 dark:text-blue-100">{card.data.activeDays}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        {card.data.activeDays < 7 ? 
-                          `Great start! Building momentum.` :
-                          `Avg session: ${formatDuration(Math.round(card.data.avgSession))}`
-                        }
-                      </p>
-                    </div>
-                  </div>
-                );
+                return <SummaryCard key="summary" data={card.data} />;
               }
 
               if (card.type === 'monthly' && card.data) {
-                const avgDailyDuration = card.data.activeDays > 0 ? card.data.totalDuration / card.data.activeDays : 0;
-                const avgSessionLength = card.data.totalSessions > 0 ? card.data.totalDuration / card.data.totalSessions : 0;
-                const focusScore = avgSessionLength > 0 ? Math.min(100, Math.round((avgSessionLength / 3600) * 25)) : 0;
-                const consistencyScore = card.data.activeDays > 0 ? Math.round((card.data.activeDays / 31) * 100) : 0;
-                
                 return (
-                  <div
-                    key={(card as any).monthKey}
-                    className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-green-950/20 dark:to-emerald-950/20 dark:border-green-800/30"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold text-sm text-green-900 dark:text-green-100">{(card.data as any).name}</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                          {(card as any).trend !== 'neutral' && (
-                            <span className={cn(
-                              'text-xs font-medium',
-                              (card as any).trend === 'up' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                            )}>
-                              {(card as any).trend === 'up' ? '↗' : '↘'}{Math.abs((card as any).trendValue).toFixed(0)}%
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
-                        {focusScore}%
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                      <div>
-                        <div className="text-green-600 dark:text-green-400">Total</div>
-                        <div className="font-medium text-green-900 dark:text-green-100">{formatDuration(card.data.totalDuration)}</div>
-                      </div>
-                      <div>
-                        <div className="text-green-600 dark:text-green-400">Daily</div>
-                        <div className="font-medium text-green-900 dark:text-green-100">{formatDuration(Math.round(avgDailyDuration))}</div>
-                      </div>
-                      <div>
-                        <div className="text-green-600 dark:text-green-400">Sessions</div>
-                        <div className="font-medium text-green-900 dark:text-green-100">{card.data.totalSessions}</div>
-                      </div>
-                      <div>
-                        <div className="text-green-600 dark:text-green-400">Days</div>
-                        <div className="font-medium text-green-900 dark:text-green-100">{card.data.activeDays}</div>
-                      </div>
-                    </div>
-
-                    {/* Mini Heatmap */}
-                    <div className="mb-2">
-                      <div className="grid grid-cols-7 gap-px">
-                        {Array.from({ length: 7 * 4 }, (_, i) => {
-                          const monthStart = dayjs((card as any).monthKey + '-01');
-                          const dayOffset = i - monthStart.day();
-                          const currentDay = monthStart.add(dayOffset, 'day');
-                          
-                          const dayActivity = (card.data as any).dates.find((d: any) => 
-                            d && d.date && d.date.format('YYYY-MM-DD') === currentDay.format('YYYY-MM-DD')
-                          );
-                          
-                          const isCurrentMonth = currentDay.month() === monthStart.month();
-                          const dayIntensity = dayActivity && dayActivity.activity ? getIntensity(dayActivity.activity.duration) : 0;
-                          
-                          return (
-                            <div
-                              key={i}
-                              className={cn(
-                                'aspect-square rounded-[1px] transition-all',
-                                isCurrentMonth
-                                  ? (dayActivity && dayActivity.activity)
-                                    ? getColorClass(dayIntensity)
-                                    : 'bg-green-100 dark:bg-green-900/30'
-                                  : 'bg-transparent'
-                              )}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                    
-                    <div className="pt-2 border-t border-green-200 dark:border-green-800">
-                      <p className="text-xs text-green-700 dark:text-green-300">
-                        {consistencyScore >= 80 ? 'Excellent consistency!' : 
-                         consistencyScore >= 50 ? 'Good habits forming' :
-                         'Building momentum'}
-                      </p>
-                    </div>
-                  </div>
+                  <MonthlyCard 
+                    key={card.monthKey}
+                    monthKey={card.monthKey}
+                    data={card.data}
+                    trend={card.trend}
+                    trendValue={card.trendValue}
+                  />
                 );
               }
 
               if (card.type === 'upcoming') {
                 return (
-                  <div
-                    key={`upcoming-${(card as any).monthKey}`}
-                    className="group relative overflow-hidden rounded-lg border border-muted/40 bg-gradient-to-br from-muted/20 to-muted/10 p-3 transition-all hover:from-muted/30 hover:to-muted/20 backdrop-blur-sm opacity-60 hover:opacity-80"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold text-sm text-muted-foreground/80">{(card as any).name}</h4>
-                        <span className="text-xs text-muted-foreground/60">Next month</span>
-                      </div>
-                      <div className="px-2 py-1 rounded-full text-xs font-medium bg-muted/50 text-muted-foreground/70 backdrop-blur-sm">
-                        Plan
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-xs mb-2 opacity-50">
-                      <div>
-                        <div className="text-muted-foreground/60">Target</div>
-                        <div className="font-medium text-muted-foreground/60">Set goal</div>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground/60">Focus</div>
-                        <div className="font-medium text-muted-foreground/60">Stay consistent</div>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground/60">Sessions</div>
-                        <div className="font-medium text-muted-foreground/60">Plan ahead</div>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground/60">Growth</div>
-                        <div className="font-medium text-muted-foreground/60">Keep going</div>
-                      </div>
-                    </div>
-
-                    <div className="mb-2 opacity-30">
-                      <div className="grid grid-cols-7 gap-px">
-                        {Array.from({ length: 7 * 4 }, (_, i) => (
-                          <div
-                            key={i}
-                            className="aspect-square rounded-[1px] bg-muted/50"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="pt-2 border-t border-muted/30">
-                      <p className="text-xs text-muted-foreground/60">
-                        Keep the momentum going! 🚀
-                      </p>
-                    </div>
-                  </div>
+                  <UpcomingCard 
+                    key={`upcoming-${card.monthKey}`}
+                    monthKey={card.monthKey}
+                    name={card.name}
+                  />
                 );
               }
 
               if (card.type === 'getting-started') {
-                return (
-                  <div
-                    key="getting-started"
-                    className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-purple-50 to-violet-50 p-3 shadow-sm transition-all hover:shadow-md dark:from-purple-950/20 dark:to-violet-950/20 dark:border-purple-800/30"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">Get Started</h4>
-                        <span className="text-xs text-purple-600 dark:text-purple-300">Begin journey</span>
-                      </div>
-                      <div className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
-                        New
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1 w-1 rounded-full bg-purple-500" />
-                        <span className="text-purple-700 dark:text-purple-300">Start timer session</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-1 w-1 rounded-full bg-purple-500" />
-                        <span className="text-purple-700 dark:text-purple-300">Build daily habits</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-1 w-1 rounded-full bg-purple-500" />
-                        <span className="text-purple-700 dark:text-purple-300">Track progress</span>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-2 border-t border-purple-200 dark:border-purple-800 mt-3">
-                      <p className="text-xs text-purple-700 dark:text-purple-300">
-                        💡 Try 25-min Pomodoro sessions
-                      </p>
-                    </div>
-                  </div>
-                );
+                return <GettingStartedCard key="getting-started" />;
               }
 
               return null;
@@ -1233,6 +1215,92 @@ export function ActivityHeatmap({
           </div>
         )}
       </div>
+    );
+  };
+
+  const buildCardsList = useCallback((monthlyStats: ReturnType<typeof calculateMonthlyStats>) => {
+    const { sortedMonths, monthsWithTrends, overallStats } = monthlyStats;
+    const allCards = [];
+    
+    // Determine if user is "established" enough to show upcoming month suggestions
+    const isEstablishedUser = overallStats.activeDays >= 7 && overallStats.totalSessions >= 10 && sortedMonths.length >= 1;
+    const hasRecentActivity = sortedMonths.length > 0 && dayjs().diff(dayjs().startOf('month'), 'day') < 15;
+    const shouldShowUpcoming = isEstablishedUser && hasRecentActivity;
+    
+    // Add summary card if we have meaningful data
+    if (sortedMonths.length > 0 && overallStats.activeDays >= 3) {
+      allCards.push({
+        type: 'summary',
+        data: overallStats
+      });
+    }
+
+    // Add monthly data cards
+    monthsWithTrends.forEach(({ monthKey, data, trend, trendValue }) => {
+      allCards.push({
+        type: 'monthly',
+        monthKey,
+        data,
+        trend,
+        trendValue
+      });
+    });
+
+    // Only add upcoming months if user is established and we have space
+    if (shouldShowUpcoming && allCards.length < 4) {
+      const currentMonth = dayjs();
+      const nextMonth = currentMonth.add(1, 'month');
+      
+      allCards.push({
+        type: 'upcoming',
+        monthKey: nextMonth.format('YYYY-MM'),
+        name: nextMonth.format('MMM YYYY'),
+        isSubtle: true
+      });
+    }
+
+    // Add getting started card if no meaningful data
+    if (sortedMonths.length === 0 || overallStats.activeDays < 3) {
+      allCards.unshift({
+        type: 'getting-started'
+      });
+    }
+
+    return allCards;
+  }, [formatDuration, getIntensity, getColorClass]);
+
+  const renderCompactCards = () => {
+    const monthlyData = processMonthlyData();
+    const monthlyStats = calculateMonthlyStats(monthlyData);
+    const allCards = buildCardsList(monthlyStats);
+
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const maxVisibleCards = 4;
+    const totalCards = allCards.length;
+    const canScrollLeft = currentIndex > 0;
+    const canScrollRight = currentIndex < totalCards - maxVisibleCards;
+
+    const scrollLeft = () => {
+      if (canScrollLeft) {
+        setCurrentIndex(prev => Math.max(0, prev - 1));
+      }
+    };
+
+    const scrollRight = () => {
+      if (canScrollRight) {
+        setCurrentIndex(prev => Math.min(totalCards - maxVisibleCards, prev + 1));
+      }
+    };
+
+    const visibleCards = allCards.slice(currentIndex, currentIndex + maxVisibleCards);
+
+    return (
+      <CompactCardsContainer 
+        cards={allCards}
+        currentIndex={currentIndex}
+        setCurrentIndex={setCurrentIndex}
+        maxVisibleCards={maxVisibleCards}
+      />
     );
   };
 

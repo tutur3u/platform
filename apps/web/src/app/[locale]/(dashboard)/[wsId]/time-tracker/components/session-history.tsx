@@ -1484,7 +1484,14 @@ export function SessionHistory({
                             </div>
                             <div className="text-center">
                               <div className="font-bold text-primary">
-                                {Math.round(filteredSessions.reduce((sum, s) => sum + calculateFocusScore(s), 0) / filteredSessions.length)}
+                                {filteredSessions.length > 0
+                                  ? Math.round(
+                                      filteredSessions.reduce(
+                                        (sum, s) => sum + calculateFocusScore(s),
+                                        0
+                                      ) / filteredSessions.length
+                                    )
+                                  : 0}
                               </div>
                               <div className="text-muted-foreground">Avg Focus</div>
                             </div>
