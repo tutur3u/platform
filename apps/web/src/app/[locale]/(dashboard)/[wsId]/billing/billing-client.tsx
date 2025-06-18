@@ -170,7 +170,7 @@ export function BillingClient({
                 <ArrowUpCircle className="mr-2 h-5 w-5" />
                 {showUpgradeOptions ? 'Hide Upgrade Options' : 'Upgrade Plan'}
               </Button>
-              <Button
+              {/* <Button
                 variant="outline"
                 size="lg"
                 className="border-border"
@@ -178,7 +178,7 @@ export function BillingClient({
                 disabled={isLoading || !activeSubscriptionId}
               >
                 {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
