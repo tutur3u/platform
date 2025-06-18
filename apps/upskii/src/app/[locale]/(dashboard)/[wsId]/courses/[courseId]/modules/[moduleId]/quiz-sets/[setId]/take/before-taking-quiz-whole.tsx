@@ -21,6 +21,7 @@ import {
   Info,
   Play,
   RotateCcw,
+  TriangleAlert,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -193,8 +194,10 @@ export default function BeforeTakingQuizWhole({
           ) : (
             !quizData.resultsReleased &&
             (isPastDue || attemptsRemaining == 0) && (
-              <Alert variant="destructive" className="mt-4">
+              <Alert variant="destructive" className="mt-4 font-bold text-dynamic-red
+              bg-dynamic-light-pink/30">
                 <AlertDescription>
+                  <TriangleAlert className="inline h-5 w-5 mr-2" />
                   {isPastDue
                     ? t('quiz.quiz-past-due-message')
                     : t('quiz.no-attempts-message')}

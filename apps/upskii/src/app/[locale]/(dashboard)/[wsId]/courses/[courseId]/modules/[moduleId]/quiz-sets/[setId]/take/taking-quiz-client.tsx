@@ -1,13 +1,15 @@
 'use client';
 
-import BeforeTakingQuizWhole, { AttemptSummary } from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
+import BeforeTakingQuizWhole, {
+  AttemptSummary,
+} from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
 import QuizStatusSidebar from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/quiz-status-sidebar';
 import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/time-elapsed-status';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { ListCheck } from '@tuturuuu/ui/icons';
+import { ListCheck, TriangleAlert } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { useTranslations } from 'next-intl';
@@ -266,7 +268,13 @@ export default function TakingQuizClient({
 
   // ─── RENDER ─────────────────────────────────────────────────────────────────
   if (loadingMeta) return <LoadingIndicator className="mx-auto mt-8" />;
-  if (metaError) return <p className="p-4 text-red-600">{metaError}</p>;
+  if (metaError)
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-3">
+        <TriangleAlert size={48} className="text-red-500" />
+        <p className="text-red-500">{metaError}</p>
+      </div>
+    );
   if (!quizMeta) return null;
 
   // Take Quiz button + instruction
@@ -296,10 +304,7 @@ export default function TakingQuizClient({
           <button onClick={() => setSidebarVisible(!sidebarVisible)}>
             <ListCheck size={32} className="text-dynamic-purple" />
           </button>
-          <TimeElapsedStatus
-            timeLeft={timeLeft}
-            isCountdown={isCountdown}
-          />
+          <TimeElapsedStatus timeLeft={timeLeft} isCountdown={isCountdown} />
         </div>
         {sidebarVisible && quizMeta && (
           <QuizStatusSidebar
@@ -432,10 +437,7 @@ export default function TakingQuizClient({
 
       <aside className="order-1 hidden w-full lg:order-2 lg:block lg:w-5/12">
         <div className="sticky top-4 space-y-2">
-          <TimeElapsedStatus
-            timeLeft={timeLeft}
-            isCountdown={isCountdown}
-          />
+          <TimeElapsedStatus timeLeft={timeLeft} isCountdown={isCountdown} />
           <QuizStatusSidebar
             questions={quizMeta.questions}
             selectedAnswers={selectedAnswers}

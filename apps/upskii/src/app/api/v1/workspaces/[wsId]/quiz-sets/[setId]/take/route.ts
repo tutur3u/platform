@@ -1,44 +1,54 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-type RawRow = {
-  quiz_id: string;
-  workspace_quizzes: {
-    question: string;
-    score: number;
-    instruction: any; // JSONB
-    quiz_options: { id: string; value: string; is_correct: boolean }[];
-  };
-};
-
-type AttemptSummary = {
+export type AttemptSummary = {
   attemptId: string;
   attemptNumber: number;
-  submittedAt: string; // ISO timestamp
+  submittedAt: string;     // ISO
   durationSeconds: number;
 };
 
-interface Params {
-  params: Promise<{
-    setId: string;
+export interface TakeResponse {
+  setId: string;
+  setName: string;
+  timeLimitMinutes: number | null;
+  attemptLimit: number | null;
+  attemptsSoFar: number;
+  allowViewOldAttempts: boolean;
+  availableDate: string | null;
+  dueDate: string | null;
+  resultsReleased: boolean;
+  explanationMode: 0 | 1 | 2;
+  instruction: any;
+  attempts: AttemptSummary[];
+  questions: Array<{
+    quizId: string;
+    question: string;
+    score: number;
+    multiple: boolean;
+    options: { id: string; value: string }[];
   }>;
+  // NEW: explicit flags for UI
+  isAvailable: boolean;
+  isPastDue: boolean;
+  hasReachedMax: boolean;
 }
 
-export async function GET(_req: NextRequest, { params }: Params) {
-  const { setId } = await params;
+export async function GET(_req: NextRequest, { params }: { params: { setId: string } }) {
+  const { setId } = params;
   const sb = await createClient();
 
   // 1) Auth
   const {
     data: { user },
-    error: uErr,
+    error: userErr,
   } = await sb.auth.getUser();
-  if (uErr || !user) {
+  if (userErr || !user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
   const userId = user.id;
 
-  // 2) Fetch quiz-set metadata (+ new cols)
+  // 2) Fetch quiz set metadata
   const { data: setRow, error: sErr } = await sb
     .from('workspace_quiz_sets')
     .select(
@@ -60,6 +70,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (sErr || !setRow) {
     return NextResponse.json({ error: 'Quiz set not found' }, { status: 404 });
   }
+
   const {
     name: setName,
     attempt_limit: attemptLimit,
@@ -72,50 +83,18 @@ export async function GET(_req: NextRequest, { params }: Params) {
     instruction,
   } = setRow;
 
-  const now = new Date();
-
-  // 3) Availability & due checks
-  if (availableDate && new Date(availableDate) > now) {
-    return NextResponse.json(
-      { error: 'Quiz not yet available', availableDate },
-      { status: 403 }
-    );
-  }
-  if (dueDate && new Date(dueDate) < now) {
-    return NextResponse.json(
-      { error: 'Quiz past due', dueDate },
-      { status: 403 }
-    );
-  }
-
-  // 4) Count how many attempts user already made
-  const { data: prev, error: aErr } = await sb
+  // 3) Count attempts so far
+  const { data: prevAttempts, error: aErr } = await sb
     .from('workspace_quiz_attempts')
-    .select('attempt_number', { count: 'exact', head: false })
+    .select('attempt_number', { head: false })
     .eq('user_id', userId)
     .eq('set_id', setId);
   if (aErr) {
-    return NextResponse.json(
-      { error: 'Error counting attempts' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error counting attempts' }, { status: 500 });
   }
-  const attemptsSoFar = prev?.length ?? 0;
+  const attemptsSoFar = prevAttempts?.length ?? 0;
 
-  // 5) Enforce attempt limit
-  if (attemptLimit !== null && attemptsSoFar >= attemptLimit) {
-    return NextResponse.json(
-      {
-        error: 'Max attempts reached',
-        attemptsSoFar,
-        attemptLimit,
-        allowViewResults: false,
-      },
-      { status: 403 }
-    );
-  }
-
-  // 7) Fetch all previous attempts summary
+  // 4) Build summaries of past attempts
   const { data: rawAttempts, error: attErr } = await sb
     .from('workspace_quiz_attempts')
     .select('id,attempt_number,started_at,completed_at')
@@ -123,46 +102,22 @@ export async function GET(_req: NextRequest, { params }: Params) {
     .eq('set_id', setId)
     .order('attempt_number', { ascending: false });
   if (attErr) {
-    return NextResponse.json(
-      { error: 'Error fetching attempts' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error fetching attempts' }, { status: 500 });
   }
   const attempts: AttemptSummary[] = (rawAttempts || []).map((row) => {
     const started = new Date(row.started_at).getTime();
     const completed = row.completed_at
       ? new Date(row.completed_at).getTime()
       : Date.now();
-    const durationSeconds = Math.floor((completed - started) / 1000);
     return {
       attemptId: row.id,
       attemptNumber: row.attempt_number,
       submittedAt: row.completed_at ?? row.started_at,
-      durationSeconds,
+      durationSeconds: Math.floor((completed - started) / 1000),
     };
   });
 
-  // 8) Early‐exit if they’ve already done one attempt _and_ results are viewable
-  // if (allowViewResults && attemptsSoFar > 0) {
-  //   return NextResponse.json({
-  //     setId,
-  //     setName,
-  //     timeLimitMinutes,
-  //     releasePointsImmediately,
-  //     resultsReleased,
-  //     attemptLimit,
-  //     attemptsSoFar,
-  //     allowViewResults,
-  //     availableDate,
-  //     dueDate,
-  //     attempts,
-  //     explanationMode,
-  //     instruction,
-  //     questions: [], // no need to send questions
-  //   });
-  // }
-
-  // 9) Otherwise fetch questions+options as before
+  // 5) Fetch questions & options
   const { data: rawQ, error: qErr } = await sb
     .from('quiz_set_quizzes')
     .select(
@@ -182,39 +137,46 @@ export async function GET(_req: NextRequest, { params }: Params) {
     )
     .eq('set_id', setId);
   if (qErr) {
-    return NextResponse.json(
-      { error: 'Error fetching questions' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error fetching questions' }, { status: 500 });
   }
-  const questions = (rawQ as RawRow[]).map((r) => ({
+
+  const questions = (rawQ || []).map((r: any) => ({
     quizId: r.quiz_id,
     question: r.workspace_quizzes.question,
     score: r.workspace_quizzes.score,
     multiple:
-      r.workspace_quizzes.quiz_options.filter((o) => o.is_correct).length > 1,
-    options: r.workspace_quizzes.quiz_options.map((o) => ({
+      r.workspace_quizzes.quiz_options.filter((o: any) => o.is_correct).length > 1,
+    options: r.workspace_quizzes.quiz_options.map((o: any) => ({
       id: o.id,
       value: o.value,
     })),
-    instruction: r.workspace_quizzes.instruction ?? instruction,
   }));
 
-  // 10) Return the full TakeResponse
-  return NextResponse.json({
+  // 6) Derive UI flags
+  const now = new Date();
+  const isAvailable = !availableDate || new Date(availableDate) <= now;
+  const isPastDue = !!dueDate && new Date(dueDate) < now;
+  const hasReachedMax = attemptLimit !== null && attemptsSoFar >= attemptLimit;
+
+  // 7) Return unified 200 response
+  const payload: TakeResponse = {
     setId,
     setName,
     timeLimitMinutes,
-    allowViewOldAttempts,
     attemptLimit,
     attemptsSoFar,
-    resultsReleased,
-    // allowViewResults,
+    allowViewOldAttempts,
     availableDate,
     dueDate,
-    attempts,
-    explanationMode,
+    resultsReleased,
+    explanationMode: explanationMode as 0 | 1 | 2,
     instruction,
+    attempts,
     questions,
-  });
+    isAvailable,
+    isPastDue,
+    hasReachedMax,
+  };
+
+  return NextResponse.json(payload);
 }
