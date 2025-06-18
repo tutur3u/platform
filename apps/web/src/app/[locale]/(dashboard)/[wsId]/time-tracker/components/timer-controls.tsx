@@ -614,6 +614,29 @@ export function TimerControls({
   const dropdownContainerRef = useRef<HTMLDivElement>(null);
   const dropdownContentRef = useRef<HTMLDivElement>(null);
 
+  // Refs for timer state to avoid interval recreation
+  const elapsedTimeRef = useRef(elapsedTime);
+  const hasReachedTargetRef = useRef(hasReachedTarget);
+  const getCurrentBreakStateRef = useRef(getCurrentBreakState);
+  const updateCurrentBreakStateRef = useRef(updateCurrentBreakState);
+
+  // Update refs when values change
+  useEffect(() => {
+    elapsedTimeRef.current = elapsedTime;
+  }, [elapsedTime]);
+
+  useEffect(() => {
+    hasReachedTargetRef.current = hasReachedTarget;
+  }, [hasReachedTarget]);
+
+  useEffect(() => {
+    getCurrentBreakStateRef.current = getCurrentBreakState;
+  }, [getCurrentBreakState]);
+
+  useEffect(() => {
+    updateCurrentBreakStateRef.current = updateCurrentBreakState;
+  }, [updateCurrentBreakState]);
+
   // Task creation state
   const [boards, setBoards] = useState<TaskBoard[]>([]);
   const [showTaskCreation, setShowTaskCreation] = useState(false);
@@ -832,7 +855,7 @@ export function TimerControls({
 
     // Session milestones for stopwatch mode
     if (timerMode === 'stopwatch' && stopwatchSettings.enableSessionMilestones && isRunning) {
-      const elapsedMinutes = Math.floor(elapsedTime / 60);
+      const elapsedMinutes = Math.floor(elapsedTimeRef.current / 60);
       const milestones = [30, 60, 120, 180, 240]; // 30min, 1hr, 2hr, 3hr, 4hr
       
       for (const milestone of milestones) {
@@ -852,7 +875,7 @@ export function TimerControls({
         }
       }
     }
-  }, [timerMode, getCurrentBreakState, updateCurrentBreakState, stopwatchSettings, pomodoroSettings, customTimerSettings, lastNotificationTime, isRunning, countdownState.sessionType, elapsedTime, showNotification]);
+  }, [timerMode, getCurrentBreakState, updateCurrentBreakState, stopwatchSettings, pomodoroSettings, customTimerSettings, lastNotificationTime, isRunning, countdownState.sessionType, showNotification]);
 
 
 
@@ -913,20 +936,20 @@ export function TimerControls({
     if (timerMode === 'custom' && customTimerSettings.type === 'enhanced-stopwatch' && isRunning) {
       const interval = setInterval(() => {
         const currentTime = Date.now();
-        const elapsedMinutes = Math.floor(elapsedTime / 60);
+        const elapsedMinutes = Math.floor(elapsedTimeRef.current / 60);
         const targetMinutes = customTimerSettings.targetDuration || 60;
         
         // Check for interval breaks
         if (customTimerSettings.enableIntervalBreaks) {
           const intervalFreq = customTimerSettings.intervalFrequency || 25;
-          const currentBreakState = getCurrentBreakState();
+          const currentBreakState = getCurrentBreakStateRef.current();
           const timeSinceLastBreak = Math.floor((currentTime - currentBreakState.lastIntervalBreakTime) / (1000 * 60));
           
           if (timeSinceLastBreak >= intervalFreq) {
             const breakDuration = customTimerSettings.intervalBreakDuration || 5;
             const newBreaksCount = currentBreakState.intervalBreaksCount + 1;
             
-            updateCurrentBreakState({
+            updateCurrentBreakStateRef.current({
               intervalBreaksCount: newBreaksCount,
               lastIntervalBreakTime: currentTime
             });
@@ -947,7 +970,7 @@ export function TimerControls({
         }
         
         // Check for target achievement
-        if (!hasReachedTarget && elapsedMinutes >= targetMinutes) {
+        if (!hasReachedTargetRef.current && elapsedMinutes >= targetMinutes) {
           setHasReachedTarget(true);
           
           if (customTimerSettings.enableTargetNotification) {
@@ -982,7 +1005,7 @@ export function TimerControls({
 
       return () => clearInterval(interval);
     }
-  }, [timerMode, customTimerSettings, isRunning, elapsedTime, getCurrentBreakState, updateCurrentBreakState, hasReachedTarget, showNotification, playNotificationSound, checkBreakReminders]);
+  }, [timerMode, customTimerSettings, isRunning, showNotification, playNotificationSound, checkBreakReminders, setIsRunning]);
 
   // Fetch boards with lists
   const fetchBoards = useCallback(async () => {
