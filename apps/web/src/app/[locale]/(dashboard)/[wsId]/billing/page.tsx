@@ -1,8 +1,8 @@
 import { BillingClient } from './billing-client';
+import BillingHistory from './billing-history';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { api } from '@/lib/polar';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Receipt } from 'lucide-react';
 
 const fetchProducts = async () => {
   try {
@@ -56,7 +56,6 @@ const fetchSubscription = async (wsId: string) => {
   }
 
   console.log(dbSub, 'fetched subscription from database');
-  // 2. If it exists, get the full product details from Polar
   const polarProduct = await api.products.get({
     id: dbSub.product_id || '',
   });
@@ -78,19 +77,50 @@ const fetchSubscription = async (wsId: string) => {
   };
 };
 
+const fetchedWorksapceSubscriptions = async (wsId: string) => {
+  const sbAdmin = await createClient();
+
+  const { data: history, error } = await sbAdmin
+    .from('workspace_subscription')
+    .select(
+      `
+      created_at, 
+      product_id, 
+      status, 
+      cancel_at_period_end,
+      workspace_subscription_products (
+        name,
+        description,
+        price,
+        recurring_interval
+      )
+    `
+    )
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  if (error) {
+    console.error('Error fetching billing history:', error);
+    return [];
+  }
+
+  return history || [];
+};
+
 export default async function BillingPage({
   params,
 }: {
   params: Promise<{ wsId: string }>;
 }) {
-  // const products = await fetchProducts();
-  // const subscription = await fetchSubscription((await params).wsId);
   const { wsId } = await params;
-  const [products, subscription, isCreator] = await Promise.all([
-    fetchProducts(),
-    fetchSubscription(wsId),
-    checkCreator(wsId),
-  ]);
+  const [products, subscription, isCreator, subscriptionHistory] =
+    await Promise.all([
+      fetchProducts(),
+      fetchSubscription(wsId),
+      checkCreator(wsId),
+      fetchedWorksapceSubscriptions(wsId),
+    ]);
 
   const currentPlan = subscription?.product
     ? {
@@ -127,26 +157,14 @@ export default async function BillingPage({
         features: ['Basic features', 'Limited usage', 'Community support'],
       };
 
-  const paymentHistory = [
-    {
-      id: 'INV-2023-06',
-      date: 'Jun 15, 2023',
-      amount: '$19.99',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-2023-05',
-      date: 'May 15, 2023',
-      amount: '$19.99',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-2023-04',
-      date: 'Apr 15, 2023',
-      amount: '$19.99',
-      status: 'Paid',
-    },
-  ];
+  const billingHistory = subscriptionHistory.map((sub, index) => ({
+    id: `SUB-${sub.product_id?.slice(-6) || index}`,
+    created_at: sub.created_at,
+    product_id: sub.product_id,
+    status: sub.status,
+    cancel_at_period_end: sub.cancel_at_period_end,
+    product: sub.workspace_subscription_products || null,
+  }));
 
   const upgradePlans = products.map((product, index) => ({
     id: product.id,
@@ -188,69 +206,7 @@ export default async function BillingPage({
         isCreator={isCreator}
       />
 
-      {/* Payment History (Static) */}
-      <div className="rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
-        <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
-          Payment History
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Invoice #
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Date
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Amount
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {paymentHistory.map((payment) => (
-                <tr key={payment.id}>
-                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                    {payment.id}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                    {payment.date}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
-                    {payment.amount}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span
-                      className={`inline-flex rounded-full px-2 text-xs leading-5 font-semibold ${
-                        payment.status === 'Paid'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                      }`}
-                    >
-                      {payment.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <button
-                      className="text-primary hover:text-primary/80"
-                      title="Download Receipt"
-                    >
-                      <Receipt className="h-5 w-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <BillingHistory billingHistory={billingHistory} />
     </div>
   );
 }
