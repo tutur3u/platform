@@ -191,15 +191,19 @@ export default function TasksSidebarContent({
       board.lists?.forEach((list) => {
         if (list.tasks) {
           // Transform Partial<WorkspaceTask> to ExtendedWorkspaceTask
-          const extendedTasks = list.tasks.map((task) => ({
-            ...task,
-            board_name: board.name,
-            list_name: list.name,
-            assignee_name: undefined,
-            assignee_avatar: undefined,
-            is_assigned_to_current_user: undefined,
-            assignees: undefined,
-          } as ExtendedWorkspaceTask));
+          const extendedTasks = list.tasks.map((task): ExtendedWorkspaceTask => {
+            const taskAny = task as any;
+            return {
+              ...task,
+              board_name: board.name,
+              list_name: list.name,
+              // Keep existing assignee metadata if present, properly handling null/undefined
+              assignee_name: taskAny.assignee_name ? taskAny.assignee_name : undefined,
+              assignee_avatar: taskAny.assignee_avatar ? taskAny.assignee_avatar : undefined,
+              is_assigned_to_current_user: taskAny.is_assigned_to_current_user,
+              assignees: taskAny.assignees,
+            };
+          });
           tasks.push(...extendedTasks);
         }
       });

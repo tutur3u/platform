@@ -640,12 +640,12 @@ export function ActivityHeatmap({
     }
 
     const monthlyStats = {
-      activeDays: days.filter(day => day.activity && day.isCurrentMonth).length,
+      activeDays: days.filter(day => day?.activity && day.isCurrentMonth).length,
       totalDuration: days
-        .filter(day => day.isCurrentMonth && day.activity)
+        .filter(day => day.isCurrentMonth && day?.activity)
         .reduce((sum, day) => sum + (day.activity?.duration || 0), 0),
       totalSessions: days
-        .filter(day => day.isCurrentMonth && day.activity)
+        .filter(day => day.isCurrentMonth && day?.activity)
         .reduce((sum, day) => sum + (day.activity?.sessions || 0), 0)
     };
 
