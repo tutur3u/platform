@@ -5,18 +5,18 @@ import { NextRequest, NextResponse } from 'next/server';
 interface TaskAssigneeData {
   user: {
     id: string;
-    display_name?: string;
-    avatar_url?: string;
+    display_name: string | null;
+    avatar_url: string | null;
     email?: string;
   } | null;
 }
 
 interface TaskListData {
   id: string;
-  name: string;
+  name: string | null;
   workspace_boards: {
     id: string;
-    name: string;
+    name: string | null;
     ws_id: string;
   } | null;
 }
@@ -24,12 +24,12 @@ interface TaskListData {
 interface RawTaskData {
   id: string;
   name: string;
-  description?: string;
-  priority?: number;
-  completed: boolean;
-  start_date?: string;
-  end_date?: string;
-  created_at: string;
+  description: string | null;
+  priority: number | null;
+  completed: boolean | null;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string | null;
   list_id: string;
   task_lists: TaskListData | null;
   assignees?: TaskAssigneeData[];

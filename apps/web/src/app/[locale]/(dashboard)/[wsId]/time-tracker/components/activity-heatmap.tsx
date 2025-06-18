@@ -1133,7 +1133,6 @@ export function ActivityHeatmap({
   };
 
   const UpcomingCard = ({
-    monthKey,
     name,
   }: {
     monthKey: string;
@@ -1438,28 +1437,6 @@ export function ActivityHeatmap({
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const maxVisibleCards = 4;
-    const totalCards = allCards.length;
-    const canScrollLeft = currentIndex > 0;
-    const canScrollRight = currentIndex < totalCards - maxVisibleCards;
-
-    const scrollLeft = () => {
-      if (canScrollLeft) {
-        setCurrentIndex((prev) => Math.max(0, prev - 1));
-      }
-    };
-
-    const scrollRight = () => {
-      if (canScrollRight) {
-        setCurrentIndex((prev) =>
-          Math.min(totalCards - maxVisibleCards, prev + 1)
-        );
-      }
-    };
-
-    const visibleCards = allCards.slice(
-      currentIndex,
-      currentIndex + maxVisibleCards
-    );
 
     return (
       <CompactCardsContainer

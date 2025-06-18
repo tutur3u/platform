@@ -38,9 +38,9 @@ export function sortTasks(
  * Base filters interface for common filter properties
  */
 interface BaseFilters {
-  board: string | null;
-  list: string | null;
-  assignee: string | null;
+  board: string | null | undefined;
+  list: string | null | undefined;
+  assignee: string | null | undefined;
 }
 
 /**
@@ -182,19 +182,28 @@ export function generateAssigneeInitials(assignee: {
   const name = assignee.display_name?.trim();
   const email = assignee.email?.trim();
 
-  if (name) {
+  if (name && name.length > 0) {
     // Handle names with multiple parts (e.g., "John Doe" -> "JD")
     const parts = name.split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) {
+    if (parts.length >= 2 && parts[0] && parts[1] && parts[0].length > 0 && parts[1].length > 0) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     }
-    return name[0].toUpperCase();
+    // Safe access to first character
+    const firstChar = name.charAt(0);
+    if (firstChar) {
+      return firstChar.toUpperCase();
+    }
   }
 
-  if (email) {
+  if (email && email.length > 0) {
     // Use part before @ for email
     const username = email.split('@')[0];
-    return username[0].toUpperCase();
+    if (username && username.length > 0) {
+      const firstChar = username.charAt(0);
+      if (firstChar) {
+        return firstChar.toUpperCase();
+      }
+    }
   }
 
   return '?';

@@ -70,9 +70,9 @@ export interface TaskFilters {
 
 // Sidebar task filters
 export interface TaskSidebarFilters {
-  board: string | null;
-  list: string | null;
-  assignee: string | null;
+  board: string | undefined;
+  list: string | undefined;
+  assignee: string | undefined;
 }
 
 // Complete time tracker data structure
