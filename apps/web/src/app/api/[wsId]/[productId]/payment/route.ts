@@ -7,6 +7,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ wsId: string; productId: string }> }
 ) {
+  // const sbAdmin = await createAdminClient();
   const user = await getCurrentSupabaseUser();
 
   const { wsId, productId } = await params;
@@ -66,9 +67,10 @@ export async function GET(
     });
   }
 
+  // HERE is where you add the metadata
   const checkoutSession = await api.checkouts.create({
     products: [productId],
-    successUrl: `/${wsId}/billing/success`,
+    successUrl: `http://localhost:7803/${wsId}/billing/success`,
 
     metadata: {
       wsId: wsId,
