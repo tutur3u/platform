@@ -1,7 +1,7 @@
 'use client';
 
+import { ArrowLeft, Loader, Sparkles } from '@tuturuuu/ui/icons';
 import { Command as CommandPrimitive } from 'cmdk';
-import { ArrowLeft, Loader, Sparkles } from 'lucide-react';
 
 interface CommandHeaderProps {
   page: string;

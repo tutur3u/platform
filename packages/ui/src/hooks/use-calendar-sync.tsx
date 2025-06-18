@@ -7,6 +7,10 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import {
+  canProceedWithSync,
+  updateLastUpsert,
+} from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
 import {
   createContext,
@@ -335,6 +339,13 @@ export const CalendarSyncProvider = ({
     ) => {
       setIsSyncing(true);
       try {
+        // Check if we can proceed with sync
+        const canProceed = await canProceedWithSync(wsId);
+        if (!canProceed) {
+          console.log('Sync blocked due to 30-second cooldown');
+          return;
+        }
+
         const supabase = createClient();
 
         // Use the exact range from dates array
@@ -559,6 +570,9 @@ export const CalendarSyncProvider = ({
         } else {
           setError(null);
           console.log('Upsert status: Finished');
+
+          // Update lastUpsert timestamp after successful upsert
+          await updateLastUpsert(wsId);
         }
 
         // Refresh the cache to trigger queryClient to refetch the data from database

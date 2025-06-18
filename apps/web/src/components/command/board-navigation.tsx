@@ -2,7 +2,7 @@
 
 import type { Board } from './types';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
-import { ExternalLink, LayoutDashboard, MapPin, Tag } from 'lucide-react';
+import { ExternalLink, LayoutDashboard, MapPin, Tag } from '@tuturuuu/ui/icons';
 import * as React from 'react';
 
 interface BoardNavigationProps {

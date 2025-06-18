@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '@tuturuuu/utils/format';
 import {
   Bell,
   ChevronRight,
@@ -9,7 +8,8 @@ import {
   Shield,
   Smartphone,
   User,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

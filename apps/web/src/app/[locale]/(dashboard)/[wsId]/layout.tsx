@@ -17,6 +17,9 @@ import {
 import {
   Archive,
   Banknote,
+  Blocks,
+  Bolt,
+  BookKey,
   Box,
   BriefcaseBusiness,
   Calendar,
@@ -27,15 +30,20 @@ import {
   Cog,
   Database,
   FileText,
+  FolderSync,
   GraduationCap,
   HardDrive,
+  KeyRound,
   Logs,
   Mail,
   MessageCircleIcon,
   PencilLine,
   Play,
   Presentation,
+  Receipt,
   ScanSearch,
+  ScrollText,
+  ShieldUser,
   Sparkles,
   Users,
 } from '@tuturuuu/ui/icons';
@@ -378,17 +386,90 @@ export default async function Layout({ children, params }: LayoutProps) {
     null,
     {
       title: t('common.settings'),
-      href: `/${wsId}/settings`,
       icon: <Cog className="h-5 w-5" />,
       aliases: [
         `/${wsId}/members`,
         `/${wsId}/teams`,
+        `/${wsId}/roles`,
+        `/${wsId}/settings/reports`,
+        `/${wsId}/billing`,
+        `/${wsId}/api-keys`,
         `/${wsId}/secrets`,
         `/${wsId}/infrastructure`,
         `/${wsId}/migrations`,
         `/${wsId}/activities`,
       ],
       shortcut: ',',
+      children: [
+        {
+          title: t('workspace-settings-layout.workspace'),
+          href: `/${wsId}/settings`,
+          icon: <Bolt className="h-5 w-5" />,
+        },
+        {
+          title: t('workspace-settings-layout.members'),
+          href: `/${wsId}/members`,
+          icon: <Users className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY || withoutPermission('manage_workspace_members'),
+        },
+        {
+          title: t('workspace-settings-layout.roles'),
+          href: `/${wsId}/roles`,
+          icon: <ShieldUser className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
+        },
+        {
+          title: t('workspace-settings-layout.reports'),
+          href: `/${wsId}/settings/reports`,
+          icon: <FileText className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY || withoutPermission('manage_user_report_templates'),
+        },
+        {
+          title: t('sidebar_tabs.billing'),
+          href: `/${wsId}/billing`,
+          icon: <Receipt className="h-5 w-5" />,
+          requireRootWorkspace: true,
+          requireRootMember: true,
+        },
+        {
+          title: t('workspace-settings-layout.api_keys'),
+          href: `/${wsId}/api-keys`,
+          icon: <KeyRound className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY || withoutPermission('manage_workspace_security'),
+        },
+        {
+          title: t('workspace-settings-layout.secrets'),
+          href: `/${wsId}/secrets`,
+          icon: <BookKey className="h-5 w-5" />,
+          disabled: withoutPermission('manage_workspace_secrets'),
+          requireRootMember: true,
+        },
+        {
+          title: t('workspace-settings-layout.infrastructure'),
+          href: `/${wsId}/infrastructure`,
+          icon: <Blocks className="h-5 w-5" />,
+          disabled: withoutPermission('view_infrastructure'),
+          requireRootWorkspace: true,
+        },
+        {
+          title: t('workspace-settings-layout.migrations'),
+          href: `/${wsId}/migrations`,
+          icon: <FolderSync className="h-5 w-5" />,
+          disabled: withoutPermission('manage_external_migrations'),
+          requireRootWorkspace: true,
+        },
+        {
+          title: t('workspace-settings-layout.activities'),
+          href: `/${wsId}/activities`,
+          icon: <ScrollText className="h-5 w-5" />,
+          disabled: withoutPermission('manage_workspace_audit_logs'),
+          requireRootWorkspace: true,
+        },
+      ],
     },
   ];
 

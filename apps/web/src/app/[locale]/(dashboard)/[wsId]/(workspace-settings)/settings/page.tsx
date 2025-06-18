@@ -1,9 +1,8 @@
 import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
-import FeatureToggles from './feature-toggles';
 import WorkspaceLogoSettings from './logo';
 import Security from './security';
-import { DEV_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import {
   getPermissions,
   getSecrets,
@@ -97,25 +96,6 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         )}
 
         {enableSecurity && <Security workspace={ws} />}
-
-        {DEV_MODE && (
-          <>
-            <Separator className="col-span-full" />
-
-            <div className="col-span-full flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-              <div className="mb-1 text-2xl font-bold">
-                {t('ws-settings.features')}
-              </div>
-              <div className="mb-4 font-semibold text-foreground/80">
-                {t('ws-settings.features_description')}
-              </div>
-
-              <div className="grid h-full items-end gap-2 text-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                <FeatureToggles />
-              </div>
-            </div>
-          </>
-        )}
       </div>
     </>
   );

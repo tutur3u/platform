@@ -6,6 +6,14 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import {
+  AlertTriangle,
+  Check,
+  Clock,
+  List,
+  Loader,
+  Plus,
+} from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   Select,
@@ -16,7 +24,6 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { AlertTriangle, Check, Clock, List, Loader, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 interface BoardWithLists {
