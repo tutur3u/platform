@@ -28,7 +28,7 @@
 //   //   cancel_at_period_end: true, // This is the user-friendly way to cancel
 //   // });
 //   const session = await api.customerSessions.create({
-//     customerExternalId: '00000000-0000-0000-0000-000000000001',
+//     customerId: '00000000-0000-0000-0000-000000000001',
 //   });
 //   const result = await api.customers.getExternal({
 //     externalId: user.id,
