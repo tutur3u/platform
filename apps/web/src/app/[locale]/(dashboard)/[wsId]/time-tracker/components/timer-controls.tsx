@@ -2616,7 +2616,7 @@ export function TimerControls({
                             countdownState.sessionType === 'focus' ? "bg-green-500" : "bg-blue-500"
                           )}
                           style={{ 
-                            width: `${((countdownState.targetTime - countdownState.remainingTime) / countdownState.targetTime) * 100}%` 
+                            width: `${countdownState.targetTime > 0 ? ((countdownState.targetTime - countdownState.remainingTime) / countdownState.targetTime) * 100 : 0}%` 
                           }}
                         />
                       </div>
