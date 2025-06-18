@@ -40,41 +40,41 @@ export function BillingClient({
   upgradePlans,
   wsId,
   isCreator,
-  product_id,
-  activeSubscriptionId,
+  // _product_id,
+  // activeSubscriptionId,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [_isLoading, _setIsLoading] = useState(false);
+  const [message, _setMessage] = useState('');
 
-  const handleCancelSubscription = async () => {
-    setIsLoading(true);
-    setMessage('');
+  // const handleCancelSubscription = async () => {
+  //   setIsLoading(true);
+  //   setMessage('');
 
-    const response = await fetch(`/api/${wsId}/${product_id}/cancel`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+  //   const response = await fetch(`/api/${wsId}/${product_id}/cancel`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
 
-      body: JSON.stringify({ polarSubscriptionId: activeSubscriptionId }),
-    });
+  //     body: JSON.stringify({ polarSubscriptionId: activeSubscriptionId }),
+  //   });
 
-    setIsLoading(false);
+  //   setIsLoading(false);
 
-    if (response.ok) {
-      setMessage(
-        'Your subscription will be canceled at the end of your billing period.'
-      );
-      // Reload the page to show the updated subscription status
-      window.location.reload();
-    } else {
-      const errorData = await response.json();
-      setMessage(
-        `Error: ${errorData.error || 'Could not cancel subscription.'}`
-      );
-    }
-  };
+  //   if (response.ok) {
+  //     setMessage(
+  //       'Your subscription will be canceled at the end of your billing period.'
+  //     );
+  //     // Reload the page to show the updated subscription status
+  //     window.location.reload();
+  //   } else {
+  //     const errorData = await response.json();
+  //     setMessage(
+  //       `Error: ${errorData.error || 'Could not cancel subscription.'}`
+  //     );
+  //   }
+  // };
 
   return (
     <>
