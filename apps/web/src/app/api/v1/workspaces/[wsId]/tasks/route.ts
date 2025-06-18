@@ -1,6 +1,40 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Type interfaces for better type safety
+interface TaskAssigneeData {
+  user: {
+    id: string;
+    display_name?: string;
+    avatar_url?: string;
+    email?: string;
+  } | null;
+}
+
+interface TaskListData {
+  id: string;
+  name: string;
+  workspace_boards: {
+    id: string;
+    name: string;
+    ws_id: string;
+  } | null;
+}
+
+interface RawTaskData {
+  id: string;
+  name: string;
+  description?: string;
+  priority?: number;
+  completed: boolean;
+  start_date?: string;
+  end_date?: string;
+  created_at: string;
+  list_id: string;
+  task_lists: TaskListData | null;
+  assignees?: TaskAssigneeData[];
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
@@ -103,11 +137,11 @@ export async function GET(
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
       data
-        ?.filter((task: any) => {
+        ?.filter((task: RawTaskData) => {
           // Filter out tasks that don't belong to this workspace
           return task.task_lists?.workspace_boards?.ws_id === wsId;
         })
-        ?.map((task: any) => ({
+        ?.map((task: RawTaskData) => ({
           id: task.id,
           name: task.name,
           description: task.description,
@@ -123,16 +157,16 @@ export async function GET(
           // Add assignee information
           assignees:
             task.assignees
-              ?.map((a: any) => a.user)
+              ?.map((a: TaskAssigneeData) => a.user)
               .filter(
-                (user: any, index: number, self: any[]) =>
+                (user, index: number, self) =>
                   user &&
                   user.id &&
-                  self.findIndex((u: any) => u.id === user.id) === index
+                  self.findIndex((u) => u?.id === user.id) === index
               ) || [],
           // Add helper field to identify if current user is assigned
           is_assigned_to_current_user:
-            task.assignees?.some((a: any) => a.user?.id === user.id) || false,
+            task.assignees?.some((a: TaskAssigneeData) => a.user?.id === user.id) || false,
         })) || [];
 
     return NextResponse.json({ tasks });
