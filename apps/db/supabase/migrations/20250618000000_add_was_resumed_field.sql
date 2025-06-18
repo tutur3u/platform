@@ -18,6 +18,8 @@ CREATE INDEX idx_time_tracking_sessions_was_resumed
 ON public.time_tracking_sessions USING btree (was_resumed) 
 WHERE was_resumed = true;
 
+drop view time_tracking_session_analytics;
+
 -- Update the time_tracking_session_analytics view to include was_resumed
 CREATE OR REPLACE VIEW time_tracking_session_analytics AS
 SELECT 
