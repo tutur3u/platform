@@ -7,7 +7,7 @@ import { Receipt } from 'lucide-react';
 const fetchProducts = async () => {
   try {
     const res = await api.products.list({ isArchived: false });
-
+    console.log(res.result.items, 'fetched products from polar');
     return res.result.items ?? [];
   } catch (err) {
     console.error('Failed to fetch products:', err);
