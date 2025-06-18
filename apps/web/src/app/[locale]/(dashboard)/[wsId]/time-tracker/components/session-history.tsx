@@ -613,21 +613,15 @@ const StackedSessionItem: FC<{
                       ? dayjs.utc(session.end_time).tz(userTimezone)
                       : null;
 
-                    // Calculate gap from previous session (considering the full session list for gaps)
-                    const actualIndex = showAllSessions ? index : index;
-                    const prevSession =
-                      actualIndex > 0
-                        ? showAllSessions
-                          ? stackedSession.sessions[index - 1]
-                          : stackedSession.sessions[index - 1]
-                        : null;
-                    const gapInSeconds =
-                      prevSession && prevSession.end_time
-                        ? sessionStart.diff(
-                            dayjs.utc(prevSession.end_time).tz(userTimezone),
-                            'seconds'
-                          )
-                        : null;
+                    // Calculate gap from previous session
+                    const prevSession = index > 0 ? stackedSession.sessions[index - 1] : null;
+
+                    const gapInSeconds = prevSession?.end_time
+                      ? sessionStart.diff(
+                          dayjs.utc(prevSession.end_time).tz(userTimezone),
+                          'seconds'
+                        )
+                      : null;
 
                     // Format gap duration based on length
                     const formatGap = (seconds: number) => {
@@ -719,7 +713,7 @@ const StackedSessionItem: FC<{
                               {session.is_running ? (
                                 <div className="h-2 w-2 animate-pulse rounded-full bg-green-600" />
                               ) : (
-                                (showAllSessions ? index : index) + 1
+                                index + 1
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
@@ -882,7 +876,8 @@ export function SessionHistory({
     const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
 
     // Bonus for consistency (sessions without interruptions)
-    const consistencyBonus = session.was_resumed ? 0 : 20;
+    // was_resumed can be null in database, so check explicitly for true
+    const consistencyBonus = session.was_resumed === true ? 0 : 20;
 
     // Time of day bonus (peak hours get bonus)
     const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();
@@ -1127,12 +1122,12 @@ export function SessionHistory({
       ).length,
     };
 
-    const bestTimeOfDay = Object.entries(timeOfDayBreakdown).reduce((a, b) =>
-      timeOfDayBreakdown[a[0] as keyof typeof timeOfDayBreakdown] >
-      timeOfDayBreakdown[b[0] as keyof typeof timeOfDayBreakdown]
-        ? a
-        : b
-    )[0];
+    const bestTimeOfDay = sessionsForPeriod.length > 0 
+      ? Object.entries(timeOfDayBreakdown).reduce<[string, number]>(
+          (a, b) => a[1] > b[1] ? a : b,
+          ['morning', 0] // sensible default prevents TypeError
+        )[0]
+      : 'none';
 
     const longestSession =
       sessionsForPeriod.length > 0
@@ -1327,6 +1322,9 @@ export function SessionHistory({
       'Description',
     ];
 
+    const escape = (v: string) =>
+      /^[=+\-@]/.test(v) ? `'${v}` : v;
+
     const csvData = sessionsForPeriod.map((session) => {
       const userTz = dayjs.tz.guess();
       const startTime = dayjs.utc(session.start_time).tz(userTz);
@@ -1336,15 +1334,15 @@ export function SessionHistory({
 
       return [
         startTime.format('YYYY-MM-DD'),
-        session.title,
-        session.category?.name || '',
-        session.task?.name || '',
+        escape(session.title),
+        escape(session.category?.name || ''),
+        escape(session.task?.name || ''),
         startTime.format('HH:mm:ss'),
         endTime?.format('HH:mm:ss') || '',
         session.duration_seconds
           ? (session.duration_seconds / 3600).toFixed(2)
           : '0',
-        session.description || '',
+        escape(session.description || ''),
       ];
     });
 

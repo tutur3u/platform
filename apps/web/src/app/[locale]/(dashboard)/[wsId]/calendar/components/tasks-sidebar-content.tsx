@@ -7,7 +7,7 @@ import QuickTaskTimer from './quick-task-timer';
 import { TaskForm } from './task-form';
 import { TaskListForm } from './task-list-form';
 import TimeTracker from './time-tracker';
-import type { AIChat, WorkspaceTaskBoard } from '@tuturuuu/types/db';
+import type { AIChat, WorkspaceTask, WorkspaceTaskBoard } from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,
@@ -188,9 +188,16 @@ export default function TasksSidebarContent({
       board.lists?.forEach((list) => {
         if (list.tasks) {
           // Transform Partial<WorkspaceTask> to ExtendedWorkspaceTask
+          interface TaskWithAssigneeMeta extends Partial<WorkspaceTask> {
+            assignee_name?: string;
+            assignee_avatar?: string;
+            is_assigned_to_current_user?: boolean;
+            assignees?: ExtendedWorkspaceTask['assignees'];
+          }
+
           const extendedTasks = list.tasks.map(
             (task): ExtendedWorkspaceTask => {
-              const taskAny = task as any;
+              const taskMeta = task as TaskWithAssigneeMeta;
 
               // Type-safe conversion from Partial<WorkspaceTask> to ExtendedWorkspaceTask
               // Convert undefined values to null to match the expected type constraints
@@ -218,11 +225,11 @@ export default function TasksSidebarContent({
                 list_name: list.name ?? undefined,
 
                 // Keep existing assignee metadata if present
-                assignee_name: taskAny.assignee_name || undefined,
-                assignee_avatar: taskAny.assignee_avatar || undefined,
+                assignee_name: taskMeta.assignee_name || undefined,
+                assignee_avatar: taskMeta.assignee_avatar || undefined,
                 is_assigned_to_current_user:
-                  taskAny.is_assigned_to_current_user || undefined,
-                assignees: taskAny.assignees || undefined,
+                  taskMeta.is_assigned_to_current_user || undefined,
+                assignees: taskMeta.assignees || undefined,
               };
 
               return extendedTask;

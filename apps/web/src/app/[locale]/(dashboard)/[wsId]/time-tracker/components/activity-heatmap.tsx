@@ -601,11 +601,13 @@ export function ActivityHeatmap({
         0
       );
 
+      const avgDuration = monthActivity.length > 0 ? totalDuration / monthActivity.length : 0;
+
       return {
         month: monthStart,
         duration: totalDuration,
         sessions: totalSessions,
-        intensity: getIntensity(totalDuration / monthActivity.length || 0),
+        intensity: getIntensity(avgDuration),
       };
     });
 
@@ -711,6 +713,7 @@ export function ActivityHeatmap({
             <Button
               variant="ghost"
               size="icon"
+              type="button"
               onClick={() => setCurrentMonth(currentMonth.subtract(1, 'month'))}
               className="h-7 w-7"
             >
@@ -719,6 +722,7 @@ export function ActivityHeatmap({
             <Button
               variant="ghost"
               size="icon"
+              type="button"
               onClick={() => setCurrentMonth(currentMonth.add(1, 'month'))}
               className="h-7 w-7"
             >
@@ -795,74 +799,75 @@ export function ActivityHeatmap({
   };
 
   // Data processing functions
-  const processMonthlyData = useCallback(() => {
-    return weeks.reduce(
-      (acc, week) => {
-        week.forEach((day) => {
-          if (day?.activity) {
-            const monthKey = day.date.format('YYYY-MM');
-            const monthName = day.date.format('MMM YYYY');
+  const monthlyData = useMemo(() => {
+    // Process data directly from dailyActivity to avoid recomputing through weeks
+    const acc: Record<
+      string,
+      {
+        name: string;
+        totalDuration: number;
+        activeDays: number;
+        totalSessions: number;
+        dates: Array<{
+          date: dayjs.Dayjs;
+          activity: { duration: number; sessions: number };
+        }>;
+        weekdays: number;
+        weekends: number;
+        bestDay: { duration: number; date: string };
+        longestStreak: number;
+        currentStreak: number;
+      }
+    > = {};
 
-            if (!acc[monthKey]) {
-              acc[monthKey] = {
-                name: monthName,
-                totalDuration: 0,
-                activeDays: 0,
-                totalSessions: 0,
-                dates: [] as (typeof day)[],
-                weekdays: 0,
-                weekends: 0,
-                bestDay: { duration: 0, date: '' },
-                longestStreak: 0,
-                currentStreak: 0,
-              };
-            }
+    dailyActivity?.forEach((activity) => {
+      const date = dayjs.utc(activity.date).tz(userTimezone);
+      const monthKey = date.format('YYYY-MM');
+      const monthName = date.format('MMM YYYY');
 
-            acc[monthKey].totalDuration += day.activity.duration;
-            acc[monthKey].totalSessions += day.activity.sessions;
-            acc[monthKey].activeDays += 1;
-            acc[monthKey].dates.push(day);
+      if (!acc[monthKey]) {
+        acc[monthKey] = {
+          name: monthName,
+          totalDuration: 0,
+          activeDays: 0,
+          totalSessions: 0,
+          dates: [],
+          weekdays: 0,
+          weekends: 0,
+          bestDay: { duration: 0, date: '' },
+          longestStreak: 0,
+          currentStreak: 0,
+        };
+      }
 
-            // Track weekday vs weekend activity
-            if (day.date.day() === 0 || day.date.day() === 6) {
-              acc[monthKey].weekends += 1;
-            } else {
-              acc[monthKey].weekdays += 1;
-            }
+      acc[monthKey].totalDuration += activity.duration;
+      acc[monthKey].totalSessions += activity.sessions;
+      acc[monthKey].activeDays += 1;
+      acc[monthKey].dates.push({ date, activity });
 
-            // Track best day
-            if (day.activity.duration > acc[monthKey].bestDay.duration) {
-              acc[monthKey].bestDay = {
-                duration: day.activity.duration,
-                date: day.date.format('MMM D'),
-              };
-            }
-          }
-        });
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          name: string;
-          totalDuration: number;
-          activeDays: number;
-          totalSessions: number;
-          dates: any[];
-          weekdays: number;
-          weekends: number;
-          bestDay: { duration: number; date: string };
-          longestStreak: number;
-          currentStreak: number;
-        }
-      >
-    );
-  }, [weeks]);
+      // Track weekday vs weekend activity
+      if (date.day() === 0 || date.day() === 6) {
+        acc[monthKey].weekends += 1;
+      } else {
+        acc[monthKey].weekdays += 1;
+      }
+
+      // Track best day
+      if (activity.duration > acc[monthKey].bestDay.duration) {
+        acc[monthKey].bestDay = {
+          duration: activity.duration,
+          date: date.format('MMM D'),
+        };
+      }
+    });
+
+    return acc;
+  }, [dailyActivity, userTimezone]);
 
   const calculateMonthlyStats = useCallback(
-    (monthlyData: ReturnType<typeof processMonthlyData>) => {
+    (monthlyDataParam: typeof monthlyData) => {
       // Calculate streaks for each month
-      Object.values(monthlyData).forEach((monthData) => {
+      Object.values(monthlyDataParam).forEach((monthData) => {
         let currentStreak = 0;
         let longestStreak = 0;
 
@@ -872,7 +877,8 @@ export function ActivityHeatmap({
         );
 
         for (let i = 0; i < sortedDates.length; i++) {
-          if (sortedDates[i]?.activity?.duration > 0) {
+          const dateData = sortedDates[i];
+          if (dateData?.activity?.duration && dateData.activity.duration > 0) {
             currentStreak += 1;
             longestStreak = Math.max(longestStreak, currentStreak);
           } else {
@@ -885,7 +891,7 @@ export function ActivityHeatmap({
       });
 
       // Sort months chronologically (most recent first)
-      const sortedMonths = Object.entries(monthlyData)
+      const sortedMonths = Object.entries(monthlyDataParam)
         .sort(([a], [b]) => b.localeCompare(a))
         .slice(0, 12); // Show last 12 months
 
@@ -901,10 +907,15 @@ export function ActivityHeatmap({
           const prevAvg =
             prevData.totalDuration / Math.max(prevData.activeDays, 1);
 
-          if (currentAvg > prevAvg * 1.1) trend = 'up';
-          else if (currentAvg < prevAvg * 0.9) trend = 'down';
+          if (prevAvg > 0) {
+            if (currentAvg > prevAvg * 1.1) trend = 'up';
+            else if (currentAvg < prevAvg * 0.9) trend = 'down';
 
-          trendValue = ((currentAvg - prevAvg) / Math.max(prevAvg, 1)) * 100;
+            trendValue = ((currentAvg - prevAvg) / prevAvg) * 100;
+          } else {
+            trend = 'neutral';
+            trendValue = 0;
+          }
         }
 
         return { monthKey, data, trend, trendValue };
@@ -948,7 +959,7 @@ export function ActivityHeatmap({
         },
       };
     },
-    []
+    [monthlyData]
   );
 
   // Card components
@@ -1372,8 +1383,8 @@ export function ActivityHeatmap({
   };
 
   const buildCardsList = useCallback(
-    (monthlyStats: ReturnType<typeof calculateMonthlyStats>) => {
-      const { sortedMonths, monthsWithTrends, overallStats } = monthlyStats;
+    (monthlyStatsParam: ReturnType<typeof calculateMonthlyStats>) => {
+      const { sortedMonths, monthsWithTrends, overallStats } = monthlyStatsParam;
       const allCards = [];
 
       // Determine if user is "established" enough to show upcoming month suggestions
@@ -1427,14 +1438,13 @@ export function ActivityHeatmap({
 
       return allCards;
     },
-    [formatDuration, getIntensity, getColorClass]
+    [calculateMonthlyStats]
   );
 
-  const renderCompactCards = () => {
-    const monthlyData = processMonthlyData();
+  // Rename and lift hooks into a proper React component
+  function CompactCardsView() {
     const monthlyStats = calculateMonthlyStats(monthlyData);
     const allCards = buildCardsList(monthlyStats);
-
     const [currentIndex, setCurrentIndex] = useState(0);
     const maxVisibleCards = 4;
 
@@ -1446,7 +1456,7 @@ export function ActivityHeatmap({
         maxVisibleCards={maxVisibleCards}
       />
     );
-  };
+  }
 
   return (
     <div className="relative space-y-4 overflow-visible sm:space-y-5">
@@ -1557,7 +1567,11 @@ export function ActivityHeatmap({
                   !externalSettings &&
                   setInternalSettings((prev) => ({
                     ...prev,
-                    timeReference: checked ? 'smart' : 'relative',
+                    timeReference: checked 
+                      ? 'smart' 
+                      : prev.timeReference === 'smart' 
+                        ? 'relative' 
+                        : prev.timeReference,
                   }))
                 }
                 disabled={!!externalSettings}
@@ -1768,7 +1782,7 @@ export function ActivityHeatmap({
         </div>
       )}
 
-      {settings.viewMode === 'compact-cards' && renderCompactCards()}
+              {settings.viewMode === 'compact-cards' && <CompactCardsView />}
     </div>
   );
 }

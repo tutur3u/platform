@@ -68,11 +68,12 @@ export async function GET(
     }
 
     const url = new URL(request.url);
-    const limit = Math.min(
-      parseInt(url.searchParams.get('limit') || '100'),
-      200
-    );
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+    
+    const parsedLimit = Number.parseInt(url.searchParams.get('limit') ?? '', 10);
+    const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 200) : 100;
+
+    const parsedOffset = Number.parseInt(url.searchParams.get('offset') ?? '', 10);
+    const offset = Number.isFinite(parsedOffset) && parsedOffset >= 0 ? parsedOffset : 0;
     const boardId = url.searchParams.get('boardId');
     const listId = url.searchParams.get('listId');
 
@@ -90,11 +91,11 @@ export async function GET(
         end_date,
         created_at,
         list_id,
-        task_lists (
+        task_lists!inner (
           id,
           name,
           board_id,
-          workspace_boards (
+          workspace_boards!inner (
             id,
             name,
             ws_id
@@ -126,16 +127,13 @@ export async function GET(
 
     if (error) {
       console.error('Database error in tasks query:', error);
-      throw error;
+      throw new Error('TASKS_QUERY_FAILED');
     }
 
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
       data
-        ?.filter((task: RawTaskData) => {
-          // Filter out tasks that don't belong to this workspace
-          return task.task_lists?.workspace_boards?.ws_id === wsId;
-        })
+
         ?.map((task: RawTaskData) => ({
           id: task.id,
           name: task.name,
@@ -150,15 +148,18 @@ export async function GET(
           board_name: task.task_lists?.workspace_boards?.name,
           list_name: task.task_lists?.name,
           // Add assignee information
-          assignees:
-            task.assignees
-              ?.map((a: TaskAssigneeData) => a.user)
-              .filter(
-                (user, index: number, self) =>
-                  user &&
-                  user.id &&
-                  self.findIndex((u) => u?.id === user.id) === index
-              ) || [],
+          assignees: [
+            ...(task.assignees ?? [])
+              .map((a) => a.user)
+              .filter((u): u is NonNullable<typeof u> => !!u?.id)
+              .reduce((uniqueUsers, user) => {
+                if (!uniqueUsers.has(user.id)) {
+                  uniqueUsers.set(user.id, user);
+                }
+                return uniqueUsers;
+              }, new Map<string, NonNullable<typeof task.assignees>[0]['user']>())
+              .values(),
+          ],
           // Add helper field to identify if current user is assigned
           is_assigned_to_current_user:
             task.assignees?.some(

@@ -4,14 +4,21 @@
 ALTER TABLE public.time_tracking_sessions 
 ADD COLUMN was_resumed boolean DEFAULT false;
 
+-- Back-fill existing rows to ensure no NULL values
+UPDATE public.time_tracking_sessions 
+SET was_resumed = false 
+WHERE was_resumed IS NULL;
+
+-- Add NOT NULL constraint to prevent tri-state logic
+ALTER TABLE public.time_tracking_sessions 
+ALTER COLUMN was_resumed SET NOT NULL;
+
 -- Add index for analytics queries that filter by was_resumed
 CREATE INDEX idx_time_tracking_sessions_was_resumed 
 ON public.time_tracking_sessions USING btree (was_resumed) 
 WHERE was_resumed = true;
 
 -- Update the time_tracking_session_analytics view to include was_resumed
-DROP VIEW IF EXISTS time_tracking_session_analytics;
-
 CREATE OR REPLACE VIEW time_tracking_session_analytics AS
 SELECT 
     tts.*,
