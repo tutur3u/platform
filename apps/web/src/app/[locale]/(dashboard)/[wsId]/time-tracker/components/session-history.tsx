@@ -840,7 +840,7 @@ export function SessionHistory({
     const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
     
     // Bonus for consistency (sessions without interruptions)
-    const consistencyBonus = session.description?.includes('resumed') ? 0 : 20;
+    const consistencyBonus = session.was_resumed ? 0 : 20;
     
     // Time of day bonus (peak hours get bonus)
     const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();

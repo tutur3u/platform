@@ -3795,6 +3795,7 @@ export type Database = {
           title: string;
           updated_at: string | null;
           user_id: string;
+          was_resumed: boolean | null;
           ws_id: string;
         };
         Insert: {
@@ -3812,6 +3813,7 @@ export type Database = {
           title: string;
           updated_at?: string | null;
           user_id: string;
+          was_resumed?: boolean | null;
           ws_id: string;
         };
         Update: {
@@ -3829,6 +3831,7 @@ export type Database = {
           title?: string;
           updated_at?: string | null;
           user_id?: string;
+          was_resumed?: boolean | null;
           ws_id?: string;
         };
         Relationships: [
@@ -7124,6 +7127,7 @@ export type Database = {
           title: string | null;
           updated_at: string | null;
           user_id: string | null;
+          was_resumed: boolean | null;
           ws_id: string | null;
         };
         Relationships: [
