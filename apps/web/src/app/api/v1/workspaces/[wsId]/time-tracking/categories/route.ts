@@ -100,9 +100,9 @@ export async function POST(
     }
 
     // Use admin client for insertion
-    const adminSupabase = await createAdminClient();
+    const sbAdmin = await createAdminClient();
 
-    const { data, error } = await adminSupabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_categories')
       .insert({
         ws_id: wsId,

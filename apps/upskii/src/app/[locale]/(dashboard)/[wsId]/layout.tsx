@@ -57,25 +57,8 @@ export default async function Layout({ children, params }: LayoutProps) {
     name: 'ENABLE_EDUCATION',
     value: 'true',
   });
-  console.log('ENABLE_EDUCATION', ENABLE_EDUCATION);
 
   const navLinks: (NavLink | null)[] = [
-    // {
-    //   title: t('sidebar_tabs.education'),
-    //   href: `/${wsId}/education`,
-    //   icon: <GraduationCap className="h-4 w-4" />,
-    //   disabled:
-    //     ENABLE_AI_ONLY ||
-    //     !(await verifySecret({
-    //       forceAdmin: true,
-    //       wsId,
-    //       name: 'ENABLE_EDUCATION',
-    //       value: 'true',
-    //     })) ||
-    //     withoutPermission('ai_lab'),
-    //   shortcut: 'A',
-    //   experimental: 'beta',
-    // },
     {
       title: t('sidebar.home'),
       href: `/${wsId}/home`,
@@ -83,14 +66,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       experimental: 'alpha',
       shortcut: 'H',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     {
       title: t('sidebar.courses'),
@@ -99,14 +75,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       experimental: 'alpha',
       shortcut: 'C',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     {
       title: t('sidebar.quizzes'),
@@ -115,14 +84,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       experimental: 'alpha',
       shortcut: 'Q',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     {
       title: t('sidebar.quiz-sets'),
@@ -131,14 +93,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       experimental: 'alpha',
       shortcut: 'S',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     {
       title: t('sidebar.challenges'),
@@ -147,14 +102,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       experimental: 'alpha',
       shortcut: 'L',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     {
       title: t('sidebar.ai_teach_studio'),
@@ -163,14 +111,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       experimental: 'alpha',
       shortcut: 'T',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     {
       title: t('sidebar.certificates'),
@@ -179,14 +120,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       experimental: 'alpha',
       shortcut: 'Q',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     {
       title: t('sidebar.ai_chat'),
@@ -195,66 +129,35 @@ export default async function Layout({ children, params }: LayoutProps) {
       experimental: 'alpha',
       shortcut: 'M',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     null,
     {
       title: t('sidebar.roles'),
       href: `/${wsId}/roles`,
-      // subItems: [] as { name: string; href: string }[],
       icon: <ShieldCheck className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'R',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     {
       title: t('sidebar.teams'),
       href: `/${wsId}/teams`,
-      // subItems: [] as { name: string; href: string }[],
       icon: <Users className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'T',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     {
       title: t('sidebar.users'),
       href: `/${wsId}/users`,
-      // subItems: [] as { name: string; href: string }[],
       icon: <UserCog className="h-4 w-4" />,
       experimental: 'alpha',
       shortcut: 'U',
       disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
 
     null,
@@ -278,9 +181,10 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const user = await getCurrentUser();
 
-  // Check if user is workspace creator for education access request
-  const isWorkspaceCreator = workspace?.role === 'OWNER';
-  const shouldShowRequestButton = isWorkspaceCreator && !ENABLE_EDUCATION;
+  // Check if user is workspace owner and education is not enabled
+  const isWorkspaceOwner = workspace?.role === 'OWNER';
+  const shouldShowEducationBanner =
+    isWorkspaceOwner && !ENABLE_EDUCATION && !ENABLE_AI_ONLY && workspace?.name;
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
 
@@ -320,8 +224,10 @@ export default async function Layout({ children, params }: LayoutProps) {
         </Suspense>
       }
     >
-      {shouldShowRequestButton && workspace.name && (
-        <EducationBanner workspaceName={workspace.name} wsId={wsId} />
+      {shouldShowEducationBanner && (
+        <div className="mb-6">
+          <EducationBanner workspaceName={workspace.name} wsId={wsId} />
+        </div>
       )}
       {children}
     </Structure>
