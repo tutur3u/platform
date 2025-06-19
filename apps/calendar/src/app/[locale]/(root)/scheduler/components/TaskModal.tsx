@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { CalendarIcon, ClockIcon, PlusIcon, TagIcon } from '@tuturuuu/ui/icons';
+import { SplitIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -25,7 +26,6 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import dayjs from 'dayjs';
 import { useState } from 'react';
-import { SplitIcon } from '@tuturuuu/ui/icons';
 
 interface TaskModalProps {
   isOpen: boolean;
