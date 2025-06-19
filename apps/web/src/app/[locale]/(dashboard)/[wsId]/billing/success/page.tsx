@@ -17,10 +17,11 @@ const fetchWorkspaceSubscription = async (
 
     const { data: subscription, error } = await supabase
       .from('workspace_subscription')
-      .select('*')
+      .select('*, workspace_subscription_products(price)')
       .eq('ws_id', wsId)
       .single();
 
+    console.log('Subscription data:', subscription);
     if (error) {
       console.error('Failed to fetch workspace subscription:', error);
       return null;
@@ -46,8 +47,8 @@ export default async function SuccessPage({
   const paymentDetails = subscription
     ? {
         planName: subscription.plan_name || 'Pro Plan',
-        amount: subscription.price
-          ? `$${(subscription.price / 100).toFixed(2)}`
+        amount: subscription.workspace_subscription_products.price
+          ? `$${subscription.workspace_subscription_products.price.toFixed(2)}`
           : '--',
         invoiceId: subscription.id || 'N/A',
         date: subscription.created_at
@@ -182,10 +183,13 @@ export default async function SuccessPage({
         </Button>
         <Button
           variant="outline"
+          asChild
           className="group flex items-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-xl"
         >
-          <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-2 group-hover:scale-125" />
-          Download Receipt
+          <Link href={`/api/billing/${wsId}/invoice`} target="_blank">
+            <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-2 group-hover:scale-125" />
+            Download Receipt
+          </Link>
         </Button>
         <Button
           variant="outline"
