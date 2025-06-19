@@ -3001,7 +3001,10 @@
     "progress": "Progress",
     "metrics": "Metrics",
     "crawlers": "Crawlers",
-    "queues": "Queues"
+    "queues": "Queues",
+    "learning": "Learning",
+    "teaching": "Teaching",
+    "management": "Management"
   },
   "signup": {
     "get-started": "Get started",
@@ -4309,6 +4312,7 @@
     "challenges": "Challenges",
     "ai_teach_studio": "AI Teaching Studio",
     "users": "Users",
-    "teams": "Teams"
+    "teams": "Teams",
+    "platform_users": "Platform users"
   }
 }

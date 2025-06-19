@@ -617,7 +617,12 @@
     "whats_the_title": "Tiêu đề là gì?",
     "write_something": "Hãy viết gì đó...",
     "error_saving_content": "Lỗi khi lưu nội dung của bạn",
-    "not_completed": "Chưa hoàn thành"
+    "not_completed": "Chưa hoàn thành",
+    "crawlers": "Crawlers",
+    "queues": "Queues",
+    "learning": "Học tập",
+    "teaching": "Giảng dạy",
+    "management": "Quản lý"
   },
   "contact": {
     "title": "Liên hệ với chúng tôi",
@@ -1709,7 +1714,7 @@
         },
         {
           "title": "Mở rộng Dễ dàng",
-          "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại"
+          "description": "Phát triển từ một đến hàng nghìnhàng nghìn người dùng mà không gặp trở ngại"
         },
         {
           "title": "Phát triển Liên tục",
@@ -3001,8 +3006,11 @@
     "diet_and_nutrition": "Ăn uống",
     "progress": "Tiến độ",
     "metrics": "Chỉ số",
-    "crawlers": "Công cụ cào dữ liệu",
-    "queues": "Hàng chờ"
+    "crawlers": "Crawlers",
+    "queues": "Queues",
+    "learning": "Học tập",
+    "teaching": "Giảng dạy",
+    "management": "Quản lý"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",
@@ -4289,7 +4297,8 @@
     "challenges": "Các thử thách",
     "ai_teach_studio": "Công cụ giảng dạy AI",
     "users": "Người dùng",
-    "teams": "Nhóm"
+    "teams": "Nhóm",
+    "platform_users": "Người dùng nền tảng"
   },
   "certificates": {
     "offered_by": "được dạy bởi",

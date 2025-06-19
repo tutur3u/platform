@@ -65,10 +65,11 @@ export function Structure({
     .filter((link) => link !== null)
     .filter(
       (link) =>
-        pathname.startsWith(link.href) ||
-        link.aliases?.some((alias) => pathname.startsWith(alias))
+        link.href &&
+        (pathname.startsWith(link.href) ||
+          link.aliases?.some((alias) => pathname.startsWith(alias)))
     )
-    .sort((a, b) => b.href.length - a.href.length);
+    .sort((a, b) => (b.href?.length || 0) - (a.href?.length || 0));
 
   const currentLink = matchedLinks?.[0];
 
