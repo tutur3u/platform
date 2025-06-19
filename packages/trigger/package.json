@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bunx trigger.dev@latest dev",
-    "deploy": "bunx trigger.dev@latest deploy"
+    "trigger:dev": "bunx trigger.dev@latest dev",
+    "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",
