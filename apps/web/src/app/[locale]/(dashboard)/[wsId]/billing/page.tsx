@@ -1,12 +1,29 @@
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
-import { api } from '@/lib/polar';
+import { createPolarClient } from '@/lib/polar';
 import { createClient } from '@tuturuuu/supabase/next/server';
 
-const fetchProducts = async () => {
+const fetchProducts = async ({
+  wsId,
+  sandbox,
+}: {
+  wsId: string;
+  sandbox: boolean;
+}) => {
   try {
-    const res = await api.products.list({ isArchived: false });
+    const polarClient = createPolarClient({
+      sandbox:
+        // Always use sandbox for development
+        process.env.NODE_ENV === 'development'
+          ? true
+          : // If the workspace is the root workspace and the sandbox is true, use sandbox
+            wsId === ROOT_WORKSPACE_ID && sandbox
+            ? true // Enable sandbox for root workspace
+            : false, // Otherwise, use production
+    });
+
+    const res = await polarClient.products.list({ isArchived: false });
 
     return res.result.items ?? [];
   } catch (err) {
@@ -35,7 +52,13 @@ const checkCreator = async (wsId: string) => {
   return data;
 };
 
-const fetchSubscription = async (wsId: string) => {
+const fetchSubscription = async ({
+  wsId,
+  sandbox,
+}: {
+  wsId: string;
+  sandbox: boolean;
+}) => {
   const sbAdmin = await createClient();
 
   const { data: dbSub, error } = await sbAdmin
@@ -50,7 +73,20 @@ const fetchSubscription = async (wsId: string) => {
     return null;
   }
 
-  const polarProduct = await api.products.get({ id: dbSub.product_id || '' });
+  const polarClient = createPolarClient({
+    sandbox:
+      // Always use sandbox for development
+      process.env.NODE_ENV === 'development'
+        ? true
+        : // If the workspace is the root workspace and the sandbox is true, use sandbox
+          wsId === ROOT_WORKSPACE_ID && sandbox
+          ? true // Enable sandbox for root workspace
+          : false, // Otherwise, use production
+  });
+
+  const polarProduct = await polarClient.products.get({
+    id: dbSub.product_id || '',
+  });
 
   if (!polarProduct) return null;
 
@@ -102,15 +138,20 @@ const fetchWorkspaceSubscriptions = async (wsId: string) => {
 
 export default async function BillingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ wsId: string }>;
+  searchParams: Promise<{ sandbox: string }>;
 }) {
   const { wsId } = await params;
+  const { sandbox } = await searchParams;
+
+  const enableSandbox = sandbox === 'true';
 
   const [products, subscription, isCreator, subscriptionHistory] =
     await Promise.all([
-      fetchProducts(),
-      fetchSubscription(wsId),
+      fetchProducts({ wsId, sandbox: enableSandbox }),
+      fetchSubscription({ wsId, sandbox: enableSandbox }),
       checkCreator(wsId),
       fetchWorkspaceSubscriptions(wsId),
     ]);

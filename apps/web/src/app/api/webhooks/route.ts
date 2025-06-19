@@ -1,11 +1,7 @@
-import { Polar } from '@tuturuuu/payment/polar';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { createPolarClient } from '@/lib/polar';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-
-const polarAdmin = new Polar({
-  accessToken: process.env.NEXT_PUBLIC_POLAR_ACCESS_TOKEN,
-  server: process.env.NODE_ENV === 'development' ? 'sandbox' : 'production',
-});
 
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET || '',
@@ -27,6 +23,9 @@ export const POST = Webhooks({
       }
 
       const ws_id = subscriptionPayload.metadata?.wsId;
+      const sandbox =
+        subscriptionPayload.metadata?.sandbox === 'true' ||
+        process.env.NODE_ENV === 'development';
 
       if (!ws_id || typeof ws_id !== 'string') {
         console.error(
@@ -74,7 +73,18 @@ export const POST = Webhooks({
 
         if (countError) throw countError;
 
-        await polarAdmin.events.ingest({
+        const polarClient = createPolarClient({
+          sandbox:
+            // Always use sandbox for development
+            process.env.NODE_ENV === 'development'
+              ? true
+              : // If the workspace is the root workspace and the sandbox is true, use sandbox
+                ws_id === ROOT_WORKSPACE_ID && sandbox
+                ? true // Enable sandbox for root workspace
+                : false, // Otherwise, use production
+        });
+
+        await polarClient.events.ingest({
           events: [
             {
               name: 'workspace.seats.sync',

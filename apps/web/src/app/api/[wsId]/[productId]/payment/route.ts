@@ -1,12 +1,16 @@
-import { api } from '@/lib/polar';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { createPolarClient } from '@/lib/polar';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; productId: string }> }
 ) {
+  const searchParams = request.nextUrl.searchParams;
+  const sandbox = searchParams.get('sandbox') === 'true';
+
   const BASE_URL =
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:7803'
@@ -61,8 +65,19 @@ export async function GET(
     });
   }
 
+  const polarClient = createPolarClient({
+    sandbox:
+      // Always use sandbox for development
+      process.env.NODE_ENV === 'development'
+        ? true
+        : // If the workspace is the root workspace and the sandbox is true, use sandbox
+          wsId === ROOT_WORKSPACE_ID && sandbox
+          ? true // Enable sandbox for root workspace
+          : false, // Otherwise, use production
+  });
+
   // HERE is where you add the metadata
-  const checkoutSession = await api.checkouts.create({
+  const checkoutSession = await polarClient.checkouts.create({
     products: [productId],
     successUrl: `${BASE_URL}/${wsId}/billing/success`,
     // externalCustomerId: user?.id || '',
