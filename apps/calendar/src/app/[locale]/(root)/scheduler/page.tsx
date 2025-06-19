@@ -18,6 +18,7 @@ import type {
   Task,
   TemplateScenario,
 } from '@tuturuuu/ai/scheduling/types';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
@@ -29,11 +30,19 @@ import {
   BrainIcon,
   CalendarIcon,
   ClockIcon,
+  LockIcon,
   SettingsIcon,
   SparklesIcon,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
@@ -47,6 +56,8 @@ function SchedulerPage() {
     useState<ActiveHours>(defaultActiveHours);
   const [isScheduling, setIsScheduling] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [lockedEvents, setLockedEvents] = useState<Event[]>([]);
+  const [isLockedEventModalOpen, setIsLockedEventModalOpen] = useState(false);
 
   const loadTemplate = (template: TemplateScenario) => {
     setTasks(
@@ -90,13 +101,29 @@ function SchedulerPage() {
     setLogs([]);
   };
 
+  const addLockedEvent = (
+    eventData: Omit<Event, 'id' | 'locked' | 'taskId'>
+  ) => {
+    const newEvent: Event = {
+      ...eventData,
+      id: `locked-${Date.now()}`,
+      locked: true,
+      taskId: 'locked',
+    };
+    setLockedEvents([...lockedEvents, newEvent]);
+  };
+
+  const deleteLockedEvent = (id: string) => {
+    setLockedEvents(lockedEvents.filter((event) => event.id !== id));
+  };
+
   const handleSchedule = async () => {
     setIsScheduling(true);
-    // Add a small delay to show loading state
     setTimeout(() => {
       const { events: scheduledEvents, logs: scheduleLogs } = scheduleTasks(
         tasks,
-        activeHours
+        activeHours,
+        lockedEvents
       );
       setEvents(scheduledEvents);
       setLogs(scheduleLogs);
@@ -182,6 +209,46 @@ function SchedulerPage() {
                   onDeleteTask={deleteTask}
                   onSchedule={handleSchedule}
                 />
+                {/* Locked Events Section */}
+                <div className="mt-8">
+                  <div className="mb-2 flex items-center gap-2">
+                    <LockIcon className="h-5 w-5 text-dynamic-blue" />
+                    <span className="font-semibold">Locked Events</span>
+                    <button
+                      className="ml-auto rounded bg-dynamic-blue px-3 py-1 text-xs text-white transition hover:bg-dynamic-blue/80"
+                      onClick={() => setIsLockedEventModalOpen(true)}
+                    >
+                      Add Locked Event
+                    </button>
+                  </div>
+                  {lockedEvents.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">
+                      No locked events
+                    </div>
+                  ) : (
+                    <ul className="space-y-2">
+                      {lockedEvents.map((event) => (
+                        <li
+                          key={event.id}
+                          className="flex items-center gap-3 rounded border border-dynamic-blue/30 bg-dynamic-blue/5 px-3 py-2"
+                        >
+                          <LockIcon className="h-4 w-4 text-dynamic-blue" />
+                          <span className="font-medium">{event.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {event.range.start.format('YYYY-MM-DD HH:mm')} -{' '}
+                            {event.range.end.format('YYYY-MM-DD HH:mm')}
+                          </span>
+                          <button
+                            className="ml-auto text-xs text-destructive hover:underline"
+                            onClick={() => deleteLockedEvent(event.id)}
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
               <div>
                 <TemplateScenarios
@@ -190,6 +257,24 @@ function SchedulerPage() {
                 />
               </div>
             </div>
+            {/* Locked Event Modal */}
+            {isLockedEventModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+                <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+                  <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+                    <LockIcon className="h-5 w-5 text-dynamic-blue" /> Add
+                    Locked Event
+                  </h3>
+                  <LockedEventForm
+                    onAdd={(event) => {
+                      addLockedEvent(event);
+                      setIsLockedEventModalOpen(false);
+                    }}
+                    onCancel={() => setIsLockedEventModalOpen(false)}
+                  />
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="schedule" className="space-y-6">
@@ -337,6 +422,116 @@ function SchedulerPage() {
         />
       </div>
     </TooltipProvider>
+  );
+}
+
+function LockedEventForm({
+  onAdd,
+  onCancel,
+}: {
+  onAdd: (event: Omit<Event, 'id' | 'locked' | 'taskId'>) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'));
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('10:00');
+  const [category, setCategory] = useState<'work' | 'personal' | 'meeting'>(
+    'work'
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const start = dayjs(`${date}T${startTime}`);
+    const end = dayjs(`${date}T${endTime}`);
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
+    if (!start.isValid() || !end.isValid() || end.isBefore(start)) {
+      setError('Invalid date or time');
+      return;
+    }
+    setError(null);
+    onAdd({
+      name,
+      range: { start, end },
+      isPastDeadline: false,
+      partNumber: undefined,
+      totalParts: undefined,
+      category,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label>Name</Label>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Event name"
+          required
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Date</Label>
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <Label>Category</Label>
+          <Select value={category} onValueChange={(v) => setCategory(v as any)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="work">💼 Work</SelectItem>
+              <SelectItem value="personal">🏠 Personal</SelectItem>
+              <SelectItem value="meeting">👥 Meeting</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Start Time</Label>
+          <Input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <Label>End Time</Label>
+          <Input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            required
+          />
+        </div>
+      </div>
+      {error && <div className="text-sm text-destructive">{error}</div>}
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          className="bg-dynamic-blue text-white hover:bg-dynamic-blue/80"
+        >
+          Add
+        </Button>
+      </div>
+    </form>
   );
 }
 

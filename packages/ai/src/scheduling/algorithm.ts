@@ -46,19 +46,26 @@ function ensureMinimumDuration(hours: number): number {
 
 export const scheduleTasks = (
   tasks: Task[],
-  activeHours: ActiveHours = defaultActiveHours
+  activeHours: ActiveHours = defaultActiveHours,
+  lockedEvents: Event[] = []
 ): ScheduleResult => {
-  const scheduledEvents: Event[] = [];
+  // Start with locked events in the schedule
+  const scheduledEvents: Event[] = lockedEvents.map((e) => ({
+    ...e,
+    locked: true,
+  }));
   const logs: Log[] = [];
 
-  // Sort tasks by deadline, earliest first. Tasks without a deadline are considered last.
-  const sortedTasks = [...tasks].sort((a, b) => {
-    if (a.deadline && b.deadline)
-      return a.deadline.isBefore(b.deadline) ? -1 : 1;
-    if (a.deadline) return -1; // a has a deadline, b doesn't
-    if (b.deadline) return 1; // b has a deadline, a doesn't
-    return 0; // no deadlines
-  });
+  // Prepare a working pool of tasks with remaining duration
+  const taskPool = tasks.map((task) => ({
+    ...task,
+    duration: hoursToQuarterHours(task.duration),
+    minDuration: ensureMinimumDuration(task.minDuration),
+    maxDuration: hoursToQuarterHours(task.maxDuration),
+    remaining: hoursToQuarterHours(task.duration),
+    nextPart: 1,
+    scheduledParts: 0,
+  }));
 
   // Initialize available times for each category - start from now
   const now = dayjs();
@@ -68,172 +75,226 @@ export const scheduleTasks = (
     meeting: getNextAvailableTime(activeHours.meeting, now),
   };
 
-  for (const task of sortedTasks) {
-    const categoryHours = activeHours[task.category];
+  // Sort by deadline, earliest first (for fairness in each round)
+  taskPool.sort((a, b) => {
+    if (a.deadline && b.deadline)
+      return a.deadline.isBefore(b.deadline) ? -1 : 1;
+    if (a.deadline) return -1;
+    if (b.deadline) return 1;
+    return 0;
+  });
 
-    if (!categoryHours || categoryHours.length === 0) {
-      logs.push({
-        type: 'error',
-        message: `No ${task.category} hours defined for task "${task.name}".`,
-      });
-      continue;
-    }
+  let attempts = 0;
+  const maxAttempts = 2000; // Prevent infinite loops
 
-    // Ensure task durations are in 15-minute increments
-    const adjustedTask = {
-      ...task,
-      duration: hoursToQuarterHours(task.duration),
-      minDuration: ensureMinimumDuration(task.minDuration),
-      maxDuration: hoursToQuarterHours(task.maxDuration),
-    };
+  while (taskPool.some((t) => t.remaining > 0) && attempts < maxAttempts) {
+    attempts++;
+    let anyScheduled = false;
 
-    let remainingDuration = adjustedTask.duration;
-    let partNumber = 1;
-    const taskParts: Event[] = [];
-    let attempts = 0;
-    const maxAttempts = 50; // Prevent infinite loops
-
-    while (remainingDuration > 0 && attempts < maxAttempts) {
-      attempts++;
-
-      const availableSlots = getAvailableSlots(
-        availableTimes[task.category],
-        categoryHours,
-        scheduledEvents
-      );
-
-      if (availableSlots.length === 0) {
-        // Move to next day and try again
-        availableTimes[task.category] = availableTimes[task.category]
-          .add(1, 'day')
-          .startOf('day');
-        availableTimes[task.category] = getNextAvailableTime(
-          categoryHours,
-          availableTimes[task.category]
-        );
-
+    for (const task of taskPool) {
+      if (task.remaining <= 0) continue;
+      const categoryHours = activeHours[task.category];
+      if (!categoryHours || categoryHours.length === 0) {
         logs.push({
-          type: 'warning',
-          message: `Moving task "${task.name}" to ${availableTimes[task.category].format('YYYY-MM-DD')} due to lack of available time slots.`,
+          type: 'error',
+          message: `No ${task.category} hours defined for task "${task.name}".`,
         });
+        task.remaining = 0;
         continue;
       }
 
-      const slot = availableSlots[0];
-      if (!slot) {
-        logs.push({
-          type: 'error',
-          message: `No valid slot found for task "${task.name}".`,
-        });
-        break;
-      }
-
-      const slotDuration = slot.end.diff(slot.start, 'hour', true);
-
-      // Calculate the duration for this part (in quarter-hour increments)
-      let partDuration = Math.min(remainingDuration, slotDuration);
-      partDuration = Math.min(partDuration, adjustedTask.maxDuration);
-      partDuration = Math.max(
-        partDuration,
-        Math.min(adjustedTask.minDuration, remainingDuration)
-      );
-
-      // Ensure part duration is in 15-minute increments
-      partDuration = hoursToQuarterHours(partDuration);
-
-      // If the remaining duration is less than minDuration and we can't fit it
-      if (
-        remainingDuration < adjustedTask.minDuration &&
-        partDuration < remainingDuration
-      ) {
-        // Try to extend the current part or find a larger slot
-        const extendedDuration = Math.min(
-          adjustedTask.minDuration,
-          slotDuration
-        );
-        if (extendedDuration >= adjustedTask.minDuration) {
-          partDuration = hoursToQuarterHours(extendedDuration);
-        } else {
-          logs.push({
-            type: 'warning',
-            message: `Cannot schedule remaining ${remainingDuration}h of task "${task.name}" due to minimum duration constraint (${adjustedTask.minDuration}h).`,
+      // Non-splittable: try to schedule as a single block
+      if (task.allowSplit === false) {
+        if (task.scheduledParts > 0) continue; // Already tried
+        let scheduled = false;
+        let tryTime = availableTimes[task.category];
+        let blockAttempts = 0;
+        while (!scheduled && blockAttempts < 50) {
+          blockAttempts++;
+          const availableSlots = getAvailableSlots(
+            tryTime,
+            categoryHours,
+            scheduledEvents
+          );
+          const slot = availableSlots.find((slot) => {
+            const slotDuration = slot.end.diff(slot.start, 'hour', true);
+            return slotDuration >= task.duration;
           });
-          break;
+          if (slot) {
+            const partStart = roundToQuarterHour(slot.start, false);
+            const partEnd = partStart.add(task.duration, 'hour');
+            const newEvent: Event = {
+              id: `event-${task.id}`,
+              name: task.name,
+              range: { start: partStart, end: partEnd },
+              isPastDeadline: false,
+              taskId: task.id,
+            };
+            if (task.deadline && partEnd.isAfter(task.deadline)) {
+              newEvent.isPastDeadline = true;
+              logs.push({
+                type: 'warning',
+                message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline.format('YYYY-MM-DD HH:mm')}.`,
+              });
+            }
+            scheduledEvents.push(newEvent);
+            availableTimes[task.category] = roundToQuarterHour(partEnd, true);
+            scheduled = true;
+            task.remaining = 0;
+            task.scheduledParts = 1;
+            anyScheduled = true;
+          } else {
+            tryTime = tryTime.add(1, 'day').startOf('day');
+            tryTime = getNextAvailableTime(categoryHours, tryTime);
+            logs.push({
+              type: 'warning',
+              message: `Moving task "${task.name}" to ${tryTime.format('YYYY-MM-DD')} due to lack of available time slots for non-splittable task.`,
+            });
+          }
         }
-      }
-
-      // Ensure the part start time is rounded to 15-minute increment
-      const partStart = roundToQuarterHour(slot.start, false);
-      const partEnd = partStart.add(partDuration, 'hour');
-
-      // Verify the end time doesn't exceed the slot
-      if (partEnd.isAfter(slot.end)) {
-        const adjustedDuration = slot.end.diff(partStart, 'hour', true);
-
-        if (adjustedDuration < adjustedTask.minDuration) {
+        if (!scheduled) {
           logs.push({
             type: 'error',
-            message: `Cannot fit minimum duration for task "${task.name}" part ${partNumber}.`,
+            message: `Task "${task.name}" could not be scheduled as a single block after 50 attempts.`,
           });
+          task.remaining = 0;
+        }
+        continue;
+      }
+
+      // Splittable: try to schedule the next part
+      let scheduledPart = false;
+      let tryTime = availableTimes[task.category];
+      let splitAttempts = 0;
+      while (task.remaining > 0 && splitAttempts < 50 && !scheduledPart) {
+        splitAttempts++;
+        let availableSlots = getAvailableSlots(
+          tryTime,
+          categoryHours,
+          scheduledEvents
+        );
+        // If deadline is set, filter out slots that end after the deadline
+        if (task.deadline) {
+          availableSlots = availableSlots.filter(
+            (slot) =>
+              slot.end.isBefore(task.deadline) || slot.end.isSame(task.deadline)
+          );
+        }
+        if (availableSlots.length === 0) {
+          // Move to next day and try again, unless deadline prevents it
+          const nextTime = tryTime.add(1, 'day').startOf('day');
+          if (task.deadline && nextTime.isAfter(task.deadline)) {
+            logs.push({
+              type: 'warning',
+              message: `No available slots before deadline for task "${task.name}". Skipping remaining duration.`,
+            });
+            task.remaining = 0;
+            break;
+          }
+          tryTime = getNextAvailableTime(categoryHours, nextTime);
+          continue;
+        }
+        const slot = availableSlots[0];
+        if (!slot) {
+          // Defensive: should not happen, but skip if no slot
           break;
         }
-
-        partDuration = hoursToQuarterHours(adjustedDuration);
+        const slotDuration = slot.end.diff(slot.start, 'hour', true);
+        let partDuration = Math.min(task.remaining, slotDuration);
+        partDuration = Math.min(partDuration, task.maxDuration);
+        partDuration = Math.max(
+          partDuration,
+          Math.min(task.minDuration, task.remaining)
+        );
+        partDuration = hoursToQuarterHours(partDuration);
+        // If the remaining duration is less than minDuration and we can't fit it
+        if (
+          task.remaining < task.minDuration &&
+          partDuration < task.remaining
+        ) {
+          const extendedDuration = Math.min(task.minDuration, slotDuration);
+          if (extendedDuration >= task.minDuration) {
+            partDuration = hoursToQuarterHours(extendedDuration);
+          } else {
+            logs.push({
+              type: 'warning',
+              message: `Cannot schedule remaining ${task.remaining}h of task "${task.name}" due to minimum duration constraint (${task.minDuration}h).`,
+            });
+            task.remaining = 0;
+            break;
+          }
+        }
+        const partStart = roundToQuarterHour(slot.start, false);
+        const partEnd = partStart.add(partDuration, 'hour');
+        if (partEnd.isAfter(slot.end)) {
+          const adjustedDuration = slot.end.diff(partStart, 'hour', true);
+          if (adjustedDuration < task.minDuration) {
+            logs.push({
+              type: 'error',
+              message: `Cannot fit minimum duration for task "${task.name}" part ${task.nextPart}.`,
+            });
+            task.remaining = 0;
+            break;
+          }
+          partDuration = hoursToQuarterHours(adjustedDuration);
+        }
+        const finalPartEnd = partStart.add(partDuration, 'hour');
+        // If this part would end after the deadline, skip scheduling
+        if (task.deadline && finalPartEnd.isAfter(task.deadline)) {
+          logs.push({
+            type: 'warning',
+            message: `Cannot schedule part of task "${task.name}" because it would end after the deadline (${task.deadline.format('YYYY-MM-DD HH:mm')}). Skipping remaining duration.`,
+          });
+          task.remaining = 0;
+          break;
+        }
+        const totalParts = Math.ceil(task.duration / task.maxDuration);
+        const newEvent: Event = {
+          id: `event-${task.id}-part-${task.nextPart}`,
+          name:
+            totalParts > 1
+              ? `${task.name} (Part ${task.nextPart}/${totalParts})`
+              : task.name,
+          range: { start: partStart, end: finalPartEnd },
+          isPastDeadline: false,
+          taskId: task.id,
+          partNumber: totalParts > 1 ? task.nextPart : undefined,
+          totalParts: totalParts > 1 ? totalParts : undefined,
+        };
+        if (task.deadline && finalPartEnd.isAfter(task.deadline)) {
+          newEvent.isPastDeadline = true;
+          logs.push({
+            type: 'warning',
+            message: `Part ${task.nextPart} of task "${task.name}" is scheduled past its deadline of ${task.deadline.format('YYYY-MM-DD HH:mm')}.`,
+          });
+        }
+        scheduledEvents.push(newEvent);
+        tryTime = roundToQuarterHour(finalPartEnd, true);
+        availableTimes[task.category] = tryTime;
+        task.remaining -= partDuration;
+        task.scheduledParts++;
+        task.nextPart++;
+        anyScheduled = true;
+        scheduledPart = true;
       }
-
-      const finalPartEnd = partStart.add(partDuration, 'hour');
-      const totalParts = Math.ceil(
-        adjustedTask.duration / adjustedTask.maxDuration
-      );
-
-      const newEvent: Event = {
-        id: `event-${task.id}-part-${partNumber}`,
-        name:
-          totalParts > 1
-            ? `${task.name} (Part ${partNumber}/${totalParts})`
-            : task.name,
-        range: { start: partStart, end: finalPartEnd },
-        isPastDeadline: false,
-        taskId: task.id,
-        partNumber: totalParts > 1 ? partNumber : undefined,
-        totalParts: totalParts > 1 ? totalParts : undefined,
-      };
-
-      // Check if this part is past the deadline
-      if (task.deadline && finalPartEnd.isAfter(task.deadline)) {
-        newEvent.isPastDeadline = true;
-        logs.push({
-          type: 'warning',
-          message: `Part ${partNumber} of task "${task.name}" is scheduled past its deadline of ${task.deadline.format('YYYY-MM-DD HH:mm')}.`,
-        });
-      }
-
-      taskParts.push(newEvent);
-      scheduledEvents.push(newEvent);
-
-      remainingDuration -= partDuration;
-      availableTimes[task.category] = roundToQuarterHour(finalPartEnd, true);
-      partNumber++;
     }
 
-    if (attempts >= maxAttempts) {
-      logs.push({
-        type: 'error',
-        message: `Task "${task.name}" could not be fully scheduled after ${maxAttempts} attempts.`,
-      });
-    }
+    // If no task could be scheduled in this round, break to avoid infinite loop
+    if (!anyScheduled) break;
+  }
 
-    if (taskParts.length > 1) {
+  // Log split info and unscheduled warnings
+  for (const task of taskPool) {
+    if (task.scheduledParts > 1) {
       logs.push({
         type: 'warning',
-        message: `Task "${task.name}" has been split into ${taskParts.length} parts due to duration constraints and available time slots.`,
+        message: `Task "${task.name}" has been split into ${task.scheduledParts} parts due to duration constraints and available time slots.`,
       });
     }
-
-    if (remainingDuration > 0) {
+    if (task.remaining > 0) {
       logs.push({
         type: 'warning',
-        message: `Task "${task.name}" could not be fully scheduled. ${remainingDuration}h remaining.`,
+        message: `Task "${task.name}" could not be fully scheduled. ${task.remaining}h remaining.`,
       });
     }
   }

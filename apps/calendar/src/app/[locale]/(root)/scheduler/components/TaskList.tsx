@@ -18,6 +18,7 @@ import {
   Trash2Icon,
   ZapIcon,
 } from '@tuturuuu/ui/icons';
+import { SplitIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
@@ -28,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
@@ -245,6 +247,29 @@ export function TaskList({
                                 : ''
                             }`}
                           />
+                          {/* Split Toggle Button */}
+                          <div className="ml-2 flex items-center gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1">
+                                  <SplitIcon className="h-4 w-4 text-primary" />
+                                  <Switch
+                                    id={`split-toggle-${task.id}`}
+                                    checked={task.allowSplit ?? true}
+                                    onCheckedChange={(checked) =>
+                                      onUpdateTask(task.id, {
+                                        allowSplit: checked,
+                                      })
+                                    }
+                                    className="scale-90"
+                                  />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Allow this task to be split into sessions
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                           {isCompleted && (
                             <CheckCircleIcon className="h-5 w-5 text-dynamic-green" />
                           )}

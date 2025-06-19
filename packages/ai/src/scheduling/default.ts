@@ -31,5 +31,6 @@ export const defaultTasks: Task[] = [
     maxDuration: 2,
     category: 'work',
     events: [],
+    allowSplit: true,
   },
 ];
