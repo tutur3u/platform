@@ -7,6 +7,11 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ wsId: string; productId: string }> }
 ) {
+  const BASE_URL =
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:7803'
+      : 'https://tuturuuu.com';
+
   // const sbAdmin = await createAdminClient();
   const user = await getCurrentSupabaseUser();
 
@@ -59,8 +64,8 @@ export async function GET(
   // HERE is where you add the metadata
   const checkoutSession = await api.checkouts.create({
     products: [productId],
-    successUrl: `http://localhost:7803/${wsId}/billing/success`,
-    externalCustomerId: user?.id || '',
+    successUrl: `${BASE_URL}/${wsId}/billing/success`,
+    // externalCustomerId: user?.id || '',
     metadata: {
       wsId: wsId,
     },
