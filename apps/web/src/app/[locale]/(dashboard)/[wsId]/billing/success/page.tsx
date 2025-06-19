@@ -87,7 +87,7 @@ export default async function SuccessPage({
       </div>
 
       {/* Payment Summary Card */}
-      <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm transition-all delay-700 duration-300 duration-700 animate-in slide-in-from-bottom-6 hover:scale-[1.02] hover:shadow-lg dark:bg-card/80">
+      <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm transition-all delay-700 duration-700 animate-in slide-in-from-bottom-6 hover:scale-[1.02] hover:shadow-lg dark:bg-card/80">
         <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
           Payment Summary
         </h2>
