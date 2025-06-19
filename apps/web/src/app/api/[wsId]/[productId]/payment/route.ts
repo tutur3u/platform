@@ -3,17 +3,15 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const DEV_MODE = process.env.NODE_ENV === 'development';
-export const PROD_MODE = process.env.NODE_ENV === 'production';
-
-export const BASE_URL =
-  process.env.NODE_ENV === 'development'
-    ? 'http://localhost:7803'
-    : 'https://tuturuuu.com';
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ wsId: string; productId: string }> }
 ) {
+  const BASE_URL =
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:7803'
+      : 'https://tuturuuu.com';
+
   // const sbAdmin = await createAdminClient();
   const user = await getCurrentSupabaseUser();
 
