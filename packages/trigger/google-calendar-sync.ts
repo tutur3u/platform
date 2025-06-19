@@ -1,4 +1,4 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/client';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   BACKGROUND_SYNC_RANGE,
   updateLastUpsert,
@@ -39,7 +39,7 @@ const getColorFromGoogleColorId = (colorId?: string): string => {
 
 export const syncGoogleCalendarEvents = async () => {
   try {
-    const supabase = createAdminClient();
+    const supabase = await createAdminClient({ noCookie: true });
 
     // Fetch all wsId with auth tokens not null
     const { data: tokens, error } = await supabase
