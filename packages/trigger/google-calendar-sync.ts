@@ -128,7 +128,9 @@ export const syncGoogleCalendarEvents = async () => {
           .from('workspace_calendar_events')
           .select('*')
           .eq('ws_id', ws_id)
-          .not('google_event_id', 'is', null);
+          .not('google_event_id', 'is', null)
+          .gte('start_at', timeMin.toISOString())
+          .lte('start_at', timeMax.toISOString());
 
         if (dbError) {
           console.error('Error fetching events after upsert:', dbError);
