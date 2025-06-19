@@ -3,10 +3,11 @@ import { Button } from '@tuturuuu/ui/button';
 import {
   ArrowLeft,
   CheckCircle,
+  Clock,
   CreditCard,
   Download,
 } from '@tuturuuu/ui/icons';
-import { format } from 'date-fns';
+import { addHours, format, isAfter } from 'date-fns';
 import Link from 'next/link';
 
 const fetchWorkspaceSubscription = async (
@@ -21,7 +22,6 @@ const fetchWorkspaceSubscription = async (
       .eq('ws_id', wsId)
       .single();
 
-    console.log('Subscription data:', subscription);
     if (error) {
       console.error('Failed to fetch workspace subscription:', error);
       return null;
@@ -43,6 +43,13 @@ export default async function SuccessPage({
   const { wsId } = await params;
 
   const subscription = await fetchWorkspaceSubscription(wsId);
+
+  // Calculate link expiration
+  const createdAt = subscription?.created_at
+    ? new Date(subscription.created_at)
+    : new Date();
+  const expiresAt = addHours(createdAt, 24);
+  const isLinkExpired = isAfter(new Date(), expiresAt);
 
   const paymentDetails = subscription
     ? {
@@ -67,7 +74,7 @@ export default async function SuccessPage({
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8 duration-700 animate-in fade-in">
       <div className="mb-8 text-center delay-100 duration-1000 animate-in fade-in">
-        <div className="mx-auto mb-4 flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-green-100 delay-200 duration-800 animate-in zoom-in dark:bg-green-900/30">
+        <div className="mx-auto mb-4 flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-green-100 delay-200 dark:bg-green-900/30">
           <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
         </div>
         <h1 className="mb-2 text-3xl font-bold tracking-tight delay-300 duration-600 animate-in slide-in-from-bottom-4">
@@ -120,12 +127,34 @@ export default async function SuccessPage({
             </div>
             <div className="-m-2 flex justify-between rounded p-2 transition-all duration-200 hover:bg-muted/30">
               <span className="text-muted-foreground">Status:</span>
-              <span className="inline-flex animate-pulse rounded-full bg-green-100 px-2 text-xs leading-5 font-semibold text-green-800 transition-all duration-300 hover:scale-110 dark:bg-green-900/30 dark:text-green-400">
+              <span className="rounded-full bg-green-100 px-2 text-xs leading-5 font-semibold text-green-800 hover:scale-110 dark:bg-green-900/30 dark:text-green-400">
                 Paid
               </span>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Download Link Expiration Notice */}
+      <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 p-6 text-center transition-all delay-900 duration-300 animate-in fade-in dark:border-amber-800 dark:bg-amber-900/20">
+        <div className="mb-2 flex items-center justify-center gap-2">
+          <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          <p className="font-medium text-amber-800 dark:text-amber-200">
+            Download Receipt Availability
+          </p>
+        </div>
+        {isLinkExpired ? (
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            The download link has expired (24 hours after payment). Please
+            contact support for a new receipt.
+          </p>
+        ) : (
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            Download link expires on{' '}
+            {format(expiresAt, "MMMM d, yyyy 'at' h:mm a")} (24 hours after
+            payment)
+          </p>
+        )}
       </div>
 
       {/* What's Next Card */}
@@ -181,16 +210,27 @@ export default async function SuccessPage({
             Back to Billing
           </Link>
         </Button>
-        <Button
-          variant="outline"
-          asChild
-          className="group flex items-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-xl"
-        >
-          <Link href={`/api/billing/${wsId}/invoice`} target="_blank">
-            <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-2 group-hover:scale-125" />
-            Download Receipt
-          </Link>
-        </Button>
+        {isLinkExpired ? (
+          <Button
+            variant="outline"
+            disabled
+            className="group flex cursor-not-allowed items-center gap-2 opacity-50"
+          >
+            <Download className="h-4 w-4" />
+            Download Receipt (Expired)
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            asChild
+            className="group flex items-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-xl"
+          >
+            <Link href={`/api/billing/${wsId}/invoice`} target="_blank">
+              <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-2 group-hover:scale-125" />
+              Download Receipt
+            </Link>
+          </Button>
+        )}
         <Button
           variant="outline"
           asChild
