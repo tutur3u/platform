@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
 import {
   BACKGROUND_SYNC_RANGE,
   updateLastUpsert,
@@ -114,10 +115,60 @@ export const syncGoogleCalendarEvents = async () => {
           });
         if (error) {
           console.error('Error upserting events:', error);
-        } else {
-          // Update lastUpsert timestamp after successful upsert
-          await updateLastUpsert(ws_id, supabase);
+          continue;
         }
+        console.log(
+          'Upserted events for wsId:',
+          ws_id,
+          formattedEvents.map((e) => e.title)
+        );
+
+        // Google calendar not null
+        const { data: dbEventsAfterUpsert, error: dbError } = await supabase
+          .from('workspace_calendar_events')
+          .select('*')
+          .eq('ws_id', ws_id)
+          .not('google_event_id', 'is', null)
+          .gte('start_at', timeMin.toISOString())
+          .lte('start_at', timeMax.toISOString());
+
+        if (dbError) {
+          console.error('Error fetching events after upsert:', dbError);
+          continue;
+        }
+
+        const eventsToDelete: WorkspaceCalendarEvent[] = [];
+        for (const event of dbEventsAfterUpsert) {
+          if (
+            !formattedEvents.some(
+              (e) => e.google_event_id === event.google_event_id
+            )
+          ) {
+            eventsToDelete.push(event);
+          }
+        }
+
+        const { error: deleteError } = await supabase
+          .from('workspace_calendar_events')
+          .delete()
+          .in(
+            'id',
+            eventsToDelete.map((e) => e.id)
+          );
+
+        if (deleteError) {
+          console.error('Error deleting events:', deleteError);
+          continue;
+        }
+
+        console.log(
+          'Deleted events for wsId:',
+          ws_id,
+          eventsToDelete.map((e) => e.title)
+        );
+
+        // Update lastUpsert timestamp after successful upsert
+        await updateLastUpsert(ws_id, supabase);
       } catch (error) {
         console.error('Error fetching Google Calendar events:', error);
       }
