@@ -42,9 +42,11 @@ const CalendarSyncContext = createContext<{
     }) => void
   ) => Promise<void>;
 
+  isActiveSyncOn: boolean;
+
   // Events-related operations
   events: CalendarEvent[];
-
+  setIsActiveSyncOn: (isActive: boolean) => void;
   // Show data from database to Tuturuuu
   eventsWithoutAllDays: CalendarEvent[];
   allDayEvents: CalendarEvent[];
@@ -64,7 +66,8 @@ const CalendarSyncContext = createContext<{
   currentView: 'day',
   setCurrentView: () => {},
   syncToTuturuuu: async () => {},
-
+  isActiveSyncOn: false,
+  setIsActiveSyncOn: () => {},
   // Events-related operations
   events: [],
 
@@ -123,6 +126,7 @@ export const CalendarSyncProvider = ({
   const [currentView, setCurrentView] = useState<
     'day' | '4-day' | 'week' | 'month'
   >('day');
+  const [isActiveSyncOn, setIsActiveSyncOn] = useState(false);
   const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const prevGoogleDataRef = useRef<string>('');
@@ -337,6 +341,11 @@ export const CalendarSyncProvider = ({
         changesMade: boolean;
       }) => void
     ) => {
+      if (!isActiveSyncOn) {
+        console.log('Sync blocked due to isActiveSyncOn is false');
+        return;
+      }
+
       setIsSyncing(true);
       try {
         // Check if we can proceed with sync
@@ -850,7 +859,8 @@ export const CalendarSyncProvider = ({
     setCurrentView,
     syncToTuturuuu,
     syncToGoogle,
-
+    isActiveSyncOn,
+    setIsActiveSyncOn,
     // Events-related operations
     events,
 
