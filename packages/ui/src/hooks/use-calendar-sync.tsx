@@ -624,6 +624,28 @@ export const CalendarSyncProvider = ({
     }
   }, [fetchedGoogleData, syncToTuturuuu]);
 
+  // Trigger sync when isActiveSyncOn becomes true
+  useEffect(() => {
+    // If have not connected to google, don't sync
+    if (experimentalGoogleToken?.ws_id !== wsId) {
+      return;
+    }
+
+    // Only sync when isActiveSyncOn becomes true and we have Google data
+    if (isActiveSyncOn && fetchedGoogleData && fetchedGoogleData.length > 0) {
+      console.log(
+        'useEffect - isActiveSyncOn changed to true, triggering sync'
+      );
+      syncToTuturuuu();
+    }
+  }, [
+    isActiveSyncOn,
+    fetchedGoogleData,
+    syncToTuturuuu,
+    wsId,
+    experimentalGoogleToken?.ws_id,
+  ]);
+
   // Trigger refetch from DB and Google when changing views AND there are changes in Google data
   // This will trigger syncToTuturuuu()
   useEffect(() => {
