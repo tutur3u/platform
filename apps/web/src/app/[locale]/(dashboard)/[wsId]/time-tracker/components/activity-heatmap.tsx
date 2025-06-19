@@ -446,7 +446,7 @@ export function ActivityHeatmap({
                 <div
                   key={globalIndex}
                   className={cn(
-                    'aspect-square rounded-[2px] border border-gray-200/30 bg-gray-100/80 dark:border-gray-700/30 dark:bg-gray-800/60',
+                    '/30 aspect-square rounded-[2px] border bg-gray-100/80 dark:border-gray-700/30 dark:bg-gray-800/60',
                     isMobile
                       ? 'min-h-[11px] min-w-[11px]'
                       : 'min-h-[13px] min-w-[13px] sm:min-h-[15px] sm:min-w-[15px]'
@@ -1762,19 +1762,19 @@ export function ActivityHeatmap({
       {settings.viewMode === 'hybrid' && (
         <div className="space-y-4">
           {/* Year Overview */}
-          <div className="rounded-lg border border-gray-200/60 bg-gray-50/50 p-3 dark:border-gray-700/60 dark:bg-gray-800/30">
+          <div className="rounded-lg border bg-gray-50/50 p-3 dark:border-gray-700/60 dark:bg-gray-800/30">
             {renderYearOverview()}
           </div>
 
           {/* Monthly Calendar */}
-          <div className="rounded-lg border border-gray-200/60 bg-white/50 p-3 dark:border-gray-700/60 dark:bg-gray-900/30">
+          <div className="rounded-lg border bg-white/50 p-3 dark:border-gray-700/60 dark:bg-gray-900/30">
             {renderMonthlyCalendar()}
           </div>
         </div>
       )}
 
       {settings.viewMode === 'calendar-only' && (
-        <div className="rounded-lg border border-gray-200/60 bg-white/50 p-3 dark:border-gray-700/60 dark:bg-gray-900/30">
+        <div className="rounded-lg border bg-white/50 p-3 dark:border-gray-700/60 dark:bg-gray-900/30">
           {renderMonthlyCalendar()}
         </div>
       )}

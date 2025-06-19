@@ -2961,6 +2961,70 @@ export type Database = {
         };
         Relationships: [];
       };
+      onboarding_progress: {
+        Row: {
+          completed_at: string | null;
+          completed_steps: string[];
+          created_at: string;
+          current_step: string;
+          profile_completed: boolean;
+          tour_completed: boolean;
+          updated_at: string;
+          user_id: string;
+          workspace_avatar_url: string | null;
+          workspace_description: string | null;
+          workspace_name: string | null;
+        };
+        Insert: {
+          completed_at?: string | null;
+          completed_steps?: string[];
+          created_at?: string;
+          current_step?: string;
+          profile_completed?: boolean;
+          tour_completed?: boolean;
+          updated_at?: string;
+          user_id: string;
+          workspace_avatar_url?: string | null;
+          workspace_description?: string | null;
+          workspace_name?: string | null;
+        };
+        Update: {
+          completed_at?: string | null;
+          completed_steps?: string[];
+          created_at?: string;
+          current_step?: string;
+          profile_completed?: boolean;
+          tour_completed?: boolean;
+          updated_at?: string;
+          user_id?: string;
+          workspace_avatar_url?: string | null;
+          workspace_description?: string | null;
+          workspace_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'onboarding_progress_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'onboarding_progress_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'onboarding_progress_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       personal_notes: {
         Row: {
           content: string | null;
@@ -7550,7 +7614,7 @@ export type Database = {
     };
     Functions: {
       calculate_productivity_score: {
-        Args: { category_color: string; duration_seconds: number };
+        Args: { duration_seconds: number; category_color: string };
         Returns: number;
       };
       check_ws_creator: {
@@ -7569,30 +7633,30 @@ export type Database = {
         Args:
           | {
               enabled_filter?: boolean;
-              role_filter?: string;
               search_query: string;
+              role_filter?: string;
             }
           | { search_query: string };
         Returns: number;
       };
       create_ai_chat: {
-        Args: { title: string; message: string; model: string };
+        Args: { message: string; title: string; model: string };
         Returns: string;
       };
       generate_cross_app_token: {
         Args:
           | {
-              p_session_data?: Json;
+              p_origin_app: string;
               p_expiry_seconds?: number;
               p_target_app: string;
-              p_origin_app: string;
               p_user_id: string;
             }
           | {
-              p_target_app: string;
-              p_expiry_seconds?: number;
-              p_user_id: string;
               p_origin_app: string;
+              p_session_data?: Json;
+              p_expiry_seconds?: number;
+              p_target_app: string;
+              p_user_id: string;
             };
         Returns: string;
       };
@@ -7604,18 +7668,18 @@ export type Database = {
         }[];
       };
       get_daily_income_expense: {
-        Args: { _ws_id: string; past_days?: number };
+        Args: { past_days?: number; _ws_id: string };
         Returns: {
-          total_expense: number;
           day: string;
+          total_expense: number;
           total_income: number;
         }[];
       };
       get_daily_prompt_completion_tokens: {
         Args: { past_days?: number };
         Returns: {
-          total_completion_tokens: number;
           total_prompt_tokens: number;
+          total_completion_tokens: number;
           day: string;
         }[];
       };
@@ -7642,9 +7706,9 @@ export type Database = {
       get_hourly_prompt_completion_tokens: {
         Args: { past_hours?: number };
         Returns: {
-          hour: string;
-          total_completion_tokens: number;
           total_prompt_tokens: number;
+          total_completion_tokens: number;
+          hour: string;
         }[];
       };
       get_inventory_batches_count: {
@@ -7657,15 +7721,15 @@ export type Database = {
       };
       get_inventory_products: {
         Args: {
-          _has_unit?: boolean;
           _category_ids?: string[];
-          _warehouse_ids?: string[];
           _ws_id?: string;
+          _warehouse_ids?: string[];
+          _has_unit?: boolean;
         };
         Returns: {
+          manufacturer: string;
           id: string;
           name: string;
-          manufacturer: string;
           unit: string;
           unit_id: string;
           category: string;
@@ -7694,16 +7758,16 @@ export type Database = {
       get_monthly_income_expense: {
         Args: { _ws_id: string; past_months?: number };
         Returns: {
-          total_expense: number;
-          month: string;
           total_income: number;
+          month: string;
+          total_expense: number;
         }[];
       };
       get_monthly_prompt_completion_tokens: {
         Args: { past_months?: number };
         Returns: {
-          total_prompt_tokens: number;
           month: string;
+          total_prompt_tokens: number;
           total_completion_tokens: number;
         }[];
       };
@@ -7712,30 +7776,30 @@ export type Database = {
         Returns: number;
       };
       get_possible_excluded_groups: {
-        Args: { _ws_id: string; included_groups: string[] };
+        Args: { included_groups: string[]; _ws_id: string };
         Returns: {
+          amount: number;
           id: string;
           name: string;
           ws_id: string;
-          amount: number;
         }[];
       };
       get_possible_excluded_tags: {
         Args: { _ws_id: string; included_tags: string[] };
         Returns: {
-          id: string;
-          amount: number;
           ws_id: string;
+          id: string;
           name: string;
+          amount: number;
         }[];
       };
       get_session_statistics: {
         Args: Record<PropertyKey, never>;
         Returns: {
           latest_session_date: string;
-          completed_count: number;
           active_count: number;
           unique_users_count: number;
+          completed_count: number;
           total_count: number;
         }[];
       };
@@ -7746,40 +7810,40 @@ export type Database = {
           limit_count?: number;
         };
         Returns: {
+          description: string;
+          title: string;
+          category_id: string;
+          task_id: string;
+          tags: string[];
           category_name: string;
           category_color: string;
           task_name: string;
           usage_count: number;
           avg_duration: number;
           last_used: string;
-          category_id: string;
-          tags: string[];
-          task_id: string;
-          title: string;
-          description: string;
         }[];
       };
       get_submission_statistics: {
         Args: Record<PropertyKey, never>;
         Returns: {
           latest_submission_date: string;
-          total_count: number;
           unique_users_count: number;
+          total_count: number;
         }[];
       };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
         Returns: {
-          amount: number;
-          id: string;
-          name: string;
-          is_expense: boolean;
-          ws_id: string;
           created_at: string;
+          is_expense: boolean;
+          name: string;
+          id: string;
+          amount: number;
+          ws_id: string;
         }[];
       };
       get_user_role: {
-        Args: { ws_id: string; user_id: string };
+        Args: { user_id: string; ws_id: string };
         Returns: string;
       };
       get_user_session_stats: {
@@ -7793,26 +7857,36 @@ export type Database = {
       get_user_sessions: {
         Args: { user_id: string };
         Returns: {
-          created_at: string;
-          session_id: string;
-          updated_at: string;
           user_agent: string;
           ip: string;
           is_current: boolean;
+          created_at: string;
+          updated_at: string;
+          session_id: string;
         }[];
       };
       get_user_tasks: {
         Args: { _board_id: string };
         Returns: {
-          completed: boolean;
-          start_date: string;
-          end_date: string;
-          list_id: string;
-          board_id: string;
-          description: string;
           priority: number;
+          board_id: string;
+          list_id: string;
+          end_date: string;
+          start_date: string;
           id: string;
           name: string;
+          description: string;
+          completed: boolean;
+        }[];
+      };
+      get_user_whitelist_status: {
+        Args: { user_id_param: string };
+        Returns: {
+          is_whitelisted: boolean;
+          allow_role_management: boolean;
+          allow_challenge_management: boolean;
+          allow_manage_all_challenges: boolean;
+          enabled: boolean;
         }[];
       };
       get_workspace_drive_size: {
@@ -7833,19 +7907,19 @@ export type Database = {
       };
       get_workspace_user_groups: {
         Args: {
-          search_query: string;
-          excluded_tags: string[];
-          included_tags: string[];
           _ws_id: string;
+          included_tags: string[];
+          excluded_tags: string[];
+          search_query: string;
         };
         Returns: {
-          tags: string[];
           ws_id: string;
-          notes: string;
-          name: string;
-          id: string;
+          tags: string[];
           created_at: string;
           tag_count: number;
+          id: string;
+          name: string;
+          notes: string;
         }[];
       };
       get_workspace_user_groups_count: {
@@ -7860,17 +7934,12 @@ export type Database = {
           _ws_id: string;
         };
         Returns: {
-          id: string;
-          avatar_url: string;
-          full_name: string;
-          display_name: string;
-          email: string;
-          phone: string;
           gender: string;
           birthday: string;
           ethnicity: string;
           guardian: string;
           address: string;
+          national_id: string;
           note: string;
           balance: number;
           ws_id: string;
@@ -7879,7 +7948,12 @@ export type Database = {
           linked_users: Json;
           created_at: string;
           updated_at: string;
-          national_id: string;
+          email: string;
+          full_name: string;
+          avatar_url: string;
+          id: string;
+          phone: string;
+          display_name: string;
         }[];
       };
       get_workspace_users_count: {
@@ -7891,19 +7965,19 @@ export type Database = {
         Returns: number;
       };
       get_workspace_wallets_expense: {
-        Args: { start_date?: string; ws_id: string; end_date?: string };
+        Args: { end_date?: string; start_date?: string; ws_id: string };
         Returns: number;
       };
       get_workspace_wallets_income: {
-        Args: { ws_id: string; start_date?: string; end_date?: string };
+        Args: { end_date?: string; start_date?: string; ws_id: string };
         Returns: number;
       };
       has_other_owner: {
-        Args: { _ws_id: string; _user_id: string };
+        Args: { _user_id: string; _ws_id: string };
         Returns: boolean;
       };
       insert_ai_chat_message: {
-        Args: { chat_id: string; source: string; message: string };
+        Args: { source: string; chat_id: string; message: string };
         Returns: undefined;
       };
       is_list_accessible: {
@@ -7923,7 +7997,7 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_user_email_in_team: {
-        Args: { _team_id: string; _user_email: string };
+        Args: { _user_email: string; _team_id: string };
         Returns: boolean;
       };
       is_nova_user_id_in_team: {
@@ -7950,20 +8024,24 @@ export type Database = {
         Args: { _user_id: string; _task_id: string };
         Returns: boolean;
       };
+      is_user_whitelisted: {
+        Args: { user_id_param: string };
+        Returns: boolean;
+      };
       nova_get_all_challenges_with_user_stats: {
         Args: { user_id: string };
         Returns: Json;
       };
       nova_get_challenge_with_user_stats: {
-        Args: { user_id: string; challenge_id: string };
+        Args: { challenge_id: string; user_id: string };
         Returns: Json;
       };
       nova_get_user_daily_sessions: {
-        Args: { challenge_id: string; user_id: string };
+        Args: { user_id: string; challenge_id: string };
         Returns: number;
       };
       nova_get_user_total_sessions: {
-        Args: { user_id: string; challenge_id: string };
+        Args: { challenge_id: string; user_id: string };
         Returns: number;
       };
       revoke_all_cross_app_tokens: {
@@ -7975,12 +8053,12 @@ export type Database = {
         Returns: number;
       };
       revoke_user_session: {
-        Args: { session_id: string; target_user_id: string };
+        Args: { target_user_id: string; session_id: string };
         Returns: boolean;
       };
       search_users: {
         Args:
-          | { page_size: number; search_query: string; page_number: number }
+          | { search_query: string; page_number: number; page_size: number }
           | {
               search_query: string;
               page_number: number;
@@ -7989,36 +8067,36 @@ export type Database = {
               enabled_filter?: boolean;
             };
         Returns: {
-          allow_challenge_management: boolean;
-          allow_manage_all_challenges: boolean;
-          allow_role_management: boolean;
-          email: string;
-          new_email: string;
-          birthday: string;
           team_name: string[];
+          id: string;
+          display_name: string;
+          deleted: boolean;
           avatar_url: string;
           handle: string;
           bio: string;
           created_at: string;
           user_id: string;
           enabled: boolean;
-          id: string;
-          display_name: string;
-          deleted: boolean;
+          allow_challenge_management: boolean;
+          allow_manage_all_challenges: boolean;
+          allow_role_management: boolean;
+          email: string;
+          new_email: string;
+          birthday: string;
         }[];
       };
       search_users_by_name: {
         Args: {
-          min_similarity?: number;
-          result_limit?: number;
           search_query: string;
+          result_limit?: number;
+          min_similarity?: number;
         };
         Returns: {
-          handle: string;
+          display_name: string;
           relevance: number;
           avatar_url: string;
-          display_name: string;
           id: string;
+          handle: string;
         }[];
       };
       sum_quiz_scores: {
@@ -8032,7 +8110,7 @@ export type Database = {
         Returns: boolean;
       };
       transactions_have_same_amount: {
-        Args: { transaction_id_1: string; transaction_id_2: string };
+        Args: { transaction_id_2: string; transaction_id_1: string };
         Returns: boolean;
       };
       update_expired_sessions: {
@@ -8044,11 +8122,11 @@ export type Database = {
         Returns: undefined;
       };
       validate_cross_app_token: {
-        Args: { p_token: string; p_target_app: string };
+        Args: { p_target_app: string; p_token: string };
         Returns: string;
       };
       validate_cross_app_token_with_session: {
-        Args: { p_token: string; p_target_app: string };
+        Args: { p_target_app: string; p_token: string };
         Returns: {
           user_id: string;
           session_data: Json;

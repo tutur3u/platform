@@ -38,7 +38,7 @@ export function PricingSection() {
       cta: t('get_started_free'),
       popular: false,
       color: 'gray',
-      borderColor: 'border-gray-200',
+      borderColor: '',
       buttonVariant: 'outline',
     },
     {

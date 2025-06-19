@@ -132,7 +132,7 @@ export function Leaderboard({
       initial={prefersReducedMotion ? {} : { opacity: 0, y: 10 }}
       animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_0_25px_rgba(0,0,0,0.3)]"
+      className="relative overflow-hidden rounded-xl border bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_0_25px_rgba(0,0,0,0.3)]"
     >
       {/* Enhanced gradient border effect */}
       <div className="absolute -inset-px -z-10 rounded-xl bg-linear-to-r from-transparent via-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px">
@@ -173,7 +173,7 @@ export function Leaderboard({
                 {sortOrder === 'desc' ? t('highest-first') : t('lowest-first')}
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="border-gray-200 bg-white text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <TooltipContent className="bg-white text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
               <p>{t('hover-info')}</p>
             </TooltipContent>
           </Tooltip>
@@ -183,7 +183,7 @@ export function Leaderboard({
       <div className="scrollbar-thin overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/30">
-            <TableRow className="border-b border-gray-200 hover:bg-transparent dark:border-slate-700/50 dark:hover:bg-transparent">
+            <TableRow className="border-b hover:bg-transparent dark:border-slate-700/50 dark:hover:bg-transparent">
               <TableHead className="w-[100px] bg-gray-50 font-semibold text-gray-700 dark:bg-slate-800/30 dark:text-slate-300">
                 {t('rank')}
               </TableHead>
@@ -203,7 +203,7 @@ export function Leaderboard({
                   animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: index * 0.05 }}
                   className={cn(
-                    'group border-b border-gray-200 transition-all hover:bg-gray-50 dark:border-slate-800/30 dark:hover:bg-slate-800/30',
+                    'group border-b transition-all hover:bg-gray-50 dark:border-slate-800/30 dark:hover:bg-slate-800/30',
                     currentEntryId === entry.id &&
                       'bg-blue-50/50 hover:bg-blue-50/80 dark:bg-blue-900/20 dark:hover:bg-blue-900/30',
                     hoveredRow === entry.id &&
@@ -429,7 +429,7 @@ export function Leaderboard({
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="border-b border-gray-200 bg-gray-50/80 dark:border-slate-800/30 dark:bg-slate-800/20"
+                    className="border-b bg-gray-50/80 dark:border-slate-800/30 dark:bg-slate-800/20"
                   >
                     <TableCell colSpan={3} className="px-4 py-3">
                       <motion.div
