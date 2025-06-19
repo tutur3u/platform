@@ -115,7 +115,7 @@ export const syncGoogleCalendarEvents = async () => {
           });
         if (error) {
           console.error('Error upserting events:', error);
-          return;
+          continue;
         }
         console.log(
           'Upserted events for wsId:',
@@ -134,7 +134,7 @@ export const syncGoogleCalendarEvents = async () => {
 
         if (dbError) {
           console.error('Error fetching events after upsert:', dbError);
-          return;
+          continue;
         }
 
         const eventsToDelete: WorkspaceCalendarEvent[] = [];
@@ -158,7 +158,7 @@ export const syncGoogleCalendarEvents = async () => {
 
         if (deleteError) {
           console.error('Error deleting events:', deleteError);
-          return;
+          continue;
         }
 
         console.log(
