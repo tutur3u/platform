@@ -1,8 +1,8 @@
 'use client';
 
-import { LanguageWrapper } from '../_components/language-wrapper';
-import { SystemLanguageWrapper } from '../_components/system-language-wrapper';
-import { ThemeDropdownToggle } from '../_components/theme-dropdown-toggle';
+import { LanguageWrapper } from '../../(dashboard)/_components/language-wrapper';
+import { SystemLanguageWrapper } from '../../(dashboard)/_components/system-language-wrapper';
+import { ThemeDropdownToggle } from '../../(dashboard)/_components/theme-dropdown-toggle';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
