@@ -22,8 +22,6 @@ import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';
 import * as z from 'zod';
 
-
-
 interface Props {
   chatId: string;
   path?: string;
@@ -32,7 +30,6 @@ interface Props {
   onComplete?: () => void;
   submitLabel?: string;
 }
-
 
 const ObjectFormSchema = z.object({
   files: z.custom<File[]>((value) => {
@@ -43,8 +40,6 @@ const ObjectFormSchema = z.object({
     return value;
   }),
 });
-
-
 
 export function StorageObjectForm({
   chatId,
@@ -95,7 +90,6 @@ export function StorageObjectForm({
       const { error } = await supabase.storage
         .from('ai-chat')
         .upload(finalPath, file);
-
 
       if (error) {
         setFileStatuses((prev) => ({
