@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { CoreMessage, smoothStream, streamText } from 'ai';
+import { CoreMessage, generateText  } from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -26,10 +26,17 @@ export function createPOST(
       id,
       model = DEFAULT_MODEL_NAME,
       messages,
+      filePaths,
     } = (await req.json()) as {
       id?: string;
       model?: string;
       messages?: CoreMessage[];
+      filePaths?: string[];
+      file?: {
+        type: 'file';
+        data: ArrayBuffer | string;
+        mimeType: string;
+      }
     };
 
     try {
@@ -113,13 +120,54 @@ export function createPOST(
         console.log('User message saved to database');
       }
 
+      // Tải và chuyển đổi file từ Supabase
+      const fileInputs: {
+        type: 'file';
+        data: Uint8Array;
+        mimeType: string;
+      }[] = [];
+      
+      if (filePaths?.length) {
+        for (const path of filePaths) {
+          const { data: fileData, error } = await supabase.storage
+            .from('ai-chat')
+            .download(path);
+      
+          if (error || !fileData) continue;
+      
+          const buffer = await fileData.arrayBuffer();
+      
+          fileInputs.push({
+            type: 'file',
+            data: new Uint8Array(buffer),
+            mimeType: 'application/pdf',
+          });
+        }
+      }
+
+      // Add user message
+      const userMessages = messages.filter((m) => m.role === 'user');
+      const latestMessage = userMessages[userMessages.length - 1];
+
+      const finalMessages: CoreMessage[] = [
+        {
+          role: 'user',
+          content: [
+            ...(typeof latestMessage?.content === 'string'
+              ? [{ type: 'text' as const, text: latestMessage.content }]
+              : []),
+            ...fileInputs, // fileInputs: Array<{ type: 'file'; data: Uint8Array; mimeType: string }>
+          ],
+        },
+      ];
+
       // Instantiate Model with provided API key
       const google = createGoogleGenerativeAI({
         apiKey: apiKey,
       });
 
-      const result = streamText({
-        experimental_transform: smoothStream(),
+      
+      const result = await generateText({
         model: google(model, {
           safetySettings: [
             {
@@ -140,39 +188,35 @@ export function createPOST(
             },
           ],
         }),
-        messages,
+        messages: finalMessages,
         system: systemInstruction,
-        onFinish: async (response) => {
-          console.log('AI Response:', response);
-
-          if (!response.text) {
-            console.log('No content found');
-            throw new Error('No content found');
-          }
-
-          const { error } = await sbAdmin.from('ai_chat_messages').insert({
-            chat_id: chatId,
-            creator_id: user.id,
-            content: response.text,
-            role: 'ASSISTANT',
-            model: model.toLowerCase(),
-            finish_reason: response.finishReason,
-            prompt_tokens: response.usage.promptTokens,
-            completion_tokens: response.usage.completionTokens,
-            metadata: { source: 'Rewise' },
-          });
-
-          if (error) {
-            console.log('ERROR ORIGIN: ROOT COMPLETION');
-            console.log(error);
-            throw new Error(error.message);
-          }
-
-          console.log('AI Response saved to database');
-        },
       });
-
-      return result.toDataStreamResponse();
+      
+      console.log('AI Response:', result);
+      
+      if (!result.text) {
+        throw new Error('No content found');
+      }
+      
+      // Save response to DB
+      const { error } = await sbAdmin.from('ai_chat_messages').insert({
+        chat_id: chatId,
+        creator_id: user.id,
+        content: result.text,
+        role: 'ASSISTANT',
+        model: model.toLowerCase(),
+        finish_reason: result.finishReason,
+        prompt_tokens: result.usage?.promptTokens,
+        completion_tokens: result.usage?.completionTokens,
+        metadata: { source: 'Rewise' },
+      });
+      
+      if (error) {
+        console.error('ERROR ORIGIN: GENERATETEXT COMPLETION', error);
+        throw new Error(error.message);
+      }
+      
+      return NextResponse.json({ text: result.text });
     } catch (error: any) {
       console.log(error);
       return NextResponse.json(
