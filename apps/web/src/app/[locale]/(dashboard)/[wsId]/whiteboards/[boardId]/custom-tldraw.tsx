@@ -3,14 +3,27 @@
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { type Editor, Tldraw } from 'tldraw';
+import { type Editor, type TLStoreSnapshot, Tldraw } from 'tldraw';
 import 'tldraw/tldraw.css';
 
 type Theme = 'system' | 'dark' | 'light';
 
-export function CustomTldraw({ persistenceKey }: { persistenceKey: string }) {
+export function CustomTldraw({
+  initialData,
+  persistenceKey,
+}: {
+  initialData?: TLStoreSnapshot;
+  persistenceKey: string;
+}) {
   const { resolvedTheme } = useTheme();
   const [editor, setEditor] = useState<Editor | null>(null);
+
+  const handleMount = (editor: Editor) => {
+    setEditor(editor);
+    if (initialData) {
+      editor.loadSnapshot(initialData);
+    }
+  };
 
   useEffect(() => {
     if (editor)
@@ -29,7 +42,7 @@ export function CustomTldraw({ persistenceKey }: { persistenceKey: string }) {
 
       <Tldraw
         persistenceKey={`ws-${persistenceKey}-tldraw`}
-        onMount={setEditor}
+        onMount={handleMount}
       />
     </div>
   );
