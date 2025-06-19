@@ -42,9 +42,8 @@ export async function GET(
 }
 
 function generateInvoiceHtml(subscription: any): string {
-  const amount = subscription.price
-    ? `$${(subscription.price / 100).toFixed(2)}`
-    : '--';
+  const price = subscription.workspace_subscription_products?.price;
+  const amount = price ? `$${price.toFixed(2)}` : '--';
   const date = subscription.created_at
     ? format(new Date(subscription.created_at), 'MMMM d, yyyy')
     : format(new Date(), 'MMMM d, yyyy');
