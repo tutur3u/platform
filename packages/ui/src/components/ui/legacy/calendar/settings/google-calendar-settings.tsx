@@ -12,8 +12,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Progress } from '@tuturuuu/ui/progress';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Check, ExternalLink, Link, Loader2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -83,6 +85,7 @@ export function GoogleCalendarSettings({
   });
   const { toast } = useToast();
   const { syncGoogleCalendarNow, getGoogleEvents } = useCalendar();
+  const { setIsActiveSyncOn, isActiveSyncOn } = useCalendarSync();
 
   // Show connected events count
   const connectedEventsCount = getGoogleEvents().length;
@@ -409,6 +412,13 @@ export function GoogleCalendarSettings({
                     )}
                     {isDisconnecting ? 'Disconnecting...' : 'Disconnect'}
                   </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={isActiveSyncOn}
+                    onCheckedChange={setIsActiveSyncOn}
+                  />
+                  <span>Active Sync</span>
                 </div>
               </div>
             ) : (

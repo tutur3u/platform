@@ -600,7 +600,7 @@ export const CalendarSyncProvider = ({
         setIsSyncing(false);
       }
     },
-    [wsId, dates, queryClient]
+    [wsId, dates, queryClient, isActiveSyncOn]
   );
 
   // Sync to Tuturuuu database when google data changes for current view
