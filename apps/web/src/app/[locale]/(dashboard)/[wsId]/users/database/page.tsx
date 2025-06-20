@@ -4,12 +4,12 @@ import Filters from './filters';
 import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

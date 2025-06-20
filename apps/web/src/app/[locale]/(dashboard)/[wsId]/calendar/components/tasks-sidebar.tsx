@@ -1,12 +1,15 @@
 import { getChats } from '../../chat/helper';
 import TasksSidebarContent from './tasks-sidebar-content';
-import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
   WorkspaceTask,
   WorkspaceTaskBoard,
   WorkspaceTaskList,
 } from '@tuturuuu/types/db';
+import {
+  getPermissions,
+  verifyHasSecrets,
+} from '@tuturuuu/utils/workspace-helper';
 
 interface TasksSidebarProps {
   wsId: string;

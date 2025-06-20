@@ -1,5 +1,5 @@
 import { createCalendarOptimizer } from './tools';
-import { getPermissions } from '@/lib/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(

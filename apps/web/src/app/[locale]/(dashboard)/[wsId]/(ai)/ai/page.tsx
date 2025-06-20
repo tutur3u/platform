@@ -1,4 +1,4 @@
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
