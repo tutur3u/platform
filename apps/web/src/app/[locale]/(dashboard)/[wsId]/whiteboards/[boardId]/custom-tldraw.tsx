@@ -1,14 +1,25 @@
 'use client';
 
+import Toolbar from './toolbar';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { type Editor, Tldraw } from 'tldraw';
+import { type Editor, type TLStoreSnapshot, Tldraw } from 'tldraw';
 import 'tldraw/tldraw.css';
 
 type Theme = 'system' | 'dark' | 'light';
 
-export function CustomTldraw({ persistenceKey }: { persistenceKey: string }) {
+interface CustomTldrawProps {
+  wsId: string;
+  boardId: string;
+  initialData?: TLStoreSnapshot;
+}
+
+export function CustomTldraw({
+  wsId,
+  boardId,
+  initialData,
+}: CustomTldrawProps) {
   const { resolvedTheme } = useTheme();
   const [editor, setEditor] = useState<Editor | null>(null);
 
@@ -28,7 +39,10 @@ export function CustomTldraw({ persistenceKey }: { persistenceKey: string }) {
       )}
 
       <Tldraw
-        persistenceKey={`ws-${persistenceKey}-tldraw`}
+        snapshot={initialData}
+        components={{
+          SharePanel: () => <Toolbar wsId={wsId} boardId={boardId} />,
+        }}
         onMount={setEditor}
       />
     </div>
