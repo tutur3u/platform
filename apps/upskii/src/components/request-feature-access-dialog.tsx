@@ -174,7 +174,7 @@ export function RequestFeatureAccessDialog({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/feature-access-requests`,
+        `/api/v1/workspaces/${wsId}/education-access-request`,
         {
           method: 'POST',
           headers: {
@@ -195,6 +195,7 @@ export function RequestFeatureAccessDialog({
         await checkExistingRequests(); // Refresh requests list
         setOpen(false);
         setMessage('');
+        setSelectedFeature(null);
       } else {
         toast.error(data.error || t('toasts.error.request-failed'));
       }
