@@ -25,14 +25,22 @@ export default async function WorkspaceProjectsPage({
   searchParams,
 }: Props) {
   const { wsId } = await params;
-  const { withoutPermission, permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
   });
 
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  // Check if the current user is a workspace owner
-  const isOwner = permissions?.includes('owner') || permissions?.includes('admin');
+  // Check if the current user is a workspace owner/creator
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', wsId)
+    .single();
+  
+  const isOwner = Boolean(user && workspace && workspace.creator_id === user.id);
 
   const { data: rawData, count } = await getData(wsId, await searchParams);
   const t = await getTranslations();
