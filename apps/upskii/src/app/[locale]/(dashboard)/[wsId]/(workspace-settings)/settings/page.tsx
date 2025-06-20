@@ -115,12 +115,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
               <RequestFeatureAccessDialog
                 wsId={wsId}
                 workspaceName={ws?.name}
-                enabledFeatures={{
-                  ENABLE_AI: featureFlags.ENABLE_AI,
-                  ENABLE_EDUCATION: featureFlags.ENABLE_EDUCATION,
-                  ENABLE_QUIZZES: featureFlags.ENABLE_QUIZZES,
-                  ENABLE_CHALLENGES: featureFlags.ENABLE_CHALLENGES,
-                }}
+                enabledFeatures={featureFlags}
               >
                 <Button variant="default" size="default">
                   <Plus className="mr-2 h-4 w-4" />
