@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { CalendarIcon, ClockIcon, PlusIcon, TagIcon } from '@tuturuuu/ui/icons';
+import { SplitIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -25,12 +26,11 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import dayjs from 'dayjs';
 import { useState } from 'react';
-import { SplitIcon } from '@tuturuuu/ui/icons';
 
 interface TaskModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onAddTask: (task: Omit<Task, 'id' | 'events'>) => void;
+  onCloseAction: () => void;
+  onAddTaskAction: (task: Omit<Task, 'id' | 'events'>) => void;
 }
 
 const categoryOptions = [
@@ -54,7 +54,11 @@ const categoryOptions = [
   },
 ] as const;
 
-export function TaskModal({ isOpen, onClose, onAddTask }: TaskModalProps) {
+export function TaskModal({
+  isOpen,
+  onCloseAction,
+  onAddTaskAction,
+}: TaskModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -121,7 +125,7 @@ export function TaskModal({ isOpen, onClose, onAddTask }: TaskModalProps) {
       allowSplit: formData.allowSplit,
     };
 
-    onAddTask(newTask);
+    onAddTaskAction(newTask);
     handleClose();
   };
 
@@ -138,7 +142,7 @@ export function TaskModal({ isOpen, onClose, onAddTask }: TaskModalProps) {
       allowSplit: true,
     });
     setErrors({});
-    onClose();
+    onCloseAction();
   };
 
   const updateFormData = (field: string, value: string | number | boolean) => {

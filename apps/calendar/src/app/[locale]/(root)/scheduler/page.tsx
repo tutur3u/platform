@@ -417,8 +417,8 @@ function SchedulerPage() {
         {/* Task Modal */}
         <TaskModal
           isOpen={isTaskModalOpen}
-          onClose={() => setIsTaskModalOpen(false)}
-          onAddTask={addTask}
+          onCloseAction={() => setIsTaskModalOpen(false)}
+          onAddTaskAction={addTask}
         />
       </div>
     </TooltipProvider>
@@ -487,7 +487,12 @@ function LockedEventForm({
         </div>
         <div>
           <Label>Category</Label>
-          <Select value={category} onValueChange={(v) => setCategory(v as any)}>
+          <Select
+            value={category}
+            onValueChange={(v) =>
+              setCategory(v as 'work' | 'personal' | 'meeting')
+            }
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
