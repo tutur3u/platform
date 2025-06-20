@@ -30,15 +30,15 @@ interface AddEventModalProps {
 
 export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
   const [formData, setFormData] = React.useState({
-    title: '',
+    name: '',
     description: '',
-    duration: 1,
-    splitUp: true,
-    minDuration: 0.5,
-    maxDuration: 2,
-    workingHours: 'working',
-    scheduleAfter: '',
-    dueDate: '',
+    total_duration: 1,
+    is_splittable: true,
+    min_split_duration_minutes: 0.5,
+    max_split_duration_minutes: 2,
+    time_reference: 'working_time',
+    schedule_after: '',
+    due_date: '',
   });
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -46,30 +46,35 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.title.trim()) {
-      newErrors.title = 'Task name is required';
+    if (!formData.name.trim()) {
+      newErrors.name = 'Task name is required';
     }
 
-    if (formData.duration <= 0) {
+    if (formData.total_duration <= 0) {
       newErrors.duration = 'Duration must be greater than 0';
     }
 
-    if (formData.splitUp) {
-      if (formData.minDuration <= 0) {
-        newErrors.minDuration = 'Minimum duration must be greater than 0';
+    if (formData.is_splittable) {
+      if (formData.min_split_duration_minutes <= 0) {
+        newErrors.min_split_duration_minutes =
+          'Minimum duration must be greater than 0';
       }
 
-      if (formData.maxDuration <= 0) {
-        newErrors.maxDuration = 'Maximum duration must be greater than 0';
+      if (formData.max_split_duration_minutes <= 0) {
+        newErrors.max_split_duration_minutes =
+          'Maximum duration must be greater than 0';
       }
 
-      if (formData.minDuration > formData.maxDuration) {
+      if (
+        formData.min_split_duration_minutes >
+        formData.max_split_duration_minutes
+      ) {
         newErrors.minDuration =
           'Minimum duration cannot be greater than maximum';
       }
     }
 
-    if (formData.dueDate && dayjs(formData.dueDate).isBefore(dayjs())) {
+    if (formData.due_date && dayjs(formData.due_date).isBefore(dayjs())) {
       newErrors.dueDate = 'Due date cannot be in the past';
     }
 
@@ -97,15 +102,15 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
 
   const handleClose = () => {
     setFormData({
-      title: '',
+      name: '',
       description: '',
-      duration: 1,
-      splitUp: true,
-      minDuration: 0.5,
-      maxDuration: 2,
-      workingHours: 'working',
-      scheduleAfter: '',
-      dueDate: '',
+      total_duration: 1,
+      is_splittable: true,
+      min_split_duration_minutes: 0.5,
+      max_split_duration_minutes: 2,
+      time_reference: 'working_time',
+      schedule_after: '',
+      due_date: '',
     });
     setErrors({});
     onClose?.();
@@ -113,22 +118,16 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
 
   const workingHoursOptions = [
     {
-      value: 'working',
+      value: 'working_time',
       label: 'Working Hours',
       icon: '💼',
       description: 'Schedule during standard work hours',
     },
     {
-      value: 'all',
-      label: 'All Hours',
-      icon: '🌍',
-      description: 'Schedule at any time of day',
-    },
-    {
-      value: 'custom',
-      label: 'Custom',
+      value: 'personal_time',
+      label: 'Personal Time',
       icon: '⚙️',
-      description: 'Define custom time preferences',
+      description: 'Schedule at any time of day',
     },
   ];
 
@@ -155,12 +154,12 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
               <Input
                 id="task-title"
                 placeholder="e.g., Complete project documentation"
-                value={formData.title}
-                onChange={(e) => updateFormData('title', e.target.value)}
-                className={errors.title ? 'border-destructive' : ''}
+                value={formData.name}
+                onChange={(e) => updateFormData('name', e.target.value)}
+                className={errors.name ? 'border-destructive' : ''}
               />
-              {errors.title && (
-                <p className="text-sm text-destructive">{errors.title}</p>
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name}</p>
               )}
             </div>
 
@@ -195,7 +194,7 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                   type="number"
                   step="0.25"
                   min="0.25"
-                  value={formData.duration}
+                  value={formData.total_duration}
                   onChange={(e) =>
                     updateFormData('duration', parseFloat(e.target.value))
                   }
@@ -209,7 +208,7 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="split-up"
-                  checked={formData.splitUp}
+                  checked={formData.is_splittable}
                   onCheckedChange={(checked) =>
                     updateFormData('splitUp', checked)
                   }
@@ -219,7 +218,7 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                 </Label>
               </div>
 
-              {formData.splitUp && (
+              {formData.is_splittable && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="min-duration" className="text-sm">
@@ -231,18 +230,22 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                       type="number"
                       step="0.25"
                       min="0.25"
-                      value={formData.minDuration}
+                      value={formData.min_split_duration_minutes}
                       onChange={(e) =>
                         updateFormData(
-                          'minDuration',
+                          'min_split_duration_minutes',
                           parseFloat(e.target.value)
                         )
                       }
-                      className={errors.minDuration ? 'border-destructive' : ''}
+                      className={
+                        errors.min_split_duration_minutes
+                          ? 'border-destructive'
+                          : ''
+                      }
                     />
-                    {errors.minDuration && (
+                    {errors.min_split_duration_minutes && (
                       <p className="text-xs text-destructive">
-                        {errors.minDuration}
+                        {errors.min_split_duration_minutes}
                       </p>
                     )}
                   </div>
@@ -257,18 +260,22 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                       type="number"
                       step="0.25"
                       min="0.25"
-                      value={formData.maxDuration}
+                      value={formData.max_split_duration_minutes}
                       onChange={(e) =>
                         updateFormData(
-                          'maxDuration',
+                          'max_split_duration_minutes',
                           parseFloat(e.target.value)
                         )
                       }
-                      className={errors.maxDuration ? 'border-destructive' : ''}
+                      className={
+                        errors.max_split_duration_minutes
+                          ? 'border-destructive'
+                          : ''
+                      }
                     />
-                    {errors.maxDuration && (
+                    {errors.max_split_duration_minutes && (
                       <p className="text-xs text-destructive">
-                        {errors.maxDuration}
+                        {errors.max_split_duration_minutes}
                       </p>
                     )}
                   </div>
@@ -282,7 +289,7 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                     • <strong>Total:</strong> How long this task should take
                     overall
                   </li>
-                  {formData.splitUp && (
+                  {formData.is_splittable && (
                     <>
                       <li>
                         • <strong>Min:</strong> Minimum time block needed for
@@ -309,8 +316,10 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                 <Label className="text-sm font-medium">Working Hours</Label>
               </div>
               <Select
-                value={formData.workingHours}
-                onValueChange={(value) => updateFormData('workingHours', value)}
+                value={formData.time_reference}
+                onValueChange={(value) =>
+                  updateFormData('time_reference', value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -341,9 +350,9 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                 <Input
                   id="schedule-after"
                   type="datetime-local"
-                  value={formData.scheduleAfter}
+                  value={formData.schedule_after}
                   onChange={(e) =>
-                    updateFormData('scheduleAfter', e.target.value)
+                    updateFormData('schedule_after', e.target.value)
                   }
                   min={dayjs().format('YYYY-MM-DDTHH:mm')}
                 />
@@ -359,8 +368,8 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                 <Input
                   id="due-date"
                   type="datetime-local"
-                  value={formData.dueDate}
-                  onChange={(e) => updateFormData('dueDate', e.target.value)}
+                  value={formData.due_date}
+                  onChange={(e) => updateFormData('due_date', e.target.value)}
                   min={dayjs().format('YYYY-MM-DDTHH:mm')}
                   className={errors.dueDate ? 'border-destructive' : ''}
                 />
