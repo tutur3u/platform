@@ -8,6 +8,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Plus, UserPlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import {
   getPermissions,
   getSecrets,
@@ -34,6 +35,12 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
   const ws = await getWorkspace(wsId);
   const secrets = await getSecrets({ wsId });
   const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
+
+  // Get feature flags for the dialog
+  const featureFlags = await getFeatureFlags(wsId, true);
+
+  // Debug logging
+  console.log('Server - Feature flags for wsId:', wsId, featureFlags);
 
   const preventWorkspaceDeletion =
     secrets
@@ -105,7 +112,16 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
             title={t('ws-settings.features')}
             description={t('ws-settings.features_description')}
             action={
-              <RequestFeatureAccessDialog wsId={wsId} workspaceName={ws?.name}>
+              <RequestFeatureAccessDialog
+                wsId={wsId}
+                workspaceName={ws?.name}
+                enabledFeatures={{
+                  ENABLE_AI: featureFlags.ENABLE_AI,
+                  ENABLE_EDUCATION: featureFlags.ENABLE_EDUCATION,
+                  ENABLE_QUIZZES: featureFlags.ENABLE_QUIZZES,
+                  ENABLE_CHALLENGES: featureFlags.ENABLE_CHALLENGES,
+                }}
+              >
                 <Button variant="default" size="default">
                   <Plus className="mr-2 h-4 w-4" />
                   Request Features

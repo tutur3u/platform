@@ -38,6 +38,12 @@ interface RequestFeatureAccessDialogProps {
   workspaceName: string | null;
   wsId: string;
   children: React.ReactNode;
+  enabledFeatures?: {
+    ENABLE_AI: boolean;
+    ENABLE_EDUCATION: boolean;
+    ENABLE_QUIZZES: boolean;
+    ENABLE_CHALLENGES: boolean;
+  };
 }
 
 interface FeatureAccessRequest {
@@ -99,6 +105,12 @@ export function RequestFeatureAccessDialog({
   workspaceName,
   wsId,
   children,
+  enabledFeatures = {
+    ENABLE_AI: false,
+    ENABLE_EDUCATION: false,
+    ENABLE_QUIZZES: false,
+    ENABLE_CHALLENGES: false,
+  },
 }: RequestFeatureAccessDialogProps) {
   const t = useTranslations('ws-settings.feature-request');
 
@@ -119,10 +131,32 @@ export function RequestFeatureAccessDialog({
         .filter((r) => r.status === 'pending' || r.status === 'approved')
         .map((r) => r.feature)
     );
-    return Object.keys(featureConfig).filter(
-      (f) => !requestedOrApprovedFeatures.has(f)
+
+    // Also exclude features that are already enabled
+    const enabledFeaturesSet = new Set();
+    if (enabledFeatures?.ENABLE_AI) enabledFeaturesSet.add('ai');
+    if (enabledFeatures?.ENABLE_EDUCATION) enabledFeaturesSet.add('education');
+    if (enabledFeatures?.ENABLE_QUIZZES) enabledFeaturesSet.add('quizzes');
+    if (enabledFeatures?.ENABLE_CHALLENGES)
+      enabledFeaturesSet.add('challenges');
+
+    // Debug logging
+    console.log('Debug - enabledFeatures:', enabledFeatures);
+    console.log('Debug - enabledFeaturesSet:', enabledFeaturesSet);
+    console.log(
+      'Debug - requestedOrApprovedFeatures:',
+      requestedOrApprovedFeatures
+    );
+    console.log('Debug - all feature keys:', Object.keys(featureConfig));
+
+    const available = Object.keys(featureConfig).filter(
+      (f) => !requestedOrApprovedFeatures.has(f) && !enabledFeaturesSet.has(f)
     ) as FeatureKey[];
-  }, [existingRequests]);
+
+    console.log('Debug - availableFeatures:', available);
+
+    return available;
+  }, [existingRequests, enabledFeatures]);
 
   useEffect(() => {
     const firstFeature = availableFeatures[0];
