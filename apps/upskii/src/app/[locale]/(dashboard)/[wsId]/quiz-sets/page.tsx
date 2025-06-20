@@ -7,6 +7,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
+
 interface SearchParams {
   q?: string;
   page?: string;

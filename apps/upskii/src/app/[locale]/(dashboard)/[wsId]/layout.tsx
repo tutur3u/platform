@@ -5,11 +5,8 @@ import type { NavLink } from '@/components/navigation';
 import { EducationBanner } from '@/components/request-education-banner';
 import { UserNav } from '@/components/user-nav';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import {
-  getPermissions,
-  getWorkspace,
-  verifySecret,
-} from '@/lib/workspace-helper';
+import { getFeatureFlags } from '@/constants/secrets';
+import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import {
   Award,
   Blocks,
@@ -55,19 +52,8 @@ export default async function Layout({ children, params }: LayoutProps) {
     wsId,
   });
 
-  const ENABLE_AI_ONLY = await verifySecret({
-    forceAdmin: true,
-    wsId,
-    name: 'ENABLE_AI_ONLY',
-    value: 'true',
-  });
-
-  const ENABLE_EDUCATION = await verifySecret({
-    forceAdmin: true,
-    wsId,
-    name: 'ENABLE_EDUCATION',
-    value: 'true',
-  });
+  const { ENABLE_AI, ENABLE_EDUCATION, ENABLE_QUIZZES, ENABLE_CHALLENGES } =
+    await getFeatureFlags(wsId);
 
   const navLinks: (NavLink | null)[] = [
     {
@@ -76,8 +62,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <Home className="h-4 w-4" />,
       matchExact: true,
       shortcut: 'H',
-      disabled:
-        ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+      disabled: !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     null,
     {
@@ -89,40 +74,35 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/courses`,
           icon: <BookCopy className="h-4 w-4" />,
           shortcut: 'C',
-          disabled:
-            ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+          disabled: !ENABLE_EDUCATION || withoutPermission('ai_lab'),
         },
         {
           title: t('sidebar.quizzes'),
           href: `/${wsId}/quizzes`,
           icon: <CopyCheck className="h-4 w-4" />,
           shortcut: 'Q',
-          disabled:
-            ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+          disabled: !ENABLE_QUIZZES || withoutPermission('ai_lab'),
         },
         {
           title: t('sidebar.quiz-sets'),
           href: `/${wsId}/quiz-sets`,
           icon: <ListTodo className="h-4 w-4" />,
           shortcut: 'S',
-          disabled:
-            ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+          disabled: !ENABLE_QUIZZES || withoutPermission('ai_lab'),
         },
         {
           title: t('sidebar.challenges'),
           href: `/${wsId}/challenges`,
           icon: <SquareTerminal className="h-4 w-4" />,
           shortcut: 'L',
-          disabled:
-            ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+          disabled: !ENABLE_CHALLENGES || withoutPermission('ai_lab'),
         },
         {
           title: t('sidebar.certificates'),
           href: `/${wsId}/certificates`,
           icon: <Award className="h-4 w-4" />,
           shortcut: 'Q',
-          disabled:
-            ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+          disabled: !ENABLE_EDUCATION || withoutPermission('ai_lab'),
         },
       ],
     },
@@ -135,16 +115,14 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/ai-teach-studio`,
           icon: <BookOpenText className="h-4 w-4" />,
           shortcut: 'T',
-          disabled:
-            ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+          disabled: !ENABLE_AI || withoutPermission('ai_lab'),
         },
         {
           title: t('sidebar.ai_chat'),
           href: `/${wsId}/ai-chat`,
           icon: <Bot className="h-4 w-4" />,
           shortcut: 'M',
-          disabled:
-            ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+          disabled: !ENABLE_AI || withoutPermission('ai_lab'),
         },
       ],
     },
@@ -176,29 +154,25 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('workspace-settings-layout.members'),
           href: `/${wsId}/members`,
           icon: <Users className="h-4 w-4" />,
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_members'),
+          disabled: withoutPermission('manage_workspace_members'),
         },
         {
           title: t('workspace-settings-layout.roles'),
           href: `/${wsId}/roles`,
           icon: <ShieldUser className="h-4 w-4" />,
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
+          disabled: withoutPermission('manage_workspace_roles'),
         },
         {
           title: t('workspace-settings-layout.reports'),
           href: `/${wsId}/settings/reports`,
           icon: <FileText className="h-4 w-4" />,
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_user_report_templates'),
+          disabled: withoutPermission('manage_user_report_templates'),
         },
         {
           title: t('workspace-settings-layout.api_keys'),
           href: `/${wsId}/api-keys`,
           icon: <KeyRound className="h-4 w-4" />,
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_security'),
+          disabled: withoutPermission('manage_workspace_security'),
         },
         {
           title: t('workspace-settings-layout.secrets'),
@@ -219,8 +193,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/users`,
           icon: <UserCog className="h-4 w-4" />,
           shortcut: 'U',
-          disabled:
-            ENABLE_AI_ONLY || !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+          disabled: withoutPermission('ai_lab'),
           requireRootWorkspace: true,
           requireRootMember: true,
         },
@@ -255,7 +228,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   // Check if user is workspace owner and education is not enabled
   const isWorkspaceOwner = workspace?.role === 'OWNER';
   const shouldShowEducationBanner =
-    isWorkspaceOwner && !ENABLE_EDUCATION && !ENABLE_AI_ONLY && workspace?.name;
+    isWorkspaceOwner && !ENABLE_EDUCATION && workspace?.name;
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
 
