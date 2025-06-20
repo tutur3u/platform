@@ -2,6 +2,12 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Type interfaces for better type safety
+interface ProcessedAssignee {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 interface TaskAssigneeData {
   user: {
     id: string;
@@ -14,6 +20,9 @@ interface TaskAssigneeData {
 interface TaskListData {
   id: string;
   name: string | null;
+  // Task list status: 'not_started' | 'active' | 'done' | 'closed'
+  // Used to determine task availability for time tracking
+  status: string | null;
   workspace_boards: {
     id: string;
     name: string | null;
@@ -21,7 +30,7 @@ interface TaskListData {
   } | null;
 }
 
-interface RawTaskData {
+interface TaskData {
   id: string;
   name: string;
   description: string | null;
@@ -31,6 +40,7 @@ interface RawTaskData {
   end_date: string | null;
   created_at: string | null;
   list_id: string;
+  archived: boolean | null;
   task_lists: TaskListData | null;
   assignees?: TaskAssigneeData[];
 }
@@ -87,6 +97,9 @@ export async function GET(
     const boardId = url.searchParams.get('boardId');
     const listId = url.searchParams.get('listId');
 
+    // Check if this is a request for time tracking (indicated by limit=100 and no specific filters)
+    const isTimeTrackingRequest = limit === 100 && !boardId && !listId;
+
     // Build the query for fetching tasks with assignee information
     let query = supabase
       .from('tasks')
@@ -101,9 +114,11 @@ export async function GET(
         end_date,
         created_at,
         list_id,
+        archived,
         task_lists!inner (
           id,
           name,
+          status,
           board_id,
           workspace_boards!inner (
             id,
@@ -122,6 +137,14 @@ export async function GET(
       )
       .eq('task_lists.workspace_boards.ws_id', wsId)
       .eq('deleted', false);
+
+    // IMPORTANT: If this is for time tracking, apply the same filters as the server-side helper
+    if (isTimeTrackingRequest) {
+      query = query
+        .eq('archived', false) // Only non-archived tasks
+        .in('task_lists.status', ['not_started', 'active']) // Only from active lists
+        .eq('task_lists.deleted', false); // Ensure list is not deleted
+    }
 
     // Apply filters based on query parameters
     if (listId) {
@@ -142,7 +165,7 @@ export async function GET(
 
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
-      data?.map((task: RawTaskData) => ({
+      data?.map((task: TaskData) => ({
         id: task.id,
         name: task.name,
         description: task.description,
@@ -152,20 +175,28 @@ export async function GET(
         end_date: task.end_date,
         created_at: task.created_at,
         list_id: task.list_id,
+        archived: task.archived,
         // Add board information for context
         board_name: task.task_lists?.workspace_boards?.name,
         list_name: task.task_lists?.name,
+        list_status: task.task_lists?.status,
         // Add assignee information
         assignees: [
           ...(task.assignees ?? [])
-            .map((a) => a.user)
-            .filter((u): u is NonNullable<typeof u> => !!u?.id)
-            .reduce((uniqueUsers, user) => {
-              if (!uniqueUsers.has(user.id)) {
-                uniqueUsers.set(user.id, user);
-              }
-              return uniqueUsers;
-            }, new Map<string, NonNullable<typeof task.assignees>[0]['user']>())
+            .map((a: TaskAssigneeData) => a.user)
+            .filter((u): u is ProcessedAssignee => !!u?.id)
+            .reduce(
+              (
+                uniqueUsers: Map<string, ProcessedAssignee>,
+                user: ProcessedAssignee
+              ) => {
+                if (!uniqueUsers.has(user.id)) {
+                  uniqueUsers.set(user.id, user);
+                }
+                return uniqueUsers;
+              },
+              new Map()
+            )
             .values(),
         ],
         // Add helper field to identify if current user is assigned
