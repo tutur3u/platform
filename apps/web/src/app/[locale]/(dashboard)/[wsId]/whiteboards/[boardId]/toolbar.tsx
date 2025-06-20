@@ -71,7 +71,7 @@ export default function Toolbar({ boardId }: { boardId: string }) {
 
       toast({
         title: 'Saved successfully!',
-        description: 'Your whiteboard and thumbnail have been saved.',
+        description: 'Your whiteboard has been saved.',
         variant: 'default',
       });
     } catch (error: any) {
