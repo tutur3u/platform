@@ -7716,9 +7716,6 @@ export type Database = {
               p_expiry_seconds?: number;
               p_target_app: string;
               p_user_id: string;
-              p_origin_app: string;
-              p_target_app: string;
-              p_expiry_seconds?: number;
             }
           | {
               p_origin_app: string;
@@ -7742,7 +7739,6 @@ export type Database = {
           day: string;
           total_expense: number;
           total_income: number;
-          total_expense: number;
         }[];
       };
       get_daily_prompt_completion_tokens: {
@@ -7751,8 +7747,6 @@ export type Database = {
           total_prompt_tokens: number;
           total_completion_tokens: number;
           day: string;
-          total_prompt_tokens: number;
-          total_completion_tokens: number;
         }[];
       };
       get_finance_invoices_count: {
@@ -7873,10 +7867,6 @@ export type Database = {
           unique_users_count: number;
           completed_count: number;
           total_count: number;
-          unique_users_count: number;
-          active_count: number;
-          completed_count: number;
-          latest_session_date: string;
         }[];
       };
       get_session_templates: {
