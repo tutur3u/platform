@@ -8,4 +8,6 @@ to authenticated
 with check (true);
 
 
+alter table "public"."workspace_calendar_tasks" alter column "total_duration" set data type real using "total_duration"::real;
+
 

@@ -5080,7 +5080,7 @@ export type Database = {
           time_reference:
             | Database['public']['Enums']['calendar_task_time']
             | null;
-          total_duration: string;
+          total_duration: number;
           updated_at: string | null;
           user_defined_priority:
             | Database['public']['Enums']['priority_status']
@@ -5104,7 +5104,7 @@ export type Database = {
           time_reference?:
             | Database['public']['Enums']['calendar_task_time']
             | null;
-          total_duration: string;
+          total_duration: number;
           updated_at?: string | null;
           user_defined_priority?:
             | Database['public']['Enums']['priority_status']
@@ -5128,7 +5128,7 @@ export type Database = {
           time_reference?:
             | Database['public']['Enums']['calendar_task_time']
             | null;
-          total_duration?: string;
+          total_duration?: number;
           updated_at?: string | null;
           user_defined_priority?:
             | Database['public']['Enums']['priority_status']
