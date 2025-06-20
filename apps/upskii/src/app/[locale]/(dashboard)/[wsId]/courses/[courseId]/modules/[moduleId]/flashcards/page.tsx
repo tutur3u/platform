@@ -1,6 +1,7 @@
 import FlashcardForm from '../../../../../flashcards/form';
 import { AIFlashcards } from './client-ai';
 import ClientFlashcards from './client-flashcards';
+import { getFeatureFlags } from '@/constants/secrets';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { SwatchBook } from '@tuturuuu/ui/icons';
@@ -19,7 +20,7 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
   const { wsId, moduleId } = await params;
   const t = await getTranslations();
   const flashcards = await getFlashcards(moduleId);
-
+  const { ENABLE_AI } = await getFeatureFlags(wsId);
   const cards = flashcards.map((fc) => ({
     id: fc.id,
     front: fc.front,
@@ -73,9 +74,11 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
           </>
         )}
 
-        <div className="col-span-full">
-          <AIFlashcards wsId={wsId} moduleId={moduleId} />
-        </div>
+        {ENABLE_AI ? (
+          <div className="col-span-full">
+            <AIFlashcards wsId={wsId} moduleId={moduleId} />
+          </div>
+        ) : undefined}
       </div>
     </div>
   );

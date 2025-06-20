@@ -1,5 +1,6 @@
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
+import { getFeatureFlags } from '@/constants/secrets';
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
@@ -36,6 +37,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   const t = await getTranslations();
   const { wsId, courseId, moduleId } = await params;
   const data = await getModuleData(courseId, moduleId);
+  const { ENABLE_QUIZZES } = await getFeatureFlags(wsId);
 
   const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
@@ -129,24 +131,26 @@ export default async function UserGroupDetailsPage({ params }: Props) {
           ) : undefined
         }
       />
-      <CourseSection
-        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes`}
-        title={t('ws-quizzes.plural')}
-        icon={<ListTodo className="h-5 w-5" />}
-        content={
-          quizSets && quizSets.length > 0 ? (
-            <div className="grid gap-4 pt-2 md:grid-cols-2">
-              <ClientQuizzes
-                wsId={wsId}
-                courseId={courseId}
-                moduleId={moduleId}
-                quizSets={quizSets}
-                previewMode
-              />
-            </div>
-          ) : undefined
-        }
-      />
+      {ENABLE_QUIZZES ? (
+        <CourseSection
+          href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes`}
+          title={t('ws-quizzes.plural')}
+          icon={<ListTodo className="h-5 w-5" />}
+          content={
+            quizSets && quizSets.length > 0 ? (
+              <div className="grid gap-4 pt-2 md:grid-cols-2">
+                <ClientQuizzes
+                  wsId={wsId}
+                  courseId={courseId}
+                  moduleId={moduleId}
+                  quizSets={quizSets}
+                  previewMode
+                />
+              </div>
+            ) : undefined
+          }
+        />
+      ) : undefined}
       {/* <CourseSection
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets`}
         title={t('ws-quiz-sets.plural')}

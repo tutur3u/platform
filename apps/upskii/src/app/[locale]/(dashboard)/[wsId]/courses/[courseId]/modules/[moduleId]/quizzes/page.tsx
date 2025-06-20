@@ -1,6 +1,7 @@
 import QuizForm from '../../../../../quizzes/form';
 import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';
+import { getFeatureFlags } from '@/constants/secrets';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ListTodo } from '@tuturuuu/ui/icons';
@@ -44,6 +45,7 @@ export default async function ModuleQuizzesPage({ params }: Props) {
   const t = await getTranslations();
   const quizSets = await getQuizzes(moduleId);
   const moduleName = await getModuleName(moduleId);
+  const { ENABLE_AI } = await getFeatureFlags(wsId);
   return (
     <div className="grid gap-4">
       <FeatureSummary
@@ -69,14 +71,16 @@ export default async function ModuleQuizzesPage({ params }: Props) {
           quizSets={quizSets}
           courseId={courseId}
         />
-        <div className="col-span-full">
-          <AIQuizzes
-            wsId={wsId}
-            moduleId={moduleId}
-            courseId={courseId}
-            moduleName={moduleName}
-          />
-        </div>
+        {ENABLE_AI ? (
+          <div className="col-span-full">
+            <AIQuizzes
+              wsId={wsId}
+              moduleId={moduleId}
+              courseId={courseId}
+              moduleName={moduleName}
+            />
+          </div>
+        ) : undefined}
       </div>
       {/* <div className="grid gap-4 md:grid-cols-2">
         {quizSets && quizSets.length > 0 && (
