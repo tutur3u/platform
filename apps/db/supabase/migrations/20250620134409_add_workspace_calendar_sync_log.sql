@@ -42,39 +42,6 @@ USING (
     )
 );
 
--- Users can insert sync logs for workspaces they are members of
-CREATE POLICY "Users can insert sync logs for their workspaces"
-ON public.workspace_calendar_sync_log
-FOR INSERT
-TO authenticated
-WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM public.workspace_members wm
-        WHERE wm.ws_id = ws_id
-        AND wm.user_id = auth.uid()
-    )
-);
-
--- Users can update sync logs for workspaces they are members of
-CREATE POLICY "Users can update sync logs for their workspaces"
-ON public.workspace_calendar_sync_log
-FOR UPDATE
-TO authenticated
-USING (
-    EXISTS (
-        SELECT 1 FROM public.workspace_members wm
-        WHERE wm.ws_id = ws_id
-        AND wm.user_id = auth.uid()
-    )
-)
-WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM public.workspace_members wm
-        WHERE wm.ws_id = ws_id
-        AND wm.user_id = auth.uid()
-    )
-);
-
 -- Add check constraint for status values
 ALTER TABLE "public"."workspace_calendar_sync_log" 
 ADD CONSTRAINT "workspace_calendar_sync_log_status_check" 
