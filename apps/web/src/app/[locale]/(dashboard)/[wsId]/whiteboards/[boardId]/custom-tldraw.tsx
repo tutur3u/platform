@@ -54,7 +54,7 @@ function SnapshotToolbar({ boardId }: { boardId: string }) {
   const { toast } = useToast();
   const supabase = createClient();
 
-  const generateThumbnail = useCallback(async (): Promise<Blob> => {
+  const generateThumbnail = async () => {
     const shapeIds = editor.getCurrentPageShapeIds();
     if (shapeIds.size === 0) {
       throw new Error('No shapes on canvas');
@@ -68,7 +68,19 @@ function SnapshotToolbar({ boardId }: { boardId: string }) {
     });
 
     return blob;
-  }, [editor]);
+  };
+
+  const generateFileName = (name: string) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+
+    return `${year}${month}${day}-${hours}-${minutes}-${seconds}-${name}`;
+  };
 
   const save = useCallback(async () => {
     try {
@@ -76,19 +88,27 @@ function SnapshotToolbar({ boardId }: { boardId: string }) {
 
       const thumbnailBlob = await generateThumbnail();
 
-      const thumbnailFile = new File([thumbnailBlob], `${boardId}.png`, {
+      const thumbnailFileName = generateFileName(`${boardId}.png`);
+
+      const thumbnailFile = new File([thumbnailBlob], thumbnailFileName, {
         type: 'image/png',
       });
 
-      const { data: thumbnailData } = await supabase.storage
+      const { error: thumbnailError } = await supabase.storage
         .from('whiteboards-thumbnails')
-        .upload(thumbnailFile.name, thumbnailFile);
+        .upload(thumbnailFileName, thumbnailFile);
+
+      if (thumbnailError) throw thumbnailError;
+
+      const { data: thumbnailUrl } = supabase.storage
+        .from('whiteboards-thumbnails')
+        .getPublicUrl(thumbnailFileName);
 
       await supabase
         .from('whiteboards')
         .update({
           snapshot: JSON.stringify(snapshot),
-          thumbnail_url: thumbnailData?.path,
+          thumbnail_url: thumbnailUrl.publicUrl,
           updated_at: new Date().toISOString(),
         })
         .eq('id', boardId);
@@ -106,7 +126,7 @@ function SnapshotToolbar({ boardId }: { boardId: string }) {
         variant: 'destructive',
       });
     }
-  }, [editor, boardId, generateThumbnail]);
+  }, [editor]);
 
   useEffect(() => {
     const snapshot = localStorage.getItem(boardId);
