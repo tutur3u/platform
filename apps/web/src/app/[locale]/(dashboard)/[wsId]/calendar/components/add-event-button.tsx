@@ -3,7 +3,6 @@ import { PlusIcon } from '@tuturuuu/ui/icons';
 import React from 'react';
 
 interface AddEventButtonProps {
-  wsId: string;
   onOpenDialog?: () => void;
 }
 

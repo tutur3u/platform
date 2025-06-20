@@ -30,7 +30,7 @@ interface AddEventModalProps {
   wsId?: string;
 }
 
-export default function AddEventModal({
+export default async function AddEventModal({
   isOpen,
   onClose,
   wsId,
@@ -46,10 +46,13 @@ export default function AddEventModal({
     schedule_after: '',
     due_date: '',
   });
-
+  const supabase = createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = React.useState(false);
-  const supabase = createClient();
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -107,10 +110,6 @@ export default function AddEventModal({
       setIsLoading(true);
 
       // Get current user
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
 
       if (authError || !user) {
         setErrors({ submit: 'Authentication required. Please log in.' });
@@ -456,9 +455,7 @@ export default function AddEventModal({
             <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
               <div className="flex items-center gap-2">
                 <span>📧</span>
-                <span>
-                  Tasks will be scheduled for tanphat.huynh23@gmail.com
-                </span>
+                <span>Tasks will be scheduled for #{user?.email}</span>
               </div>
             </div>
           </div>
