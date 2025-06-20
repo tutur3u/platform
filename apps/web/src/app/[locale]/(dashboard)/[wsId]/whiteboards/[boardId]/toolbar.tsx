@@ -6,7 +6,13 @@ import Link from 'next/link';
 import { useCallback } from 'react';
 import { useEditor } from 'tldraw';
 
-export default function Toolbar({ boardId }: { boardId: string }) {
+export default function Toolbar({
+  wsId,
+  boardId,
+}: {
+  wsId: string;
+  boardId: string;
+}) {
   const supabase = createClient();
 
   const editor = useEditor();
@@ -43,6 +49,10 @@ export default function Toolbar({ boardId }: { boardId: string }) {
   const save = useCallback(async () => {
     try {
       const thumbnailBlob = await generateThumbnail();
+      if (!thumbnailBlob) {
+        throw new Error('Failed to generate thumbnail');
+      }
+
       const thumbnailFileName = generateFileName(`${boardId}.png`);
       const thumbnailFile = new File([thumbnailBlob], thumbnailFileName, {
         type: 'image/png',
@@ -60,7 +70,7 @@ export default function Toolbar({ boardId }: { boardId: string }) {
 
       const snapshot = editor.getSnapshot();
 
-      await supabase
+      const { error: updateError } = await supabase
         .from('whiteboards')
         .update({
           snapshot: JSON.stringify(snapshot),
@@ -68,6 +78,8 @@ export default function Toolbar({ boardId }: { boardId: string }) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', boardId);
+
+      if (updateError) throw updateError;
 
       toast({
         title: 'Saved successfully!',
@@ -82,11 +94,11 @@ export default function Toolbar({ boardId }: { boardId: string }) {
         variant: 'destructive',
       });
     }
-  }, [editor]);
+  }, [editor, boardId, supabase, toast]);
 
   return (
     <div className="pointer-events-auto flex gap-4 p-4">
-      <Link href={`/whiteboards`}>
+      <Link href={`/${wsId}/whiteboards`}>
         <Button variant="ghost">
           <ArrowLeftIcon className="h-4 w-4" />
           Back

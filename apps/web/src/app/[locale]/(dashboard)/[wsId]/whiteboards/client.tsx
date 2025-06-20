@@ -213,10 +213,7 @@ export default function WhiteboardsList({
               target="_blank"
               className="block"
             >
-              <Card
-                key={whiteboard.id}
-                className="group cursor-pointer transition-shadow hover:shadow-md"
-              >
+              <Card className="group cursor-pointer transition-shadow hover:shadow-md">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-md line-clamp-1">
@@ -276,10 +273,7 @@ export default function WhiteboardsList({
               target="_blank"
               className="block"
             >
-              <Card
-                key={whiteboard.id}
-                className="group cursor-pointer transition-shadow hover:shadow-sm"
-              >
+              <Card className="group cursor-pointer transition-shadow hover:shadow-sm">
                 <CardContent className="flex items-center gap-4 p-4">
                   {/* Thumbnail */}
                   <div className="h-12 w-12 overflow-hidden rounded">
@@ -345,10 +339,6 @@ function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleDelete = async (whiteboard: Whiteboard) => {
-    if (!confirm(`Are you sure you want to delete "${whiteboard.title}"?`)) {
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('whiteboards')
@@ -356,16 +346,14 @@ function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
         .eq('id', whiteboard.id);
 
       if (error) {
-        console.error('Error deleting whiteboard:', error);
-        toast.error('Failed to delete whiteboard. Please try again.');
-        return;
+        throw new Error('Failed to delete whiteboard');
       }
 
       toast.success('Whiteboard deleted successfully!');
       router.refresh();
     } catch (error) {
-      console.error('Unexpected error:', error);
-      toast.error('An unexpected error occurred. Please try again.');
+      console.error('Error deleting whiteboard:', error);
+      toast.error('Failed to delete whiteboard. Please try again.');
     }
   };
 

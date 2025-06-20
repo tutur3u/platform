@@ -9,13 +9,17 @@ import 'tldraw/tldraw.css';
 
 type Theme = 'system' | 'dark' | 'light';
 
-export function CustomTldraw({
-  initialData,
-  boardId,
-}: {
-  initialData?: TLStoreSnapshot;
+interface CustomTldrawProps {
+  wsId: string;
   boardId: string;
-}) {
+  initialData?: TLStoreSnapshot;
+}
+
+export function CustomTldraw({
+  wsId,
+  boardId,
+  initialData,
+}: CustomTldrawProps) {
   const { resolvedTheme } = useTheme();
   const [editor, setEditor] = useState<Editor | null>(null);
 
@@ -37,7 +41,7 @@ export function CustomTldraw({
       <Tldraw
         snapshot={initialData}
         components={{
-          SharePanel: () => <Toolbar boardId={boardId} />,
+          SharePanel: () => <Toolbar wsId={wsId} boardId={boardId} />,
         }}
         onMount={setEditor}
       />
