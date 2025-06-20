@@ -48,7 +48,7 @@ export default async function ModuleQuizzesPage({ params }: Props) {
 
   const { ENABLE_AI } = await requireFeatureFlags(wsId, {
     requiredFlags: ['ENABLE_AI'],
-    redirectTo: `/${wsId}/courses/${courseId}/modules/${moduleId}`,
+    redirectTo: null,
   });
 
   return (

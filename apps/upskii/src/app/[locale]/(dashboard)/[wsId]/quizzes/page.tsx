@@ -30,12 +30,12 @@ export default async function WorkspaceQuizzesPage({
   const t = await getTranslations();
   const { wsId } = await params;
 
-  const { data, count } = await getData(wsId, await searchParams);
-
   await requireFeatureFlags(wsId, {
     requiredFlags: ['ENABLE_QUIZZES'],
     redirectTo: `/${wsId}/home`,
   });
+
+  const { data, count } = await getData(wsId, await searchParams);
 
   return (
     <>

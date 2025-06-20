@@ -23,7 +23,7 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
 
   const { ENABLE_AI } = await requireFeatureFlags(wsId, {
     requiredFlags: ['ENABLE_AI'],
-    redirectTo: `/${wsId}/home`,
+    redirectTo: null,
   });
 
   const cards = flashcards.map((fc) => ({
