@@ -1,5 +1,17 @@
 'use client';
 
+import EditWhiteboardDialog from './editWhiteboardDialog';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -13,7 +25,6 @@ import {
   Grid3X3,
   IconChevronUpDown,
   IconEdit,
-  IconPlus,
   IconTrash,
   IconUsers,
   ImageIcon,
@@ -24,8 +35,11 @@ import {
   Search,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Toggle } from '@tuturuuu/ui/toggle';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 type SortOption = 'alphabetical' | 'dateCreated' | 'lastModified';
@@ -103,10 +117,6 @@ export default function WhiteboardsList({
     if (diffInDays === 1) return 'Yesterday';
     if (diffInDays < 7) return `${diffInDays} days ago`;
     return date.toLocaleDateString();
-  };
-
-  const handleClick = (whiteboard: Whiteboard) => {
-    window.open(`/${wsId}/whiteboards/${whiteboard.id}`, '_blank');
   };
 
   return (
@@ -193,174 +203,232 @@ export default function WhiteboardsList({
               ? `No whiteboards match "${searchQuery}"`
               : 'Get started by creating your first whiteboard'}
           </p>
-          {!searchQuery && (
-            <Button className="gap-2">
-              <IconPlus className="h-4 w-4" />
-              Create Whiteboard
-            </Button>
-          )}
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {sortedWhiteboards.map((whiteboard) => (
-            <Card
+            <Link
               key={whiteboard.id}
-              className="group cursor-pointer transition-shadow hover:shadow-md"
-              onClick={() => handleClick(whiteboard)}
+              href={`/${wsId}/whiteboards/${whiteboard.id}`}
+              target="_blank"
+              className="block"
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-md line-clamp-1">
-                    {whiteboard.title}
-                  </CardTitle>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="opacity-0 transition-opacity group-hover:opacity-100"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem className="gap-2">
-                        <IconEdit className="h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2">
-                        <IconUsers className="h-4 w-4" />
-                        Share
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2">
-                        <IconTrash className="h-4 w-4 text-red-500" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Thumbnail */}
-                <div className="mb-4 h-32 w-full overflow-hidden rounded-lg">
-                  {whiteboard.thumbnail_url ? (
-                    <Image
-                      src={whiteboard.thumbnail_url}
-                      alt={whiteboard.title}
-                      width={128}
-                      height={128}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-muted">
-                      <div className="text-sm text-muted-foreground">
-                        No preview
+              <Card
+                key={whiteboard.id}
+                className="group cursor-pointer transition-shadow hover:shadow-md"
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-md line-clamp-1">
+                      {whiteboard.title}
+                    </CardTitle>
+
+                    <CardAction whiteboard={whiteboard} />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {/* Thumbnail */}
+                  <div className="mb-4 h-32 w-full overflow-hidden rounded-lg">
+                    {whiteboard.thumbnail_url ? (
+                      <Image
+                        src={whiteboard.thumbnail_url}
+                        alt={whiteboard.title}
+                        width={128}
+                        height={128}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center bg-muted">
+                        <div className="text-sm text-muted-foreground">
+                          No preview
+                        </div>
                       </div>
-                    </div>
+                    )}
+                  </div>
+
+                  {whiteboard.description && (
+                    <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
+                      {whiteboard.description}
+                    </p>
                   )}
-                </div>
 
-                {whiteboard.description && (
-                  <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
-                    {whiteboard.description}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <IconUsers className="h-3 w-3" />
-                    {whiteboard.creatorName}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <IconUsers className="h-3 w-3" />
+                      {whiteboard.creatorName}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Pen className="h-3 w-3" />
+                      {formatDate(whiteboard.lastModified)}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Pen className="h-3 w-3" />
-                    {formatDate(whiteboard.lastModified)}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       ) : (
         <div className="space-y-2">
           {sortedWhiteboards.map((whiteboard) => (
-            <Card
+            <Link
               key={whiteboard.id}
-              className="group cursor-pointer transition-shadow hover:shadow-sm"
-              onClick={() => handleClick(whiteboard)}
+              href={`/${wsId}/whiteboards/${whiteboard.id}`}
+              target="_blank"
+              className="block"
             >
-              <CardContent className="flex items-center gap-4 p-4">
-                {/* Thumbnail */}
-                <div className="h-12 w-12 overflow-hidden rounded">
-                  {whiteboard.thumbnail_url ? (
-                    <Image
-                      src={whiteboard.thumbnail_url}
-                      alt={whiteboard.title}
-                      width={128}
-                      height={128}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-muted">
-                      <div className="text-sm text-muted-foreground">
-                        <ImageIcon className="h-4 w-4" />
+              <Card
+                key={whiteboard.id}
+                className="group cursor-pointer transition-shadow hover:shadow-sm"
+              >
+                <CardContent className="flex items-center gap-4 p-4">
+                  {/* Thumbnail */}
+                  <div className="h-12 w-12 overflow-hidden rounded">
+                    {whiteboard.thumbnail_url ? (
+                      <Image
+                        src={whiteboard.thumbnail_url}
+                        alt={whiteboard.title}
+                        width={128}
+                        height={128}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center bg-muted">
+                        <div className="text-sm text-muted-foreground">
+                          <ImageIcon className="h-4 w-4" />
+                        </div>
                       </div>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-semibold">
+                      {whiteboard.title}
+                    </h3>
+                    {whiteboard.description && (
+                      <p className="truncate text-sm text-muted-foreground">
+                        {whiteboard.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Metadata */}
+                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <IconUsers className="h-3 w-3" />
+                      {whiteboard.creatorName}
                     </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-semibold">{whiteboard.title}</h3>
-                  {whiteboard.description && (
-                    <p className="truncate text-sm text-muted-foreground">
-                      {whiteboard.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Metadata */}
-                <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <IconUsers className="h-3 w-3" />
-                    {whiteboard.creatorName}
+                    <div className="flex items-center gap-1">
+                      <Pen className="h-3 w-3" />
+                      {formatDate(whiteboard.lastModified)}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(whiteboard.dateCreated)}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Pen className="h-3 w-3" />
-                    {formatDate(whiteboard.lastModified)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {formatDate(whiteboard.dateCreated)}
-                  </div>
-                </div>
 
-                {/* Actions */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="gap-2">
-                      <IconEdit className="h-4 w-4" />
-                      Rename
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="gap-2">
-                      <IconUsers className="h-4 w-4" />
-                      Share
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardContent>
-            </Card>
+                  <CardAction whiteboard={whiteboard} />
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
+    </>
+  );
+}
+
+function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
+  const supabase = createClient();
+  const router = useRouter();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const handleDelete = async (whiteboard: Whiteboard) => {
+    if (!confirm(`Are you sure you want to delete "${whiteboard.title}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('whiteboards')
+        .delete()
+        .eq('id', whiteboard.id);
+
+      if (error) {
+        console.error('Error deleting whiteboard:', error);
+        toast.error('Failed to delete whiteboard. Please try again.');
+        return;
+      }
+
+      toast.success('Whiteboard deleted successfully!');
+      router.refresh();
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred. Please try again.');
+    }
+  };
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="opacity-0 transition-opacity group-hover:opacity-100"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <EditWhiteboardDialog
+            whiteboard={whiteboard}
+            trigger={
+              <DropdownMenuItem
+                className="gap-2"
+                onSelect={(e) => e.preventDefault()}
+              >
+                <IconEdit className="h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+            }
+          />
+          <DropdownMenuItem
+            className="gap-2"
+            onSelect={(e) => e.preventDefault()}
+          >
+            <IconUsers className="h-4 w-4" />
+            Share
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="gap-2 text-red-500 focus:text-red-500"
+            onSelect={(e) => e.preventDefault()}
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <IconTrash className="h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Whiteboard</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {`"${whiteboard.title}"`}? This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleDelete(whiteboard)}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

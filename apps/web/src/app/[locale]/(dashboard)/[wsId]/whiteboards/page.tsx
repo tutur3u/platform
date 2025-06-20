@@ -1,4 +1,5 @@
 import WhiteboardsList, { type Whiteboard } from './client';
+import CreateWhiteboardDialog from './createWhiteboardDialog';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { IconPlus } from '@tuturuuu/ui/icons';
@@ -60,10 +61,15 @@ export default async function WhiteboardsPage({
               {t('whiteboards_description')}
             </p>
           </div>
-          <Button className="gap-2">
-            <IconPlus className="h-4 w-4" />
-            {t('new_whiteboard')}
-          </Button>
+          <CreateWhiteboardDialog
+            wsId={wsId}
+            trigger={
+              <Button className="gap-2">
+                <IconPlus className="h-4 w-4" />
+                {t('new_whiteboard')}
+              </Button>
+            }
+          />
         </div>
 
         <Separator />
