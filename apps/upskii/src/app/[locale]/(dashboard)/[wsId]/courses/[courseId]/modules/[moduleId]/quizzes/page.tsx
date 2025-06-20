@@ -1,10 +1,10 @@
 import QuizForm from '../../../../../quizzes/form';
 import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';
-import { getFeatureFlags } from '@/constants/secrets';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ListTodo } from '@tuturuuu/ui/icons';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -45,7 +45,12 @@ export default async function ModuleQuizzesPage({ params }: Props) {
   const t = await getTranslations();
   const quizSets = await getQuizzes(moduleId);
   const moduleName = await getModuleName(moduleId);
-  const { ENABLE_AI } = await getFeatureFlags(wsId);
+
+  const { ENABLE_AI } = await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_AI'],
+    redirectTo: `/${wsId}/courses/${courseId}/modules/${moduleId}`,
+  });
+
   return (
     <div className="grid gap-4">
       <FeatureSummary

@@ -1,6 +1,5 @@
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
-import { getFeatureFlags } from '@/constants/secrets';
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
@@ -22,6 +21,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { JSONContent } from '@tuturuuu/ui/tiptap';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -37,7 +37,11 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   const t = await getTranslations();
   const { wsId, courseId, moduleId } = await params;
   const data = await getModuleData(courseId, moduleId);
-  const { ENABLE_QUIZZES } = await getFeatureFlags(wsId);
+
+  const { ENABLE_QUIZZES } = await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_QUIZZES'],
+    redirectTo: null,
+  });
 
   const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });

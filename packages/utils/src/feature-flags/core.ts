@@ -1,6 +1,25 @@
 import { verifySecret } from '../workspace-helper';
 import { FEATURE_FLAGS } from './data';
 import type { FeatureFlag, FeatureFlagMap } from './types';
+import { redirect } from 'next/navigation';
+
+export async function requireFeatureFlags(
+  wsId: string,
+  {
+    requiredFlags = [],
+    redirectTo,
+    forceAdmin = false,
+  }: {
+    requiredFlags: FeatureFlag[];
+    redirectTo: string | null;
+    forceAdmin?: boolean;
+  }
+): Promise<FeatureFlagMap> {
+  const featureFlags = await getFeatureFlags(wsId, forceAdmin);
+  const missingFlags = requiredFlags.filter((flag) => !featureFlags[flag]);
+  if (missingFlags.length > 0 && redirectTo) redirect(redirectTo);
+  return featureFlags;
+}
 
 /**
  * Get all feature flags for a workspace

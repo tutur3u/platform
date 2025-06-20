@@ -1,11 +1,11 @@
 import FlashcardForm from '../../../../../flashcards/form';
 import { AIFlashcards } from './client-ai';
 import ClientFlashcards from './client-flashcards';
-import { getFeatureFlags } from '@/constants/secrets';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { SwatchBook } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -20,7 +20,12 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
   const { wsId, moduleId } = await params;
   const t = await getTranslations();
   const flashcards = await getFlashcards(moduleId);
-  const { ENABLE_AI } = await getFeatureFlags(wsId);
+
+  const { ENABLE_AI } = await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_AI'],
+    redirectTo: `/${wsId}/home`,
+  });
+
   const cards = flashcards.map((fc) => ({
     id: fc.id,
     front: fc.front,

@@ -1,5 +1,4 @@
-import { getFeatureFlag } from '@/constants/secrets';
-import { redirect } from 'next/navigation';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { ReactNode } from 'react';
 
 interface LayoutProps {
@@ -17,12 +16,10 @@ export default async function ModuleQuizzesLayout({
 }: LayoutProps) {
   const { wsId, courseId, moduleId } = await params;
 
-  // Check if quizzes feature is enabled
-  const ENABLE_QUIZZES = await getFeatureFlag(wsId, 'ENABLE_QUIZZES');
-
-  if (!ENABLE_QUIZZES) {
-    redirect(`/${wsId}/courses/${courseId}/modules/${moduleId}`);
-  }
+  await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_QUIZZES'],
+    redirectTo: `/${wsId}/courses/${courseId}/modules/${moduleId}`,
+  });
 
   return <>{children}</>;
 }

@@ -1,5 +1,4 @@
-import { getFeatureFlag } from '@/constants/secrets';
-import { redirect } from 'next/navigation';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { ReactNode } from 'react';
 
 interface LayoutProps {
@@ -16,11 +15,10 @@ export default async function ChallengesLayout({
   const { wsId } = await params;
 
   // Check if challenges feature is enabled
-  const ENABLE_CHALLENGES = await getFeatureFlag(wsId, 'ENABLE_CHALLENGES');
-
-  if (!ENABLE_CHALLENGES) {
-    redirect(`/${wsId}/home`);
-  }
+  await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_CHALLENGES'],
+    redirectTo: `/${wsId}/home`,
+  });
 
   return <>{children}</>;
 }

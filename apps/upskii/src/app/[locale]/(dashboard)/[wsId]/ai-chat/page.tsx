@@ -1,6 +1,6 @@
 import Chat from './chat';
 import { getChats } from './helper';
-import { getFeatureFlags } from '@/constants/secrets';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -25,8 +25,10 @@ export default async function AIPage({ params, searchParams }: Props) {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  const { ENABLE_AI } = await getFeatureFlags(wsId);
-  if (!ENABLE_AI) redirect(`/${wsId}/home`);
+  await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_AI'],
+    redirectTo: `/${wsId}/home`,
+  });
 
   return (
     <Chat

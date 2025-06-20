@@ -1,13 +1,12 @@
 import { getWorkspaceQuizColumns } from './columns';
 import QuizForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { getFeatureFlags } from '@/constants/secrets';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceQuiz } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
-import { redirect } from 'next/navigation';
 
 interface SearchParams {
   q?: string;
@@ -33,9 +32,10 @@ export default async function WorkspaceQuizzesPage({
 
   const { data, count } = await getData(wsId, await searchParams);
 
-  const { ENABLE_QUIZZES } = await getFeatureFlags(wsId);
-
-  if (!ENABLE_QUIZZES) redirect(`/${wsId}/home`);
+  await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_QUIZZES'],
+    redirectTo: `/${wsId}/home`,
+  });
 
   return (
     <>

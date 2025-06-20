@@ -1,4 +1,3 @@
-import { getFeatureFlags } from '@/constants/secrets';
 import {
   createClient,
   createDynamicClient,
@@ -21,6 +20,7 @@ import {
   Youtube,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -50,8 +50,10 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   const quizSets = await getQuizSets(moduleId);
   const quizzes = await getQuizzes(moduleId);
 
-  // Get feature flags for conditional rendering
-  const { ENABLE_QUIZZES } = await getFeatureFlags(wsId);
+  const { ENABLE_QUIZZES } = await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_QUIZZES'],
+    redirectTo: null,
+  });
 
   return (
     <>

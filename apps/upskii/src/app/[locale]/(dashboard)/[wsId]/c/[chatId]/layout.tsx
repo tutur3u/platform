@@ -1,9 +1,9 @@
 import { siteConfig } from '@/constants/configs';
-import { getFeatureFlags } from '@/constants/secrets';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { AIChat } from '@tuturuuu/types/db';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
 interface Props {
@@ -97,8 +97,10 @@ export default async function AIChatDetailsLayout({
 }) {
   const { wsId } = await params;
 
-  const { ENABLE_AI } = await getFeatureFlags(wsId);
-  if (!ENABLE_AI) redirect(`/${wsId}/home`);
+  await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_AI'],
+    redirectTo: `/${wsId}/home`,
+  });
 
   return children;
 }

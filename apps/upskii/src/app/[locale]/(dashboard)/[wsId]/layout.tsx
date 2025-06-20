@@ -5,7 +5,6 @@ import type { NavLink } from '@/components/navigation';
 import { EducationBanner } from '@/components/request-education-banner';
 import { UserNav } from '@/components/user-nav';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { getFeatureFlags } from '@/constants/secrets';
 import {
   Award,
   Blocks,
@@ -30,6 +29,7 @@ import {
   UserCog,
   Users,
 } from '@tuturuuu/ui/icons';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -53,7 +53,15 @@ export default async function Layout({ children, params }: LayoutProps) {
   });
 
   const { ENABLE_AI, ENABLE_EDUCATION, ENABLE_QUIZZES, ENABLE_CHALLENGES } =
-    await getFeatureFlags(wsId);
+    await requireFeatureFlags(wsId, {
+      requiredFlags: [
+        'ENABLE_AI',
+        'ENABLE_EDUCATION',
+        'ENABLE_QUIZZES',
+        'ENABLE_CHALLENGES',
+      ],
+      redirectTo: null,
+    });
 
   const navLinks: (NavLink | null)[] = [
     {
