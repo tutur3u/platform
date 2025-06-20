@@ -14,6 +14,7 @@ export interface Event {
   partNumber?: number;
   totalParts?: number;
   locked?: boolean;
+  category?: 'work' | 'personal' | 'meeting';
 }
 
 export interface Task {
