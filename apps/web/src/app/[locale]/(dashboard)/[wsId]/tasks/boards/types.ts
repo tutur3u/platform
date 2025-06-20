@@ -48,7 +48,13 @@ export interface BoardGroup {
 }
 
 export type ViewMode = 'table' | 'cards' | 'groups';
-export type SortField = 'name' | 'id' | 'created_at' | 'progress' | 'tasks' | 'group';
+export type SortField =
+  | 'name'
+  | 'id'
+  | 'created_at'
+  | 'progress'
+  | 'tasks'
+  | 'group';
 export type SortDirection = 'asc' | 'desc';
 
 export interface SmartFilters {
@@ -77,33 +83,40 @@ export const DEFAULT_VIEW_SETTINGS: ViewSettings = {
   sortBy: 'name',
   sortOrder: 'asc',
   forceShowAll: false,
-  visibleColumns: ['board', 'progress', 'tasks', 'status', 'last_updated', 'actions'],
+  visibleColumns: [
+    'board',
+    'progress',
+    'tasks',
+    'status',
+    'last_updated',
+    'actions',
+  ],
   groupView: {
-    collapsed: []
+    collapsed: [],
   },
   pagination: {
     page: 1,
-    pageSize: 5
-  }
+    pageSize: 5,
+  },
 };
 
 export const STORAGE_KEYS = {
-  VIEW_SETTINGS: 'task_boards_view_settings'
+  VIEW_SETTINGS: 'task_boards_view_settings',
 } as const;
 
 // Predefined group colors
 export const GROUP_COLORS = {
-  'Gaming': '#10b981', // emerald
-  'Robotics': '#3b82f6', // blue
-  'Marketing': '#f59e0b', // amber
-  'Development': '#8b5cf6', // violet
-  'Design': '#ec4899', // pink
-  'Research': '#06b6d4', // cyan
-  'Sales': '#84cc16', // lime
-  'Support': '#f97316', // orange
-  'Finance': '#6366f1', // indigo
-  'HR': '#14b8a6', // teal
-  'Operations': '#ef4444', // red
-  'Strategy': '#64748b', // slate
-  'Default': '#6b7280' // gray
-} as const; 
+  Gaming: '#10b981', // emerald
+  Robotics: '#3b82f6', // blue
+  Marketing: '#f59e0b', // amber
+  Development: '#8b5cf6', // violet
+  Design: '#ec4899', // pink
+  Research: '#06b6d4', // cyan
+  Sales: '#84cc16', // lime
+  Support: '#f97316', // orange
+  Finance: '#6366f1', // indigo
+  HR: '#14b8a6', // teal
+  Operations: '#ef4444', // red
+  Strategy: '#64748b', // slate
+  Default: '#6b7280', // gray
+} as const;

@@ -315,7 +315,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               const { transform } = args;
 
               // Get viewport bounds (safely handle SSR)
-              const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+              const viewportWidth =
+                typeof window !== 'undefined' ? window.innerWidth : 1920;
               const maxX = viewportWidth - 350; // Account for card width
 
               return {

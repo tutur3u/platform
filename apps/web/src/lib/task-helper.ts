@@ -145,13 +145,14 @@ export async function updateTask(
 
 // Utility function to transform and deduplicate assignees
 export function transformAssignees(assignees: any[]): any[] {
-  return assignees
-    ?.map((a: any) => a.user)
-          .filter(
+  return (
+    assignees
+      ?.map((a: any) => a.user)
+      .filter(
         (user: any, index: number, self: any[]) =>
-          user?.id &&
-          self.findIndex((u: any) => u.id === user.id) === index
-      ) || [];
+          user?.id && self.findIndex((u: any) => u.id === user.id) === index
+      ) || []
+  );
 }
 
 // Utility function to invalidate all task-related caches consistently
