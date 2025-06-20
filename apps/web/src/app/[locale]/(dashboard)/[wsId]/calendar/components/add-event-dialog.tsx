@@ -8,14 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  CalendarIcon,
-  ClockIcon,
-  MinusIcon,
-  PlusIcon,
-  TagIcon,
-  XIcon,
-} from '@tuturuuu/ui/icons';
+import { CalendarIcon, ClockIcon, PlusIcon, TagIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -25,6 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import dayjs from 'dayjs';
 import React from 'react';
 
 interface AddEventModalProps {
@@ -35,97 +31,179 @@ interface AddEventModalProps {
 export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
   const [formData, setFormData] = React.useState({
     title: '',
+    description: '',
     duration: 1,
     splitUp: true,
-    minDuration: 30,
+    minDuration: 0.5,
     maxDuration: 2,
-    workingHours: 'Working Hours',
-    scheduleAfter: 'Now',
-    dueDate: new Date('2025-06-23T18:00:00'),
+    workingHours: 'working',
+    scheduleAfter: '',
+    dueDate: '',
   });
 
-  const handleInputChange = (field: string, value: any) => {
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = 'Task name is required';
+    }
+
+    if (formData.duration <= 0) {
+      newErrors.duration = 'Duration must be greater than 0';
+    }
+
+    if (formData.splitUp) {
+      if (formData.minDuration <= 0) {
+        newErrors.minDuration = 'Minimum duration must be greater than 0';
+      }
+
+      if (formData.maxDuration <= 0) {
+        newErrors.maxDuration = 'Maximum duration must be greater than 0';
+      }
+
+      if (formData.minDuration > formData.maxDuration) {
+        newErrors.minDuration =
+          'Minimum duration cannot be greater than maximum';
+      }
+    }
+
+    if (formData.dueDate && dayjs(formData.dueDate).isBefore(dayjs())) {
+      newErrors.dueDate = 'Due date cannot be in the past';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const updateFormData = (field: string, value: string | number | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
   };
 
-  const incrementDuration = () => {
-    setFormData((prev) => ({ ...prev, duration: prev.duration + 1 }));
-  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const decrementDuration = () => {
-    setFormData((prev) => ({
-      ...prev,
-      duration: Math.max(1, prev.duration - 1),
-    }));
-  };
+    if (!validateForm()) {
+      return;
+    }
 
-  const handleSubmit = () => {
-    // Handle form submission
     console.log('Form data:', formData);
+    handleClose();
+  };
+
+  const handleClose = () => {
+    setFormData({
+      title: '',
+      description: '',
+      duration: 1,
+      splitUp: true,
+      minDuration: 0.5,
+      maxDuration: 2,
+      workingHours: 'working',
+      scheduleAfter: '',
+      dueDate: '',
+    });
+    setErrors({});
     onClose?.();
   };
 
+  const workingHoursOptions = [
+    {
+      value: 'working',
+      label: 'Working Hours',
+      icon: '💼',
+      description: 'Schedule during standard work hours',
+    },
+    {
+      value: 'all',
+      label: 'All Hours',
+      icon: '🌍',
+      description: 'Schedule at any time of day',
+    },
+    {
+      value: 'custom',
+      label: 'Custom',
+      icon: '⚙️',
+      description: 'Define custom time preferences',
+    },
+  ];
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <PlusIcon className="h-5 w-5" />
+            Create New Task
+          </DialogTitle>
           <DialogDescription>
-            Schedule a new task with your preferred settings
+            Schedule a new task with your preferred settings and constraints.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Task Name Input */}
-          <div className="space-y-2">
-            <Label htmlFor="task-name">Task Name</Label>
-            <div className="relative">
-              <div className="absolute top-1/2 left-3 -translate-y-1/2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500">
-                  <span className="text-sm text-white">☺</span>
-                </div>
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="task-title">
+                Task Name <span className="text-destructive">*</span>
+              </Label>
               <Input
-                id="task-name"
-                placeholder="Enter task name..."
+                id="task-title"
+                placeholder="e.g., Complete project documentation"
                 value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                className="pl-12"
+                onChange={(e) => updateFormData('title', e.target.value)}
+                className={errors.title ? 'border-destructive' : ''}
+              />
+              {errors.title && (
+                <p className="text-sm text-destructive">{errors.title}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="task-description">Description (Optional)</Label>
+              <Textarea
+                id="task-description"
+                placeholder="Add any additional details about this task..."
+                value={formData.description}
+                onChange={(e) => updateFormData('description', e.target.value)}
+                rows={2}
               />
             </div>
           </div>
 
-          {/* Duration Section */}
+          <Separator />
+
+          {/* Duration Settings */}
           <div className="space-y-4">
-            <div className="flex items-start justify-between">
-              <div className="space-y-3">
-                <Label>Duration</Label>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={decrementDuration}
-                    className="h-9 w-9 rounded-full"
-                  >
-                    <MinusIcon className="h-4 w-4" />
-                  </Button>
-                  <div className="min-w-[80px] text-center">
-                    <span className="text-xl font-semibold">
-                      {formData.duration}
-                    </span>
-                    <span className="ml-1 text-sm text-muted-foreground">
-                      hr{formData.duration !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={incrementDuration}
-                    className="h-9 w-9 rounded-full"
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                  </Button>
-                </div>
+            <div className="mb-3 flex items-center gap-2">
+              <ClockIcon className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-sm font-medium">Duration Settings</Label>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="duration" className="text-sm">
+                  Total Duration (h) <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  step="0.25"
+                  min="0.25"
+                  value={formData.duration}
+                  onChange={(e) =>
+                    updateFormData('duration', parseFloat(e.target.value))
+                  }
+                  className={errors.duration ? 'border-destructive' : ''}
+                />
+                {errors.duration && (
+                  <p className="text-xs text-destructive">{errors.duration}</p>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">
@@ -133,112 +211,185 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                   id="split-up"
                   checked={formData.splitUp}
                   onCheckedChange={(checked) =>
-                    handleInputChange('splitUp', checked)
+                    updateFormData('splitUp', checked)
                   }
                 />
                 <Label htmlFor="split-up" className="text-sm font-normal">
-                  Split up
+                  Allow splitting into smaller sessions
                 </Label>
               </div>
-            </div>
 
-            {/* Min/Max Duration */}
-            {formData.splitUp && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm">Min duration</Label>
-                  <div className="rounded-md border bg-muted/30 p-3">
-                    <span className="text-sm font-medium">
-                      {formData.minDuration} mins
-                    </span>
+              {formData.splitUp && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="min-duration" className="text-sm">
+                      Min Duration (h){' '}
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="min-duration"
+                      type="number"
+                      step="0.25"
+                      min="0.25"
+                      value={formData.minDuration}
+                      onChange={(e) =>
+                        updateFormData(
+                          'minDuration',
+                          parseFloat(e.target.value)
+                        )
+                      }
+                      className={errors.minDuration ? 'border-destructive' : ''}
+                    />
+                    {errors.minDuration && (
+                      <p className="text-xs text-destructive">
+                        {errors.minDuration}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="max-duration" className="text-sm">
+                      Max Duration (h){' '}
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="max-duration"
+                      type="number"
+                      step="0.25"
+                      min="0.25"
+                      value={formData.maxDuration}
+                      onChange={(e) =>
+                        updateFormData(
+                          'maxDuration',
+                          parseFloat(e.target.value)
+                        )
+                      }
+                      className={errors.maxDuration ? 'border-destructive' : ''}
+                    />
+                    {errors.maxDuration && (
+                      <p className="text-xs text-destructive">
+                        {errors.maxDuration}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Max duration</Label>
-                  <div className="rounded-md border bg-muted/30 p-3">
-                    <span className="text-sm font-medium">
-                      {formData.maxDuration} hrs
-                    </span>
-                  </div>
-                </div>
+              )}
+
+              <div className="rounded-lg bg-accent/50 p-3 text-xs text-muted-foreground">
+                <strong>Duration Guidelines:</strong>
+                <ul className="mt-1 space-y-1">
+                  <li>
+                    • <strong>Total:</strong> How long this task should take
+                    overall
+                  </li>
+                  {formData.splitUp && (
+                    <>
+                      <li>
+                        • <strong>Min:</strong> Minimum time block needed for
+                        meaningful progress
+                      </li>
+                      <li>
+                        • <strong>Max:</strong> Maximum time to work on this
+                        task at once
+                      </li>
+                    </>
+                  )}
+                </ul>
               </div>
-            )}
-          </div>
-
-          {/* Working Hours */}
-          <div className="space-y-2">
-            <Label htmlFor="working-hours">Working Hours</Label>
-            <Select
-              value={formData.workingHours}
-              onValueChange={(value) =>
-                handleInputChange('workingHours', value)
-              }
-            >
-              <SelectTrigger id="working-hours">
-                <div className="flex items-center gap-2">
-                  <ClockIcon className="h-4 w-4 text-blue-500" />
-                  <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Working Hours">Working Hours</SelectItem>
-                <SelectItem value="All Hours">All Hours</SelectItem>
-                <SelectItem value="Custom">Custom</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Email Notice */}
-          <div className="rounded-md bg-blue-50 p-3 text-sm text-blue-800">
-            <div className="flex items-center gap-2">
-              <span>📧</span>
-              <span>Tasks will be scheduled for tanphat.huynh23@gmail.com</span>
             </div>
           </div>
 
-          {/* Schedule After & Due Date */}
-          <div className="grid grid-cols-2 gap-4">
+          <Separator />
+
+          {/* Scheduling Preferences */}
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm">Schedule after</Label>
-              <div className="rounded-md border bg-muted/30 p-3">
-                <span className="text-sm font-medium">
-                  {formData.scheduleAfter}
+              <div className="mb-2 flex items-center gap-2">
+                <ClockIcon className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Working Hours</Label>
+              </div>
+              <Select
+                value={formData.workingHours}
+                onValueChange={(value) => updateFormData('workingHours', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {workingHoursOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center gap-2">
+                        <span>{option.icon}</span>
+                        <div>
+                          <div className="font-medium">{option.label}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {option.description}
+                          </div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="schedule-after" className="text-sm">
+                  Schedule After (Optional)
+                </Label>
+                <Input
+                  id="schedule-after"
+                  type="datetime-local"
+                  value={formData.scheduleAfter}
+                  onChange={(e) =>
+                    updateFormData('scheduleAfter', e.target.value)
+                  }
+                  min={dayjs().format('YYYY-MM-DDTHH:mm')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="due-date" className="text-sm">
+                    Due Date (Optional)
+                  </Label>
+                </div>
+                <Input
+                  id="due-date"
+                  type="datetime-local"
+                  value={formData.dueDate}
+                  onChange={(e) => updateFormData('dueDate', e.target.value)}
+                  min={dayjs().format('YYYY-MM-DDTHH:mm')}
+                  className={errors.dueDate ? 'border-destructive' : ''}
+                />
+                {errors.dueDate && (
+                  <p className="text-xs text-destructive">{errors.dueDate}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
+              <div className="flex items-center gap-2">
+                <span>📧</span>
+                <span>
+                  Tasks will be scheduled for tanphat.huynh23@gmail.com
                 </span>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm">Due date</Label>
-              <div className="rounded-md border bg-muted/30 p-3">
-                <span className="text-sm font-medium">Jun 23, 2025 6:00pm</span>
-              </div>
-            </div>
           </div>
-        </div>
 
-        <DialogFooter className="flex items-center justify-between pt-6">
-          <div className="flex gap-1">
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <TagIcon className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <ClockIcon className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <CalendarIcon className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose}>
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button
-              onClick={handleSubmit}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
+            <Button type="submit" className="bg-blue-500 hover:bg-blue-600">
+              <PlusIcon className="mr-2 h-4 w-4" />
               Create Task
             </Button>
-          </div>
-        </DialogFooter>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
