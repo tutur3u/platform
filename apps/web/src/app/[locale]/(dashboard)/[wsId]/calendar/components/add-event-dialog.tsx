@@ -120,7 +120,7 @@ export default function AddEventModal({
       const taskData = {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
-        total_duration: formData.total_duration.toString(),
+        total_duration: formData.total_duration,
         is_splittable: formData.is_splittable,
         min_split_duration_minutes: formData.is_splittable
           ? formData.min_split_duration_minutes
