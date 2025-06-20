@@ -24,9 +24,7 @@ import {
   Search,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
-import { Separator } from '@tuturuuu/ui/separator';
 import { Toggle } from '@tuturuuu/ui/toggle';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -43,15 +41,18 @@ export interface Whiteboard {
   creatorName: string;
 }
 
-export default function WhiteboardsList({
-  whiteboards,
-}: {
+interface WhiteboardsListProps {
+  wsId: string;
   whiteboards: Whiteboard[];
-}) {
+}
+
+export default function WhiteboardsList({
+  wsId,
+  whiteboards,
+}: WhiteboardsListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('lastModified');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const t = useTranslations('common');
 
   const getSortLabel = (option: SortOption) => {
     switch (option) {
@@ -104,26 +105,12 @@ export default function WhiteboardsList({
     return date.toLocaleDateString();
   };
 
+  const handleClick = (whiteboard: Whiteboard) => {
+    window.open(`/${wsId}/whiteboards/${whiteboard.id}`, '_blank');
+  };
+
   return (
-    <div className="container mx-auto space-y-6 p-6">
-      {/* Header */}
-      <div className="flex justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {t('whiteboards')}
-          </h1>
-          <p className="text-muted-foreground">
-            {t('whiteboards_description')}
-          </p>
-        </div>
-        <Button className="gap-2">
-          <IconPlus className="h-4 w-4" />
-          {t('new_whiteboard')}
-        </Button>
-      </div>
-
-      <Separator />
-
+    <>
       {/* Controls */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -219,6 +206,7 @@ export default function WhiteboardsList({
             <Card
               key={whiteboard.id}
               className="group cursor-pointer transition-shadow hover:shadow-md"
+              onClick={() => handleClick(whiteboard)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -298,6 +286,7 @@ export default function WhiteboardsList({
             <Card
               key={whiteboard.id}
               className="group cursor-pointer transition-shadow hover:shadow-sm"
+              onClick={() => handleClick(whiteboard)}
             >
               <CardContent className="flex items-center gap-4 p-4">
                 {/* Thumbnail */}
@@ -372,6 +361,6 @@ export default function WhiteboardsList({
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }

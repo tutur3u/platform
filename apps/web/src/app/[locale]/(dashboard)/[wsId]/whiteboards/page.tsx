@@ -1,5 +1,9 @@
 import WhiteboardsList, { type Whiteboard } from './client';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { Button } from '@tuturuuu/ui/button';
+import { IconPlus } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 interface WhiteboardsPageProps {
@@ -39,10 +43,34 @@ export default async function WhiteboardsPage({
   params,
 }: WhiteboardsPageProps) {
   const { wsId } = await params;
+  const t = await getTranslations('common');
 
   try {
     const whiteboards = await getWhiteboards(wsId);
-    return <WhiteboardsList whiteboards={whiteboards} />;
+
+    return (
+      <div className="container mx-auto space-y-6 p-6">
+        {/* Header */}
+        <div className="flex justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">
+              {t('whiteboards')}
+            </h1>
+            <p className="text-muted-foreground">
+              {t('whiteboards_description')}
+            </p>
+          </div>
+          <Button className="gap-2">
+            <IconPlus className="h-4 w-4" />
+            {t('new_whiteboard')}
+          </Button>
+        </div>
+
+        <Separator />
+
+        <WhiteboardsList wsId={wsId} whiteboards={whiteboards} />
+      </div>
+    );
   } catch (error) {
     console.error('Failed to load whiteboards:', error);
     return notFound();
