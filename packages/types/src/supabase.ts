@@ -5064,42 +5064,48 @@ export type Database = {
       };
       workspace_calendar_sync_log: {
         Row: {
+          access_token: string;
           created_at: string;
+          deleted_events: Json | null;
           error_message: string | null;
-          event_snapshot_after: Json | null;
           event_snapshot_before: Json;
-          google_account_id: string;
           id: string;
+          refresh_token: string;
           status: string;
           sync_ended_at: string | null;
           sync_started_at: string;
           triggered_by: string;
+          upserted_events: Json | null;
           ws_id: string;
         };
         Insert: {
+          access_token: string;
           created_at?: string;
+          deleted_events?: Json | null;
           error_message?: string | null;
-          event_snapshot_after?: Json | null;
           event_snapshot_before: Json;
-          google_account_id: string;
           id?: string;
+          refresh_token: string;
           status: string;
           sync_ended_at?: string | null;
           sync_started_at: string;
           triggered_by: string;
+          upserted_events?: Json | null;
           ws_id: string;
         };
         Update: {
+          access_token?: string;
           created_at?: string;
+          deleted_events?: Json | null;
           error_message?: string | null;
-          event_snapshot_after?: Json | null;
           event_snapshot_before?: Json;
-          google_account_id?: string;
           id?: string;
+          refresh_token?: string;
           status?: string;
           sync_ended_at?: string | null;
           sync_started_at?: string;
           triggered_by?: string;
+          upserted_events?: Json | null;
           ws_id?: string;
         };
         Relationships: [
