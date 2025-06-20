@@ -1,16 +1,13 @@
 import { Button } from '@tuturuuu/ui/button';
 import { PlusIcon } from '@tuturuuu/ui/icons';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface AddEventButtonProps {
   wsId: string;
   onOpenDialog?: () => void;
 }
 
-export default function AddEventButton({
-  wsId,
-  onOpenDialog,
-}: AddEventButtonProps) {
+export default function AddEventButton({ onOpenDialog }: AddEventButtonProps) {
   return (
     <Button
       onClick={onOpenDialog}
