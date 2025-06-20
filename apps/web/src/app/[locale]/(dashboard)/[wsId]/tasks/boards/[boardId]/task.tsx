@@ -1,6 +1,7 @@
 import { AssigneeSelect } from './_components/assignee-select';
 import { TaskActions } from './task-actions';
 import { useDeleteTask, useUpdateTask } from '@/lib/task-helper';
+import { moveTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -29,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   AlertCircle,
   Calendar,
@@ -58,8 +60,6 @@ import {
   isYesterday,
 } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
-import { moveTask } from '@/lib/task-helper';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 
 export interface Task extends TaskType {}
 
@@ -253,7 +253,7 @@ export function TaskCard({
     if (!targetCompletionList || !onUpdate) return;
 
     setIsLoading(true);
-    
+
     // Use the standard moveTask function to ensure consistent logic
     const supabase = createClient();
     try {
