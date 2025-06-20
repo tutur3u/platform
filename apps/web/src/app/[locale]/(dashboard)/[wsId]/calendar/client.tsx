@@ -1,5 +1,7 @@
 'use client';
 
+import AddEventButton from './components/add-event-button';
+import AddEventModal from './components/add-event-dialog';
 import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
 import TestEventGeneratorButton from './components/test-event-generator-button';
 import { DEV_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
@@ -9,6 +11,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Sparkles } from '@tuturuuu/ui/icons';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 export default function CalendarClientPage({
   experimentalGoogleToken,
@@ -19,11 +22,16 @@ export default function CalendarClientPage({
 }) {
   const t = useTranslations('calendar');
   const locale = useLocale();
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
+
+  const openAddEventDialog = () => setIsAddEventModalOpen(true);
+  const closeAddEventDialog = () => setIsAddEventModalOpen(false);
 
   const extras =
     workspace.id === ROOT_WORKSPACE_ID ? (
       <div className="grid w-full items-center gap-2 md:flex md:w-auto">
         {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />}
+        <AddEventButton wsId={workspace.id} onOpenDialog={openAddEventDialog} />
         <AutoScheduleComprehensiveDialog wsId={workspace.id}>
           <Button
             variant="default"
@@ -38,18 +46,24 @@ export default function CalendarClientPage({
     ) : undefined;
 
   return (
-    <SmartCalendar
-      t={t}
-      locale={locale}
-      workspace={workspace}
-      useQuery={useQuery}
-      useQueryClient={useQueryClient}
-      experimentalGoogleToken={
-        experimentalGoogleToken?.ws_id === workspace.id
-          ? experimentalGoogleToken
-          : null
-      }
-      extras={extras}
-    />
+    <>
+      <SmartCalendar
+        t={t}
+        locale={locale}
+        workspace={workspace}
+        useQuery={useQuery}
+        useQueryClient={useQueryClient}
+        experimentalGoogleToken={
+          experimentalGoogleToken?.ws_id === workspace.id
+            ? experimentalGoogleToken
+            : null
+        }
+        extras={extras}
+      />
+      <AddEventModal
+        isOpen={isAddEventModalOpen}
+        onClose={closeAddEventDialog}
+      />
+    </>
   );
 }
