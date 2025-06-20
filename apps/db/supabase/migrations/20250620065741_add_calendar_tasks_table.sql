@@ -22,17 +22,17 @@ create table "public"."workspace_calendar_tasks" (
 
 alter table "public"."workspace_calendar_tasks" enable row level security;
 
-CREATE UNIQUE INDEX workspace_calendar_taskss_pkey ON public.workspace_calendar_tasks USING btree (id);
+CREATE UNIQUE INDEX workspace_calendar_tasks_pkey ON public.workspace_calendar_tasks USING btree (id);
 
-alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_taskss_pkey" PRIMARY KEY using index "workspace_calendar_taskss_pkey";
+alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_tasks_pkey" PRIMARY KEY using index "workspace_calendar_tasks_pkey";
 
-alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_taskss_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE not valid;
+alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_tasks_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE not valid;
 
-alter table "public"."workspace_calendar_tasks" validate constraint "workspace_calendar_taskss_creator_id_fkey";
+alter table "public"."workspace_calendar_tasks" validate constraint "workspace_calendar_tasks_creator_id_fkey";
 
-alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_taskss_ws_id_fkey" FOREIGN KEY (ws_id) REFERENCES workspaces(id) ON DELETE CASCADE not valid;
+alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_tasks_ws_id_fkey" FOREIGN KEY (ws_id) REFERENCES workspaces(id) ON DELETE CASCADE not valid;
 
-alter table "public"."workspace_calendar_tasks" validate constraint "workspace_calendar_taskss_ws_id_fkey";
+alter table "public"."workspace_calendar_tasks" validate constraint "workspace_calendar_tasks_ws_id_fkey";
 
 grant delete on table "public"."workspace_calendar_tasks" to "anon";
 
@@ -76,4 +76,23 @@ grant truncate on table "public"."workspace_calendar_tasks" to "service_role";
 
 grant update on table "public"."workspace_calendar_tasks" to "service_role";
 
+alter table "public"."workspace_calendar_tasks" add column "description" text;
 
+alter table "public"."workspace_calendar_tasks" add column "total_duration" text not null;
+
+alter table "public"."workspace_calendar_tasks" alter column "max_split_duration_minutes" set data type real using "max_split_duration_minutes"::real;
+
+alter table "public"."workspace_calendar_tasks" alter column "min_split_duration_minutes" set data type real using "min_split_duration_minutes"::real;
+
+alter table "public"."workspace_calendar_tasks" enable row level security;
+
+create policy "allow only user in the workspace to insert"
+on "public"."workspace_calendar_tasks"
+as permissive
+for insert
+to authenticated
+with check (true);
+
+alter table "public"."workspace_calendar_tasks" alter column "total_duration" set data type real using "total_duration"::real;
+
+alter table "public"."workspace_calendar_tasks" alter column "updated_at" set default now();
