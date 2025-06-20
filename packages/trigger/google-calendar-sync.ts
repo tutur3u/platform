@@ -59,7 +59,85 @@ export const syncGoogleCalendarEvents = async () => {
       tokens.map((token) => token.ws_id)
     );
 
+    const endSync = async (
+      ws_id: string,
+      googleAccountEmail: string | null,
+      syncStartedAt: string,
+      syncEndedAt: string,
+      status: string,
+      errorMessage: string,
+      eventSnapshotBefore: WorkspaceCalendarEvent[],
+      upsertedEvents: WorkspaceCalendarEvent[],
+      deletedEvents: WorkspaceCalendarEvent[]
+    ) => {
+      await supabase.from('workspace_calendar_sync_log').insert({
+        ws_id,
+        google_account_email: googleAccountEmail,
+        sync_started_at: syncStartedAt,
+        sync_ended_at: syncEndedAt,
+        status: status,
+        error_message: errorMessage,
+        event_snapshot_before: eventSnapshotBefore,
+        upserted_events: upsertedEvents,
+        deleted_events: deletedEvents,
+        triggered_by: 'trigger_dot_dev',
+      });
+    };
+
     for (const token of tokens || []) {
+      const syncStartedAt = dayjs().toISOString();
+      let googleAccountEmail: string | null = null;
+
+      const auth = getGoogleAuthClient(token);
+
+      try {
+        // get google account email from google api
+        const googleAccount = await auth.getTokenInfo(
+          token.access_token as string
+        );
+        googleAccountEmail = googleAccount.email || null;
+        console.log('googleAccountEmail', googleAccountEmail);
+      } catch (error) {
+        console.error('Error fetching google account email:', error);
+        await endSync(
+          token.ws_id,
+          null,
+          syncStartedAt,
+          dayjs().toISOString(),
+          'failed',
+          'Error fetching google account email: ' + error,
+          [],
+          [],
+          []
+        );
+        continue;
+      }
+
+      // get events before sync
+      const { data: eventsBeforeSync, error: errorEventsBeforeSync } =
+        await supabase
+          .from('workspace_calendar_events')
+          .select('*')
+          .eq('ws_id', token.ws_id)
+          .not('google_event_id', 'is', null);
+      if (errorEventsBeforeSync) {
+        console.error(
+          'Error fetching events before sync:',
+          errorEventsBeforeSync
+        );
+        await endSync(
+          token.ws_id,
+          googleAccountEmail,
+          syncStartedAt,
+          dayjs().toISOString(),
+          'failed',
+          'Error fetching events before sync: ' + errorEventsBeforeSync.message,
+          eventsBeforeSync || [],
+          [],
+          []
+        );
+        continue;
+      }
       const { ws_id, access_token, refresh_token } = token;
       if (!access_token) {
         console.error('No Google access token found for wsIds:', {
@@ -67,10 +145,21 @@ export const syncGoogleCalendarEvents = async () => {
           hasAccessToken: !!access_token,
           hasRefreshToken: !!refresh_token,
         });
+        await endSync(
+          token.ws_id,
+          googleAccountEmail,
+          syncStartedAt,
+          dayjs().toISOString(),
+          'failed',
+          'No Google access token found for wsIds',
+          eventsBeforeSync || [],
+          [],
+          []
+        );
+        continue;
       }
 
       try {
-        const auth = getGoogleAuthClient(token);
         const calendar = google.calendar({ version: 'v3', auth });
 
         const startOfCurrentWeek = dayjs().startOf('week');
@@ -115,6 +204,17 @@ export const syncGoogleCalendarEvents = async () => {
           });
         if (error) {
           console.error('Error upserting events:', error);
+          await endSync(
+            ws_id,
+            googleAccountEmail,
+            syncStartedAt,
+            dayjs().toISOString(),
+            'failed',
+            'Error upserting events: ' + error.message,
+            eventsBeforeSync || [],
+            formattedEvents as WorkspaceCalendarEvent[],
+            []
+          );
           continue;
         }
         console.log(
@@ -134,6 +234,17 @@ export const syncGoogleCalendarEvents = async () => {
 
         if (dbError) {
           console.error('Error fetching events after upsert:', dbError);
+          await endSync(
+            ws_id,
+            googleAccountEmail,
+            syncStartedAt,
+            dayjs().toISOString(),
+            'failed',
+            'Error fetching events after upsert: ' + dbError.message,
+            eventsBeforeSync || [],
+            formattedEvents as WorkspaceCalendarEvent[],
+            []
+          );
           continue;
         }
 
@@ -158,6 +269,17 @@ export const syncGoogleCalendarEvents = async () => {
 
         if (deleteError) {
           console.error('Error deleting events:', deleteError);
+          await endSync(
+            ws_id,
+            googleAccountEmail,
+            syncStartedAt,
+            dayjs().toISOString(),
+            'failed',
+            'Error deleting events: ' + deleteError.message,
+            eventsBeforeSync || [],
+            formattedEvents as WorkspaceCalendarEvent[],
+            eventsToDelete as WorkspaceCalendarEvent[]
+          );
           continue;
         }
 
@@ -167,10 +289,33 @@ export const syncGoogleCalendarEvents = async () => {
           eventsToDelete.map((e) => e.title)
         );
 
+        await endSync(
+          ws_id,
+          googleAccountEmail,
+          syncStartedAt,
+          dayjs().toISOString(),
+          'success',
+          '',
+          eventsBeforeSync || [],
+          formattedEvents as WorkspaceCalendarEvent[],
+          eventsToDelete as WorkspaceCalendarEvent[]
+        );
+
         // Update lastUpsert timestamp after successful upsert
         await updateLastUpsert(ws_id, supabase);
       } catch (error) {
         console.error('Error fetching Google Calendar events:', error);
+        await endSync(
+          ws_id,
+          googleAccountEmail,
+          syncStartedAt,
+          dayjs().toISOString(),
+          'failed',
+          'Error fetching Google Calendar events: ' + error,
+          eventsBeforeSync || [],
+          [],
+          []
+        );
       }
     }
   } catch (error) {
