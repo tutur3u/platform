@@ -288,7 +288,10 @@
     "whats_the_title": "Tiêu đề là gì?",
     "write_something": "Hãy viết gì đó...",
     "error_saving_content": "Lỗi khi lưu nội dung của bạn",
-    "not_completed": "Chưa hoàn thành"
+    "not_completed": "Chưa hoàn thành",
+    "whiteboards": "Bảng trắng",
+    "whiteboards_description": "Hợp tác và minh họa ý tưởng với đội của bạn",
+    "new_whiteboard": "Bảng trắng mới"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
