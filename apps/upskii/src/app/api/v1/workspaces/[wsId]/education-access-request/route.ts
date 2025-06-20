@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { FEATURE_FLAGS } from '@tuturuuu/utils/feature-flags/data';
+import {
+  getRequestableFeature,
+  isRequestableFeature,
+} from '@tuturuuu/utils/feature-flags/requestable-features';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface Params {
@@ -7,27 +10,6 @@ interface Params {
     wsId: string;
   }>;
 }
-
-const FEATURE_MAP = {
-  ai: {
-    flag: FEATURE_FLAGS.ENABLE_AI,
-    name: 'AI',
-  },
-  education: {
-    flag: FEATURE_FLAGS.ENABLE_EDUCATION,
-    name: 'Education',
-  },
-  challenges: {
-    flag: FEATURE_FLAGS.ENABLE_CHALLENGES,
-    name: 'Challenges',
-  },
-  quizzes: {
-    flag: FEATURE_FLAGS.ENABLE_QUIZZES,
-    name: 'Quizzes',
-  },
-} as const;
-
-type FeatureType = keyof typeof FEATURE_MAP;
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
@@ -57,14 +39,14 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     // Validate feature type
-    if (!FEATURE_MAP[feature as FeatureType]) {
+    if (!isRequestableFeature(feature)) {
       return NextResponse.json(
         { error: 'Invalid feature type' },
         { status: 400 }
       );
     }
 
-    const featureConfig = FEATURE_MAP[feature as FeatureType];
+    const featureConfig = getRequestableFeature(feature);
 
     // Verify user is workspace owner
     const { data: memberCheck, error: memberError } = await supabase
@@ -112,7 +94,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       .from('workspace_education_access_requests')
       .select('id, status')
       .eq('ws_id', wsId)
-      .eq('feature', featureConfig.flag)
+      .eq('feature', featureConfig.flag as any)
       .eq('status', 'pending')
       .single();
 
@@ -133,7 +115,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         workspace_name: workspaceName.trim(),
         creator_id: user.id,
         message: message.trim(),
-        feature: featureConfig.flag,
+        feature: featureConfig.flag as any,
         status: 'pending',
       })
       .select('*')

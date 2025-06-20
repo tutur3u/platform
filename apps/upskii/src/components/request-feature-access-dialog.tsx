@@ -10,17 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import {
-  BookText,
-  CheckCircle,
-  Clock,
-  HelpCircle,
-  Loader2,
-  Send,
-  Sparkles,
-  Trophy,
-  XCircle,
-} from '@tuturuuu/ui/icons';
+import { CheckCircle, Clock, Loader2, Send, XCircle } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -30,6 +20,14 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import {
+  FEATURE_FLAG_TO_REQUESTABLE_KEY,
+  REQUESTABLE_FEATURES,
+  type RequestableFeatureKey,
+  getRequestableFeature,
+  getRequestableFeatureKeys,
+} from '@tuturuuu/utils/feature-flags/requestable-features';
+import type { FeatureFlag } from '@tuturuuu/utils/feature-flags/types';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -38,12 +36,7 @@ interface RequestFeatureAccessDialogProps {
   workspaceName: string | null;
   wsId: string;
   children: React.ReactNode;
-  enabledFeatures?: {
-    ENABLE_AI: boolean;
-    ENABLE_EDUCATION: boolean;
-    ENABLE_QUIZZES: boolean;
-    ENABLE_CHALLENGES: boolean;
-  };
+  enabledFeatures?: Record<FeatureFlag, boolean>;
 }
 
 interface FeatureAccessRequest {
@@ -55,62 +48,11 @@ interface FeatureAccessRequest {
   created_at: string;
 }
 
-const featureConfig = {
-  education: {
-    name: 'Education',
-    icon: BookText,
-    details: [
-      'Course creation and management with multimedia content',
-      'Interactive quiz and assessment tools with detailed analytics',
-      'Student progress tracking and performance insights',
-      'Automated certificate generation upon course completion',
-      'AI-powered teaching studio and content assistance',
-    ],
-  },
-  ai: {
-    name: 'AI',
-    icon: Sparkles,
-    details: [
-      'Advanced AI models for text and image generation',
-      'AI-powered data analysis and insights',
-      'Automated content summarization and tagging',
-      'Personalized recommendations powered by AI',
-    ],
-  },
-  challenges: {
-    name: 'Challenges',
-    icon: Trophy,
-    details: [
-      'Create and manage coding or skill-based challenges',
-      'Leaderboards and points system',
-      'Team-based and individual competitions',
-      'Automated judging and scoring',
-    ],
-  },
-  quizzes: {
-    name: 'Quizzes',
-    icon: HelpCircle,
-    details: [
-      'Multiple question types (multiple choice, open-ended, etc.)',
-      'Timed quizzes and proctoring features',
-      'Detailed analytics and performance reports',
-      'Question banks and randomization',
-    ],
-  },
-};
-
-type FeatureKey = keyof typeof featureConfig;
-
 export function RequestFeatureAccessDialog({
   workspaceName,
   wsId,
   children,
-  enabledFeatures = {
-    ENABLE_AI: false,
-    ENABLE_EDUCATION: false,
-    ENABLE_QUIZZES: false,
-    ENABLE_CHALLENGES: false,
-  },
+  enabledFeatures,
 }: RequestFeatureAccessDialogProps) {
   const t = useTranslations('ws-settings.feature-request');
 
@@ -121,39 +63,38 @@ export function RequestFeatureAccessDialog({
   const [existingRequests, setExistingRequests] = useState<
     FeatureAccessRequest[]
   >([]);
-  const [selectedFeature, setSelectedFeature] = useState<FeatureKey | null>(
-    null
-  );
+  const [selectedFeature, setSelectedFeature] =
+    useState<RequestableFeatureKey | null>(null);
 
   const availableFeatures = useMemo(() => {
     const requestedOrApprovedFeatures = new Set(
       existingRequests
         .filter((r) => r.status === 'pending' || r.status === 'approved')
-        .map((r) => r.feature)
+        .map((r) => {
+          // Convert feature flag back to requestable key
+          const requestableKey = Object.entries(
+            FEATURE_FLAG_TO_REQUESTABLE_KEY
+          ).find(
+            ([, key]) => key && REQUESTABLE_FEATURES[key]?.flag === r.feature
+          )?.[1];
+          return requestableKey;
+        })
+        .filter(Boolean)
     );
 
     // Also exclude features that are already enabled
     const enabledFeaturesSet = new Set();
-    if (enabledFeatures?.ENABLE_AI) enabledFeaturesSet.add('ai');
-    if (enabledFeatures?.ENABLE_EDUCATION) enabledFeaturesSet.add('education');
-    if (enabledFeatures?.ENABLE_QUIZZES) enabledFeaturesSet.add('quizzes');
-    if (enabledFeatures?.ENABLE_CHALLENGES)
-      enabledFeaturesSet.add('challenges');
+    if (enabledFeatures) {
+      Object.entries(FEATURE_FLAG_TO_REQUESTABLE_KEY).forEach(([flag, key]) => {
+        if (key && enabledFeatures[flag as FeatureFlag]) {
+          enabledFeaturesSet.add(key);
+        }
+      });
+    }
 
-    // Debug logging
-    console.log('Debug - enabledFeatures:', enabledFeatures);
-    console.log('Debug - enabledFeaturesSet:', enabledFeaturesSet);
-    console.log(
-      'Debug - requestedOrApprovedFeatures:',
-      requestedOrApprovedFeatures
-    );
-    console.log('Debug - all feature keys:', Object.keys(featureConfig));
-
-    const available = Object.keys(featureConfig).filter(
+    const available = getRequestableFeatureKeys().filter(
       (f) => !requestedOrApprovedFeatures.has(f) && !enabledFeaturesSet.has(f)
-    ) as FeatureKey[];
-
-    console.log('Debug - availableFeatures:', available);
+    );
 
     return available;
   }, [existingRequests, enabledFeatures]);
@@ -268,7 +209,7 @@ export function RequestFeatureAccessDialog({
   };
 
   const selectedFeatureConfig = selectedFeature
-    ? featureConfig[selectedFeature]
+    ? getRequestableFeature(selectedFeature)
     : null;
   const SelectedFeatureIcon = selectedFeatureConfig?.icon;
 
@@ -299,7 +240,9 @@ export function RequestFeatureAccessDialog({
               ) : (
                 <Select
                   value={selectedFeature ?? ''}
-                  onValueChange={(v) => setSelectedFeature(v as FeatureKey)}
+                  onValueChange={(v) =>
+                    setSelectedFeature(v as RequestableFeatureKey)
+                  }
                   disabled={availableFeatures.length === 0}
                 >
                   <SelectTrigger className="w-full">
@@ -307,12 +250,13 @@ export function RequestFeatureAccessDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {availableFeatures.map((key) => {
-                      const Icon = featureConfig[key].icon;
+                      const config = getRequestableFeature(key);
+                      const Icon = config.icon;
                       return (
                         <SelectItem key={key} value={key}>
                           <div className="flex items-center gap-2">
                             <Icon className="h-4 w-4" />
-                            <span>{featureConfig[key].name}</span>
+                            <span>{config.name}</span>
                           </div>
                         </SelectItem>
                       );
@@ -346,21 +290,6 @@ export function RequestFeatureAccessDialog({
                   {t('reason-description')}
                 </p>
               </div>
-              <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4 text-sm">
-                <h4 className="mb-2 font-semibold text-dynamic-blue">
-                  {t('feature-details-title', {
-                    feature: selectedFeatureConfig.name,
-                  })}
-                </h4>
-                <ul className="space-y-1 text-muted-foreground">
-                  {selectedFeatureConfig.details.map((detail, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-dynamic-blue/60"></span>
-                      <span>{detail}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
             </>
           )}
 
@@ -371,7 +300,17 @@ export function RequestFeatureAccessDialog({
               </h4>
               <div className="space-y-2 rounded-lg border p-3">
                 {existingRequests.map((req) => {
-                  const Icon = featureConfig[req.feature as FeatureKey]?.icon;
+                  // Convert feature flag back to requestable key to get config
+                  const requestableKey = Object.entries(
+                    FEATURE_FLAG_TO_REQUESTABLE_KEY
+                  ).find(
+                    ([, key]) =>
+                      key && REQUESTABLE_FEATURES[key]?.flag === req.feature
+                  )?.[1];
+                  const config = requestableKey
+                    ? getRequestableFeature(requestableKey)
+                    : null;
+                  const Icon = config?.icon;
                   return (
                     <div
                       key={req.id}
@@ -380,7 +319,7 @@ export function RequestFeatureAccessDialog({
                       <div className="flex items-center gap-2">
                         {Icon && <Icon className="h-4 w-4" />}
                         <span className="font-medium">
-                          {featureConfig[req.feature as FeatureKey]?.name}
+                          {config?.name || req.feature}
                         </span>
                       </div>
                       <div
