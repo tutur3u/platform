@@ -44,7 +44,7 @@ export default function CreateWhiteboardDialog({
       }
 
       // Create the whiteboard
-      const { error } = await supabase.from('whiteboards').insert({
+      const { error } = await supabase.from('workspace_whiteboards').insert({
         title: values.title,
         description: values.description || null,
         ws_id: wsId,

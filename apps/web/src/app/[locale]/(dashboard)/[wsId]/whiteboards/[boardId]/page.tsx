@@ -13,7 +13,7 @@ export default async function TLDrawPage({ params }: TLDrawPageProps) {
   const supabase = await createClient();
 
   const { data: whiteboard } = await supabase
-    .from('whiteboards')
+    .from('workspace_whiteboards')
     .select('*')
     .eq('id', boardId)
     .eq('ws_id', wsId)

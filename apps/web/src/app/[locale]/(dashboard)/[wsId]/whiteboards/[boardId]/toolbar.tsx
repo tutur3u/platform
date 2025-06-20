@@ -3,7 +3,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { ArrowLeftIcon } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEditor } from 'tldraw';
 
 export default function Toolbar({
@@ -17,6 +17,37 @@ export default function Toolbar({
 
   const editor = useEditor();
   const { toast } = useToast();
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const lastSavedSnapshotRef = useRef<string | null>(null);
+
+  // Initialize the last saved snapshot on mount
+  useEffect(() => {
+    if (editor && lastSavedSnapshotRef.current === null) {
+      const currentSnapshot = JSON.stringify(editor.getSnapshot());
+      lastSavedSnapshotRef.current = currentSnapshot;
+    }
+  }, [editor]);
+
+  // Listen for changes in the editor
+  useEffect(() => {
+    if (!editor) return;
+
+    const checkForChanges = () => {
+      const currentSnapshot = JSON.stringify(editor.getSnapshot());
+      const hasChanges = currentSnapshot !== lastSavedSnapshotRef.current;
+      setHasUnsavedChanges(hasChanges);
+    };
+
+    // Check for changes on various editor events
+    const unsubscribeHistory = editor.store.listen(() => {
+      checkForChanges();
+    });
+
+    return () => {
+      unsubscribeHistory();
+    };
+  }, [editor]);
 
   const generateThumbnail = async () => {
     const shapeIds = editor.getCurrentPageShapeIds();
@@ -59,19 +90,22 @@ export default function Toolbar({
       });
 
       const { error: thumbnailError } = await supabase.storage
-        .from('whiteboards-thumbnails')
-        .upload(thumbnailFileName, thumbnailFile);
+        .from('workspaces')
+        .upload(
+          `${wsId}/whiteboards/${boardId}/${thumbnailFileName}`,
+          thumbnailFile
+        );
 
       if (thumbnailError) throw thumbnailError;
 
       const { data: thumbnailUrl } = supabase.storage
-        .from('whiteboards-thumbnails')
-        .getPublicUrl(thumbnailFileName);
+        .from('workspaces')
+        .getPublicUrl(`${wsId}/whiteboards/${boardId}/${thumbnailFileName}`);
 
       const snapshot = editor.getSnapshot();
 
       const { error: updateError } = await supabase
-        .from('whiteboards')
+        .from('workspace_whiteboards')
         .update({
           snapshot: JSON.stringify(snapshot),
           thumbnail_url: thumbnailUrl.publicUrl,
@@ -80,6 +114,10 @@ export default function Toolbar({
         .eq('id', boardId);
 
       if (updateError) throw updateError;
+
+      // Update the last saved snapshot reference
+      lastSavedSnapshotRef.current = JSON.stringify(snapshot);
+      setHasUnsavedChanges(false);
 
       toast({
         title: 'Saved successfully!',
@@ -94,7 +132,7 @@ export default function Toolbar({
         variant: 'destructive',
       });
     }
-  }, [editor, boardId, supabase, toast]);
+  }, [editor, boardId, supabase, toast, wsId]);
 
   return (
     <div className="pointer-events-auto flex gap-4 p-4">
@@ -104,7 +142,7 @@ export default function Toolbar({
           Back
         </Button>
       </Link>
-      <Button variant="default" onClick={save}>
+      <Button variant="default" onClick={save} disabled={!hasUnsavedChanges}>
         Save Snapshot
       </Button>
     </div>

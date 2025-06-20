@@ -46,7 +46,7 @@ export default function EditWhiteboardDialog({
 
       // Update the whiteboard
       const { error } = await supabase
-        .from('whiteboards')
+        .from('workspace_whiteboards')
         .update({
           title: values.title,
           description: values.description || null,

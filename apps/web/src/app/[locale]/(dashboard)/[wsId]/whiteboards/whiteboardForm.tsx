@@ -17,8 +17,8 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import * as z from 'zod';
 
 const formSchema = z.object({
-  title: z.string().min(3, {
-    message: 'Title must be at least 3 characters.',
+  title: z.string().min(1, {
+    message: 'Title is required',
   }),
   description: z.string().optional(),
 });
@@ -28,6 +28,7 @@ export type WhiteboardFormValues = z.infer<typeof formSchema>;
 interface WhiteboardFormProps {
   defaultValues?: WhiteboardFormValues;
   whiteboardId?: string;
+  // eslint-disable-next-line no-unused-vars
   onSubmit: (values: WhiteboardFormValues) => void;
   isSubmitting: boolean;
 }

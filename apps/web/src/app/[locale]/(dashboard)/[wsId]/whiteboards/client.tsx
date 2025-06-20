@@ -210,7 +210,6 @@ export default function WhiteboardsList({
             <Link
               key={whiteboard.id}
               href={`/${wsId}/whiteboards/${whiteboard.id}`}
-              target="_blank"
               className="block"
             >
               <Card className="group cursor-pointer transition-shadow hover:shadow-md">
@@ -341,7 +340,7 @@ function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
   const handleDelete = async (whiteboard: Whiteboard) => {
     try {
       const { error } = await supabase
-        .from('whiteboards')
+        .from('workspace_whiteboards')
         .delete()
         .eq('id', whiteboard.id);
 

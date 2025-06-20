@@ -15,7 +15,7 @@ async function getWhiteboards(wsId: string): Promise<Whiteboard[]> {
   const supabase = await createClient();
 
   const { data: whiteboards, error } = await supabase
-    .from('whiteboards')
+    .from('workspace_whiteboards')
     .select(
       `*,
       creator:users(display_name)
@@ -73,7 +73,6 @@ export default async function WhiteboardsPage({
         </div>
 
         <Separator />
-
         <WhiteboardsList wsId={wsId} whiteboards={whiteboards} />
       </div>
     );
