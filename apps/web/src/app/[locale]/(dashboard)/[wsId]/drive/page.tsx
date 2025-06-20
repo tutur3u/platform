@@ -1,6 +1,5 @@
 import NewActions from './new-actions';
 import StorageObjectsTable from './table';
-import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { formatBytes } from '@/utils/file-helper';
 import { joinPath } from '@/utils/path-helper';
 import {
@@ -13,6 +12,10 @@ import {
 } from '@tuturuuu/types/primitives/StorageObject';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import {
+  getPermissions,
+  verifyHasSecrets,
+} from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

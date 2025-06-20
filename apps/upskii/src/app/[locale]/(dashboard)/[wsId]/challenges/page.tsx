@@ -18,6 +18,7 @@ export default async function Page({
   }>;
 }) {
   const { wsId } = await params;
+
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
   const t = await getTranslations('nova');

@@ -1,8 +1,8 @@
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {

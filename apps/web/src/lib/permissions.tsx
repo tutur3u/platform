@@ -1,4 +1,4 @@
-import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
+import { PROD_MODE } from '@/constants/common';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { PermissionId } from '@tuturuuu/types/db';
 import {
@@ -31,6 +31,7 @@ import {
   UserCog,
   Users,
 } from '@tuturuuu/ui/icons';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { ReactNode } from 'react';
 
 export type RolePermission = {

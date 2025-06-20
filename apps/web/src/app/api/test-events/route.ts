@@ -1,7 +1,7 @@
 import { DEV_MODE } from '@/constants/common';
-import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';

@@ -5,6 +5,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { SwatchBook } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -19,6 +20,11 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
   const { wsId, moduleId } = await params;
   const t = await getTranslations();
   const flashcards = await getFlashcards(moduleId);
+
+  const { ENABLE_AI } = await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_AI'],
+    redirectTo: null,
+  });
 
   const cards = flashcards.map((fc) => ({
     id: fc.id,
@@ -73,9 +79,11 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
           </>
         )}
 
-        <div className="col-span-full">
-          <AIFlashcards wsId={wsId} moduleId={moduleId} />
-        </div>
+        {ENABLE_AI ? (
+          <div className="col-span-full">
+            <AIFlashcards wsId={wsId} moduleId={moduleId} />
+          </div>
+        ) : undefined}
       </div>
     </div>
   );

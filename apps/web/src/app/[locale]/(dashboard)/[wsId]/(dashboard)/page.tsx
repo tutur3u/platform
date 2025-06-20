@@ -17,11 +17,11 @@ import {
   WarehousesStatistics,
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
-import { getWorkspace, verifySecret } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -77,31 +77,6 @@ export default async function WorkspaceHomePage({
           </>
         }
       />
-
-      {/* {(await verifySecret({
-        forceAdmin: true,
-        wsId,
-        name: 'ENABLE_AI',
-        value: 'true',
-      })) &&
-        containsPermission('ai_lab') && (
-          <>
-            <Separator className="my-4" />
-            <div className="grid grid-cols-1 gap-4">
-              {user?.email?.endsWith('@tuturuuu.com') &&
-                containsPermission('manage_workspace_roles') && (
-                  <AuroraActions />
-                )}
-              <Dashboard data={forecast} />
-              <PricePredictionChart data={forecast} />
-              <CommodityComparison data={forecast} />
-              <AdvancedAnalytics
-                mlMetrics={mlMetrics}
-                statisticalMetrics={statsMetrics}
-              />
-            </div>
-          </>
-        )} */}
 
       {ENABLE_AI_ONLY || (
         <>
@@ -162,22 +137,6 @@ export default async function WorkspaceHomePage({
           </div>
         </>
       )}
-
-      {/* {containsPermission('manage_workspace_roles') &&
-        wsId === ROOT_WORKSPACE_ID && (
-          <Suspense
-            fallback={<LoadingStatisticCard className="col-span-full" />}
-          >
-            <div className="col-span-full mb-32">
-              <Separator className="my-4" />
-              <HourlyTotalChart data={hourlyData} />
-              <Separator className="my-4" />
-              <DailyTotalChart data={dailyData} />
-              <Separator className="my-4" />
-              <MonthlyTotalChart data={monthlyData} />
-            </div>
-          </Suspense>
-        )} */}
     </>
   );
 }
@@ -228,41 +187,3 @@ async function getStatsMetrics() {
 
   return data;
 }
-
-// async function getHourlyData(wsId: string) {
-//   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-//   const sbAdmin = await createAdminClient();
-
-//   const queryBuilder = supabase.rpc('get_hourly_prompt_completion_tokens', {
-//     past_hours: 24,
-//   });
-
-//   const { data, error, count } = await queryBuilder;
-//   if (error) throw error;
-
-//   return { data, count };
-// }
-
-// async function getDailyData(wsId: string) {
-//   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-//   const sbAdmin = await createAdminClient();
-
-//   const queryBuilder = supabase.rpc('get_daily_prompt_completion_tokens');
-
-//   const { data, error, count } = await queryBuilder;
-//   if (error) throw error;
-
-//   return { data, count };
-// }
-
-// async function getMonthlyData(wsId: string) {
-//   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-//   const sbAdmin = await createAdminClient();
-
-//   const queryBuilder = supabase.rpc('get_monthly_prompt_completion_tokens');
-
-//   const { data, error, count } = await queryBuilder;
-//   if (error) throw error;
-
-//   return { data, count };
-// }
