@@ -1,10 +1,10 @@
 import { DEV_MODE } from '@/constants/common';
-import { getPermissions } from '@/lib/workspace-helper';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import juice from 'juice';
 import { NextRequest, NextResponse } from 'next/server';

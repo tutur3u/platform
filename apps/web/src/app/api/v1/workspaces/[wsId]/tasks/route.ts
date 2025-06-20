@@ -96,7 +96,7 @@ export async function GET(
       Number.isFinite(parsedOffset) && parsedOffset >= 0 ? parsedOffset : 0;
     const boardId = url.searchParams.get('boardId');
     const listId = url.searchParams.get('listId');
-    
+
     // Check if this is a request for time tracking (indicated by limit=100 and no specific filters)
     const isTimeTrackingRequest = limit === 100 && !boardId && !listId;
 
@@ -185,12 +185,18 @@ export async function GET(
           ...(task.assignees ?? [])
             .map((a: TaskAssigneeData) => a.user)
             .filter((u): u is ProcessedAssignee => !!u?.id)
-            .reduce((uniqueUsers: Map<string, ProcessedAssignee>, user: ProcessedAssignee) => {
-              if (!uniqueUsers.has(user.id)) {
-                uniqueUsers.set(user.id, user);
-              }
-              return uniqueUsers;
-            }, new Map())
+            .reduce(
+              (
+                uniqueUsers: Map<string, ProcessedAssignee>,
+                user: ProcessedAssignee
+              ) => {
+                if (!uniqueUsers.has(user.id)) {
+                  uniqueUsers.set(user.id, user);
+                }
+                return uniqueUsers;
+              },
+              new Map()
+            )
             .values(),
         ],
         // Add helper field to identify if current user is assigned

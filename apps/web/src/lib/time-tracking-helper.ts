@@ -1,10 +1,10 @@
 'use server';
 
+import { transformAssignees } from '@/lib/task-helper';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { transformAssignees } from '@/lib/task-helper';
 import 'server-only';
 
 export const getTimeTrackingData = async (wsId: string, userId: string) => {
@@ -51,7 +51,8 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
 
   const tasksPromise = sbAdmin
     .from('tasks')
-    .select(`
+    .select(
+      `
       *,
       list:task_lists!inner(
         id,
@@ -71,7 +72,8 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
           user_private_details(email)
         )
       )
-    `)
+    `
+    )
     .eq('list.board.ws_id', wsId)
     .eq('deleted', false)
     .eq('archived', false)
@@ -232,13 +234,12 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     // Transform assignees to match expected format
     assignees: transformAssignees(task.assignees || []).map((user: any) => ({
       ...user,
-      // Extract email from nested user_private_details  
+      // Extract email from nested user_private_details
       email: user?.user_private_details?.[0]?.email || null,
     })),
     // Add current user assignment flag
-    is_assigned_to_current_user: task.assignees?.some(
-      (a: any) => a.user?.id === userId
-    ) || false,
+    is_assigned_to_current_user:
+      task.assignees?.some((a: any) => a.user?.id === userId) || false,
     // Ensure task is available for time tracking
     completed: false, // Since we filtered out archived tasks, none should be completed
   }));

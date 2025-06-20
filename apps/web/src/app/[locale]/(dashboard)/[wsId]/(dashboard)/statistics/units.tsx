@@ -1,6 +1,6 @@
 import StatisticCard from '@/components/cards/StatisticCard';
-import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 export default async function UnitsStatistics({ wsId }: { wsId: string }) {

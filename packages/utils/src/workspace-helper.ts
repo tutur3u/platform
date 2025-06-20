@@ -1,16 +1,18 @@
-import { permissions as rolePermissions } from './permissions';
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { permissions as rolePermissions } from '../../../apps/web/src/lib/permissions';
+import { ROOT_WORKSPACE_ID } from './constants';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { PermissionId } from '@tuturuuu/types/db';
+import {
+  PermissionId,
+  Workspace,
+  type WorkspaceUserRole,
+} from '@tuturuuu/types/db';
 import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 
-export async function getWorkspace(id?: string) {
-  if (!id) return null;
-
+export async function getWorkspace(id: string, requireUserRole = false) {
   const supabase = await createClient();
 
   const {
@@ -19,24 +21,31 @@ export async function getWorkspace(id?: string) {
 
   if (!user) redirect('/login');
 
-  const { data, error } = await supabase
+  const queryBuilder = supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, avatar_url, logo_url, created_at, workspace_members(role)'
     )
-    .eq('id', id)
-    .eq('workspace_members.user_id', user.id)
-    .single();
+    .eq('id', id);
 
-  if (error || !data?.workspace_members[0]?.role) notFound();
+  if (requireUserRole) queryBuilder.eq('workspace_members.user_id', user.id);
+  const { data, error } = await queryBuilder.single();
+
+  const workspaceJoined = !!data?.workspace_members[0]?.role;
+
+  if (error) notFound();
   const { workspace_members, ...rest } = data;
 
   const ws = {
     ...rest,
     role: workspace_members[0]?.role,
+    joined: workspaceJoined,
   };
 
-  return ws;
+  return ws as Workspace & {
+    role: WorkspaceUserRole;
+    joined: boolean;
+  };
 }
 
 export async function getWorkspaces(noRedirect?: boolean) {
@@ -81,6 +90,7 @@ export async function getWorkspaceInvites() {
     ? supabase
         .from('workspace_email_invites')
         .select('...workspaces(id, name), created_at')
+        .ilike('email', `%${user.email}%`)
     : null;
 
   // use promise.all to run both queries in parallel
@@ -92,7 +102,7 @@ export async function getWorkspaceInvites() {
   if (invites.error || emailInvites?.error)
     throw invites.error || emailInvites?.error;
 
-  const data = [...invites.data, ...(emailInvites?.data || [])];
+  const data = [...invites.data, ...(emailInvites?.data || [])] as Workspace[];
   return data;
 }
 
@@ -142,21 +152,15 @@ export async function enforceRootWorkspaceAdmin(
 
 export async function getSecrets({
   wsId,
-  requiredSecrets,
   forceAdmin = false,
 }: {
   wsId?: string;
-  requiredSecrets?: string[];
   forceAdmin?: boolean;
 }) {
-  const supabase = forceAdmin
-    ? await createAdminClient()
-    : await createClient();
-
+  const supabase = await (forceAdmin ? createAdminClient() : createClient());
   const queryBuilder = supabase.from('workspace_secrets').select('*');
 
   if (wsId) queryBuilder.eq('ws_id', wsId);
-  if (requiredSecrets) queryBuilder.in('name', requiredSecrets);
 
   const { data, error } = await queryBuilder.order('created_at', {
     ascending: false,
@@ -175,7 +179,7 @@ export async function verifyHasSecrets(
   requiredSecrets: string[],
   redirectPath?: string
 ) {
-  const secrets = await getSecrets({ wsId, requiredSecrets, forceAdmin: true });
+  const secrets = await getSecrets({ wsId, forceAdmin: true });
 
   const allSecretsVerified = requiredSecrets.every((secret) => {
     const { value } = getSecret(secret, secrets) || {};
@@ -193,23 +197,28 @@ export function getSecret(
   return secrets.find(({ name }) => name === secretName);
 }
 
-export function verifySecret(
-  secretName: string,
-  secretValue: string,
-  secrets: WorkspaceSecret[]
-) {
-  const secret = getSecret(secretName, secrets);
-  return secret?.value === secretValue;
+export async function verifySecret({
+  wsId,
+  forceAdmin = false,
+  name,
+  value,
+}: {
+  wsId: string;
+  forceAdmin?: boolean;
+  name: string;
+  value: string;
+}) {
+  const secrets = await getSecrets({ wsId, forceAdmin });
+  const secret = getSecret(name, secrets);
+  return secret?.value === value;
 }
 
 export async function getPermissions({
   wsId,
-  requiredPermissions,
   redirectTo,
   enableNotFound,
 }: {
   wsId: string;
-  requiredPermissions: PermissionId[];
   redirectTo?: string;
   enableNotFound?: boolean;
 }) {
@@ -219,35 +228,20 @@ export async function getPermissions({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) throw new Error('User not found');
-
-  if (
-    !requiredPermissions.every((p) =>
-      rolePermissions({ wsId: ROOT_WORKSPACE_ID, user }).some(
-        (rp) => rp.id === p
-      )
-    )
-  ) {
-    throw new Error(
-      `Invalid permissions provided: ${requiredPermissions
-        .filter(
-          (p) =>
-            !rolePermissions({ wsId: ROOT_WORKSPACE_ID, user }).some(
-              (rp) => rp.id === p
-            )
-        )
-        .join(', ')}`
-    );
+  if (!user) {
+    console.error('User not found');
+    return {
+      permissions: [],
+      containsPermission: () => false,
+      withoutPermission: () => true,
+    };
   }
-
-  if (!user) throw new Error('User not found');
 
   const permissionsQuery = supabase
     .from('workspace_role_permissions')
     .select('permission, role_id')
     .eq('ws_id', wsId)
-    .eq('enabled', true)
-    .in('permission', requiredPermissions);
+    .eq('enabled', true);
 
   const workspaceQuery = supabase
     .from('workspaces')
@@ -259,8 +253,7 @@ export async function getPermissions({
     .from('workspace_default_permissions')
     .select('permission')
     .eq('ws_id', wsId)
-    .eq('enabled', true)
-    .in('permission', requiredPermissions);
+    .eq('enabled', true);
 
   const [permissionsRes, workspaceRes, defaultRes] = await Promise.all([
     permissionsQuery,
@@ -272,7 +265,7 @@ export async function getPermissions({
   const { data: workspaceData, error: workspaceError } = workspaceRes;
   const { data: defaultData, error: defaultError } = defaultRes;
 
-  if (!workspaceData) throw new Error('Workspace not found');
+  if (!workspaceData) notFound();
   if (permissionsError) throw permissionsError;
   if (workspaceError) throw workspaceError;
   if (defaultError) throw defaultError;
@@ -280,32 +273,53 @@ export async function getPermissions({
   const hasPermissions = permissionsData.length > 0 || defaultData.length > 0;
   const isCreator = workspaceData.creator_id === user.id;
 
-  // console.log();
-  // console.log('Is creator', isCreator);
-  // console.log('Required permissions', requiredPermissions);
-  // console.log('Workspace permissions', permissionsData);
-  // console.log('Default permissions', defaultData);
-  // console.log('Has permissions', hasPermissions);
-  // console.log();
+  // if (DEV_MODE) {
+  //   console.log('--------------------');
+  //   console.log('Is creator', isCreator);
+  //   console.log('Workspace permissions', permissionsData);
+  //   console.log('Default permissions', defaultData);
+  //   console.log('Has permissions', hasPermissions);
+  //   console.log('--------------------');
+  // }
 
   if (!isCreator && !hasPermissions) {
     if (redirectTo) {
-      // console.log('Redirecting to', redirectTo);
+      // if (DEV_MODE) console.log('Redirecting to', redirectTo);
       redirect(redirectTo);
     }
 
     if (enableNotFound) {
-      // console.log('Not found');
+      // if (DEV_MODE) console.log('Not found');
       notFound();
     }
   }
 
-  const permissions =
-    workspaceData.creator_id === user.id
-      ? rolePermissions({ wsId, user }).map(({ id }) => id)
-      : [...permissionsData, ...defaultData]
-          .map(({ permission }) => permission)
-          .filter((value, index, self) => self.indexOf(value) === index);
+  const permissions = isCreator
+    ? rolePermissions({ wsId, user }).map(({ id }) => id)
+    : [...permissionsData, ...defaultData]
+        .map(({ permission }) => permission)
+        .filter((value, index, self) => self.indexOf(value) === index);
 
-  return { permissions };
+  const containsPermission = (permission: PermissionId) =>
+    permissions.includes(permission);
+
+  const withoutPermission = (permission: PermissionId) =>
+    !containsPermission(permission);
+
+  return { permissions, containsPermission, withoutPermission };
+}
+
+export async function getWorkspaceUser(id: string, userId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_user_linked_users')
+    .select('*')
+    .eq('ws_id', id)
+    .eq('platform_user_id', userId)
+    .single();
+
+  if (error) notFound();
+
+  return data;
 }

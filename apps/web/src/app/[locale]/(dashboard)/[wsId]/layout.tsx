@@ -4,16 +4,10 @@ import InvitationCard from './invitation-card';
 import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
 import {
-  ROOT_WORKSPACE_ID,
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
 import { SidebarProvider } from '@/context/sidebar-context';
-import {
-  getPermissions,
-  getWorkspace,
-  verifySecret,
-} from '@/lib/workspace-helper';
 import {
   Archive,
   Banknote,
@@ -47,7 +41,13 @@ import {
   Sparkles,
   Users,
 } from '@tuturuuu/ui/icons';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import {
+  getPermissions,
+  getWorkspace,
+  verifySecret,
+} from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';

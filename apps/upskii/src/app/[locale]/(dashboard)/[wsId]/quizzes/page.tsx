@@ -5,6 +5,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceQuiz } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -28,6 +29,11 @@ export default async function WorkspaceQuizzesPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId } = await params;
+
+  await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_QUIZZES'],
+    redirectTo: `/${wsId}/home`,
+  });
 
   const { data, count } = await getData(wsId, await searchParams);
 

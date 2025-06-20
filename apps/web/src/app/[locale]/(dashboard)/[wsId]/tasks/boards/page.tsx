@@ -5,6 +5,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { EnhancedBoard } from './types';

@@ -1,4 +1,7 @@
-import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
+import {
+  getPermissions,
+  verifyHasSecrets,
+} from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 export async function FinanceCategoryStatistics({ wsId }: { wsId: string }) {

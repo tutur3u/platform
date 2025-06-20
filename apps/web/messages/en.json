@@ -290,7 +290,10 @@
     "whats_the_title": "What's the title?",
     "write_something": "Write something",
     "error_saving_content": "There was an error saving your content",
-    "not_completed": "Not completed"
+    "not_completed": "Not completed",
+    "whiteboards": "Whiteboards",
+    "whiteboards_description": "Collaborate and visualize ideas with your team",
+    "new_whiteboard": "New whiteboard"
   },
   "date_helper": {
     "time-unit": "Time unit",

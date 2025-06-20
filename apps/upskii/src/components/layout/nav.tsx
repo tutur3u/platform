@@ -1,11 +1,7 @@
 'use client';
 
 import { NavLink } from '@/components/navigation';
-import {
-  ENABLE_KEYBOARD_SHORTCUTS,
-  PROD_MODE,
-  ROOT_WORKSPACE_ID,
-} from '@/constants/common';
+import { ENABLE_KEYBOARD_SHORTCUTS, PROD_MODE } from '@/constants/common';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@tuturuuu/ui/button';
 import {
@@ -16,6 +12,7 @@ import {
 import { ChevronRight } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
