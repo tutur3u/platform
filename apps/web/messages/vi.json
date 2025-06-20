@@ -1137,6 +1137,18 @@
     "create_description": "Tạo bảng nhiệm vụ",
     "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể."
   },
+  "task-boards": {
+    "name": "Tên",
+    "board": "Bảng",
+    "progress": "Tiến độ",
+    "tasks": "Nhiệm vụ",
+    "status": "Trạng thái",
+    "last_updated": "Cập nhật lần cuối",
+    "actions": "Hành động",
+    "stats_completionRate": "Tỷ lệ hoàn thành",
+    "stats_totalTasks": "Tổng nhiệm vụ",
+    "stats_lastActivity": "Hoạt động cuối"
+  },
   "ws-settings": {
     "description": "Quản lý các thiết lập không gian làm việc.",
     "basic_info": "Thông tin cơ bản",
