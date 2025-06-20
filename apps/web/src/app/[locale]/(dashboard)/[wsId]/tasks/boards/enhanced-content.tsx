@@ -31,7 +31,7 @@ interface EnhancedTaskBoardsContentProps {
 function EnhancedTaskBoardsContentInner({ 
   boards, 
   count,
-  wsId,
+  wsId: _wsId,
   isOwner = false
 }: EnhancedTaskBoardsContentProps) {
   const [settings, setSettings] = useState<ViewSettings>(DEFAULT_VIEW_SETTINGS);
