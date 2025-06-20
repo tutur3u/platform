@@ -51,7 +51,7 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
     }
 
     if (formData.total_duration <= 0) {
-      newErrors.duration = 'Duration must be greater than 0';
+      newErrors.total_duration = 'Duration must be greater than 0';
     }
 
     if (formData.is_splittable) {
@@ -69,13 +69,13 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
         formData.min_split_duration_minutes >
         formData.max_split_duration_minutes
       ) {
-        newErrors.minDuration =
+        newErrors.min_split_duration_minutes =
           'Minimum duration cannot be greater than maximum';
       }
     }
 
     if (formData.due_date && dayjs(formData.due_date).isBefore(dayjs())) {
-      newErrors.dueDate = 'Due date cannot be in the past';
+      newErrors.due_date = 'Due date cannot be in the past';
     }
 
     setErrors(newErrors);
@@ -196,12 +196,14 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                   min="0.25"
                   value={formData.total_duration}
                   onChange={(e) =>
-                    updateFormData('duration', parseFloat(e.target.value))
+                    updateFormData('total_duration', parseFloat(e.target.value))
                   }
-                  className={errors.duration ? 'border-destructive' : ''}
+                  className={errors.total_duration ? 'border-destructive' : ''}
                 />
-                {errors.duration && (
-                  <p className="text-xs text-destructive">{errors.duration}</p>
+                {errors.total_duration && (
+                  <p className="text-xs text-destructive">
+                    {errors.total_duration}
+                  </p>
                 )}
               </div>
 
@@ -210,7 +212,7 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                   id="split-up"
                   checked={formData.is_splittable}
                   onCheckedChange={(checked) =>
-                    updateFormData('splitUp', checked)
+                    updateFormData('is_splittable', checked)
                   }
                 />
                 <Label htmlFor="split-up" className="text-sm font-normal">
@@ -371,10 +373,10 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
                   value={formData.due_date}
                   onChange={(e) => updateFormData('due_date', e.target.value)}
                   min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                  className={errors.dueDate ? 'border-destructive' : ''}
+                  className={errors.due_date ? 'border-destructive' : ''}
                 />
-                {errors.dueDate && (
-                  <p className="text-xs text-destructive">{errors.dueDate}</p>
+                {errors.due_date && (
+                  <p className="text-xs text-destructive">{errors.due_date}</p>
                 )}
               </div>
             </div>
