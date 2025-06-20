@@ -14,6 +14,8 @@ interface TaskAssigneeData {
 interface TaskListData {
   id: string;
   name: string | null;
+  // Task list status: 'not_started' | 'active' | 'done' | 'closed'
+  // Used to determine task availability for time tracking
   status: string | null;
   workspace_boards: {
     id: string;

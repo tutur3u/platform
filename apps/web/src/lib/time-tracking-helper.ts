@@ -4,6 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { transformAssignees } from '@/lib/task-helper';
 import 'server-only';
 
 export const getTimeTrackingData = async (wsId: string, userId: string) => {
@@ -229,18 +230,11 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     list_name: task.list?.name,
     list_status: task.list?.status,
     // Transform assignees to match expected format
-    assignees: task.assignees
-      ?.map((a: any) => ({
-        ...a.user,
-        // Extract email from nested user_private_details
-        email: a.user?.user_private_details?.[0]?.email || null,
-      }))
-      .filter(
-        (user: any, index: number, self: any[]) =>
-          user &&
-          user.id &&
-          self.findIndex((u: any) => u.id === user.id) === index
-      ) || [],
+    assignees: transformAssignees(task.assignees || []).map((user: any) => ({
+      ...user,
+      // Extract email from nested user_private_details  
+      email: user?.user_private_details?.[0]?.email || null,
+    })),
     // Add current user assignment flag
     is_assigned_to_current_user: task.assignees?.some(
       (a: any) => a.user?.id === userId
