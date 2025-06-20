@@ -1,6 +1,5 @@
 import { EnhancedTaskBoardsContent } from './enhanced-content';
 import { TaskBoardForm } from './form';
-import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
