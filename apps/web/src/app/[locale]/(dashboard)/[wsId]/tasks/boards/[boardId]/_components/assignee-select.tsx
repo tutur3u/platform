@@ -304,7 +304,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
         align="start"
         side="bottom"
       >
-        <div className="overflow-hidden rounded-xl border border-gray-200/50 dark:border-gray-700/50">
+        <div className="/50 overflow-hidden rounded-xl border dark:border-gray-700/50">
           <Command>
             <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50 dark:border-gray-800 dark:from-gray-900 dark:to-slate-900">
               <CommandInput

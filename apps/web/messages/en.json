@@ -354,7 +354,126 @@
     "change-theme": "Switch between light and dark themes",
     "change-language": "Change display language",
     "sign-out": "Sign Out",
-    "sign-out-desc": "Log out of your current session"
+    "sign-out-desc": "Log out of your current session",
+    "waitlist": {
+      "title": "You're on the waitlist",
+      "description": "Thank you for your interest! You're currently on our waitlist. We'll notify you as soon as access becomes available.",
+      "email-notification": "We'll send you an email when your access is ready",
+      "estimated-time": "Estimated wait time",
+      "contact-support": "Questions? Contact support",
+      "logout": "Sign out",
+      "status": "Waitlist Status",
+      "position": "Position in queue",
+      "join-community": "Join our community",
+      "follow-updates": "Follow for updates",
+      "get-in-touch": "Get in touch"
+    },
+    "welcome": {
+      "title": "Welcome to Tuturuuu!",
+      "subtitle": "Let's get you set up in just a few steps",
+      "description": "We'll help you create your workspace and get everything ready for your team to collaborate.",
+      "get-started": "Get Started",
+      "step-indicator": "Step {current} of {total}",
+      "features": {
+        "team-collaboration": {
+          "title": "Team Collaboration",
+          "description": "Work together seamlessly with your team in real-time across all your projects"
+        },
+        "powerful-tools": {
+          "title": "Powerful Tools",
+          "description": "Access advanced features and AI-powered tools to boost your productivity"
+        },
+        "easy-setup": {
+          "title": "Easy Setup",
+          "description": "Get up and running in minutes with our intuitive guided setup process"
+        }
+      },
+      "ready-to-start": "Ready to get started?",
+      "setup-steps": "Here's what we'll set up together:",
+      "steps": {
+        "create-workspace": "Create workspace",
+        "setup-profile": "Setup profile",
+        "configure-settings": "Configure settings",
+        "start-collaborating": "Start collaborating"
+      },
+      "completion-time": "Takes less than 2 minutes to complete"
+    },
+    "workspace-setup": {
+      "title": "Create Your Workspace",
+      "subtitle": "Set up your team's home base",
+      "workspace-name": "Workspace Name",
+      "workspace-name-placeholder": "My Company",
+      "workspace-description": "Description (Optional)",
+      "workspace-description-placeholder": "Tell us about your workspace...",
+      "workspace-avatar": "Workspace Avatar",
+      "workspace-details": "Workspace Details",
+      "upload-avatar": "Upload Image",
+      "continue": "Continue",
+      "back": "Back",
+      "creating-workspace": "Creating workspace...",
+      "tips": {
+        "title": "💡 Tips for choosing a workspace name:",
+        "tip1": "• Choose a name that reflects your team or project",
+        "tip2": "• Keep it short and memorable",
+        "tip3": "• You can always change this later"
+      }
+    },
+    "profile-completion": {
+      "title": "Complete Your Profile",
+      "subtitle": "Help your team recognize you",
+      "display-name": "Display Name",
+      "display-name-placeholder": "Your name",
+      "bio": "Bio",
+      "bio-optional": "(optional)",
+      "bio-placeholder": "Tell us about yourself...",
+      "avatar": "Profile Avatar",
+      "profile-details": "Profile Details",
+      "continue": "Complete Profile",
+      "back": "Back",
+      "updating": "Updating...",
+      "profile-tip": "💡 Your profile helps teammates recognize and connect with you across the platform.",
+      "finish": "Finish & Continue"
+    },
+    "feature-tour": {
+      "title": "Quick Tour",
+      "subtitle": "Let's explore what you can do",
+      "skip-tour": "Skip Tour",
+      "start-tour": "Start Tour",
+      "next": "Next",
+      "previous": "Previous",
+      "finish": "Finish Tour",
+      "features": {
+        "dashboard": {
+          "title": "Dashboard",
+          "description": "Your central hub for all workspace activities and insights."
+        },
+        "projects": {
+          "title": "Projects",
+          "description": "Organize and manage your team's work with powerful project tools."
+        },
+        "collaboration": {
+          "title": "Collaboration",
+          "description": "Chat, share files, and work together seamlessly."
+        },
+        "settings": {
+          "title": "Settings",
+          "description": "Customize your workspace and manage team permissions."
+        }
+      }
+    },
+    "completion": {
+      "title": "All Set!",
+      "subtitle": "Your workspace is ready",
+      "description": "Congratulations! You've successfully set up your workspace. You can now invite team members and start collaborating.",
+      "go-to-dashboard": "Go to Dashboard",
+      "invite-team": "Invite Team Members"
+    },
+    "errors": {
+      "title": "Error",
+      "save-progress": "Failed to save progress. Please try again.",
+      "create-workspace": "Failed to create workspace. Please try again.",
+      "update-profile": "Failed to update profile. Please try again."
+    }
   },
   "meet-together": {
     "headline-p1": "Find the best time slot for everyone,",

@@ -144,7 +144,7 @@ export function ApprovalRowActions({
       case 'rejected':
         return 'border-red-200 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400';
       default:
-        return 'border-gray-200 bg-gray-100 text-gray-800 dark:border-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+        return ' bg-gray-100 text-gray-800 dark:border-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
