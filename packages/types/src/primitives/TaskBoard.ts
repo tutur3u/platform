@@ -1,5 +1,8 @@
 import { SupportedColor } from './SupportedColors';
 
+// Task Board Status - Used for organizing tasks into workflow stages
+// NOTE: This is different from AI module TaskStatus which has different values
+// Do not confuse with: 'not-started', 'in-progress', 'completed', 'blocked'
 export type TaskBoardStatus = 'not_started' | 'active' | 'done' | 'closed';
 
 export interface TaskBoardStatusTemplate {

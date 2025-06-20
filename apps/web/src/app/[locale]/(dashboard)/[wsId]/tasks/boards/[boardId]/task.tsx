@@ -58,6 +58,8 @@ import {
   isYesterday,
 } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
+import { moveTask } from '@/lib/task-helper';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 
 export interface Task extends TaskType {}
 
@@ -67,6 +69,7 @@ interface Props {
   taskList?: TaskList;
   isOverlay?: boolean;
   onUpdate?: () => void;
+  availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
 }
 
 export function TaskCard({
@@ -75,6 +78,7 @@ export function TaskCard({
   taskList,
   isOverlay,
   onUpdate,
+  availableLists: propAvailableLists,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -91,8 +95,13 @@ export function TaskCard({
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
 
-  // Fetch available task lists for the board
+  // Fetch available task lists for the board (only if not provided as prop)
   useEffect(() => {
+    if (propAvailableLists) {
+      setAvailableLists(propAvailableLists);
+      return;
+    }
+
     const fetchTaskLists = async () => {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -109,7 +118,7 @@ export function TaskCard({
     };
 
     fetchTaskLists();
-  }, [boardId]);
+  }, [boardId, propAvailableLists]);
 
   // Find the first list with 'done' or 'closed' status
   const getTargetCompletionList = () => {
@@ -244,22 +253,24 @@ export function TaskCard({
     if (!targetCompletionList || !onUpdate) return;
 
     setIsLoading(true);
-    updateTaskMutation.mutate(
-      {
-        taskId: task.id,
-        updates: {
-          list_id: targetCompletionList.id,
-          archived: true, // Also mark as archived when moving to completion
-        },
-      },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          setMenuOpen(false);
-          onUpdate();
-        },
-      }
-    );
+    
+    // Use the standard moveTask function to ensure consistent logic
+    const supabase = createClient();
+    try {
+      await moveTask(supabase, task.id, targetCompletionList.id);
+      // Manually invalidate queries since we're not using the mutation hook
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to move task to completion:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to complete task. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+      setMenuOpen(false);
+    }
   }
 
   async function handleDelete() {
