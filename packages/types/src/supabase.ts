@@ -5064,13 +5064,12 @@ export type Database = {
       };
       workspace_calendar_sync_log: {
         Row: {
-          access_token: string;
           created_at: string;
           deleted_events: Json | null;
           error_message: string | null;
           event_snapshot_before: Json;
+          google_account_email: string | null;
           id: string;
-          refresh_token: string;
           status: string;
           sync_ended_at: string | null;
           sync_started_at: string;
@@ -5079,13 +5078,12 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
-          access_token: string;
           created_at?: string;
           deleted_events?: Json | null;
           error_message?: string | null;
           event_snapshot_before: Json;
+          google_account_email?: string | null;
           id?: string;
-          refresh_token: string;
           status: string;
           sync_ended_at?: string | null;
           sync_started_at: string;
@@ -5094,13 +5092,12 @@ export type Database = {
           ws_id: string;
         };
         Update: {
-          access_token?: string;
           created_at?: string;
           deleted_events?: Json | null;
           error_message?: string | null;
           event_snapshot_before?: Json;
+          google_account_email?: string | null;
           id?: string;
-          refresh_token?: string;
           status?: string;
           sync_ended_at?: string | null;
           sync_started_at?: string;

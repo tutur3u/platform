@@ -4,8 +4,7 @@
 CREATE TABLE "public"."workspace_calendar_sync_log" (
     "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
     "ws_id" uuid NOT NULL REFERENCES "workspaces"("id") ON DELETE CASCADE,
-    "access_token" text NOT NULL,
-    "refresh_token" text NOT NULL,
+    "google_account_email" text,
     "sync_started_at" timestamp with time zone NOT NULL,
     "sync_ended_at" timestamp with time zone,
     "status" text NOT NULL,

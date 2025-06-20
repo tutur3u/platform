@@ -61,8 +61,7 @@ export const syncGoogleCalendarEvents = async () => {
 
     const endSync = async (
       ws_id: string,
-      access_token: string,
-      refresh_token: string,
+      googleAccountEmail: string | null,
       syncStartedAt: string,
       syncEndedAt: string,
       status: string,
@@ -73,8 +72,7 @@ export const syncGoogleCalendarEvents = async () => {
     ) => {
       await supabase.from('workspace_calendar_sync_log').insert({
         ws_id,
-        access_token,
-        refresh_token,
+        google_account_email: googleAccountEmail,
         sync_started_at: syncStartedAt,
         sync_ended_at: syncEndedAt,
         status: status,
@@ -88,6 +86,34 @@ export const syncGoogleCalendarEvents = async () => {
 
     for (const token of tokens || []) {
       const syncStartedAt = dayjs().toISOString();
+      let googleAccountEmail: string | null = null;
+
+      const auth = getGoogleAuthClient(token);
+
+      try {
+        // get google account email from google api
+        const googleAccount = await auth.getTokenInfo(
+          token.access_token as string
+        );
+        googleAccountEmail = googleAccount.email || null;
+        console.log('googleAccountEmail', googleAccountEmail);
+      } catch (error) {
+        console.error('Error fetching google account email:', error);
+        await endSync(
+          token.ws_id,
+          null,
+          syncStartedAt,
+          dayjs().toISOString(),
+          'failed',
+          'Error fetching google account email: ' + error,
+          [],
+          [],
+          []
+        );
+        continue;
+      }
+
+      // get events before sync
       const { data: eventsBeforeSync, error: errorEventsBeforeSync } =
         await supabase
           .from('workspace_calendar_events')
@@ -99,15 +125,14 @@ export const syncGoogleCalendarEvents = async () => {
           'Error fetching events before sync:',
           errorEventsBeforeSync
         );
-        endSync(
+        await endSync(
           token.ws_id,
-          token.access_token,
-          token.refresh_token,
+          googleAccountEmail,
           syncStartedAt,
           dayjs().toISOString(),
           'failed',
           'Error fetching events before sync: ' + errorEventsBeforeSync.message,
-          [],
+          eventsBeforeSync || [],
           [],
           []
         );
@@ -120,10 +145,9 @@ export const syncGoogleCalendarEvents = async () => {
           hasAccessToken: !!access_token,
           hasRefreshToken: !!refresh_token,
         });
-        endSync(
+        await endSync(
           token.ws_id,
-          token.access_token,
-          token.refresh_token,
+          googleAccountEmail,
           syncStartedAt,
           dayjs().toISOString(),
           'failed',
@@ -136,7 +160,6 @@ export const syncGoogleCalendarEvents = async () => {
       }
 
       try {
-        const auth = getGoogleAuthClient(token);
         const calendar = google.calendar({ version: 'v3', auth });
 
         const startOfCurrentWeek = dayjs().startOf('week');
@@ -181,10 +204,9 @@ export const syncGoogleCalendarEvents = async () => {
           });
         if (error) {
           console.error('Error upserting events:', error);
-          endSync(
+          await endSync(
             ws_id,
-            access_token,
-            refresh_token,
+            googleAccountEmail,
             syncStartedAt,
             dayjs().toISOString(),
             'failed',
@@ -193,6 +215,7 @@ export const syncGoogleCalendarEvents = async () => {
             [],
             []
           );
+          continue;
         }
         console.log(
           'Upserted events for wsId:',
@@ -211,10 +234,9 @@ export const syncGoogleCalendarEvents = async () => {
 
         if (dbError) {
           console.error('Error fetching events after upsert:', dbError);
-          endSync(
+          await endSync(
             ws_id,
-            access_token,
-            refresh_token,
+            googleAccountEmail,
             syncStartedAt,
             dayjs().toISOString(),
             'failed',
@@ -247,10 +269,9 @@ export const syncGoogleCalendarEvents = async () => {
 
         if (deleteError) {
           console.error('Error deleting events:', deleteError);
-          endSync(
+          await endSync(
             ws_id,
-            access_token,
-            refresh_token,
+            googleAccountEmail,
             syncStartedAt,
             dayjs().toISOString(),
             'failed',
@@ -268,10 +289,9 @@ export const syncGoogleCalendarEvents = async () => {
           eventsToDelete.map((e) => e.title)
         );
 
-        endSync(
+        await endSync(
           ws_id,
-          access_token,
-          refresh_token,
+          googleAccountEmail,
           syncStartedAt,
           dayjs().toISOString(),
           'success',
@@ -285,10 +305,9 @@ export const syncGoogleCalendarEvents = async () => {
         await updateLastUpsert(ws_id, supabase);
       } catch (error) {
         console.error('Error fetching Google Calendar events:', error);
-        endSync(
+        await endSync(
           ws_id,
-          access_token,
-          refresh_token,
+          googleAccountEmail,
           syncStartedAt,
           dayjs().toISOString(),
           'failed',
