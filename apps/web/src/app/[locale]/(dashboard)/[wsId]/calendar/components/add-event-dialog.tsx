@@ -1,3 +1,4 @@
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
@@ -26,9 +27,14 @@ import React from 'react';
 interface AddEventModalProps {
   isOpen?: boolean;
   onClose?: () => void;
+  wsId?: string;
 }
 
-export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
+export default function AddEventModal({
+  isOpen,
+  onClose,
+  wsId,
+}: AddEventModalProps) {
   const [formData, setFormData] = React.useState({
     name: '',
     description: '',
@@ -42,6 +48,8 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
   });
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = React.useState(false);
+  const supabase = createClient();
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -89,15 +97,79 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const submitToDatabase = async () => {
+    if (!wsId) {
+      setErrors({ submit: 'Workspace ID is required' });
+      return false;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Get current user
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        setErrors({ submit: 'Authentication required. Please log in.' });
+        return false;
+      }
+
+      const taskData = {
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        total_duration: formData.total_duration.toString(),
+        is_splittable: formData.is_splittable,
+        min_split_duration_minutes: formData.is_splittable
+          ? formData.min_split_duration_minutes
+          : null,
+        max_split_duration_minutes: formData.is_splittable
+          ? formData.max_split_duration_minutes
+          : null,
+        time_reference: formData.time_reference as
+          | 'working_time'
+          | 'personal_time',
+        schedule_after: formData.schedule_after || null,
+        due_date: formData.due_date || null,
+        ws_id: wsId,
+        creator_id: user.id,
+      };
+
+      const { data, error } = await supabase
+        .from('workspace_calendar_tasks')
+        .insert([taskData])
+        .select();
+
+      if (error) {
+        console.error('Database error:', error);
+        setErrors({ submit: `Failed to create task: ${error.message}` });
+        return false;
+      }
+
+      console.log('Task created successfully:', data);
+      return true;
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setErrors({ submit: 'An unexpected error occurred. Please try again.' });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    console.log('Form data:', formData);
-    handleClose();
+    const success = await submitToDatabase();
+    if (success) {
+      handleClose();
+    }
   };
 
   const handleClose = () => {
@@ -391,13 +463,37 @@ export default function AddEventModal({ isOpen, onClose }: AddEventModalProps) {
             </div>
           </div>
 
+          {errors.submit && (
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              {errors.submit}
+            </div>
+          )}
+
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
-            <Button type="submit" className="bg-blue-500 hover:bg-blue-600">
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Create Task
+            <Button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-600"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  Create Task
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>

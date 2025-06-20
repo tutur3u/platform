@@ -61,6 +61,7 @@ export default function CalendarClientPage({
         extras={extras}
       />
       <AddEventModal
+        wsId={workspace.id}
         isOpen={isAddEventModalOpen}
         onClose={closeAddEventDialog}
       />
