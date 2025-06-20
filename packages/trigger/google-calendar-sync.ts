@@ -212,7 +212,7 @@ export const syncGoogleCalendarEvents = async () => {
             'failed',
             'Error upserting events: ' + error.message,
             eventsBeforeSync || [],
-            [],
+            formattedEvents as WorkspaceCalendarEvent[],
             []
           );
           continue;
@@ -278,7 +278,7 @@ export const syncGoogleCalendarEvents = async () => {
             'Error deleting events: ' + deleteError.message,
             eventsBeforeSync || [],
             formattedEvents as WorkspaceCalendarEvent[],
-            []
+            eventsToDelete as WorkspaceCalendarEvent[]
           );
           continue;
         }
