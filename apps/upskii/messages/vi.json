@@ -4126,7 +4126,10 @@
     "features": "Các tính năng",
     "features_description": "Quản lý các tính năng của không gian làm việc.",
     "delete": "Xóa không gian làm việc",
-    "deleting": "Đang xóa"
+    "deleting": "Đang xóa",
+    "feature-request": {
+      "title": "Yêu cầu mở khóa tính năng"
+    }
   },
   "ws-slides": {
     "singular": "Trang trình bày",

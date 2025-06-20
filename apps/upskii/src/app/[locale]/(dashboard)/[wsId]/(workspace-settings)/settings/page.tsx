@@ -1,12 +1,11 @@
 import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
-import FeatureToggles from './feature-toggles';
 import WorkspaceLogoSettings from './logo';
 import Security from './security';
-import { DEV_MODE } from '@/constants/common';
+import { RequestFeatureAccessDialog } from '@/components/request-feature-access-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { UserPlus } from '@tuturuuu/ui/icons';
+import { Plus, UserPlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
@@ -98,26 +97,29 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         )}
 
         {enableSecurity && <Security workspace={ws} />}
-
-        {DEV_MODE && (
-          <>
-            <Separator className="col-span-full" />
-
-            <div className="col-span-full flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-              <div className="mb-1 text-2xl font-bold">
-                {t('ws-settings.features')}
-              </div>
-              <div className="mb-4 font-semibold text-foreground/80">
-                {t('ws-settings.features_description')}
-              </div>
-
-              <div className="grid h-full items-end gap-2 text-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                <FeatureToggles />
-              </div>
-            </div>
-          </>
-        )}
       </div>
+      {isWorkspaceOwner ? (
+        <>
+          <Separator className="my-4" />
+          <FeatureSummary
+            title={t('ws-settings.features')}
+            description={t('ws-settings.features_description')}
+            action={
+              <RequestFeatureAccessDialog wsId={wsId} workspaceName={ws?.name}>
+                <Button variant="default" size="default">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Request Features
+                </Button>
+              </RequestFeatureAccessDialog>
+            }
+          />
+          <div className="grid h-full items-end gap-2 text-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {/* Showcase features that are requested/pending */}
+          </div>
+        </>
+      ) : (
+        <></>
+      )}
     </>
   );
 }
