@@ -16,8 +16,6 @@ export const API_URL =
   process.env.API_URL ||
   (PROD_MODE ? 'https://tuturuuu.com/api' : 'http://localhost:7803/api');
 
-export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
-
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';
 export const SIDEBAR_COLLAPSED_COOKIE_NAME = 'sidebar-collapsed';

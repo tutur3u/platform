@@ -2,17 +2,17 @@ import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
 import Security from './security';
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { UserPlus } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
   getSecrets,
   getWorkspace,
   verifyHasSecrets,
-} from '@/lib/workspace-helper';
-import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { UserPlus } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+} from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 

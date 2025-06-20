@@ -4,7 +4,7 @@ import {
   getPermissions,
   getWorkspace,
   verifyHasSecrets,
-} from '@/lib/workspace-helper';
+} from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 
 interface Props {

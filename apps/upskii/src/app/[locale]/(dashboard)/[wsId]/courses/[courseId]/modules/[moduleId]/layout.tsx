@@ -20,6 +20,7 @@ import {
   Youtube,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -48,6 +49,11 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   const flashcards = await getFlashcards(moduleId);
   const quizSets = await getQuizSets(moduleId);
   const quizzes = await getQuizzes(moduleId);
+
+  const { ENABLE_QUIZZES } = await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_QUIZZES'],
+    redirectTo: null,
+  });
 
   return (
     <>
@@ -117,18 +123,24 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 icon={<Youtube className="h-5 w-5" />}
                 className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20"
               />
-              <LinkButton
-                href={`${commonHref}/quiz-sets`}
-                title={`${t('ws-quiz-sets.plural')} (${quizSets || 0})`}
-                icon={<ListTodo className="h-5 w-5" />}
-                className="border-dynamic-lime/20 bg-dynamic-lime/10 text-dynamic-lime hover:bg-dynamic-lime/20"
-              />
-              <LinkButton
-                href={`${commonHref}/quizzes`}
-                title={`${t('ws-quizzes.plural')} (${quizzes || 0})`}
-                icon={<SquareCheck className="h-5 w-5" />}
-                className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
-              />
+              {/* Only show quiz-sets button if ENABLE_QUIZZES is enabled */}
+              {ENABLE_QUIZZES && (
+                <LinkButton
+                  href={`${commonHref}/quiz-sets`}
+                  title={`${t('ws-quiz-sets.plural')} (${quizSets || 0})`}
+                  icon={<ListTodo className="h-5 w-5" />}
+                  className="border-dynamic-lime/20 bg-dynamic-lime/10 text-dynamic-lime hover:bg-dynamic-lime/20"
+                />
+              )}
+              {/* Only show quizzes button if ENABLE_QUIZZES is enabled */}
+              {ENABLE_QUIZZES && (
+                <LinkButton
+                  href={`${commonHref}/quizzes`}
+                  title={`${t('ws-quizzes.plural')} (${quizzes || 0})`}
+                  icon={<SquareCheck className="h-5 w-5" />}
+                  className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
+                />
+              )}
               <LinkButton
                 href={`${commonHref}/flashcards`}
                 title={`${t('ws-flashcards.plural')} (${flashcards || 0})`}

@@ -4118,7 +4118,33 @@
     "features": "Features",
     "features_description": "Manage the features of your workspace.",
     "delete": "Delete Workspace",
-    "deleting": "Deleting Workspace"
+    "deleting": "Deleting Workspace",
+    "feature-request": {
+      "title": "Request Feature Access",
+      "description": "Request access to new features for your workspace \"{ws}\".",
+      "feature-label": "Feature",
+      "feature-placeholder": "Select a feature",
+      "no-features": "All available features have been requested or enabled.",
+      "reason-label": "Why do you need access to this feature? *",
+      "reason-placeholder": "Please explain how you plan to use the {feature} features in your workspace. Include details about your intended use case, target audience, and goals...",
+      "reason-description": "Minimum 20 characters. Be specific about your goals.",
+      "feature-details-title": "{feature} features include:",
+      "existing-requests-title": "Your Existing Requests",
+      "cancel": "Cancel",
+      "submit": "Submit Request",
+      "submitting": "Submitting...",
+      "toasts": {
+        "error": {
+          "reason-required": "Please provide a reason for your request",
+          "feature-required": "Please select a feature to request",
+          "request-failed": "Failed to submit request. Please try again."
+        },
+        "success": {
+          "request-submitted": "Feature access request submitted successfully! Platform administrators will review your request."
+        }
+      },
+      "description-2": "Platform administrators will review your request and approve access if appropriate."
+    }
   },
   "ws-slides": {
     "singular": "Slide",

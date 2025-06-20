@@ -1,8 +1,8 @@
 import { ApprovalsTable } from './approvals-table';
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
-import { getPermissions } from '@/lib/workspace-helper';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 
 interface Props {
