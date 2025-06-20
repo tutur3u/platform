@@ -2,6 +2,12 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Type interfaces for better type safety
+interface ProcessedAssignee {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 interface TaskAssigneeData {
   user: {
     id: string;
@@ -177,9 +183,9 @@ export async function GET(
         // Add assignee information
         assignees: [
           ...(task.assignees ?? [])
-            .map((a: any) => a.user)
-            .filter((u: any) => !!u?.id)
-            .reduce((uniqueUsers: Map<string, any>, user: any) => {
+            .map((a: TaskAssigneeData) => a.user)
+            .filter((u): u is ProcessedAssignee => !!u?.id)
+            .reduce((uniqueUsers: Map<string, ProcessedAssignee>, user: ProcessedAssignee) => {
               if (!uniqueUsers.has(user.id)) {
                 uniqueUsers.set(user.id, user);
               }
