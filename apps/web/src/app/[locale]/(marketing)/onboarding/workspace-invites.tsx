@@ -1,6 +1,9 @@
 import WorkspaceInviteSnippet from '@/components/notifications/WorkspaceInviteSnippet';
-import { getWorkspaceInvites, getWorkspaces } from '@/lib/workspace-helper';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
+import {
+  getWorkspaceInvites,
+  getWorkspaces,
+} from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

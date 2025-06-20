@@ -1,5 +1,5 @@
 import { type NavLink, Navigation } from '@/components/navigation';
-import { getPermissions, getSecrets } from '@/lib/workspace-helper';
+import { getPermissions, getSecrets } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import type React from 'react';

@@ -45,7 +45,7 @@
  * ];
  * ```
  */
-import { verifySecret } from '@/lib/workspace-helper';
+import { verifySecret } from '@tuturuuu/utils/workspace-helper';
 
 // Feature flag names - centralized for consistency
 export const FEATURE_FLAGS = {

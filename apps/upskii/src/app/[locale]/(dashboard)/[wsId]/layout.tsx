@@ -6,7 +6,6 @@ import { EducationBanner } from '@/components/request-education-banner';
 import { UserNav } from '@/components/user-nav';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { getFeatureFlags } from '@/constants/secrets';
-import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import {
   Award,
   Blocks,
@@ -32,6 +31,7 @@ import {
   Users,
 } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
