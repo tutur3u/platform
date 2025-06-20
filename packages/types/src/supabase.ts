@@ -5066,6 +5066,7 @@ export type Database = {
         Row: {
           created_at: string;
           creator_id: string | null;
+          description: string | null;
           due_date: string | null;
           evaluated_priority:
             | Database['public']['Enums']['priority_status']
@@ -5079,6 +5080,7 @@ export type Database = {
           time_reference:
             | Database['public']['Enums']['calendar_task_time']
             | null;
+          total_duration: string;
           updated_at: string | null;
           user_defined_priority:
             | Database['public']['Enums']['priority_status']
@@ -5088,6 +5090,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           creator_id?: string | null;
+          description?: string | null;
           due_date?: string | null;
           evaluated_priority?:
             | Database['public']['Enums']['priority_status']
@@ -5101,6 +5104,7 @@ export type Database = {
           time_reference?:
             | Database['public']['Enums']['calendar_task_time']
             | null;
+          total_duration: string;
           updated_at?: string | null;
           user_defined_priority?:
             | Database['public']['Enums']['priority_status']
@@ -5110,6 +5114,7 @@ export type Database = {
         Update: {
           created_at?: string;
           creator_id?: string | null;
+          description?: string | null;
           due_date?: string | null;
           evaluated_priority?:
             | Database['public']['Enums']['priority_status']
@@ -5123,6 +5128,7 @@ export type Database = {
           time_reference?:
             | Database['public']['Enums']['calendar_task_time']
             | null;
+          total_duration?: string;
           updated_at?: string | null;
           user_defined_priority?:
             | Database['public']['Enums']['priority_status']
