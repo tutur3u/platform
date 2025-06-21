@@ -100,7 +100,7 @@ export const approvalsColumns = (
         // Try to find the requestable key for this feature flag
         const requestableKey = Object.entries(
           REQUESTABLE_KEY_TO_FEATURE_FLAG
-        // @ts-ignore
+          // @ts-ignore
         ).find(([_key, flag]) => flag === featureFlag)?.[0];
 
         if (requestableKey) {
