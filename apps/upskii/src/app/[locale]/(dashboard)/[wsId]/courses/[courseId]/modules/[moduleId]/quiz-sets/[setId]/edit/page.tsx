@@ -17,7 +17,7 @@ export default async function Page({ params }: Props) {
   if (!setDetails) {
     return <div>Error: Quiz set not found</div>;
   }
-  
+
   return (
     <div>
       <QuizSetForm wsId={wsId} moduleId={moduleId} data={setDetails} />

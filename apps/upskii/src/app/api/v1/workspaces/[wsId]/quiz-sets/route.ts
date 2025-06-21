@@ -62,7 +62,7 @@ export async function POST(req: Request, { params }: Params) {
     const baseName = formattedName;
     let suffix = 1;
     let newName = baseName;
-    
+
     // Keep incrementing suffix until we find a unique name
     while (existingNames.includes(newName)) {
       suffix++;
