@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { CoreMessage, generateText  } from 'ai';
+import { CoreMessage, generateText } from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -36,7 +36,7 @@ export function createPOST(
         type: 'file';
         data: ArrayBuffer | string;
         mimeType: string;
-      }
+      };
     };
 
     try {
@@ -126,17 +126,17 @@ export function createPOST(
         data: Uint8Array;
         mimeType: string;
       }[] = [];
-      
+
       if (filePaths?.length) {
         for (const path of filePaths) {
           const { data: fileData, error } = await supabase.storage
             .from('workspaces')
             .download(path);
-      
+
           if (error || !fileData) continue;
-      
+
           const buffer = await fileData.arrayBuffer();
-      
+
           fileInputs.push({
             type: 'file',
             data: new Uint8Array(buffer),
@@ -166,7 +166,6 @@ export function createPOST(
         apiKey: apiKey,
       });
 
-      
       const result = await generateText({
         model: google(model, {
           safetySettings: [
@@ -191,13 +190,13 @@ export function createPOST(
         messages: finalMessages,
         system: systemInstruction,
       });
-      
+
       console.log('AI Response:', result);
-      
+
       if (!result.text) {
         throw new Error('No content found');
       }
-      
+
       // Save response to DB
       const { error } = await sbAdmin.from('ai_chat_messages').insert({
         chat_id: chatId,
@@ -210,12 +209,12 @@ export function createPOST(
         completion_tokens: result.usage?.completionTokens,
         metadata: { source: 'Rewise' },
       });
-      
+
       if (error) {
         console.error('ERROR ORIGIN: GENERATETEXT COMPLETION', error);
         throw new Error(error.message);
       }
-      
+
       return NextResponse.json({ text: result.text });
     } catch (error: any) {
       console.log(error);
