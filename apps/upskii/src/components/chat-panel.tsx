@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import { StorageObjectForm } from './ai-chat/file-upload';
 import { ChatModelSelector } from './chat-model-selector';
 import ApiKeyInput from './form-apikey';
 import { PromptForm } from './prompt-form';
@@ -19,7 +20,6 @@ import {
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React, { useState } from 'react';
-import { StorageObjectForm } from './ai-chat/file-upload';
 
 interface PresenceUser {
   id: string;
@@ -229,13 +229,12 @@ export function ChatPanel({
 
         {dialogType === 'files' && (
           <div className="grid gap-4">
-            
-              <StorageObjectForm
-                chatId={chat?.id || ''}
-                submitLabel={t('common.upload')}
-                path={storagePath}
-                accept="*"
-              />
+            <StorageObjectForm
+              chatId={chat?.id || ''}
+              submitLabel={t('common.upload')}
+              path={storagePath}
+              accept="*"
+            />
             {/* <FileUploader
               value={files}
               onValueChange={setFiles}

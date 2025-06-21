@@ -22,8 +22,6 @@ import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';
 import * as z from 'zod';
 
-
-
 interface Props {
   chatId: string;
   path?: string;
@@ -32,7 +30,6 @@ interface Props {
   onComplete?: () => void;
   submitLabel?: string;
 }
-
 
 const ObjectFormSchema = z.object({
   files: z.custom<File[]>((value) => {
@@ -43,8 +40,6 @@ const ObjectFormSchema = z.object({
     return value;
   }),
 });
-
-
 
 export function StorageObjectForm({
   chatId,
@@ -75,50 +70,54 @@ export function StorageObjectForm({
 
   async function onSubmit(formData: z.infer<typeof ObjectFormSchema>) {
     if (loading || editingFile) return;
-  
+
     setLoading(true);
-  
+
     const unuploadedFiles = formData.files.filter(
       (file) => fileStatuses[file.name] !== 'uploaded'
     );
-  
+
     const filesToUpload = unuploadedFiles.slice(0, 10); // giới hạn tối đa 10 file
-  
+
     await Promise.all(
       filesToUpload.map(async (file) => {
         setFileStatuses((prev) => ({
           ...prev,
           [file.name]: 'uploading',
         }));
-  
+
         const finalPath = path
           ? joinPath(path, `${generateRandomUUID()}_${file.name}`)
-          : joinPath(chatId, uploadPath, `${generateRandomUUID()}_${file.name}`);
-  
+          : joinPath(
+              chatId,
+              uploadPath,
+              `${generateRandomUUID()}_${file.name}`
+            );
+
         const { error } = await supabase.storage
           .from('workspaces')
           .upload(finalPath, file);
-  
+
         setFileStatuses((prev) => ({
           ...prev,
           [file.name]: error ? 'error' : 'uploaded',
         }));
-  
+
         if (error) {
           console.error(`Upload failed for ${file.name}:`, error.message);
         }
       })
     );
-  
+
     // Check if all selected (or attempted) files are uploaded successfully
     const allUploaded = filesToUpload.every(
       (file) => fileStatuses[file.name] === 'uploaded'
     );
-  
+
     if (allUploaded) {
       onComplete?.();
     }
-  
+
     router.refresh();
     setLoading(false);
   }
@@ -144,7 +143,6 @@ export function StorageObjectForm({
   //     const { error } = await supabase.storage
   //       .from('workspaces')
   //       .upload(finalPath, file);
-
 
   //     if (error) {
   //       setFileStatuses((prev) => ({
