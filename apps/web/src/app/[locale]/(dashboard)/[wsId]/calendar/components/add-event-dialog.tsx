@@ -144,10 +144,9 @@ export default function AddEventModal({
         end_date: formData.end_date || null,
         ws_id: wsId,
         creator_id: user.id,
-        list_id: 'default_list_id', // Replace with actual list_id value
-        archived: false, // Default value
-        completed: false, // Default value
-        created_at: new Date().toISOString(), // Current timestamp
+        archived: false,
+        completed: false,
+        created_at: new Date().toISOString(),
       };
 
       const { data, error } = await supabase

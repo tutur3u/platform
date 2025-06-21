@@ -144,9 +144,8 @@ alter table "public"."tasks" add column "total_duration" real;
 
 alter table "public"."tasks" add column "user_defined_priority" priority_status default 'medium'::priority_status;
 
-alter table "public"."tasks" alter column "priority" set default 'medium'::priority_status;
 
-alter table "public"."tasks" alter column "priority" set data type priority_status using "priority"::priority_status;
+
 
 CREATE UNIQUE INDEX workspace_calendar_taskss_pkey ON public.workspace_calendar_tasks USING btree (id);
 
@@ -195,4 +194,16 @@ create or replace view "public"."time_tracking_session_analytics" as  SELECT tts
      LEFT JOIN tasks t ON ((tts.task_id = t.id)));
 
 
+
+alter table "public"."tasks" alter column "is_splittable" drop default;
+
+alter table "public"."tasks" alter column "is_splittable" drop not null;
+
+alter table "public"."tasks" alter column "max_split_duration_minutes" drop default;
+
+alter table "public"."tasks" alter column "min_split_duration_minutes" drop default;
+
+alter table "public"."tasks" alter column "time_reference" drop default;
+
+alter table "public"."tasks" alter column "time_reference" drop not null;
 

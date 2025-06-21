@@ -3639,13 +3639,16 @@ export type Database = {
           description: string | null;
           end_date: string | null;
           id: string;
-          list_id: string;
+          is_splittable: boolean | null;
+          list_id: string | null;
           max_split_duration_minutes: number | null;
           min_split_duration_minutes: number | null;
           name: string;
-          priority: Database['public']['Enums']['priority_status'] | null;
+          priority: number | null;
           start_date: string | null;
-          time_reference: Database['public']['Enums']['calendar_task_time'];
+          time_reference:
+            | Database['public']['Enums']['calendar_task_time']
+            | null;
           total_duration: number | null;
           user_defined_priority:
             | Database['public']['Enums']['priority_status']
@@ -3660,13 +3663,16 @@ export type Database = {
           description?: string | null;
           end_date?: string | null;
           id?: string;
-          list_id: string;
+          is_splittable?: boolean | null;
+          list_id?: string | null;
           max_split_duration_minutes?: number | null;
           min_split_duration_minutes?: number | null;
           name: string;
-          priority?: Database['public']['Enums']['priority_status'] | null;
+          priority?: number | null;
           start_date?: string | null;
-          time_reference?: Database['public']['Enums']['calendar_task_time'];
+          time_reference?:
+            | Database['public']['Enums']['calendar_task_time']
+            | null;
           total_duration?: number | null;
           user_defined_priority?:
             | Database['public']['Enums']['priority_status']
@@ -3681,13 +3687,16 @@ export type Database = {
           description?: string | null;
           end_date?: string | null;
           id?: string;
-          list_id?: string;
+          is_splittable?: boolean | null;
+          list_id?: string | null;
           max_split_duration_minutes?: number | null;
           min_split_duration_minutes?: number | null;
           name?: string;
-          priority?: Database['public']['Enums']['priority_status'] | null;
+          priority?: number | null;
           start_date?: string | null;
-          time_reference?: Database['public']['Enums']['calendar_task_time'];
+          time_reference?:
+            | Database['public']['Enums']['calendar_task_time']
+            | null;
           total_duration?: number | null;
           user_defined_priority?:
             | Database['public']['Enums']['priority_status']
