@@ -162,7 +162,7 @@ export const syncGoogleCalendarEvents = async () => {
       try {
         const calendar = google.calendar({ version: 'v3', auth });
 
-        const now = dayjs().utc();
+        const now = dayjs();
         const timeMin = now.toDate();
         const timeMax = now.add(BACKGROUND_SYNC_RANGE, 'day');
 
