@@ -194,25 +194,19 @@ export function ApprovalsTable() {
             <div className="text-2xl font-bold text-yellow-600">
               {stats.pending}
             </div>
-            <div className="text-sm text-muted-foreground">
-              {t('pending')}
-            </div>
+            <div className="text-sm text-muted-foreground">{t('pending')}</div>
           </div>
           <div className="rounded-lg border bg-card p-4">
             <div className="text-2xl font-bold text-green-600">
               {stats.approved}
             </div>
-            <div className="text-sm text-muted-foreground">
-              {t('approved')}
-            </div>
+            <div className="text-sm text-muted-foreground">{t('approved')}</div>
           </div>
           <div className="rounded-lg border bg-card p-4">
             <div className="text-2xl font-bold text-red-600">
               {stats.rejected}
             </div>
-            <div className="text-sm text-muted-foreground">
-              {t('rejected')}
-            </div>
+            <div className="text-sm text-muted-foreground">{t('rejected')}</div>
           </div>
         </div>
 
@@ -227,7 +221,7 @@ export function ApprovalsTable() {
             {isLoading && (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>{t('loading')}</span>  
+                <span>{t('loading')}</span>
               </>
             )}
           </div>

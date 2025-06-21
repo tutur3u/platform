@@ -44,11 +44,9 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
   // Get feature flags for the dialog
   const featureFlags = await getFeatureFlags(wsId, true);
 
-
   const approvedFeatures = getRequestableFeatureKeys().filter(
     (key) => featureFlags[getRequestableFeature(key).flag]
   );
-
 
   const preventWorkspaceDeletion =
     secrets
