@@ -13,6 +13,7 @@ import {
   AlertTriangleIcon,
   CalendarIcon,
   ClockIcon,
+  LockIcon,
   SparklesIcon,
   TrendingUpIcon,
 } from '@tuturuuu/ui/icons';
@@ -225,15 +226,29 @@ export function ScheduleDisplay({ events }: ScheduleDisplayProps) {
                             {/* Event Card */}
                             <div
                               className={`group relative rounded-lg border p-4 transition-all hover:shadow-sm ${
-                                event.isPastDeadline
-                                  ? 'border-destructive/30 bg-destructive/5'
-                                  : 'hover:bg-accent/5'
+                                event.locked
+                                  ? 'border-dynamic-blue/30 bg-dynamic-blue/10'
+                                  : event.isPastDeadline
+                                    ? 'border-destructive/30 bg-destructive/5'
+                                    : 'hover:bg-accent/5'
                               }`}
                             >
                               <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1 space-y-2">
                                   {/* Event Header */}
                                   <div className="flex items-center gap-3">
+                                    {event.locked && (
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <LockIcon className="h-5 w-5 shrink-0 text-dynamic-blue" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>
+                                            Locked event: this time is blocked
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    )}
                                     {event.isPastDeadline && (
                                       <Tooltip>
                                         <TooltipTrigger>
