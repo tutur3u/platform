@@ -3639,10 +3639,20 @@ export type Database = {
           description: string | null;
           end_date: string | null;
           id: string;
-          list_id: string;
+          is_splittable: boolean | null;
+          list_id: string | null;
+          max_split_duration_hours: number | null;
+          min_split_duration_hours: number | null;
           name: string;
           priority: number | null;
           start_date: string | null;
+          time_reference:
+            | Database['public']['Enums']['calendar_task_time']
+            | null;
+          total_duration: number | null;
+          user_defined_priority:
+            | Database['public']['Enums']['priority_status']
+            | null;
         };
         Insert: {
           archived?: boolean | null;
@@ -3653,10 +3663,20 @@ export type Database = {
           description?: string | null;
           end_date?: string | null;
           id?: string;
-          list_id: string;
+          is_splittable?: boolean | null;
+          list_id?: string | null;
+          max_split_duration_hours?: number | null;
+          min_split_duration_hours?: number | null;
           name: string;
           priority?: number | null;
           start_date?: string | null;
+          time_reference?:
+            | Database['public']['Enums']['calendar_task_time']
+            | null;
+          total_duration?: number | null;
+          user_defined_priority?:
+            | Database['public']['Enums']['priority_status']
+            | null;
         };
         Update: {
           archived?: boolean | null;
@@ -3667,10 +3687,20 @@ export type Database = {
           description?: string | null;
           end_date?: string | null;
           id?: string;
-          list_id?: string;
+          is_splittable?: boolean | null;
+          list_id?: string | null;
+          max_split_duration_hours?: number | null;
+          min_split_duration_hours?: number | null;
           name?: string;
           priority?: number | null;
           start_date?: string | null;
+          time_reference?:
+            | Database['public']['Enums']['calendar_task_time']
+            | null;
+          total_duration?: number | null;
+          user_defined_priority?:
+            | Database['public']['Enums']['priority_status']
+            | null;
         };
         Relationships: [
           {
@@ -5062,52 +5092,103 @@ export type Database = {
           },
         ];
       };
-      workspace_calendar_sync_log: {
+      workspace_calendar_tasks: {
         Row: {
           created_at: string;
-          deleted_events: Json | null;
-          error_message: string | null;
-          event_snapshot_before: Json;
-          google_account_email: string | null;
+          creator_id: string | null;
+          description: string | null;
+          due_date: string | null;
+          evaluated_priority:
+            | Database['public']['Enums']['priority_status']
+            | null;
           id: string;
-          status: string;
-          sync_ended_at: string | null;
-          sync_started_at: string;
-          triggered_by: string;
-          upserted_events: Json | null;
-          ws_id: string;
+          is_splittable: boolean | null;
+          max_split_duration_minutes: number | null;
+          min_split_duration_minutes: number | null;
+          name: string | null;
+          schedule_after: string | null;
+          time_reference:
+            | Database['public']['Enums']['calendar_task_time']
+            | null;
+          total_duration: number;
+          updated_at: string | null;
+          user_defined_priority:
+            | Database['public']['Enums']['priority_status']
+            | null;
+          ws_id: string | null;
         };
         Insert: {
           created_at?: string;
-          deleted_events?: Json | null;
-          error_message?: string | null;
-          event_snapshot_before: Json;
-          google_account_email?: string | null;
+          creator_id?: string | null;
+          description?: string | null;
+          due_date?: string | null;
+          evaluated_priority?:
+            | Database['public']['Enums']['priority_status']
+            | null;
           id?: string;
-          status: string;
-          sync_ended_at?: string | null;
-          sync_started_at: string;
-          triggered_by: string;
-          upserted_events?: Json | null;
-          ws_id: string;
+          is_splittable?: boolean | null;
+          max_split_duration_minutes?: number | null;
+          min_split_duration_minutes?: number | null;
+          name?: string | null;
+          schedule_after?: string | null;
+          time_reference?:
+            | Database['public']['Enums']['calendar_task_time']
+            | null;
+          total_duration: number;
+          updated_at?: string | null;
+          user_defined_priority?:
+            | Database['public']['Enums']['priority_status']
+            | null;
+          ws_id?: string | null;
         };
         Update: {
           created_at?: string;
-          deleted_events?: Json | null;
-          error_message?: string | null;
-          event_snapshot_before?: Json;
-          google_account_email?: string | null;
+          creator_id?: string | null;
+          description?: string | null;
+          due_date?: string | null;
+          evaluated_priority?:
+            | Database['public']['Enums']['priority_status']
+            | null;
           id?: string;
-          status?: string;
-          sync_ended_at?: string | null;
-          sync_started_at?: string;
-          triggered_by?: string;
-          upserted_events?: Json | null;
-          ws_id?: string;
+          is_splittable?: boolean | null;
+          max_split_duration_minutes?: number | null;
+          min_split_duration_minutes?: number | null;
+          name?: string | null;
+          schedule_after?: string | null;
+          time_reference?:
+            | Database['public']['Enums']['calendar_task_time']
+            | null;
+          total_duration?: number;
+          updated_at?: string | null;
+          user_defined_priority?:
+            | Database['public']['Enums']['priority_status']
+            | null;
+          ws_id?: string | null;
         };
         Relationships: [
           {
-            foreignKeyName: 'workspace_calendar_sync_log_ws_id_fkey';
+            foreignKeyName: 'workspace_calendar_taskss_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_calendar_taskss_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_calendar_taskss_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_calendar_taskss_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -7110,71 +7191,6 @@ export type Database = {
           },
         ];
       };
-      workspace_whiteboards: {
-        Row: {
-          created_at: string;
-          creator_id: string;
-          description: string | null;
-          id: string;
-          snapshot: Json | null;
-          thumbnail_url: string | null;
-          title: string;
-          updated_at: string;
-          ws_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          creator_id: string;
-          description?: string | null;
-          id?: string;
-          snapshot?: Json | null;
-          thumbnail_url?: string | null;
-          title: string;
-          updated_at?: string;
-          ws_id: string;
-        };
-        Update: {
-          created_at?: string;
-          creator_id?: string;
-          description?: string | null;
-          id?: string;
-          snapshot?: Json | null;
-          thumbnail_url?: string | null;
-          title?: string;
-          updated_at?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_whiteboards_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'workspace_whiteboards_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'workspace_whiteboards_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_whiteboards_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       workspaces: {
         Row: {
           avatar_url: string | null;
@@ -8261,10 +8277,12 @@ export type Database = {
         | 'paragraph_quiz'
         | 'flashcards';
       calendar_hour_type: 'WORK' | 'PERSONAL' | 'MEETING';
+      calendar_task_time: 'working_time' | 'personal_time';
       certificate_templates: 'original' | 'modern' | 'elegant';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       dataset_type: 'excel' | 'csv' | 'html';
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
+      priority_status: 'low' | 'medium' | 'high' | 'critical';
       subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
       task_board_status: 'not_started' | 'active' | 'done' | 'closed';
       workspace_role_permission:
@@ -8416,10 +8434,12 @@ export const Constants = {
         'flashcards',
       ],
       calendar_hour_type: ['WORK', 'PERSONAL', 'MEETING'],
+      calendar_task_time: ['working_time', 'personal_time'],
       certificate_templates: ['original', 'modern', 'elegant'],
       chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
       dataset_type: ['excel', 'csv', 'html'],
       platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
+      priority_status: ['low', 'medium', 'high', 'critical'],
       subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
       task_board_status: ['not_started', 'active', 'done', 'closed'],
       workspace_role_permission: [
