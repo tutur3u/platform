@@ -2,7 +2,7 @@
 
 import { RequestFeatureAccessDialog } from './request-feature-access-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import { BookOpenText, Plus, Sparkles } from '@tuturuuu/ui/icons';
+import { BookOpenText, Plus } from '@tuturuuu/ui/icons';
 import { FeatureFlag } from '@tuturuuu/utils/feature-flags/types';
 import clsx from 'clsx';
 import { useTranslations } from 'next-intl';
