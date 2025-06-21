@@ -5,8 +5,8 @@ import 'dotenv/config';
 export const googleCalendarBackgroundSync = schedules.task({
   id: 'google-calendar-background-sync',
   cron: {
-    // every minute
-    pattern: '* * * * *',
+    // every 10 minutes
+    pattern: '*/10 * * * *',
   },
   run: async () => {
     await syncGoogleCalendarEvents();
