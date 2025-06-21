@@ -6,7 +6,7 @@ export const googleCalendarBackgroundSync = schedules.task({
   id: 'google-calendar-background-sync',
   cron: {
     // every minute
-    pattern: '* * * * *',
+    pattern: '*/10 * * * *',
   },
   run: async () => {
     await syncGoogleCalendarEvents();
