@@ -14,6 +14,7 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'meeting',
         events: [],
+        allowSplit: false,
       },
       {
         id: 'basic-2',
@@ -23,6 +24,7 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 3,
         category: 'work',
         events: [],
+        allowSplit: false,
       },
       {
         id: 'basic-3',
@@ -32,6 +34,7 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         events: [],
+        allowSplit: false,
       },
     ],
   },
@@ -47,6 +50,7 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         events: [],
+        allowSplit: true,
       },
       {
         id: 'split-2',
@@ -56,6 +60,7 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'personal',
         events: [],
+        allowSplit: true,
       },
       {
         id: 'split-3',
@@ -65,6 +70,7 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'work',
         events: [],
+        allowSplit: true,
       },
     ],
   },
