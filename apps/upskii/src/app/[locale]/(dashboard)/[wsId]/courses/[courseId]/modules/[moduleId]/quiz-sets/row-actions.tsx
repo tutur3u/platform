@@ -15,17 +15,20 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface QuizSetRowActionsProps {
   wsId: string;
+  courseId: string;
   moduleId: string;
   row: Row<WorkspaceQuizSet>;
 }
 
 export function QuizSetRowActions({
   wsId,
+  courseId,
   moduleId,
   row,
 }: QuizSetRowActionsProps) {
@@ -76,7 +79,14 @@ export function QuizSetRowActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+          {/* <DropdownMenuItem onClick={() => setShowEditDialog(true)}> */}
+          <DropdownMenuItem
+            onClick={() => {
+              router.push(
+                `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${data.id}/edit`
+              );
+            }}
+          >
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
