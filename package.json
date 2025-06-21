@@ -6,6 +6,8 @@
     "buildx": "bun i && turbo test lint build",
     "dev": "turbo run dev --parallel",
     "dev:web": "turbo run dev -F @ncthub/web",
+    "devx": "bun sb:stop && bun i && bun sb:start && bun dev",
+    "devx:web": "bun sb:stop && bun i && bun sb:start && bun dev:web",
     "devrs": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev",
     "devrs:web": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:web",
     "ocr:install": "cd apps/ocr && python -m venv venv && .\\venv\\Scripts\\pip install -r requirements.txt",
