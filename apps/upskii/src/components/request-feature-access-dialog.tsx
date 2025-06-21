@@ -22,14 +22,13 @@ import {
 import { Textarea } from '@tuturuuu/ui/textarea';
 import {
   FEATURE_FLAG_TO_REQUESTABLE_KEY,
-  REQUESTABLE_FEATURES,
   type RequestableFeatureKey,
   getRequestableFeature,
   getRequestableFeatureKeys,
 } from '@tuturuuu/utils/feature-flags/requestable-features';
 import type { FeatureFlag } from '@tuturuuu/utils/feature-flags/types';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 interface RequestFeatureAccessDialogProps {
@@ -56,7 +55,6 @@ export function RequestFeatureAccessDialog({
 }: RequestFeatureAccessDialogProps) {
   const t = useTranslations('ws-settings.feature-request');
 
-  const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [message, setMessage] = useState('');
@@ -70,15 +68,11 @@ export function RequestFeatureAccessDialog({
     const requestedOrApprovedFeatures = new Set(
       existingRequests
         .filter((r) => r.status === 'pending' || r.status === 'approved')
-        .map((r) => {
-          // Convert feature flag back to requestable key
-          const requestableKey = Object.entries(
-            FEATURE_FLAG_TO_REQUESTABLE_KEY
-          ).find(
-            ([, key]) => key && REQUESTABLE_FEATURES[key]?.flag === r.feature
-          )?.[1];
-          return requestableKey;
-        })
+        .map((r) =>
+          r.feature
+            ? FEATURE_FLAG_TO_REQUESTABLE_KEY[r.feature as FeatureFlag]
+            : null
+        )
         .filter(Boolean)
     );
 
@@ -100,27 +94,23 @@ export function RequestFeatureAccessDialog({
   }, [existingRequests, enabledFeatures]);
 
   useEffect(() => {
-    const firstFeature = availableFeatures[0];
-    if (availableFeatures.length > 0 && !selectedFeature) {
-      if (firstFeature) {
-        setSelectedFeature(firstFeature);
+    setSelectedFeature((current) => {
+      if (availableFeatures.length === 0) {
+        return null;
       }
-    } else if (availableFeatures.length === 0) {
-      setSelectedFeature(null);
-    }
-  }, [availableFeatures, selectedFeature]);
+      const isValid = current && availableFeatures.includes(current);
+      if (isValid) {
+        return current;
+      }
+      return availableFeatures[0] ?? null;
+    });
+  }, [availableFeatures]);
 
-  // Check for existing request when component mounts
-  useEffect(() => {
-    if (!wsId) return;
-    checkExistingRequests();
-  }, [wsId]);
-
-  const checkExistingRequests = async () => {
+  const checkExistingRequests = useCallback(async () => {
     try {
       setIsCheckingStatus(true);
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/education-access-request`
+        `/api/v1/workspaces/${wsId}/feature-request`
       );
 
       if (response.ok) {
@@ -133,7 +123,13 @@ export function RequestFeatureAccessDialog({
     } finally {
       setIsCheckingStatus(false);
     }
-  };
+  }, [wsId]);
+
+  // Check for existing request when component mounts
+  useEffect(() => {
+    if (!wsId) return;
+    checkExistingRequests();
+  }, [wsId, checkExistingRequests]);
 
   const handleSubmitRequest = async () => {
     if (!message.trim()) {
@@ -149,7 +145,7 @@ export function RequestFeatureAccessDialog({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/education-access-request`,
+        `/api/v1/workspaces/${wsId}/feature-request`,
         {
           method: 'POST',
           headers: {
@@ -168,7 +164,6 @@ export function RequestFeatureAccessDialog({
       if (response.ok) {
         toast.success(t('toasts.success.request-submitted'));
         await checkExistingRequests(); // Refresh requests list
-        setOpen(false);
         setMessage('');
         setSelectedFeature(null);
       } else {
@@ -213,8 +208,12 @@ export function RequestFeatureAccessDialog({
     : null;
   const SelectedFeatureIcon = selectedFeatureConfig?.icon;
 
+  const requestsToShow = existingRequests.filter(
+    (req) => req.status === 'pending' || req.status === 'rejected'
+  );
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
@@ -293,20 +292,19 @@ export function RequestFeatureAccessDialog({
             </>
           )}
 
-          {existingRequests.length > 0 && (
+          {requestsToShow.length > 0 && (
             <div>
               <h4 className="mb-2 text-sm font-medium text-foreground">
                 {t('existing-requests-title')}
               </h4>
               <div className="space-y-2 rounded-lg border p-3">
-                {existingRequests.map((req) => {
+                {requestsToShow.map((req) => {
                   // Convert feature flag back to requestable key to get config
-                  const requestableKey = Object.entries(
-                    FEATURE_FLAG_TO_REQUESTABLE_KEY
-                  ).find(
-                    ([, key]) =>
-                      key && REQUESTABLE_FEATURES[key]?.flag === req.feature
-                  )?.[1];
+                  const requestableKey = req.feature
+                    ? FEATURE_FLAG_TO_REQUESTABLE_KEY[
+                        req.feature as FeatureFlag
+                      ]
+                    : null;
                   const config = requestableKey
                     ? getRequestableFeature(requestableKey)
                     : null;
@@ -341,13 +339,6 @@ export function RequestFeatureAccessDialog({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={isLoading}
-          >
-            {t('cancel')}
-          </Button>
           <Button
             onClick={handleSubmitRequest}
             disabled={

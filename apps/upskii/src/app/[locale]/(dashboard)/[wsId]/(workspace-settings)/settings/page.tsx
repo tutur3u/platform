@@ -2,6 +2,7 @@ import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
 import Security from './security';
+import { FeatureCard } from '@/components/feature-card';
 import { RequestFeatureAccessDialog } from '@/components/request-feature-access-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -9,6 +10,10 @@ import { Plus, UserPlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
+import {
+  getRequestableFeature,
+  getRequestableFeatureKeys,
+} from '@tuturuuu/utils/feature-flags/requestable-features';
 import {
   getPermissions,
   getSecrets,
@@ -41,6 +46,11 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
 
   // Debug logging
   console.log('Server - Feature flags for wsId:', wsId, featureFlags);
+
+  const approvedFeatures = getRequestableFeatureKeys().filter(
+    (key) => featureFlags[getRequestableFeature(key).flag]
+  );
+  console.log('approvedFeatures', approvedFeatures);
 
   const preventWorkspaceDeletion =
     secrets
@@ -106,10 +116,10 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         {enableSecurity && <Security workspace={ws} />}
       </div>
       {isWorkspaceOwner ? (
-        <>
-          <Separator className="my-4" />
+        <div className="flex flex-col gap-4">
+          <Separator />
           <FeatureSummary
-            title={t('ws-settings.features')}
+            pluralTitle={t('ws-settings.features')}
             description={t('ws-settings.features_description')}
             action={
               <RequestFeatureAccessDialog
@@ -124,10 +134,19 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
               </RequestFeatureAccessDialog>
             }
           />
-          <div className="grid h-full items-end gap-2 text-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {/* Showcase features that are requested/pending */}
+          <div className="grid gap-2 text-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {approvedFeatures.map((key) => {
+              const feature = getRequestableFeature(key);
+              return (
+                <FeatureCard
+                  key={key}
+                  icon={feature.icon}
+                  name={feature.name}
+                />
+              );
+            })}
           </div>
-        </>
+        </div>
       ) : (
         <></>
       )}

@@ -31,8 +31,8 @@ export default async function ApprovalsPage({ params }: Props) {
   return (
     <>
       <FeatureSummary
-        pluralTitle="Education Access Requests"
-        description="Review and approve education feature requests from workspace creators. Approved requests will automatically enable education features for the respective workspaces."
+        pluralTitle="Feature Access Requests"
+        description="Review and approve feature requests from workspace creators. Manage access to AI, Education, Quizzes, and Challenges features. Approved requests will automatically enable features for the respective workspaces."
       />
       <Separator className="my-4" />
       <ApprovalsTable />

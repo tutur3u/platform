@@ -58,7 +58,7 @@ export function ApprovalRowActions({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `/api/v1/admin/education-access-requests/${approval.id}`,
+        `/api/v1/admin/feature-requests/${approval.id}`,
         {
           method: 'PUT',
           headers: {
@@ -75,7 +75,7 @@ export function ApprovalRowActions({
 
       if (response.ok) {
         toast.success(
-          `Approved education access for ${approval.workspace_name}. Education features will be enabled automatically.`
+          `Approved ${approval.feature_requested} access for ${approval.workspace_name}. Features will be enabled automatically.`
         );
         setShowApproveDialog(false);
         setAdminNotes('');
@@ -100,7 +100,7 @@ export function ApprovalRowActions({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `/api/v1/admin/education-access-requests/${approval.id}`,
+        `/api/v1/admin/feature-requests/${approval.id}`,
         {
           method: 'PUT',
           headers: {
@@ -117,7 +117,7 @@ export function ApprovalRowActions({
 
       if (response.ok) {
         toast.success(
-          `Rejected education access request for ${approval.workspace_name}`
+          `Rejected ${approval.feature_requested} access request for ${approval.workspace_name}`
         );
         setShowRejectDialog(false);
         setAdminNotes('');
@@ -156,7 +156,7 @@ export function ApprovalRowActions({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BookOpenText className="h-5 w-5 text-dynamic-blue" />
-              Education Access Request Details
+              Feature Access Request Details
             </DialogTitle>
           </DialogHeader>
 
@@ -175,6 +175,8 @@ export function ApprovalRowActions({
                 </p>
               </div>
             </div>
+
+            {/* Feature Info */}
 
             {/* Requester Info */}
             <div className="space-y-3">
@@ -275,11 +277,12 @@ export function ApprovalRowActions({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-green-600">
               <Check className="h-5 w-5" />
-              Approve Education Access
+              Approve {approval.feature_requested} Access
             </DialogTitle>
             <DialogDescription>
-              This will enable education features for "{approval.workspace_name}
-              " and grant the workspace access to all educational tools.
+              This will enable {approval.feature_requested} features for "
+              {approval.workspace_name}" and grant the workspace access to{' '}
+              {approval.feature_requested} functionality.
               {approval.status === 'rejected' &&
                 ' This will override the previous rejection.'}
             </DialogDescription>
@@ -337,11 +340,11 @@ export function ApprovalRowActions({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <X className="h-5 w-5" />
-              Reject Education Access
+              Reject {approval.feature_requested} Access
             </DialogTitle>
             <DialogDescription>
-              This will reject the education access request for "
-              {approval.workspace_name}". Please provide a reason for the
+              This will reject the {approval.feature_requested} access request
+              for "{approval.workspace_name}". Please provide a reason for the
               rejection.
             </DialogDescription>
           </DialogHeader>

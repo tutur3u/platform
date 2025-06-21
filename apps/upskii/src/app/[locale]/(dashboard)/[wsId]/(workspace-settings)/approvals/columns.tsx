@@ -7,6 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { BookOpenText, User } from '@tuturuuu/ui/icons';
+import {
+  REQUESTABLE_KEY_TO_FEATURE_FLAG,
+  getRequestableFeature,
+} from '@tuturuuu/utils/feature-flags/requestable-features';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 
@@ -79,15 +83,58 @@ export const approvalsColumns = (
     },
   },
   {
+    accessorKey: 'feature_requested',
+    header: ({ column }) => (
+      <DataTableColumnHeader t={t} column={column} title="Feature Requested" />
+    ),
+    cell: ({ row }) => {
+      const featureRequested = row.getValue('feature_requested') as string;
+
+      // Try to get the feature configuration
+      let featureConfig = null;
+      let FeatureIcon = BookOpenText; // Default icon
+
+      // Check if it's a feature flag and get the requestable key
+      const featureFlag = featureRequested as any;
+      if (featureFlag) {
+        // Try to find the requestable key for this feature flag
+        const requestableKey = Object.entries(
+          REQUESTABLE_KEY_TO_FEATURE_FLAG
+        // @ts-ignore
+        ).find(([_key, flag]) => flag === featureFlag)?.[0];
+
+        if (requestableKey) {
+          featureConfig = getRequestableFeature(requestableKey as any);
+          if (featureConfig?.icon) {
+            FeatureIcon = featureConfig.icon;
+          }
+        }
+      }
+
+      return (
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-dynamic-blue/10">
+            <FeatureIcon className="h-4 w-4 text-dynamic-blue" />
+          </div>
+          <div className="flex flex-col">
+            <div className="text-sm font-medium text-dynamic-blue">
+              {featureConfig?.name || featureRequested}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {featureRequested}
+            </div>
+          </div>
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: 'request_message',
     header: ({ column }) => (
       <DataTableColumnHeader t={t} column={column} title="Request Details" />
     ),
     cell: ({ row }) => (
-      <div className="max-w-64 space-y-1">
-        <div className="text-sm font-medium text-dynamic-blue">
-          Education Features
-        </div>
+      <div className="max-w-64">
         <div className="line-clamp-3 text-sm break-words text-muted-foreground">
           {row.getValue('request_message')}
         </div>
