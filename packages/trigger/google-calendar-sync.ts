@@ -162,11 +162,9 @@ export const syncGoogleCalendarEvents = async () => {
       try {
         const calendar = google.calendar({ version: 'v3', auth });
 
-        const startOfCurrentWeek = dayjs().startOf('week');
-        const timeMin = startOfCurrentWeek.toDate();
-        const timeMax = startOfCurrentWeek
-          .add(BACKGROUND_SYNC_RANGE, 'day')
-          .toDate();
+        const now = dayjs();
+        const timeMin = now.toDate();
+        const timeMax = now.add(BACKGROUND_SYNC_RANGE, 'day');
 
         const response = await calendar.events.list({
           calendarId: 'primary',
