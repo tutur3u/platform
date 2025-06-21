@@ -3828,15 +3828,85 @@
     "create_description": "Tạo một hàng chờ mới"
   },
   "ws-quiz-sets": {
-    "plural": "Bộ trắc nghiệm",
-    "singular": "Bộ trắc nghiệm",
-    "description": "Quản lý các bộ trắc nghiệm trong không gian làm việc của bạn bao gồm các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
-    "create": "Tạo bộ trắc nghiệm",
-    "create_description": "Tạo bộ trắc nghiệm mới",
-    "name": "Tên bộ trắc nghiệm",
-    "edit": "Chỉnh sửa bộ",
-    "link-quizzes": "Liên kết câu hỏi",
-    "link-modules": "Liên kết mô-đun"
+    "plural": "Bộ câu hỏi",
+    "singular": "Bộ câu hỏi",
+    "description": "Bộ câu hỏi được sử dụng để nhóm các câu quiz lại với nhau cho mục đích học tập.",
+    "create_description": "Tạo một bộ câu hỏi mới",
+    "link-quizzes": "Liên kết bài kiểm tra",
+    "link-modules": "Liên kết học phần",
+    "editing": "Đang cập nhật...",
+    "creating": "Đang tạo...",
+    "create": "Tạo bộ câu hỏi",
+    "edit": "Chỉnh sửa bộ câu hỏi",
+    "form-sections": {
+      "basic": {
+        "title": "Thông tin cơ bản",
+        "subtitle": "Thiết lập các chi tiết cơ bản cho bài kiểm tra của bạn"
+      },
+      "timing-limit": {
+        "title": "Thông tin cơ bản",
+        "subtitle": "Thiết lập các chi tiết cơ bản cho bài kiểm tra của bạn"
+      },
+      "schedule": {
+        "title": "Lịch trình",
+        "subtitle": "Đặt thời gian khả dụng và thời hạn cho bài kiểm tra"
+      },
+      "settings": {
+        "title": "Cài đặt bài kiểm tra",
+        "subtitle": "Cấu hình hành vi bài kiểm tra và quyền của sinh viên"
+      }
+    },
+    "form-description": "Cấu hình cài đặt, thời gian và quyền của bài kiểm tra để tạo trải nghiệm học tập hấp dẫn cho sinh viên của bạn.",
+    "required-badge": "Bắt buộc",
+    "form-fields": {
+      "name": {
+        "title": "Tên bộ câu hỏi",
+        "description": "Chọn một tên rõ ràng, mô tả cho bài kiểm tra của bạn",
+        "placeholder": "Ví dụ: Kiểm tra Chương 5"
+      },
+      "attempt_limit": {
+        "title": "Giới hạn số lần làm bài",
+        "description": "Số lần tối đa người dùng có thể làm bài kiểm tra. Để 0 nếu không giới hạn.",
+        "placeholder": "Ví dụ: 3"
+      },
+      "time_limit_minutes": {
+        "title": "Giới hạn thời gian (phút)",
+        "description": "Thời gian cho phép hoàn thành bài kiểm tra tính bằng phút. Để 0 nếu không giới hạn thời gian.",
+        "placeholder": "Ví dụ: 60"
+      },
+      "available_date": {
+        "title": "Có hiệu lực từ",
+        "description": "Ngày và giờ bài kiểm tra có sẵn cho người tham gia."
+      },
+      "due_date": {
+        "title": "Ngày hết hạn",
+        "description": "Thời hạn nộp bài kiểm tra."
+      },
+      "explanation_mode": {
+        "title": "Chế độ giải thích",
+        "description": "Chọn thời điểm và cách học sinh có thể xem giải thích câu trả lời",
+        "placeholder": "Chọn thời điểm giải thích",
+        "select_never": "Không bao giờ hiển thị giải thích câu trả lời",
+        "select_correct_answer": "Chỉ hiển thị giải thích các câu trả lời đúng",
+        "select_all_answer": "Hiển thị giải thích của tất cả các câu trả lời"
+      },
+      "instruction": {
+        "title": "Hướng dẫn",
+        "description": "Cung cấp hướng dẫn chi tiết cho học sinh bằng trình soạn thảo văn bản đa dạng thức, hiển thị trước khi bắt đầu bài kiểm tra."
+      },
+      "allow_view_results": {
+        "title": "Cho phép xem kết quả ngay lập tức",
+        "description": "Cho phép người dùng xem điểm của họ ngay sau khi nộp bài."
+      },
+      "results_released": {
+        "title": "Đã công bố kết quả",
+        "description": "Đánh dấu kết quả bài kiểm tra đã công bố, cho phép xem phản hồi chi tiết và giải thích."
+      },
+      "allow_view_old_attempts": {
+        "title": "Cho phép xem lại các lần làm bài cũ",
+        "description": "Cho phép người dùng xem lại các lần làm bài kiểm tra trước đó của họ. Trước khi kết quả được công bố, người dùng chỉ có thể xem các câu trả lời đã nộp của mình. Khi kết quả được công bố, họ sẽ thấy các câu trả lời cùng với kết quả chi tiết và phản hồi."
+      }
+    }
   },
   "ws-quizzes": {
     "plural": "Câu hỏi trắc nghiệm",

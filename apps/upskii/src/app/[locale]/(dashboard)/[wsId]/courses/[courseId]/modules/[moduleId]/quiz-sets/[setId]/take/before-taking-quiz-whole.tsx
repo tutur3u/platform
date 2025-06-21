@@ -118,8 +118,6 @@ export default function BeforeTakingQuizWhole({
 
   const canViewTotalPointsOnly = quizData.resultsReleased;
 
-  console.log('Test', quizData.attempts[0]);
-
   // const canViewOldAttemptsResults = quizData.resultsReleased;
   // can view attempts with points in detailed explanation
   const canViewOldAttemptsResults =

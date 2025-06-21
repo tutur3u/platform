@@ -3830,12 +3830,84 @@
     "plural": "Quiz Sets",
     "singular": "Quiz Set",
     "description": "Quiz sets are used to group quizzes together for learning purposes.",
-    "create": "Create quiz set",
     "create_description": "Create a new quiz set",
-    "name": "Set name",
-    "edit": "Edit set",
     "link-quizzes": "Link Quizzes",
-    "link-modules": "Link modules"
+    "link-modules": "Link modules",
+    "editing": "Updating...",
+    "creating": "Creating...",
+    "create": "Create Quiz Set",
+    "edit": "Edit Quiz Set",
+    "form-sections": {
+      "basic": {
+        "title": "Basic Information",
+        "subtitle": "Set up the fundamental details of your quiz"
+      },
+      "timing-limit": {
+        "title": "Basic Information",
+        "subtitle": "Set up the fundamental details of your quiz"
+      },
+      "schedule": {
+        "title": "Schedule",
+        "subtitle": "Set availability and due dates for the quiz"
+      },
+      "settings": {
+        "title": "Quiz Settings",
+        "subtitle": "Configure quiz behavior and student permissions"
+      }
+    },
+    "form-description": "Configure your quiz settings, timing, and permissions to create an engaging learning experience for your students.",
+    "required-badge": "Required",
+    "form-fields": {
+      "name": {
+        "title": "Set Name",
+        "description": "Choose a clear, descriptive name for your quiz",
+        "placeholder": "e.g., Chapter 5 Assessment"
+      },
+      "attempt_limit": {
+        "title": "Attempt Limit",
+        "description": "Maximum number of times a user can attempt the quiz. Leave 0 for unlimited.",
+        "placeholder": "e.g., 3"
+      },
+      "time_limit_minutes": {
+        "title": "Time Limit (minutes)",
+        "description": "The time allowed to complete the quiz in minutes. Leave 0 for no time limit.",
+        "placeholder": "e.g, 60"
+      },
+      "available_date": {
+        "title": "Available From",
+        "description": "Date and time when the quiz becomes available to participants."
+      },
+      "due_date": {
+        "title": "Due Date",
+        "description": "Deadline for submitting the quiz."
+      },
+      "explanation_mode": {
+        "title": "Explanation Mode",
+        "description": "Choose when and how students can see answer explanations",
+        "placeholder": "Select explanation timing",
+        "select_never": "Never show answer explanations",
+        "select_correct_answer": "Only show explanation of correct answers",
+        "select_all_answer": "Show explanation of all answers"
+      },
+      "instruction": {
+        "title": "Instructions",
+        "description": "Provide detailed instructions for students using the rich text editor, displayed before starting the quiz.",
+        "save": "Save Instruction",
+        "saving": "Saving..."
+      },
+      "allow_view_results": {
+        "title": "Allow Immediate Results",
+        "description": "Enable users to see their score immediately upon submission."
+      },
+      "results_released": {
+        "title": "Results Released",
+        "description": "Mark quiz results as released, allowing detailed feedback and explanations."
+      },
+      "allow_view_old_attempts": {
+        "title": "Allow Review Old Attempts",
+        "description": "Revisit users' previous quiz attempts. Before results are released, users can view only their submitted answers. Once results are released, they'll see their answers along with detailed results and feedback."
+      }
+    }
   },
   "ws-quizzes": {
     "plural": "Quizzes",

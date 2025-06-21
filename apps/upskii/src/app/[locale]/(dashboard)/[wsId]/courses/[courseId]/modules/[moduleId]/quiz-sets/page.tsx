@@ -1,5 +1,4 @@
 import { getQuizSetColumns } from './columns';
-import CourseModuleForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type WorkspaceQuizSet } from '@tuturuuu/types/db';
@@ -46,7 +45,8 @@ export default async function WorkspaceCoursesPage({
         singularTitle={t('ws-quiz-sets.singular')}
         createTitle={t('ws-quiz-sets.create')}
         createDescription={t('ws-quiz-sets.create_description')}
-        form={<CourseModuleForm wsId={wsId} moduleId={moduleId} />}
+        // form={<QuizSetForm wsId={wsId} moduleId={moduleId} />}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/create`}
       />
       <Separator className="my-4" />
       <CustomDataTable
