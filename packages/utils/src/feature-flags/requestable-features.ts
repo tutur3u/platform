@@ -52,35 +52,28 @@ export function getRequestableFeatureKeys(): RequestableFeatureKey[] {
   return Object.keys(REQUESTABLE_FEATURES) as RequestableFeatureKey[];
 }
 
-// Create a mapping from feature flag to requestable feature key
-export const FEATURE_FLAG_TO_REQUESTABLE_KEY: Record<
-  FeatureFlag,
-  RequestableFeatureKey | null
-> = {
-  ENABLE_AI: 'ai',
-  ENABLE_EDUCATION: 'education',
-  ENABLE_QUIZZES: 'quizzes',
-  ENABLE_CHALLENGES: 'challenges',
-  // Non-requestable features
-  ENABLE_AI_ONLY: null,
-  ENABLE_CHAT: null,
-  ENABLE_TASKS: null,
-  ENABLE_DOCS: null,
-  ENABLE_DRIVE: null,
-  ENABLE_SLIDES: null,
-  DISABLE_INVITE: null,
-  PREVENT_WORKSPACE_DELETION: null,
-  ENABLE_AVATAR: null,
-  ENABLE_LOGO: null,
-};
-
-// Reverse mapping from requestable key to feature flag
-export const REQUESTABLE_KEY_TO_FEATURE_FLAG: Record<
-  RequestableFeatureKey,
-  FeatureFlag
-> = {
-  ai: FEATURE_FLAGS.ENABLE_AI,
-  education: FEATURE_FLAGS.ENABLE_EDUCATION,
-  quizzes: FEATURE_FLAGS.ENABLE_QUIZZES,
-  challenges: FEATURE_FLAGS.ENABLE_CHALLENGES,
-};
+// Derive mappings from REQUESTABLE_FEATURES
+export const REQUESTABLE_KEY_TO_FEATURE_FLAG = Object.entries(
+  REQUESTABLE_FEATURES
+).reduce(
+  (acc, [key, config]) => {
+    acc[key as RequestableFeatureKey] = config.flag;
+    return acc;
+  },
+  {} as Record<RequestableFeatureKey, FeatureFlag>
+);
+export const FEATURE_FLAG_TO_REQUESTABLE_KEY = Object.entries(
+  REQUESTABLE_FEATURES
+).reduce(
+  (acc, [key, config]) => {
+    acc[config.flag] = key as RequestableFeatureKey;
+    return acc;
+  },
+  {} as Partial<Record<FeatureFlag, RequestableFeatureKey>>
+);
+// Helper to get requestable key from feature flag
+export function getRequestableKeyFromFeatureFlag(
+  flag: FeatureFlag
+): RequestableFeatureKey | null {
+  return FEATURE_FLAG_TO_REQUESTABLE_KEY[flag] ?? null;
+}

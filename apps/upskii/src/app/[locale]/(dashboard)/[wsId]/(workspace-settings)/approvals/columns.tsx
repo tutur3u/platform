@@ -8,9 +8,10 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { BookOpenText, User } from '@tuturuuu/ui/icons';
 import {
-  REQUESTABLE_KEY_TO_FEATURE_FLAG,
   getRequestableFeature,
+  getRequestableKeyFromFeatureFlag,
 } from '@tuturuuu/utils/feature-flags/requestable-features';
+import type { FeatureFlag } from '@tuturuuu/utils/feature-flags/types';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 
@@ -94,20 +95,15 @@ export const approvalsColumns = (
       let featureConfig = null;
       let FeatureIcon = BookOpenText; // Default icon
 
-      // Check if it's a feature flag and get the requestable key
-      const featureFlag = featureRequested as any;
-      if (featureFlag) {
-        // Try to find the requestable key for this feature flag
-        const requestableKey = Object.entries(
-          REQUESTABLE_KEY_TO_FEATURE_FLAG
-          // @ts-ignore
-        ).find(([_key, flag]) => flag === featureFlag)?.[0];
+      // Use the type-safe helper function to get the requestable key from feature flag
+      const requestableKey = getRequestableKeyFromFeatureFlag(
+        featureRequested as FeatureFlag
+      );
 
-        if (requestableKey) {
-          featureConfig = getRequestableFeature(requestableKey as any);
-          if (featureConfig?.icon) {
-            FeatureIcon = featureConfig.icon;
-          }
+      if (requestableKey) {
+        featureConfig = getRequestableFeature(requestableKey);
+        if (featureConfig?.icon) {
+          FeatureIcon = featureConfig.icon;
         }
       }
 
