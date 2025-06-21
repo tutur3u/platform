@@ -3641,8 +3641,8 @@ export type Database = {
           id: string;
           is_splittable: boolean | null;
           list_id: string | null;
-          max_split_duration_minutes: number | null;
-          min_split_duration_minutes: number | null;
+          max_split_duration_hours: number | null;
+          min_split_duration_hours: number | null;
           name: string;
           priority: number | null;
           start_date: string | null;
@@ -3665,8 +3665,8 @@ export type Database = {
           id?: string;
           is_splittable?: boolean | null;
           list_id?: string | null;
-          max_split_duration_minutes?: number | null;
-          min_split_duration_minutes?: number | null;
+          max_split_duration_hours?: number | null;
+          min_split_duration_hours?: number | null;
           name: string;
           priority?: number | null;
           start_date?: string | null;
@@ -3689,8 +3689,8 @@ export type Database = {
           id?: string;
           is_splittable?: boolean | null;
           list_id?: string | null;
-          max_split_duration_minutes?: number | null;
-          min_split_duration_minutes?: number | null;
+          max_split_duration_hours?: number | null;
+          min_split_duration_hours?: number | null;
           name?: string;
           priority?: number | null;
           start_date?: string | null;

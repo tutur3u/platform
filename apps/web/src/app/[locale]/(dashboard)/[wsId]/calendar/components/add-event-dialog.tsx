@@ -40,8 +40,8 @@ export default function AddEventModal({
     description: '',
     total_duration: 1,
     is_splittable: true,
-    min_split_duration_minutes: 0.5,
-    max_split_duration_minutes: 2,
+    min_split_duration_hours: 0.5,
+    max_split_duration_hours: 2,
     time_reference: 'working_time',
     start_date: '',
     end_date: '',
@@ -78,21 +78,20 @@ export default function AddEventModal({
     }
 
     if (formData.is_splittable) {
-      if (formData.min_split_duration_minutes <= 0) {
-        newErrors.min_split_duration_minutes =
+      if (formData.min_split_duration_hours <= 0) {
+        newErrors.min_split_duration_hours =
           'Minimum duration must be greater than 0';
       }
 
-      if (formData.max_split_duration_minutes <= 0) {
-        newErrors.max_split_duration_minutes =
+      if (formData.max_split_duration_hours <= 0) {
+        newErrors.max_split_duration_hours =
           'Maximum duration must be greater than 0';
       }
 
       if (
-        formData.min_split_duration_minutes >
-        formData.max_split_duration_minutes
+        formData.min_split_duration_hours > formData.max_split_duration_hours
       ) {
-        newErrors.min_split_duration_minutes =
+        newErrors.min_split_duration_hours =
           'Minimum duration cannot be greater than maximum';
       }
     }
@@ -131,11 +130,11 @@ export default function AddEventModal({
         description: formData.description.trim() || null,
         total_duration: formData.total_duration,
         is_splittable: formData.is_splittable,
-        min_split_duration_minutes: formData.is_splittable
-          ? formData.min_split_duration_minutes
+        min_split_duration_hours: formData.is_splittable
+          ? formData.min_split_duration_hours
           : null,
-        max_split_duration_minutes: formData.is_splittable
-          ? formData.max_split_duration_minutes
+        max_split_duration_hours: formData.is_splittable
+          ? formData.max_split_duration_hours
           : null,
         time_reference: formData.time_reference as
           | 'working_time'
@@ -190,8 +189,8 @@ export default function AddEventModal({
       description: '',
       total_duration: 1,
       is_splittable: true,
-      min_split_duration_minutes: 0.5,
-      max_split_duration_minutes: 2,
+      min_split_duration_hours: 0.5,
+      max_split_duration_hours: 2,
       time_reference: 'working_time',
       start_date: '',
       end_date: '',
@@ -316,22 +315,22 @@ export default function AddEventModal({
                       type="number"
                       step="0.25"
                       min="0.25"
-                      value={formData.min_split_duration_minutes}
+                      value={formData.min_split_duration_hours}
                       onChange={(e) =>
                         updateFormData(
-                          'min_split_duration_minutes',
+                          'min_split_duration_hours',
                           parseFloat(e.target.value)
                         )
                       }
                       className={
-                        errors.min_split_duration_minutes
+                        errors.min_split_duration_hours
                           ? 'border-destructive'
                           : ''
                       }
                     />
-                    {errors.min_split_duration_minutes && (
+                    {errors.min_split_duration_hours && (
                       <p className="text-xs text-destructive">
-                        {errors.min_split_duration_minutes}
+                        {errors.min_split_duration_hours}
                       </p>
                     )}
                   </div>
@@ -346,22 +345,22 @@ export default function AddEventModal({
                       type="number"
                       step="0.25"
                       min="0.25"
-                      value={formData.max_split_duration_minutes}
+                      value={formData.max_split_duration_hours}
                       onChange={(e) =>
                         updateFormData(
-                          'max_split_duration_minutes',
+                          'max_split_duration_hours',
                           parseFloat(e.target.value)
                         )
                       }
                       className={
-                        errors.max_split_duration_minutes
+                        errors.max_split_duration_hours
                           ? 'border-destructive'
                           : ''
                       }
                     />
-                    {errors.max_split_duration_minutes && (
+                    {errors.max_split_duration_hours && (
                       <p className="text-xs text-destructive">
-                        {errors.max_split_duration_minutes}
+                        {errors.max_split_duration_hours}
                       </p>
                     )}
                   </div>
