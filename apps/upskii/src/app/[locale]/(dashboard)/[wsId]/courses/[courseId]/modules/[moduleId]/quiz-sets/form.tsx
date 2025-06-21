@@ -131,6 +131,14 @@ export default function QuizSetForm({ wsId, moduleId, data, onFinish }: Props) {
       if (res.ok) {
         onFinish?.(values);
         router.refresh();
+
+        // navigate to set detail page if created or edited successfully
+        if (!values.id) {
+          const newSet = await res.json();
+          router.push(`/${wsId}/quiz-sets/${newSet.setId}`);
+        } else {
+          router.push(`/${wsId}/quiz-sets/${values.id}`);
+        }
       } else {
         const err = await res.json();
         toast({ title: t('error_saving'), description: err.message });
