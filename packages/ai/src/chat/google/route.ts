@@ -130,7 +130,7 @@ export function createPOST(
       if (filePaths?.length) {
         for (const path of filePaths) {
           const { data: fileData, error } = await supabase.storage
-            .from('ai-chat')
+            .from('workspaces')
             .download(path);
       
           if (error || !fileData) continue;

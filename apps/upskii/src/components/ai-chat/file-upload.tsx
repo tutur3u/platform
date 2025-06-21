@@ -75,53 +75,102 @@ export function StorageObjectForm({
 
   async function onSubmit(formData: z.infer<typeof ObjectFormSchema>) {
     if (loading || editingFile) return;
-
+  
     setLoading(true);
-
-    formData.files.forEach(async (file) => {
-      // if the file is already uploaded, skip it
-      if (fileStatuses[file.name] === 'uploaded') return;
-
-      // Set the status of the file to uploading
-      setFileStatuses((prev) => ({
-        ...prev,
-        [file.name]: 'uploading',
-      }));
-
-      const finalPath = path
-        ? joinPath(path, `${generateRandomUUID()}_${file.name}`)
-        : joinPath(chatId, uploadPath, `${generateRandomUUID()}_${file.name}`);
-
-      const { error } = await supabase.storage
-        .from('ai-chat')
-        .upload(finalPath, file);
-
-
-      if (error) {
+  
+    const unuploadedFiles = formData.files.filter(
+      (file) => fileStatuses[file.name] !== 'uploaded'
+    );
+  
+    const filesToUpload = unuploadedFiles.slice(0, 10); // giới hạn tối đa 10 file
+  
+    await Promise.all(
+      filesToUpload.map(async (file) => {
         setFileStatuses((prev) => ({
           ...prev,
-          [file.name]: 'error',
+          [file.name]: 'uploading',
         }));
-        return;
-      }
-
-      // Set the status of the file to uploaded
-      setFileStatuses((prev) => ({
-        ...prev,
-        [file.name]: 'uploaded',
-      }));
-    });
-
-    // if all files are uploaded, call onComplete
-    if (
-      formData.files.every((file) => fileStatuses[file.name] === 'uploaded')
-    ) {
+  
+        const finalPath = path
+          ? joinPath(path, `${generateRandomUUID()}_${file.name}`)
+          : joinPath(chatId, uploadPath, `${generateRandomUUID()}_${file.name}`);
+  
+        const { error } = await supabase.storage
+          .from('workspaces')
+          .upload(finalPath, file);
+  
+        setFileStatuses((prev) => ({
+          ...prev,
+          [file.name]: error ? 'error' : 'uploaded',
+        }));
+  
+        if (error) {
+          console.error(`Upload failed for ${file.name}:`, error.message);
+        }
+      })
+    );
+  
+    // Check if all selected (or attempted) files are uploaded successfully
+    const allUploaded = filesToUpload.every(
+      (file) => fileStatuses[file.name] === 'uploaded'
+    );
+  
+    if (allUploaded) {
       onComplete?.();
     }
-
+  
     router.refresh();
     setLoading(false);
   }
+  // async function onSubmit(formData: z.infer<typeof ObjectFormSchema>) {
+  //   if (loading || editingFile) return;
+
+  //   setLoading(true);
+
+  //   formData.files.forEach(async (file) => {
+  //     // if the file is already uploaded, skip it
+  //     if (fileStatuses[file.name] === 'uploaded') return;
+
+  //     // Set the status of the file to uploading
+  //     setFileStatuses((prev) => ({
+  //       ...prev,
+  //       [file.name]: 'uploading',
+  //     }));
+
+  //     const finalPath = path
+  //       ? joinPath(path, `${generateRandomUUID()}_${file.name}`)
+  //       : joinPath(chatId, uploadPath, `${generateRandomUUID()}_${file.name}`);
+
+  //     const { error } = await supabase.storage
+  //       .from('workspaces')
+  //       .upload(finalPath, file);
+
+
+  //     if (error) {
+  //       setFileStatuses((prev) => ({
+  //         ...prev,
+  //         [file.name]: 'error',
+  //       }));
+  //       return;
+  //     }
+
+  //     // Set the status of the file to uploaded
+  //     setFileStatuses((prev) => ({
+  //       ...prev,
+  //       [file.name]: 'uploaded',
+  //     }));
+  //   });
+
+  //   // if all files are uploaded, call onComplete
+  //   if (
+  //     formData.files.every((file) => fileStatuses[file.name] === 'uploaded')
+  //   ) {
+  //     onComplete?.();
+  //   }
+
+  //   router.refresh();
+  //   setLoading(false);
+  // }
 
   const files = form.watch('files');
 

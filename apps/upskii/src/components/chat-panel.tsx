@@ -19,6 +19,7 @@ import {
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React, { useState } from 'react';
+import { StorageObjectForm } from './ai-chat/file-upload';
 
 interface PresenceUser {
   id: string;
@@ -81,7 +82,7 @@ export function ChatPanel({
   apiKey,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
-
+  const storagePath = `${id}/${chat?.id}/resources/`;
   const [showDialog, setShowDialog] = useState(false);
   const [dialogType, setDialogType] = useState<
     'files' | 'visibility' | 'api'
@@ -228,13 +229,20 @@ export function ChatPanel({
 
         {dialogType === 'files' && (
           <div className="grid gap-4">
-            <FileUploader
+            
+              <StorageObjectForm
+                chatId={chat?.id || ''}
+                submitLabel={t('common.upload')}
+                path={storagePath}
+                accept="*"
+              />
+            {/* <FileUploader
               value={files}
               onValueChange={setFiles}
               maxFileCount={10}
               maxSize={50 * 1024 * 1024}
               onUpload={onUpload}
-            />
+            /> */}
           </div>
         )}
 
