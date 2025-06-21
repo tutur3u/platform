@@ -1,20 +1,26 @@
 'use client';
 
-import { RequestAccessButton } from './request-access-button';
-import { BookOpenText, Sparkles } from '@tuturuuu/ui/icons';
+import { RequestFeatureAccessDialog } from './request-feature-access-dialog';
+import { Button } from '@tuturuuu/ui/button';
+import { BookOpenText, Plus, Sparkles } from '@tuturuuu/ui/icons';
+import { FeatureFlag } from '@tuturuuu/utils/feature-flags/types';
 import clsx from 'clsx';
+import { useTranslations } from 'next-intl';
 
 interface EducationBannerProps {
   workspaceName: string | null;
   wsId: string;
   className?: string;
+  enabledFeatures: Record<FeatureFlag, boolean>;
 }
 
 export function EducationBanner({
   workspaceName,
   wsId,
   className,
+  enabledFeatures,
 }: EducationBannerProps) {
+  const t = useTranslations();
   return (
     <div
       className={clsx(
@@ -36,22 +42,24 @@ export function EducationBanner({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-foreground">
-                Unlock Education Features
+                {t('unlock-education-features')}
               </h3>
-              <span className="inline-flex items-center gap-1 rounded-full bg-dynamic-blue/10 px-2.5 py-0.5 text-xs font-medium text-dynamic-blue ring-1 ring-dynamic-blue/20">
-                <Sparkles className="h-3 w-3" />
-                Request Access
-              </span>
             </div>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Transform your workspace with comprehensive learning tools: create
-              courses, design interactive quizzes, track student progress, issue
-              certificates, and leverage AI-powered teaching assistants.
+              {t('transform-your-workspace')}
             </p>
           </div>
         </div>
-
-        <RequestAccessButton workspaceName={workspaceName} wsId={wsId} />
+        <RequestFeatureAccessDialog
+          workspaceName={workspaceName}
+          wsId={wsId}
+          enabledFeatures={enabledFeatures}
+        >
+          <Button variant="default" size="default">
+            <Plus className="mr-2 h-4 w-4" />
+            {t('request-feature')}
+          </Button>
+        </RequestFeatureAccessDialog>
       </div>
     </div>
   );

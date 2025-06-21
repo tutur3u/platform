@@ -4403,5 +4403,7 @@
     "feature-access-requests": "Feature Requests",
     "feature-access-requests-description": "Review and approve feature requests from workspace creators. Approved requests will automatically enable features for the respective workspaces."
   },
-  "request-feature": "Request Feature"
+  "request-feature": "Request Feature",
+  "unlock-education-features": "Unlock Education Features",
+  "transform-your-workspace": "Transform your workspace with comprehensive learning tools: create\ncourses, design interactive quizzes, track student progress, issue\ncertificates, and leverage AI-powered teaching assistants."
 }
