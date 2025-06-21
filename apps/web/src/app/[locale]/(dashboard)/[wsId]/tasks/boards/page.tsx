@@ -1,5 +1,6 @@
 import { EnhancedTaskBoardsContent } from './enhanced-content';
 import { TaskBoardForm } from './form';
+import { EnhancedBoard } from './types';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -7,7 +8,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { EnhancedBoard } from './types';
 
 interface Props {
   params: Promise<{
@@ -33,14 +33,18 @@ export default async function WorkspaceProjectsPage({
 
   // Check if the current user is a workspace owner/creator
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { data: workspace } = await supabase
     .from('workspaces')
     .select('creator_id')
     .eq('id', wsId)
     .single();
-  
-  const isOwner = Boolean(user && workspace && workspace.creator_id === user.id);
+
+  const isOwner = Boolean(
+    user && workspace && workspace.creator_id === user.id
+  );
 
   const { data: rawData, count } = await getData(wsId, await searchParams);
   const t = await getTranslations();
@@ -49,11 +53,17 @@ export default async function WorkspaceProjectsPage({
   const enhancedBoards: EnhancedBoard[] = await Promise.all(
     rawData.map(async (board, index) => {
       const boardStats = await getBoardStats(board.id);
-      
+
       // Sample group assignment based on board name or index
-      const groups = ['gaming', 'robotics', 'marketing', 'development', 'design'];
+      const groups = [
+        'gaming',
+        'robotics',
+        'marketing',
+        'development',
+        'design',
+      ];
       const groupId = groups[index % groups.length];
-      
+
       return {
         ...board,
         href: `/${wsId}/tasks/boards/${board.id}`,
@@ -75,10 +85,10 @@ export default async function WorkspaceProjectsPage({
         requireExpansion
       />
       <Separator className="my-4" />
-      <EnhancedTaskBoardsContent 
-        boards={enhancedBoards} 
-        count={count} 
-        wsId={wsId} 
+      <EnhancedTaskBoardsContent
+        boards={enhancedBoards}
+        count={count}
+        wsId={wsId}
         isOwner={isOwner}
       />
     </>
@@ -122,17 +132,19 @@ async function getData(
 
 async function getBoardStats(boardId: string) {
   const supabase = await createClient();
-  
+
   // Get all tasks for this board with assignee information
   const { data: tasks } = await supabase
     .from('tasks')
-    .select(`
+    .select(
+      `
       id, 
       list_id, 
       priority, 
       end_date,
       task_assignees!inner(user_id, workspace_users!inner(display_name))
-    `)
+    `
+    )
     .eq('board_id', boardId);
 
   // Get all lists for this board with their status
@@ -142,81 +154,107 @@ async function getBoardStats(boardId: string) {
     .eq('board_id', boardId);
 
   const totalTasks = tasks?.length || 0;
-  
+
   // Create a map of list_id to status for quick lookup
-  const listStatusMap = new Map(lists?.map(list => [list.id, list.status]) || []);
-  
+  const listStatusMap = new Map(
+    lists?.map((list) => [list.id, list.status]) || []
+  );
+
   // Calculate task statuses based on which list they're in
-  const completedTasks = tasks?.filter(task => {
-    const listStatus = listStatusMap.get(task.list_id);
-    return listStatus === 'done' || listStatus === 'closed';
-  }).length || 0;
-  
-  const activeTasks = tasks?.filter(task => {
-    const listStatus = listStatusMap.get(task.list_id);
-    return listStatus === 'active' || listStatus === 'not_started';
-  }).length || 0;
-  
+  const completedTasks =
+    tasks?.filter((task) => {
+      const listStatus = listStatusMap.get(task.list_id);
+      return listStatus === 'done' || listStatus === 'closed';
+    }).length || 0;
+
+  const activeTasks =
+    tasks?.filter((task) => {
+      const listStatus = listStatusMap.get(task.list_id);
+      return listStatus === 'active' || listStatus === 'not_started';
+    }).length || 0;
+
   const now = new Date();
-  const overdueTasks = tasks?.filter(task => {
-    const listStatus = listStatusMap.get(task.list_id);
-    return task.end_date && 
-           new Date(task.end_date) < now && 
-           (listStatus !== 'done' && listStatus !== 'closed');
-  }).length || 0;
+  const overdueTasks =
+    tasks?.filter((task) => {
+      const listStatus = listStatusMap.get(task.list_id);
+      return (
+        task.end_date &&
+        new Date(task.end_date) < now &&
+        listStatus !== 'done' &&
+        listStatus !== 'closed'
+      );
+    }).length || 0;
 
   // Priority distribution - simplified since we don't know the exact priority values
   const priorityDistribution = {
-    low: tasks?.filter(t => t.priority === 1).length || 0,
-    medium: tasks?.filter(t => t.priority === 2).length || 0,
-    high: tasks?.filter(t => t.priority === 3).length || 0,
-    urgent: tasks?.filter(t => t.priority === 4).length || 0,
+    low: tasks?.filter((t) => t.priority === 1).length || 0,
+    medium: tasks?.filter((t) => t.priority === 2).length || 0,
+    high: tasks?.filter((t) => t.priority === 3).length || 0,
+    urgent: tasks?.filter((t) => t.priority === 4).length || 0,
   };
 
   // Status distribution based on list statuses
   const statusDistribution = {
-    not_started: tasks?.filter(task => listStatusMap.get(task.list_id) === 'not_started').length || 0,
-    active: tasks?.filter(task => listStatusMap.get(task.list_id) === 'active').length || 0,
-    done: tasks?.filter(task => listStatusMap.get(task.list_id) === 'done').length || 0,
-    closed: tasks?.filter(task => listStatusMap.get(task.list_id) === 'closed').length || 0,
+    not_started:
+      tasks?.filter((task) => listStatusMap.get(task.list_id) === 'not_started')
+        .length || 0,
+    active:
+      tasks?.filter((task) => listStatusMap.get(task.list_id) === 'active')
+        .length || 0,
+    done:
+      tasks?.filter((task) => listStatusMap.get(task.list_id) === 'done')
+        .length || 0,
+    closed:
+      tasks?.filter((task) => listStatusMap.get(task.list_id) === 'closed')
+        .length || 0,
   };
 
   // Workload analysis
-  const assigneeWorkload = tasks?.reduce((acc, task) => {
-    task.task_assignees?.forEach((assignee: any) => {
-      const userId = assignee.user_id;
-      const userName = assignee.workspace_users?.display_name || 'Unknown';
-      
-      if (!acc[userId]) {
-        acc[userId] = { userId, name: userName, taskCount: 0 };
-      }
-      acc[userId].taskCount++;
-    });
-    return acc;
-  }, {} as Record<string, { userId: string; name: string; taskCount: number }>) || {};
+  const assigneeWorkload =
+    tasks?.reduce(
+      (acc, task) => {
+        task.task_assignees?.forEach((assignee: any) => {
+          const userId = assignee.user_id;
+          const userName = assignee.workspace_users?.display_name || 'Unknown';
+
+          if (!acc[userId]) {
+            acc[userId] = { userId, name: userName, taskCount: 0 };
+          }
+          acc[userId].taskCount++;
+        });
+        return acc;
+      },
+      {} as Record<string, { userId: string; name: string; taskCount: number }>
+    ) || {};
 
   const workloadStats = Object.values(assigneeWorkload);
-  const avgTasksPerPerson = workloadStats.length > 0 
-    ? workloadStats.reduce((sum, stat) => sum + stat.taskCount, 0) / workloadStats.length 
-    : 0;
-  
+  const avgTasksPerPerson =
+    workloadStats.length > 0
+      ? workloadStats.reduce((sum, stat) => sum + stat.taskCount, 0) /
+        workloadStats.length
+      : 0;
+
   // Mark users as overloaded if they have >150% of average tasks
-  const assigneeWorkloadArray = workloadStats.map(stat => ({
+  const assigneeWorkloadArray = workloadStats.map((stat) => ({
     ...stat,
-    isOverloaded: stat.taskCount > avgTasksPerPerson * 1.5 && avgTasksPerPerson > 0
+    isOverloaded:
+      stat.taskCount > avgTasksPerPerson * 1.5 && avgTasksPerPerson > 0,
   }));
 
   // Smart detection flags
   const hasUrgentTasks = priorityDistribution.urgent > 0;
   const hasMultipleOverdue = overdueTasks >= 2;
-  const hasWorkloadImbalance = assigneeWorkloadArray.some(assignee => assignee.isOverloaded);
+  const hasWorkloadImbalance = assigneeWorkloadArray.some(
+    (assignee) => assignee.isOverloaded
+  );
 
   return {
     totalTasks,
     completedTasks,
     activeTasks,
     overdueTasks,
-    completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+    completionRate:
+      totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
     priorityDistribution,
     statusDistribution,
     totalLists: lists?.length || 0,

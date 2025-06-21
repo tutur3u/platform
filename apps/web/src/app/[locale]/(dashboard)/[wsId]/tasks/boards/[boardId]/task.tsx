@@ -268,9 +268,9 @@ export function TaskCard({
         variant: 'destructive',
       });
     } finally {
-          setIsLoading(false);
-          setMenuOpen(false);
-      }
+      setIsLoading(false);
+      setMenuOpen(false);
+    }
   }
 
   async function handleDelete() {

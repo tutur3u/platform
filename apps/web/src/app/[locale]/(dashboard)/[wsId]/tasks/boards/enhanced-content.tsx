@@ -1,25 +1,31 @@
 'use client';
 
-import { EnhancedBoard, ViewSettings, DEFAULT_VIEW_SETTINGS, STORAGE_KEYS, SmartFilters } from './types';
+import { projectColumns } from './columns';
 import { BoardList } from './components/board-list';
 import { ViewSettingsPanel } from './components/view-settings';
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
-import { Button } from '@tuturuuu/ui/button';
-import { Badge } from '@tuturuuu/ui/badge';
-import { 
-  Grid3X3, 
-  LayoutGrid, 
-  List, 
-  TrendingUp,
-  Clock,
-  AlertCircle,
-  Flag,
-  RefreshCw,
-  Columns
-} from '@tuturuuu/ui/icons';
+import {
+  DEFAULT_VIEW_SETTINGS,
+  EnhancedBoard,
+  STORAGE_KEYS,
+  SmartFilters,
+  ViewSettings,
+} from './types';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { projectColumns } from './columns';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  AlertCircle,
+  Clock,
+  Columns,
+  Flag,
+  Grid3X3,
+  LayoutGrid,
+  List,
+  RefreshCw,
+  TrendingUp,
+} from '@tuturuuu/ui/icons';
+import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
 
 interface EnhancedTaskBoardsContentProps {
   boards: EnhancedBoard[];
@@ -28,11 +34,11 @@ interface EnhancedTaskBoardsContentProps {
   isOwner?: boolean;
 }
 
-function EnhancedTaskBoardsContentInner({ 
-  boards, 
+function EnhancedTaskBoardsContentInner({
+  boards,
   count,
   wsId: _wsId,
-  isOwner = false
+  isOwner = false,
 }: EnhancedTaskBoardsContentProps) {
   const [settings, setSettings] = useState<ViewSettings>(DEFAULT_VIEW_SETTINGS);
 
@@ -52,14 +58,17 @@ function EnhancedTaskBoardsContentInner({
   // Save settings to localStorage
   const handleSettingsChange = (newSettings: ViewSettings) => {
     setSettings(newSettings);
-    localStorage.setItem(STORAGE_KEYS.VIEW_SETTINGS, JSON.stringify(newSettings));
+    localStorage.setItem(
+      STORAGE_KEYS.VIEW_SETTINGS,
+      JSON.stringify(newSettings)
+    );
   };
 
   // Create smart filters data
   const smartFilters: SmartFilters = {
-    hasUrgentTasks: boards.some(b => b.stats.hasUrgentTasks),
-    hasMultipleOverdue: boards.some(b => b.stats.hasMultipleOverdue),
-    hasWorkloadImbalance: boards.some(b => b.stats.hasWorkloadImbalance),
+    hasUrgentTasks: boards.some((b) => b.stats.hasUrgentTasks),
+    hasMultipleOverdue: boards.some((b) => b.stats.hasMultipleOverdue),
+    hasWorkloadImbalance: boards.some((b) => b.stats.hasWorkloadImbalance),
   };
 
   // Refresh function
@@ -76,50 +85,67 @@ function EnhancedTaskBoardsContentInner({
   ];
 
   // Summary statistics
-  const totalActiveBoards = boards.filter(b => b.stats.activeTasks > 0).length;
-  const totalUrgentTasks = boards.reduce((sum, b) => sum + b.stats.priorityDistribution.urgent, 0);
-  const totalOverdueBoards = boards.filter(b => b.stats.overdueTasks > 0).length;
-  const avgProgress = boards.length > 0 
-    ? Math.round(boards.reduce((sum, b) => sum + b.stats.completionRate, 0) / boards.length)
-    : 0;
+  const totalActiveBoards = boards.filter(
+    (b) => b.stats.activeTasks > 0
+  ).length;
+  const totalUrgentTasks = boards.reduce(
+    (sum, b) => sum + b.stats.priorityDistribution.urgent,
+    0
+  );
+  const totalOverdueBoards = boards.filter(
+    (b) => b.stats.overdueTasks > 0
+  ).length;
+  const avgProgress =
+    boards.length > 0
+      ? Math.round(
+          boards.reduce((sum, b) => sum + b.stats.completionRate, 0) /
+            boards.length
+        )
+      : 0;
 
   return (
     <div className="space-y-6">
       {/* Enhanced Header with Quick Stats */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 bg-muted/20 rounded-lg border">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border bg-muted/20 p-4 lg:flex-row lg:items-center">
+        <div className="grid flex-1 grid-cols-2 gap-4 lg:grid-cols-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-blue-600" />
             <div className="text-sm">
               <span className="font-semibold">{avgProgress}%</span>
-              <span className="text-muted-foreground ml-1">avg progress</span>
+              <span className="ml-1 text-muted-foreground">avg progress</span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-green-600" />
             <div className="text-sm">
               <span className="font-semibold">{totalActiveBoards}</span>
-              <span className="text-muted-foreground ml-1">active boards</span>
+              <span className="ml-1 text-muted-foreground">active boards</span>
             </div>
           </div>
-          
+
           {totalUrgentTasks > 0 && (
             <div className="flex items-center gap-2">
               <Flag className="h-4 w-4 text-red-600" />
               <div className="text-sm">
-                <span className="font-semibold text-red-600">{totalUrgentTasks}</span>
-                <span className="text-muted-foreground ml-1">urgent tasks</span>
+                <span className="font-semibold text-red-600">
+                  {totalUrgentTasks}
+                </span>
+                <span className="ml-1 text-muted-foreground">urgent tasks</span>
               </div>
             </div>
           )}
-          
+
           {totalOverdueBoards > 0 && (
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-orange-600" />
               <div className="text-sm">
-                <span className="font-semibold text-orange-600">{totalOverdueBoards}</span>
-                <span className="text-muted-foreground ml-1">overdue boards</span>
+                <span className="font-semibold text-orange-600">
+                  {totalOverdueBoards}
+                </span>
+                <span className="ml-1 text-muted-foreground">
+                  overdue boards
+                </span>
               </div>
             </div>
           )}
@@ -127,21 +153,22 @@ function EnhancedTaskBoardsContentInner({
       </div>
 
       {/* Enhanced Controls */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">
             {count} board{count !== 1 ? 's' : ''}
           </span>
-          {(smartFilters.hasUrgentTasks || 
-            smartFilters.hasMultipleOverdue || 
-            smartFilters.hasWorkloadImbalance) && !settings.forceShowAll && (
-            <Badge variant="outline" className="text-xs">
-              Smart filters active
-            </Badge>
-          )}
+          {(smartFilters.hasUrgentTasks ||
+            smartFilters.hasMultipleOverdue ||
+            smartFilters.hasWorkloadImbalance) &&
+            !settings.forceShowAll && (
+              <Badge variant="outline" className="text-xs">
+                Smart filters active
+              </Badge>
+            )}
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           {/* View Mode Buttons */}
           <div className="flex items-center rounded-lg border bg-background p-1">
             {viewModeButtons.map(({ mode, icon: Icon, label }) => (
@@ -149,7 +176,9 @@ function EnhancedTaskBoardsContentInner({
                 key={mode}
                 variant={settings.viewMode === mode ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => handleSettingsChange({ ...settings, viewMode: mode })}
+                onClick={() =>
+                  handleSettingsChange({ ...settings, viewMode: mode })
+                }
                 className="flex items-center gap-2 text-xs"
               >
                 <Icon className="h-4 w-4" />
@@ -170,7 +199,7 @@ function EnhancedTaskBoardsContentInner({
                 <RefreshCw className="h-4 w-4" />
                 Refresh
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -183,8 +212,8 @@ function EnhancedTaskBoardsContentInner({
           )}
 
           {/* View Settings */}
-          <ViewSettingsPanel 
-            settings={settings} 
+          <ViewSettingsPanel
+            settings={settings}
             onSettingsChange={handleSettingsChange}
             onRefresh={handleRefresh}
             smartFilters={smartFilters}
@@ -220,14 +249,14 @@ function EnhancedTaskBoardsContentInner({
 
 export const EnhancedTaskBoardsContent = dynamic(
   () => Promise.resolve(EnhancedTaskBoardsContentInner),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="space-y-4">
-        <div className="h-16 bg-muted/50 rounded animate-pulse" />
-        <div className="h-8 bg-muted/50 rounded animate-pulse" />
-        <div className="h-64 bg-muted/50 rounded animate-pulse" />
+        <div className="h-16 animate-pulse rounded bg-muted/50" />
+        <div className="h-8 animate-pulse rounded bg-muted/50" />
+        <div className="h-64 animate-pulse rounded bg-muted/50" />
       </div>
-    )
+    ),
   }
-); 
+);

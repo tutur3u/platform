@@ -1132,7 +1132,7 @@
   "task-boards": {
     "name": "Name",
     "board": "Board",
-    "progress": "Progress", 
+    "progress": "Progress",
     "tasks": "Tasks",
     "status": "Status",
     "last_updated": "Last Updated",

@@ -1,20 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { SmartFilters, ViewSettings } from '../types';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Columns3, RefreshCw, SortAsc, SortDesc } from '@tuturuuu/ui/icons';
-import { ViewSettings, SmartFilters } from '../types';
+import { useState } from 'react';
 
 interface ViewSettingsPanelProps {
   settings: ViewSettings;
@@ -62,17 +62,19 @@ export function ViewSettingsPanel({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full h-8 gap-2"
+                className="h-8 w-full gap-2"
                 onClick={handleRefresh}
                 disabled={isRefreshing}
               >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
+                />
                 {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
               </Button>
             </div>
-            
+
             <DropdownMenuSeparator />
-            
+
             {/* Sorting Section */}
             <DropdownMenuLabel className="flex items-center gap-2">
               <SortAsc className="h-4 w-4" />
@@ -84,18 +86,28 @@ export function ViewSettingsPanel({
                 onSettingsChange({ ...settings, sortBy: value as any })
               }
             >
-              <DropdownMenuRadioItem value="name">Sort by Name</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="id">Sort by ID</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="created_at">Sort by Created Date</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="progress">Sort by Progress</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="tasks">Sort by Task Count</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="name">
+                Sort by Name
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="id">
+                Sort by ID
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="created_at">
+                Sort by Created Date
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="progress">
+                Sort by Progress
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="tasks">
+                Sort by Task Count
+              </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
-            
+
             <div className="px-2 pt-1">
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full h-8 gap-2 justify-start"
+                className="h-8 w-full justify-start gap-2"
                 onClick={() =>
                   onSettingsChange({
                     ...settings,
@@ -126,23 +138,45 @@ export function ViewSettingsPanel({
                 <DropdownMenuCheckboxItem
                   checked={settings.visibleColumns?.includes('board') ?? true}
                   onCheckedChange={(checked) => {
-                    const columns = settings.visibleColumns || ['board', 'progress', 'tasks', 'status', 'last_updated', 'actions'];
+                    const columns = settings.visibleColumns || [
+                      'board',
+                      'progress',
+                      'tasks',
+                      'status',
+                      'last_updated',
+                      'actions',
+                    ];
                     const newColumns = checked
-                      ? [...columns.filter(c => c !== 'board'), 'board']
-                      : columns.filter(c => c !== 'board');
-                    onSettingsChange({ ...settings, visibleColumns: newColumns });
+                      ? [...columns.filter((c) => c !== 'board'), 'board']
+                      : columns.filter((c) => c !== 'board');
+                    onSettingsChange({
+                      ...settings,
+                      visibleColumns: newColumns,
+                    });
                   }}
                 >
                   Board Name
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
-                  checked={settings.visibleColumns?.includes('progress') ?? true}
+                  checked={
+                    settings.visibleColumns?.includes('progress') ?? true
+                  }
                   onCheckedChange={(checked) => {
-                    const columns = settings.visibleColumns || ['board', 'progress', 'tasks', 'status', 'last_updated', 'actions'];
+                    const columns = settings.visibleColumns || [
+                      'board',
+                      'progress',
+                      'tasks',
+                      'status',
+                      'last_updated',
+                      'actions',
+                    ];
                     const newColumns = checked
-                      ? [...columns.filter(c => c !== 'progress'), 'progress']
-                      : columns.filter(c => c !== 'progress');
-                    onSettingsChange({ ...settings, visibleColumns: newColumns });
+                      ? [...columns.filter((c) => c !== 'progress'), 'progress']
+                      : columns.filter((c) => c !== 'progress');
+                    onSettingsChange({
+                      ...settings,
+                      visibleColumns: newColumns,
+                    });
                   }}
                 >
                   Progress
@@ -150,11 +184,21 @@ export function ViewSettingsPanel({
                 <DropdownMenuCheckboxItem
                   checked={settings.visibleColumns?.includes('tasks') ?? true}
                   onCheckedChange={(checked) => {
-                    const columns = settings.visibleColumns || ['board', 'progress', 'tasks', 'status', 'last_updated', 'actions'];
+                    const columns = settings.visibleColumns || [
+                      'board',
+                      'progress',
+                      'tasks',
+                      'status',
+                      'last_updated',
+                      'actions',
+                    ];
                     const newColumns = checked
-                      ? [...columns.filter(c => c !== 'tasks'), 'tasks']
-                      : columns.filter(c => c !== 'tasks');
-                    onSettingsChange({ ...settings, visibleColumns: newColumns });
+                      ? [...columns.filter((c) => c !== 'tasks'), 'tasks']
+                      : columns.filter((c) => c !== 'tasks');
+                    onSettingsChange({
+                      ...settings,
+                      visibleColumns: newColumns,
+                    });
                   }}
                 >
                   Tasks
@@ -162,23 +206,48 @@ export function ViewSettingsPanel({
                 <DropdownMenuCheckboxItem
                   checked={settings.visibleColumns?.includes('status') ?? true}
                   onCheckedChange={(checked) => {
-                    const columns = settings.visibleColumns || ['board', 'progress', 'tasks', 'status', 'last_updated', 'actions'];
+                    const columns = settings.visibleColumns || [
+                      'board',
+                      'progress',
+                      'tasks',
+                      'status',
+                      'last_updated',
+                      'actions',
+                    ];
                     const newColumns = checked
-                      ? [...columns.filter(c => c !== 'status'), 'status']
-                      : columns.filter(c => c !== 'status');
-                    onSettingsChange({ ...settings, visibleColumns: newColumns });
+                      ? [...columns.filter((c) => c !== 'status'), 'status']
+                      : columns.filter((c) => c !== 'status');
+                    onSettingsChange({
+                      ...settings,
+                      visibleColumns: newColumns,
+                    });
                   }}
                 >
                   Status
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
-                  checked={settings.visibleColumns?.includes('last_updated') ?? true}
+                  checked={
+                    settings.visibleColumns?.includes('last_updated') ?? true
+                  }
                   onCheckedChange={(checked) => {
-                    const columns = settings.visibleColumns || ['board', 'progress', 'tasks', 'status', 'last_updated', 'actions'];
+                    const columns = settings.visibleColumns || [
+                      'board',
+                      'progress',
+                      'tasks',
+                      'status',
+                      'last_updated',
+                      'actions',
+                    ];
                     const newColumns = checked
-                      ? [...columns.filter(c => c !== 'last_updated'), 'last_updated']
-                      : columns.filter(c => c !== 'last_updated');
-                    onSettingsChange({ ...settings, visibleColumns: newColumns });
+                      ? [
+                          ...columns.filter((c) => c !== 'last_updated'),
+                          'last_updated',
+                        ]
+                      : columns.filter((c) => c !== 'last_updated');
+                    onSettingsChange({
+                      ...settings,
+                      visibleColumns: newColumns,
+                    });
                   }}
                 >
                   Last Updated
@@ -186,11 +255,21 @@ export function ViewSettingsPanel({
                 <DropdownMenuCheckboxItem
                   checked={settings.visibleColumns?.includes('actions') ?? true}
                   onCheckedChange={(checked) => {
-                    const columns = settings.visibleColumns || ['board', 'progress', 'tasks', 'status', 'last_updated', 'actions'];
+                    const columns = settings.visibleColumns || [
+                      'board',
+                      'progress',
+                      'tasks',
+                      'status',
+                      'last_updated',
+                      'actions',
+                    ];
                     const newColumns = checked
-                      ? [...columns.filter(c => c !== 'actions'), 'actions']
-                      : columns.filter(c => c !== 'actions');
-                    onSettingsChange({ ...settings, visibleColumns: newColumns });
+                      ? [...columns.filter((c) => c !== 'actions'), 'actions']
+                      : columns.filter((c) => c !== 'actions');
+                    onSettingsChange({
+                      ...settings,
+                      visibleColumns: newColumns,
+                    });
                   }}
                 >
                   Actions
@@ -208,7 +287,7 @@ export function ViewSettingsPanel({
     smartFilters.hasUrgentTasks && 'Urgent Tasks',
     smartFilters.hasMultipleOverdue && 'Multiple Overdue',
     smartFilters.hasWorkloadImbalance && 'Workload Imbalance',
-    settings.forceShowAll && 'Show All Override'
+    settings.forceShowAll && 'Show All Override',
   ].filter(Boolean);
 
   return (
@@ -268,13 +347,23 @@ export function ViewSettingsPanel({
               onSettingsChange({ ...settings, sortBy: value as any })
             }
           >
-            <DropdownMenuRadioItem value="name">Sort by Name</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="name">
+              Sort by Name
+            </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="id">Sort by ID</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="created_at">Sort by Created Date</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="progress">Sort by Progress</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="tasks">Sort by Task Count</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="created_at">
+              Sort by Created Date
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="progress">
+              Sort by Progress
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="tasks">
+              Sort by Task Count
+            </DropdownMenuRadioItem>
             {settings.viewMode === 'groups' && (
-              <DropdownMenuRadioItem value="group">Sort by Group</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="group">
+                Sort by Group
+              </DropdownMenuRadioItem>
             )}
           </DropdownMenuRadioGroup>
 
@@ -282,7 +371,7 @@ export function ViewSettingsPanel({
             <Button
               variant="ghost"
               size="sm"
-              className="w-full h-8 gap-2 justify-start"
+              className="h-8 w-full justify-start gap-2"
               onClick={() =>
                 onSettingsChange({
                   ...settings,
@@ -330,4 +419,4 @@ export function ViewSettingsPanel({
       </DropdownMenu>
     </div>
   );
-} 
+}
