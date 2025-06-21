@@ -5557,6 +5557,7 @@ export type Database = {
           admin_notes: string | null;
           created_at: string;
           creator_id: string;
+          feature: Database['public']['Enums']['FEATURE_FLAG'];
           id: string;
           message: string;
           reviewed_at: string | null;
@@ -5570,6 +5571,7 @@ export type Database = {
           admin_notes?: string | null;
           created_at?: string;
           creator_id: string;
+          feature?: Database['public']['Enums']['FEATURE_FLAG'];
           id?: string;
           message: string;
           reviewed_at?: string | null;
@@ -5583,6 +5585,7 @@ export type Database = {
           admin_notes?: string | null;
           created_at?: string;
           creator_id?: string;
+          feature?: Database['public']['Enums']['FEATURE_FLAG'];
           id?: string;
           message?: string;
           reviewed_at?: string | null;
@@ -8264,6 +8267,11 @@ export type Database = {
       certificate_templates: 'original' | 'modern' | 'elegant';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       dataset_type: 'excel' | 'csv' | 'html';
+      FEATURE_FLAG:
+        | 'ENABLE_AI'
+        | 'ENABLE_EDUCATION'
+        | 'ENABLE_CHALLENGES'
+        | 'ENABLE_QUIZZES';
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
       subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
       task_board_status: 'not_started' | 'active' | 'done' | 'closed';
@@ -8419,6 +8427,12 @@ export const Constants = {
       certificate_templates: ['original', 'modern', 'elegant'],
       chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
       dataset_type: ['excel', 'csv', 'html'],
+      FEATURE_FLAG: [
+        'ENABLE_AI',
+        'ENABLE_EDUCATION',
+        'ENABLE_CHALLENGES',
+        'ENABLE_QUIZZES',
+      ],
       platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
       subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
       task_board_status: ['not_started', 'active', 'done', 'closed'],

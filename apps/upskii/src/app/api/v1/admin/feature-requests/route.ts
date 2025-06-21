@@ -3,6 +3,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import {
+  REQUESTABLE_KEY_TO_FEATURE_FLAG,
+  isRequestableFeature,
+} from '@tuturuuu/utils/feature-flags/requestable-features';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -47,6 +51,7 @@ export async function GET(req: NextRequest) {
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const status = searchParams.get('status');
     const q = searchParams.get('q');
+    const feature = searchParams.get('feature');
 
     // Use admin client for broader access
     const sbAdmin = await createAdminClient();
@@ -60,6 +65,7 @@ export async function GET(req: NextRequest) {
         creator_id,
         message,
         status,
+        feature,
         admin_notes,
         reviewed_by,
         reviewed_at,
@@ -83,6 +89,15 @@ export async function GET(req: NextRequest) {
     // Apply status filter
     if (status && status !== 'all') {
       query = query.eq('status', status);
+    }
+
+    // Apply feature filter
+    if (feature && feature !== 'all') {
+      // Only apply filter for valid requestable features
+      if (isRequestableFeature(feature)) {
+        const featureFlag = REQUESTABLE_KEY_TO_FEATURE_FLAG[feature];
+        query = query.eq('feature', featureFlag as any);
+      }
     }
 
     // Apply search filter
@@ -117,7 +132,7 @@ export async function GET(req: NextRequest) {
           request.users?.display_name || request.users?.email || 'Unknown User',
         creator_email: request.users?.email,
         creator_avatar: request.users?.avatar_url,
-        feature_requested: 'Education Features',
+        feature_requested: request.feature,
         request_message: request.message,
         status: request.status,
         admin_notes: request.admin_notes,

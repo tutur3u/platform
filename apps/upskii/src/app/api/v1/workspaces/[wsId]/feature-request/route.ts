@@ -1,4 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  getRequestableFeature,
+  isRequestableFeature,
+} from '@tuturuuu/utils/feature-flags/requestable-features';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface Params {
@@ -24,15 +28,25 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     // Parse request body
     const body = await req.json();
-    const { workspaceName, message } = body;
+    const { workspaceName, message, feature } = body;
 
     // Validate required fields
-    if (!workspaceName?.trim() || !message?.trim()) {
+    if (!workspaceName?.trim() || !message?.trim() || !feature) {
       return NextResponse.json(
-        { error: 'Workspace name and message are required' },
+        { error: 'Workspace name, message, and feature are required' },
         { status: 400 }
       );
     }
+
+    // Validate feature type
+    if (!isRequestableFeature(feature)) {
+      return NextResponse.json(
+        { error: 'Invalid feature type' },
+        { status: 400 }
+      );
+    }
+
+    const featureConfig = getRequestableFeature(feature);
 
     // Verify user is workspace owner
     const { data: memberCheck, error: memberError } = await supabase
@@ -51,45 +65,49 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     if (memberCheck.role !== 'OWNER') {
       return NextResponse.json(
-        { error: 'Only workspace owners can request education access' },
+        {
+          error: `Only workspace owners can request ${featureConfig.name} access`,
+        },
         { status: 403 }
       );
     }
 
-    // Check if education is already enabled
-    const { data: educationSecret } = await supabase
+    // Check if feature is already enabled
+    const { data: featureSecret } = await supabase
       .from('workspace_secrets')
       .select('value')
       .eq('ws_id', wsId)
-      .eq('name', 'ENABLE_EDUCATION')
+      .eq('name', featureConfig.flag)
       .single();
 
-    if (educationSecret?.value === 'true') {
+    if (featureSecret?.value === 'true') {
       return NextResponse.json(
-        { error: 'Education features are already enabled for this workspace' },
+        {
+          error: `${featureConfig.name} features are already enabled for this workspace`,
+        },
         { status: 400 }
       );
     }
 
-    // Check for existing pending request
+    // Check for existing pending request for this feature
     const { data: existingRequest, error: existingError } = await supabase
       .from('workspace_education_access_requests')
       .select('id, status')
       .eq('ws_id', wsId)
+      .eq('feature', featureConfig.flag as any)
       .eq('status', 'pending')
       .single();
 
     if (existingRequest && !existingError) {
       return NextResponse.json(
         {
-          error:
-            'A pending education access request already exists for this workspace',
+          error: `A pending ${featureConfig.name} access request already exists for this workspace`,
         },
         { status: 400 }
       );
     }
 
-    // Create the education access request
+    // Create the feature access request
     const { data: newRequest, error: insertError } = await supabase
       .from('workspace_education_access_requests')
       .insert({
@@ -97,6 +115,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         workspace_name: workspaceName.trim(),
         creator_id: user.id,
         message: message.trim(),
+        feature: featureConfig.flag as any,
         status: 'pending',
       })
       .select('*')
@@ -105,14 +124,14 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (insertError) {
       console.error('Database error:', insertError);
       return NextResponse.json(
-        { error: 'Failed to create education access request' },
+        { error: `Failed to create ${featureConfig.name} access request` },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
       {
-        message: 'Education access request submitted successfully',
+        message: `${featureConfig.name} access request submitted successfully`,
         request: newRequest,
       },
       { status: 201 }
@@ -156,29 +175,22 @@ export async function GET(_: NextRequest, { params }: Params) {
       );
     }
 
-    // Get education access request for this workspace
-    const { data: request, error: requestError } = await supabase
+    // Get all feature access requests for this workspace
+    const { data: requests, error: requestError } = await supabase
       .from('workspace_education_access_requests')
       .select('*')
       .eq('ws_id', wsId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .order('created_at', { ascending: false });
 
     if (requestError) {
-      // If no request found, return null
-      if (requestError.code === 'PGRST116') {
-        return NextResponse.json({ request: null });
-      }
-
       console.error('Database error:', requestError);
       return NextResponse.json(
-        { error: 'Failed to fetch education access request' },
+        { error: 'Failed to fetch feature access requests' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ request });
+    return NextResponse.json({ requests: requests || [] });
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json(
