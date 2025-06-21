@@ -128,5 +128,5 @@
   "overrides": {
     "react-is": "^19.1.0"
   },
-  "packageManager": "bun@1.2.15"
+  "packageManager": "bun@1.2.16"
 }

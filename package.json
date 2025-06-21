@@ -5,16 +5,21 @@
     "build": "turbo run build",
     "buildx": "bun i && turbo test lint build",
     "dev": "turbo run dev --parallel",
-    "devx": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev --parallel",
-    "devx:web": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev -F @ncthub/web",
-    "devrs": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev --parallel",
-    "devrs:web": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev -F @ncthub/web",
+    "dev:web": "turbo run dev -F @ncthub/web",
+    "devrs": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev",
+    "devrs:web": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:web",
+    "ocr:install": "cd apps/ocr && python -m venv venv && .\\venv\\Scripts\\pip install -r requirements.txt",
+    "ocr:dev": "cd apps/ocr && .\\venv\\Scripts\\uvicorn main:app --host 127.0.0.1 --port 5500 --reload",
+    "ocr:start": "cd apps/ocr && .\\venv\\Scripts\\uvicorn main:app --host 127.0.0.1 --port 5500",
+    "ocr:run": "cd apps/ocr && .\\venv\\Scripts\\modal run modal_deployment.py",
+    "ocr:serve": "cd apps/ocr && .\\venv\\Scripts\\modal serve modal_deployment.py",
+    "ocr:deploy": "cd apps/ocr && .\\venv\\Scripts\\modal deploy modal_deployment.py",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "stop": "cd apps/db && bun stop",
+    "stop": "cd apps/db && bun sb:stop",
     "diff": "cd apps/db && bun sb:diff",
     "typegen": "cd apps/db && bun sb:typegen",
     "sb:status": "cd apps/db && bun sb:status",
@@ -37,24 +42,24 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.28.0",
+    "@eslint/js": "^9.29.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@ncthub/eslint-config": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "^3.1.4",
-    "eslint": "^9.28.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.29.0",
     "prettier": "^3.5.3",
     "prettier-eslint": "^16.4.2",
-    "prettier-plugin-tailwindcss": "^0.6.12",
+    "prettier-plugin-tailwindcss": "^0.6.13",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
-    "vitest": "^3.1.4"
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "bun@1.2.15",
+  "packageManager": "bun@1.2.16",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -70,19 +75,5 @@
     "sharp",
     "supabase",
     "unrs-resolver"
-  ],
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@tailwindcss/oxide",
-      "@vercel/speed-insights",
-      "canvas",
-      "core-js",
-      "cytoscape",
-      "esbuild",
-      "puppeteer",
-      "sharp",
-      "supabase",
-      "unrs-resolver"
-    ]
-  }
+  ]
 }
