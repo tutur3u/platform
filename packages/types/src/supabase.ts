@@ -8024,7 +8024,6 @@ export type Database = {
           unique_users_count: number;
           active_count: number;
           completed_count: number;
-          latest_session_date: string;
         }[];
       };
       get_session_templates: {
@@ -8050,7 +8049,6 @@ export type Database = {
         Returns: {
           latest_submission_date: string;
           total_count: number;
-          latest_submission_date: string;
           unique_users_count: number;
         }[];
       };
@@ -8060,8 +8058,6 @@ export type Database = {
           id: string;
           name: string;
           is_expense: boolean;
-          name: string;
-          id: string;
           ws_id: string;
           created_at: string;
           amount: number;
@@ -8156,7 +8152,6 @@ export type Database = {
           included_groups: string[];
           excluded_groups: string[];
           search_query: string;
-          excluded_groups: string[];
         };
         Returns: {
           groups: string[];
