@@ -1,21 +1,21 @@
 import UserAttendances from '../../../attendance/user-attendances';
 import UserAttendancesSkeleton from '../../../attendance/user-attendances-skeleton';
-import { UserDatabaseFilter } from '../../../filters';
+import { Filter } from '../../../filters';
 import { CustomMonthPicker } from '@/components/custom-month-picker';
-import { cn } from '@/lib/utils';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
-import 'dayjs/locale/vi';
+import { createClient } from '@ncthub/supabase/next/server';
+import { UserGroup } from '@ncthub/types/primitives/UserGroup';
+import { Button } from '@ncthub/ui/button';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import {
   CalendarIcon,
   ChartColumn,
   FileUser,
   MinusCircle,
   UserCheck,
-} from 'lucide-react';
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
+import 'dayjs/locale/vi';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -143,7 +143,7 @@ export default async function UserGroupAttendancePage({
           lang={locale}
           className="col-span-full md:col-span-1"
         />
-        <UserDatabaseFilter
+        <Filter
           key="excluded-user-groups-filter"
           tag="excludedGroups"
           title={t('user-data-table.excluded_groups')}

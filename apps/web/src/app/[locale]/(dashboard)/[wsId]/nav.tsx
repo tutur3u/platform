@@ -6,15 +6,12 @@ import {
   PROD_MODE,
   ROOT_WORKSPACE_ID,
 } from '@/constants/common';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { buttonVariants } from '@repo/ui/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { DraftingCompass, FlaskConical } from 'lucide-react';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { buttonVariants } from '@ncthub/ui/button';
+import { DraftingCompass, FlaskConical } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -24,9 +21,11 @@ interface NavProps {
   wsId: string;
   currentUser: WorkspaceUser | null;
   isCollapsed: boolean;
-  links: NavLink[];
+  links: (NavLink | null)[];
   onClick?: () => void;
 }
+
+const HIDE_EXPERIMENTAL_STATUS = true;
 
 export function Nav({
   wsId,
@@ -44,7 +43,7 @@ export function Nav({
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
   useEffect(() => {
-    if (urlToLoad) setUrlToLoad(undefined);
+    if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
   }, [pathname, searchParams]);
 
   function hasFocus(selector: string) {
@@ -65,7 +64,7 @@ export function Nav({
   useEffect(() => {
     function down(e: KeyboardEvent) {
       links.forEach((link) => {
-        if (!link.shortcut || !link.href) return;
+        if (!link || !link.shortcut || !link.href) return;
         const { ctrl, shift, key } = parseShortcut(link.shortcut);
         if (
           !hasFocus('input, select, textarea') &&
@@ -90,14 +89,13 @@ export function Nav({
   }, [links, pathname]);
 
   return (
-    <div
-      data-collapsed={isCollapsed}
-      className="group flex flex-col gap-4 py-2 data-[collapsed=true]:py-2"
-    >
-      <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
-        {links.map((link, index) => {
+    <nav className={cn('grid gap-1 p-2', isCollapsed && 'justify-center')}>
+      {links
+        .map((link, idx) => {
+          if (!link) return <Separator key={idx} className="my-1" />;
+
           // If the link is disabled, don't render it
-          if (link?.disabled) return null;
+          if (!link || link?.disabled) return null;
 
           // If the link is disabled on production, don't render it
           if (link?.disableOnProduction && PROD_MODE) return null;
@@ -128,12 +126,11 @@ export function Nav({
               .filter(Boolean).length > 0;
 
           return isCollapsed ? (
-            <Tooltip key={index} delayDuration={0}>
+            <Tooltip key={link.href} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
-                  href={
-                    link.forceRefresh ? `${link.href}?refresh=true` : link.href
-                  }
+                  scroll={false}
+                  href={link.href}
                   className={cn(
                     buttonVariants({
                       variant: isActive ? 'secondary' : 'ghost',
@@ -141,7 +138,7 @@ export function Nav({
                     }),
                     'h-9 w-9 max-sm:hover:bg-transparent',
                     urlToLoad === link.href &&
-                      'bg-accent text-accent-foreground animate-pulse'
+                      'animate-pulse bg-accent text-accent-foreground'
                   )}
                   onClick={() => {
                     if (!link.newTab && link.href.split('?')[0] !== pathname)
@@ -156,7 +153,7 @@ export function Nav({
               <TooltipContent
                 side="right"
                 className={cn(
-                  'flex items-center gap-4',
+                  'flex items-center gap-4 border bg-background text-foreground',
                   ((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
                     link.experimental) &&
                     'flex-col items-start gap-1'
@@ -171,7 +168,7 @@ export function Nav({
                       'text-muted-foreground',
                       (ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
                         link.experimental
-                        ? 'bg-foreground/5 rounded-lg border px-2 py-0.5'
+                        ? 'rounded-lg border bg-foreground/5 px-2 py-0.5'
                         : 'ml-auto'
                     )}
                   >
@@ -183,14 +180,14 @@ export function Nav({
                           .replace('SHIFT', '⇧')
                           .replace(/\+/g, '')
                       : link.trailing ||
-                        (link.experimental && (
+                        (!HIDE_EXPERIMENTAL_STATUS && link.experimental && (
                           <div className="flex items-center gap-1">
                             {link.experimental === 'alpha' ? (
                               <DraftingCompass className="h-2 w-2 flex-none" />
                             ) : (
                               <FlaskConical className="h-2 w-2 flex-none" />
                             )}
-                            <span className="line-clamp-1 break-all text-xs font-semibold">
+                            <span className="line-clamp-1 text-xs font-semibold break-all">
                               {t(`common.${link.experimental}`)}
                             </span>
                           </div>
@@ -201,15 +198,15 @@ export function Nav({
             </Tooltip>
           ) : (
             <Link
-              key={index}
-              href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
+              key={link.href + 'no-tooltip'}
+              href={link.href}
               className={cn(
                 buttonVariants({
                   variant: isActive ? 'secondary' : 'ghost',
                   size: 'sm',
                 }),
                 urlToLoad === link.href &&
-                  'bg-accent text-accent-foreground animate-pulse',
+                  'animate-pulse bg-accent text-accent-foreground',
                 'justify-between gap-2 max-sm:hover:bg-transparent'
               )}
               onClick={() => {
@@ -229,13 +226,13 @@ export function Nav({
               </div>
               {((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
                 link.trailing ||
-                link.experimental) && (
+                (!HIDE_EXPERIMENTAL_STATUS && link.experimental)) && (
                 <span
                   className={cn(
                     'text-muted-foreground',
                     isActive && 'bg-background text-foreground',
                     ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
-                      ? 'bg-foreground/5 hidden rounded-lg border px-2 py-0.5 md:block'
+                      ? 'hidden rounded-lg border bg-foreground/5 px-2 py-0.5 md:block'
                       : 'ml-auto',
                     link.experimental && 'bg-transparent'
                   )}
@@ -248,14 +245,14 @@ export function Nav({
                         .replace('SHIFT', '⇧')
                         .replace(/\+/g, '')
                     : link.trailing ||
-                      (link.experimental && (
+                      (!HIDE_EXPERIMENTAL_STATUS && link.experimental && (
                         <div className="flex items-center gap-1">
                           {link.experimental === 'alpha' ? (
                             <DraftingCompass className="h-2 w-2 flex-none" />
                           ) : (
                             <FlaskConical className="h-2 w-2 flex-none" />
                           )}
-                          <span className="line-clamp-1 break-all text-xs font-semibold">
+                          <span className="line-clamp-1 text-xs font-semibold break-all">
                             {t(`common.${link.experimental}`)}
                           </span>
                         </div>
@@ -264,8 +261,15 @@ export function Nav({
               )}
             </Link>
           );
+        })
+        // filter out consecutive Separator components
+        .filter((link, idx, arr) => {
+          if (link?.type === Separator) {
+            const nextLink = arr[idx + 1];
+            if (!nextLink || nextLink?.type === Separator) return false;
+          }
+          return true;
         })}
-      </nav>
-    </div>
+    </nav>
   );
 }

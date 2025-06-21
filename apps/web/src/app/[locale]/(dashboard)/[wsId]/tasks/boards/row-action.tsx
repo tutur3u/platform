@@ -1,19 +1,19 @@
 'use client';
 
 import { TaskBoardForm } from './form';
-import { TaskBoard } from '@/types/primitives/TaskBoard';
-import { Button } from '@repo/ui/components/ui/button';
-import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
+import { TaskBoard } from '@ncthub/types/primitives/TaskBoard';
+import { Button } from '@ncthub/ui/button';
+import ModifiableDialogTrigger from '@ncthub/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@ncthub/ui/dropdown-menu';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Ellipsis, Eye } from '@ncthub/ui/icons';
 import { Row } from '@tanstack/react-table';
-import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -67,7 +67,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>

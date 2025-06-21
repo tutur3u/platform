@@ -1,9 +1,8 @@
 'use client';
 
-import { Wallet } from '@/types/primitives/Wallet';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { SelectField } from '@repo/ui/components/ui/custom/select-field';
+import { Wallet } from '@ncthub/types/primitives/Wallet';
+import { Button } from '@ncthub/ui/button';
+import { SelectField } from '@ncthub/ui/custom/select-field';
 import {
   Form,
   FormControl,
@@ -11,18 +10,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
   wsId: string;
   data?: Wallet;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
@@ -30,8 +31,10 @@ const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1).max(255),
   balance: z.number().optional(),
-  type: z.enum(['STANDARD', 'CREDIT']),
-  currency: z.enum(['VND']),
+  type: z.string(),
+  // type: z.enum(['STANDARD', 'CREDIT']),
+  currency: z.string(),
+  // currency: z.enum(['VND']),
 });
 
 export function WalletForm({ wsId, data, onFinish }: Props) {
@@ -40,7 +43,7 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       id: data?.id,
@@ -197,7 +200,7 @@ export function WalletForm({ wsId, data, onFinish }: Props) {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading
             ? t('common.processing')
-            : !!data?.id
+            : data?.id
               ? t('ws-wallets.edit')
               : t('ws-wallets.create')}
         </Button>

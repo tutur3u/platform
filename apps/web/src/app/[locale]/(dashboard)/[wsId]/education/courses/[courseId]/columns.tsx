@@ -1,10 +1,10 @@
 'use client';
 
 import { WorkspaceCourseModuleRowActions } from './row-actions';
-import { WorkspaceCourseModule } from '@/types/db';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { WorkspaceCourseModule } from '@ncthub/types/db';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { Check, X } from '@ncthub/ui/icons';
 import { ColumnDef } from '@tanstack/react-table';
-import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -58,7 +58,7 @@ export const getWorkspaceCourseModuleColumns = (
     cell: ({ row }) => (
       <Link
         href={row.original.href || '#'}
-        className="min-w-[8rem] font-semibold hover:underline"
+        className="min-w-32 font-semibold hover:underline"
       >
         {row.getValue('name') || '-'}
       </Link>

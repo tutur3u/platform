@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@repo/ui/components/ui/button';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { CheckCheck, Copy } from 'lucide-react';
+import { Button } from '@ncthub/ui/button';
+import { CheckCheck, Copy } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Label } from '@ncthub/ui/label';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

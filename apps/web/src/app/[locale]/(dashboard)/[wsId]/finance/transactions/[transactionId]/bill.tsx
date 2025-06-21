@@ -1,18 +1,15 @@
 'use client';
 
-import { createDynamicClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  FileUploader,
-  StatedFile,
-} from '@repo/ui/components/ui/custom/file-uploader';
+import { createDynamicClient } from '@ncthub/supabase/next/client';
+import { Button } from '@ncthub/ui/button';
+import { FileUploader, StatedFile } from '@ncthub/ui/custom/file-uploader';
+import { File, FileText, ImageIcon, X } from '@ncthub/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { File, FileText, ImageIcon, X } from 'lucide-react';
+} from '@ncthub/ui/tooltip';
 import { useState } from 'react';
 
 interface Props {
@@ -70,7 +67,7 @@ export function Bill({ wsId, transactionId }: Props) {
             {pdfs.length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                  <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                     <FileText className="h-4 w-4" />
                     {pdfs.length} PDFs
                   </div>
@@ -109,7 +106,7 @@ export function Bill({ wsId, transactionId }: Props) {
             {images.length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                  <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                     <ImageIcon className="h-4 w-4" />
                     {images.length} Images
                   </div>
@@ -154,7 +151,7 @@ export function Bill({ wsId, transactionId }: Props) {
             {others.length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                  <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                     <File className="h-4 w-4" />
                     {others.length} Files
                   </div>

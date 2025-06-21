@@ -1,0 +1,67 @@
+---
+title: 'Include Relevant Context'
+description: 'Add background details, references, or brand-specific data to help the model generate more targeted responses.'
+---
+
+Don’t assume the model knows everything it needs. Instead, add helpful background details or instructions directly in the prompt. Supplying context gives the model a better understanding of your goals, limitations, and the specific problem it needs to solve.
+
+For example, the following prompt asks the model to provide router troubleshooting advice:
+
+**Example Prompt:**
+
+```prompt
+My printer won’t print even though it’s connected. The display says “Paper Jam”, but I checked and there’s no paper stuck inside. What should I do?
+```
+
+**Response:**
+
+```response
+If your printer shows a “Paper Jam” error but there’s no visible jam, it could be due to a false sensor trigger or small bits of paper stuck inside. Here are steps you can take to troubleshoot:
+1. Power off and unplug the printer.
+2. Open all accessible panels and trays.
+  - Remove any paper and carefully check inside using a flashlight.
+  - Look for tiny scraps of paper or dust near rollers or sensors.
+3. Clean the rollers.
+  - Use a lint-free cloth slightly dampened with water to clean the feed rollers.
+4. Let it rest for a few minutes, then restart.
+   - Plug the printer back in and turn it on.
+5. Try a test print.
+  - If the issue persists, consult the printer’s manual or support site for advanced help.
+```
+
+The response provided sounds like general advice and doesn’t directly address this specific printer model or its error message behavior. To make the response more accurate and relevant, you could include details from the printer’s official troubleshooting guide—such as how it handles “Paper Jam” alerts or what might trigger them falsely. Providing that context helps the model give targeted, brand-specific instructions rather than just standard tips.
+
+**Example Prompt:**
+
+```prompt
+Answer the question using the text below. Respond with only the text provided.
+Question: What should I do if my Epson printer shows an error with blinking red and orange lights?
+
+Text:
+Light Pattern: Blinking red and orange
+What it means: A fatal printer error has occurred.
+What to do:
+- Turn off the printer.
+- Unplug the power cord and wait for at least 60 seconds.
+- Plug the printer back in and power it on.
+- If the error persists, contact Epson support for service.
+
+Light Pattern: Blinking green
+What it means: The printer is receiving data or printing.
+What to do: No action needed.
+
+Light Pattern: Solid red
+What it means: The printer is out of paper or has a paper jam.
+What to do: Check for jammed paper and reload the paper tray properly.
+```
+
+**Response:**
+
+```response
+Turn off the printer. Unplug the power cord and wait for at least 60 seconds. Plug the printer back in and power it on. If the error persists, contact Epson support for service.
+```
+
+**📝 Summary:**
+
+- Add any relevant background or reference material directly into the prompt to guide the model’s response.
+- Also, be sure to clearly explain how the model should apply that context when generating its answer.

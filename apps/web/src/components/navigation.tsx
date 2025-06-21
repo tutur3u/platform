@@ -1,7 +1,7 @@
 'use client';
 
 import { DEV_MODE, PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { User } from '@/types/primitives/User';
+import { User } from '@ncthub/types/primitives/User';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
@@ -12,7 +12,6 @@ export interface NavLink {
   icon?: ReactNode;
   href: string;
   newTab?: boolean;
-  forceRefresh?: boolean;
   matchExact?: boolean;
   aliases?: string[];
   disabled?: boolean;
@@ -72,7 +71,7 @@ export function Navigation({
   }, [pathname]);
 
   return (
-    <div className="scrollbar-none mb-4 flex flex-none gap-1 overflow-x-auto font-semibold">
+    <div className="mb-4 scrollbar-none flex flex-none gap-1 overflow-x-auto font-semibold">
       {navLinks.map((link) => {
         // If the link is disabled, don't render it
         if (link?.disabled) return null;
@@ -130,10 +129,10 @@ export function Navigation({
             }
             className={`text-sm md:text-base ${
               isActive
-                ? 'text-foreground border-border bg-foreground/[0.025] dark:bg-foreground/5'
+                ? 'border-border bg-foreground/[0.025] text-foreground dark:bg-foreground/5'
                 : urlToLoad === link.href
-                  ? 'text-foreground/70 dark:text-foreground/40 bg-foreground/5 animate-pulse'
-                  : 'text-foreground/70 dark:text-foreground/40 md:hover:text-foreground md:hover:bg-foreground/5 border-transparent'
+                  ? 'animate-pulse bg-foreground/5 text-foreground/70 dark:text-foreground/40'
+                  : 'border-transparent text-foreground/70 md:hover:bg-foreground/5 md:hover:text-foreground dark:text-foreground/40'
             } ${
               enableUnderline && notPublic
                 ? 'underline decoration-dashed underline-offset-4'
@@ -143,7 +142,7 @@ export function Navigation({
               setUrlToLoad(link.href);
               if (isActive) scrollActiveLinksIntoView();
             }}
-            href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
+            href={link.href}
           >
             {link.title}
           </Link>

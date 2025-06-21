@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@ncthub/ui/button';
+import { cn } from '@ncthub/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';

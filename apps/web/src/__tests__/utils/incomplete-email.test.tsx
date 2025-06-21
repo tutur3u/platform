@@ -10,7 +10,7 @@ describe('isIncompleteEmail', () => {
     expect(isIncompleteEmail('test@example.com')).toBe(false);
   });
 
-  it('should return true for @ symbol at the beginning', () => {
+  it('should return false for @ symbol at the beginning', () => {
     expect(isIncompleteEmail('@example.com')).toBe(false);
   });
 
@@ -26,7 +26,31 @@ describe('isIncompleteEmail', () => {
     expect(isIncompleteEmail('test@test@')).toBe(true);
   });
 
-  it('should return true for string ending with @', () => {
-    expect(isIncompleteEmail('test@')).toBe(true);
+  it('should handle special characters before @', () => {
+    expect(isIncompleteEmail('test.name@')).toBe(true);
+    expect(isIncompleteEmail('test+name@')).toBe(true);
+    expect(isIncompleteEmail('test-name@')).toBe(true);
+  });
+
+  it('should handle multiple @ symbols correctly', () => {
+    expect(isIncompleteEmail('test@@')).toBe(true);
+    expect(isIncompleteEmail('test@domain@')).toBe(true);
+    expect(isIncompleteEmail('test@domain@domain.com')).toBe(false);
+  });
+
+  it('should handle whitespace correctly', () => {
+    expect(isIncompleteEmail('test @ ')).toBe(false);
+    expect(isIncompleteEmail('test@  ')).toBe(true);
+    expect(isIncompleteEmail('  test@')).toBe(true);
+  });
+
+  it('should return false for strings without @', () => {
+    expect(isIncompleteEmail('testexample')).toBe(false);
+    expect(isIncompleteEmail('test.example')).toBe(false);
+  });
+
+  it('should handle null and undefined', () => {
+    expect(isIncompleteEmail(null as any)).toBe(false);
+    expect(isIncompleteEmail(undefined as any)).toBe(false);
   });
 });

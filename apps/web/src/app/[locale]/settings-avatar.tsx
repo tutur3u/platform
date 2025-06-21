@@ -1,16 +1,9 @@
 'use client';
 
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
-import { generateRandomUUID } from '@/utils/uuid-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -19,15 +12,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import { Form } from '@repo/ui/components/ui/form';
-import { Label } from '@repo/ui/components/ui/label';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Loader2, Settings, UserIcon } from 'lucide-react';
+} from '@ncthub/ui/dialog';
+import { Form } from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Loader2, Settings, UserIcon } from '@ncthub/ui/icons';
+import { Label } from '@ncthub/ui/label';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { getInitials } from '@ncthub/utils/name-helper';
+import { generateRandomUUID } from '@ncthub/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface AvatarProps {
@@ -58,7 +54,7 @@ export default function UserAvatar({ user }: AvatarProps) {
     user?.avatar_url || null
   );
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
   });
 
@@ -218,7 +214,7 @@ export default function UserAvatar({ user }: AvatarProps) {
         <DialogTrigger asChild>
           <div className="flex items-center justify-center">
             <div className="relative flex w-fit flex-col items-center justify-center gap-4">
-              <Avatar className="border-foreground h-32 w-32 cursor-pointer overflow-visible border text-3xl font-semibold">
+              <Avatar className="h-32 w-32 cursor-pointer overflow-visible border border-foreground text-3xl font-semibold">
                 <AvatarImage
                   src={previewSrc || undefined}
                   alt="Avatar"
@@ -232,7 +228,7 @@ export default function UserAvatar({ user }: AvatarProps) {
               </Avatar>
               <Button
                 size="icon"
-                className="absolute bottom-0 right-0 rounded-full backdrop-blur-lg"
+                className="absolute right-0 bottom-0 rounded-full backdrop-blur-lg"
               >
                 <Settings className="h-5 w-5" />
               </Button>

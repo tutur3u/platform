@@ -1,6 +1,6 @@
 import { FruitColorName, FruitType, Fruits } from './types';
-import { cn } from '@/lib/utils';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
 
 export default function GameStats({ fruits }: { fruits: Fruits }) {
   const fruitTypeCounts: {

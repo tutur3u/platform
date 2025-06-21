@@ -32,11 +32,11 @@ export default function Members() {
       <p className="mt-8 w-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text p-3 text-center text-3xl font-black tracking-normal text-transparent md:text-5xl lg:text-6xl lg:tracking-wide">
         The Team
       </p>
-      <div className="bg-foreground/5 border-foreground/10 text-foreground relative mx-auto mb-4 mt-4 max-w-4xl rounded-lg border p-2 text-center text-base font-semibold tracking-wide md:p-6 md:text-xl">
+      <div className="relative mx-auto mt-4 mb-4 max-w-4xl rounded-lg border border-foreground/10 bg-foreground/5 p-2 text-center text-base font-semibold tracking-wide text-foreground md:p-6 md:text-xl">
         RMIT Neo Culture Tech Club mostly operates technical events, workshops,
         trainings, etc… related to technology. Our target students are from the
         house of{' '}
-        <span className="text-brand-light-red font-bold underline underline-offset-4">
+        <span className="font-bold text-brand-light-red underline underline-offset-4">
           SSET
         </span>
         .
@@ -93,8 +93,8 @@ export default function Members() {
           <div
             key={index}
             className={`flex justify-center p-4 transition duration-300 ${
-            highlightedDepartment &&
-            !p.departments.includes(highlightedDepartment)
+              highlightedDepartment &&
+              !p.departments.includes(highlightedDepartment)
                 ? 'opacity-30'
                 : 'opacity-100'
             }`}

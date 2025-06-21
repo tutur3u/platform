@@ -5,11 +5,11 @@ import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPermissions } from '@/lib/workspace-helper';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@ncthub/types/primitives/WorkspaceUserField';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -93,6 +93,7 @@ export default async function WorkspaceUsersPage({
           group_count: false,
           created_at: false,
           updated_at: false,
+          avatar_url: false,
 
           // Extra columns
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),

@@ -1,21 +1,21 @@
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@ncthub/supabase/next/client';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
+} from '@ncthub/ui/dialog';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { useToast } from '@repo/ui/hooks/use-toast';
+} from '@ncthub/ui/select';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useLocale, useTranslations } from 'next-intl';

@@ -1,15 +1,15 @@
 import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
 import MemberTabs from './_components/member-tabs';
-import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
   getWorkspace,
   verifyHasSecrets,
 } from '@/lib/workspace-helper';
-import { User } from '@/types/primitives/User';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
+import { User } from '@ncthub/types/primitives/User';
+import { Separator } from '@ncthub/ui/separator';
+import { getCurrentUser } from '@ncthub/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
@@ -36,7 +36,7 @@ export default async function WorkspaceMembersPage({
   if (withoutPermission('manage_workspace_members'))
     redirect(`/${wsId}/settings`);
 
-  const ws = await getWorkspace(wsId);
+  const ws = await getWorkspace(wsId, true);
   const user = await getCurrentUser();
   const members = await getMembers(wsId, await searchParams);
 
@@ -45,7 +45,7 @@ export default async function WorkspaceMembersPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">
             {t('workspace-settings-layout.members')}

@@ -1,10 +1,10 @@
 import { walletColumns } from './columns';
 import { WalletForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { Wallet } from '@/types/primitives/Wallet';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import { Wallet } from '@ncthub/types/primitives/Wallet';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

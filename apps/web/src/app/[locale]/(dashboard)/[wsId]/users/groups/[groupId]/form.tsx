@@ -1,20 +1,16 @@
 'use client';
 
-import { UserDatabaseFilter } from '../../../users/filters';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
-import SearchBar from '@repo/ui/components/ui/custom/search-bar';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { Filter } from '../../../users/filters';
+import { createClient } from '@ncthub/supabase/next/client';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
+import SearchBar from '@ncthub/ui/custom/search-bar';
+import { User, X } from '@ncthub/ui/icons';
+import { ScrollArea } from '@ncthub/ui/scroll-area';
+import { cn } from '@ncthub/utils/format';
+import { getInitials } from '@ncthub/utils/name-helper';
 import { useQuery } from '@tanstack/react-query';
-import { User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -91,7 +87,7 @@ export default function GroupMemberForm({
     <>
       <div className="flex items-center gap-2">
         <SearchBar t={t} className={cn('w-full')} onSearch={setQuery} />
-        <UserDatabaseFilter
+        <Filter
           title={t('ws-members.invite_member')}
           icon={<User className="mr-2 h-4 w-4" />}
           options={users.map((user) => ({
@@ -101,9 +97,9 @@ export default function GroupMemberForm({
               <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">
                 <AvatarImage
                   src={user?.avatar_url ?? undefined}
-                  className="border-foreground/50 overflow-clip rounded-full border"
+                  className="overflow-clip rounded-full border border-foreground/50"
                 />
-                <AvatarFallback className="border-foreground/50 border font-semibold">
+                <AvatarFallback className="border border-foreground/50 font-semibold">
                   {user?.display_name ? (
                     getInitials(user.display_name)
                   ) : (
@@ -137,9 +133,9 @@ export default function GroupMemberForm({
                   <Avatar className="relative h-12 w-12 overflow-visible font-semibold">
                     <AvatarImage
                       src={user?.avatar_url ?? undefined}
-                      className="border-foreground/50 overflow-clip rounded-full border"
+                      className="overflow-clip rounded-full border border-foreground/50"
                     />
-                    <AvatarFallback className="border-foreground/50 border font-semibold">
+                    <AvatarFallback className="border border-foreground/50 font-semibold">
                       {user?.display_name
                         ? getInitials(user?.display_name)
                         : null}
@@ -168,7 +164,7 @@ export default function GroupMemberForm({
           </div>
         </ScrollArea>
       ) : (
-        <div className="text-foreground/50 mt-4 rounded border border-dashed p-4 text-center font-semibold md:p-8">
+        <div className="mt-4 rounded border border-dashed p-4 text-center font-semibold text-foreground/50 md:p-8">
           This group has no members yet.
         </div>
       )}
@@ -177,7 +173,7 @@ export default function GroupMemberForm({
 }
 
 async function getWorkspaceUsers(wsId: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_users')
@@ -192,7 +188,7 @@ async function getWorkspaceUsers(wsId: string) {
 }
 
 async function getUsers(groupId: string, query?: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_users')

@@ -1,0 +1,213 @@
+---
+title: 'Monorepo Architecture'
+description: 'Understanding Tuturuuu monorepo architecture and the benefits of using Turborepo.'
+---
+
+<Info>
+  **Prerequisite**: You should have followed the [Development](/development)
+  setup guide to understand the basic structure of the codebase.
+</Info>
+
+## What is a Monorepo?
+
+A monorepo is a single repository containing multiple distinct projects with well-defined relationships. This approach differs from a polyrepo strategy where each project has its own separate repository.
+
+> "A monorepo is a single repository containing multiple distinct projects, with well-defined relationships."
+> — [monorepo.tools](https://monorepo.tools/)
+
+It's important to note that a monorepo is not the same as a monolith. A monolith is a single, tightly coupled application, while a monorepo can contain many independent applications, libraries, and tools that can be deployed separately.
+
+## Why Tuturuuu Uses a Monorepo
+
+Tuturuuu's platform is built as a monorepo (`@rmit-nct/hub`) for several key reasons:
+
+### 1. Code Sharing Without Overhead
+
+Our monorepo structure makes it easy to share code across different applications and services without the overhead of publishing packages. Core components, utilities, and business logic can be shared across multiple applications without duplicating code.
+
+```
+platform/
+├── apps/
+│   ├── web/      # Main web application
+│   ├── docs/     # Documentation site (Mintlify)
+│   └── ...       # Other applications
+└── packages/
+    ├── ai/       # Shared AI functions & configurations
+    ├── ui/       # Shared UI components
+    ├── types/    # Shared TypeScript types
+    ├── utils/    # Shared utilities
+    ├── supabase/ # Supabase client and utilities
+    └── ...       # Other shared packages
+```
+
+### 2. Atomic Changes Across Projects
+
+When making changes that affect multiple parts of the platform, we can make those changes in a single commit. This ensures that all parts of the system remain compatible with each other, reducing integration issues.
+
+For example, when updating a database schema:
+
+1. We can update the Supabase schema in `apps/db/supabase/migrations`
+2. Update the TypeScript types in `packages/types/src/supabase.ts`
+3. Update all affected applications in the same pull request
+
+### 3. Consistent Developer Experience
+
+A monorepo allows us to standardize tooling, testing, and deployment processes across all projects. This creates a consistent development experience regardless of which part of the platform a developer is working on.
+
+All developers use the same:
+
+- Package manager (bun)
+- Build system (Turborepo)
+- Code style guidelines (enforced by ESLint and Prettier)
+- Testing framework
+- CI/CD pipelines
+
+### 4. Simplified Dependency Management
+
+Managing dependencies in a monorepo is simpler because we can ensure all projects use the same versions of shared dependencies, avoiding version conflicts.
+
+## Why We Chose Turborepo
+
+Tuturuuu uses [Turborepo](https://turborepo.org/) as its build system for several reasons:
+
+### 1. Incremental Builds with Caching
+
+Turborepo provides intelligent caching of build artifacts. This means that if a file hasn't changed, Turborepo will use the cached result instead of rebuilding it, significantly reducing build times.
+
+```bash
+# Only builds what changed since the last build
+bun run build
+```
+
+### 2. Parallel Task Execution
+
+Turborepo automatically parallelizes tasks, maximizing the use of available CPU cores.
+
+```bash
+# Runs lint across all packages in parallel
+bun lint
+```
+
+### 3. Task Orchestration
+
+Turborepo understands dependencies between packages and ensures tasks are run in the correct order.
+
+```bash
+# In turbo.json
+{
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**"]
+    }
+  }
+}
+```
+
+### 4. Remote Caching
+
+For CI/CD pipelines, Turborepo supports remote caching, which means build artifacts can be shared across different environments.
+
+## Monorepo Structure
+
+Our monorepo is organized into several main directories:
+
+### apps/
+
+Contains all deployable applications. Each application is a standalone project that can be deployed independently.
+
+```
+apps/
+├── web/    # Main web application
+├── docs/   # Documentation site (Mintlify)
+└── db/     # Database migrations and scripts
+```
+
+### packages/
+
+Contains shared libraries and utilities that are used by multiple applications.
+
+```
+packages/
+├── ui/       # Shared UI components
+├── types/    # Shared TypeScript types including Supabase types
+├── utils/    # Shared utilities
+├── ai/       # AI-related utilities
+└── supabase/ # Supabase client and utilities
+```
+
+## Development Workflow
+
+When working in our monorepo, you'll typically:
+
+1. Clone the repository: `git clone https://github.com/rmit-nct/hub.git`
+2. Install dependencies: `bun install`
+3. Start the development servers: `bun dev` or `bun devx` (with Supabase)
+
+For more detailed instructions on development workflow, see the [Development](/development) and [Local Supabase Development](/local-supabase-development) guides.
+
+## Best Practices
+
+When working in our monorepo, follow these best practices:
+
+### 1. Keep Projects Modular
+
+Even though all code lives in one repository, maintain clear boundaries between projects. Each package or app should have a well-defined purpose and API.
+
+### 2. Use Workspace References
+
+When one project depends on another within the monorepo, use workspace references:
+
+```json
+{
+  "dependencies": {
+    "@ncthub/ui": "workspace:*",
+    "@ncthub/types": "workspace:*"
+  }
+}
+```
+
+### 3. Think About Build Order
+
+Be mindful of dependencies between packages. If package B depends on package A, ensure that changes to package A trigger rebuilds of package B.
+
+### 4. Use Correct Scope for Changes
+
+- For changes that affect a single application, focus your changes there
+- For changes that affect multiple applications, consider extracting common code to a shared package
+- For global changes (like tooling updates), ensure you test across all affected projects
+
+## Common Challenges and Solutions
+
+### Challenge: Long Build Times
+
+**Solution:** Turborepo's caching mechanism helps, but also:
+
+- Be selective about what you build during development
+- Use `bun --filter` to focus on specific packages
+
+```bash
+# Only build the web app and its dependencies
+bun --filter web... build
+```
+
+### Challenge: Dependency Management
+
+**Solution:**
+
+- Regularly update dependencies
+- Bun automatically detects workspace packages from the root `package.json` workspaces field
+- Consider using `bun dedupe` to eliminate duplicate dependencies
+
+### Challenge: CI/CD Pipeline Complexity
+
+**Solution:**
+
+- Use GitHub Actions workflows that are specific to the affected parts of the codebase
+- Leverage Turborepo's `--filter` and `--since` flags to only build what's changed
+
+## Further Resources
+
+- [monorepo.tools](https://monorepo.tools/): Comprehensive information about monorepos
+- [Turborepo Documentation](https://turbo.build/repo/docs): Official Turborepo documentation
+- [Bun Workspace](https://bun.sh/docs/install/workspaces): How bun handles monorepos

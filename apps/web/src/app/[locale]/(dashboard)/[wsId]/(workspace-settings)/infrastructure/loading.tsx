@@ -5,6 +5,8 @@ export default function InfrastructureOverviewPage() {
     <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
       <LoadingStatisticCard />
       <LoadingStatisticCard />
+      <LoadingStatisticCard />
+      <LoadingStatisticCard />
     </div>
   );
 }

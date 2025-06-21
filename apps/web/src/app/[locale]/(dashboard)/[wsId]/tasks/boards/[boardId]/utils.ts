@@ -1,23 +1,21 @@
-import { TaskDragData } from './task';
-import { ColumnDragData } from './task-list';
-import { Active, DataRef, Over } from '@dnd-kit/core';
+import { Active, Over } from '@dnd-kit/core';
 
-type DraggableData = ColumnDragData | TaskDragData;
+interface DraggableData {
+  type: 'Task' | 'Column';
+  task?: any;
+  column?: any;
+}
 
-export function hasDraggableData<T extends Active | Over>(
-  entry: T | null | undefined
-): entry is T & {
-  data: DataRef<DraggableData>;
-} {
-  if (!entry) {
-    return false;
-  }
+export function hasDraggableData(
+  element: Active | Over | null
+): element is Active | Over {
+  if (!element) return false;
+  if (!element.data?.current) return false;
 
-  const data = entry.data.current;
+  const data = element.data.current as DraggableData;
 
-  if (data?.type === 'Column' || data?.type === 'Task') {
-    return true;
-  }
+  if (data.type === 'Task' && !data.task) return false;
+  if (data.type === 'Column' && !data.column) return false;
 
-  return false;
+  return data.type === 'Task' || data.type === 'Column';
 }

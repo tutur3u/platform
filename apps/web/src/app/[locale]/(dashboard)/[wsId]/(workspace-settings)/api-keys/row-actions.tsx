@@ -1,18 +1,18 @@
 'use client';
 
 import ApiKeyEditDialog from './edit-dialog';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
-import { Button } from '@repo/ui/components/ui/button';
+import { WorkspaceApiKey } from '@ncthub/types/primitives/WorkspaceApiKey';
+import { Button } from '@ncthub/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@ncthub/ui/dropdown-menu';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Ellipsis } from '@ncthub/ui/icons';
 import { Row } from '@tanstack/react-table';
-import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -56,7 +56,7 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>

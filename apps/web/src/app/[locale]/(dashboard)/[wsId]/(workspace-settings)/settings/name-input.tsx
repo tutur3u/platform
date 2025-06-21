@@ -1,32 +1,32 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@ncthub/ui/button';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Check, Loader2 } from 'lucide-react';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Check, Loader2 } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Label } from '@ncthub/ui/label';
+import { zodResolver } from '@ncthub/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  defaultValue?: string;
+  defaultValue?: string | null;
   disabled?: boolean;
 }
 
 const FormSchema = z.object({
-  name: z.string().min(1).max(50),
+  name: z.string().min(1).max(50).optional(),
 });
 
 export default function NameInput({
@@ -39,10 +39,10 @@ export default function NameInput({
 
   const [saving, setSaving] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: defaultValue,
+      name: defaultValue ?? undefined,
     },
   });
 

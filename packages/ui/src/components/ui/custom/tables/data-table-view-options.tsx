@@ -77,11 +77,12 @@ export function DataTableViewOptions<TData>({
                       <UserCog className="mr-1 h-4 w-4" />
                     ) : undefined}
 
-                    {/* @ts-expect-error */}
-                    {extraColumns?.findLast(
-                      (extraColumn: { id: string; name?: string }) =>
-                        extraColumn.id === column.id
-                    )?.name || namespace
+                    {(extraColumns as Array<{ id: string; name?: string }>)
+                      ?.filter(
+                        (extraColumn: { id: string; name?: string }) =>
+                          extraColumn.id === column.id
+                      )
+                      .pop()?.name || namespace
                       ? t?.(`${namespace}.${column.id}`)
                       : column.id}
                   </DropdownMenuCheckboxItem>

@@ -1,15 +1,9 @@
 'use client';
 
-import { User } from '@/types/primitives/User';
-import { Workspace } from '@/types/primitives/Workspace';
-import { getInitials } from '@/utils/name-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+import { Workspace } from '@ncthub/types/db';
+import { User } from '@ncthub/types/primitives/User';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   Form,
   FormControl,
@@ -26,14 +20,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Settings, User as UserIcon } from 'lucide-react';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Settings, User as UserIcon } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { getInitials } from '@ncthub/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
@@ -44,7 +40,8 @@ interface Props {
 
 const FormSchema = z.object({
   role: z.string(),
-  accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
+  accessLevel: z.string(),
+  // accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
 });
 
 export function MemberSettingsButton({
@@ -55,7 +52,7 @@ export function MemberSettingsButton({
   const router = useRouter();
   const t = useTranslations('ws-members');
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       role: user?.role_title || '',
@@ -150,7 +147,7 @@ export function MemberSettingsButton({
     >
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
-          <Settings className="text-foreground/70 h-6 w-6" />
+          <Settings className="h-6 w-6 text-foreground/70" />
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -177,7 +174,7 @@ export function MemberSettingsButton({
           </Avatar>
 
           <div className="flex-1 space-y-1">
-            <p className="line-clamp-1 text-sm font-medium leading-none">
+            <p className="line-clamp-1 text-sm leading-none font-medium">
               {user?.display_name ? (
                 user.display_name
               ) : (
@@ -186,7 +183,7 @@ export function MemberSettingsButton({
               {role ? <span className="text-orange-300">({role})</span> : null}
             </p>
 
-            <p className="text-foreground/60 line-clamp-1 text-sm">
+            <p className="line-clamp-1 text-sm text-foreground/60">
               {user?.email ||
                 (user?.handle
                   ? `@${user.handle}`

@@ -1,37 +1,24 @@
-'use client';
-
-import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { cn } from '@ncthub/utils/format';
+import { ReactNode } from 'react';
 
 interface Props {
   onlyOnMobile?: boolean;
+  children: ReactNode;
 }
 
-export default function NavbarPadding({ onlyOnMobile = false }: Props) {
-  const [navbarHeight, setNavbarHeight] = useState(0);
-
-  useEffect(() => {
-    const navbarElement = document.getElementById('navbar');
-
-    const handleHeight = () => {
-      if (navbarElement) {
-        setNavbarHeight(navbarElement.clientHeight);
-      }
-    };
-
-    handleHeight();
-
-    window.addEventListener('resize', handleHeight);
-
-    return () => {
-      window.removeEventListener('resize', handleHeight);
-    };
-  }, []);
+export default function NavbarPadding({
+  onlyOnMobile = false,
+  children,
+}: Props) {
+  const navbarHeight = 57;
 
   return (
-    <div
-      style={{ height: `${navbarHeight}px` }}
-      className={cn(onlyOnMobile ? 'md:hidden' : '')}
-    />
+    <>
+      <div
+        style={{ height: `${navbarHeight}px` }}
+        className={cn(onlyOnMobile ? 'md:hidden' : '')}
+      />
+      <div className="relative">{children}</div>
+    </>
   );
 }

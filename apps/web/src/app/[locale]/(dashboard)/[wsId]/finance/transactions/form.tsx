@@ -2,15 +2,14 @@
 
 import { WalletForm } from '../wallets/form';
 import { TransactionCategoryForm } from './categories/form';
-import { Transaction } from '@/types/primitives/Transaction';
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
-import { Wallet } from '@/types/primitives/Wallet';
 import { fetcher } from '@/utils/fetcher';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { Calendar } from '@repo/ui/components/ui/calendar';
-import { Combobox } from '@repo/ui/components/ui/custom/combobox';
-import { Dialog, DialogContent } from '@repo/ui/components/ui/dialog';
+import { Transaction } from '@ncthub/types/primitives/Transaction';
+import { TransactionCategory } from '@ncthub/types/primitives/TransactionCategory';
+import { Wallet } from '@ncthub/types/primitives/Wallet';
+import { Button } from '@ncthub/ui/button';
+import { Calendar } from '@ncthub/ui/calendar';
+import { Combobox } from '@ncthub/ui/custom/combobox';
+import { Dialog, DialogContent } from '@ncthub/ui/dialog';
 import {
   Form,
   FormControl,
@@ -18,30 +17,28 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { cn } from '@repo/ui/lib/utils';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { CalendarIcon } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@ncthub/ui/popover';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { Separator } from '@ncthub/ui/separator';
+import { Textarea } from '@ncthub/ui/textarea';
+import { cn } from '@ncthub/utils/format';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
-import { CalendarIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import useSWR from 'swr';
 import * as z from 'zod';
 
 interface Props {
   wsId: string;
   data?: Transaction;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
@@ -84,7 +81,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
 
   const walletsLoading = !wallets && !walletsError;
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       id: data?.id,
@@ -308,17 +305,17 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
 
           <div className="h-0" />
 
-          <FormField
-            control={form.control}
-            name="taken_at"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>{t('transaction-data-table.taken_at')}</FormLabel>
-                <Popover>
+          <Popover>
+            <FormField
+              control={form.control}
+              name="taken_at"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>{t('transaction-data-table.taken_at')}</FormLabel>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
-                        variant={'outline'}
+                        variant="outline"
                         className={cn(
                           'pl-3 text-left font-normal',
                           !field.value && 'text-muted-foreground'
@@ -344,21 +341,22 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
+                      onSubmit={field.onChange}
                       initialFocus
                     />
                   </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </Popover>
 
           <div className="h-2" />
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading
               ? t('common.processing')
-              : !!data?.id
+              : data?.id
                 ? t('ws-transactions.edit')
                 : t('ws-transactions.create')}
           </Button>

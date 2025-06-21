@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -32,7 +32,7 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId: id } = await params;
 
-  const { moduleId, quiz_options, ...rest } = await req.json();
+  const { moduleId, setId, quiz_options, ...rest } = await req.json();
 
   const { data, error } = await supabase
     .from('workspace_quizzes')
@@ -54,6 +54,13 @@ export async function POST(req: Request, { params }: Params) {
   if (moduleId) {
     await supabase.from('course_module_quizzes').insert({
       module_id: moduleId,
+      quiz_id: data.id,
+    });
+  }
+
+  if (setId) {
+    await supabase.from('quiz_set_quizzes').insert({
+      set_id: setId,
       quiz_id: data.id,
     });
   }

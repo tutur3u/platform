@@ -1,32 +1,25 @@
 'use client';
 
 import { DatePicker } from '../../../../../../components/row-actions/users/date-picker';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
-import { generateRandomUUID } from '@/utils/uuid-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
-import { SelectField } from '@repo/ui/components/ui/custom/select-field';
+import { createClient } from '@ncthub/supabase/next/client';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
+import { Button } from '@ncthub/ui/button';
+import { SelectField } from '@ncthub/ui/custom/select-field';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
+} from '@ncthub/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
+} from '@ncthub/ui/dropdown-menu';
 import {
   Form,
   FormControl,
@@ -35,18 +28,21 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@ncthub/ui/form';
+import { useForm } from '@ncthub/ui/hooks/use-form';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Ellipsis, Eye, Loader2, UserIcon, XIcon } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
+import { zodResolver } from '@ncthub/ui/resolvers';
+import { Separator } from '@ncthub/ui/separator';
+import { getInitials } from '@ncthub/utils/name-helper';
+import { generateRandomUUID } from '@ncthub/utils/uuid-helper';
 import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
-import { Ellipsis, Eye, Loader2, UserIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface UserRowActionsProps {
@@ -61,7 +57,8 @@ const FormSchema = z.object({
   display_name: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  gender: z.string().optional(),
+  // gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
   birthday: z.date().nullable().optional(),
   ethnicity: z.string().optional(),
   guardian: z.string().optional(),
@@ -85,7 +82,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
       id: user?.id,
@@ -182,6 +179,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         });
       }
       router.refresh();
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast({
         title: t('ws-members.error'),
@@ -359,7 +357,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
                     <FormMessage />
                     <FormDescription>
                       The identification number of this user in your workspace.
-                      This is automatically managed by NCT Hub, and cannot be
+                      This is automatically managed by Tuturuuu, and cannot be
                       changed.
                     </FormDescription>
                   </FormItem>
@@ -412,7 +410,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="example@rmit.edu.vn" {...field} />
+                      <Input placeholder="example@tuturuuu.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -593,7 +591,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>

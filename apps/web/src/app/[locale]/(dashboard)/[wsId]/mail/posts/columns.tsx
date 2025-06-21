@@ -1,11 +1,11 @@
 'use client';
 
 import RowActions from './row-actions';
-import { PostEmail } from '@/types/primitives/post-email';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { PostEmail } from '@ncthub/types/primitives/post-email';
+import { DataTableColumnHeader } from '@ncthub/ui/custom/tables/data-table-column-header';
+import { Check, X } from '@ncthub/ui/icons';
 import { ColumnDef } from '@tanstack/react-table';
 import 'dayjs/locale/vi';
-import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -24,7 +24,7 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-[8rem]">{row.getValue('id')}</div>
+      <div className="line-clamp-1 min-w-32">{row.getValue('id')}</div>
     ),
   },
   {
@@ -61,7 +61,7 @@ export const getPostEmailColumns = (
     cell: ({ row }) => (
       <Link
         href={`/${row.original.ws_id}/users/groups/${row.original.group_id}`}
-        className="line-clamp-1 min-w-[8rem] hover:underline"
+        className="line-clamp-1 min-w-32 hover:underline"
       >
         {row.getValue('group_name') || '-'}
       </Link>
@@ -79,7 +79,7 @@ export const getPostEmailColumns = (
     cell: ({ row }) => (
       <Link
         href={`/${row.original.ws_id}/users/groups/${row.original.group_id}/posts/${row.original.post_id}`}
-        className="line-clamp-1 min-w-[8rem] hover:underline"
+        className="line-clamp-1 min-w-32 hover:underline"
       >
         {row.getValue('post_title') || '-'}
       </Link>
@@ -106,7 +106,7 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-3 max-w-[10rem] whitespace-pre-line">
+      <div className="line-clamp-3 max-w-40 whitespace-pre-line">
         {row.getValue('post_content') || '-'}
       </div>
     ),
@@ -132,7 +132,7 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-[8rem]">
+      <div className="line-clamp-1 min-w-32">
         {row.getValue('notes') || '-'}
       </div>
     ),
@@ -147,7 +147,7 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem]">
+      <div className="min-w-32">
         {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
       </div>
     ),

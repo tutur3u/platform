@@ -1,0 +1,277 @@
+---
+title: 'Git Conventions'
+description: 'Learn how Tuturuuu uses Conventional Commits and Branch naming to improve development workflow.'
+---
+
+<Info>
+  **Prerequisite**: You should be familiar with basic Git operations and
+  understand the [Monorepo Architecture](/monorepo-architecture) of our
+  codebase.
+</Info>
+
+## Overview
+
+Tuturuuu follows standardized conventions for Git commits and branch naming to improve collaboration, automate releases, and maintain a clean, navigable repository history. We use two main specifications:
+
+1. [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for structured commit messages
+2. [Conventional Branch](https://conventional-branch.github.io/) for consistent branch naming
+
+These conventions help automate our CI/CD workflows, generate changelogs, and make our development process more efficient.
+
+## Conventional Commits
+
+### What are Conventional Commits?
+
+Conventional Commits is a specification for adding human and machine-readable meaning to commit messages. It provides a set of rules for creating an explicit commit history, making it easier to write automated tools on top of.
+
+The basic structure of a conventional commit is:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Types
+
+Tuturuuu uses the following commit types:
+
+| Type       | Description                                     | Example                                          |
+| ---------- | ----------------------------------------------- | ------------------------------------------------ |
+| `feat`     | New feature or enhancement                      | `feat: add dark mode support`                    |
+| `fix`      | Bug fix                                         | `fix: prevent crash when user data is undefined` |
+| `docs`     | Documentation changes                           | `docs: update installation instructions`         |
+| `style`    | Code style changes (formatting, no code change) | `style: format code with prettier`               |
+| `refactor` | Code refactoring                                | `refactor: simplify authentication logic`        |
+| `perf`     | Performance improvements                        | `perf: optimize database queries`                |
+| `test`     | Add or fix tests                                | `test: add unit tests for auth middleware`       |
+| `build`    | Changes affecting build system or dependencies  | `build: update dependency to fix security issue` |
+| `ci`       | Changes to CI configuration files and scripts   | `ci: add workflow for staging deployments`       |
+| `chore`    | Routine tasks, maintenance                      | `chore: update package.json metadata`            |
+
+### Scopes
+
+Scopes provide additional context about which part of the codebase is affected. In our monorepo structure, we often use package or app names as scopes:
+
+```
+feat(web): add new dashboard layout
+fix(ui): correct button alignment in mobile view
+chore(types): update supabase database types
+```
+
+### Breaking Changes
+
+Breaking changes must be indicated by adding a `!` after the type/scope or by using a `BREAKING CHANGE:` footer:
+
+```
+feat(api)!: require authentication for all endpoints
+
+BREAKING CHANGE: All API endpoints now require authentication tokens.
+```
+
+### Examples
+
+Here are some examples of conventional commits used in our codebase:
+
+```
+feat(web): add new calendar integration
+fix(supabase): correct permission issue in auth policy
+docs(readme): update development setup instructions
+style: apply consistent formatting with prettier
+refactor(utils): simplify date formatting functions
+perf(queries): optimize workspace user loading
+test(auth): add tests for token verification
+build(deps): update Next.js to v14
+ci(vercel): add automatic preview deployments
+chore(release): publish packages
+```
+
+## Conventional Branches
+
+### What are Conventional Branches?
+
+Conventional Branch refers to a structured naming convention for Git branches that makes it easier to identify branches by type and purpose.
+
+The basic structure is:
+
+```
+<type>/<description>
+```
+
+### Branch Types
+
+Tuturuuu uses the following branch types:
+
+| Type      | Description             | Example                         |
+| --------- | ----------------------- | ------------------------------- |
+| `main`    | Main development branch | `main`                          |
+| `feature` | For new features        | `feature/user-dashboard`        |
+| `bugfix`  | For bug fixes           | `bugfix/login-error`            |
+| `hotfix`  | For urgent fixes        | `hotfix/security-vulnerability` |
+| `release` | For preparing releases  | `release/v1.2.0`                |
+| `chore`   | For maintenance tasks   | `chore/update-dependencies`     |
+
+### Naming Rules
+
+1. Use lowercase alphanumeric characters and hyphens
+2. Keep names concise but descriptive
+3. Include ticket/issue numbers when applicable
+4. Avoid special characters (except hyphens)
+
+### Examples
+
+```
+feature/workspace-sharing
+bugfix/file-upload-error
+hotfix/auth-vulnerability
+release/v2.5.0
+chore/update-react-18
+feature/issue-123-user-profile
+```
+
+## How These Conventions Improve Our Workflow
+
+### 1. Automated Changelog Generation
+
+Our conventional commits are used to automatically generate changelogs for releases. Different commit types are categorized accordingly:
+
+```markdown
+# Changelog
+
+## Features
+
+- add dark mode support (#123)
+- add calendar integration (#124)
+
+## Bug Fixes
+
+- prevent crash when user data is undefined (#125)
+
+## Documentation
+
+- update installation instructions (#126)
+```
+
+### 2. Semantic Versioning
+
+Conventional commits help determine the next semantic version for packages:
+
+- `fix:` commits trigger a PATCH increment (1.0.0 → 1.0.1)
+- `feat:` commits trigger a MINOR increment (1.0.0 → 1.1.0)
+- Commits with `BREAKING CHANGE` trigger a MAJOR increment (1.0.0 → 2.0.0)
+
+### 3. Automated Package Publishing
+
+In our CI workflows, package publishing is automatically triggered when a PR with specific commit types is merged. For example, our `release-types-package.yaml` workflow triggers when:
+
+```yaml
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'packages/types/package.json'
+  # ...
+
+jobs:
+  check-version-bump:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@ncthub/types)')
+    # ...
+```
+
+### 4. Better Code Reviews
+
+With conventional commits and branches, it's easier to understand the purpose of a pull request at a glance:
+
+- A PR from `feature/user-dashboard` with commits like `feat: add user stats widget` clearly indicates a new feature
+- A PR from `bugfix/auth-issue` with commits like `fix: prevent token expiration error` indicates a bug fix
+
+### 5. Simplifying Navigation
+
+Conventional branch names make it easier to navigate the repository history and find specific changes. For example:
+
+```bash
+# Find all feature branches
+git branch --list "feature/*"
+
+# Find branches related to authentication
+git branch --list "*auth*"
+```
+
+## Tools and Enforcement
+
+We use a dedicated CI/CD check to enforce our Git conventions:
+
+### Branch Naming Check
+
+We use a GitHub Action workflow to verify that branch names follow our convention:
+
+```yaml
+name: Branch Name Check
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - production
+
+jobs:
+  check-branch-name:
+    name: Check branch name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          if ! [[ $BRANCH_NAME =~ ^(feature|bugfix|hotfix|release|chore)/.+ ]]; then
+            echo "❌ Branch name '$BRANCH_NAME' doesn't follow the conventional branch format."
+            echo "Branch name should be in format: type/description"
+            echo "Allowed types: feature, bugfix, hotfix, release, chore"
+            exit 1
+          else
+            echo "✅ Branch name follows convention: $BRANCH_NAME"
+          fi
+```
+
+## Best Practices
+
+### Writing Good Commit Messages
+
+1. Use the imperative mood ("add" not "added" or "adds")
+2. Capitalize the first letter of the description
+3. Do not end the description with a period
+4. Keep the description under 72 characters
+5. Use the body to explain the what and why, not the how
+
+Example of a well-formatted commit:
+
+```
+feat(auth): Add multi-factor authentication support
+
+Implement TOTP-based multi-factor authentication to improve security.
+The implementation follows the RFC 6238 standard.
+
+Closes #123
+```
+
+### Branch Management
+
+1. Create branches from the latest `main` branch
+2. Keep branches focused on a single task or issue
+3. Regularly rebase long-lived branches on `main` to avoid merge conflicts
+4. Delete branches after they've been merged
+
+### Pull Request Workflow
+
+1. Create a branch with the appropriate type based on the work
+2. Make commits using conventional commit messages
+3. Push the branch and create a pull request
+4. Use conventional commit style for the PR title
+5. After approval and merge, delete the branch
+
+## Conclusion
+
+Following these Git conventions helps us maintain a clean, understandable repository history, automate release processes, and improve collaboration across the team. By standardizing both commit messages and branch names, we create a more efficient development workflow.
+
+For more information, refer to the official documentation for [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) and [Conventional Branch](https://conventional-branch.github.io/).

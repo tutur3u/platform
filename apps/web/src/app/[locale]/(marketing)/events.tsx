@@ -11,7 +11,7 @@ const EventImages = [
 export default function Events() {
   return (
     <div className="relative w-full py-8">
-      <div className="bg-foreground/10 rounded-3xl p-4 backdrop-blur-xl md:p-8">
+      <div className="rounded-3xl bg-foreground/10 p-4 backdrop-blur-xl md:p-8">
         <div className="flex grid-cols-7 grid-rows-2 flex-col gap-10 md:grid">
           {EventImages.slice(0, 5).map((link, index) =>
             index === 0 ? (

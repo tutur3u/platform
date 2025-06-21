@@ -1,12 +1,12 @@
 import { DocumentCard } from './card';
 import MyDialogContent from './dialog-content';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Dialog, DialogTrigger } from '@repo/ui/components/ui/dialog';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { FilePlus } from 'lucide-react';
+import { createClient } from '@ncthub/supabase/next/server';
+import { Button } from '@ncthub/ui/button';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Dialog, DialogTrigger } from '@ncthub/ui/dialog';
+import { FilePlus } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
@@ -52,7 +52,7 @@ export default async function DocumentsPage({ params }: Props) {
 
       <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {documents && documents.length === 0 && (
-          <div className="text-foreground/80 col-span-full">
+          <div className="col-span-full text-foreground/80">
             {noDocumentsLabel}
           </div>
         )}

@@ -1,35 +1,30 @@
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-import type { AIChat } from '@/types/db';
-import { Button } from '@repo/ui/components/ui/button';
-import { StatedFile } from '@repo/ui/components/ui/custom/file-uploader';
-import { Dialog } from '@repo/ui/components/ui/dialog';
-import { IconArrowElbow } from '@repo/ui/components/ui/icons';
+import { type UseChatHelpers } from '@ncthub/ai/types';
+import type { AIChat } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
+import { StatedFile } from '@ncthub/ui/custom/file-uploader';
+import { Dialog } from '@ncthub/ui/dialog';
+import {
+  Bolt,
+  File,
+  FileText,
+  Globe,
+  IconArrowElbow,
+  ImageIcon,
+  Languages,
+  Lock,
+  Paperclip,
+  RefreshCw,
+  X,
+} from '@ncthub/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { cn } from '@repo/ui/lib/utils';
-import type { UseChatHelpers } from 'ai/react';
-import {
-  ArrowDownWideNarrow,
-  Bolt,
-  File,
-  FileText,
-  Globe,
-  ImageIcon,
-  Languages,
-  Lock,
-  NotebookPen,
-  NotebookTabs,
-  Paperclip,
-  PencilLine,
-  RefreshCw,
-  SquareStack,
-  X,
-} from 'lucide-react';
+} from '@ncthub/ui/tooltip';
+import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
@@ -42,7 +37,7 @@ export interface PromptProps
   chat: Partial<AIChat> | undefined;
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
-  inputRef: React.RefObject<HTMLTextAreaElement>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
   showExtraOptions: boolean;
@@ -191,13 +186,13 @@ export function PromptForm({
   //   };
   // }, [microphoneState, connectionState]);
 
-  const [responseTypes, setResponseTypes] = useState<{
-    summary?: boolean;
-    notes?: boolean;
-    multiChoiceQuiz?: boolean;
-    paragraphQuiz?: boolean;
-    flashcards?: boolean;
-  }>({});
+  // const [responseTypes, setResponseTypes] = useState<{
+  //   summary?: boolean;
+  //   notes?: boolean;
+  //   multiChoiceQuiz?: boolean;
+  //   paragraphQuiz?: boolean;
+  //   flashcards?: boolean;
+  // }>({});
 
   const [element, setElement] = useState<HTMLElement | null>(null);
 
@@ -229,7 +224,8 @@ export function PromptForm({
         className="w-full"
       >
         <div className="mb-2 flex items-center justify-between gap-2">
-          <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
+          <div />
+          {/* <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
             <Button
               size="xs"
               type="button"
@@ -335,7 +331,7 @@ export function PromptForm({
               <NotebookTabs className="mr-1 h-4 w-4" />
               {t('ai_chat.flashcards')}
             </Button>
-          </div>
+          </div> */}
 
           <div className="flex items-center">
             <Tooltip>
@@ -546,7 +542,7 @@ export function PromptForm({
               {pdfs.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                    <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                       <FileText className="h-4 w-4" />
                       {pdfs.length} PDFs
                     </div>
@@ -585,7 +581,7 @@ export function PromptForm({
               {images.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                    <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                       <ImageIcon className="h-4 w-4" />
                       {images.length} Images
                     </div>
@@ -598,6 +594,7 @@ export function PromptForm({
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={URL.createObjectURL(f.rawFile)}
                               alt={f.rawFile.name}
@@ -630,7 +627,7 @@ export function PromptForm({
               {others.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                    <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                       <File className="h-4 w-4" />
                       {others.length} Files
                     </div>
@@ -682,7 +679,7 @@ export function PromptForm({
             placeholder={`${t('ai_chat.send_message')}.`}
             spellCheck={false}
             maxRows={7}
-            className="placeholder-foreground/50 scrollbar-none w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
+            className="scrollbar-none w-full resize-none bg-transparent py-2 placeholder-foreground/50 focus-within:outline-hidden sm:text-sm"
           />
         </div>
       </form>

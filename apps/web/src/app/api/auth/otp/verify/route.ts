@@ -1,16 +1,17 @@
-import { createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
+import { validateEmail, validateOtp } from '@ncthub/utils/email';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
 export async function POST(request: Request) {
-  const requestUrl = new URL(request.url);
-
-  const { email, otp } = await request.json();
+  const { locale, email, otp } = await request.json();
 
   const validatedEmail = await validateEmail(email);
   const validatedOtp = await validateOtp(otp);
 
+  const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
   const { error } = await supabase.auth.verifyOtp({
@@ -22,26 +23,37 @@ export async function POST(request: Request) {
   if (error)
     return NextResponse.json({ error: error.message }, { status: 400 });
 
-  return NextResponse.redirect(requestUrl.origin, {
-    // a 301 status is required to redirect from a POST to a GET route
-    status: 301,
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user)
+    return NextResponse.json({ error: 'User not found' }, { status: 400 });
+
+  const { error: updateError } = await sbAdmin.auth.admin.updateUserById(
+    user.id,
+    {
+      user_metadata: { locale, origin: 'TUTURUUU' },
+    }
+  );
+
+  if (updateError)
+    return NextResponse.json({ error: updateError.message }, { status: 400 });
+
+  const cookieStore = await cookies();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const supabaseCookies = cookieStore
+    .getAll()
+    .filter(({ name }) => name.startsWith('sb-'))
+    .map(({ name, value }) => ({ name, value }));
+
+  return NextResponse.json({
+    message: 'OTP verified successfully',
+    cookies: supabaseCookies,
+    session,
   });
 }
-
-const validateEmail = async (email?: string | null) => {
-  if (!email) throw 'Email is required';
-
-  const regex = /\S+@\S+\.\S+/;
-  if (!regex.test(email)) throw 'Email is invalid';
-
-  return email;
-};
-
-const validateOtp = async (otp?: string | null) => {
-  if (!otp) throw 'OTP is required';
-
-  const regex = /^\d{6}$/;
-  if (!regex.test(otp)) throw 'OTP is invalid';
-
-  return otp;
-};

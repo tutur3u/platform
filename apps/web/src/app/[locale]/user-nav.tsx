@@ -1,6 +1,6 @@
 import UserNavClient from './user-nav-client';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
-import { getCurrentUser } from '@/lib/user-helper';
+import { getCurrentUser } from '@ncthub/utils/user-helper';
 import { cookies as c } from 'next/headers';
 
 export async function UserNav({

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@ncthub/typescript-config",
+  "license": "MIT",
+  "version": "0.1.0",
+  "exports": {
+    "./base.json": "./base.json",
+    "./nextjs.json": "./nextjs.json",
+    "./react-library.json": "./react-library.json"
+  }
+}

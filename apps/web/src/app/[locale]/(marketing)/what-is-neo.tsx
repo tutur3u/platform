@@ -1,9 +1,12 @@
 'use client';
 
-import GetStartedButton from './get-started-button';
+import { GetStartedButton } from '@ncthub/ui/custom/get-started-button';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 export default function WhatIsNeo() {
+  const t = useTranslations();
+
   return (
     <motion.div
       className="mt-4 flex flex-col items-center text-center md:mt-28"
@@ -12,9 +15,9 @@ export default function WhatIsNeo() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
     >
-      <p className="text-4xl font-extrabold leading-normal md:text-5xl lg:text-6xl">
+      <p className="text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
         What is{' '}
-        <span className="whitespace-nowrap border-b-4 border-[#FBC721] text-[#5FC6E5]">
+        <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
           NEO Culture
         </span>{' '}
         Tech?
@@ -47,7 +50,7 @@ export default function WhatIsNeo() {
         ))}
       </div>
 
-      <GetStartedButton href="/login" />
+      <GetStartedButton href="/login" text={t('common.get-started')} />
     </motion.div>
   );
 }

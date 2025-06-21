@@ -1,25 +1,21 @@
 'use client';
 
 import { AuthButton } from './auth-button';
-import { ThemeToggle } from './theme-toggle';
 import { PUBLIC_PATHS } from '@/constants/common';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { Separator } from '@repo/ui/components/ui/separator';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@repo/ui/components/ui/sheet';
-import { User } from '@supabase/supabase-js';
-import { MenuIcon } from 'lucide-react';
+import { SupabaseUser } from '@ncthub/supabase/next/user';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { ThemeToggle } from '@ncthub/ui/custom/theme-toggle';
+import { MenuIcon } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
+import { Sheet, SheetContent, SheetTrigger } from '@ncthub/ui/sheet';
+import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 interface MenuProps {
-  sbUser: User | null;
+  sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
   t?: any;
 }
@@ -76,7 +72,7 @@ const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
     return null;
 
   return (
-    <div className="bg-primary-foreground hidden w-full items-center rounded-2xl border-[0.5px] border-gray-700/50 px-6 py-3 font-semibold md:flex md:gap-6 lg:gap-8">
+    <div className="hidden w-full items-center rounded-2xl border-[0.5px] border-gray-700/50 bg-primary-foreground px-6 py-3 font-semibold md:flex md:gap-6 lg:gap-8">
       {navItems(t).map((item) => (
         <NavLink
           key={item.href}
@@ -92,7 +88,7 @@ const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
   <NavLink
     item={item}
     onClick={onClick}
-    className="border-brand-lighzt-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition"
+    className="border-brand-lighzt-blue/20 rounded-lg border bg-brand-light-blue/5 p-2 font-semibold text-brand-light-blue transition hover:bg-brand-light-blue/10"
   />
 );
 
@@ -102,7 +98,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition">
+      <SheetTrigger className="rounded-lg border border-brand-light-blue/20 bg-brand-light-blue/5 p-2 font-semibold text-brand-light-blue transition hover:bg-brand-light-blue/10">
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
       <SheetContent className="md:hidden">

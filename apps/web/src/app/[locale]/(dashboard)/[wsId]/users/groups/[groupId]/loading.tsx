@@ -1,5 +1,5 @@
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Separator } from '@ncthub/ui/separator';
 
 function Loading() {
   return (

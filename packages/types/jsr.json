@@ -1,0 +1,10 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@ncthub/types",
+  "license": "MIT",
+  "version": "0.1.5",
+  "exports": {
+    "./supabase": "./src/supabase.ts",
+    "./db": "./src/db.ts"
+  }
+}

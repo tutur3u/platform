@@ -1,19 +1,17 @@
-import { ModuleContentEditor } from './editor';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Goal, Sparkles } from 'lucide-react';
+import { Button } from '@ncthub/ui/button';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import { Goal, Sparkles } from '@ncthub/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
-interface Props {
-  params: Promise<{
-    wsId: string;
-    courseId: string;
-    moduleId: string;
-  }>;
-}
+// interface Props {
+//   params: Promise<{
+//     wsId: string;
+//     courseId: string;
+//     moduleId: string;
+//   }>;
+// }
 
-export default async function ModuleContentPage({ params }: Props) {
-  const { courseId, moduleId } = await params;
+export default async function ModuleContentPage() {
   const t = await getTranslations();
 
   return (
@@ -35,7 +33,7 @@ export default async function ModuleContentPage({ params }: Props) {
         }
         showSecondaryTrigger
       />
-      <ModuleContentEditor courseId={courseId} moduleId={moduleId} />
+      {/* <ModuleContentEditor courseId={courseId} moduleId={moduleId} /> */}
     </div>
   );
 }

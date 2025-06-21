@@ -1,5 +1,4 @@
 import { Fruit, getColorCode, getColorSrc } from './types';
-import { cn } from '@/lib/utils';
 import {
   Bomb,
   ChevronDown,
@@ -8,7 +7,8 @@ import {
   ChevronUp,
   LoaderPinwheel,
   Sparkle,
-} from 'lucide-react';
+} from '@ncthub/ui/icons';
+import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 
 function FruitPlaceholder({
@@ -166,7 +166,7 @@ function FruitPlaceholder({
       {fruit?.type === 'rainbow' && (
         <LoaderPinwheel
           className={cn(
-            'text-foreground/70 pointer-events-none absolute h-5 w-5 animate-spin md:h-6 md:w-6',
+            'pointer-events-none absolute h-5 w-5 animate-spin text-foreground/70 md:h-6 md:w-6',
             iconClassName
           )}
         />

@@ -1,13 +1,13 @@
 import { invoiceColumns } from '../../../finance/invoices/columns';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceUserReport } from '@/types/db';
-import { Invoice } from '@/types/primitives/Invoice';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { TicketCheck, Users } from 'lucide-react';
+import { createClient } from '@ncthub/supabase/next/server';
+import { WorkspaceUserReport } from '@ncthub/types/db';
+import { Invoice } from '@ncthub/types/primitives/Invoice';
+import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import { Button } from '@ncthub/ui/button';
+import { TicketCheck, Users } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
@@ -71,7 +71,7 @@ export default async function WorkspaceUserDetailsPage({
             height={128}
             src={data.avatar_url}
             alt="Avatar"
-            className="aspect-square min-w-[8rem] rounded-lg object-cover"
+            className="aspect-square min-w-32 rounded-lg object-cover"
           />
           {data.full_name && <div>{data.full_name}</div>}
         </div>
@@ -229,7 +229,7 @@ export default async function WorkspaceUserDetailsPage({
         </div>
       </div>
 
-      <div className="mb-2 mt-4 text-lg font-semibold">
+      <div className="mt-4 mb-2 text-lg font-semibold">
         Hoá đơn ({invoiceCount})
       </div>
       <CustomDataTable
@@ -407,7 +407,6 @@ async function getInvoiceData(
 
   const data = rawData.map(({ customer, ...rest }) => ({
     ...rest,
-    // @ts-expect-error
     customer: customer?.full_name || '-',
   }));
 

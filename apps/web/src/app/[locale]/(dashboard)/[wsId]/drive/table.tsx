@@ -1,11 +1,9 @@
 'use client';
 
 import { storageObjectsColumns } from './columns';
-import { StorageObjectForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { StorageObject } from '@/types/primitives/StorageObject';
-import { Dialog, DialogTitle } from '@repo/ui/components/ui/dialog';
-import { useTranslations } from 'next-intl';
+import { StorageObject } from '@ncthub/types/primitives/StorageObject';
+import { Dialog } from '@ncthub/ui/dialog';
 import { useState } from 'react';
 
 interface Props {
@@ -21,13 +19,13 @@ export default function StorageObjectsTable({
   path,
   count,
 }: Props) {
-  const t = useTranslations('common');
+  // const t = useTranslations('common');
 
   const [storageObj, setStorageObject] = useState<StorageObject>();
 
-  const onComplete = () => {
-    setStorageObject(undefined);
-  };
+  // const onComplete = () => {
+  //   setStorageObject(undefined);
+  // };
 
   return (
     <Dialog
@@ -37,7 +35,7 @@ export default function StorageObjectsTable({
       }
     >
       <CustomDataTable
-        data={data}
+        data={!path || path === '/' ? data : [{ name: '...' }, ...data]}
         columnGenerator={(t: any, namespace: string | undefined) =>
           storageObjectsColumns(t, namespace, setStorageObject, wsId, path)
         }
@@ -46,18 +44,18 @@ export default function StorageObjectsTable({
         defaultVisibility={{
           id: false,
         }}
-        newObjectTitle={t('upload')}
-        editContent={
-          <>
-            <DialogTitle hidden />
-            <StorageObjectForm
-              wsId={wsId}
-              onComplete={onComplete}
-              uploadPath={path}
-              submitLabel={storageObj?.id ? t('edit') : t('upload')}
-            />
-          </>
-        }
+        // newObjectTitle={t('upload')}
+        // editContent={
+        //   <>
+        //     <DialogTitle hidden />
+        //     <StorageObjectForm
+        //       wsId={wsId}
+        //       onComplete={onComplete}
+        //       uploadPath={path}
+        //       submitLabel={storageObj?.id ? t('edit') : t('upload')}
+        //     />
+        //   </>
+        // }
       />
     </Dialog>
   );

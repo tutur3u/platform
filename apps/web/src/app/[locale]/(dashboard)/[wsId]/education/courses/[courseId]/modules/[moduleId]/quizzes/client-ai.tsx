@@ -1,11 +1,11 @@
 'use client';
 
 import ClientQuizzes from './client-quizzes';
-import { quizSchema } from '@/app/api/ai/objects/types';
 import { GenerateDialog } from '@/components/generate-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { experimental_useObject as useObject } from 'ai/react';
+import { useObject } from '@ncthub/ai/object/core';
+import { quizSchema } from '@ncthub/ai/object/types';
+import { Button } from '@ncthub/ui/button';
+import { toast } from '@ncthub/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

@@ -1,6 +1,6 @@
-const { resolve } = require("node:path");
+import { resolve } from 'node:path';
 
-const project = resolve(process.cwd(), "tsconfig.json");
+const project = resolve(process.cwd(), 'tsconfig.json');
 
 /*
  * This is a custom ESLint configuration for use with
@@ -9,31 +9,30 @@ const project = resolve(process.cwd(), "tsconfig.json");
  */
 
 /** @type {import("eslint").Linter.Config} */
-module.exports = {
-  extends: ["eslint:recommended", "turbo"],
-  plugins: ["only-warn"],
-  globals: {
-    React: true,
-    JSX: true,
-  },
-  env: {
-    browser: true,
-  },
-  settings: {
-    "import/resolver": {
-      typescript: {
-        project,
-      },
+const extenstions = ['eslint:recommended', 'turbo'];
+export { extenstions as extends };
+export const plugins = ['only-warn'];
+export const globals = {
+  React: true,
+  JSX: true,
+};
+export const env = {
+  browser: true,
+};
+export const settings = {
+  'import/resolver': {
+    typescript: {
+      project,
     },
   },
-  ignorePatterns: [
-    // Ignore dotfiles
-    ".*.js",
-    "node_modules/",
-    "dist/",
-  ],
-  overrides: [
-    // Force ESLint to detect .tsx files
-    { files: ["*.js?(x)", "*.ts?(x)"] },
-  ],
 };
+export const ignorePatterns = [
+  // Ignore dotfiles
+  '.*.js',
+  'node_modules/',
+  'dist/',
+];
+export const overrides = [
+  // Force ESLint to detect .tsx files
+  { files: ['*.js?(x)', '*.ts?(x)'] },
+];

@@ -1,5 +1,5 @@
-import { Button } from '@repo/ui/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { Button } from '@ncthub/ui/button';
+import { Sparkles } from '@ncthub/ui/icons';
 
 export default function FleetingNavigatorMenu({
   setCurrentView,

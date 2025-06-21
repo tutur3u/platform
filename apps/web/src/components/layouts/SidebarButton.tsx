@@ -1,5 +1,5 @@
 import { DEV_MODE } from '@/constants/common';
-import { Tooltip } from '@mantine/core';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ncthub/ui/tooltip';
 import React from 'react';
 
 interface SidebarButtonProps {
@@ -32,30 +32,36 @@ export default function SidebarButton({
 }: SidebarButtonProps) {
   if (disabled && !DEV_MODE) return null;
 
-  return (
-    <Tooltip
-      label={<div className="font-semibold">{label}</div>}
-      position="right"
-      offset={16}
-      disabled={!showTooltip}
+  const buttonContent = (
+    <div
+      onClick={disabled ? undefined : onClick}
+      className={`flex items-center gap-2 rounded p-2 select-none ${
+        left ? 'justify-start' : 'justify-center'
+      } ${
+        disabled
+          ? 'cursor-not-allowed text-zinc-600'
+          : isActive
+            ? 'cursor-pointer border-border bg-zinc-500/10 text-zinc-900 dark:border-zinc-300/10 dark:bg-zinc-500/10 dark:text-zinc-100'
+            : 'cursor-pointer border-transparent text-zinc-700 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 dark:text-zinc-300 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100'
+      } ${classNames?.root}`}
     >
-      <div
-        onClick={disabled ? undefined : onClick}
-        className={`flex select-none items-center gap-2 rounded p-2 ${
-          left ? 'justify-start' : 'justify-center'
-        } ${
-          disabled
-            ? 'cursor-not-allowed text-zinc-600'
-            : isActive
-              ? 'border-border cursor-pointer bg-zinc-500/10 text-zinc-900 dark:border-zinc-300/10 dark:bg-zinc-500/10 dark:text-zinc-100'
-              : 'cursor-pointer border-transparent text-zinc-700 md:hover:bg-zinc-500/10 md:hover:text-zinc-900 dark:text-zinc-300 md:dark:hover:bg-zinc-300/5 md:dark:hover:text-zinc-100'
-        } ${classNames?.root}`}
-      >
-        {showIcon && <div className="flex-none">{activeIcon}</div>}
-        {showLabel && (
-          <div className="line-clamp-1 text-sm font-semibold">{label}</div>
-        )}
-      </div>
+      {showIcon && <div className="flex-none">{activeIcon}</div>}
+      {showLabel && (
+        <div className="line-clamp-1 text-sm font-semibold">{label}</div>
+      )}
+    </div>
+  );
+
+  if (!showTooltip) {
+    return buttonContent;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
+      <TooltipContent side="right" sideOffset={16}>
+        <div className="font-semibold">{label}</div>
+      </TooltipContent>
     </Tooltip>
   );
 }

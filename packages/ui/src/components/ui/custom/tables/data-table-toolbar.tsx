@@ -5,11 +5,7 @@ import SearchBar from '../search-bar';
 import { DataTableCreateButton } from './data-table-create-button';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger } from '@ncthub/ui/dialog';
 import { Table } from '@tanstack/react-table';
 import { Download, RotateCcw, Upload } from 'lucide-react';
 import { ReactNode } from 'react';

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@ncthub/eslint-config",
+  "license": "MIT",
+  "version": "0.1.5",
+  "exports": {
+    "./library.js": "./library.js",
+    "./next.js": "./next.js",
+    "./react-internal.js": "./react-internal.js"
+  }
+}

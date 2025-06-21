@@ -1,12 +1,12 @@
 'use client';
 
 import { downloadPublicObject, uploadObject } from '@/lib/storage-helper';
-import { Workspace } from '@/types/primitives/Workspace';
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import { Input } from '@repo/ui/components/ui/input';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Check, Loader2 } from 'lucide-react';
+import { createClient } from '@ncthub/supabase/next/client';
+import { Workspace } from '@ncthub/types/db';
+import { Button } from '@ncthub/ui/button';
+import { toast } from '@ncthub/ui/hooks/use-toast';
+import { Check, Loader2 } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -14,7 +14,7 @@ import { v4 as UUIDv4 } from 'uuid';
 
 interface Props {
   workspace: Workspace;
-  defaultValue?: string;
+  defaultValue?: string | null;
   disabled?: boolean;
 }
 

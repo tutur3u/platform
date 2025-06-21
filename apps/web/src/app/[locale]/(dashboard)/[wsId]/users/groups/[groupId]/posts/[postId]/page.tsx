@@ -1,12 +1,19 @@
 import UserCard from './card';
 import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
-import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@ncthub/supabase/next/server';
+import type { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import FeatureSummary from '@ncthub/ui/custom/feature-summary';
+import {
+  Check,
+  CheckCheck,
+  CircleHelp,
+  Clock,
+  Send,
+  X,
+} from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import { format } from 'date-fns';
-import { Check, CheckCheck, CircleHelp, Clock, Send, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -70,7 +77,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         }
         description={
           <div className="flex flex-col gap-2">
-            <h2 className="text-dynamic-blue bg-dynamic-blue/15 border-dynamic-blue/15 w-fit rounded border px-2 text-xl font-semibold uppercase">
+            <h2 className="w-fit rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 text-xl font-semibold text-dynamic-blue uppercase">
               {post?.title?.trim() || t('common.unknown')}
             </h2>
             <p className="text-sm opacity-70">
@@ -108,45 +115,45 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
       />
       <Separator className="my-4" />
       <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <div className="bg-dynamic-purple/15 text-dynamic-purple border-dynamic-purple/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 p-4 text-dynamic-purple">
           <div className="flex items-center gap-2 text-xl font-bold">
             <Send />
             {t('ws-post-emails.sent_emails')}
           </div>
-          <Separator className="bg-dynamic-purple/15 my-1" />
+          <Separator className="my-1 bg-dynamic-purple/15" />
           <div className="text-xl font-semibold md:text-3xl">
             {status.sent?.length}
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
-        <div className="bg-dynamic-green/15 text-dynamic-green border-dynamic-green/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-green/15 bg-dynamic-green/15 p-4 text-dynamic-green">
           <div className="flex items-center gap-2 text-xl font-bold">
             <Check />
             {t('common.completed')}
           </div>
-          <Separator className="bg-dynamic-green/15 my-1" />
+          <Separator className="my-1 bg-dynamic-green/15" />
           <div className="text-3xl font-semibold">
             {status.checked}
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
-        <div className="bg-dynamic-red/15 text-dynamic-red border-dynamic-red/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-4 text-dynamic-red">
           <div className="flex items-center gap-2 text-xl font-bold">
             <X />
             {t('common.incomplete')}
           </div>
-          <Separator className="bg-dynamic-red/15 my-1" />
+          <Separator className="my-1 bg-dynamic-red/15" />
           <div className="text-3xl font-semibold">
             {status.failed}
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
-        <div className="bg-dynamic-blue/15 text-dynamic-blue border-dynamic-blue/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 p-4 text-dynamic-blue">
           <div className="flex items-center gap-2 text-xl font-bold">
             <CircleHelp />
             {t('common.unknown')}
           </div>
-          <Separator className="bg-dynamic-blue/15 my-1" />
+          <Separator className="my-1 bg-dynamic-blue/15" />
           <div className="text-3xl font-semibold">
             {status.tenative}
             <span className="opacity-50">/{status.count}</span>
@@ -253,22 +260,13 @@ async function getUserData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .rpc(
-      'get_workspace_users',
-      {
-        _ws_id: wsId,
-        included_groups: [groupId],
-        excluded_groups: Array.isArray(excludedGroups)
-          ? excludedGroups
-          : [excludedGroups],
-        search_query: q || '',
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('*')
-    .order('full_name', { ascending: true, nullsFirst: false });
+    .from('workspace_user_groups_users')
+    .select('...workspace_users!inner(*)', {
+      count: 'exact',
+    })
+    .eq('group_id', groupId);
+
+  if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
 
   // if (page && pageSize) {
   //   const parsedPage = Number.parseInt(page);

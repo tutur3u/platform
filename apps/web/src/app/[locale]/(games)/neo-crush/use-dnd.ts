@@ -124,9 +124,11 @@ export const useDragAndDrop = (
             newFruits[squareBeingReplacedId] = temp;
           }
 
-          if (hasMatch ||
-              draggedFruit?.type !== 'normal' ||
-              replacedFruit?.type !== 'normal')
+          if (
+            hasMatch ||
+            draggedFruit?.type !== 'normal' ||
+            replacedFruit?.type !== 'normal'
+          )
             decrementTurns();
           setFruits(newFruits);
         }

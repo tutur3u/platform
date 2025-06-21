@@ -1,10 +1,10 @@
 import { CustomDataTable } from '@/components/custom-data-table';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@ncthub/ui/separator';
 
 export default function Loading() {
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 text-transparent md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 text-transparent md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">secrets</h1>
           <p className="">description</p>

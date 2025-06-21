@@ -1,36 +1,47 @@
 {
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "always"
   },
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "typescript.tsdk": "node_modules/typescript/lib",
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "files.exclude": {
-    // "**/node_modules": true,
-    // "**/.turbo": true
-  },
   "workbench.editor.customLabels.patterns": {
     "**/app/**/page.tsx": "${dirname} - Page",
     "**/app/**/layout.tsx": "${dirname} - Layout",
     "**/app/**/route.ts": "${dirname} - API Route",
     "**/components/**/index.tsx": "${dirname} - Component"
   },
-  "[json]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
-  },
-  "i18n-ally.enabledFrameworks": [
-    "next-intl"
-  ],
-  "i18n-ally.localesPaths": [
-    "apps/web/messages",
-  ],
+  "tailwindCSS.experimental.configFile": "packages/ui/src/globals.css",
+  "i18n-ally.enabledFrameworks": ["next-intl"],
+  "i18n-ally.localesPaths": ["apps/web/messages"],
+  "i18n-ally.autoDetection": true,
   "i18n-ally.keystyle": "nested",
-  "codeQL.githubDatabase.update": "never",
-  "codeQL.githubDatabase.download": "never",
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"
-  }
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "codeQL.githubDatabase.update": "never",
+  "codeQL.githubDatabase.download": "never",
+  "IDX.aI.enableInlineCompletion": true,
+  "IDX.aI.enableCodebaseIndexing": true,
+  "i18n-ally.sourceLanguage": "en",
+  "typescript.experimental.useTsgo": false
 }

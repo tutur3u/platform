@@ -1,9 +1,9 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import { User } from '@supabase/supabase-js';
+import { createClient } from '@ncthub/supabase/next/client';
+import type { SupabaseUser } from '@ncthub/supabase/next/user';
+import { Button } from '@ncthub/ui/button';
+import { cn } from '@ncthub/utils/format';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -12,14 +12,17 @@ export function AuthButton({
   onClick,
   className,
 }: {
-  user: User | null;
+  user: SupabaseUser | null;
   onClick?: () => void;
   className?: string;
 }) {
   const supabase = createClient();
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({
+      scope: 'local',
+    });
+
     return redirect('/login');
   };
 

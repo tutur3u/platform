@@ -1,15 +1,15 @@
 'use client';
 
 import { StorageFolderForm, StorageObjectForm } from './form';
-import { Button } from '@repo/ui/components/ui/button';
-import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
+import { Button } from '@ncthub/ui/button';
+import ModifiableDialogTrigger from '@ncthub/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { File, Folder, Plus } from 'lucide-react';
+} from '@ncthub/ui/dropdown-menu';
+import { FileText, Folder, Plus } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -34,13 +34,13 @@ export default function NewActions({ wsId, path }: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onSelect={() => setFileUploadDialog(true)}>
-            <File className="mr-2 h-4 w-4" />
-            {t('ws-storage-objects.files')}
-          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setFolderCreateDialog(true)}>
             <Folder className="mr-2 h-4 w-4" />
             {t('ws-storage-objects.folder')}
+          </DropdownMenuItem>{' '}
+          <DropdownMenuItem onSelect={() => setFileUploadDialog(true)}>
+            <FileText className="mr-2 h-4 w-4" />
+            {t('ws-storage-objects.files')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
