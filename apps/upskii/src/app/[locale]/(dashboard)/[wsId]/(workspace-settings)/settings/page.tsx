@@ -44,13 +44,11 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
   // Get feature flags for the dialog
   const featureFlags = await getFeatureFlags(wsId, true);
 
-  // Debug logging
-  console.log('Server - Feature flags for wsId:', wsId, featureFlags);
 
   const approvedFeatures = getRequestableFeatureKeys().filter(
     (key) => featureFlags[getRequestableFeature(key).flag]
   );
-  console.log('approvedFeatures', approvedFeatures);
+
 
   const preventWorkspaceDeletion =
     secrets
@@ -129,7 +127,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
               >
                 <Button variant="default" size="default">
                   <Plus className="mr-2 h-4 w-4" />
-                  Request Features
+                  {t('request-feature')}
                 </Button>
               </RequestFeatureAccessDialog>
             }

@@ -6,6 +6,7 @@ import { StatusFilter } from './status-filter';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { Button } from '@tuturuuu/ui/button';
 import { AlertCircle, RefreshCw } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -49,6 +50,8 @@ export function ApprovalsTable() {
     pageSize: 10,
     totalPages: 1,
   });
+
+  const t = useTranslations('approval-data-table');
 
   // Get current search parameters
   const status = searchParams.get('status') || undefined;
@@ -143,7 +146,7 @@ export function ApprovalsTable() {
       <div className="flex h-64 items-center justify-center">
         <div className="flex items-center gap-2 text-muted-foreground">
           <RefreshCw className="h-5 w-5 animate-spin" />
-          <span>Loading...</span>
+          <span>{t('loading')}</span>
         </div>
       </div>
     );
@@ -159,7 +162,7 @@ export function ApprovalsTable() {
         </div>
         <Button onClick={handleRefresh} variant="outline" size="sm">
           <RefreshCw className="mr-2 h-4 w-4" />
-          Try Again
+          {t('try-again')}
         </Button>
       </div>
     );
@@ -171,7 +174,7 @@ export function ApprovalsTable() {
         {isLoading && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <RefreshCw className="h-4 w-4 animate-spin" />
-            <span>Loading requests...</span>
+            <span>{t('loading')}</span>
           </div>
         )}
       </div>
@@ -183,25 +186,33 @@ export function ApprovalsTable() {
             <div className="text-2xl font-bold text-foreground">
               {stats.total}
             </div>
-            <div className="text-sm text-muted-foreground">Total Requests</div>
+            <div className="text-sm text-muted-foreground">
+              {t('total-requests')}
+            </div>
           </div>
           <div className="rounded-lg border bg-card p-4">
             <div className="text-2xl font-bold text-yellow-600">
               {stats.pending}
             </div>
-            <div className="text-sm text-muted-foreground">Pending</div>
+            <div className="text-sm text-muted-foreground">
+              {t('pending')}
+            </div>
           </div>
           <div className="rounded-lg border bg-card p-4">
             <div className="text-2xl font-bold text-green-600">
               {stats.approved}
             </div>
-            <div className="text-sm text-muted-foreground">Approved</div>
+            <div className="text-sm text-muted-foreground">
+              {t('approved')}
+            </div>
           </div>
           <div className="rounded-lg border bg-card p-4">
             <div className="text-2xl font-bold text-red-600">
               {stats.rejected}
             </div>
-            <div className="text-sm text-muted-foreground">Rejected</div>
+            <div className="text-sm text-muted-foreground">
+              {t('rejected')}
+            </div>
           </div>
         </div>
 
@@ -216,7 +227,7 @@ export function ApprovalsTable() {
             {isLoading && (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Loading requests...</span>
+                <span>{t('loading')}</span>  
               </>
             )}
           </div>
@@ -229,6 +240,7 @@ export function ApprovalsTable() {
           approvalsColumns(t, namespace, handleRefresh)
         }
         count={approvals.count}
+        namespace="approval-data-table"
         defaultVisibility={{
           id: false,
           created_at: false,

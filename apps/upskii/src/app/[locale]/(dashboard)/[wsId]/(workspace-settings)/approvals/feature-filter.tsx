@@ -11,6 +11,7 @@ import {
   getRequestableFeature,
   getRequestableFeatureKeys,
 } from '@tuturuuu/utils/feature-flags/requestable-features';
+import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface FeatureFilterProps {
@@ -18,6 +19,7 @@ interface FeatureFilterProps {
 }
 
 export function FeatureFilter({ currentFeature }: FeatureFilterProps) {
+  const t = useTranslations('approval-data-table');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -41,10 +43,10 @@ export function FeatureFilter({ currentFeature }: FeatureFilterProps) {
   return (
     <Select value={currentFeature || 'all'} onValueChange={handleFeatureChange}>
       <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Filter by feature" />
+        <SelectValue placeholder={t('filter-by-feature')} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">All Features</SelectItem>
+        <SelectItem value="all">{t('all-features')}</SelectItem>
         {availableFeatures.map((featureKey) => {
           const feature = getRequestableFeature(featureKey);
           return (

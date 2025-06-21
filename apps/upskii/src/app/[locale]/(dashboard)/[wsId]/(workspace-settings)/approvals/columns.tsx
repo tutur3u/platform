@@ -38,7 +38,11 @@ export const approvalsColumns = (
   {
     accessorKey: 'workspace_name',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Workspace" />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.workspace`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
@@ -54,7 +58,11 @@ export const approvalsColumns = (
   {
     accessorKey: 'creator_name',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Requested By" />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.requested_by`)}
+      />
     ),
     cell: ({ row }) => {
       const creatorName = row.getValue('creator_name') as string;
@@ -86,7 +94,11 @@ export const approvalsColumns = (
   {
     accessorKey: 'feature_requested',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Feature Requested" />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.feature_requested`)}
+      />
     ),
     cell: ({ row }) => {
       const featureRequested = row.getValue('feature_requested') as string;
@@ -127,7 +139,11 @@ export const approvalsColumns = (
   {
     accessorKey: 'request_message',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Request Details" />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.request_details`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="max-w-64">
@@ -140,7 +156,11 @@ export const approvalsColumns = (
   {
     accessorKey: 'status',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Status" />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.status`)}
+      />
     ),
     cell: ({ row }) => {
       const status = row.getValue('status') as string;
@@ -161,11 +181,11 @@ export const approvalsColumns = (
                 'border-yellow-200 bg-yellow-100 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
             )}
           >
-            {status}
+            {t(`${namespace}.status-${status}`)}
           </Badge>
           {reviewedAt && reviewedByName && (
             <div className="text-xs text-muted-foreground">
-              by {reviewedByName}
+              {t(`${namespace}.reviewed_by`, { name: reviewedByName })}
             </div>
           )}
         </div>
@@ -175,7 +195,11 @@ export const approvalsColumns = (
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Requested" />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => {
       const createdAt = row.getValue('created_at') as string;
@@ -191,7 +215,9 @@ export const approvalsColumns = (
           </div>
           {reviewedAt && (
             <div className="text-xs text-dynamic-blue">
-              Reviewed {moment(reviewedAt).format('MMM DD')}
+              {t(`${namespace}.reviewed_at`, {
+                date: moment(reviewedAt).format('MMM DD'),
+              })}
             </div>
           )}
         </div>
@@ -201,7 +227,11 @@ export const approvalsColumns = (
   {
     accessorKey: 'admin_notes',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Admin Notes" />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.admin_notes`)}
+      />
     ),
     cell: ({ row }) => {
       const adminNotes = row.getValue('admin_notes') as string;
@@ -213,7 +243,9 @@ export const approvalsColumns = (
               {adminNotes}
             </div>
           ) : (
-            <div className="text-xs text-muted-foreground italic">No notes</div>
+            <div className="text-xs text-muted-foreground italic">
+              {t(`${namespace}.no_notes`)}
+            </div>
           )}
         </div>
       );

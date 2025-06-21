@@ -3,6 +3,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
 interface Props {
@@ -28,11 +29,13 @@ export default async function ApprovalsPage({ params }: Props) {
     redirect(`/${wsId}/settings`);
   }
 
+  const t = await getTranslations('approvals');
+
   return (
     <>
       <FeatureSummary
-        pluralTitle="Feature Access Requests"
-        description="Review and approve feature requests from workspace creators. Manage access to AI, Education, Quizzes, and Challenges features. Approved requests will automatically enable features for the respective workspaces."
+        pluralTitle={t('feature-access-requests')}
+        description={t('feature-access-requests-description')}
       />
       <Separator className="my-4" />
       <ApprovalsTable />

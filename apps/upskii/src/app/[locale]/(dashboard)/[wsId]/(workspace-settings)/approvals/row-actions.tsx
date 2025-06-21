@@ -35,6 +35,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -53,6 +54,7 @@ export function ApprovalRowActions({
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
+  const t = useTranslations('approval-data-table');
 
   const handleApprove = async () => {
     setIsLoading(true);
@@ -75,17 +77,20 @@ export function ApprovalRowActions({
 
       if (response.ok) {
         toast.success(
-          `Approved ${approval.feature_requested} access for ${approval.workspace_name}. Features will be enabled automatically.`
+          t('approveSuccess', {
+            feature: approval.feature_requested,
+            workspace: approval.workspace_name,
+          })
         );
         setShowApproveDialog(false);
         setAdminNotes('');
         onRefresh?.();
       } else {
-        toast.error(data.error || 'Failed to approve request');
+        toast.error(data.error || t('approveError'));
       }
     } catch (error) {
       console.error('Error approving request:', error);
-      toast.error('Failed to approve request');
+      toast.error(t('approveError'));
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +98,7 @@ export function ApprovalRowActions({
 
   const handleReject = async () => {
     if (!adminNotes.trim()) {
-      toast.error('Please provide a reason for rejection');
+      toast.error(t('rejectError'));
       return;
     }
 
@@ -117,17 +122,20 @@ export function ApprovalRowActions({
 
       if (response.ok) {
         toast.success(
-          `Rejected ${approval.feature_requested} access request for ${approval.workspace_name}`
+          t('rejectSuccess', {
+            feature: approval.feature_requested,
+            workspace: approval.workspace_name,
+          })
         );
         setShowRejectDialog(false);
         setAdminNotes('');
         onRefresh?.();
       } else {
-        toast.error(data.error || 'Failed to reject request');
+        toast.error(data.error || t('rejectError'));
       }
     } catch (error) {
       console.error('Error rejecting request:', error);
-      toast.error('Failed to reject request');
+      toast.error(t('rejectError'));
     } finally {
       setIsLoading(false);
     }
@@ -156,7 +164,7 @@ export function ApprovalRowActions({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BookOpenText className="h-5 w-5 text-dynamic-blue" />
-              Feature Access Request Details
+              {t('detailsTitle')}
             </DialogTitle>
           </DialogHeader>
 
@@ -180,7 +188,7 @@ export function ApprovalRowActions({
 
             {/* Requester Info */}
             <div className="space-y-3">
-              <h4 className="font-medium">Requested By</h4>
+              <h4 className="font-medium">{t('requestedBy')}</h4>
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage
@@ -204,7 +212,7 @@ export function ApprovalRowActions({
 
             {/* Request Details */}
             <div className="space-y-3">
-              <h4 className="font-medium">Request Message</h4>
+              <h4 className="font-medium">{t('request_message')}</h4>
               <div className="rounded-md border bg-muted/20 p-3 text-sm">
                 {approval.request_message}
               </div>
@@ -213,7 +221,7 @@ export function ApprovalRowActions({
             {/* Status & Timeline */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <h4 className="font-medium">Status</h4>
+                <h4 className="font-medium">{t('status')}</h4>
                 <Badge
                   variant="secondary"
                   className={cn('capitalize', getStatusColor(approval.status))}
@@ -222,21 +230,27 @@ export function ApprovalRowActions({
                 </Badge>
               </div>
               <div className="space-y-2">
-                <h4 className="font-medium">Timeline</h4>
+                <h4 className="font-medium">{t('timeline')}</h4>
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span>
-                      Requested{' '}
-                      {moment(approval.created_at).format('MMM DD, YYYY')}
+                      {t('requested_at', {
+                        date: moment(approval.created_at).format(
+                          'MMM DD, YYYY'
+                        ),
+                      })}
                     </span>
                   </div>
                   {approval.reviewed_at && (
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4" />
                       <span>
-                        Reviewed{' '}
-                        {moment(approval.reviewed_at).format('MMM DD, YYYY')}
+                        {t('reviewed_at', {
+                          date: moment(approval.reviewed_at).format(
+                            'MMM DD, YYYY'
+                          ),
+                        })}
                       </span>
                     </div>
                   )}
@@ -247,13 +261,15 @@ export function ApprovalRowActions({
             {/* Admin Notes */}
             {approval.admin_notes && (
               <div className="space-y-3">
-                <h4 className="font-medium">Admin Notes</h4>
+                <h4 className="font-medium">{t('adminNotes')}</h4>
                 <div className="rounded-md border bg-muted/20 p-3 text-sm">
                   {approval.admin_notes}
                 </div>
                 {approval.reviewed_by_name && (
                   <p className="text-xs text-muted-foreground">
-                    Notes by {approval.reviewed_by_name}
+                    {t('notesBy', {
+                      name: approval.reviewed_by_name,
+                    })}
                   </p>
                 )}
               </div>
@@ -265,7 +281,7 @@ export function ApprovalRowActions({
               variant="outline"
               onClick={() => setShowDetailsDialog(false)}
             >
-              Close
+              {t('close')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -277,23 +293,25 @@ export function ApprovalRowActions({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-green-600">
               <Check className="h-5 w-5" />
-              Approve {approval.feature_requested} Access
+              {t('approveTitle', {
+                feature: approval.feature_requested,
+              })}
             </DialogTitle>
             <DialogDescription>
-              This will enable {approval.feature_requested} features for "
-              {approval.workspace_name}" and grant the workspace access to{' '}
-              {approval.feature_requested} functionality.
-              {approval.status === 'rejected' &&
-                ' This will override the previous rejection.'}
+              {t('approveDescription', {
+                feature: approval.feature_requested,
+                workspace: approval.workspace_name,
+              })}
+              {approval.status === 'rejected' && t('approveOverride')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="approve-notes">Admin Notes (Optional)</Label>
+              <Label htmlFor="approve-notes">{t('adminNotes')}</Label>
               <Textarea
                 id="approve-notes"
-                placeholder="Add any notes about this approval..."
+                placeholder={t('adminNotesPlaceholder')}
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
                 rows={3}
@@ -311,7 +329,7 @@ export function ApprovalRowActions({
               }}
               disabled={isLoading}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleApprove}
@@ -321,12 +339,12 @@ export function ApprovalRowActions({
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Approving...
+                  {t('approving')}
                 </>
               ) : (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  Approve Request
+                  {t('approveRequest')}
                 </>
               )}
             </Button>
@@ -340,21 +358,24 @@ export function ApprovalRowActions({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <X className="h-5 w-5" />
-              Reject {approval.feature_requested} Access
+              {t('rejectTitle', {
+                feature: approval.feature_requested,
+              })}
             </DialogTitle>
             <DialogDescription>
-              This will reject the {approval.feature_requested} access request
-              for "{approval.workspace_name}". Please provide a reason for the
-              rejection.
+              {t('rejectDescription', {
+                feature: approval.feature_requested,
+                workspace: approval.workspace_name,
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reject-notes">Reason for Rejection *</Label>
+              <Label htmlFor="reject-notes">{t('reasonForRejection')}</Label>
               <Textarea
                 id="reject-notes"
-                placeholder="Please explain why this request is being rejected..."
+                placeholder={t('reasonForRejectionPlaceholder')}
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
                 rows={4}
@@ -372,7 +393,7 @@ export function ApprovalRowActions({
               }}
               disabled={isLoading}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleReject}
@@ -382,12 +403,12 @@ export function ApprovalRowActions({
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Rejecting...
+                  {t('rejecting')}
                 </>
               ) : (
                 <>
                   <X className="mr-2 h-4 w-4" />
-                  Reject Request
+                  {t('rejectRequest')}
                 </>
               )}
             </Button>
@@ -403,13 +424,13 @@ export function ApprovalRowActions({
             className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{t('openMenu')}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem onClick={() => setShowDetailsDialog(true)}>
             <Eye className="mr-2 h-4 w-4" />
-            View Details
+            {t('viewDetails')}
           </DropdownMenuItem>
 
           {isPending && (
@@ -421,7 +442,7 @@ export function ApprovalRowActions({
                 className="text-green-600 focus:text-green-600"
               >
                 <Check className="mr-2 h-4 w-4" />
-                Approve Request
+                {t('approveRequest')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setShowRejectDialog(true)}
@@ -429,7 +450,7 @@ export function ApprovalRowActions({
                 className="text-red-600 focus:text-red-600"
               >
                 <X className="mr-2 h-4 w-4" />
-                Reject Request
+                {t('rejectRequest')}
               </DropdownMenuItem>
             </>
           )}
@@ -444,7 +465,7 @@ export function ApprovalRowActions({
                   className="text-red-600 focus:text-red-600"
                 >
                   <X className="mr-2 h-4 w-4" />
-                  Revoke Access
+                  {t('revokeAccess')}
                 </DropdownMenuItem>
               )}
               {approval.status === 'rejected' && (
@@ -454,7 +475,7 @@ export function ApprovalRowActions({
                   className="text-green-600 focus:text-green-600"
                 >
                   <Check className="mr-2 h-4 w-4" />
-                  Approve Request
+                  {t('approveRequest')}
                 </DropdownMenuItem>
               )}
             </>
