@@ -1129,6 +1129,18 @@
     "create_description": "Create a task board",
     "description": "Task boards are used to manage tasks that are related to a specific project or goal."
   },
+  "task-boards": {
+    "name": "Name",
+    "board": "Board",
+    "progress": "Progress", 
+    "tasks": "Tasks",
+    "status": "Status",
+    "last_updated": "Last Updated",
+    "actions": "Actions",
+    "stats_completionRate": "Completion Rate",
+    "stats_totalTasks": "Total Tasks",
+    "stats_lastActivity": "Last Activity"
+  },
   "ws-settings": {
     "description": "Manage the settings of your workspace.",
     "basic_info": "Basic Information",
