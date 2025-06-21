@@ -43,8 +43,8 @@ export default function AddEventModal({
     min_split_duration_minutes: 0.5,
     max_split_duration_minutes: 2,
     time_reference: 'working_time',
-    schedule_after: '',
-    due_date: '',
+    start_date: '',
+    end_date: '',
   });
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -97,8 +97,8 @@ export default function AddEventModal({
       }
     }
 
-    if (formData.due_date && dayjs(formData.due_date).isBefore(dayjs())) {
-      newErrors.due_date = 'Due date cannot be in the past';
+    if (formData.end_date && dayjs(formData.end_date).isBefore(dayjs())) {
+      newErrors.end_date = 'End date cannot be in the past';
     }
 
     setErrors(newErrors);
@@ -140,14 +140,18 @@ export default function AddEventModal({
         time_reference: formData.time_reference as
           | 'working_time'
           | 'personal_time',
-        schedule_after: formData.schedule_after || null,
-        due_date: formData.due_date || null,
+        start_date: formData.start_date || null,
+        end_date: formData.end_date || null,
         ws_id: wsId,
         creator_id: user.id,
+        list_id: 'default_list_id', // Replace with actual list_id value
+        archived: false, // Default value
+        completed: false, // Default value
+        created_at: new Date().toISOString(), // Current timestamp
       };
 
       const { data, error } = await supabase
-        .from('workspace_calendar_tasks')
+        .from('tasks')
         .insert([taskData])
         .select();
 
@@ -190,8 +194,8 @@ export default function AddEventModal({
       min_split_duration_minutes: 0.5,
       max_split_duration_minutes: 2,
       time_reference: 'working_time',
-      schedule_after: '',
-      due_date: '',
+      start_date: '',
+      end_date: '',
     });
     setErrors({});
     onClose?.();
@@ -427,16 +431,14 @@ export default function AddEventModal({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="schedule-after" className="text-sm">
-                  Schedule After (Optional)
+                <Label htmlFor="start-date" className="text-sm">
+                  Start Date (Optional)
                 </Label>
                 <Input
-                  id="schedule-after"
+                  id="start-date"
                   type="datetime-local"
-                  value={formData.schedule_after}
-                  onChange={(e) =>
-                    updateFormData('schedule_after', e.target.value)
-                  }
+                  value={formData.start_date}
+                  onChange={(e) => updateFormData('start_date', e.target.value)}
                   min={dayjs().format('YYYY-MM-DDTHH:mm')}
                 />
               </div>
@@ -444,20 +446,20 @@ export default function AddEventModal({
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor="due-date" className="text-sm">
-                    Due Date (Optional)
+                  <Label htmlFor="end-date" className="text-sm">
+                    End Date (Optional)
                   </Label>
                 </div>
                 <Input
-                  id="due-date"
+                  id="end-date"
                   type="datetime-local"
-                  value={formData.due_date}
-                  onChange={(e) => updateFormData('due_date', e.target.value)}
+                  value={formData.end_date}
+                  onChange={(e) => updateFormData('end_date', e.target.value)}
                   min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                  className={errors.due_date ? 'border-destructive' : ''}
+                  className={errors.end_date ? 'border-destructive' : ''}
                 />
-                {errors.due_date && (
-                  <p className="text-xs text-destructive">{errors.due_date}</p>
+                {errors.end_date && (
+                  <p className="text-xs text-destructive">{errors.end_date}</p>
                 )}
               </div>
             </div>
