@@ -71,7 +71,7 @@ export const projectColumns = (
               <Badge
                 key={tag}
                 variant="secondary"
-                className="text-xs px-1.5 py-0.5"
+                className="px-1.5 py-0.5 text-xs"
               >
                 {tag}
               </Badge>
@@ -79,7 +79,7 @@ export const projectColumns = (
             {row.original.tags.length > 3 && (
               <Badge
                 variant="outline"
-                className="text-xs px-1.5 py-0.5 text-muted-foreground"
+                className="px-1.5 py-0.5 text-xs text-muted-foreground"
               >
                 +{row.original.tags.length - 3}
               </Badge>

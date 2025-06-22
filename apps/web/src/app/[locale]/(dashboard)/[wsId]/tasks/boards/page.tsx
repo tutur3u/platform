@@ -4,13 +4,15 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
-import { 
-  LayoutGrid, 
-  LayoutList, 
-  Layers3, 
-  RefreshCw, 
+import {
   Columns3,
   Filter,
+  Layers3,
+  LayoutGrid,
+  LayoutList,
+  Plus,
+  RefreshCw,
+  Settings2,
   SortAsc,
   Settings2,
   Plus,
@@ -152,7 +154,9 @@ export default async function WorkspaceProjectsPage({
             <LayoutGrid className="h-4 w-4 text-green-500" />
             <div>
               <p className="text-sm text-muted-foreground">Active Boards</p>
-              <p className="text-2xl font-bold">{data.filter(board => !board.archived).length}</p>
+              <p className="text-2xl font-bold">
+                {data.filter((board) => !board.archived).length}
+              </p>
             </div>
           </div>
         </div>
@@ -161,7 +165,12 @@ export default async function WorkspaceProjectsPage({
             <Layers3 className="h-4 w-4 text-purple-500" />
             <div>
               <p className="text-sm text-muted-foreground">Tagged Boards</p>
-              <p className="text-2xl font-bold">{data.filter(board => board.tags && board.tags.length > 0).length}</p>
+              <p className="text-2xl font-bold">
+                {
+                  data.filter((board) => board.tags && board.tags.length > 0)
+                    .length
+                }
+              </p>
             </div>
           </div>
         </div>
