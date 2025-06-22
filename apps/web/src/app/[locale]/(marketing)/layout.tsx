@@ -10,7 +10,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <>
       <Navbar hideMetadata />
-      <div id="main-content" className="flex flex-col pt-[53px]">
+      <div id="main-content" className="flex flex-col pt-16">
         {children}
       </div>
       <Footer />
