@@ -10,5 +10,5 @@
     "ocr:serve": "./venv/Scripts/modal serve modal_deployment.py",
     "ocr:deploy": "./venv/Scripts/modal deploy modal_deployment.py"
   },
-  "packageManager": "bun@1.2.15"
+  "packageManager": "bun@1.2.16"
 }
