@@ -2402,7 +2402,11 @@
     "progress": "Progress",
     "metrics": "Metrics",
     "crawlers": "Crawlers",
-    "queues": "Queues"
+    "queues": "Queues",
+    "support": "Support",
+    "inquiries": "Inquiries",
+    "my_inquiries": "My Inquiries",
+    "all_inquiries": "All Inquiries"
   },
   "signup": {
     "get-started": "Get started",

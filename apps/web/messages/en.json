@@ -707,7 +707,11 @@
     "spark": "Spark",
     "media": "Media",
     "ai_lab": "AI Lab",
-    "management": "Management"
+    "management": "Management",
+    "support": "Support",
+    "inquiries": "Inquiries",
+    "my_inquiries": "My Inquiries",
+    "all_inquiries": "All Inquiries"
   },
   "team-tabs": {
     "overview": "Overview",

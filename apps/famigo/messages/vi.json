@@ -2400,7 +2400,11 @@
     "progress": "Tiến độ",
     "metrics": "Chỉ số",
     "crawlers": "Công cụ cào dữ liệu",
-    "queues": "Hàng chờ"
+    "queues": "Hàng chờ",
+    "support": "Hỗ trợ",
+    "inquiries": "Yêu cầu hỗ trợ",
+    "my_inquiries": "Yêu cầu của tôi",
+    "all_inquiries": "Tất cả yêu cầu"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",

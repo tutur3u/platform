@@ -13,6 +13,7 @@ import {
   Code,
   Home,
   List,
+  MessageCircle,
   Trophy,
   User,
   Users,
@@ -87,6 +88,21 @@ export default async function RootLayout({
       name: t('score-calculator'),
       href: '/score-calculator',
       icon: <Calculator className="h-4 w-4" />,
+    },
+    {
+      name: t('sidebar_tabs.support'),
+      href: '/support',
+      icon: <MessageCircle className="h-4 w-4" />,
+      subItems: [
+        {
+          name: t('sidebar_tabs.my_inquiries'),
+          href: '/support',
+        },
+        {
+          name: t('sidebar_tabs.all_inquiries'),
+          href: '/support/admin',
+        },
+      ],
     },
     {
       name: t('users'),

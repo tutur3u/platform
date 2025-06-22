@@ -373,7 +373,11 @@
     "collapse-sidebar": "Collapse Sidebar",
     "expand-sidebar": "Expand Sidebar",
     "slides": "Slides",
-    "mail": "Mail"
+    "mail": "Mail",
+    "support": "Support",
+    "inquiries": "Inquiries",
+    "my_inquiries": "My Inquiries",
+    "all_inquiries": "All Inquiries"
   },
   "team-tabs": {
     "overview": "Overview",

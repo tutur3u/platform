@@ -718,7 +718,11 @@
     "spark": "Spark",
     "media": "Phương tiện truyền thông",
     "ai_lab": "Phòng thí nghiệm AI",
-    "management": "Quản lý tài nguyên"
+    "management": "Quản lý tài nguyên",
+    "support": "Hỗ trợ",
+    "inquiries": "Yêu cầu hỗ trợ",
+    "my_inquiries": "Yêu cầu của tôi",
+    "all_inquiries": "Tất cả yêu cầu"
   },
   "team-tabs": {
     "overview": "Tổng quan",

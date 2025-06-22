@@ -59,6 +59,21 @@ export default async function RootLayout({
       icon: <Bell className="h-4 w-4" />,
     },
     {
+      name: 'Support',
+      href: '/support',
+      icon: <MessageCircle className="h-4 w-4" />,
+      subItems: [
+        {
+          name: 'My Inquiries',
+          href: '/support',
+        },
+        {
+          name: 'All Inquiries',
+          href: '/support/admin',
+        },
+      ],
+    },
+    {
       name: 'Manage',
       href: '/manage',
       icon: <Users className="h-4 w-4" />,
