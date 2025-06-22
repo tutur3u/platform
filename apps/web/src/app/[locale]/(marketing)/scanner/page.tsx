@@ -296,7 +296,7 @@ export default function Page() {
           </Button>
         </div>
         <div className="mt-4 flex justify-center">
-          <Link href="/idlist">
+          <Link href="/scanner/idlist">
             <Button className="rounded-lg px-4 py-2">View all students</Button>
           </Link>
         </div>

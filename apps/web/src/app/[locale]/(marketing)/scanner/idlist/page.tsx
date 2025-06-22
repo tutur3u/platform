@@ -3,6 +3,7 @@
 import AddStudentDialog from '@/components/AddStudentDialog';
 import StudentList from '@/components/StudentList';
 import { Student } from '@ncthub/types/primitives/Student';
+import { Button } from '@ncthub/ui/button';
 import { toast } from '@ncthub/ui/hooks/use-toast';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -236,7 +237,7 @@ export default function Page() {
   }
 
   return (
-    <div className="p-2">
+    <div className="container mx-auto">
       <StudentList
         students={students}
         editID={editID}
@@ -262,10 +263,8 @@ export default function Page() {
         error={addError}
       />
       <div className="mt-4 flex justify-center">
-        <Link href="/">
-          <button className="rounded-lg px-4 py-2 text-white">
-            Back to Capture Page
-          </button>
+        <Link href="/scanner">
+          <Button className="rounded-lg px-4 py-2">Back to Capture Page</Button>
         </Link>
       </div>
     </div>
