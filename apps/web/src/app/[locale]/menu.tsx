@@ -1,7 +1,6 @@
 'use client';
 
 import { AuthButton } from './auth-button';
-import { PUBLIC_PATHS } from '@/constants/common';
 import { SupabaseUser } from '@ncthub/supabase/next/user';
 import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
 import { ThemeToggle } from '@ncthub/ui/custom/theme-toggle';
