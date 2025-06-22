@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { TaskBoard, Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
@@ -40,6 +40,844 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { projectColumns } from './columns';
 
+interface AnalyticsFilters {
+  timeView: 'week' | 'month' | 'year';
+  selectedBoard: string | null;
+  statusFilter: 'all' | 'not_started' | 'active' | 'done' | 'closed';
+}
+
+// Gantt Chart Component
+function GanttChart({ allTasks, filters }: { 
+  allTasks: any[], 
+  filters: AnalyticsFilters 
+}) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [clickCardVisible, setClickCardVisible] = useState(false);
+  const [clickCardPosition, setClickCardPosition] = useState({ x: 0, y: 0 });
+  const [clickedTask, setClickedTask] = useState<any | null>(null);
+  const clickCardRef = useRef<HTMLDivElement>(null);
+
+  // Filter tasks based on selected board, status, and search
+  const filteredTasks = useMemo(() => {
+    let tasks = allTasks;
+    
+    // Filter by board
+    if (filters.selectedBoard) {
+      tasks = tasks.filter(task => task.boardId === filters.selectedBoard);
+    }
+    
+    // Filter by status
+    if (filters.statusFilter !== 'all') {
+      tasks = tasks.filter(task => {
+        const taskStatus = task.listStatus || 'not_started';
+        return taskStatus === filters.statusFilter;
+      });
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      tasks = tasks.filter(task => 
+        task.name?.toLowerCase().includes(query) ||
+        task.description?.toLowerCase().includes(query) ||
+        task.boardName?.toLowerCase().includes(query)
+      );
+    }
+    
+    return tasks;
+  }, [allTasks, filters.selectedBoard, filters.statusFilter, searchQuery]);
+
+  // Get time range based on filter
+  const getTimeRange = () => {
+    const now = new Date();
+    switch (filters.timeView) {
+      case 'week': {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        return { start: weekStart, end: weekEnd };
+      }
+      case 'month': {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        return { start: monthStart, end: monthEnd };
+      }
+      case 'year': {
+        const yearStart = new Date(now.getFullYear(), 0, 1);
+        const yearEnd = new Date(now.getFullYear(), 11, 31);
+        return { start: yearStart, end: yearEnd };
+      }
+    }
+  };
+
+  const timeRange = getTimeRange();
+  const totalDays = Math.ceil((timeRange.end.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60 * 24));
+
+  // Calculate productivity stats
+  const productivityStats = useMemo(() => {
+    const completed = filteredTasks.filter(task => 
+      task.listStatus === 'done' || task.listStatus === 'closed'
+    ).length;
+    const total = filteredTasks.length;
+    const completionRate = total > 0 ? (completed / total) * 100 : 0;
+    
+    const overdue = filteredTasks.filter(task => 
+      task.end_date && 
+      new Date(task.end_date) < new Date() && 
+      task.listStatus !== 'done' && 
+      task.listStatus !== 'closed'
+    ).length;
+    
+    const onTime = completed - overdue;
+    const onTimeRate = completed > 0 ? (onTime / completed) * 100 : 0;
+
+    return {
+      completionRate: completionRate.toFixed(1),
+      onTimeRate: onTimeRate.toFixed(1),
+      totalTasks: total,
+      completedTasks: completed,
+      overdueTasks: overdue
+    };
+  }, [filteredTasks]);
+
+  // Process all tasks for Gantt display (before pagination)
+  const allGanttTasks = useMemo(() => {
+    return filteredTasks
+      .filter(task => task.created_at) // Only tasks with creation date
+      .map(task => {
+        const createdDate = new Date(task.created_at);
+        const endDate = task.listStatus === 'done' || task.listStatus === 'closed' 
+          ? (task.updated_at ? new Date(task.updated_at) : createdDate)
+          : (task.end_date ? new Date(task.end_date) : new Date());
+        
+        // Calculate position and width
+        const startOffset = Math.max(0, 
+          (createdDate.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        const duration = Math.max(1, 
+          (endDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        
+        return {
+          ...task,
+          createdDate,
+          endDate,
+          startOffset: (startOffset / totalDays) * 100,
+          width: Math.min((duration / totalDays) * 100, 100 - (startOffset / totalDays) * 100),
+          status: task.listStatus || 'not_started'
+        };
+      })
+      .filter(task => task.startOffset < 100) // Only show tasks within time range
+      .sort((a, b) => a.createdDate.getTime() - b.createdDate.getTime());
+  }, [filteredTasks, timeRange, totalDays]);
+
+  // Calculate pagination
+  const totalTasks = allGanttTasks.length;
+  const totalPages = Math.ceil(totalTasks / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  
+  // Get current page tasks
+  const ganttTasks = useMemo(() => {
+    return allGanttTasks.slice(startIndex, endIndex);
+  }, [allGanttTasks, startIndex, endIndex]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.selectedBoard, filters.statusFilter, searchQuery]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'done':
+      case 'closed':
+        return 'bg-green-500';
+      case 'active':
+        return 'bg-blue-500';
+      case 'not_started':
+      default:
+        return 'bg-gray-400';
+    }
+  };
+
+  // Generate time markers
+  const timeMarkers = useMemo(() => {
+    const markers = [];
+    const markerCount = filters.timeView === 'week' ? 7 : filters.timeView === 'month' ? 4 : 12;
+    
+    for (let i = 0; i <= markerCount; i++) {
+      const position = (i / markerCount) * 100;
+      const date = new Date(timeRange.start);
+      
+      if (filters.timeView === 'week') {
+        date.setDate(date.getDate() + i);
+        markers.push({ position, label: date.toLocaleDateString('en', { weekday: 'short' }) });
+      } else if (filters.timeView === 'month') {
+        date.setDate(date.getDate() + (i * 7));
+        markers.push({ position, label: `Week ${i + 1}` });
+      } else {
+        date.setMonth(date.getMonth() + i);
+        markers.push({ position, label: date.toLocaleDateString('en', { month: 'short' }) });
+      }
+    }
+    return markers;
+  }, [filters.timeView, timeRange]);
+
+  // Add the click handlers to the GanttChart component
+  const handleTaskClick = (e: React.MouseEvent, task: any) => {
+    e.stopPropagation();
+    
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+    
+    setClickedTask(task);
+    setClickCardVisible(true);
+    
+    // Position near the click
+    let newX = mouseX + 15;
+    let newY = mouseY + 15;
+    
+    // Ensure it doesn't go off screen
+    if (newX + 250 > window.innerWidth) {
+      newX = mouseX - 265;
+    }
+    if (newY + 150 > window.innerHeight) {
+      newY = mouseY - 165;
+    }
+    
+    setClickCardPosition({ x: newX, y: newY });
+  };
+
+  const handleCloseClick = () => {
+    setClickCardVisible(false);
+    setClickedTask(null);
+  };
+
+  // Add click outside to close
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (clickCardRef.current && !clickCardRef.current.contains(event.target as Node)) {
+        handleCloseClick();
+      }
+    };
+
+    const handleScroll = () => {
+      handleCloseClick();
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleCloseClick();
+      }
+    };
+
+    if (clickCardVisible) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('scroll', handleScroll, true); // Use capture to catch all scroll events
+      document.addEventListener('keydown', handleEscape);
+      window.addEventListener('scroll', handleScroll);
+      // Also listen for scrolling on the gantt container
+      const ganttContainer = document.querySelector('.custom-scrollbar');
+      if (ganttContainer) {
+        ganttContainer.addEventListener('scroll', handleScroll);
+      }
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('scroll', handleScroll, true);
+      document.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('scroll', handleScroll);
+      const ganttContainer = document.querySelector('.custom-scrollbar');
+      if (ganttContainer) {
+        ganttContainer.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [clickCardVisible]);
+
+  return (
+    <>
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h4 className="font-medium">Task Gantt Timeline</h4>
+            <p className="text-sm text-muted-foreground">
+              Visual timeline showing task lifecycle from creation to completion
+            </p>
+          </div>
+          
+          {/* Productivity Stats */}
+          <div className="flex items-center gap-4 text-sm">
+            <div className="text-center">
+              <div className="font-semibold text-green-600">{productivityStats.completionRate}%</div>
+              <div className="text-muted-foreground">Completion</div>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-blue-600">{productivityStats.onTimeRate}%</div>
+              <div className="text-muted-foreground">On-Time</div>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-purple-600">{productivityStats.totalTasks}</div>
+              <div className="text-muted-foreground">Tasks</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Combined Search, Pagination and Task Count Controls */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
+          {/* Search Input */}
+          <div className="relative w-full md:max-w-sm">
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Pagination and Task Count */}
+          <div className="flex items-center gap-4 flex-wrap justify-center md:justify-end">
+            <Select value={pageSize.toString()} onValueChange={(value) => {
+              setPageSize(Number(value));
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {totalTasks > 0 && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>
+                  Showing {startIndex + 1}-{Math.min(endIndex, totalTasks)} of {totalTasks} tasks
+                </span>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+
+                    <span className="px-2 text-sm">
+                      {currentPage} of {totalPages}
+                    </span>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+      {/* Time Scale - Horizontally Scrollable for Year View */}
+      <div className="relative mb-4 h-10">
+        <div className={cn(
+          "relative border-b pb-3",
+          filters.timeView === 'year' 
+            ? "overflow-x-auto overflow-y-hidden" 
+            : "overflow-hidden"
+        )}>
+          <div className={cn(
+            "relative flex",
+            filters.timeView === 'year' ? "min-w-[1000px] h-6" : "w-full h-6"
+          )}>
+            {timeMarkers.map((marker, index) => (
+              <div 
+                key={index} 
+                className={cn(
+                  "text-xs text-muted-foreground whitespace-nowrap flex items-center justify-center",
+                  filters.timeView === 'year' 
+                    ? "flex-1 text-center px-2" 
+                    : "absolute transform -translate-x-1/2"
+                )}
+                style={filters.timeView === 'year' ? {} : { 
+                  left: `${Math.min(Math.max(marker.position, 8), 92)}%`,
+                  top: '0px'
+                }}
+              >
+                {marker.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Gantt Chart - Fixed Height Container */}
+      <div 
+        className="border rounded-lg bg-background relative"
+        style={{ height: '320px' }} // Fixed height instead of expanding
+      >
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 8px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: #3b82f6;
+              border-radius: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: #2563eb;
+            }
+            .hover-card {
+              position: fixed;
+              z-index: 9999;
+              pointer-events: none;
+              opacity: 0;
+              transform: scale(0.95);
+              transition: all 0.2s ease-out;
+              will-change: transform, opacity, left, top;
+            }
+            .group:hover .hover-card {
+              opacity: 1;
+              transform: scale(1);
+              pointer-events: auto;
+            }
+            .hover-card::before {
+              content: '';
+              position: absolute;
+              width: 0;
+              height: 0;
+              border-style: solid;
+              border-width: 5px 5px 5px 0;
+              border-color: transparent #ffffff transparent transparent;
+              left: -5px;
+              top: 12px;
+              filter: drop-shadow(-1px 0 1px rgba(0,0,0,0.1));
+            }
+            .dark .hover-card::before {
+              border-color: transparent #111827 transparent transparent;
+            }
+          `
+        }} />
+        
+        {/* Scrollable Content Area */}
+        <div 
+          className="h-full overflow-y-auto pr-2 custom-scrollbar p-4"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#3b82f6 transparent'
+          }}
+        >
+          <div className="space-y-1">
+            {ganttTasks.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                No tasks found for the selected time period
+              </div>
+            ) : (
+              ganttTasks.map((task) => (
+                <div 
+                  key={task.id} 
+                  className="group flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors relative"
+                >
+                  {/* Task Info */}
+                  <div className="w-52 min-w-0">
+                    {/* Task Name with line clamp */}
+                    <div 
+                      className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1 group-hover:line-clamp-none transition-all duration-200"
+                      title={task.name}
+                    >
+                      {task.name}
+                    </div>
+                  </div>
+                  
+                  {/* Timeline Bar */}
+                  <div className="flex-1 relative h-6 bg-gray-100 dark:bg-gray-800 rounded">
+                    <div
+                      className={cn(
+                        "absolute h-full rounded transition-all hover:opacity-90 cursor-pointer",
+                        getStatusColor(task.status)
+                      )}
+                      style={{
+                        left: `${task.startOffset}%`,
+                        width: `${task.width}%`
+                      }}
+                    >
+                      {/* Status Indicators */}
+                      <div className="absolute inset-y-0 flex items-center justify-between w-full pointer-events-none">
+                        {/* Not Started (Gray) */}
+                        <div 
+                          className="w-2 h-2 rounded-full bg-gray-400 opacity-70"
+                          style={{ left: '0%' }}
+                        />
+                        
+                        {/* In Progress (Blue) */}
+                        {task.status === 'active' && (
+                          <div 
+                            className="w-2 h-2 rounded-full bg-blue-500 opacity-70"
+                            style={{ left: '50%', transform: 'translateX(-50%)' }}
+                          />
+                        )}
+                        
+                        {/* Completed (Green) */}
+                        {(task.status === 'done' || task.status === 'closed') && (
+                          <div 
+                            className="w-2 h-2 rounded-full bg-green-500 opacity-70"
+                            style={{ right: '0%' }}
+                          />
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-center h-full text-white text-xs font-medium">
+                        {(task.status === 'done' || task.status === 'closed') && filters.timeView !== 'year' && task.width > 15 ? '✓' : ''}
+                      </div>
+                      
+                      {/* Status transition markers and timeline */}
+                      {task.updated_at && task.updated_at !== task.created_at && (
+                        <>
+                          {/* Status change marker */}
+                          <div 
+                            className="absolute top-0 w-0.5 h-full bg-yellow-400 opacity-60"
+                            style={{ left: '50%' }}
+                            title={`Status changed: ${new Date(task.updated_at).toLocaleDateString()}`}
+                          />
+                          
+                          {/* Progress indicator for active tasks */}
+                          {task.status === 'active' && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+                          )}
+                        </>
+                      )}
+                      
+                      {/* Task lifecycle phases - Individual phase hover targets */}
+                      <div className="absolute inset-0 flex">
+                        {/* Creation phase (first 25% of timeline) */}
+                        <div 
+                          className="bg-gray-300 dark:bg-gray-600 opacity-30 hover:opacity-50 transition-opacity cursor-help"
+                          style={{ width: '25%' }}
+                          title={`📅 Created: ${task.createdDate.toLocaleDateString()} at ${task.createdDate.toLocaleTimeString()}`}
+                        />
+                        
+                        {/* Active development phase (middle 50%) */}
+                        {task.status === 'active' && (
+                          <div 
+                            className="bg-blue-400 opacity-40 hover:opacity-60 transition-opacity cursor-help"
+                            style={{ width: '50%' }}
+                            title={`🔄 In Progress: Started ${task.createdDate.toLocaleDateString()}${task.updated_at ? ` • Last updated: ${new Date(task.updated_at).toLocaleDateString()}` : ''}`}
+                          />
+                        )}
+                        
+                        {/* Completion phase (last 25% if completed) */}
+                        {(task.status === 'done' || task.status === 'closed') && (
+                          <div 
+                            className="bg-green-400 opacity-40 hover:opacity-60 transition-opacity ml-auto cursor-help"
+                            style={{ width: '25%' }}
+                            title={`✅ ${task.status === 'done' ? 'Completed' : 'Closed'}: ${task.updated_at ? new Date(task.updated_at).toLocaleDateString() + ' at ' + new Date(task.updated_at).toLocaleTimeString() : 'Date unknown'}${task.end_date ? ` • Due was: ${new Date(task.end_date).toLocaleDateString()}` : ''}`}
+                          />
+                        )}
+                        
+                        {/* Main timeline click area */}
+                        <div 
+                          className="absolute inset-0 cursor-pointer"
+                          onClick={(e) => handleTaskClick(e, task)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Status Badge */}
+                  <div className="w-24 text-xs">
+                    <Badge 
+                      variant="outline"
+                      className={cn(
+                        "text-xs font-medium border",
+                        task.status === 'done' && "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
+                        task.status === 'closed' && "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800",
+                        task.status === 'active' && "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
+                        task.status === 'not_started' && "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
+                      )}
+                    >
+                      {task.status === 'done' ? (
+                        <span className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                          Done
+                        </span>
+                      ) : task.status === 'closed' ? (
+                        <span className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                          Closed
+                        </span>
+                      ) : task.status === 'active' ? (
+                        <span className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                          Active
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                          Pending
+                        </span>
+                      )}
+                    </Badge>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Enhanced Legend - Collapsible */}
+      <Collapsible className="mt-4 pt-4 border-t">
+        <CollapsibleTrigger className="flex items-center justify-between w-full group">
+          <div className="flex items-center gap-2">
+            <h5 className="text-sm font-medium">Status Legend</h5>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+          </div>
+          <span className="text-xs text-muted-foreground">
+            Hover over tasks for detailed timeline
+          </span>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent className="mt-3">
+          <div className="flex flex-wrap items-center gap-6 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-gray-400 rounded"></div>
+              <span>Not Started</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <span>Active</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded"></div>
+              <span>Completed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-1 bg-yellow-400 rounded"></div>
+              <span>Status Change</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-1 bg-gradient-to-r from-gray-300 via-blue-400 to-green-400 rounded"></div>
+              <span>Lifecycle Phases</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-1 bg-red-500 rounded"></div>
+              <span>Overdue</span>
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+
+    {/* Beautiful Click Card */}
+    {clickCardVisible && clickedTask && (
+      <>
+        {/* Subtle backdrop */}
+        <div className="fixed inset-0 z-[9998] bg-black/5 backdrop-blur-[1px]" onClick={handleCloseClick} />
+        
+        <div
+          ref={clickCardRef}
+          className="fixed z-[9999] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-w-sm animate-in slide-in-from-bottom-2 duration-200"
+          style={{ 
+            left: Math.max(10, Math.min(clickCardPosition.x, window.innerWidth - 350)), 
+            top: Math.max(10, Math.min(clickCardPosition.y, window.innerHeight - 200))
+          }}
+        >
+        {/* Compact Header */}
+        <div className="p-3 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-100 truncate">{clickedTask.name}</h4>
+              <div className="flex items-center gap-1 mt-1">
+                <Badge variant="outline" className="text-xs px-1 py-0">{clickedTask.boardName || 'Unknown Board'}</Badge>
+                <span className="text-xs text-muted-foreground">•</span>
+                <Badge variant="outline" className="text-xs px-1 py-0">{clickedTask.listName || 'Unknown List'}</Badge>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge 
+                variant="outline"
+                className={cn(
+                  "text-xs font-medium",
+                  clickedTask.status === 'done' && "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
+                  clickedTask.status === 'closed' && "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800",
+                  clickedTask.status === 'active' && "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
+                  clickedTask.status === 'not_started' && "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
+                )}
+              >
+                {clickedTask.status === 'done' ? (
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    Done
+                  </span>
+                ) : clickedTask.status === 'closed' ? (
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                    Closed
+                  </span>
+                ) : clickedTask.status === 'active' ? (
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                    Active
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    Pending
+                  </span>
+                )}
+              </Badge>
+              <button
+                onClick={handleCloseClick}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Compact Content */}
+        <div className="p-3 space-y-2">
+          {clickedTask.description && (
+            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{clickedTask.description}</p>
+          )}
+          
+          {/* Compact Info Grid */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3 text-green-500" />
+                <span className="text-muted-foreground">Created:</span>
+              </div>
+              <div className="font-medium pl-4">
+                {clickedTask.createdDate ? clickedTask.createdDate.toLocaleDateString() : 'N/A'}
+              </div>
+              
+              {clickedTask.end_date && (
+                <>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3 text-orange-500" />
+                    <span className="text-muted-foreground">Due:</span>
+                  </div>
+                  <div className="font-medium pl-4">{new Date(clickedTask.end_date).toLocaleDateString()}</div>
+                </>
+              )}
+            </div>
+            
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <Activity className="h-3 w-3 text-blue-500" />
+                <span className="text-muted-foreground">Duration:</span>
+              </div>
+              <div className="font-medium pl-4">
+                {(() => {
+                  try {
+                    if (clickedTask.createdDate && clickedTask.endDate) {
+                      const durationMs = clickedTask.endDate.getTime() - clickedTask.createdDate.getTime();
+                      const days = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+                      const hours = Math.ceil(durationMs / (1000 * 60 * 60));
+                      return days === 0 ? `${hours} hrs` : `${days} days`;
+                    }
+                    return 'N/A';
+                  } catch {
+                    return 'N/A';
+                  }
+                })()}
+              </div>
+              
+              {clickedTask.priority && (
+                <>
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground">Priority:</span>
+                  </div>
+                  <div className="pl-4">
+                    <Badge 
+                      variant={clickedTask.priority === 1 ? 'destructive' : 
+                               clickedTask.priority === 2 ? 'default' : 
+                               clickedTask.priority === 3 ? 'secondary' : 'outline'}
+                      className="text-xs"
+                    >
+                      {clickedTask.priority === 1 ? '🔥 Urgent' : 
+                       clickedTask.priority === 2 ? '⚡ High' : 
+                       clickedTask.priority === 3 ? '📋 Medium' : '📝 Low'}
+                    </Badge>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          
+          {clickedTask.assignee_name && (
+            <div className="flex items-center gap-2 pt-1">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-medium">
+                {clickedTask.assignee_name.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-xs font-medium">{clickedTask.assignee_name}</span>
+            </div>
+          )}
+          
+          {/* Compact Progress */}
+          <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
+            <div 
+              className={cn(
+                "h-1.5 rounded-full transition-all",
+                clickedTask.status === 'done' || clickedTask.status === 'closed' ? 'bg-green-500' :
+                clickedTask.status === 'active' ? 'bg-blue-500' : 'bg-gray-400 dark:bg-gray-500'
+              )}
+              style={{ 
+                width: clickedTask.status === 'done' || clickedTask.status === 'closed' ? '100%' : 
+                       clickedTask.status === 'active' ? '60%' : '10%' 
+              }}
+            />
+          </div>
+          
+          {/* Compact Overdue Warning */}
+          {clickedTask.end_date && new Date(clickedTask.end_date) < new Date() && 
+           clickedTask.status !== 'done' && clickedTask.status !== 'closed' && (
+            <div className="flex items-center gap-1 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
+              <AlertTriangle className="h-3 w-3 text-red-500" />
+              <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+                Overdue by {Math.ceil((new Date().getTime() - new Date(clickedTask.end_date).getTime()) / (1000 * 60 * 60 * 24))} days
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+      </>
+    )}
+
+    </>
+  );
+}
+
 interface EnhancedBoardsViewProps {
   data: (TaskBoard & { 
     href: string;
@@ -65,11 +903,6 @@ interface TaskModalState {
   selectedBoard: string | null; // null means all boards
 }
 
-interface AnalyticsFilters {
-  timeView: 'week' | 'month' | 'year';
-  selectedBoard: string | null;
-}
-
 export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   const [selectedBoard, setSelectedBoard] = useState<typeof data[0] | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -81,15 +914,27 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
   const [analyticsFilters, setAnalyticsFilters] = useState<AnalyticsFilters>({
     timeView: 'month',
-    selectedBoard: null
+    selectedBoard: null,
+    statusFilter: 'all'
   });
 
-  // Calculate aggregate metrics for the quick stats
-  const totalTasks = data.reduce((sum, board) => sum + board.totalTasks, 0);
-  const totalCompleted = data.reduce((sum, board) => sum + board.completedTasks, 0);
-  const totalOverdue = data.reduce((sum, board) => sum + board.overdueTasks, 0);
-  const totalHighPriority = data.reduce((sum, board) => sum + board.highPriorityTasks, 0);
-  const avgProgress = data.length > 0 ? Math.round(data.reduce((sum, board) => sum + board.progressPercentage, 0) / data.length) : 0;
+  // Calculate aggregate metrics for the quick stats - now responsive to board selection
+  const getFilteredMetrics = (selectedBoard: string | null) => {
+    const filteredData = selectedBoard ? data.filter(board => board.id === selectedBoard) : data;
+    const totalTasks = filteredData.reduce((sum, board) => sum + board.totalTasks, 0);
+    const totalCompleted = filteredData.reduce((sum, board) => sum + board.completedTasks, 0);
+    const totalOverdue = filteredData.reduce((sum, board) => sum + board.overdueTasks, 0);
+    const totalHighPriority = filteredData.reduce((sum, board) => sum + board.highPriorityTasks, 0);
+    const avgProgress = filteredData.length > 0 ? Math.round(filteredData.reduce((sum, board) => sum + board.progressPercentage, 0) / filteredData.length) : 0;
+    
+    return { totalTasks, totalCompleted, totalOverdue, totalHighPriority, avgProgress };
+  };
+
+  // Default metrics for main dashboard
+  const { totalTasks, totalCompleted, totalOverdue, totalHighPriority, avgProgress } = getFilteredMetrics(null);
+  
+  // Analytics-specific metrics that respond to board selection
+  const analyticsMetrics = useMemo(() => getFilteredMetrics(analyticsFilters.selectedBoard), [analyticsFilters.selectedBoard, data]);
 
   // Get all tasks across all boards for filtering
   const allTasks = useMemo(() => {
@@ -107,6 +952,103 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       )
     );
   }, [data]);
+
+  // Calculate actual average task completion time
+  const calculateAvgDuration = useMemo(() => {
+    const filteredTasks = analyticsFilters.selectedBoard 
+      ? allTasks.filter(task => task.boardId === analyticsFilters.selectedBoard)
+      : allTasks;
+    
+    const completedTasks = filteredTasks.filter(task => 
+      (task.listStatus === 'done' || task.listStatus === 'closed' || task.archived) &&
+      task.created_at && 
+      (task as any).updated_at
+    );
+
+    if (completedTasks.length === 0) return { days: 0, hours: 0, label: 'N/A' };
+
+    const totalDurationMs = completedTasks.reduce((sum, task) => {
+      const createdDate = new Date(task.created_at);
+      const completedDate = new Date((task as any).updated_at);
+      return sum + (completedDate.getTime() - createdDate.getTime());
+    }, 0);
+
+    const avgDurationMs = totalDurationMs / completedTasks.length;
+    const avgDays = Math.round(avgDurationMs / (1000 * 60 * 60 * 24));
+    const avgHours = Math.round(avgDurationMs / (1000 * 60 * 60));
+
+    // Return appropriate format based on duration
+    if (avgDays > 0) {
+      return { days: avgDays, hours: 0, label: `${avgDays}d` };
+    } else if (avgHours > 0) {
+      return { days: 0, hours: avgHours, label: `${avgHours}h` };
+    } else {
+      return { days: 0, hours: 0, label: '<1h' };
+    }
+  }, [allTasks, analyticsFilters.selectedBoard]);
+
+  // Calculate task velocity (tasks completed per week)
+  const calculateTaskVelocity = useMemo(() => {
+    const filteredTasks = analyticsFilters.selectedBoard 
+      ? allTasks.filter(task => task.boardId === analyticsFilters.selectedBoard)
+      : allTasks;
+    
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    
+    const thisWeekCompleted = filteredTasks.filter(task => 
+      (task.listStatus === 'done' || task.listStatus === 'closed' || task.archived) &&
+      (task as any).updated_at && 
+      new Date((task as any).updated_at) >= oneWeekAgo
+    ).length;
+    
+    const lastWeekCompleted = filteredTasks.filter(task => 
+      (task.listStatus === 'done' || task.listStatus === 'closed' || task.archived) &&
+      (task as any).updated_at && 
+      new Date((task as any).updated_at) >= twoWeeksAgo &&
+      new Date((task as any).updated_at) < oneWeekAgo
+    ).length;
+    
+    const trend = lastWeekCompleted > 0 
+      ? ((thisWeekCompleted - lastWeekCompleted) / lastWeekCompleted) * 100
+      : thisWeekCompleted > 0 ? 100 : 0;
+    
+    return {
+      thisWeek: thisWeekCompleted,
+      lastWeek: lastWeekCompleted,
+      trend: Math.round(trend),
+      label: `${thisWeekCompleted}/week`
+    };
+  }, [allTasks, analyticsFilters.selectedBoard]);
+
+  // Calculate on-time delivery rate
+  const calculateOnTimeRate = useMemo(() => {
+    const filteredTasks = analyticsFilters.selectedBoard 
+      ? allTasks.filter(task => task.boardId === analyticsFilters.selectedBoard)
+      : allTasks;
+    
+    const completedWithDueDate = filteredTasks.filter(task => 
+      (task.listStatus === 'done' || task.listStatus === 'closed' || task.archived) &&
+      task.end_date && 
+      (task as any).updated_at
+    );
+
+    if (completedWithDueDate.length === 0) return { rate: 0, onTime: 0, total: 0, label: 'N/A' };
+
+    const onTimeCompleted = completedWithDueDate.filter(task => 
+      new Date((task as any).updated_at) <= new Date(task.end_date!)
+    ).length;
+    
+    const rate = Math.round((onTimeCompleted / completedWithDueDate.length) * 100);
+    
+    return {
+      rate,
+      onTime: onTimeCompleted,
+      total: completedWithDueDate.length,
+      label: `${rate}%`
+    };
+  }, [allTasks, analyticsFilters.selectedBoard]);
 
   // Filter tasks based on modal state
   const filteredTasks = useMemo(() => {
@@ -526,16 +1468,31 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
             {/* Analytics View - Gantt Chart Heatmap */}
             <TabsContent value="analytics" className="mt-0 space-y-4">
-              <div className="space-y-6">
+              <div className="space-y-6 pb-8">
                 {/* Analytics Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold">Task Analytics & Productivity</h3>
+                    <h3 className="text-lg font-semibold">Task Timeline & Performance</h3>
                     <p className="text-sm text-muted-foreground">
-                      Visual representation of task creation and completion patterns
+                      Visual timeline and performance metrics for task management
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Select 
+                      value={analyticsFilters.statusFilter} 
+                      onValueChange={(value) => setAnalyticsFilters(prev => ({ ...prev, statusFilter: value as any }))}
+                    >
+                      <SelectTrigger className="w-36">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">📋 All Tasks</SelectItem>
+                        <SelectItem value="not_started">⏸️ Not Started</SelectItem>
+                        <SelectItem value="active">🔄 Active</SelectItem>
+                        <SelectItem value="done">✅ Done</SelectItem>
+                        <SelectItem value="closed">🔒 Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Select 
                       value={analyticsFilters.timeView} 
                       onValueChange={(value) => setAnalyticsFilters(prev => ({ ...prev, timeView: value as 'week' | 'month' | 'year' }))}
@@ -566,8 +1523,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   </div>
                 </div>
 
-                {/* Productivity Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Productivity Metrics - Now responsive to board selection */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <Card className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="rounded-lg bg-blue-500/10 p-2">
@@ -575,7 +1532,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       </div>
                       <span className="text-sm font-medium">Completion Rate</span>
                     </div>
-                    <p className="text-2xl font-bold text-blue-600">{Math.round((totalCompleted / totalTasks) * 100) || 0}%</p>
+                    <p className="text-2xl font-bold text-blue-600">{Math.round((analyticsMetrics.totalCompleted / analyticsMetrics.totalTasks) * 100) || 0}%</p>
                     <p className="text-xs text-muted-foreground">Overall completion</p>
                   </Card>
 
@@ -586,30 +1543,65 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       </div>
                       <span className="text-sm font-medium">Active Tasks</span>
                     </div>
-                    <p className="text-2xl font-bold text-green-600">{totalTasks - totalCompleted}</p>
+                    <p className="text-2xl font-bold text-green-600">{analyticsMetrics.totalTasks - analyticsMetrics.totalCompleted}</p>
                     <p className="text-xs text-muted-foreground">In progress</p>
                   </Card>
 
                   <Card className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="rounded-lg bg-purple-500/10 p-2">
-                        <Activity className="h-4 w-4 text-purple-500" />
+                        <Clock className="h-4 w-4 text-purple-500" />
                       </div>
-                      <span className="text-sm font-medium">Total Boards</span>
+                      <span className="text-sm font-medium">Avg Duration</span>
                     </div>
-                    <p className="text-2xl font-bold text-purple-600">{data.length}</p>
-                    <p className="text-xs text-muted-foreground">Active projects</p>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {calculateAvgDuration.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const filteredTasks = analyticsFilters.selectedBoard 
+                          ? allTasks.filter(task => task.boardId === analyticsFilters.selectedBoard)
+                          : allTasks;
+                        const completedCount = filteredTasks.filter(task => 
+                          (task.listStatus === 'done' || task.listStatus === 'closed' || task.archived) &&
+                          task.created_at && 
+                          (task as any).updated_at
+                        ).length;
+                        return completedCount > 0 
+                          ? `Based on ${completedCount} completed tasks`
+                          : 'No completed tasks yet';
+                      })()}
+                    </p>
                   </Card>
 
                   <Card className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="rounded-lg bg-orange-500/10 p-2">
-                        <Clock className="h-4 w-4 text-orange-500" />
+                        <TrendingUp className="h-4 w-4 text-orange-500" />
                       </div>
-                      <span className="text-sm font-medium">Overdue</span>
+                      <span className="text-sm font-medium">Task Velocity</span>
                     </div>
-                    <p className="text-2xl font-bold text-orange-600">{totalOverdue}</p>
-                    <p className="text-xs text-muted-foreground">Need attention</p>
+                    <p className="text-2xl font-bold text-orange-600">{calculateTaskVelocity.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {calculateTaskVelocity.trend > 0 ? '↗️' : calculateTaskVelocity.trend < 0 ? '↘️' : '→'} 
+                      {calculateTaskVelocity.trend !== 0 ? ` ${Math.abs(calculateTaskVelocity.trend)}%` : ' No change'} from last week
+                    </p>
+                  </Card>
+
+                  <Card className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="rounded-lg bg-emerald-500/10 p-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      </div>
+                      <span className="text-sm font-medium">On-Time Rate</span>
+                    </div>
+                    <p className="text-2xl font-bold text-emerald-600">{calculateOnTimeRate.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {calculateOnTimeRate.total > 0 
+                        ? `${calculateOnTimeRate.onTime}/${calculateOnTimeRate.total} tasks delivered on time`
+                        : 'No tasks with due dates yet'
+                      }
+                    </p>
                   </Card>
                 </div>
 
@@ -1035,504 +2027,6 @@ function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupProps) {
   );
 }
 
-// Gantt Chart Component
-function GanttChart({ allTasks, filters }: { 
-  allTasks: any[], 
-  filters: AnalyticsFilters 
-}) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Filter tasks based on selected board and search
-  const filteredTasks = useMemo(() => {
-    let tasks = allTasks;
-    
-    // Filter by board
-    if (filters.selectedBoard) {
-      tasks = tasks.filter(task => task.boardId === filters.selectedBoard);
-    }
-    
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      tasks = tasks.filter(task => 
-        task.name?.toLowerCase().includes(query) ||
-        task.description?.toLowerCase().includes(query) ||
-        task.boardName?.toLowerCase().includes(query)
-      );
-    }
-    
-    return tasks;
-  }, [allTasks, filters.selectedBoard, searchQuery]);
-
-  // Get time range based on filter
-  const getTimeRange = () => {
-    const now = new Date();
-    switch (filters.timeView) {
-      case 'week': {
-        const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() - now.getDay());
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        return { start: weekStart, end: weekEnd };
-      }
-      case 'month': {
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        return { start: monthStart, end: monthEnd };
-      }
-      case 'year': {
-        const yearStart = new Date(now.getFullYear(), 0, 1);
-        const yearEnd = new Date(now.getFullYear(), 11, 31);
-        return { start: yearStart, end: yearEnd };
-      }
-    }
-  };
-
-  const timeRange = getTimeRange();
-  const totalDays = Math.ceil((timeRange.end.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60 * 24));
-
-  // Calculate productivity stats
-  const productivityStats = useMemo(() => {
-    const completed = filteredTasks.filter(task => 
-      task.listStatus === 'done' || task.listStatus === 'closed'
-    ).length;
-    const total = filteredTasks.length;
-    const completionRate = total > 0 ? (completed / total) * 100 : 0;
-    
-    const overdue = filteredTasks.filter(task => 
-      task.end_date && 
-      new Date(task.end_date) < new Date() && 
-      task.listStatus !== 'done' && 
-      task.listStatus !== 'closed'
-    ).length;
-    
-    const onTime = completed - overdue;
-    const onTimeRate = completed > 0 ? (onTime / completed) * 100 : 0;
-
-    return {
-      completionRate: completionRate.toFixed(1),
-      onTimeRate: onTimeRate.toFixed(1),
-      totalTasks: total,
-      completedTasks: completed,
-      overdueTasks: overdue
-    };
-  }, [filteredTasks]);
-
-  // Process all tasks for Gantt display (before pagination)
-  const allGanttTasks = useMemo(() => {
-    return filteredTasks
-      .filter(task => task.created_at) // Only tasks with creation date
-      .map(task => {
-        const createdDate = new Date(task.created_at);
-        const endDate = task.listStatus === 'done' || task.listStatus === 'closed' 
-          ? (task.updated_at ? new Date(task.updated_at) : createdDate)
-          : (task.end_date ? new Date(task.end_date) : new Date());
-        
-        // Calculate position and width
-        const startOffset = Math.max(0, 
-          (createdDate.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60 * 24)
-        );
-        const duration = Math.max(1, 
-          (endDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
-        );
-        
-        return {
-          ...task,
-          createdDate,
-          endDate,
-          startOffset: (startOffset / totalDays) * 100,
-          width: Math.min((duration / totalDays) * 100, 100 - (startOffset / totalDays) * 100),
-          status: task.listStatus || 'not_started'
-        };
-      })
-      .filter(task => task.startOffset < 100) // Only show tasks within time range
-      .sort((a, b) => a.createdDate.getTime() - b.createdDate.getTime());
-  }, [filteredTasks, timeRange, totalDays]);
-
-  // Calculate pagination
-  const totalTasks = allGanttTasks.length;
-  const totalPages = Math.ceil(totalTasks / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  
-  // Get current page tasks
-  const ganttTasks = useMemo(() => {
-    return allGanttTasks.slice(startIndex, endIndex);
-  }, [allGanttTasks, startIndex, endIndex]);
-
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters.selectedBoard, searchQuery]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'done':
-      case 'closed':
-        return 'bg-green-500';
-      case 'active':
-        return 'bg-blue-500';
-      case 'not_started':
-      default:
-        return 'bg-gray-400';
-    }
-  };
-
-  // Generate time markers
-  const timeMarkers = useMemo(() => {
-    const markers = [];
-    const markerCount = filters.timeView === 'week' ? 7 : filters.timeView === 'month' ? 4 : 12;
-    
-    for (let i = 0; i <= markerCount; i++) {
-      const position = (i / markerCount) * 100;
-      const date = new Date(timeRange.start);
-      
-      if (filters.timeView === 'week') {
-        date.setDate(date.getDate() + i);
-        markers.push({ position, label: date.toLocaleDateString('en', { weekday: 'short' }) });
-      } else if (filters.timeView === 'month') {
-        date.setDate(date.getDate() + (i * 7));
-        markers.push({ position, label: `Week ${i + 1}` });
-      } else {
-        date.setMonth(date.getMonth() + i);
-        markers.push({ position, label: date.toLocaleDateString('en', { month: 'short' }) });
-      }
-    }
-    return markers;
-  }, [filters.timeView, timeRange]);
-
-  return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h4 className="font-medium">Task Gantt Timeline</h4>
-          <p className="text-sm text-muted-foreground">
-            Visual timeline showing task lifecycle from creation to completion
-          </p>
-        </div>
-        
-        {/* Productivity Stats */}
-        <div className="flex items-center gap-4 text-sm">
-          <div className="text-center">
-            <div className="font-semibold text-green-600">{productivityStats.completionRate}%</div>
-            <div className="text-muted-foreground">Completion</div>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold text-blue-600">{productivityStats.onTimeRate}%</div>
-            <div className="text-muted-foreground">On-Time</div>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold text-purple-600">{productivityStats.totalTasks}</div>
-            <div className="text-muted-foreground">Total</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Pagination Controls */}
-      <div className="flex items-center justify-between mb-4 gap-4">
-        <div className="flex items-center gap-2 flex-1">
-          <div className="relative flex-1 max-w-sm">
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          
-          <Select value={pageSize.toString()} onValueChange={(value) => {
-            setPageSize(Number(value));
-            setCurrentPage(1);
-          }}>
-            <SelectTrigger className="w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {totalTasks > 0 && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>
-              Showing {startIndex + 1}-{Math.min(endIndex, totalTasks)} of {totalTasks} tasks
-            </span>
-            
-            {totalPages > 1 && (
-              <div className="flex items-center gap-1 ml-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                
-                <span className="px-2 text-sm">
-                  {currentPage} of {totalPages}
-                </span>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Time Scale */}
-      <div className="relative mb-4">
-        <div className="flex justify-between text-xs text-muted-foreground border-b pb-2">
-          {timeMarkers.map((marker, index) => (
-            <div key={index} style={{ position: 'absolute', left: `${marker.position}%` }}>
-              {marker.label}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Gantt Chart */}
-      <div className="space-y-1 max-h-96 overflow-y-auto">
-        {ganttTasks.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            No tasks found for the selected time period
-          </div>
-        ) : (
-          ganttTasks.map((task) => (
-            <div 
-              key={task.id} 
-              className="group flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-            >
-              {/* Task Info */}
-              <div className="w-52 min-w-0">
-                {/* Task Name with line clamp */}
-                <div 
-                  className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1 group-hover:line-clamp-none transition-all duration-200"
-                  title={task.name}
-                >
-                  {task.name}
-                </div>
-                
-                {/* Task Details - shown on hover */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-1 space-y-1">
-                  {task.description && (
-                    <div className="text-xs text-muted-foreground line-clamp-2">
-                      {task.description}
-                    </div>
-                  )}
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>Created: {task.createdDate.toLocaleDateString()}</span>
-                      {task.end_date && (
-                        <>
-                          <span>•</span>
-                          <span>Due: {new Date(task.end_date).toLocaleDateString()}</span>
-                        </>
-                      )}
-                    </div>
-                    
-                    {/* Task lifecycle information */}
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-gray-400" />
-                        <span className="text-muted-foreground">Created</span>
-                      </div>
-                      
-                      {task.updated_at && task.updated_at !== task.created_at && (
-                        <>
-                          <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                          <div className="flex items-center gap-1">
-                            <div className={cn(
-                              "w-2 h-2 rounded-full",
-                              task.status === 'active' ? 'bg-blue-500' :
-                              task.status === 'done' || task.status === 'closed' ? 'bg-green-500' :
-                              'bg-gray-400'
-                            )} />
-                            <span className="text-muted-foreground">
-                              {task.status === 'active' ? 'In Progress' :
-                               task.status === 'done' ? 'Completed' :
-                               task.status === 'closed' ? 'Closed' :
-                               'Updated'}
-                            </span>
-                            <span className="text-muted-foreground">
-                              ({new Date(task.updated_at).toLocaleDateString()})
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    
-                    {/* Duration and time tracking */}
-                    <div className="text-xs text-muted-foreground">
-                      Duration: {Math.ceil((task.endDate.getTime() - task.createdDate.getTime()) / (1000 * 60 * 60 * 24))} days
-                      {task.end_date && new Date(task.end_date) < new Date() && 
-                       task.status !== 'done' && task.status !== 'closed' && (
-                        <span className="ml-2 text-red-500 font-medium">• Overdue</span>
-                      )}
-                    </div>
-                  </div>
-                  {task.priority && (
-                    <div className="flex items-center gap-1">
-                      <Badge 
-                        variant={task.priority === 3 ? 'destructive' : task.priority === 2 ? 'default' : 'secondary'}
-                        className="text-xs h-4"
-                      >
-                        {task.priority === 3 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'} Priority
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Timeline Bar */}
-              <div className="flex-1 relative h-6 bg-gray-100 dark:bg-gray-800 rounded">
-                <div
-                  className={cn(
-                    "absolute h-full rounded transition-all hover:opacity-90 cursor-pointer",
-                    getStatusColor(task.status)
-                  )}
-                  style={{
-                    left: `${task.startOffset}%`,
-                    width: `${task.width}%`
-                  }}
-                  title={`${task.name}\nStatus: ${task.status}\nCreated: ${task.createdDate.toLocaleDateString()}\nDuration: ${Math.ceil((task.endDate.getTime() - task.createdDate.getTime()) / (1000 * 60 * 60 * 24))} days`}
-                >
-                  <div className="flex items-center justify-center h-full text-white text-xs font-medium">
-                    {task.status === 'done' || task.status === 'closed' ? '✓' : ''}
-                  </div>
-                  
-                  {/* Status transition markers and timeline */}
-                  {task.updated_at && task.updated_at !== task.created_at && (
-                    <>
-                      {/* Status change marker */}
-                      <div 
-                        className="absolute top-0 w-0.5 h-full bg-yellow-400 opacity-60"
-                        style={{ left: '50%' }}
-                        title={`Status changed: ${new Date(task.updated_at).toLocaleDateString()}`}
-                      />
-                      
-                      {/* Progress indicator for active tasks */}
-                      {task.status === 'active' && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
-                      )}
-                    </>
-                  )}
-                  
-                  {/* Task lifecycle phases */}
-                  <div className="absolute inset-0 flex">
-                    {/* Creation phase (first 25% of timeline) */}
-                    <div 
-                      className="bg-gray-300 dark:bg-gray-600 opacity-30"
-                      style={{ width: '25%' }}
-                      title="Task created"
-                    />
-                    
-                    {/* Active development phase (middle 50%) */}
-                    {task.status === 'active' && (
-                      <div 
-                        className="bg-blue-400 opacity-40"
-                        style={{ width: '50%' }}
-                        title="Task in progress"
-                      />
-                    )}
-                    
-                    {/* Completion phase (last 25% if completed) */}
-                    {(task.status === 'done' || task.status === 'closed') && (
-                      <div 
-                        className="bg-green-400 opacity-40 ml-auto"
-                        style={{ width: '25%' }}
-                        title="Task completed"
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Status Badge */}
-              <div className="w-20 text-xs">
-                <Badge 
-                  variant={task.status === 'done' || task.status === 'closed' ? 'default' : 'secondary'}
-                  className="text-xs"
-                >
-                  {task.status === 'done' ? 'Done' : 
-                   task.status === 'closed' ? 'Closed' :
-                   task.status === 'active' ? 'Active' : 'Not Started'}
-                </Badge>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Enhanced Legend */}
-      <div className="mt-4 pt-4 border-t space-y-3">
-        <div className="flex items-center justify-between">
-          <h5 className="text-sm font-medium">Status Legend</h5>
-          <span className="text-xs text-muted-foreground">
-            Hover over tasks for detailed timeline
-          </span>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 text-xs">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-gray-400 rounded"></div>
-              <span>Not Started</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
-              <span>Active</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded"></div>
-              <span>Completed</span>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-1 bg-yellow-400 rounded"></div>
-              <span>Status Change</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-1 bg-gradient-to-r from-gray-300 via-blue-400 to-green-400 rounded"></div>
-              <span>Lifecycle Phases</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-1 bg-red-500 rounded"></div>
-              <span>Overdue</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
 // Status Distribution Component
 function StatusDistribution({ allTasks, selectedBoard }: { allTasks: any[], selectedBoard: string | null }) {
   const filteredTasks = useMemo(() => {
@@ -1667,9 +2161,6 @@ function PriorityDistribution({ allTasks, selectedBoard }: { allTasks: any[], se
               <div className="flex items-center gap-2">
                 <div className={cn("w-3 h-3 rounded", priority.color)}></div>
                 <span className="text-sm">{priority.label}</span>
-                {priority.key === 'UNASSIGNED' && (
-                  <span className="text-xs text-muted-foreground ml-1">📋</span>
-                )}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">{priorityCounts[priority.key as keyof typeof priorityCounts]}</span>
@@ -1695,7 +2186,7 @@ function PriorityDistribution({ allTasks, selectedBoard }: { allTasks: any[], se
   );
 }
 
-// Assignee Timeline Component
+// Enhanced Team Performance & Productivity Component
 function AssigneeTimeline({ allTasks, selectedBoard }: { allTasks: any[], selectedBoard: string | null }) {
   const filteredTasks = useMemo(() => {
     if (!selectedBoard) return allTasks;
@@ -1703,112 +2194,135 @@ function AssigneeTimeline({ allTasks, selectedBoard }: { allTasks: any[], select
   }, [allTasks, selectedBoard]);
 
   const assigneeStats = useMemo(() => {
-    const stats: { [key: string]: { total: number, completed: number, name: string } } = {};
+    const stats: { [key: string]: { 
+      total: number, 
+      completed: number, 
+      active: number,
+      overdue: number,
+      notStarted: number,
+      avgCompletionTime: number,
+      name: string,
+      recentActivity: number
+    } } = {};
     
     filteredTasks.forEach(task => {
-      // Use assignee if available, otherwise use "Unassigned"
       const assigneeId = task.assignee_id || 'unassigned';
       const assigneeName = task.assignee_name || 'Unassigned';
       
       if (!stats[assigneeId]) {
-        stats[assigneeId] = { total: 0, completed: 0, name: assigneeName };
+        stats[assigneeId] = { 
+          total: 0, 
+          completed: 0, 
+          active: 0, 
+          overdue: 0, 
+          notStarted: 0,
+          avgCompletionTime: 0,
+          name: assigneeName,
+          recentActivity: 0
+        };
       }
       
       stats[assigneeId].total += 1;
+      
       if (task.listStatus === 'done' || task.listStatus === 'closed' || task.archived) {
         stats[assigneeId].completed += 1;
+        
+        // Calculate completion time if we have dates
+        if (task.created_at && task.updated_at) {
+          const completionTime = new Date(task.updated_at).getTime() - new Date(task.created_at).getTime();
+          const days = completionTime / (1000 * 60 * 60 * 24);
+          stats[assigneeId].avgCompletionTime = (stats[assigneeId].avgCompletionTime + days) / 2;
+        }
+      } else if (task.listStatus === 'active') {
+        stats[assigneeId].active += 1;
+      } else {
+        stats[assigneeId].notStarted += 1;
+      }
+      
+      // Check if overdue
+      if (task.end_date && new Date(task.end_date) < new Date() && 
+          task.listStatus !== 'done' && task.listStatus !== 'closed' && !task.archived) {
+        stats[assigneeId].overdue += 1;
+      }
+      
+      // Recent activity (tasks updated in last 7 days)
+      if (task.updated_at && new Date(task.updated_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) {
+        stats[assigneeId].recentActivity += 1;
       }
     });
 
-    // Convert to array and sort by total tasks
-    return Object.entries(stats)
-      .map(([id, data]) => ({
-        id,
-        name: data.name,
-        total: data.total,
-        completed: data.completed,
-        completionRate: data.total > 0 ? (data.completed / data.total) * 100 : 0
-      }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 6); // Show top 6 assignees
+    return Object.entries(stats).map(([id, data]) => ({
+      id,
+      ...data,
+      completionRate: data.total > 0 ? (data.completed / data.total) * 100 : 0,
+      efficiency: data.completed > 0 ? Math.max(0, 100 - (data.overdue / data.completed) * 100) : 0
+    })).sort((a, b) => b.total - a.total);
   }, [filteredTasks]);
-
-  const totalTasks = filteredTasks.length;
 
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="font-medium">Assignee Performance</h4>
-        <span className="text-xs text-muted-foreground">{totalTasks} tasks</span>
+        <h4 className="font-medium">Team Performance</h4>
+        <span className="text-xs text-muted-foreground">{assigneeStats.length} members</span>
       </div>
-      <div className="space-y-3">
-        {assigneeStats.length === 0 ? (
-          <div className="text-center text-sm text-muted-foreground py-4">
-            No assignee data found
-          </div>
-        ) : (
-          assigneeStats.map((assignee) => (
-            <div key={assignee.id} className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-medium">
-                    {assignee.id === 'unassigned' ? '📋' : assignee.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium">{assignee.name}</span>
-                    {assignee.id === 'unassigned' && (
-                      <span className="text-xs text-muted-foreground ml-1">(no assignee)</span>
-                    )}
+      <div className="space-y-3 max-h-64 overflow-y-auto">
+        {assigneeStats.map(assignee => (
+          <div key={assignee.id} className="space-y-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-medium">
+                  {assignee.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div className="font-medium text-sm">{assignee.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {assignee.total} tasks • {assignee.completionRate.toFixed(0)}% completion
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium">{assignee.completed}/{assignee.total}</div>
-                  <div className="text-xs text-muted-foreground">{assignee.completionRate.toFixed(0)}%</div>
-                </div>
               </div>
-              
-              {/* Progress bar */}
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div className="flex h-2 rounded-full overflow-hidden">
-                  <div 
-                    className="bg-green-500 transition-all"
-                    style={{ width: `${assignee.completionRate}%` }}
-                  />
-                  <div 
-                    className="bg-blue-200 dark:bg-blue-800 transition-all"
-                    style={{ width: `${100 - assignee.completionRate}%` }}
-                  />
-                </div>
-              </div>
-              
-              {/* Task breakdown */}
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{assignee.completed} completed</span>
-                <span>{assignee.total - assignee.completed} remaining</span>
+              <div className="text-right">
+                <div className="text-sm font-medium text-green-600">{assignee.completed}</div>
+                <div className="text-xs text-muted-foreground">completed</div>
               </div>
             </div>
-          ))
+            
+            {/* Progress bars */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span>Progress</span>
+                <span>{assignee.completionRate.toFixed(0)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
+                <div 
+                  className="h-1.5 bg-green-500 rounded-full transition-all"
+                  style={{ width: `${assignee.completionRate}%` }}
+                />
+              </div>
+            </div>
+            
+            {/* Task breakdown */}
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="text-center">
+                <div className="font-medium text-blue-600">{assignee.active}</div>
+                <div className="text-muted-foreground">Active</div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium text-red-600">{assignee.overdue}</div>
+                <div className="text-muted-foreground">Overdue</div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium text-purple-600">{assignee.recentActivity}</div>
+                <div className="text-muted-foreground">Recent</div>
+              </div>
+            </div>
+          </div>
+        ))}
+        {assigneeStats.length === 0 && (
+          <div className="text-center text-sm text-muted-foreground py-4">
+            No team members found
+          </div>
         )}
       </div>
-      
-      {assigneeStats.length > 0 && (
-        <div className="mt-4 pt-3 border-t">
-          <div className="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <div className="text-lg font-semibold text-green-600">
-                {Math.round(assigneeStats.reduce((sum, a) => sum + a.completionRate, 0) / assigneeStats.length)}%
-              </div>
-              <div className="text-xs text-muted-foreground">Avg Completion</div>
-            </div>
-            <div>
-              <div className="text-lg font-semibold text-blue-600">
-                {assigneeStats.length}
-              </div>
-              <div className="text-xs text-muted-foreground">Active Assignees</div>
-            </div>
-          </div>
-        </div>
-      )}
     </Card>
   );
-} 
+}
