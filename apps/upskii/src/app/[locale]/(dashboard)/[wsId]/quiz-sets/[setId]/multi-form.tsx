@@ -20,6 +20,7 @@ interface Props {
   wsId: string;
   moduleId?: string;
   setId?: string;
+  isEdit?: boolean;
   data?: Array<
     Partial<
       WorkspaceQuiz & {
@@ -62,6 +63,7 @@ export default function MultiQuizForm({
   setId,
   data,
   onFinish,
+  isEdit = false,
 }: Props) {
   const t = useTranslations('ws-quizzes');
   const router = useRouter();
@@ -127,35 +129,49 @@ export default function MultiQuizForm({
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
     try {
-      const promises = formData.quizzes.map(async (quiz) => {
-        const res = await fetch(
-          quiz.id
-            ? `/api/v1/workspaces/${wsId}/quizzes/${quiz.id}`
-            : `/api/v1/workspaces/${wsId}/quizzes`,
-          {
-            method: quiz.id ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...quiz,
-              moduleId: formData.moduleId,
-              setId: formData.setId,
-            }),
-          }
-        );
+      // const promises = formData.quizzes.map(async (quiz) => {
+      //   // const res = await fetch(quiz.id ? `/api/v1/workspaces/${wsId}/quizzes/update-all` : `/api/v1/workspaces/${wsId}/quizzes`, {
+      //   const res = await fetch(`/api/v1/workspaces/${wsId}/quizzes`, {
+      //     method: quiz.id ? 'PUT' : 'POST',
+      //     headers: { 'Content-Type': 'application/json' },
+      //     body: JSON.stringify({
+      //       ...quiz,
+      //       moduleId: formData.moduleId,
+      //       setId: formData.setId,
+      //     }),
+      //   });
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(
-            errorData.message || quiz.id
-              ? t('form.error.fail-update')
-              : t('form.error.fail-create')
-          );
-        }
+      //   if (!res.ok) {
+      //     const errorData = await res.json();
+      //     console.log('Error response:', errorData);
+      //     throw new Error(
+      //       errorData.message || quiz.id
+      //         ? t('form.error.fail-update')
+      //         : t('form.error.fail-create')
+      //     );
+      //   }
 
-        return res.json();
+      //   return res.json();
+      // });
+
+      // await Promise.all(promises);
+
+      const res = await fetch(`/api/v1/workspaces/${wsId}/quizzes`, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moduleId, setId, quizzes: formData.quizzes }),
       });
 
-      await Promise.all(promises);
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.log('Error response:', errorData);
+        throw new Error(
+          errorData.message
+            ? t('form.error.fail-update')
+            : t('form.error.fail-create')
+        );
+      }
+      // const json = await res.json();
 
       let description = '';
       if (formData.quizzes.length > 1) {
@@ -337,7 +353,9 @@ export default function MultiQuizForm({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {data && data.length > 0 ? t("form.updating") : t("form.creating")}
+                    {data && data.length > 0
+                      ? t('form.updating')
+                      : t('form.creating')}
                   </>
                 ) : (
                   <>

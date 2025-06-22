@@ -49,7 +49,7 @@ export default async function WorkspaceQuizzesPage({
             size="sm"
             className="border border-dynamic-purple bg-dynamic-purple/10 text-primary"
           >
-            Edit All Quizzes
+            {t('ws-quizzes.edit-all')}
           </Button>
         }
       />

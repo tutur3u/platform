@@ -11,7 +11,6 @@ interface Props {
 export default async function Page({ params }: Props) {
   const { wsId, setId } = await params;
   const quizData = await getData(setId);
-  console.log('Quiz data:', quizData);
 
   if (!quizData) {
     <div>
@@ -21,7 +20,7 @@ export default async function Page({ params }: Props) {
   }
   return (
     <div>
-      <QuizForm wsId={wsId} setId={setId} data={quizData ?? undefined} />
+      <QuizForm wsId={wsId} setId={setId} data={quizData ?? undefined} isEdit={true} />
     </div>
   );
 }
