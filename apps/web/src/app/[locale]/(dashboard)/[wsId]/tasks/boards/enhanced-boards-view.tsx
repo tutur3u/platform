@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { TaskBoard, Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
@@ -18,7 +18,7 @@ import {
   AlertTriangle,
   Calendar,
   TrendingUp,
-  Users,
+  // Users,
   Eye,
   X,
   ArrowRight,
@@ -26,6 +26,7 @@ import {
   Activity,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   ExternalLink,
   Zap,
 } from '@tuturuuu/ui/icons';
@@ -620,7 +621,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 {/* Gantt Chart Timeline */}
                 <GanttChart 
                   allTasks={allTasks} 
-                  data={data}
                   filters={analyticsFilters}
                 />
 
@@ -1046,35 +1046,57 @@ function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupProps) {
 }
 
 // Gantt Chart Component
-function GanttChart({ allTasks, data, filters }: { 
+function GanttChart({ allTasks, filters }: { 
   allTasks: any[], 
-  data: any[], 
   filters: AnalyticsFilters 
 }) {
-  // Filter tasks based on selected board
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter tasks based on selected board and search
   const filteredTasks = useMemo(() => {
-    if (!filters.selectedBoard) return allTasks;
-    return allTasks.filter(task => task.boardId === filters.selectedBoard);
-  }, [allTasks, filters.selectedBoard]);
+    let tasks = allTasks;
+    
+    // Filter by board
+    if (filters.selectedBoard) {
+      tasks = tasks.filter(task => task.boardId === filters.selectedBoard);
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      tasks = tasks.filter(task => 
+        task.name?.toLowerCase().includes(query) ||
+        task.description?.toLowerCase().includes(query) ||
+        task.boardName?.toLowerCase().includes(query)
+      );
+    }
+    
+    return tasks;
+  }, [allTasks, filters.selectedBoard, searchQuery]);
 
   // Get time range based on filter
   const getTimeRange = () => {
     const now = new Date();
     switch (filters.timeView) {
-      case 'week':
+      case 'week': {
         const weekStart = new Date(now);
         weekStart.setDate(now.getDate() - now.getDay());
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         return { start: weekStart, end: weekEnd };
-      case 'month':
+      }
+      case 'month': {
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         return { start: monthStart, end: monthEnd };
-      case 'year':
+      }
+      case 'year': {
         const yearStart = new Date(now.getFullYear(), 0, 1);
         const yearEnd = new Date(now.getFullYear(), 11, 31);
         return { start: yearStart, end: yearEnd };
+      }
     }
   };
 
@@ -1108,8 +1130,8 @@ function GanttChart({ allTasks, data, filters }: {
     };
   }, [filteredTasks]);
 
-  // Process tasks for Gantt display
-  const ganttTasks = useMemo(() => {
+  // Process all tasks for Gantt display (before pagination)
+  const allGanttTasks = useMemo(() => {
     return filteredTasks
       .filter(task => task.created_at) // Only tasks with creation date
       .map(task => {
@@ -1136,9 +1158,24 @@ function GanttChart({ allTasks, data, filters }: {
         };
       })
       .filter(task => task.startOffset < 100) // Only show tasks within time range
-      .sort((a, b) => a.createdDate.getTime() - b.createdDate.getTime())
-      .slice(0, 15); // Limit to 15 tasks for readability
+      .sort((a, b) => a.createdDate.getTime() - b.createdDate.getTime());
   }, [filteredTasks, timeRange, totalDays]);
+
+  // Calculate pagination
+  const totalTasks = allGanttTasks.length;
+  const totalPages = Math.ceil(totalTasks / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  
+  // Get current page tasks
+  const ganttTasks = useMemo(() => {
+    return allGanttTasks.slice(startIndex, endIndex);
+  }, [allGanttTasks, startIndex, endIndex]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.selectedBoard, searchQuery]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -1203,6 +1240,80 @@ function GanttChart({ allTasks, data, filters }: {
         </div>
       </div>
 
+      {/* Search and Pagination Controls */}
+      <div className="flex items-center justify-between mb-4 gap-4">
+        <div className="flex items-center gap-2 flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          
+          <Select value={pageSize.toString()} onValueChange={(value) => {
+            setPageSize(Number(value));
+            setCurrentPage(1);
+          }}>
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {totalTasks > 0 && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>
+              Showing {startIndex + 1}-{Math.min(endIndex, totalTasks)} of {totalTasks} tasks
+            </span>
+            
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1 ml-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <span className="px-2 text-sm">
+                  {currentPage} of {totalPages}
+                </span>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Time Scale */}
       <div className="relative mb-4">
         <div className="flex justify-between text-xs text-muted-foreground border-b pb-2">
@@ -1215,34 +1326,158 @@ function GanttChart({ allTasks, data, filters }: {
       </div>
 
       {/* Gantt Chart */}
-      <div className="space-y-2 max-h-96 overflow-y-auto">
+      <div className="space-y-1 max-h-96 overflow-y-auto">
         {ganttTasks.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
             No tasks found for the selected time period
           </div>
         ) : (
           ganttTasks.map((task, index) => (
-            <div key={task.id} className="flex items-center gap-3 py-1">
-              {/* Task Name */}
-              <div className="w-48 text-sm font-medium truncate" title={task.name}>
-                {task.name}
+            <div 
+              key={task.id} 
+              className="group flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+            >
+              {/* Task Info */}
+              <div className="w-52 min-w-0">
+                {/* Task Name with line clamp */}
+                <div 
+                  className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1 group-hover:line-clamp-none transition-all duration-200"
+                  title={task.name}
+                >
+                  {task.name}
+                </div>
+                
+                {/* Task Details - shown on hover */}
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-1 space-y-1">
+                  {task.description && (
+                    <div className="text-xs text-muted-foreground line-clamp-2">
+                      {task.description}
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>Created: {task.createdDate.toLocaleDateString()}</span>
+                      {task.end_date && (
+                        <>
+                          <span>•</span>
+                          <span>Due: {new Date(task.end_date).toLocaleDateString()}</span>
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Task lifecycle information */}
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-gray-400" />
+                        <span className="text-muted-foreground">Created</span>
+                      </div>
+                      
+                      {task.updated_at && task.updated_at !== task.created_at && (
+                        <>
+                          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                          <div className="flex items-center gap-1">
+                            <div className={cn(
+                              "w-2 h-2 rounded-full",
+                              task.status === 'active' ? 'bg-blue-500' :
+                              task.status === 'done' || task.status === 'closed' ? 'bg-green-500' :
+                              'bg-gray-400'
+                            )} />
+                            <span className="text-muted-foreground">
+                              {task.status === 'active' ? 'In Progress' :
+                               task.status === 'done' ? 'Completed' :
+                               task.status === 'closed' ? 'Closed' :
+                               'Updated'}
+                            </span>
+                            <span className="text-muted-foreground">
+                              ({new Date(task.updated_at).toLocaleDateString()})
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Duration and time tracking */}
+                    <div className="text-xs text-muted-foreground">
+                      Duration: {Math.ceil((task.endDate.getTime() - task.createdDate.getTime()) / (1000 * 60 * 60 * 24))} days
+                      {task.end_date && new Date(task.end_date) < new Date() && 
+                       task.status !== 'done' && task.status !== 'closed' && (
+                        <span className="ml-2 text-red-500 font-medium">• Overdue</span>
+                      )}
+                    </div>
+                  </div>
+                  {task.priority && (
+                    <div className="flex items-center gap-1">
+                      <Badge 
+                        variant={task.priority === 3 ? 'destructive' : task.priority === 2 ? 'default' : 'secondary'}
+                        className="text-xs h-4"
+                      >
+                        {task.priority === 3 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'} Priority
+                      </Badge>
+                    </div>
+                  )}
+                </div>
               </div>
               
               {/* Timeline Bar */}
               <div className="flex-1 relative h-6 bg-gray-100 dark:bg-gray-800 rounded">
                 <div
                   className={cn(
-                    "absolute h-full rounded transition-all hover:opacity-80",
+                    "absolute h-full rounded transition-all hover:opacity-90 cursor-pointer",
                     getStatusColor(task.status)
                   )}
                   style={{
                     left: `${task.startOffset}%`,
                     width: `${task.width}%`
                   }}
-                  title={`${task.name} (${task.createdDate.toLocaleDateString()} - ${task.endDate.toLocaleDateString()})`}
+                  title={`${task.name}\nStatus: ${task.status}\nCreated: ${task.createdDate.toLocaleDateString()}\nDuration: ${Math.ceil((task.endDate.getTime() - task.createdDate.getTime()) / (1000 * 60 * 60 * 24))} days`}
                 >
                   <div className="flex items-center justify-center h-full text-white text-xs font-medium">
                     {task.status === 'done' || task.status === 'closed' ? '✓' : ''}
+                  </div>
+                  
+                  {/* Status transition markers and timeline */}
+                  {task.updated_at && task.updated_at !== task.created_at && (
+                    <>
+                      {/* Status change marker */}
+                      <div 
+                        className="absolute top-0 w-0.5 h-full bg-yellow-400 opacity-60"
+                        style={{ left: '50%' }}
+                        title={`Status changed: ${new Date(task.updated_at).toLocaleDateString()}`}
+                      />
+                      
+                      {/* Progress indicator for active tasks */}
+                      {task.status === 'active' && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Task lifecycle phases */}
+                  <div className="absolute inset-0 flex">
+                    {/* Creation phase (first 25% of timeline) */}
+                    <div 
+                      className="bg-gray-300 dark:bg-gray-600 opacity-30"
+                      style={{ width: '25%' }}
+                      title="Task created"
+                    />
+                    
+                    {/* Active development phase (middle 50%) */}
+                    {task.status === 'active' && (
+                      <div 
+                        className="bg-blue-400 opacity-40"
+                        style={{ width: '50%' }}
+                        title="Task in progress"
+                      />
+                    )}
+                    
+                    {/* Completion phase (last 25% if completed) */}
+                    {(task.status === 'done' || task.status === 'closed') && (
+                      <div 
+                        className="bg-green-400 opacity-40 ml-auto"
+                        style={{ width: '25%' }}
+                        title="Task completed"
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -1263,19 +1498,45 @@ function GanttChart({ allTasks, data, filters }: {
         )}
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-4 mt-4 pt-4 border-t text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-gray-400 rounded"></div>
-          <span>Not Started</span>
+      {/* Enhanced Legend */}
+      <div className="mt-4 pt-4 border-t space-y-3">
+        <div className="flex items-center justify-between">
+          <h5 className="text-sm font-medium">Status Legend</h5>
+          <span className="text-xs text-muted-foreground">
+            Hover over tasks for detailed timeline
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-500 rounded"></div>
-          <span>Active</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded"></div>
-          <span>Completed</span>
+        
+        <div className="grid grid-cols-2 gap-4 text-xs">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-gray-400 rounded"></div>
+              <span>Not Started</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <span>Active</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded"></div>
+              <span>Completed</span>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-1 bg-yellow-400 rounded"></div>
+              <span>Status Change</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-1 bg-gradient-to-r from-gray-300 via-blue-400 to-green-400 rounded"></div>
+              <span>Lifecycle Phases</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-1 bg-red-500 rounded"></div>
+              <span>Overdue</span>
+            </div>
+          </div>
         </div>
       </div>
     </Card>
