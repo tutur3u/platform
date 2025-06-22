@@ -1,0 +1,14 @@
+{
+  "name": "@ncthub/ocr",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "ocr:install": "python -m venv venv && ./venv/Scripts/pip install -r requirements.txt",
+    "ocr:dev": "./venv/Scripts/uvicorn main:app --host 127.0.0.1 --port 5500 --reload",
+    "ocr:start": "./venv/Scripts/uvicorn main:app --host 127.0.0.1 --port 5500",
+    "ocr:run": "./venv/Scripts/modal run modal_deployment.py",
+    "ocr:serve": "./venv/Scripts/modal serve modal_deployment.py",
+    "ocr:deploy": "./venv/Scripts/modal deploy modal_deployment.py"
+  },
+  "packageManager": "bun@1.2.15"
+}
