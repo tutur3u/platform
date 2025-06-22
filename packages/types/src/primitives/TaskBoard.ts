@@ -31,6 +31,7 @@ export interface TaskBoard {
   creator_id: string;
   ws_id: string;
   template_id?: string;
+  tags?: string[];
   href?: string;
 }
 

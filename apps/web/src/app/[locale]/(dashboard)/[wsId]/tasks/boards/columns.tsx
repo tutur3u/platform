@@ -3,6 +3,7 @@
 import { ProjectRowActions } from './row-action';
 import { ColumnDef } from '@tanstack/react-table';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import { Badge } from '@tuturuuu/ui/badge';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
@@ -57,12 +58,35 @@ export const projectColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link
-        href={`/${row.original.ws_id}/tasks/boards/${row.getValue('id')}`}
-        className="line-clamp-1 max-w-32 font-semibold break-all hover:underline"
-      >
-        {row.getValue('name') || '-'}
-      </Link>
+      <div className="space-y-1">
+        <Link
+          href={`/${row.original.ws_id}/tasks/boards/${row.getValue('id')}`}
+          className="line-clamp-1 max-w-32 font-semibold break-all hover:underline"
+        >
+          {row.getValue('name') || '-'}
+        </Link>
+        {row.original.tags && row.original.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {row.original.tags.slice(0, 3).map((tag, index) => (
+              <Badge
+                key={index}
+                variant="secondary"
+                className="text-xs px-1.5 py-0.5"
+              >
+                {tag}
+              </Badge>
+            ))}
+            {row.original.tags.length > 3 && (
+              <Badge
+                variant="outline"
+                className="text-xs px-1.5 py-0.5 text-muted-foreground"
+              >
+                +{row.original.tags.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
     ),
   },
   {

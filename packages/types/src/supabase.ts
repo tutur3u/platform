@@ -4883,6 +4883,7 @@ export type Database = {
           deleted: boolean | null;
           id: string;
           name: string | null;
+          tags: Json | null;
           template_id: string | null;
           ws_id: string;
         };
@@ -4893,6 +4894,7 @@ export type Database = {
           deleted?: boolean | null;
           id?: string;
           name?: string | null;
+          tags?: Json | null;
           template_id?: string | null;
           ws_id: string;
         };
@@ -4903,6 +4905,7 @@ export type Database = {
           deleted?: boolean | null;
           id?: string;
           name?: string | null;
+          tags?: Json | null;
           template_id?: string | null;
           ws_id?: string;
         };
