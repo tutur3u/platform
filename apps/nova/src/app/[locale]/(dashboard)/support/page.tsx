@@ -3,7 +3,7 @@ import { MessageCircle } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 export default async function SupportPage() {
-  const t = await getTranslations();
+  const t = await getTranslations('nova');
 
   return (
     <div className="space-y-6">
