@@ -13,6 +13,8 @@ export interface Event {
   taskId: string;
   partNumber?: number;
   totalParts?: number;
+  locked?: boolean;
+  category?: 'work' | 'personal' | 'meeting';
 }
 
 export interface Task {
@@ -24,6 +26,7 @@ export interface Task {
   category: 'work' | 'personal' | 'meeting';
   events: Event[];
   deadline?: dayjs.Dayjs;
+  allowSplit?: boolean;
 }
 
 export interface ActiveHours {

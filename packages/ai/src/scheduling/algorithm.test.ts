@@ -1,3 +1,4 @@
+import { scheduleTasks } from './algorithm';
 import { defaultActiveHours, defaultTasks } from './default';
 import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
@@ -25,6 +26,7 @@ describe('Scheduling Algorithm', () => {
           start: dayjs('2024-01-01T10:00:00'),
           end: dayjs('2024-01-01T11:00:00'),
         },
+        category: 'work',
       };
 
       expect(event.id).toBe('event-1');
@@ -62,6 +64,7 @@ describe('Scheduling Algorithm', () => {
               start: dayjs('2024-01-01T14:00:00'),
               end: dayjs('2024-01-01T15:00:00'),
             },
+            category: 'work',
           },
         ],
       };
@@ -173,12 +176,60 @@ describe('Scheduling Algorithm', () => {
     });
   });
 
-  // TODO: Add tests for the schedule function once it's implemented
   describe('schedule function', () => {
-    it.todo('should schedule tasks without conflicts');
-    it.todo('should respect active hours constraints');
-    it.todo('should handle overlapping events');
-    it.todo('should return empty schedule for no tasks');
-    it.todo('should prioritize tasks based on duration');
+    it('should schedule a non-splittable task as a single block if possible', () => {
+      const tasks = [
+        {
+          id: 'single-block',
+          name: 'Non-splittable Task',
+          duration: 2,
+          minDuration: 1,
+          maxDuration: 2,
+          category: 'work' as const,
+          events: [],
+          allowSplit: false,
+        },
+      ];
+      const result = scheduleTasks(tasks, defaultActiveHours, []);
+      expect(result.events?.length).toBe(1);
+      expect(result.events?.[0]?.name).toBe('Non-splittable Task');
+      expect(result.events?.[0]?.partNumber).toBeUndefined();
+    });
+
+    it('should not schedule a non-splittable task if no single block is available', () => {
+      const tasks = [
+        {
+          id: 'single-block-fail',
+          name: 'Non-splittable Task',
+          duration: 10, // longer than any available slot
+          minDuration: 1,
+          maxDuration: 10,
+          category: 'work' as const,
+          events: [],
+          allowSplit: false,
+        },
+      ];
+      const result = scheduleTasks(tasks, defaultActiveHours, []);
+      expect(result.events?.length).toBe(0);
+      expect(result.logs?.some((log: any) => log.type === 'error')).toBe(true);
+    });
+
+    it('should split a task if allowSplit is true or undefined and needed', () => {
+      const tasks = [
+        {
+          id: 'splittable',
+          name: 'Splittable Task',
+          duration: 6,
+          minDuration: 1,
+          maxDuration: 2,
+          category: 'work' as const,
+          events: [],
+          allowSplit: true,
+        },
+      ];
+      const result = scheduleTasks(tasks, defaultActiveHours, []);
+      expect(result.events?.length).toBeGreaterThan(1);
+      expect(result.events?.[0]?.name).toContain('Part 1');
+    });
   });
 });
