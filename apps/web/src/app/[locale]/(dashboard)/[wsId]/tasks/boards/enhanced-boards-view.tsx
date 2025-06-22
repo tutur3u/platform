@@ -421,12 +421,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                         </div>
                       </div>
                       
-                      {/* Description Preview */}
-                      {board.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                          {board.description}
-                        </p>
-                      )}
+
                       
                       {/* Tags */}
                       {board.tags && board.tags.length > 0 && (
@@ -683,11 +678,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 {/* Board Info */}
                 <div>
                   <h3 className="font-semibold text-lg mb-2">{selectedBoard.name}</h3>
-                  {selectedBoard.description && (
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {selectedBoard.description}
-                    </p>
-                  )}
                   
                   {/* Tags */}
                   {selectedBoard.tags && selectedBoard.tags.length > 0 && (
@@ -1332,7 +1322,7 @@ function GanttChart({ allTasks, filters }: {
             No tasks found for the selected time period
           </div>
         ) : (
-          ganttTasks.map((task, index) => (
+          ganttTasks.map((task) => (
             <div 
               key={task.id} 
               className="group flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
