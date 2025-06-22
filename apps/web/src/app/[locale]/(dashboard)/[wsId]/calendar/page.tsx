@@ -2,10 +2,10 @@ import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarClientPage from './client';
 import TasksSidebar from './components/tasks-sidebar';
 import { DEV_MODE } from '@/constants/common';
-import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 
 interface PageProps {

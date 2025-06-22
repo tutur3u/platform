@@ -142,3 +142,6 @@ export type NovaSubmissionData = NovaSubmissionWithScores & {
 export type CourseCertificate = Tables<'course_certificates'>;
 export type CertificateTemplate =
   Database['public']['Enums']['certificate_templates'];
+
+export type WorkspaceEducationAccessRequest =
+  Tables<'workspace_education_access_requests'>;

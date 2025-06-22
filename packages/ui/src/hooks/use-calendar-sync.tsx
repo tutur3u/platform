@@ -42,9 +42,11 @@ const CalendarSyncContext = createContext<{
     }) => void
   ) => Promise<void>;
 
+  isActiveSyncOn: boolean;
+
   // Events-related operations
   events: CalendarEvent[];
-
+  setIsActiveSyncOn: (isActive: boolean) => void;
   // Show data from database to Tuturuuu
   eventsWithoutAllDays: CalendarEvent[];
   allDayEvents: CalendarEvent[];
@@ -64,7 +66,8 @@ const CalendarSyncContext = createContext<{
   currentView: 'day',
   setCurrentView: () => {},
   syncToTuturuuu: async () => {},
-
+  isActiveSyncOn: false,
+  setIsActiveSyncOn: () => {},
   // Events-related operations
   events: [],
 
@@ -123,6 +126,7 @@ export const CalendarSyncProvider = ({
   const [currentView, setCurrentView] = useState<
     'day' | '4-day' | 'week' | 'month'
   >('day');
+  const [isActiveSyncOn, setIsActiveSyncOn] = useState(false);
   const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const prevGoogleDataRef = useRef<string>('');
@@ -337,6 +341,11 @@ export const CalendarSyncProvider = ({
         changesMade: boolean;
       }) => void
     ) => {
+      if (!isActiveSyncOn) {
+        console.log('Sync blocked due to isActiveSyncOn is false');
+        return;
+      }
+
       setIsSyncing(true);
       try {
         // Check if we can proceed with sync
@@ -591,7 +600,7 @@ export const CalendarSyncProvider = ({
         setIsSyncing(false);
       }
     },
-    [wsId, dates, queryClient]
+    [wsId, dates, queryClient, isActiveSyncOn]
   );
 
   // Sync to Tuturuuu database when google data changes for current view
@@ -614,6 +623,28 @@ export const CalendarSyncProvider = ({
       prevGoogleDataRef.current = currentGoogleDataStr;
     }
   }, [fetchedGoogleData, syncToTuturuuu]);
+
+  // Trigger sync when isActiveSyncOn becomes true
+  useEffect(() => {
+    // If have not connected to google, don't sync
+    if (experimentalGoogleToken?.ws_id !== wsId) {
+      return;
+    }
+
+    // Only sync when isActiveSyncOn becomes true and we have Google data
+    if (isActiveSyncOn && fetchedGoogleData && fetchedGoogleData.length > 0) {
+      console.log(
+        'useEffect - isActiveSyncOn changed to true, triggering sync'
+      );
+      syncToTuturuuu();
+    }
+  }, [
+    isActiveSyncOn,
+    fetchedGoogleData,
+    syncToTuturuuu,
+    wsId,
+    experimentalGoogleToken?.ws_id,
+  ]);
 
   // Trigger refetch from DB and Google when changing views AND there are changes in Google data
   // This will trigger syncToTuturuuu()
@@ -850,7 +881,8 @@ export const CalendarSyncProvider = ({
     setCurrentView,
     syncToTuturuuu,
     syncToGoogle,
-
+    isActiveSyncOn,
+    setIsActiveSyncOn,
     // Events-related operations
     events,
 

@@ -617,7 +617,12 @@
     "whats_the_title": "Tiêu đề là gì?",
     "write_something": "Hãy viết gì đó...",
     "error_saving_content": "Lỗi khi lưu nội dung của bạn",
-    "not_completed": "Chưa hoàn thành"
+    "not_completed": "Chưa hoàn thành",
+    "crawlers": "Crawlers",
+    "queues": "Queues",
+    "learning": "Học tập",
+    "teaching": "Giảng dạy",
+    "management": "Quản lý"
   },
   "contact": {
     "title": "Liên hệ với chúng tôi",
@@ -1709,7 +1714,7 @@
         },
         {
           "title": "Mở rộng Dễ dàng",
-          "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại"
+          "description": "Phát triển từ một đến hàng nghìnhàng nghìn người dùng mà không gặp trở ngại"
         },
         {
           "title": "Phát triển Liên tục",
@@ -3001,8 +3006,11 @@
     "diet_and_nutrition": "Ăn uống",
     "progress": "Tiến độ",
     "metrics": "Chỉ số",
-    "crawlers": "Công cụ cào dữ liệu",
-    "queues": "Hàng chờ"
+    "crawlers": "Crawlers",
+    "queues": "Queues",
+    "learning": "Học tập",
+    "teaching": "Giảng dạy",
+    "management": "Quản lý"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",
@@ -4118,7 +4126,31 @@
     "features": "Các tính năng",
     "features_description": "Quản lý các tính năng của không gian làm việc.",
     "delete": "Xóa không gian làm việc",
-    "deleting": "Đang xóa"
+    "deleting": "Đang xóa",
+    "feature-request": {
+      "title": "Yêu cầu mở khóa tính năng",
+      "toasts": {
+        "error": {
+          "reason-required": "Vui lòng cung cấp một lý do cho yêu cầu của bạn",
+          "feature-required": "Vui lòng chọn một tính năng để yêu cầu",
+          "request-failed": "Không thể gửi yêu cầu. Vui lòng thử lại sau"
+        },
+        "success": {
+          "request-submitted": "Yêu cầu truy cập tính năng được gửi thành công! \nQuản trị viên nền tảng sẽ xem xét yêu cầu của bạn."
+        }
+      },
+      "description": "Yêu cầu truy cập vào các tính năng mới cho không gian của bạn \"{ws}\".",
+      "description-2": "Quản trị viên nền tảng sẽ xem xét yêu cầu của bạn và phê duyệt quyền truy cập nếu thích hợp.",
+      "feature-label": "Tính năng",
+      "feature-placeholder": "Chọn một tính năng",
+      "no-features": "Tất cả các tính năng có sẵn đã được yêu cầu hoặc bật.",
+      "reason-label": "Tại sao bạn cần truy cập vào tính năng này? \n*",
+      "reason-placeholder": "Vui lòng giải thích cách bạn có kế hoạch sử dụng các tính năng {feature} trong không gian làm việc của bạn. \nBao gồm chi tiết về trường hợp sử dụng dự định của bạn, đối tượng mục tiêu và mục tiêu ...",
+      "reason-description": "Tối thiểu 20 ký tự. \nHãy cụ thể về mục tiêu của bạn.",
+      "existing-requests-title": "Các yêu cầu hiện tại của bạn",
+      "submitting": "Đang gửi ...",
+      "submit": "Gửi yêu cầu"
+    }
   },
   "ws-slides": {
     "singular": "Trang trình bày",
@@ -4289,7 +4321,8 @@
     "challenges": "Các thử thách",
     "ai_teach_studio": "Công cụ giảng dạy AI",
     "users": "Người dùng",
-    "teams": "Nhóm"
+    "teams": "Nhóm",
+    "platform_users": "Người dùng nền tảng"
   },
   "certificates": {
     "offered_by": "được dạy bởi",
@@ -4307,5 +4340,70 @@
     "empty_state_description": "Hoàn thành các khóa học để giành chứng chỉ và thể hiện thành tích của bạn.",
     "browse_courses": "Xem các khóa học",
     "certified": "Được chứng nhận"
-  }
+  },
+  "approval-data-table": {
+    "workspace": "Không gian",
+    "requested_by": "Yêu cầu bởi",
+    "feature_requested": "Tính năng yêu cầu",
+    "request_details": "Chi tiết yêu cầu",
+    "status": "Trạng thái",
+    "status-pending": "Chưa giải quyết",
+    "status-approved": "Đã chấp thuận",
+    "status-rejected": "Đã từ chối",
+    "requested": "Đã yêu cầu",
+    "admin_notes": "Ghi chú quản trị viên",
+    "no_notes": "Không có ghi chú",
+    "reviewed": "Đã xem xét",
+    "reviewed_at": "Đã xem xét lúc {date}",
+    "reviewed_by": "Đã xem xét bởi {name}",
+    "created_at": "Đã tạo lúc",
+    "id": "ID",
+    "workspace_name": "Không gian",
+    "creator_name": "Yêu cầu bởi",
+    "request_message": "Chi tiết yêu cầu",
+    "loading": "Đang tải",
+    "try-again": "Thử lại",
+    "total-requests": "Tổng số yêu cầu",
+    "pending": "Chưa giải quyết",
+    "approved": "Chấp thuận",
+    "rejected": "Từ chối",
+    "all-requests": "Tất cả các yêu cầu",
+    "all-features": "Tất cả các tính năng",
+    "approveSuccess": "Đã phê duyệt tính năng {feature} cho {workspace}. \nCác tính năng sẽ được bật tự động.",
+    "approveError": "Không phê duyệt yêu cầu",
+    "rejectError": "Vui lòng cung cấp một lý do để từ chối",
+    "rejectSuccess": "Đã từ chối quyền truy cập tính năng {feature} cho {workspace}",
+    "detailsTitle": "Chi tiết yêu cầu tính năng",
+    "requestedBy": "Được yêu cầu bởi",
+    "timeline": "Dòng thời gian",
+    "viewDetails": "Xem thông tin",
+    "approveRequest": "Phê duyệt yêu cầu",
+    "rejectRequest": "Từ chối yêu cầu",
+    "revokeAccess": "Thu hồi quyền truy cập",
+    "adminNotes": "Ghi chú quản trị viên",
+    "notesBy": "Ghi chú bởi {name}",
+    "close": "Đóng",
+    "approveTitle": "Phê duyệt quyền truy cập tính năng {feature} ",
+    "approveOverride": "Điều này sẽ ghi đè lên quyết định từ chối trước đó",
+    "approveDescription": "Điều này sẽ kích hoạt các tính năng {feature} cho \"{workspace}\".",
+    "adminNotesPlaceholder": "Thêm bất kỳ ghi chú nào về sự chấp thuận này",
+    "cancel": "Hủy bỏ",
+    "approving": "Đang chấp thuận",
+    "rejectTitle": "Từ chối quyền truy cập tính năng {feature}",
+    "rejectDescription": "Điều này sẽ từ chối yêu cầu truy cập các tính năng {feature} cho {workspace}. \nVui lòng cung cấp một lý do cho sự từ chối.",
+    "reasonForRejection": "Lý do từ chối",
+    "reasonForRejectionPlaceholder": "Vui lòng giải thích lý do tại sao yêu cầu này đang bị từ chối",
+    "rejecting": "Đang từ chối",
+    "openMenu": "Mở menu",
+    "filter-by-feature": "Bộ lọc theo tính năng",
+    "filter-by-status": "Lọc theo trạng thái",
+    "requested_at": "Được yêu cầu {date}"
+  },
+  "approvals": {
+    "feature-access-requests": "Yêu cầu tính năng",
+    "feature-access-requests-description": "Xem xét và phê duyệt các yêu cầu tính năng từ người tạo không gian làm việc. \nCác yêu cầu được phê duyệt sẽ tự động kích hoạt các tính năng cho các không gian làm việc tương ứng."
+  },
+  "request-feature": "Yêu cầu tính năng",
+  "unlock-education-features": "Mở khóa các tính năng giáo dục",
+  "transform-your-workspace": "Biến đổi không gian làm việc của bạn với các công cụ học tập toàn diện: Tạo Các khóa học, các câu đố tương tác thiết kế, theo dõi tiến trình của sinh viên, ủy quyền giấy chứng nhận, và tận dụng các trợ lý giảng dạy hỗ trợ AI."
 }

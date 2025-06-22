@@ -85,7 +85,7 @@ export default function BasicInformationComponent({
       </motion.div>
 
       <div className="mb-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
-        <Card className="relative overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
+        <Card className="relative overflow-hidden bg-white dark:border-slate-800 dark:bg-slate-900/80">
           <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-400 to-blue-600" />
           <CardContent className="flex items-center justify-between p-6">
             <div>
@@ -116,7 +116,7 @@ export default function BasicInformationComponent({
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
+        <Card className="relative overflow-hidden bg-white dark:border-slate-800 dark:bg-slate-900/80">
           <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-yellow-400 to-yellow-600" />
           <CardContent className="flex items-center justify-between p-6">
             <div>
@@ -141,7 +141,7 @@ export default function BasicInformationComponent({
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
+        <Card className="relative overflow-hidden bg-white dark:border-slate-800 dark:bg-slate-900/80">
           <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-indigo-400 to-indigo-600" />
           <CardContent className="flex items-center justify-between p-6">
             <div>

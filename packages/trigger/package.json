@@ -3,20 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "./example.ts",
-  "types": "./example.ts",
-  "exports": {
-    ".": {
-      "types": "./example.ts",
-      "import": "./example.ts"
-    },
-    "./example": {
-      "types": "./example.ts",
-      "import": "./example.ts"
-    }
+  "scripts": {
+    "trigger:dev": "bunx trigger.dev@latest dev",
+    "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
   "dependencies": {
-    "@trigger.dev/sdk": "^3.3.17"
+    "@supabase/supabase-js": "^2.50.0",
+    "@trigger.dev/sdk": "^3.3.17",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "dayjs": "^1.11.13",
+    "google-auth-library": "^10.1.0",
+    "googleapis": "^150.0.1"
   },
   "devDependencies": {
     "@trigger.dev/build": "^3.3.17"

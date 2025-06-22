@@ -1512,7 +1512,7 @@ export default function TimeTrackerContent({
               {sidebarView === 'analytics' && (
                 <>
                   {/* Stats Overview - Enhanced for sidebar */}
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
+                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     <div className="mb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
@@ -1652,7 +1652,7 @@ export default function TimeTrackerContent({
 
                   {/* Activity Heatmap - Enhanced with better header */}
                   {timerStats.dailyActivity && (
-                    <div className="relative overflow-visible rounded-xl border border-gray-200/60 bg-background/50 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-background/80">
+                    <div className="relative overflow-visible rounded-xl border bg-background/50 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-background/80">
                       <div className="mb-6">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
@@ -1694,7 +1694,7 @@ export default function TimeTrackerContent({
               {sidebarView === 'tasks' && (
                 <div className="space-y-6">
                   {/* Tasks Header */}
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-6 shadow-sm dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
+                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-6 shadow-sm dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     {/* Header Section */}
                     <div className="mb-6">
                       <div className="mb-3 flex items-center gap-3">
@@ -1995,7 +1995,7 @@ export default function TimeTrackerContent({
                             </div>
 
                             {/* Scrollable Task Container */}
-                            <div className="max-h-[400px] overflow-y-auto rounded-lg border border-gray-200/40 bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
+                            <div className="/40 max-h-[400px] overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
                               <div className="space-y-4">
                                 {filteredSidebarTasks.map((task) => (
                                   <div
@@ -2005,7 +2005,7 @@ export default function TimeTrackerContent({
                                       // Enhanced styling for assigned tasks
                                       task.is_assigned_to_current_user
                                         ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
-                                        : 'border-gray-200/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
+                                        : '/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
                                       isDraggingTask &&
                                         'shadow-md ring-1 shadow-blue-500/10 ring-blue-400/30'
                                     )}
@@ -2188,7 +2188,7 @@ export default function TimeTrackerContent({
               {/* Reports View */}
               {sidebarView === 'reports' && (
                 <div className="space-y-6">
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
+                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     <div className="mb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg">
@@ -2220,7 +2220,7 @@ export default function TimeTrackerContent({
               {/* Settings View */}
               {sidebarView === 'settings' && (
                 <div className="space-y-6">
-                  <div className="rounded-xl border border-gray-200/60 bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
+                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
                     <div className="mb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gray-500 to-gray-700 shadow-lg">

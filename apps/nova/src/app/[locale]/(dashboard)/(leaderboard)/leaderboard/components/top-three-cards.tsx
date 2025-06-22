@@ -155,7 +155,7 @@ export function TopThreeCards({
           >
             <div
               className={cn(
-                'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-gray-200 p-6 pt-32 transition-all dark:border-slate-700',
+                'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl border p-6 pt-32 transition-all dark:border-slate-700',
                 hoveredCard === index
                   ? 'shadow-lg dark:shadow-[0_0_30px_rgba(0,0,0,0.3)]'
                   : 'shadow-md dark:shadow-2xl'
@@ -426,7 +426,7 @@ export function TopThreeCards({
                 <Badge
                   variant="outline"
                   className={cn(
-                    'mb-4 border-gray-200 bg-gray-50 text-xs dark:border-slate-700 dark:bg-slate-900/80',
+                    'mb-4 bg-gray-50 text-xs dark:border-slate-700 dark:bg-slate-900/80',
                     styles.badgeClass
                   )}
                 >

@@ -3001,7 +3001,10 @@
     "progress": "Progress",
     "metrics": "Metrics",
     "crawlers": "Crawlers",
-    "queues": "Queues"
+    "queues": "Queues",
+    "learning": "Learning",
+    "teaching": "Teaching",
+    "management": "Management"
   },
   "signup": {
     "get-started": "Get started",
@@ -4115,7 +4118,33 @@
     "features": "Features",
     "features_description": "Manage the features of your workspace.",
     "delete": "Delete Workspace",
-    "deleting": "Deleting Workspace"
+    "deleting": "Deleting Workspace",
+    "feature-request": {
+      "title": "Request Feature Access",
+      "description": "Request access to new features for your workspace \"{ws}\".",
+      "feature-label": "Feature",
+      "feature-placeholder": "Select a feature",
+      "no-features": "All available features have been requested or enabled.",
+      "reason-label": "Why do you need access to this feature? *",
+      "reason-placeholder": "Please explain how you plan to use the {feature} features in your workspace. Include details about your intended use case, target audience, and goals...",
+      "reason-description": "Minimum 20 characters. Be specific about your goals.",
+      "feature-details-title": "{feature} features include:",
+      "existing-requests-title": "Your Existing Requests",
+      "cancel": "Cancel",
+      "submit": "Submit Request",
+      "submitting": "Submitting...",
+      "toasts": {
+        "error": {
+          "reason-required": "Please provide a reason for your request",
+          "feature-required": "Please select a feature to request",
+          "request-failed": "Failed to submit request. Please try again."
+        },
+        "success": {
+          "request-submitted": "Feature access request submitted successfully! Platform administrators will review your request."
+        }
+      },
+      "description-2": "Platform administrators will review your request and approve access if appropriate."
+    }
   },
   "ws-slides": {
     "singular": "Slide",
@@ -4309,6 +4338,72 @@
     "challenges": "Challenges",
     "ai_teach_studio": "AI Teaching Studio",
     "users": "Users",
-    "teams": "Teams"
-  }
+    "teams": "Teams",
+    "platform_users": "Platform users"
+  },
+  "approval-data-table": {
+    "workspace": "Workspace",
+    "requested_by": "Requested by",
+    "feature_requested": "Feature requested",
+    "request_details": "Request ",
+    "status": "Status",
+    "status-pending": "Pending",
+    "status-approved": "Approved",
+    "status-rejected": "Rejected",
+    "requested": "Requested",
+    "admin_notes": "Admin notes",
+    "no_notes": "No notes",
+    "reviewed": "Reviewed",
+    "reviewed_at": "Reviewed at {date}",
+    "reviewed_by": "Reviewed by {name}",
+    "created_at": "Created at",
+    "id": "ID",
+    "workspace_name": "Workspace",
+    "creator_name": "Requested by",
+    "request_message": "Request details",
+    "loading": "Loading",
+    "try-again": "Try Again",
+    "total-requests": "Total Requests",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "all-requests": "All Requests",
+    "all-features": "All features",
+    "approveSuccess": "Approved {feature} access for {workspace}. Features will be enabled automatically.",
+    "approveError": "Failed to approve request",
+    "rejectError": "Please provide a reason for rejection",
+    "rejectSuccess": "Rejected {feature} access request for {workspace}",
+    "detailsTitle": "Feature Request Details",
+    "requestedBy": "Requested by",
+    "timeline": "Timeline",
+    "viewDetails": "View Details",
+    "approveRequest": "Approve Request",
+    "rejectRequest": "Reject Request",
+    "revokeAccess": "Revoke Access",
+    "adminNotes": "Admin Notes",
+    "notesBy": "Notes by {name}",
+    "close": "Close",
+    "approveTitle": "Approve {feature} access",
+    "approveOverride": "This will override the previous rejection",
+    "approveDescription": "This will enable {feature} features for \"{workspace}\" and grant the workspace access to {feature} functionality.",
+    "adminNotesPlaceholder": "Add any notes about this approval",
+    "cancel": "Cancel",
+    "approving": "Approving",
+    "rejectTitle": "Reject {feature} access",
+    "rejectDescription": "This will reject the {feature} access request for {workspace}. Please provide a reason for the rejection.",
+    "reasonForRejection": "Reason for Rejection",
+    "reasonForRejectionPlaceholder": "Please explain why this request is being rejected",
+    "rejecting": "Rejecting",
+    "openMenu": "Open menu",
+    "filter-by-feature": "Filter by Feature",
+    "filter-by-status": "Filter by status",
+    "requested_at": "Requested {date}"
+  },
+  "approvals": {
+    "feature-access-requests": "Feature Requests",
+    "feature-access-requests-description": "Review and approve feature requests from workspace creators. Approved requests will automatically enable features for the respective workspaces."
+  },
+  "request-feature": "Request Feature",
+  "unlock-education-features": "Unlock Education Features",
+  "transform-your-workspace": "Transform your workspace with comprehensive learning tools: create\ncourses, design interactive quizzes, track student progress, issue\ncertificates, and leverage AI-powered teaching assistants."
 }

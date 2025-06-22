@@ -2,11 +2,7 @@
 
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
-import {
-  PROD_MODE,
-  ROOT_WORKSPACE_ID,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
 import { useQuery } from '@tanstack/react-query';
 import { Workspace } from '@tuturuuu/types/db';
@@ -15,6 +11,7 @@ import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { ArrowLeft } from '@tuturuuu/ui/icons';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
 import { useTranslations } from 'next-intl';

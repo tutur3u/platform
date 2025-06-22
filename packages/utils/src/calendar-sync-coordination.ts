@@ -83,28 +83,25 @@ export const canProceedWithSync = async (
 };
 
 /**
- * Check if a date range is within 4 weeks from the current week
+ * Check if a date range is within 4 weeks from now
  * @param startDate - Start date to check
  * @param endDate - End date to check
- * @returns boolean - true if within 4 weeks from current week, false otherwise
+ * @returns boolean - true if within 4 weeks from now, false otherwise
  */
 export const isWithinBackgroundSyncRange = (
   startDate: dayjs.Dayjs,
   endDate: dayjs.Dayjs
 ): boolean => {
-  const now = dayjs();
-  const startOfCurrentWeek = now.startOf('week');
-  const endOfBackgroundSyncRange = startOfCurrentWeek.add(
-    BACKGROUND_SYNC_RANGE,
-    'day'
-  );
+  const startOfBackgroundSyncRange = dayjs();
+  const endOfBackgroundSyncRange = dayjs().add(BACKGROUND_SYNC_RANGE, 'day');
 
   const start = dayjs(startDate);
   const end = dayjs(endDate);
 
-  // Check if the date range overlaps with the 4-week period from current week
+  // Check if the date range overlaps with the 4-week period from now
   const isWithinRange =
-    start.isBefore(endOfBackgroundSyncRange) && end.isAfter(startOfCurrentWeek);
+    start.isBefore(endOfBackgroundSyncRange) &&
+    end.isAfter(startOfBackgroundSyncRange);
 
   return isWithinRange;
 };

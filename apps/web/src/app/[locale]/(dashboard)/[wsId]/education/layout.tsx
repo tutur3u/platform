@@ -1,5 +1,5 @@
 import { NavLink, Navigation } from '@/components/navigation';
-import { verifySecret } from '@/lib/workspace-helper';
+import { verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import React from 'react';

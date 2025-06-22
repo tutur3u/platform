@@ -319,7 +319,7 @@ export default function LeaderboardClient({
               transition={{ duration: 0.5, delay: 0.4 }}
             >
               <div className="relative space-y-6">
-                <Card className="overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
+                <Card className="overflow-hidden bg-white dark:border-slate-800 dark:bg-slate-900/80">
                   <CardContent className="p-6">
                     <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
                       {t('tutorials.title')}
@@ -347,7 +347,7 @@ export default function LeaderboardClient({
                   </CardContent>
                 </Card>
 
-                <Card className="overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
+                <Card className="overflow-hidden bg-white dark:border-slate-800 dark:bg-slate-900/80">
                   <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-yellow-400 to-yellow-600" />
                   <CardContent className="p-6">
                     <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">

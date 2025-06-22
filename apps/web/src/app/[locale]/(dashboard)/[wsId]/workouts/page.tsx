@@ -1,5 +1,5 @@
 import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
-import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

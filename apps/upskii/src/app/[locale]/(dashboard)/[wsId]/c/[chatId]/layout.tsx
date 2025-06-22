@@ -1,6 +1,7 @@
 import { siteConfig } from '@/constants/configs';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { AIChat } from '@tuturuuu/types/db';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -8,6 +9,7 @@ import { ReactNode } from 'react';
 interface Props {
   params: Promise<{
     locale: string;
+    wsId: string;
     chatId: string;
   }>;
 }
@@ -86,8 +88,19 @@ export const generateMetadata = async ({
 
 export default async function AIChatDetailsLayout({
   children,
+  params,
 }: {
   children: ReactNode;
+  params: Promise<{
+    wsId: string;
+  }>;
 }) {
+  const { wsId } = await params;
+
+  await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_AI'],
+    redirectTo: `/${wsId}/home`,
+  });
+
   return children;
 }

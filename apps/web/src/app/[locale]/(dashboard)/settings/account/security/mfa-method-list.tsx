@@ -105,7 +105,7 @@ export default function MFAMethodList() {
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
-            className="flex animate-pulse items-start gap-3 rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+            className="flex animate-pulse items-start gap-3 rounded-lg border p-4 dark:border-gray-700"
           >
             <div className="h-8 w-8 rounded-full bg-gray-200 p-2 dark:bg-gray-700" />
             <div className="flex-1 space-y-2">
@@ -126,7 +126,7 @@ export default function MFAMethodList() {
         return (
           <div
             key={method.id}
-            className="flex items-start gap-3 rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50"
+            className="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50"
           >
             <div className="rounded-full bg-gray-100 p-2 dark:bg-gray-800">
               <IconComponent className="h-4 w-4 text-gray-600 dark:text-gray-400" />

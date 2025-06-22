@@ -2,13 +2,14 @@
 
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
-import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
+import { PROD_MODE } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
 import { Workspace } from '@tuturuuu/types/db';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -65,10 +66,11 @@ export function Structure({
     .filter((link) => link !== null)
     .filter(
       (link) =>
-        pathname.startsWith(link.href) ||
-        link.aliases?.some((alias) => pathname.startsWith(alias))
+        link.href &&
+        (pathname.startsWith(link.href) ||
+          link.aliases?.some((alias) => pathname.startsWith(alias)))
     )
-    .sort((a, b) => b.href.length - a.href.length);
+    .sort((a, b) => (b.href?.length || 0) - (a.href?.length || 0));
 
   const currentLink = matchedLinks?.[0];
 
