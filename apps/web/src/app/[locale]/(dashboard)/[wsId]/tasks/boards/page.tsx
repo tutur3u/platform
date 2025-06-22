@@ -13,7 +13,12 @@ import {
   Filter,
   SortAsc,
   Settings2,
-  Plus
+  Plus,
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Calendar
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -45,11 +50,71 @@ export default async function WorkspaceProjectsPage({
   const { data: rawData, count } = await getData(wsId, await searchParams);
   const t = await getTranslations();
 
-  const data = rawData.map((board) => ({
-    ...board,
-    tags: board.tags ? (typeof board.tags === 'string' ? JSON.parse(board.tags) : board.tags) : [],
-    href: `/${wsId}/tasks/boards/${board.id}`,
-  })) as (TaskBoard & { href: string })[];
+  const data = rawData.map((board: any) => {
+    // Calculate task metrics using the same logic as BoardHeader
+    const allTasks = board.task_lists?.flatMap((list: any) => list.tasks || []) || [];
+    const totalTasks = allTasks.length;
+    
+    // Use same logic as BoardHeader: completed = tasks that are archived OR in 'done'/'closed' lists
+    const completedTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find((list: any) => list.id === task.list_id);
+      return task.archived || taskList?.status === 'done' || taskList?.status === 'closed';
+    }).length;
+    
+    const activeTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find((list: any) => list.id === task.list_id);
+      return !task.archived && taskList?.status === 'active';
+    }).length;
+    
+    const overdueTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find((list: any) => list.id === task.list_id);
+      return !task.archived && taskList?.status !== 'done' && taskList?.status !== 'closed' && 
+             task.end_date && new Date(task.end_date) < new Date();
+    }).length;
+    
+    const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    // Priority breakdown for non-completed tasks
+    const highPriorityTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find((list: any) => list.id === task.list_id);
+      return task.priority === 1 && !task.archived && taskList?.status !== 'done' && taskList?.status !== 'closed';
+    }).length;
+    
+    const mediumPriorityTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find((list: any) => list.id === task.list_id);
+      return task.priority === 2 && !task.archived && taskList?.status !== 'done' && taskList?.status !== 'closed';
+    }).length;
+    
+    const lowPriorityTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find((list: any) => list.id === task.list_id);
+      return task.priority === 3 && !task.archived && taskList?.status !== 'done' && taskList?.status !== 'closed';
+    }).length;
+
+    return {
+      ...board,
+      tags: board.tags ? (typeof board.tags === 'string' ? JSON.parse(board.tags) : board.tags) : [],
+      href: `/${wsId}/tasks/boards/${board.id}`,
+      // Task metrics
+      totalTasks,
+      completedTasks,
+      activeTasks,
+      overdueTasks,
+      progressPercentage,
+      highPriorityTasks,
+      mediumPriorityTasks,
+      lowPriorityTasks,
+    };
+  }) as (TaskBoard & { 
+    href: string;
+    totalTasks: number;
+    completedTasks: number;
+    activeTasks: number;
+    overdueTasks: number;
+    progressPercentage: number;
+    highPriorityTasks: number;
+    mediumPriorityTasks: number;
+    lowPriorityTasks: number;
+  })[];
 
   return (
     <div className="space-y-6">
@@ -212,15 +277,121 @@ export default async function WorkspaceProjectsPage({
 
             {/* Cards View */}
             <TabsContent value="cards" className="mt-0 space-y-4">
-              <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-12 text-center">
-                <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                <h3 className="mb-2 text-lg font-semibold">Cards View</h3>
-                <p className="text-sm text-muted-foreground">
-                  This view will show boards as cards with detailed information.
-                  <br />
-                  Coming soon...
-                </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {data.map((board) => (
+                  <div
+                    key={board.id}
+                    className="group relative rounded-lg border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/20"
+                  >
+                    <a href={board.href} className="absolute inset-0 z-10" aria-label={`View ${board.name}`} />
+                    
+                    {/* Header */}
+                    <div className="mb-4">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-semibold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                          {board.name}
+                        </h3>
+                        {board.archived && (
+                          <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                            Archived
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Tags */}
+                      {board.tags && board.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {board.tags.slice(0, 2).map((tag: string, index: number) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {board.tags.length > 2 && (
+                            <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                              +{board.tags.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Progress Section */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-muted-foreground">Progress</span>
+                        <span className="text-sm font-bold">{board.progressPercentage}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div 
+                          className="bg-primary rounded-full h-2 transition-all duration-300"
+                          style={{ width: `${board.progressPercentage}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Task Stats */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4 text-blue-500" />
+                        <div>
+                          <p className="text-lg font-bold">{board.totalTasks}</p>
+                          <p className="text-xs text-muted-foreground">Total Tasks</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <div>
+                          <p className="text-lg font-bold">{board.completedTasks}</p>
+                          <p className="text-xs text-muted-foreground">Completed</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Metrics */}
+                    {(board.overdueTasks > 0 || board.highPriorityTasks > 0) && (
+                      <div className="flex items-center gap-4 mb-3 text-xs">
+                        {board.overdueTasks > 0 && (
+                          <div className="flex items-center gap-1 text-red-600">
+                            <Clock className="h-3 w-3" />
+                            <span>{board.overdueTasks} overdue</span>
+                          </div>
+                        )}
+                        {board.highPriorityTasks > 0 && (
+                          <div className="flex items-center gap-1 text-orange-600">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>{board.highPriorityTasks} high priority</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>{new Date(board.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-primary font-medium">Open Board</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
+
+              {/* Empty State */}
+              {data.length === 0 && (
+                <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-12 text-center">
+                  <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                  <h3 className="mb-2 text-lg font-semibold">No boards found</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create your first task board to get started.
+                  </p>
+                </div>
+              )}
             </TabsContent>
 
             {/* Groups View */}
@@ -254,7 +425,21 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_boards')
-    .select('*', {
+    .select(`
+      *,
+      task_lists!board_id (
+        id,
+        name,
+        status,
+        tasks!list_id (
+          id,
+          name,
+          archived,
+          priority,
+          end_date
+        )
+      )
+    `, {
       count: 'exact',
     })
     .eq('ws_id', wsId)
