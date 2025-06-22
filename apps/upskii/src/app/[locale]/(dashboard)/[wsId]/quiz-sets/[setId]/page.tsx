@@ -2,6 +2,7 @@ import { getWorkspaceQuizColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceQuiz } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -41,6 +42,16 @@ export default async function WorkspaceQuizzesPage({
         createDescription={t('ws-quizzes.create_description')}
         // form={<QuizForm wsId={wsId} setId={setId} />}
         href={`/${wsId}/quiz-sets/${setId}/quiz-create`}
+        secondaryHref={`/${wsId}/quiz-sets/${setId}/quiz-edit`}
+        secondaryTrigger={
+          <Button
+            variant="secondary"
+            size="sm"
+            className="border border-dynamic-purple bg-dynamic-purple/10 text-primary"
+          >
+            Edit All Quizzes
+          </Button>
+        }
       />
       <Separator className="my-4" />
       <CustomDataTable

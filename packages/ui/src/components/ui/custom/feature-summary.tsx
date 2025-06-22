@@ -18,6 +18,7 @@ interface Props<T> {
   trigger?: ReactNode;
   form?: ReactElement<FormProps<T>>;
   href?: string;
+  secondaryHref?: string;
   title?: ReactNode;
   pluralTitle?: string;
   singularTitle?: string;
@@ -47,6 +48,7 @@ export default function FeatureSummary<T>({
   defaultData,
   form,
   href,
+  secondaryHref,
   title,
   pluralTitle,
   singularTitle,
@@ -96,6 +98,7 @@ export default function FeatureSummary<T>({
         )}
       </div>
       {href && !form && <Link href={href}>{primaryTrigger}</Link>}
+      {secondaryHref && !form && <Link href={secondaryHref}>{secondaryTrigger}</Link>}
       {(form ||
         action ||
         showDefaultFormAsSecondary ||

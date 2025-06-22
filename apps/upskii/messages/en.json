@@ -3921,6 +3921,73 @@
     "points": "Points",
     "submitting": "Submitting...",
     "submit": "Submit",
+    "form": {
+      "edit-title": "Edit Quiz Questions",
+      "create-title": "Create Quiz Questions",
+      "create-description": "Create multiple quiz questions at once. Each question can have multiple options with explanations. The user can also copy and paste quiz questions",
+      "edit-description": "Edit or add more multiple quiz questions at once. Each question can have multiple options with explanations. The user can also copy and paste quiz questions",
+      "question-no": "Question {no}",
+      "option-no": "Option {no}",
+      "untitled-question": "Untitled Question",
+      "content": {
+        "options": {
+          "label": "Answer Options",
+          "add-button": "Add Option",
+          "placeholder": "Option {no}",
+          "total-options-text": "Total Options",
+          "correct-label": "Correct",
+          "explanation-label": "Explanation",
+          "generate-explanation-button": "Generate",
+          "explanation-placeholder": "Explain why this option is correct or incorrect..."
+        },
+        "questions": {
+          "label": "Question",
+          "placeholder": "Enter your question here...",
+          "count-many": "{count} Questions",
+          "count-one": "{count} Question"
+        },
+        "correct-answers": {
+          "no-selected": "No correct answer selected",
+          "single-selected": "Single correct answer",
+          "multiple-selected": "Multiple correct answers"
+        }
+      },
+      "paste-confirm-modal": {
+        "title": "Confirm Paste",
+        "description-plural": "You are about to paste {length} quiz questions. Review the content below and choose an action.",
+        "description-single": "You are about to paste 1 quiz question. Review the content below and choose an action.",
+        "discard-button": "Discard",
+        "confirm-button": "Confirm Paste"
+      },
+      "add-another-button": "Add Another Question",
+      "paste-question-button": "Paste Question",
+      "create-button": "Create All Questions",
+      "edit-button": "Edit All Questions",
+      "creating": "Creating...",
+      "updating": "Updating...",
+      "error": {
+        "title": "Error",
+        "fail-update": "Failed to update quiz",
+        "fail-create": "Failed to create quiz",
+        "unexpected": "An unexpected error occurred",
+        "invalid-clipboard-title": "Error",
+        "invalid-clipboard": "Invalid quiz format",
+        "invalid-clipboard-message": "Failed to paste quiz data. Please ensure you have valid quiz data in your clipboard.",
+        "explanation-generation-failed": "Failed to generate explanation",
+        "quiz-copy-failed": "Failed to copy quiz to clipboard"
+      },
+      "success": {
+        "title": "Success",
+        "edit-quizzes": "Successfully updated {length} quizzes",
+        "edit-quiz": "Successfully updated {length} quiz",
+        "create-quizzes": "Successfully created {length} quizzes",
+        "create-quiz": "Successfully created {length} quiz",
+        "quiz-copied": "Quiz copied to clipboard",
+        "paste-success-many": "Pasted {length} quizzes succesfully",
+        "paste-success-one": "Pasted 1 quiz succesfully",
+        "explanation-generated": "Explanation generated successfully"
+      }
+    },
     "quiz-status": {
       "sidebar_aria": "Quiz progress sidebar",
       "question_status_title": "Question Progress",
