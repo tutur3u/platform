@@ -91,7 +91,7 @@ export function TagsInput({
     >
       {value.map((tag, index) => (
         <Badge
-          key={index}
+          key={allowDuplicates ? `${tag}-${index}` : tag}
           variant="secondary"
           className={cn(
             'flex items-center gap-1 px-2 py-1',

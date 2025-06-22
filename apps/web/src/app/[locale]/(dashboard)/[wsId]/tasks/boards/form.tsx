@@ -34,7 +34,7 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { TagsInput, TagSuggestions } from '@tuturuuu/ui/tags-input';
+import { TagsInput, TagSuggestions } from '@tuturuuu/ui/board-tags-input';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -51,9 +51,12 @@ interface Props {
 
 const FormSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1),
+  name: z.string().min(1, 'Board name is required').refine(
+    (val) => val.trim().length > 0,
+    'Board name cannot be empty'
+  ),
   template_id: z.string().optional(),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(z.string()).max(8, 'Maximum 8 tags allowed').optional(),
 });
 
 const templateIcons = {
@@ -124,25 +127,6 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
     try {
-      // Validate form data
-      if (!formData.name?.trim()) {
-        toast({
-          title: 'Validation Error',
-          description: 'Board name is required',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (formData.tags && formData.tags.length > 8) {
-        toast({
-          title: 'Validation Error',
-          description: 'Maximum 8 tags allowed',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       if (formData.id) {
         // Update existing board (legacy API call)
         const res = await fetch(
@@ -297,11 +281,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                             suggestions={TAG_SUGGESTIONS}
                             selectedTags={field.value || []}
                             onTagSelect={(tag) => {
-                              // Prevent form submission
-                              const currentTags = field.value || [];
-                              if (!currentTags.includes(tag) && currentTags.length < 8) {
-                                field.onChange([...currentTags, tag]);
-                              }
+                              field.onChange([...(field.value || []), tag]);
                             }}
                             maxDisplay={6}
                           />
