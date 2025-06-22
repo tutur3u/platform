@@ -9,7 +9,7 @@
     "ui": "bunx shadcn-ui@latest",
     "lint": "eslint ."
   },
-  "packageManager": "bun@1.2.15",
+  "packageManager": "bun@1.2.16",
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-accordion": "^1.2.11",

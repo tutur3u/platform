@@ -3,20 +3,19 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "buildx": "bun i && turbo test lint build",
+    "buildx": "turbo test lint build",
     "dev": "turbo run dev --parallel",
-    "devx": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev --parallel",
-    "devx:web": "cd apps/db && bun supabase stop && bun i && bun supabase start && cd ../.. && turbo run dev -F @ncthub/web",
-    "devrs": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev --parallel",
-    "devrs:web": "cd apps/db && bun supabase stop && bun i && bun supabase start && bun sb:reset && bun sb:typegen && cd ../.. && turbo run dev -F @ncthub/web",
+    "dev:web": "turbo run dev -F @ncthub/web",
+    "devx": "bun sb:stop && bun sb:start && bun dev",
+    "devx:web": "bun sb:stop && bun sb:start && bun dev:web",
+    "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
+    "devrs:web": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:web",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "stop": "cd apps/db && bun stop",
-    "diff": "cd apps/db && bun sb:diff",
-    "typegen": "cd apps/db && bun sb:typegen",
     "ocr:install": "cd apps/ocr && bun ocr:install",
     "ocr:dev": "cd apps/ocr && bun ocr:dev",
     "ocr:start": "cd apps/ocr && bun ocr:start",
@@ -30,10 +29,10 @@
     "sb:push": "cd apps/db && bun sb:push",
     "sb:link": "cd apps/db && bun sb:link",
     "sb:linkpush": "cd apps/db && bun sb:link && bun sb:push",
-    "sb:reset": "cd apps/db && bun sb:reset",
-    "sb:diff": "cd apps/db && bun sb:up && bun sb:diff",
+    "sb:reset": "cd apps/db && bun sb:reset && bun sb:typegen",
+    "sb:diff": "cd apps/db && bun sb:up && bun sb:diff && bun sb:typegen",
     "sb:new": "cd apps/db && bun sb:new",
-    "sb:up": "cd apps/db && bun sb:up",
+    "sb:up": "cd apps/db && bun sb:up && bun sb:typegen",
     "sb:typegen": "cd apps/db && bun sb:typegen",
     "ui:add": "bun --filter ui ui:add",
     "ui:diff": "bun --filter ui ui:diff"
@@ -43,24 +42,24 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.28.0",
+    "@eslint/js": "^9.29.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@ncthub/eslint-config": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "^3.1.4",
-    "eslint": "^9.28.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.29.0",
     "prettier": "^3.5.3",
     "prettier-eslint": "^16.4.2",
-    "prettier-plugin-tailwindcss": "^0.6.12",
+    "prettier-plugin-tailwindcss": "^0.6.13",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
-    "vitest": "^3.1.4"
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "bun@1.2.15",
+  "packageManager": "bun@1.2.16",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -76,19 +75,5 @@
     "sharp",
     "supabase",
     "unrs-resolver"
-  ],
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@tailwindcss/oxide",
-      "@vercel/speed-insights",
-      "canvas",
-      "core-js",
-      "cytoscape",
-      "esbuild",
-      "puppeteer",
-      "sharp",
-      "supabase",
-      "unrs-resolver"
-    ]
-  }
+  ]
 }
