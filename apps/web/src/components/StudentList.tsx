@@ -13,6 +13,14 @@ import {
 import { Button } from '@ncthub/ui/button';
 import { toast } from '@ncthub/ui/hooks/use-toast';
 import { Pencil, Save, Trash2 } from '@ncthub/ui/icons';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@ncthub/ui/table';
 import React, { useState } from 'react';
 
 interface StudentListProps {
@@ -213,30 +221,35 @@ const StudentList: React.FC<StudentListProps> = ({
       />
 
       <div className="overflow-x-auto">
-        <table className="min-w-full overflow-hidden rounded-lg bg-white">
-          <thead className="text-white">
-            <tr>
-              <th className="px-4 py-2 text-center">Name</th>
-              <th className="px-4 py-2 text-center">Student Number</th>
-              <th className="px-4 py-2 text-center">Program</th>
-              <th className="px-4 py-2 text-center">Timestamp</th>
-              <th className="px-4 py-2 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-full overflow-hidden rounded-lg bg-primary-foreground">
+          <TableHeader className="bg-secondary">
+            <TableRow>
+              <TableHead className="px-4 py-2 text-center">Name</TableHead>
+              <TableHead className="px-4 py-2 text-center">
+                Student Number
+              </TableHead>
+              <TableHead className="px-4 py-2 text-center">Program</TableHead>
+              <TableHead className="px-4 py-2 text-center">Timestamp</TableHead>
+              <TableHead className="px-4 py-2 text-center">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {currentItems.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="py-4 text-center text-gray-500">
+              <TableRow>
+                <TableCell
+                  colSpan={5}
+                  className="py-4 text-center text-gray-500"
+                >
                   No records found
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               currentItems.map((item) => (
-                <tr
+                <TableRow
                   key={item.id}
                   className="border-b transition hover:bg-gray-50"
                 >
-                  <td className="px-4 py-2">
+                  <TableCell className="px-4 py-2">
                     {editID === item.id ? (
                       <input
                         type="text"
@@ -249,8 +262,8 @@ const StudentList: React.FC<StudentListProps> = ({
                     ) : (
                       item.name
                     )}
-                  </td>
-                  <td className="px-4 py-2">
+                  </TableCell>
+                  <TableCell className="px-4 py-2">
                     {editID === item.id ? (
                       <input
                         type="text"
@@ -263,8 +276,8 @@ const StudentList: React.FC<StudentListProps> = ({
                     ) : (
                       item.studentNumber
                     )}
-                  </td>
-                  <td className="px-4 py-2">
+                  </TableCell>
+                  <TableCell className="px-4 py-2">
                     {editID === item.id ? (
                       <input
                         type="text"
@@ -277,11 +290,11 @@ const StudentList: React.FC<StudentListProps> = ({
                     ) : (
                       item.program
                     )}
-                  </td>
-                  <td className="px-4 py-2">
+                  </TableCell>
+                  <TableCell className="px-4 py-2">
                     {item.timestamp.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-2 text-center">
+                  </TableCell>
+                  <TableCell className="px-4 py-2 text-center">
                     {editID === item.id ? (
                       <Button
                         onClick={handleSave}
@@ -306,12 +319,12 @@ const StudentList: React.FC<StudentListProps> = ({
                     >
                       <Trash2 className="h-5 w-5" />
                     </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {totalPages > 1 && (
