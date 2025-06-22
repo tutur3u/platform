@@ -14,8 +14,6 @@ import {
   RefreshCw,
   Settings2,
   SortAsc,
-  Settings2,
-  Plus,
   BarChart3,
   CheckCircle2,
   Clock,
