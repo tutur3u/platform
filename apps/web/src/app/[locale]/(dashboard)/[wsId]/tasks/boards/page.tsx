@@ -4,16 +4,16 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
-import { 
-  LayoutGrid, 
-  LayoutList, 
-  Layers3, 
-  RefreshCw, 
+import {
   Columns3,
   Filter,
-  SortAsc,
+  Layers3,
+  LayoutGrid,
+  LayoutList,
+  Plus,
+  RefreshCw,
   Settings2,
-  Plus
+  SortAsc,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -48,7 +48,11 @@ export default async function WorkspaceProjectsPage({
 
   const data = rawData.map((board) => ({
     ...board,
-    tags: board.tags ? (typeof board.tags === 'string' ? JSON.parse(board.tags) : board.tags) : [],
+    tags: board.tags
+      ? typeof board.tags === 'string'
+        ? JSON.parse(board.tags)
+        : board.tags
+      : [],
     href: `/${wsId}/tasks/boards/${board.id}`,
   })) as (TaskBoard & { href: string })[];
 
@@ -88,7 +92,9 @@ export default async function WorkspaceProjectsPage({
             <LayoutGrid className="h-4 w-4 text-green-500" />
             <div>
               <p className="text-sm text-muted-foreground">Active Boards</p>
-              <p className="text-2xl font-bold">{data.filter(board => !board.archived).length}</p>
+              <p className="text-2xl font-bold">
+                {data.filter((board) => !board.archived).length}
+              </p>
             </div>
           </div>
         </div>
@@ -97,7 +103,12 @@ export default async function WorkspaceProjectsPage({
             <Layers3 className="h-4 w-4 text-purple-500" />
             <div>
               <p className="text-sm text-muted-foreground">Tagged Boards</p>
-              <p className="text-2xl font-bold">{data.filter(board => board.tags && board.tags.length > 0).length}</p>
+              <p className="text-2xl font-bold">
+                {
+                  data.filter((board) => board.tags && board.tags.length > 0)
+                    .length
+                }
+              </p>
             </div>
           </div>
         </div>
@@ -136,23 +147,43 @@ export default async function WorkspaceProjectsPage({
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
                   <Filter className="h-4 w-4" />
                   <span className="hidden sm:inline">Filter</span>
                 </Button>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
                   <SortAsc className="h-4 w-4" />
                   <span className="hidden sm:inline">Sort</span>
                 </Button>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
                   <Settings2 className="h-4 w-4" />
                   <span className="hidden sm:inline">Options</span>
                 </Button>
                 <Separator orientation="vertical" className="h-6" />
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
                   <Columns3 className="h-4 w-4" />
                 </Button>
               </div>
@@ -162,16 +193,16 @@ export default async function WorkspaceProjectsPage({
             <div className="mt-6">
               {/* Table View */}
               <TabsContent value="table" className="space-y-4">
-      <CustomDataTable
-        columnGenerator={projectColumns}
-        namespace="basic-data-table"
-        data={data}
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
+                <CustomDataTable
+                  columnGenerator={projectColumns}
+                  namespace="basic-data-table"
+                  data={data}
+                  count={count}
+                  defaultVisibility={{
+                    id: false,
+                    created_at: false,
+                  }}
+                />
               </TabsContent>
 
               {/* Cards View - Placeholder */}
@@ -180,7 +211,8 @@ export default async function WorkspaceProjectsPage({
                   <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                   <h3 className="mb-2 text-lg font-semibold">Cards View</h3>
                   <p className="text-sm text-muted-foreground">
-                    This view will show boards as cards with detailed information.
+                    This view will show boards as cards with detailed
+                    information.
                     <br />
                     Coming soon...
                   </p>
