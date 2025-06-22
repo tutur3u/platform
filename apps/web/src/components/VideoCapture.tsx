@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@ncthub/ui/button';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface VideoCaptureProps {
@@ -141,7 +142,7 @@ const VideoCapture: React.FC<VideoCaptureProps> = ({
       <canvas ref={canvasRef} className="hidden"></canvas>
 
       <div className="my-4 flex justify-center gap-2">
-        <button
+        <Button
           onClick={toggleCamera}
           className={`rounded-lg px-4 py-2 font-medium ${
             cameraOn
@@ -150,20 +151,20 @@ const VideoCapture: React.FC<VideoCaptureProps> = ({
           }`}
         >
           {cameraOn ? 'Turn Off Camera' : 'Turn On Camera'}
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={toggleAutoCapture}
           className={`rounded-lg px-4 py-2 font-medium ${
             !cameraOn && 'cursor-not-allowed opacity-50'
           } ${
             autoCapture
               ? `bg-red-500 ${cameraOn && 'hover:bg-red-600'} text-white`
-              : `bg-[#4896ac] ${cameraOn && 'hover:bg-[#326979]'} text-white`
+              : ``
           } `}
           disabled={!cameraOn}
         >
           {autoCapture ? 'Stop Auto Capture' : 'Start Auto Capture'}
-        </button>
+        </Button>
       </div>
 
       {error && (

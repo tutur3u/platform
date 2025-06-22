@@ -15,7 +15,7 @@
     "test:watch": "turbo run test:watch",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "stop": "cd apps/db && bun stop",
+    "stop": "cd apps/db && bun sb:stop",
     "ocr:install": "cd apps/ocr && bun ocr:install",
     "ocr:dev": "cd apps/ocr && bun ocr:dev",
     "ocr:start": "cd apps/ocr && bun ocr:start",

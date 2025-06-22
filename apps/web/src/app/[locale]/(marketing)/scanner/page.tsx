@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@ncthub/ui/alert-dialog';
+import { Button } from '@ncthub/ui/button';
 import { toast } from '@ncthub/ui/hooks/use-toast';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -271,7 +272,7 @@ export default function Page() {
           error={addError}
         />
         <div className="mt-4 flex justify-center gap-4">
-          <button
+          <Button
             className={`rounded-lg bg-red-600 px-4 py-2 text-white ${
               students.length === 0
                 ? 'cursor-not-allowed opacity-50'
@@ -281,8 +282,8 @@ export default function Page() {
             onClick={() => setShowClearDialog(true)}
           >
             Clear History
-          </button>
-          <button
+          </Button>
+          <Button
             className={`rounded-lg bg-green-600 px-4 py-2 text-white ${
               students.length === 0
                 ? 'cursor-not-allowed opacity-50'
@@ -292,13 +293,11 @@ export default function Page() {
             onClick={handleUpload}
           >
             Upload to Database
-          </button>
+          </Button>
         </div>
         <div className="mt-4 flex justify-center">
           <Link href="/idlist">
-            <button className="rounded-lg bg-[#4896ac] px-4 py-2 text-white hover:bg-[#326979]">
-              View all students
-            </button>
+            <Button className="rounded-lg px-4 py-2">View all students</Button>
           </Link>
         </div>
       </div>
@@ -315,7 +314,7 @@ export default function Page() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-[#4896ac] text-white hover:bg-[#326979]"
+              className="bg-background text-foreground hover:bg-background/80"
               onClick={handleClear}
             >
               Clear

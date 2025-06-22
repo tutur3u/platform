@@ -75,7 +75,7 @@ const AddStudentDialog: React.FC<AddStudentDialogProps> = ({
         </div>
         <Button
           onClick={handleAdd}
-          className="w-full rounded-lg bg-[#4896ac] py-2 text-white transition hover:bg-[#326979]"
+          className="w-full rounded-lg py-2 transition"
         >
           Add Student
         </Button>

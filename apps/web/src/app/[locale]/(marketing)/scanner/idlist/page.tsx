@@ -263,7 +263,7 @@ export default function Page() {
       />
       <div className="mt-4 flex justify-center">
         <Link href="/">
-          <button className="rounded-lg bg-[#4896ac] px-4 py-2 text-white hover:bg-[#326979]">
+          <button className="rounded-lg px-4 py-2 text-white">
             Back to Capture Page
           </button>
         </Link>

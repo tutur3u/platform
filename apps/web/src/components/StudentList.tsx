@@ -136,26 +136,26 @@ const StudentList: React.FC<StudentListProps> = ({
   return (
     <>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">Student List</h2>
+        <h2 className="text-xl font-semibold text-primary">Student List</h2>
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={handleAdd}
-            className="rounded-lg bg-[#4896ac] px-4 py-2 text-white transition hover:bg-[#326979]"
+            className="rounded-lg px-4 py-2 transition"
           >
             Add Manually
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={exportToCSV}
-            className={`rounded-lg bg-[#4896ac] px-4 py-2 text-white ${
+            className={`rounded-lg px-4 py-2 ${
               currentItems.length === 0
                 ? 'cursor-not-allowed opacity-50'
-                : 'transition hover:bg-[#326979]'
+                : 'transition'
             }`}
             disabled={currentItems.length === 0}
           >
             Export to CSV
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -195,7 +195,6 @@ const StudentList: React.FC<StudentListProps> = ({
                 handleDateRangeApply(startDate, endDate);
               }
             }}
-            className="bg-[#4896ac] text-white hover:bg-[#326979]"
             disabled={!startDate && !endDate}
           >
             Apply
@@ -215,7 +214,7 @@ const StudentList: React.FC<StudentListProps> = ({
 
       <div className="overflow-x-auto">
         <table className="min-w-full overflow-hidden rounded-lg bg-white">
-          <thead className="bg-[#4896ac] text-white">
+          <thead className="text-white">
             <tr>
               <th className="px-4 py-2 text-center">Name</th>
               <th className="px-4 py-2 text-center">Student Number</th>
@@ -284,21 +283,21 @@ const StudentList: React.FC<StudentListProps> = ({
                   </td>
                   <td className="px-4 py-2 text-center">
                     {editID === item.id ? (
-                      <button
+                      <Button
                         onClick={handleSave}
                         className="mr-2 text-green-500 hover:text-green-700"
                       >
                         <Save className="h-5 w-5" />
-                      </button>
+                      </Button>
                     ) : (
-                      <button
+                      <Button
                         onClick={() => handleEdit(item.id)}
                         className="mr-2 text-blue-500 hover:text-blue-700"
                       >
                         <Pencil className="h-5 w-5" />
-                      </button>
+                      </Button>
                     )}
-                    <button
+                    <Button
                       onClick={() => {
                         setShowDeleteDialog(true);
                         setDeleteId(item.id);
@@ -306,7 +305,7 @@ const StudentList: React.FC<StudentListProps> = ({
                       className="text-red-500 hover:text-red-700"
                     >
                       <Trash2 className="h-5 w-5" />
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))
@@ -317,31 +316,27 @@ const StudentList: React.FC<StudentListProps> = ({
 
       {totalPages > 1 && (
         <div className="mt-4 flex justify-center space-x-2">
-          <button
+          <Button
             onClick={prevPage}
             disabled={currentPage === 1}
             className={`rounded-lg px-4 py-2 ${
-              currentPage === 1
-                ? 'bg-gray-300'
-                : 'bg-[#4896ac] text-white hover:bg-[#326979]'
+              currentPage === 1 ? 'bg-gray-300' : 'text-white'
             }`}
           >
             Previous
-          </button>
+          </Button>
           <span className="px-4 py-2">
             Page {currentPage} of {totalPages}
           </span>
-          <button
+          <Button
             onClick={nextPage}
             disabled={currentPage === totalPages}
             className={`rounded-lg px-4 py-2 ${
-              currentPage === totalPages
-                ? 'bg-gray-300'
-                : 'bg-[#4896ac] text-white hover:bg-[#326979]'
+              currentPage === totalPages ? 'bg-gray-300' : 'text-white'
             }`}
           >
             Next
-          </button>
+          </Button>
         </div>
       )}
 
@@ -357,7 +352,7 @@ const StudentList: React.FC<StudentListProps> = ({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-[#4896ac] text-white hover:bg-[#326979]"
+              className="text-white"
               onClick={() => {
                 if (deleteId) {
                   handleDelete(deleteId);
