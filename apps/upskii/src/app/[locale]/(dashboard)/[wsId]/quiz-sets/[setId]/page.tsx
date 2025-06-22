@@ -1,5 +1,4 @@
 import { getWorkspaceQuizColumns } from './columns';
-import QuizForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceQuiz } from '@tuturuuu/types/db';
@@ -40,7 +39,8 @@ export default async function WorkspaceQuizzesPage({
         description={t('ws-quizzes.description')}
         createTitle={t('ws-quizzes.create')}
         createDescription={t('ws-quizzes.create_description')}
-        form={<QuizForm wsId={wsId} setId={setId} />}
+        // form={<QuizForm wsId={wsId} setId={setId} />}
+        href={`/${wsId}/quiz-sets/${setId}/quiz-create`}
       />
       <Separator className="my-4" />
       <CustomDataTable

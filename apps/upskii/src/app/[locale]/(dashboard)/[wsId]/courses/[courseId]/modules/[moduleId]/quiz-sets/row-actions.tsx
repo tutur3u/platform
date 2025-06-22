@@ -15,7 +15,6 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
