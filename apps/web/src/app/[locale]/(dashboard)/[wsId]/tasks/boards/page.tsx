@@ -15,7 +15,6 @@ import {
   Settings2,
   Plus
 } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -104,104 +103,140 @@ export default async function WorkspaceProjectsPage({
       </div>
 
       {/* Main Content with Tabs */}
-      <div className="space-y-4">
-        {/* Tab Navigation and Controls */}
-        <div className="flex items-center justify-between">
-          {/* View Tabs */}
-          <Tabs defaultValue="table" className="w-full">
-            <div className="flex items-center justify-between">
-              <TabsList className="grid w-fit grid-cols-3 bg-muted/50">
+      <div className="space-y-6">
+        <Tabs defaultValue="table" className="w-full">
+          {/* Unified Toolbar */}
+          <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-1">
+            <div className="flex items-center gap-1">
+              {/* View Switcher */}
+              <TabsList className="grid grid-cols-3 bg-background shadow-sm">
                 <TabsTrigger
                   value="table"
-                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <LayoutList className="h-4 w-4" />
                   <span className="hidden sm:inline">Table</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="cards"
-                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <LayoutGrid className="h-4 w-4" />
                   <span className="hidden sm:inline">Cards</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="groups"
-                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <Layers3 className="h-4 w-4" />
                   <span className="hidden sm:inline">Groups</span>
                 </TabsTrigger>
               </TabsList>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  <span className="hidden sm:inline">Filter</span>
-                </Button>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <SortAsc className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sort</span>
-                </Button>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Settings2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Options</span>
-                </Button>
-                <Separator orientation="vertical" className="h-6" />
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Columns3 className="h-4 w-4" />
-                </Button>
+            {/* Contextual Actions */}
+            <div className="flex items-center gap-1">
+              {/* Table View Actions */}
+              <TabsContent value="table" className="m-0 data-[state=inactive]:hidden">
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <SortAsc className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Settings2 className="h-4 w-4" />
+                  </Button>
+                  <div className="mx-1 h-4 w-px bg-border" />
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Columns3 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* Cards View Actions */}
+              <TabsContent value="cards" className="m-0 data-[state=inactive]:hidden">
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <SortAsc className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* Groups View Actions */}
+              <TabsContent value="groups" className="m-0 data-[state=inactive]:hidden">
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <SortAsc className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Layers3 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* Global Actions */}
+              <div className="mx-1 h-4 w-px bg-border" />
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="mt-6">
+            {/* Table View */}
+            <TabsContent value="table" className="mt-0 space-y-4">
+              <CustomDataTable
+                columnGenerator={projectColumns}
+                namespace="basic-data-table"
+                data={data}
+                count={count}
+                hideToolbar={true}
+                defaultVisibility={{
+                  id: false,
+                  created_at: false,
+                }}
+              />
+            </TabsContent>
+
+            {/* Cards View */}
+            <TabsContent value="cards" className="mt-0 space-y-4">
+              <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-12 text-center">
+                <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                <h3 className="mb-2 text-lg font-semibold">Cards View</h3>
+                <p className="text-sm text-muted-foreground">
+                  This view will show boards as cards with detailed information.
+                  <br />
+                  Coming soon...
+                </p>
               </div>
-            </div>
+            </TabsContent>
 
-            {/* Tab Content */}
-            <div className="mt-6">
-              {/* Table View */}
-              <TabsContent value="table" className="space-y-4">
-      <CustomDataTable
-        columnGenerator={projectColumns}
-        namespace="basic-data-table"
-        data={data}
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
-              </TabsContent>
-
-              {/* Cards View - Placeholder */}
-              <TabsContent value="cards" className="space-y-4">
-                <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-12 text-center">
-                  <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                  <h3 className="mb-2 text-lg font-semibold">Cards View</h3>
-                  <p className="text-sm text-muted-foreground">
-                    This view will show boards as cards with detailed information.
-                    <br />
-                    Coming soon...
-                  </p>
-                </div>
-              </TabsContent>
-
-              {/* Groups View - Placeholder */}
-              <TabsContent value="groups" className="space-y-4">
-                <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-12 text-center">
-                  <Layers3 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                  <h3 className="mb-2 text-lg font-semibold">Groups View</h3>
-                  <p className="text-sm text-muted-foreground">
-                    This view will organize boards by groups with color coding.
-                    <br />
-                    Coming soon...
-                  </p>
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
+            {/* Groups View */}
+            <TabsContent value="groups" className="mt-0 space-y-4">
+              <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-12 text-center">
+                <Layers3 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                <h3 className="mb-2 text-lg font-semibold">Groups View</h3>
+                <p className="text-sm text-muted-foreground">
+                  This view will organize boards by groups with color coding.
+                  <br />
+                  Coming soon...
+                </p>
+              </div>
+            </TabsContent>
+          </div>
+        </Tabs>
       </div>
     </div>
   );
