@@ -1,8 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Calendar,
+  CheckCircle,
+  Eye,
+  Filter,
+  type LucideIcon,
+  Search,
+  X,
+} from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {
   Select,
   SelectContent,
@@ -10,24 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@tuturuuu/ui/popover';
-import {
-  Filter,
-  X,
-  Search,
-  Calendar,
-  Eye,
-  CheckCircle,
-  type LucideIcon,
-} from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 interface AdminInquiryFiltersProps {
   wsId: string;
@@ -38,7 +34,10 @@ interface AdminInquiryFiltersProps {
   };
 }
 
-export function AdminInquiryFilters({ wsId, searchParams }: AdminInquiryFiltersProps) {
+export function AdminInquiryFilters({
+  wsId,
+  searchParams,
+}: AdminInquiryFiltersProps) {
   const [localSearch, setLocalSearch] = useState(searchParams.q || '');
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
@@ -52,16 +51,16 @@ export function AdminInquiryFilters({ wsId, searchParams }: AdminInquiryFiltersP
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(currentSearchParams.toString());
-    
+
     if (value === 'all' || value === '') {
       params.delete(key);
     } else {
       params.set(key, value);
     }
-    
+
     // Reset page when filtering
     params.delete('page');
-    
+
     router.push(`/${wsId}/support/admin?${params.toString()}`);
   };
 
@@ -89,7 +88,11 @@ export function AdminInquiryFilters({ wsId, searchParams }: AdminInquiryFiltersP
 
   const activeFilters = getActiveFilters();
 
-  const statusOptions: Array<{ value: string; label: string; icon?: LucideIcon }> = [
+  const statusOptions: Array<{
+    value: string;
+    label: string;
+    icon?: LucideIcon;
+  }> = [
     { value: 'all', label: t('support.all_statuses') },
     { value: 'unread', label: t('support.unread'), icon: Eye },
     { value: 'read', label: t('support.read'), icon: Eye },
@@ -110,7 +113,7 @@ export function AdminInquiryFilters({ wsId, searchParams }: AdminInquiryFiltersP
       {/* Search Form */}
       <form onSubmit={handleSearchSubmit} className="flex flex-1 gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t('support.search_placeholder')}
             value={localSearch}
@@ -131,7 +134,10 @@ export function AdminInquiryFilters({ wsId, searchParams }: AdminInquiryFiltersP
               <Filter className="h-4 w-4" />
               Filters
               {activeFilters.length > 0 && (
-                <Badge variant="secondary" className="h-5 w-5 rounded-full p-0 text-xs">
+                <Badge
+                  variant="secondary"
+                  className="h-5 w-5 rounded-full p-0 text-xs"
+                >
                   {activeFilters.length}
                 </Badge>
               )}
@@ -140,7 +146,9 @@ export function AdminInquiryFilters({ wsId, searchParams }: AdminInquiryFiltersP
           <PopoverContent className="w-80" align="end">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">{t('support.status')}</Label>
+                <Label className="text-sm font-medium">
+                  {t('support.status')}
+                </Label>
                 <Select
                   value={searchParams.status || 'all'}
                   onValueChange={(value) => updateFilter('status', value)}
@@ -154,7 +162,9 @@ export function AdminInquiryFilters({ wsId, searchParams }: AdminInquiryFiltersP
                       return (
                         <SelectItem key={option.value} value={option.value}>
                           <div className="flex items-center gap-2">
-                            {IconComponent && <IconComponent className="h-4 w-4" />}
+                            {IconComponent && (
+                              <IconComponent className="h-4 w-4" />
+                            )}
                             {option.label}
                           </div>
                         </SelectItem>
@@ -165,7 +175,9 @@ export function AdminInquiryFilters({ wsId, searchParams }: AdminInquiryFiltersP
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium">{t('support.date_range')}</Label>
+                <Label className="text-sm font-medium">
+                  {t('support.date_range')}
+                </Label>
                 <Select
                   value={searchParams.dateRange || 'all'}
                   onValueChange={(value) => updateFilter('dateRange', value)}
@@ -220,11 +232,7 @@ export function AdminInquiryFilters({ wsId, searchParams }: AdminInquiryFiltersP
       {activeFilters.length > 0 && (
         <div className="flex flex-wrap gap-2 sm:col-span-2">
           {activeFilters.map((filter) => (
-            <Badge
-              key={filter.key}
-              variant="secondary"
-              className="gap-1 pr-1"
-            >
+            <Badge key={filter.key} variant="secondary" className="gap-1 pr-1">
               <span className="capitalize">
                 {filter.key === 'dateRange' ? 'Date' : filter.key}:
               </span>
@@ -243,4 +251,4 @@ export function AdminInquiryFilters({ wsId, searchParams }: AdminInquiryFiltersP
       )}
     </div>
   );
-} 
+}

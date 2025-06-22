@@ -1,17 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Database } from '@tuturuuu/types/supabase';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,21 +12,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { 
-  MoreHorizontal,
-  Eye,
-  EyeOff,
+import {
+  Calendar,
   CheckCircle,
   Circle,
   Copy,
+  Eye,
+  EyeOff,
   Mail,
+  MoreHorizontal,
   Trash2,
-  Calendar,
   UserCircle,
 } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import moment from 'moment';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 type SupportInquiry = Database['public']['Tables']['support_inquiries']['Row'];
 
@@ -75,8 +75,8 @@ export function AdminRowActions({ inquiry, extraData }: AdminRowActionsProps) {
 
       toast({
         title: t('support.success'),
-        description: inquiry.is_read 
-          ? t('support.marked_unread') 
+        description: inquiry.is_read
+          ? t('support.marked_unread')
           : t('support.marked_read'),
       });
 
@@ -98,7 +98,7 @@ export function AdminRowActions({ inquiry, extraData }: AdminRowActionsProps) {
     try {
       const { error } = await supabase
         .from('support_inquiries')
-        .update({ 
+        .update({
           is_resolved: !inquiry.is_resolved,
           is_read: true, // Auto-mark as read when resolving
         })
@@ -116,8 +116,8 @@ export function AdminRowActions({ inquiry, extraData }: AdminRowActionsProps) {
 
       toast({
         title: t('support.success'),
-        description: inquiry.is_resolved 
-          ? t('support.marked_unresolved') 
+        description: inquiry.is_resolved
+          ? t('support.marked_unresolved')
           : t('support.marked_resolved'),
       });
 
@@ -200,7 +200,7 @@ Read: ${inquiry.is_read ? 'Yes' : 'No'}
 Created: ${moment(inquiry.created_at).format('YYYY-MM-DD HH:mm:ss')}
 Message: ${inquiry.message}
       `.trim();
-      
+
       await navigator.clipboard.writeText(details);
       toast({
         title: t('support.copied'),
@@ -232,11 +232,7 @@ Message: ${inquiry.message}
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="h-8 w-8 p-0"
-            disabled={isLoading}
-          >
+          <Button variant="ghost" className="h-8 w-8 p-0" disabled={isLoading}>
             <span className="sr-only">Open options</span>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -246,59 +242,63 @@ Message: ${inquiry.message}
             <Eye className="mr-2 h-4 w-4" />
             {t('support.view_details')}
           </DropdownMenuItem>
-          
+
           <DropdownMenuItem onClick={handleEmailReply}>
             <Mail className="mr-2 h-4 w-4" />
             {t('support.reply_via_email')}
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator />
-          
+
           <DropdownMenuItem onClick={handleMarkAsRead}>
             {inquiry.is_read ? (
               <EyeOff className="mr-2 h-4 w-4" />
             ) : (
               <Eye className="mr-2 h-4 w-4" />
             )}
-            {inquiry.is_read ? t('support.mark_unread') : t('support.mark_read')}
+            {inquiry.is_read
+              ? t('support.mark_unread')
+              : t('support.mark_read')}
           </DropdownMenuItem>
-          
+
           <DropdownMenuItem onClick={handleMarkAsResolved}>
             {inquiry.is_resolved ? (
               <Circle className="mr-2 h-4 w-4" />
             ) : (
               <CheckCircle className="mr-2 h-4 w-4" />
             )}
-            {inquiry.is_resolved ? t('support.mark_unresolved') : t('support.mark_resolved')}
+            {inquiry.is_resolved
+              ? t('support.mark_unresolved')
+              : t('support.mark_resolved')}
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator />
-          
+
           <DropdownMenuItem onClick={handleCopyEmail}>
             <Copy className="mr-2 h-4 w-4" />
             {t('support.copy_email')}
           </DropdownMenuItem>
-          
+
           <DropdownMenuItem onClick={handleCopyDetails}>
             <Copy className="mr-2 h-4 w-4" />
             {t('support.copy_details')}
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator />
-          
+
           <DropdownMenuItem disabled className="opacity-50">
             <UserCircle className="mr-2 h-4 w-4" />
             {inquiry.name || t('support.anonymous')}
           </DropdownMenuItem>
-          
+
           <DropdownMenuItem disabled className="opacity-50">
             <Calendar className="mr-2 h-4 w-4" />
             {moment(inquiry.created_at).fromNow()}
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator />
-          
-          <DropdownMenuItem 
+
+          <DropdownMenuItem
             onClick={() => setShowDeleteDialog(true)}
             className="text-red-600 focus:text-red-600"
           >
@@ -318,7 +318,8 @@ Message: ${inquiry.message}
               <br />
               <span className="font-semibold">Subject:</span> {inquiry.subject}
               <br />
-              <span className="font-semibold">From:</span> {inquiry.name} ({inquiry.email})
+              <span className="font-semibold">From:</span> {inquiry.name} (
+              {inquiry.email})
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -337,4 +338,4 @@ Message: ${inquiry.message}
       </AlertDialog>
     </>
   );
-} 
+}

@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Database } from '@tuturuuu/types/supabase';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -12,14 +10,11 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { 
-  MoreHorizontal,
-  Eye,
-  Copy,
-  Calendar,
-} from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
+import { Calendar, Copy, Eye, MoreHorizontal } from '@tuturuuu/ui/icons';
 import moment from 'moment';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 type SupportInquiry = Database['public']['Tables']['support_inquiries']['Row'];
 
@@ -62,7 +57,7 @@ Status: ${inquiry.is_resolved ? 'Resolved' : 'Open'}
 Created: ${moment(inquiry.created_at).format('YYYY-MM-DD HH:mm:ss')}
 Message: ${inquiry.message}
       `.trim();
-      
+
       await navigator.clipboard.writeText(details);
       toast({
         title: t('support.copied'),
@@ -86,11 +81,7 @@ Message: ${inquiry.message}
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="h-8 w-8 p-0"
-          disabled={isLoading}
-        >
+        <Button variant="ghost" className="h-8 w-8 p-0" disabled={isLoading}>
           <span className="sr-only">Open options</span>
           <MoreHorizontal className="h-4 w-4" />
         </Button>
@@ -100,21 +91,21 @@ Message: ${inquiry.message}
           <Eye className="mr-2 h-4 w-4" />
           {t('support.view_details')}
         </DropdownMenuItem>
-        
+
         <DropdownMenuSeparator />
-        
+
         <DropdownMenuItem onClick={handleCopyId}>
           <Copy className="mr-2 h-4 w-4" />
           {t('support.copy_id')}
         </DropdownMenuItem>
-        
+
         <DropdownMenuItem onClick={handleCopyDetails}>
           <Copy className="mr-2 h-4 w-4" />
           {t('support.copy_details')}
         </DropdownMenuItem>
-        
+
         <DropdownMenuSeparator />
-        
+
         <DropdownMenuItem disabled className="opacity-50">
           <Calendar className="mr-2 h-4 w-4" />
           {t('support.created')} {moment(inquiry.created_at).fromNow()}
@@ -122,4 +113,4 @@ Message: ${inquiry.message}
       </DropdownMenuContent>
     </DropdownMenu>
   );
-} 
+}

@@ -9,7 +9,9 @@ export default async function AdminSupportPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <ShieldUser className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">{t('sidebar_tabs.all_inquiries')}</h1>
+        <h1 className="text-2xl font-bold">
+          {t('sidebar_tabs.all_inquiries')}
+        </h1>
       </div>
 
       <Card>
@@ -17,13 +19,15 @@ export default async function AdminSupportPage() {
           <CardTitle>{t('support.all_inquiries')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12 text-muted-foreground">
-            <ShieldUser className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <div className="py-12 text-center text-muted-foreground">
+            <ShieldUser className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>{t('support.no_inquiries_yet')}</p>
-            <p className="text-sm mt-2">{t('support.inquiries_will_appear_here')}</p>
+            <p className="mt-2 text-sm">
+              {t('support.inquiries_will_appear_here')}
+            </p>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-} 
+}

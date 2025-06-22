@@ -1,11 +1,11 @@
 'use client';
 
-import { RowActions } from './row-actions';
 import { AdminRowActions } from './admin-row-actions';
+import { RowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import { Database } from '@tuturuuu/types/supabase';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Badge } from '@tuturuuu/ui/badge';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { CheckCircle, Circle, Clock, Eye, EyeOff } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
@@ -72,7 +72,7 @@ export const getUserInquiryColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 min-w-64 max-w-96">
+      <div className="line-clamp-2 max-w-96 min-w-64">
         {row.getValue('message') || '-'}
       </div>
     ),
@@ -89,16 +89,19 @@ export const getUserInquiryColumns = (
     cell: ({ row }) => {
       const isResolved = row.getValue('is_resolved') as boolean;
       const isRead = row.original.is_read;
-      
+
       if (isResolved) {
         return (
-          <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
+          <Badge
+            variant="default"
+            className="bg-green-100 text-green-800 hover:bg-green-100"
+          >
             <CheckCircle className="mr-1 h-3 w-3" />
             {t(`${namespace}.resolved`)}
           </Badge>
         );
       }
-      
+
       if (isRead) {
         return (
           <Badge variant="secondary">
@@ -107,7 +110,7 @@ export const getUserInquiryColumns = (
           </Badge>
         );
       }
-      
+
       return (
         <Badge variant="outline">
           <Clock className="mr-1 h-3 w-3" />
@@ -134,10 +137,7 @@ export const getUserInquiryColumns = (
   {
     id: 'actions',
     cell: ({ row }) => (
-      <RowActions
-        inquiry={row.original}
-        extraData={extraData}
-      />
+      <RowActions inquiry={row.original} extraData={extraData} />
     ),
   },
 ];
@@ -189,9 +189,7 @@ export const getAdminInquiryColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-48 font-mono text-sm">
-        {row.getValue('email')}
-      </div>
+      <div className="min-w-48 font-mono text-sm">{row.getValue('email')}</div>
     ),
   },
   {
@@ -232,7 +230,7 @@ export const getAdminInquiryColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 min-w-64 max-w-96">
+      <div className="line-clamp-2 max-w-96 min-w-64">
         {row.getValue('message') || '-'}
       </div>
     ),
@@ -279,7 +277,10 @@ export const getAdminInquiryColumns = (
       return (
         <div className="flex items-center">
           {isResolved ? (
-            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
+            <Badge
+              variant="default"
+              className="bg-green-100 text-green-800 hover:bg-green-100"
+            >
               <CheckCircle className="mr-1 h-3 w-3" />
               {t(`${namespace}.resolved`)}
             </Badge>
@@ -311,10 +312,7 @@ export const getAdminInquiryColumns = (
   {
     id: 'actions',
     cell: ({ row }) => (
-      <AdminRowActions
-        inquiry={row.original}
-        extraData={extraData}
-      />
+      <AdminRowActions inquiry={row.original} extraData={extraData} />
     ),
   },
-]; 
+];

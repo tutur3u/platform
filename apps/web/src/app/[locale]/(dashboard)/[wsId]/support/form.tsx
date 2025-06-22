@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Database } from '@tuturuuu/types/supabase';
 import { Button } from '@tuturuuu/ui/button';
@@ -23,27 +22,36 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Loader2, Plus, Send } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Plus, Send, Loader2 } from '@tuturuuu/ui/icons';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-type SupportInquiryInsert = Database['public']['Tables']['support_inquiries']['Insert'];
+type SupportInquiryInsert =
+  Database['public']['Tables']['support_inquiries']['Insert'];
 
 const supportInquirySchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(100, 'Name must be less than 100 characters'),
   email: z.string().email('Please enter a valid email address'),
-  subject: z.string().min(1, 'Subject is required').max(200, 'Subject must be less than 200 characters'),
-  message: z.string().min(10, 'Message must be at least 10 characters').max(5000, 'Message must be less than 5000 characters'),
+  subject: z
+    .string()
+    .min(1, 'Subject is required')
+    .max(200, 'Subject must be less than 200 characters'),
+  message: z
+    .string()
+    .min(10, 'Message must be at least 10 characters')
+    .max(5000, 'Message must be less than 5000 characters'),
 });
 
 type SupportInquiryFormData = z.infer<typeof supportInquirySchema>;
-
-
 
 export default function SupportInquiryForm() {
   const [open, setOpen] = useState(false);
@@ -67,14 +75,19 @@ export default function SupportInquiryForm() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         form.setValue('email', user.email || '');
-        form.setValue('name', user.user_metadata?.display_name || user.user_metadata?.full_name || '');
+        form.setValue(
+          'name',
+          user.user_metadata?.display_name ||
+            user.user_metadata?.full_name ||
+            ''
+        );
       }
     });
   }, [form, supabase]);
 
   const onSubmit = async (data: SupportInquiryFormData) => {
     setIsLoading(true);
-    
+
     try {
       const inquiryData: SupportInquiryInsert = {
         name: data.name,
@@ -130,14 +143,12 @@ export default function SupportInquiryForm() {
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t('support.create_inquiry')}</DialogTitle>
-          <DialogDescription>
-            {t('support.form_description')}
-          </DialogDescription>
+          <DialogDescription>{t('support.form_description')}</DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="name"
@@ -145,7 +156,7 @@ export default function SupportInquiryForm() {
                   <FormItem>
                     <FormLabel>{t('support.name')}</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         placeholder={t('support.name_placeholder')}
                         {...field}
                       />
@@ -154,7 +165,7 @@ export default function SupportInquiryForm() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="email"
@@ -162,7 +173,7 @@ export default function SupportInquiryForm() {
                   <FormItem>
                     <FormLabel>{t('support.email')}</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         type="email"
                         placeholder={t('support.email_placeholder')}
                         {...field}
@@ -181,7 +192,7 @@ export default function SupportInquiryForm() {
                 <FormItem>
                   <FormLabel>{t('support.subject')}</FormLabel>
                   <FormControl>
-                    <Input 
+                    <Input
                       placeholder={t('support.subject_placeholder')}
                       {...field}
                     />
@@ -216,9 +227,9 @@ export default function SupportInquiryForm() {
             />
 
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setOpen(false)}
                 disabled={isLoading}
               >
@@ -243,4 +254,4 @@ export default function SupportInquiryForm() {
       </DialogContent>
     </Dialog>
   );
-} 
+}

@@ -14,13 +14,13 @@ export default async function AdminSupportPage() {
           <CardTitle>All Support Inquiries</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12 text-muted-foreground">
-            <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <div className="py-12 text-center text-muted-foreground">
+            <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>No inquiries yet</p>
-            <p className="text-sm mt-2">Inquiries will appear here</p>
+            <p className="mt-2 text-sm">Inquiries will appear here</p>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-} 
+}
