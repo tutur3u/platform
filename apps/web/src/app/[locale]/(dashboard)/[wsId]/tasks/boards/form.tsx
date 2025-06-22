@@ -7,6 +7,7 @@ import {
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
+import { TagSuggestions, TagsInput } from '@tuturuuu/ui/board-tags-input';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -34,7 +35,6 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { TagsInput, TagSuggestions } from '@tuturuuu/ui/board-tags-input';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -51,10 +51,10 @@ interface Props {
 
 const FormSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1, 'Board name is required').refine(
-    (val) => val.trim().length > 0,
-    'Board name cannot be empty'
-  ),
+  name: z
+    .string()
+    .min(1, 'Board name is required')
+    .refine((val) => val.trim().length > 0, 'Board name cannot be empty'),
   template_id: z.string().optional(),
   tags: z.array(z.string()).max(8, 'Maximum 8 tags allowed').optional(),
 });
@@ -105,7 +105,11 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
 
-  const { data: templates, isLoading: templatesLoading, error: templatesError } = useStatusTemplates();
+  const {
+    data: templates,
+    isLoading: templatesLoading,
+    error: templatesError,
+  } = useStatusTemplates();
   const createBoardMutation = useCreateBoardWithTemplate(wsId);
 
   const form = useForm({
@@ -136,9 +140,9 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
               name: formData.name.trim(),
-              tags: formData.tags || []
+              tags: formData.tags || [],
             }),
           }
         );
@@ -152,7 +156,9 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
           setOpen(false);
           router.refresh();
         } else {
-          const errorData = await res.json().catch(() => ({ message: 'Unknown error occurred' }));
+          const errorData = await res
+            .json()
+            .catch(() => ({ message: 'Unknown error occurred' }));
           toast({
             title: 'Failed to edit task board',
             description: errorData.message || 'An unexpected error occurred',
@@ -166,12 +172,12 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
           templateId: formData.template_id || undefined,
           tags: formData.tags || [],
         });
-        
+
         toast({
           title: 'Success',
           description: 'Task board created successfully',
         });
-        
+
         onFinish?.(formData);
         setOpen(false);
         router.refresh();
@@ -179,10 +185,10 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      
+
       // Handle different types of errors
       let errorMessage = 'An unexpected error occurred';
-      
+
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (typeof error === 'string') {
@@ -190,7 +196,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
       } else if (error && typeof error === 'object' && 'message' in error) {
         errorMessage = String(error.message);
       }
-      
+
       toast({
         title: `Failed to ${formData.id ? 'edit' : 'create'} task board`,
         description: errorMessage,
@@ -312,7 +318,8 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                       {templatesError && (
                         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center dark:border-red-800 dark:bg-red-950/30">
                           <p className="text-sm text-red-700 dark:text-red-300">
-                            Failed to load templates. You can still create a blank board.
+                            Failed to load templates. You can still create a
+                            blank board.
                           </p>
                         </div>
                       )}
@@ -552,14 +559,12 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
   if (children) {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          {children}
-        </DialogTrigger>
-        <DialogContent 
+        <DialogTrigger asChild>{children}</DialogTrigger>
+        <DialogContent
           className="p-0"
-          style={{ 
+          style={{
             maxWidth: '1200px',
-            width: '85vw'
+            width: '85vw',
           }}
         >
           <DialogHeader className="sr-only">

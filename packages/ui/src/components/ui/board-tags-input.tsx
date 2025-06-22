@@ -5,7 +5,7 @@ import { Button } from './button';
 import { Input } from './input';
 import { cn } from '@tuturuuu/utils/format';
 import { X } from 'lucide-react';
-import React, { useState, KeyboardEvent, useRef } from 'react';
+import React, { KeyboardEvent, useRef, useState } from 'react';
 
 interface TagsInputProps {
   value: string[];
@@ -93,10 +93,7 @@ export function TagsInput({
         <Badge
           key={allowDuplicates ? `${tag}-${index}` : tag}
           variant="secondary"
-          className={cn(
-            'flex items-center gap-1 px-2 py-1',
-            tagClassName
-          )}
+          className={cn('flex items-center gap-1 px-2 py-1', tagClassName)}
         >
           <span>{tag}</span>
           {!disabled && (
@@ -116,7 +113,7 @@ export function TagsInput({
           )}
         </Badge>
       ))}
-      
+
       {(!maxTags || value.length < maxTags) && !disabled && (
         <Input
           ref={inputRef}
@@ -175,4 +172,4 @@ export function TagSuggestions({
       ))}
     </div>
   );
-} 
+}
