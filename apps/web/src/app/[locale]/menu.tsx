@@ -62,15 +62,6 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
 };
 
 const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
-  const pathname = usePathname();
-
-  if (
-    pathname !== '/' &&
-    !PUBLIC_PATHS.some((path) => pathname.startsWith(path)) &&
-    !pathname.startsWith('/settings')
-  )
-    return null;
-
   return (
     <div className="hidden w-full items-center rounded-2xl border-[0.5px] border-gray-700/50 bg-primary-foreground px-6 py-3 font-semibold md:flex md:gap-6 lg:gap-8">
       {navItems(t).map((item) => (
