@@ -86,6 +86,8 @@ export default async function WorkspaceProjectsPage({
       highPriorityTasks,
       mediumPriorityTasks,
       lowPriorityTasks,
+      // Include task_lists for the modal functionality
+      task_lists: board.task_lists,
     };
   }) as (TaskBoard & { 
     href: string;
@@ -143,12 +145,18 @@ async function getData(
         id,
         name,
         status,
+        color,
+        position,
+        archived,
         tasks!list_id (
           id,
           name,
+          description,
           archived,
           priority,
-          end_date
+          start_date,
+          end_date,
+          created_at
         )
       )
     `, {
