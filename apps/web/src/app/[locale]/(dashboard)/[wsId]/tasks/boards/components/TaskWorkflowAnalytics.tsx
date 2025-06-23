@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { Card } from '@tuturuuu/ui/card';
-import { AlertTriangle, Clock } from '@tuturuuu/ui/icons';
+import { Clock } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 
 interface TaskWorkflowAnalyticsProps {

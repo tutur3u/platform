@@ -13,13 +13,10 @@ import {
   Activity,
   AlertTriangle,
   Calendar,
-  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
-  Target,
-  TrendingUp,
   X,
 } from '@tuturuuu/ui/icons';
 import {
@@ -284,7 +281,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
       } else {
         return '<1 hr (elapsed)';
       }
-    } catch (error) {
+    } catch (_error) {
       return 'N/A';
     }
   }, [clickedTask]);

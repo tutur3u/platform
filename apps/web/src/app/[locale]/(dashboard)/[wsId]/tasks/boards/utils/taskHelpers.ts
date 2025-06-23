@@ -117,13 +117,13 @@ export function groupTasksByStatus(tasks: any[]): Record<string, any[]> {
 
   tasks.forEach((task) => {
     if (task.archived || task.listStatus === 'done') {
-      groups.done.push(task);
+      groups.done?.push(task);
     } else if (task.listStatus === 'closed') {
-      groups.closed.push(task);
+      groups.closed?.push(task);
     } else if (task.listStatus === 'active') {
-      groups.active.push(task);
+      groups.active?.push(task);
     } else {
-      groups.not_started.push(task);
+      groups.not_started?.push(task);
     }
   });
 
