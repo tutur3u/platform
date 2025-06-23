@@ -32,7 +32,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Columns3,
   ExternalLink,
   // Users,
   Eye,
@@ -1349,6 +1348,17 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     statusFilter: 'all',
   });
 
+  // Table interaction states
+  const [tableFilters, setTableFilters] = useState({
+    search: '',
+    status: 'all',
+    sortBy: 'name',
+    sortOrder: 'asc' as 'asc' | 'desc',
+  });
+  const [showTableFilters, setShowTableFilters] = useState(false);
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [cardLayout, setCardLayout] = useState<'grid-cols-2' | 'grid-cols-3' | 'grid-cols-4'>('grid-cols-3');
+
   // Calculate aggregate metrics for the quick stats - now responsive to board selection
   const getFilteredMetrics = (selectedBoard: string | null) => {
     const filteredData = selectedBoard
@@ -1799,6 +1809,79 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     window.location.reload();
   };
 
+  // Table functionality handlers
+  const handleTableFilter = () => {
+    setShowTableFilters(!showTableFilters);
+  };
+
+  const handleTableSort = () => {
+    const newOrder = tableFilters.sortOrder === 'asc' ? 'desc' : 'asc';
+    setTableFilters({ ...tableFilters, sortOrder: newOrder });
+  };
+
+  const handleTableSettings = () => {
+    setShowColumnSettings(!showColumnSettings);
+  };
+
+
+
+  // Apply filters to data and check if filters are active
+  const { filteredData, hasActiveFilters } = useMemo(() => {
+    const hasFilters = tableFilters.search !== '' || tableFilters.status !== 'all' || tableFilters.sortBy !== 'name' || tableFilters.sortOrder !== 'asc';
+    let filtered = [...data];
+
+    // Search filter
+    if (tableFilters.search) {
+      filtered = filtered.filter(board =>
+        board.name.toLowerCase().includes(tableFilters.search.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (tableFilters.status !== 'all') {
+      filtered = filtered.filter(board => {
+        if (tableFilters.status === 'active') return !board.archived;
+        if (tableFilters.status === 'archived') return board.archived;
+        return true;
+      });
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (tableFilters.sortBy) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'created_at':
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+          break;
+        case 'totalTasks':
+          aValue = a.totalTasks;
+          bValue = b.totalTasks;
+          break;
+        case 'progressPercentage':
+          aValue = a.progressPercentage;
+          bValue = b.progressPercentage;
+          break;
+        default:
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+      }
+
+      if (tableFilters.sortOrder === 'desc') {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      } else {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      }
+    });
+
+    return { filteredData: filtered, hasActiveFilters: hasFilters };
+  }, [data, tableFilters]);
+
   return (
     <>
       {/* Enhanced Quick Stats - Now Clickable */}
@@ -1936,19 +2019,34 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 className="m-0 data-[state=inactive]:hidden"
               >
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Button 
+                    variant={showTableFilters ? "default" : "ghost"} 
+                    size="sm" 
+                    className="h-8 w-8 p-0"
+                    onClick={handleTableFilter}
+                    title="Toggle filters"
+                  >
                     <Filter className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <SortAsc className="h-4 w-4" />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0"
+                    onClick={handleTableSort}
+                    title={`Sort ${tableFilters.sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+                  >
+                    <SortAsc className={cn("h-4 w-4", tableFilters.sortOrder === 'desc' && 'rotate-180')} />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Button 
+                    variant={showColumnSettings ? "default" : "ghost"} 
+                    size="sm" 
+                    className="h-8 w-8 p-0"
+                    onClick={handleTableSettings}
+                    title="Table settings"
+                  >
                     <Settings2 className="h-4 w-4" />
                   </Button>
-                  <div className="mx-1 h-4 w-px bg-border" />
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <Columns3 className="h-4 w-4" />
-                  </Button>
+
                 </div>
               </TabsContent>
 
@@ -1958,13 +2056,38 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 className="m-0 data-[state=inactive]:hidden"
               >
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Button 
+                    variant={showTableFilters ? "default" : "ghost"} 
+                    size="sm" 
+                    className="h-8 w-8 p-0"
+                    onClick={handleTableFilter}
+                    title="Filter cards"
+                  >
                     <Filter className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <SortAsc className="h-4 w-4" />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0"
+                    onClick={handleTableSort}
+                    title="Sort cards"
+                  >
+                    <SortAsc className={cn("h-4 w-4", tableFilters.sortOrder === 'desc' && 'rotate-180')} />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0"
+                    onClick={() => {
+                      // Cycle through different card sizes
+                      const gridClasses: Array<'grid-cols-2' | 'grid-cols-3' | 'grid-cols-4'> = ['grid-cols-2', 'grid-cols-3', 'grid-cols-4'];
+                      const currentIndex = gridClasses.indexOf(cardLayout);
+                      const nextIndex = (currentIndex + 1) % gridClasses.length;
+                      const nextLayout = gridClasses[nextIndex] || 'grid-cols-3';
+                      setCardLayout(nextLayout);
+                    }}
+                    title={`Current: ${cardLayout.split('-')[2]} columns. Click to switch layout.`}
+                  >
                     <LayoutGrid className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1976,12 +2099,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 className="m-0 data-[state=inactive]:hidden"
               >
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <Calendar className="h-4 w-4" />
-                  </Button>
+                  <span className="text-xs text-muted-foreground">Analytics view</span>
                 </div>
               </TabsContent>
 
@@ -1998,6 +2116,127 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
             </div>
           </div>
 
+          {/* Filter Panel */}
+          {showTableFilters && (
+            <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className="text-sm font-medium">Search</label>
+                  <input
+                    type="text"
+                    placeholder="Search boards..."
+                    value={tableFilters.search}
+                    onChange={(e) => setTableFilters({ ...tableFilters, search: e.target.value })}
+                    className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="w-40">
+                  <label className="text-sm font-medium">Status</label>
+                  <select
+                    value={tableFilters.status}
+                    onChange={(e) => setTableFilters({ ...tableFilters, status: e.target.value })}
+                    className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Boards</option>
+                    <option value="active">Active</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+                <div className="w-32">
+                  <label className="text-sm font-medium">Sort By</label>
+                  <select
+                    value={tableFilters.sortBy}
+                    onChange={(e) => setTableFilters({ ...tableFilters, sortBy: e.target.value })}
+                    className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="name">Name</option>
+                    <option value="created_at">Created</option>
+                    <option value="totalTasks">Tasks</option>
+                    <option value="progressPercentage">Progress</option>
+                  </select>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTableFilters({
+                    search: '',
+                    status: 'all',
+                    sortBy: 'name',
+                    sortOrder: 'asc',
+                  })}
+                  className="mt-6"
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Column Settings Panel */}
+          {showColumnSettings && (
+            <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-medium">Column Settings</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowColumnSettings(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span>Board Name</span>
+                  </label>
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span>Total Tasks</span>
+                  </label>
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span>Progress</span>
+                  </label>
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span>Completed Tasks</span>
+                  </label>
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span>Active Tasks</span>
+                  </label>
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span>Overdue Tasks</span>
+                  </label>
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" className="rounded" />
+                    <span>Created Date</span>
+                  </label>
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" className="rounded" />
+                    <span>Last Updated</span>
+                  </label>
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span>Priority Distribution</span>
+                  </label>
+                </div>
+                <div className="flex items-center gap-2 pt-2 border-t">
+                  <Button variant="outline" size="sm">
+                    Reset to Default
+                  </Button>
+                  <Button size="sm" onClick={() => setShowColumnSettings(false)}>
+                    Apply Changes
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Tab Content */}
           <div className="mt-6">
             {/* Table View */}
@@ -2005,8 +2244,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               <CustomDataTable
                 columnGenerator={projectColumns}
                 namespace="basic-data-table"
-                data={data}
-                count={count}
+                data={filteredData}
+                count={hasActiveFilters ? filteredData.length : count}
                 hideToolbar={true}
                 defaultVisibility={{
                   id: false,
@@ -2017,8 +2256,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
             {/* Enhanced Cards View */}
             <TabsContent value="cards" className="mt-0 space-y-4">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {data.map((board) => (
+              <div className={`grid grid-cols-1 gap-6 sm:${cardLayout} lg:${cardLayout}`}>
+                {filteredData.map((board) => (
                   <div
                     key={board.id}
                     className="group relative cursor-pointer rounded-xl border bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg"
