@@ -1,7 +1,7 @@
 'use client';
 
-import PasteConfirmModal from './paste-confirm-modal';
-import QuizAddCard from './quiz-add-card';
+import PasteConfirmModal from '../../app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/paste-confirm-modal';
+import QuizAddCard from '../../app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/quiz-add-card';
 import type { WorkspaceQuiz } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -57,7 +57,7 @@ const FormSchema = z.object({
   quizzes: z.array(QuizSchema).min(1, 'At least one quiz is required'),
 });
 
-export default function MultiQuizForm({
+export default function MultiQuizzesForm({
   wsId,
   moduleId,
   setId,

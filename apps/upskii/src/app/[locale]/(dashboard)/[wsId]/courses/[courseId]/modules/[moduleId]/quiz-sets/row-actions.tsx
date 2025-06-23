@@ -1,6 +1,6 @@
 'use client';
 
-import QuizSetRowActionsForm from './form';
+import QuizSetRowActionsForm from '../../../../../../../../../components/quiz/quiz-set-form';
 import { Row } from '@tanstack/react-table';
 import type { WorkspaceQuizSet } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';

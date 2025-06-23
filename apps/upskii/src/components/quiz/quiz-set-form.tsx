@@ -1,6 +1,6 @@
 'use client';
 
-import InstructionEditor from './instruction-editor';
+import InstructionEditor from '../../app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/instruction-editor';
 import type { WorkspaceQuizSet } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -46,7 +46,7 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  moduleId: string;
+  moduleId?: string;
   data?: WorkspaceQuizSet;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
@@ -54,7 +54,7 @@ interface Props {
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().nonempty(),
-  moduleId: z.string(),
+  moduleId: z.string().optional(),
   attemptLimit: z.number().nullable(),
   timeLimitMinutes: z.number().nullable(),
   allowViewResults: z.boolean(),

@@ -3830,6 +3830,7 @@
   "ws-quiz-sets": {
     "plural": "Bộ câu hỏi",
     "singular": "Bộ câu hỏi",
+    "name": "Tên bộ câu hỏi",
     "description": "Bộ câu hỏi được sử dụng để nhóm các câu quiz lại với nhau cho mục đích học tập.",
     "create_description": "Tạo một bộ câu hỏi mới",
     "link-quizzes": "Liên kết bài kiểm tra",
@@ -3997,7 +3998,11 @@
       "question_navigation_label": "Chuyển đến câu hỏi",
       "answered_state": "Đã trả lời",
       "unanswered_state": "Chưa trả lời",
-      "jump_to_question": "Chuyển đến câu hỏi"
+      "jump_to_question": "Chuyển đến câu hỏi",
+      "upcoming": "Sắp diễn ra",
+      "active": "Đang hoạt động",
+      "expired": "Đã hết hạn",
+      "draft": "Nháp"
     },
     "time": {
       "remaining": "Thời gian còn lại",

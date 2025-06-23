@@ -1,6 +1,6 @@
 'use client';
 
-import QuizForm from '../../../../../quizzes/form';
+import QuizForm from '../../app/[locale]/(dashboard)/[wsId]/quizzes/form';
 import { RenderedQuizzesSets } from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/page';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {

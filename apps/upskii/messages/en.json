@@ -3829,6 +3829,7 @@
   "ws-quiz-sets": {
     "plural": "Quiz Sets",
     "singular": "Quiz Set",
+    "name": "Quiz set name",
     "description": "Quiz sets are used to group quizzes together for learning purposes.",
     "create_description": "Create a new quiz set",
     "link-quizzes": "Link Quizzes",
@@ -3913,11 +3914,12 @@
     "plural": "Quizzes",
     "singular": "Quiz",
     "create": "Create quiz",
+    "create_multiple": "Add questions",
     "create_description": "Create a new quiz",
     "description": "Manage quizzes in your workspace that have multiple choice questions for learning purposes.",
     "edit_description": "Edit a quiz",
     "edit": "Edit quiz",
-    "edit-all": "Edit all quizzes",
+    "edit_all": "Edit all quizzes",
     "question": "Question",
     "answer": "Answer",
     "points": "Points",
@@ -3998,7 +4000,11 @@
       "question_navigation_label": "Jump to question",
       "answered_state": "Answered",
       "unanswered_state": "Unanswered",
-      "jump_to_question": "Jump to question"
+      "jump_to_question": "Jump to question",
+      "upcoming": "Upcoming",
+      "active": "Active",
+      "expired": "Expired",
+      "draft": "Draft"
     },
     "time": {
       "remaining": "Time Remaining",

@@ -1,17 +1,16 @@
-import QuizForm from '../multi-form';
+import QuizSetForm from "@/components/quiz/quiz-set-form";
 
 interface Props {
   params: Promise<{
     wsId: string;
-    setId: string;
   }>;
 }
 
 export default async function Page({ params }: Props) {
-  const { wsId, setId } = await params;
+  const { wsId } = await params;
   return (
     <div>
-      <QuizForm wsId={wsId} setId={setId} />
+      <QuizSetForm wsId={wsId} />
     </div>
   );
 }

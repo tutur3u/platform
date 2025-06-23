@@ -1,4 +1,4 @@
-import QuizForm from '../multi-form';
+import MultiQuizzesForm from '@/components/quiz/multi-quizzes-form';
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 interface Props {
@@ -20,7 +20,7 @@ export default async function Page({ params }: Props) {
   }
   return (
     <div>
-      <QuizForm wsId={wsId} setId={setId} data={quizData ?? undefined} isEdit={true} />
+      <MultiQuizzesForm wsId={wsId} setId={setId} data={quizData ?? undefined} isEdit={true} />
     </div>
   );
 }
