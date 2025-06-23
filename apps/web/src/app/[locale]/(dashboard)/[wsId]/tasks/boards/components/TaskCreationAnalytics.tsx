@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card } from '@tuturuuu/ui/card';
 import { AlertTriangle } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { useMemo } from 'react';
 
 interface Task {
   id: string;
@@ -63,7 +63,9 @@ export function TaskCreationAnalytics({
       high: filteredTasks.filter((task) => task.priority === 2).length,
       medium: filteredTasks.filter((task) => task.priority === 3).length,
       low: filteredTasks.filter((task) => task.priority === 4).length,
-      unset: filteredTasks.filter((task) => !task.priority || task.priority === null).length,
+      unset: filteredTasks.filter(
+        (task) => !task.priority || task.priority === null
+      ).length,
     };
 
     // Task type distribution by board lists
@@ -75,11 +77,13 @@ export function TaskCreationAnalytics({
 
     // Average time to start (created_at to first status change)
     const timeToStartData = filteredTasks
-      .filter((task) => 
-        task.created_at && 
-        task.updated_at && 
-        task.listStatus !== 'not_started' &&
-        new Date(task.updated_at).getTime() > new Date(task.created_at).getTime()
+      .filter(
+        (task) =>
+          task.created_at &&
+          task.updated_at &&
+          task.listStatus !== 'not_started' &&
+          new Date(task.updated_at).getTime() >
+            new Date(task.created_at).getTime()
       )
       .map((task) => {
         const created = new Date(task.created_at!);
@@ -87,20 +91,26 @@ export function TaskCreationAnalytics({
         return (updated.getTime() - created.getTime()) / (1000 * 60 * 60 * 24); // days
       });
 
-    const avgTimeToStart = timeToStartData.length > 0 
-      ? timeToStartData.reduce((sum, time) => sum + time, 0) / timeToStartData.length
-      : 0;
+    const avgTimeToStart =
+      timeToStartData.length > 0
+        ? timeToStartData.reduce((sum, time) => sum + time, 0) /
+          timeToStartData.length
+        : 0;
 
     // Task creation rate trend - improved logic for clarity
-    const creationTrend = lastWeekCreated === 0 
-      ? (thisWeekCreated > 0 ? 100 : 0) // 100% increase if we had 0 last week but have tasks this week
-      : ((thisWeekCreated - lastWeekCreated) / lastWeekCreated) * 100;
+    const creationTrend =
+      lastWeekCreated === 0
+        ? thisWeekCreated > 0
+          ? 100
+          : 0 // 100% increase if we had 0 last week but have tasks this week
+        : ((thisWeekCreated - lastWeekCreated) / lastWeekCreated) * 100;
 
     // Backlog growth (not started tasks older than 1 week)
-    const backlogTasks = filteredTasks.filter((task) => 
-      task.listStatus === 'not_started' &&
-      task.created_at &&
-      new Date(task.created_at) < oneWeekAgo
+    const backlogTasks = filteredTasks.filter(
+      (task) =>
+        task.listStatus === 'not_started' &&
+        task.created_at &&
+        new Date(task.created_at) < oneWeekAgo
     ).length;
 
     return {
@@ -117,15 +127,40 @@ export function TaskCreationAnalytics({
   }, [filteredTasks]);
 
   const priorityConfig = [
-    { key: 'urgent', label: '🔥 Urgent', color: 'bg-red-500', count: taskAnalytics.priorityDistribution.urgent },
-    { key: 'high', label: '⚡ High', color: 'bg-orange-500', count: taskAnalytics.priorityDistribution.high },
-    { key: 'medium', label: '📋 Medium', color: 'bg-yellow-500', count: taskAnalytics.priorityDistribution.medium },
-    { key: 'low', label: '📝 Low', color: 'bg-green-500', count: taskAnalytics.priorityDistribution.low },
-    { key: 'unset', label: '❓ Unset', color: 'bg-gray-400', count: taskAnalytics.priorityDistribution.unset },
+    {
+      key: 'urgent',
+      label: '🔥 Urgent',
+      color: 'bg-red-500',
+      count: taskAnalytics.priorityDistribution.urgent,
+    },
+    {
+      key: 'high',
+      label: '⚡ High',
+      color: 'bg-orange-500',
+      count: taskAnalytics.priorityDistribution.high,
+    },
+    {
+      key: 'medium',
+      label: '📋 Medium',
+      color: 'bg-yellow-500',
+      count: taskAnalytics.priorityDistribution.medium,
+    },
+    {
+      key: 'low',
+      label: '📝 Low',
+      color: 'bg-green-500',
+      count: taskAnalytics.priorityDistribution.low,
+    },
+    {
+      key: 'unset',
+      label: '❓ Unset',
+      color: 'bg-gray-400',
+      count: taskAnalytics.priorityDistribution.unset,
+    },
   ];
 
   const topTaskTypes = Object.entries(taskAnalytics.typeDistribution)
-    .sort(([,a], [,b]) => b - a)
+    .sort(([, a], [, b]) => b - a)
     .slice(0, 4);
 
   return (
@@ -136,7 +171,7 @@ export function TaskCreationAnalytics({
           {taskAnalytics.totalTasks} total tasks
         </span>
       </div>
-      
+
       <div className="space-y-4">
         {/* Creation Trend */}
         <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
@@ -150,12 +185,21 @@ export function TaskCreationAnalytics({
               </div>
             </div>
             <div className="text-right">
-              <div className={cn(
-                "text-sm font-medium",
-                taskAnalytics.creationTrend > 0 ? "text-green-600" : 
-                taskAnalytics.creationTrend < 0 ? "text-red-600" : "text-gray-600"
-              )}>
-                {taskAnalytics.creationTrend > 0 ? '↗' : taskAnalytics.creationTrend < 0 ? '↘' : '→'} 
+              <div
+                className={cn(
+                  'text-sm font-medium',
+                  taskAnalytics.creationTrend > 0
+                    ? 'text-green-600'
+                    : taskAnalytics.creationTrend < 0
+                      ? 'text-red-600'
+                      : 'text-gray-600'
+                )}
+              >
+                {taskAnalytics.creationTrend > 0
+                  ? '↗'
+                  : taskAnalytics.creationTrend < 0
+                    ? '↘'
+                    : '→'}
                 {Math.abs(taskAnalytics.creationTrend).toFixed(0)}%
               </div>
               <div className="text-xs text-muted-foreground">
@@ -167,15 +211,17 @@ export function TaskCreationAnalytics({
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="text-center rounded-lg bg-gray-50 p-2 dark:bg-gray-800/50">
+          <div className="rounded-lg bg-gray-50 p-2 text-center dark:bg-gray-800/50">
             <div className="font-medium text-purple-600">
               {taskAnalytics.thisMonthCreated}
             </div>
             <div className="text-muted-foreground">This month</div>
           </div>
-          <div className="text-center rounded-lg bg-gray-50 p-2 dark:bg-gray-800/50">
+          <div className="rounded-lg bg-gray-50 p-2 text-center dark:bg-gray-800/50">
             <div className="font-medium text-orange-600">
-              {taskAnalytics.avgTimeToStart > 0 ? `${taskAnalytics.avgTimeToStart.toFixed(1)}d` : 'N/A'}
+              {taskAnalytics.avgTimeToStart > 0
+                ? `${taskAnalytics.avgTimeToStart.toFixed(1)}d`
+                : 'N/A'}
             </div>
             <div className="text-muted-foreground">Avg. time to start</div>
           </div>
@@ -185,15 +231,22 @@ export function TaskCreationAnalytics({
         <div className="space-y-2">
           <div className="text-sm font-medium">Priority Distribution</div>
           <div className="space-y-1">
-            {priorityConfig.filter(p => p.count > 0).map((priority) => (
-              <div key={priority.key} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={cn('h-2 w-2 rounded', priority.color)}></div>
-                  <span className="text-xs">{priority.label}</span>
+            {priorityConfig
+              .filter((p) => p.count > 0)
+              .map((priority) => (
+                <div
+                  key={priority.key}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={cn('h-2 w-2 rounded', priority.color)}
+                    ></div>
+                    <span className="text-xs">{priority.label}</span>
+                  </div>
+                  <span className="text-xs font-medium">{priority.count}</span>
                 </div>
-                <span className="text-xs font-medium">{priority.count}</span>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
 
@@ -204,8 +257,8 @@ export function TaskCreationAnalytics({
             <div className="space-y-1">
               {topTaskTypes.map(([type, count]) => (
                 <div key={type} className="flex items-center justify-between">
-                  <span className="text-xs truncate flex-1">{type}</span>
-                  <span className="text-xs font-medium ml-2">{count}</span>
+                  <span className="flex-1 truncate text-xs">{type}</span>
+                  <span className="ml-2 text-xs font-medium">{count}</span>
                 </div>
               ))}
             </div>
@@ -226,4 +279,4 @@ export function TaskCreationAnalytics({
       </div>
     </Card>
   );
-} 
+}

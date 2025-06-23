@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { getStatusColor, getTaskCompletionDate } from '../utils/taskHelpers';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
-import { getStatusColor, getTaskCompletionDate } from '../utils/taskHelpers';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
@@ -224,10 +224,12 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
   // Calculate task duration for the clicked task - moved to top level to avoid hook order issues
   const clickedTaskDuration = useMemo(() => {
     if (!clickedTask) return 'N/A';
-    
+
     try {
-      const createdDate = clickedTask.created_at ? new Date(clickedTask.created_at) : null;
-      
+      const createdDate = clickedTask.created_at
+        ? new Date(clickedTask.created_at)
+        : null;
+
       if (!createdDate || isNaN(createdDate.getTime())) {
         return 'N/A';
       }
@@ -239,7 +241,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
           const durationMs = completionDate.getTime() - createdDate.getTime();
           const days = Math.floor(durationMs / (1000 * 60 * 60 * 24));
           const hours = Math.floor(durationMs / (1000 * 60 * 60));
-          
+
           if (days >= 1) {
             return `${days} day${days !== 1 ? 's' : ''}`;
           } else if (hours >= 1) {
@@ -249,7 +251,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
           }
         }
       }
-      
+
       // For non-completed tasks, show planned duration or time elapsed
       if (clickedTask.end_date) {
         const dueDate = new Date(clickedTask.end_date);
@@ -257,7 +259,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
           const plannedDurationMs = dueDate.getTime() - createdDate.getTime();
           const days = Math.floor(plannedDurationMs / (1000 * 60 * 60 * 24));
           const hours = Math.floor(plannedDurationMs / (1000 * 60 * 60));
-          
+
           if (days >= 1) {
             return `${days} day${days !== 1 ? 's' : ''} (planned)`;
           } else if (hours >= 1) {
@@ -267,13 +269,13 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
           }
         }
       }
-      
+
       // Fallback: show time elapsed since creation
       const now = new Date();
       const elapsedMs = now.getTime() - createdDate.getTime();
       const days = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
       const hours = Math.floor(elapsedMs / (1000 * 60 * 60));
-      
+
       if (days >= 1) {
         return `${days} day${days !== 1 ? 's' : ''} (elapsed)`;
       } else if (hours >= 1) {
@@ -931,9 +933,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
                     <Activity className="h-3 w-3 text-blue-500" />
                     <span className="text-muted-foreground">Duration:</span>
                   </div>
-                  <div className="pl-4 font-medium">
-                    {clickedTaskDuration}
-                  </div>
+                  <div className="pl-4 font-medium">{clickedTaskDuration}</div>
 
                   {clickedTask.priority && (
                     <>
@@ -1026,4 +1026,4 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
       )}
     </>
   );
-} 
+}

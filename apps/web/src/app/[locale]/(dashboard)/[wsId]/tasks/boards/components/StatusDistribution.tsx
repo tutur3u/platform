@@ -1,15 +1,18 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
+import { useMemo } from 'react';
 
 interface StatusDistributionProps {
   allTasks: any[];
   selectedBoard: string | null;
 }
 
-export function StatusDistribution({ allTasks, selectedBoard }: StatusDistributionProps) {
+export function StatusDistribution({
+  allTasks,
+  selectedBoard,
+}: StatusDistributionProps) {
   const filteredTasks = useMemo(() => {
     if (!selectedBoard) return allTasks;
     return allTasks.filter((task) => task.boardId === selectedBoard);
@@ -114,4 +117,4 @@ export function StatusDistribution({ allTasks, selectedBoard }: StatusDistributi
       </div>
     </Card>
   );
-} 
+}

@@ -25,8 +25,8 @@ import {
 import {
   AlertTriangle,
   ArrowDown,
-  ArrowUp,
   ArrowDownUp,
+  ArrowUp,
   Calendar,
   CheckCircle2,
   ChevronLeft,
@@ -61,14 +61,28 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
-import { format, isPast, isToday, isTomorrow, isWithinInterval, addDays } from 'date-fns';
+import {
+  addDays,
+  format,
+  isPast,
+  isToday,
+  isTomorrow,
+  isWithinInterval,
+} from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 
 interface Props {
   board: { id: string; tasks: Task[] };
 }
 
-type SortField = 'name' | 'priority' | 'start_date' | 'end_date' | 'assignees' | 'created_at' | 'status';
+type SortField =
+  | 'name'
+  | 'priority'
+  | 'start_date'
+  | 'end_date'
+  | 'assignees'
+  | 'created_at'
+  | 'status';
 type SortOrder = 'asc' | 'desc';
 
 interface TableFilters {
@@ -96,11 +110,11 @@ export function ListView({ board }: Props) {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  
+
   // Filters
   const [filters, setFilters] = useState<TableFilters>({
     search: '',
@@ -109,7 +123,7 @@ export function ListView({ board }: Props) {
     assignees: new Set(),
     dateFilter: 'all',
   });
-  
+
   // Column visibility
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     status: true,
@@ -192,14 +206,14 @@ export function ListView({ board }: Props) {
 
     tasks.forEach((task) => {
       if (task.priority) priorities.add(task.priority);
-      
+
       // Map archived status
       if (task.archived) {
         statuses.add('completed');
       } else {
         statuses.add('active');
       }
-      
+
       task.assignees?.forEach((assignee) => {
         assignees.add({
           id: assignee.id,
@@ -261,7 +275,11 @@ export function ListView({ board }: Props) {
         const now = new Date();
         switch (filters.dateFilter) {
           case 'overdue':
-            if (!task.end_date || new Date(task.end_date) >= now || task.archived) {
+            if (
+              !task.end_date ||
+              new Date(task.end_date) >= now ||
+              task.archived
+            ) {
               return false;
             }
             break;
@@ -273,7 +291,12 @@ export function ListView({ board }: Props) {
           case 'this_week':
             if (!task.end_date) return false;
             const weekEnd = addDays(now, 7);
-            if (!isWithinInterval(new Date(task.end_date), { start: now, end: weekEnd })) {
+            if (
+              !isWithinInterval(new Date(task.end_date), {
+                start: now,
+                end: weekEnd,
+              })
+            ) {
               return false;
             }
             break;
@@ -391,7 +414,7 @@ export function ListView({ board }: Props) {
 
   function handleSelectAll(checked: boolean) {
     if (checked) {
-      setSelectedTasks(new Set(paginatedTasks.map(task => task.id)));
+      setSelectedTasks(new Set(paginatedTasks.map((task) => task.id)));
     } else {
       setSelectedTasks(new Set());
     }
@@ -567,7 +590,9 @@ export function ListView({ board }: Props) {
             <Input
               placeholder="Search tasks by name or description..."
               value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, search: e.target.value })
+              }
               className="pr-9 pl-9"
             />
             {filters.search && (
@@ -586,20 +611,26 @@ export function ListView({ board }: Props) {
           {/* Table Actions */}
           <div className="flex items-center gap-2">
             {/* Priority Filter */}
-            <Popover open={priorityFilterOpen} onOpenChange={setPriorityFilterOpen}>
+            <Popover
+              open={priorityFilterOpen}
+              onOpenChange={setPriorityFilterOpen}
+            >
               <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className={cn(
-                    "h-8 border-dashed",
-                    filters.priorities.size > 0 && "border-solid bg-accent"
+                    'h-8 border-dashed',
+                    filters.priorities.size > 0 && 'border-solid bg-accent'
                   )}
                 >
                   <Flag className="mr-2 h-4 w-4" />
                   Priority
                   {filters.priorities.size > 0 && (
-                    <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 h-5 w-5 p-0 text-xs"
+                    >
                       {filters.priorities.size}
                     </Badge>
                   )}
@@ -613,7 +644,11 @@ export function ListView({ board }: Props) {
                     <CommandGroup>
                       {filterOptions.priorities.map((priority) => {
                         const isSelected = filters.priorities.has(priority);
-                        const priorityLabels = { 1: 'High', 2: 'Medium', 3: 'Low' };
+                        const priorityLabels = {
+                          1: 'High',
+                          2: 'Medium',
+                          3: 'Low',
+                        };
                         return (
                           <CommandItem
                             key={priority}
@@ -624,13 +659,22 @@ export function ListView({ board }: Props) {
                               } else {
                                 newPriorities.add(priority);
                               }
-                              setFilters({ ...filters, priorities: newPriorities });
+                              setFilters({
+                                ...filters,
+                                priorities: newPriorities,
+                              });
                             }}
                           >
                             <div className="flex items-center space-x-2">
                               <Checkbox checked={isSelected} />
                               <Flag className="mr-2 h-4 w-4" />
-                              <span>{priorityLabels[priority as keyof typeof priorityLabels]}</span>
+                              <span>
+                                {
+                                  priorityLabels[
+                                    priority as keyof typeof priorityLabels
+                                  ]
+                                }
+                              </span>
                             </div>
                           </CommandItem>
                         );
@@ -644,18 +688,21 @@ export function ListView({ board }: Props) {
             {/* Status Filter */}
             <Popover open={statusFilterOpen} onOpenChange={setStatusFilterOpen}>
               <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className={cn(
-                    "h-8 border-dashed",
-                    filters.statuses.size > 0 && "border-solid bg-accent"
+                    'h-8 border-dashed',
+                    filters.statuses.size > 0 && 'border-solid bg-accent'
                   )}
                 >
                   <Circle className="mr-2 h-4 w-4" />
                   Status
                   {filters.statuses.size > 0 && (
-                    <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 h-5 w-5 p-0 text-xs"
+                    >
                       {filters.statuses.size}
                     </Badge>
                   )}
@@ -696,7 +743,9 @@ export function ListView({ board }: Props) {
             {/* Date Filter */}
             <Select
               value={filters.dateFilter}
-              onValueChange={(value: any) => setFilters({ ...filters, dateFilter: value })}
+              onValueChange={(value: any) =>
+                setFilters({ ...filters, dateFilter: value })
+              }
             >
               <SelectTrigger className="h-8 w-[130px]">
                 <Calendar className="mr-2 h-4 w-4" />
@@ -724,7 +773,10 @@ export function ListView({ board }: Props) {
                 <DropdownMenuCheckboxItem
                   checked={columnVisibility.status}
                   onCheckedChange={(checked) =>
-                    setColumnVisibility({ ...columnVisibility, status: checked })
+                    setColumnVisibility({
+                      ...columnVisibility,
+                      status: checked,
+                    })
                   }
                 >
                   Status
@@ -732,7 +784,10 @@ export function ListView({ board }: Props) {
                 <DropdownMenuCheckboxItem
                   checked={columnVisibility.priority}
                   onCheckedChange={(checked) =>
-                    setColumnVisibility({ ...columnVisibility, priority: checked })
+                    setColumnVisibility({
+                      ...columnVisibility,
+                      priority: checked,
+                    })
                   }
                 >
                   Priority
@@ -740,7 +795,10 @@ export function ListView({ board }: Props) {
                 <DropdownMenuCheckboxItem
                   checked={columnVisibility.start_date}
                   onCheckedChange={(checked) =>
-                    setColumnVisibility({ ...columnVisibility, start_date: checked })
+                    setColumnVisibility({
+                      ...columnVisibility,
+                      start_date: checked,
+                    })
                   }
                 >
                   Start Date
@@ -748,7 +806,10 @@ export function ListView({ board }: Props) {
                 <DropdownMenuCheckboxItem
                   checked={columnVisibility.end_date}
                   onCheckedChange={(checked) =>
-                    setColumnVisibility({ ...columnVisibility, end_date: checked })
+                    setColumnVisibility({
+                      ...columnVisibility,
+                      end_date: checked,
+                    })
                   }
                 >
                   Due Date
@@ -756,7 +817,10 @@ export function ListView({ board }: Props) {
                 <DropdownMenuCheckboxItem
                   checked={columnVisibility.assignees}
                   onCheckedChange={(checked) =>
-                    setColumnVisibility({ ...columnVisibility, assignees: checked })
+                    setColumnVisibility({
+                      ...columnVisibility,
+                      assignees: checked,
+                    })
                   }
                 >
                   Assignees
@@ -771,7 +835,12 @@ export function ListView({ board }: Props) {
 
             {/* Clear Filters */}
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-8">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="h-8"
+              >
                 <X className="mr-2 h-4 w-4" />
                 Clear
               </Button>
@@ -783,15 +852,19 @@ export function ListView({ board }: Props) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>
-              {filteredAndSortedTasks.length} of {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+              {filteredAndSortedTasks.length} of {tasks.length} task
+              {tasks.length !== 1 ? 's' : ''}
             </span>
             {hasActiveFilters && (
               <span className="text-xs">
-                • {filteredAndSortedTasks.length !== tasks.length ? 'Filtered' : 'All shown'}
+                •{' '}
+                {filteredAndSortedTasks.length !== tasks.length
+                  ? 'Filtered'
+                  : 'All shown'}
               </span>
             )}
           </div>
-          
+
           {/* Page Size */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Rows per page</span>
@@ -832,7 +905,10 @@ export function ListView({ board }: Props) {
             </p>
           </div>
           {filters.search && (
-            <Button variant="outline" onClick={() => setFilters({ ...filters, search: '' })}>
+            <Button
+              variant="outline"
+              onClick={() => setFilters({ ...filters, search: '' })}
+            >
               Clear search
             </Button>
           )}
@@ -844,7 +920,10 @@ export function ListView({ board }: Props) {
               <TableRow className="border-b">
                 <TableHead className="w-[40px] text-center">
                   <Checkbox
-                    checked={selectedTasks.size === paginatedTasks.length && paginatedTasks.length > 0}
+                    checked={
+                      selectedTasks.size === paginatedTasks.length &&
+                      paginatedTasks.length > 0
+                    }
                     onCheckedChange={(checked) => handleSelectAll(!!checked)}
                     aria-label="Select all tasks"
                   />
@@ -931,9 +1010,7 @@ export function ListView({ board }: Props) {
                     </Button>
                   </TableHead>
                 )}
-                {columnVisibility.actions && (
-                  <TableHead className="w-[50px]" />
-                )}
+                {columnVisibility.actions && <TableHead className="w-[50px]" />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -949,7 +1026,9 @@ export function ListView({ board }: Props) {
                   <TableCell className="text-center">
                     <Checkbox
                       checked={selectedTasks.has(task.id)}
-                      onCheckedChange={(checked) => handleSelectTask(task.id, !!checked)}
+                      onCheckedChange={(checked) =>
+                        handleSelectTask(task.id, !!checked)
+                      }
                       aria-label={`Select task ${task.name}`}
                     />
                   </TableCell>
@@ -988,7 +1067,9 @@ export function ListView({ board }: Props) {
                   )}
                   {columnVisibility.end_date && (
                     <TableCell>
-                      {task.end_date ? renderDateCell(task.end_date, true) : null}
+                      {task.end_date
+                        ? renderDateCell(task.end_date, true)
+                        : null}
                     </TableCell>
                   )}
                   {columnVisibility.assignees && (
@@ -1040,7 +1121,9 @@ export function ListView({ board }: Props) {
         <div className="flex items-center justify-between border-t pt-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>
-              Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, filteredAndSortedTasks.length)} of {filteredAndSortedTasks.length} results
+              Showing {(currentPage - 1) * pageSize + 1}-
+              {Math.min(currentPage * pageSize, filteredAndSortedTasks.length)}{' '}
+              of {filteredAndSortedTasks.length} results
             </span>
             {selectedTasks.size > 0 && (
               <>
@@ -1049,10 +1132,12 @@ export function ListView({ board }: Props) {
               </>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <span>Page {currentPage} of {totalPages}</span>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -1063,7 +1148,7 @@ export function ListView({ board }: Props) {
                 className="h-8 w-8 p-0"
               >
                 <ChevronLeft className="h-4 w-4" />
-                <ChevronLeft className="h-4 w-4 -ml-2" />
+                <ChevronLeft className="-ml-2 h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -1091,7 +1176,7 @@ export function ListView({ board }: Props) {
                 className="h-8 w-8 p-0"
               >
                 <ChevronRight className="h-4 w-4" />
-                <ChevronRight className="h-4 w-4 -ml-2" />
+                <ChevronRight className="-ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -1100,9 +1185,10 @@ export function ListView({ board }: Props) {
 
       {/* Bulk Actions for Selected Tasks */}
       {selectedTasks.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-background border rounded-lg shadow-lg p-3 flex items-center gap-3 z-50">
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 transform items-center gap-3 rounded-lg border bg-background p-3 shadow-lg">
           <span className="text-sm font-medium">
-            {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''} selected
+            {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
+            selected
           </span>
           <Separator orientation="vertical" className="h-4" />
           <div className="flex items-center gap-1">

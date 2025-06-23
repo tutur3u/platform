@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { calculateOverdueDays } from '../utils/taskHelpers';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -19,7 +19,7 @@ import {
   LayoutList,
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { calculateOverdueDays } from '../utils/taskHelpers';
+import { useState } from 'react';
 
 interface TaskGroupProps {
   title: string;
@@ -40,7 +40,13 @@ interface TaskGroupProps {
   onTaskClick: (task: any) => void;
 }
 
-export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupProps) {
+export function TaskGroup({
+  title,
+  icon,
+  tasks,
+  count,
+  onTaskClick,
+}: TaskGroupProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
@@ -49,7 +55,7 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
 
   const toggleTaskExpansion = (taskId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpandedTasks(prev => {
+    setExpandedTasks((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(taskId)) {
         newSet.delete(taskId);
@@ -85,8 +91,10 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
       <CollapsibleContent className="space-y-2 pt-2">
         {tasks.map((task) => {
           const isExpanded = expandedTasks.has(task.id);
-          const hasLongContent = task.name.length > 60 || (task.description && task.description.length > 100);
-          
+          const hasLongContent =
+            task.name.length > 60 ||
+            (task.description && task.description.length > 100);
+
           return (
             <Card
               key={task.id}
@@ -98,39 +106,51 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
                   {/* Task Title and Priority */}
                   <div className="flex items-start gap-2">
                     <div className="min-w-0 flex-1">
-                      <h4 
+                      <h4
                         className={cn(
-                          "text-sm font-medium leading-relaxed transition-all duration-200",
-                          isExpanded ? "line-clamp-none" : "line-clamp-2"
+                          'text-sm leading-relaxed font-medium transition-all duration-200',
+                          isExpanded ? 'line-clamp-none' : 'line-clamp-2'
                         )}
                         title={task.name}
                       >
                         {task.name}
                       </h4>
                     </div>
-                    
-                    <div className="flex items-center gap-2 flex-shrink-0">
+
+                    <div className="flex flex-shrink-0 items-center gap-2">
                       {task.priority === 1 && (
-                        <Badge variant="destructive" className="text-xs whitespace-nowrap">
+                        <Badge
+                          variant="destructive"
+                          className="text-xs whitespace-nowrap"
+                        >
                           🔥 Urgent
                         </Badge>
                       )}
                       {task.priority === 2 && (
-                        <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs whitespace-nowrap"
+                        >
                           ⚡ High
                         </Badge>
                       )}
                       {task.priority === 3 && (
-                        <Badge variant="outline" className="text-xs whitespace-nowrap">
+                        <Badge
+                          variant="outline"
+                          className="text-xs whitespace-nowrap"
+                        >
                           📋 Medium
                         </Badge>
                       )}
                       {task.priority === 4 && (
-                        <Badge variant="outline" className="text-xs whitespace-nowrap">
+                        <Badge
+                          variant="outline"
+                          className="text-xs whitespace-nowrap"
+                        >
                           📝 Low
                         </Badge>
                       )}
-                      
+
                       {/* Expand/Collapse button for long content */}
                       {hasLongContent && (
                         <Button
@@ -138,8 +158,16 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
                           size="sm"
                           className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                           onClick={(e) => toggleTaskExpansion(task.id, e)}
-                          title={isExpanded ? "Collapse task details" : "Expand task details"}
-                          aria-label={isExpanded ? "Collapse task details" : "Expand task details"}
+                          title={
+                            isExpanded
+                              ? 'Collapse task details'
+                              : 'Expand task details'
+                          }
+                          aria-label={
+                            isExpanded
+                              ? 'Collapse task details'
+                              : 'Expand task details'
+                          }
                         >
                           {isExpanded ? (
                             <ChevronDown className="h-3 w-3" />
@@ -154,10 +182,10 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
                   {/* Task Description */}
                   {task.description && (
                     <div className="text-xs text-muted-foreground">
-                      <p 
+                      <p
                         className={cn(
-                          "leading-relaxed transition-all duration-200",
-                          isExpanded ? "line-clamp-none" : "line-clamp-2"
+                          'leading-relaxed transition-all duration-200',
+                          isExpanded ? 'line-clamp-none' : 'line-clamp-2'
                         )}
                         title={task.description}
                       >
@@ -168,20 +196,20 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
 
                   {/* Task Metadata */}
                   <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1 min-w-0">
+                    <span className="flex min-w-0 items-center gap-1">
                       <LayoutGrid className="h-3 w-3 flex-shrink-0" />
                       <span className="truncate" title={task.boardName}>
                         {task.boardName}
                       </span>
                     </span>
-                    
-                    <span className="flex items-center gap-1 min-w-0">
+
+                    <span className="flex min-w-0 items-center gap-1">
                       <LayoutList className="h-3 w-3 flex-shrink-0" />
                       <span className="truncate" title={task.listName}>
                         {task.listName}
                       </span>
                     </span>
-                    
+
                     {task.end_date && (
                       <span className="flex items-center gap-1 whitespace-nowrap">
                         <Calendar className="h-3 w-3 flex-shrink-0" />
@@ -193,20 +221,22 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
                   </div>
 
                   {/* Overdue Warning */}
-                  {task.end_date && 
-                   new Date(task.end_date) < new Date() && 
-                   !task.archived && 
-                   task.listStatus !== 'done' && 
-                   task.listStatus !== 'closed' && (
-                    <div className="flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 dark:bg-red-900/20">
-                      <AlertTriangle className="h-3 w-3 text-red-500" />
-                      <span className="text-xs font-medium text-red-600 dark:text-red-400">
-                        Overdue by{' '}
-                        {typeof task.end_date === 'string' ? calculateOverdueDays(task.end_date) : 0}{' '}
-                        days
-                      </span>
-                    </div>
-                  )}
+                  {task.end_date &&
+                    new Date(task.end_date) < new Date() &&
+                    !task.archived &&
+                    task.listStatus !== 'done' &&
+                    task.listStatus !== 'closed' && (
+                      <div className="flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 dark:bg-red-900/20">
+                        <AlertTriangle className="h-3 w-3 text-red-500" />
+                        <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                          Overdue by{' '}
+                          {typeof task.end_date === 'string'
+                            ? calculateOverdueDays(task.end_date)
+                            : 0}{' '}
+                          days
+                        </span>
+                      </div>
+                    )}
                 </div>
 
                 {/* Action Button */}
@@ -232,4 +262,4 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
       </CollapsibleContent>
     </Collapsible>
   );
-} 
+}
