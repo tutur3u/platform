@@ -45,10 +45,7 @@ type BulkBody = {
   quizzes: QuizPayload[];
 };
 
-export async function POST(
-  request: Request,
-  { params }: Params
-) {
+export async function POST(request: Request, { params }: Params) {
   const { wsId } = await params;
   const sb = await createClient();
 
@@ -120,10 +117,7 @@ export async function POST(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: Params
-) {
+export async function PUT(request: Request, { params }: Params) {
   const { wsId } = await params;
   const sb = await createClient();
 
