@@ -64,6 +64,24 @@ interface AnalyticsFilters {
   statusFilter: 'all' | 'not_started' | 'active' | 'done' | 'closed';
 }
 
+const CARD_LAYOUT_OPTIONS = [
+  { value: 'grid-cols-2', label: '2 columns', cols: 2 },
+  { value: 'grid-cols-3', label: '3 columns', cols: 3 },
+  { value: 'grid-cols-4', label: '4 columns', cols: 4 },
+] as const;
+
+type CardLayout = typeof CARD_LAYOUT_OPTIONS[number]['value'];
+
+/**
+ * Calculate the number of days a task is overdue
+ * @param dueDate The task's due date
+ * @returns Number of days the task is overdue
+ */
+function calculateOverdueDays(dueDate: string | Date): number {
+  const due = new Date(dueDate);
+  return Math.ceil((new Date().getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 // Gantt Chart Component
 function GanttChart({
   allTasks,
@@ -949,7 +967,7 @@ function GanttChart({
                     <span className="text-muted-foreground">Duration:</span>
                   </div>
                   <div className="pl-4 font-medium">
-                    {(() => {
+                    {useMemo(() => {
                       try {
                         const createdDate = clickedTask.created_at ? new Date(clickedTask.created_at) : null;
                         
@@ -1009,7 +1027,7 @@ function GanttChart({
                       } catch (error) {
                         return 'N/A';
                       }
-                    })()}
+                    }, [clickedTask, getTaskCompletionDate])}
                   </div>
 
                   {clickedTask.priority && (
@@ -1332,15 +1350,23 @@ function TaskWorkflowAnalytics({
 }
 
 export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
-  const [selectedBoard, setSelectedBoard] = useState<(typeof data)[0] | null>(
-    null
-  );
+  const [selectedBoard, setSelectedBoard] = useState<(typeof data)[0] | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [taskModal, setTaskModal] = useState<TaskModalState>({
     isOpen: false,
     filterType: 'all',
     selectedBoard: null,
   });
+  const [cardLayout, setCardLayout] = useState<CardLayout>('grid-cols-3');
+  
+  // Handle card layout cycling
+  const handleLayoutChange = () => {
+    const currentIndex = CARD_LAYOUT_OPTIONS.findIndex(opt => opt.value === cardLayout);
+    const nextIndex = (currentIndex + 1) % CARD_LAYOUT_OPTIONS.length;
+    // We can safely assert non-null since CARD_LAYOUT_OPTIONS is a constant array
+    const nextLayout = CARD_LAYOUT_OPTIONS[nextIndex]!.value;
+    setCardLayout(nextLayout);
+  };
 
   const [analyticsFilters, setAnalyticsFilters] = useState<AnalyticsFilters>({
     timeView: 'month',
@@ -1357,7 +1383,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   });
   const [showTableFilters, setShowTableFilters] = useState(false);
   const [showColumnSettings, setShowColumnSettings] = useState(false);
-  const [cardLayout, setCardLayout] = useState<'grid-cols-2' | 'grid-cols-3' | 'grid-cols-4'>('grid-cols-3');
 
   // Calculate aggregate metrics for the quick stats - now responsive to board selection
   const getFilteredMetrics = (selectedBoard: string | null) => {
@@ -2078,14 +2103,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     variant="ghost" 
                     size="sm" 
                     className="h-8 w-8 p-0"
-                    onClick={() => {
-                      // Cycle through different card sizes
-                      const gridClasses: Array<'grid-cols-2' | 'grid-cols-3' | 'grid-cols-4'> = ['grid-cols-2', 'grid-cols-3', 'grid-cols-4'];
-                      const currentIndex = gridClasses.indexOf(cardLayout);
-                      const nextIndex = (currentIndex + 1) % gridClasses.length;
-                      const nextLayout = gridClasses[nextIndex] || 'grid-cols-3';
-                      setCardLayout(nextLayout);
-                    }}
+                    onClick={handleLayoutChange}
                     title={`Current: ${cardLayout.split('-')[2]} columns. Click to switch layout.`}
                   >
                     <LayoutGrid className="h-4 w-4" />
@@ -3124,10 +3142,7 @@ function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupProps) {
                       <AlertTriangle className="h-3 w-3 text-red-500" />
                       <span className="text-xs font-medium text-red-600 dark:text-red-400">
                         Overdue by{' '}
-                        {Math.ceil(
-                          (new Date().getTime() - new Date(task.end_date).getTime()) /
-                            (1000 * 60 * 60 * 24)
-                        )}{' '}
+                        {typeof task.end_date === 'string' ? calculateOverdueDays(task.end_date) : 0}{' '}
                         days
                       </span>
                     </div>
