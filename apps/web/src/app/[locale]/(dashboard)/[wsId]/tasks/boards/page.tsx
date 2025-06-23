@@ -1,10 +1,9 @@
-import { projectColumns } from './columns';
+import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Button } from '@tuturuuu/ui/button';
+import { Plus } from '@tuturuuu/ui/icons';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -34,34 +33,139 @@ export default async function WorkspaceProjectsPage({
   const { data: rawData, count } = await getData(wsId, await searchParams);
   const t = await getTranslations();
 
-  const data = rawData.map((board) => ({
-    ...board,
-    href: `/${wsId}/tasks/boards/${board.id}`,
-  }));
+  const data = rawData.map((board: any) => {
+    // Calculate task metrics using the same logic as BoardHeader
+    const allTasks =
+      board.task_lists?.flatMap((list: any) => list.tasks || []) || [];
+    const totalTasks = allTasks.length;
+
+    // Use same logic as BoardHeader: completed = tasks that are archived OR in 'done'/'closed' lists
+    const completedTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find(
+        (list: any) => list.id === task.list_id
+      );
+      return (
+        task.archived ||
+        taskList?.status === 'done' ||
+        taskList?.status === 'closed'
+      );
+    }).length;
+
+    const activeTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find(
+        (list: any) => list.id === task.list_id
+      );
+      return !task.archived && taskList?.status === 'active';
+    }).length;
+
+    const overdueTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find(
+        (list: any) => list.id === task.list_id
+      );
+      return (
+        !task.archived &&
+        taskList?.status !== 'done' &&
+        taskList?.status !== 'closed' &&
+        task.end_date &&
+        new Date(task.end_date) < new Date()
+      );
+    }).length;
+
+    const progressPercentage =
+      totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    // Priority breakdown for non-completed tasks
+    const highPriorityTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find(
+        (list: any) => list.id === task.list_id
+      );
+      return (
+        task.priority === 1 &&
+        !task.archived &&
+        taskList?.status !== 'done' &&
+        taskList?.status !== 'closed'
+      );
+    }).length;
+
+    const mediumPriorityTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find(
+        (list: any) => list.id === task.list_id
+      );
+      return (
+        task.priority === 2 &&
+        !task.archived &&
+        taskList?.status !== 'done' &&
+        taskList?.status !== 'closed'
+      );
+    }).length;
+
+    const lowPriorityTasks = allTasks.filter((task: any) => {
+      const taskList = board.task_lists?.find(
+        (list: any) => list.id === task.list_id
+      );
+      return (
+        task.priority === 3 &&
+        !task.archived &&
+        taskList?.status !== 'done' &&
+        taskList?.status !== 'closed'
+      );
+    }).length;
+
+    return {
+      ...board,
+      tags: board.tags
+        ? typeof board.tags === 'string'
+          ? JSON.parse(board.tags)
+          : board.tags
+        : [],
+      href: `/${wsId}/tasks/boards/${board.id}`,
+      // Task metrics
+      totalTasks,
+      completedTasks,
+      activeTasks,
+      overdueTasks,
+      progressPercentage,
+      highPriorityTasks,
+      mediumPriorityTasks,
+      lowPriorityTasks,
+      // Include task_lists for the modal functionality
+      task_lists: board.task_lists,
+    };
+  }) as (TaskBoard & {
+    href: string;
+    totalTasks: number;
+    completedTasks: number;
+    activeTasks: number;
+    overdueTasks: number;
+    progressPercentage: number;
+    highPriorityTasks: number;
+    mediumPriorityTasks: number;
+    lowPriorityTasks: number;
+  })[];
 
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-task-boards.plural')}
-        singularTitle={t('ws-task-boards.singular')}
-        description={t('ws-task-boards.description')}
-        createTitle={t('ws-task-boards.create')}
-        createDescription={t('ws-task-boards.create_description')}
-        form={<TaskBoardForm wsId={wsId} />}
-        requireExpansion
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        columnGenerator={projectColumns}
-        namespace="basic-data-table"
-        data={data}
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
-    </>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t('ws-task-boards.plural')}
+          </h1>
+          <p className="text-muted-foreground">
+            {t('ws-task-boards.description')}
+          </p>
+        </div>
+        <TaskBoardForm wsId={wsId}>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            {t('ws-task-boards.create')}
+          </Button>
+        </TaskBoardForm>
+      </div>
+
+      {/* Enhanced Boards View */}
+      <EnhancedBoardsView data={data} count={count} />
+    </div>
   );
 }
 
@@ -77,9 +181,32 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_boards')
-    .select('*', {
-      count: 'exact',
-    })
+    .select(
+      `
+      *,
+      task_lists!board_id (
+        id,
+        name,
+        status,
+        color,
+        position,
+        archived,
+        tasks!list_id (
+          id,
+          name,
+          description,
+          archived,
+          priority,
+          start_date,
+          end_date,
+          created_at
+        )
+      )
+    `,
+      {
+        count: 'exact',
+      }
+    )
     .eq('ws_id', wsId)
     .order('name', { ascending: true })
     .order('created_at', { ascending: false });

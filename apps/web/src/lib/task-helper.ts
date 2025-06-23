@@ -557,7 +557,8 @@ export async function createBoardWithTemplate(
   supabase: SupabaseClient,
   wsId: string,
   name: string,
-  templateId?: string
+  templateId?: string,
+  tags?: string[]
 ) {
   const { data, error } = await supabase
     .from('workspace_boards')
@@ -565,6 +566,7 @@ export async function createBoardWithTemplate(
       ws_id: wsId,
       name,
       template_id: templateId,
+      tags: tags || [],
     })
     .select()
     .single();
@@ -682,12 +684,14 @@ export function useCreateBoardWithTemplate(wsId: string) {
     mutationFn: async ({
       name,
       templateId,
+      tags,
     }: {
       name: string;
       templateId?: string;
+      tags?: string[];
     }) => {
       const supabase = createClient();
-      return createBoardWithTemplate(supabase, wsId, name, templateId);
+      return createBoardWithTemplate(supabase, wsId, name, templateId, tags);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-boards', wsId] });
