@@ -1051,6 +1051,207 @@ interface TaskModalState {
   selectedBoard: string | null; // null means all boards
 }
 
+// Task Workflow & Efficiency Analytics Component
+function TaskWorkflowAnalytics({
+  allTasks,
+  selectedBoard,
+}: {
+  allTasks: any[];
+  selectedBoard: string | null;
+}) {
+  const filteredTasks = useMemo(() => {
+    if (!selectedBoard) return allTasks;
+    return allTasks.filter((task) => task.boardId === selectedBoard);
+  }, [allTasks, selectedBoard]);
+
+  const workflowAnalytics = useMemo(() => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // Task efficiency metrics
+    const completedTasks = filteredTasks.filter(
+      (task) => task.listStatus === 'done' || task.listStatus === 'closed' || task.archived
+    );
+
+    const activeTasks = filteredTasks.filter(
+      (task) => task.listStatus === 'active'
+    );
+
+    const notStartedTasks = filteredTasks.filter(
+      (task) => task.listStatus === 'not_started' || !task.listStatus
+    );
+
+    // Cycle time calculation (creation to completion)
+    const cycleTimeData = completedTasks
+      .filter((task) => task.created_at && task.updated_at)
+      .map((task) => {
+        const created = new Date(task.created_at);
+        const completed = new Date(task.updated_at);
+        return (completed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+      });
+
+    const avgCycleTime = cycleTimeData.length > 0 
+      ? cycleTimeData.reduce((sum, time) => sum + time, 0) / cycleTimeData.length
+      : 0;
+
+    // Task age distribution
+    const taskAges = filteredTasks
+      .filter((task) => task.created_at)
+      .map((task) => {
+        const created = new Date(task.created_at);
+        return (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+      });
+
+    const newTasks = taskAges.filter((age) => age <= 3).length; // 0-3 days
+    const recentTasks = taskAges.filter((age) => age > 3 && age <= 7).length; // 4-7 days
+    const oldTasks = taskAges.filter((age) => age > 7 && age <= 30).length; // 1-4 weeks
+    const staleTasks = taskAges.filter((age) => age > 30).length; // >1 month
+
+    // Workload distribution
+    const totalTasks = filteredTasks.length;
+    const completionRate = totalTasks > 0 ? (completedTasks.length / totalTasks) * 100 : 0;
+
+    // Recent activity
+    const recentActivity = filteredTasks.filter((task) =>
+      task.updated_at && new Date(task.updated_at) >= oneWeekAgo
+    ).length;
+
+    // Priority distribution effectiveness
+    const highPriorityCompleted = completedTasks.filter((task) => task.priority === 1 || task.priority === 2).length;
+    const totalHighPriority = filteredTasks.filter((task) => task.priority === 1 || task.priority === 2).length;
+    const priorityEfficiency = totalHighPriority > 0 ? (highPriorityCompleted / totalHighPriority) * 100 : 0;
+
+    return {
+      totalTasks,
+      completedTasks: completedTasks.length,
+      activeTasks: activeTasks.length,
+      notStartedTasks: notStartedTasks.length,
+      avgCycleTime,
+      completionRate,
+      recentActivity,
+      priorityEfficiency,
+      ageDistribution: {
+        new: newTasks,
+        recent: recentTasks,
+        old: oldTasks,
+        stale: staleTasks,
+      },
+    };
+  }, [filteredTasks]);
+
+  const ageConfig = [
+    { key: 'new', label: '🆕 New (0-3d)', count: workflowAnalytics.ageDistribution.new, color: 'bg-green-500' },
+    { key: 'recent', label: '📅 Recent (4-7d)', count: workflowAnalytics.ageDistribution.recent, color: 'bg-blue-500' },
+    { key: 'old', label: '📚 Old (1-4w)', count: workflowAnalytics.ageDistribution.old, color: 'bg-yellow-500' },
+    { key: 'stale', label: '⏰ Stale (>1m)', count: workflowAnalytics.ageDistribution.stale, color: 'bg-red-500' },
+  ];
+
+  return (
+    <Card className="p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h4 className="font-medium">Workflow & Efficiency</h4>
+        <span className="text-xs text-muted-foreground">
+          {workflowAnalytics.totalTasks} total tasks
+        </span>
+      </div>
+      
+      <div className="space-y-4">
+        {/* Key Metrics */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 dark:from-emerald-900/20 dark:to-emerald-800/20">
+            <div className="text-lg font-bold text-emerald-600">
+              {workflowAnalytics.completionRate.toFixed(0)}%
+            </div>
+            <div className="text-xs text-emerald-700 dark:text-emerald-300">
+              Completion Rate
+            </div>
+          </div>
+          <div className="rounded-lg bg-gradient-to-br from-violet-50 to-violet-100 p-3 dark:from-violet-900/20 dark:to-violet-800/20">
+            <div className="text-lg font-bold text-violet-600">
+              {workflowAnalytics.avgCycleTime > 0 ? `${workflowAnalytics.avgCycleTime.toFixed(1)}d` : 'N/A'}
+            </div>
+            <div className="text-xs text-violet-700 dark:text-violet-300">
+              Avg. Cycle Time
+            </div>
+          </div>
+        </div>
+
+        {/* Status Breakdown */}
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Task Status</div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="text-center rounded-lg bg-gray-50 p-2 dark:bg-gray-800/50">
+              <div className="font-medium text-green-600">
+                {workflowAnalytics.completedTasks}
+              </div>
+              <div className="text-muted-foreground">Done</div>
+            </div>
+            <div className="text-center rounded-lg bg-gray-50 p-2 dark:bg-gray-800/50">
+              <div className="font-medium text-blue-600">
+                {workflowAnalytics.activeTasks}
+              </div>
+              <div className="text-muted-foreground">Active</div>
+            </div>
+            <div className="text-center rounded-lg bg-gray-50 p-2 dark:bg-gray-800/50">
+              <div className="font-medium text-gray-600">
+                {workflowAnalytics.notStartedTasks}
+              </div>
+              <div className="text-muted-foreground">Not Started</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Task Age Distribution */}
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Task Age</div>
+          <div className="space-y-1">
+            {ageConfig.filter(age => age.count > 0).map((age) => (
+              <div key={age.key} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={cn('h-2 w-2 rounded', age.color)}></div>
+                  <span className="text-xs">{age.label}</span>
+                </div>
+                <span className="text-xs font-medium">{age.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Efficiency Indicators */}
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Efficiency Metrics</div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-lg bg-orange-50 p-2 dark:bg-orange-900/20">
+              <div className="font-medium text-orange-600">
+                {workflowAnalytics.recentActivity}
+              </div>
+              <div className="text-orange-700 dark:text-orange-300">Recent Updates</div>
+            </div>
+            <div className="rounded-lg bg-indigo-50 p-2 dark:bg-indigo-900/20">
+              <div className="font-medium text-indigo-600">
+                {workflowAnalytics.priorityEfficiency.toFixed(0)}%
+              </div>
+              <div className="text-indigo-700 dark:text-indigo-300">Priority Focus</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stale Task Warning */}
+        {workflowAnalytics.ageDistribution.stale > 0 && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-2 dark:border-red-800 dark:bg-red-900/20">
+            <div className="flex items-center gap-2">
+              <Clock className="h-3 w-3 text-red-600" />
+              <span className="text-xs font-medium text-red-700 dark:text-red-300">
+                {workflowAnalytics.ageDistribution.stale} stale tasks need attention
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   const [selectedBoard, setSelectedBoard] = useState<(typeof data)[0] | null>(
     null
@@ -2057,13 +2258,13 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   />
 
                   {/* Priority Distribution */}
-                  <PriorityDistribution
+                  <TaskWorkflowAnalytics
                     allTasks={allTasks}
                     selectedBoard={analyticsFilters.selectedBoard}
                   />
 
                   {/* Assignee Timeline */}
-                  <AssigneeTimeline
+                  <TaskCreationAnalytics
                     allTasks={allTasks}
                     selectedBoard={analyticsFilters.selectedBoard}
                   />
@@ -2724,8 +2925,10 @@ function StatusDistribution({
   );
 }
 
-// Priority Distribution Component
-function PriorityDistribution({
+
+
+// Task Creation & Flow Analytics Component
+function TaskCreationAnalytics({
   allTasks,
   selectedBoard,
 }: {
@@ -2737,293 +2940,193 @@ function PriorityDistribution({
     return allTasks.filter((task) => task.boardId === selectedBoard);
   }, [allTasks, selectedBoard]);
 
-  const priorityCounts = useMemo(() => {
-    const counts = {
-      URGENT: 0,
-      HIGH: 0,
-      MEDIUM: 0,
-      LOW: 0,
-      UNASSIGNED: 0,
+  const taskAnalytics = useMemo(() => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Task creation trends
+    const thisWeekCreated = filteredTasks.filter((task) => {
+      return task.created_at && new Date(task.created_at) >= oneWeekAgo;
+    }).length;
+
+    const lastWeekCreated = filteredTasks.filter((task) => {
+      return (
+        task.created_at &&
+        new Date(task.created_at) >= twoWeeksAgo &&
+        new Date(task.created_at) < oneWeekAgo
+      );
+    }).length;
+
+    const thisMonthCreated = filteredTasks.filter((task) => {
+      return task.created_at && new Date(task.created_at) >= oneMonthAgo;
+    }).length;
+
+    // Task distribution by priority
+    const priorityDistribution = {
+      urgent: filteredTasks.filter((task) => task.priority === 1).length,
+      high: filteredTasks.filter((task) => task.priority === 2).length,
+      medium: filteredTasks.filter((task) => task.priority === 3).length,
+      low: filteredTasks.filter((task) => task.priority === 4).length,
+      unset: filteredTasks.filter((task) => !task.priority).length,
     };
 
+    // Task type distribution by board lists
+    const typeDistribution: { [key: string]: number } = {};
     filteredTasks.forEach((task) => {
-      if (task.priority === 1) {
-        counts.URGENT += 1;
-      } else if (task.priority === 2) {
-        counts.HIGH += 1;
-      } else if (task.priority === 3) {
-        counts.MEDIUM += 1;
-      } else if (task.priority === 4) {
-        counts.LOW += 1;
-      } else {
-        counts.UNASSIGNED += 1;
-      }
+      const listName = task.listName || 'Unknown';
+      typeDistribution[listName] = (typeDistribution[listName] || 0) + 1;
     });
 
-    return counts;
-  }, [filteredTasks]);
+    // Average time to start (created_at to first status change)
+    const timeToStartData = filteredTasks
+      .filter((task) => 
+        task.created_at && 
+        task.updated_at && 
+        task.listStatus !== 'not_started' &&
+        new Date(task.updated_at).getTime() > new Date(task.created_at).getTime()
+      )
+      .map((task) => {
+        const created = new Date(task.created_at);
+        const updated = new Date(task.updated_at);
+        return (updated.getTime() - created.getTime()) / (1000 * 60 * 60 * 24); // days
+      });
 
-  const total = Object.values(priorityCounts).reduce(
-    (sum, count) => sum + count,
-    0
-  );
+    const avgTimeToStart = timeToStartData.length > 0 
+      ? timeToStartData.reduce((sum, time) => sum + time, 0) / timeToStartData.length
+      : 0;
+
+    // Task creation rate trend
+    const creationTrend = lastWeekCreated > 0 
+      ? ((thisWeekCreated - lastWeekCreated) / lastWeekCreated) * 100
+      : thisWeekCreated > 0 ? 100 : 0;
+
+    // Backlog growth (not started tasks older than 1 week)
+    const backlogTasks = filteredTasks.filter((task) => 
+      task.listStatus === 'not_started' &&
+      task.created_at &&
+      new Date(task.created_at) < oneWeekAgo
+    ).length;
+
+    return {
+      thisWeekCreated,
+      lastWeekCreated,
+      thisMonthCreated,
+      creationTrend,
+      priorityDistribution,
+      typeDistribution,
+      avgTimeToStart,
+      backlogTasks,
+      totalTasks: filteredTasks.length,
+    };
+  }, [filteredTasks]);
 
   const priorityConfig = [
-    {
-      key: 'URGENT',
-      label: 'Urgent',
-      color: 'bg-red-500',
-      percentage: total > 0 ? (priorityCounts.URGENT / total) * 100 : 0,
-    },
-    {
-      key: 'HIGH',
-      label: 'High',
-      color: 'bg-orange-500',
-      percentage: total > 0 ? (priorityCounts.HIGH / total) * 100 : 0,
-    },
-    {
-      key: 'MEDIUM',
-      label: 'Medium',
-      color: 'bg-yellow-500',
-      percentage: total > 0 ? (priorityCounts.MEDIUM / total) * 100 : 0,
-    },
-    {
-      key: 'LOW',
-      label: 'Low',
-      color: 'bg-green-500',
-      percentage: total > 0 ? (priorityCounts.LOW / total) * 100 : 0,
-    },
-    {
-      key: 'UNASSIGNED',
-      label: 'No Priority Set',
-      color: 'bg-gray-300 dark:bg-gray-600',
-      percentage: total > 0 ? (priorityCounts.UNASSIGNED / total) * 100 : 0,
-    },
+    { key: 'urgent', label: '🔥 Urgent', color: 'bg-red-500', count: taskAnalytics.priorityDistribution.urgent },
+    { key: 'high', label: '⚡ High', color: 'bg-orange-500', count: taskAnalytics.priorityDistribution.high },
+    { key: 'medium', label: '📋 Medium', color: 'bg-yellow-500', count: taskAnalytics.priorityDistribution.medium },
+    { key: 'low', label: '📝 Low', color: 'bg-green-500', count: taskAnalytics.priorityDistribution.low },
+    { key: 'unset', label: '❓ Unset', color: 'bg-gray-400', count: taskAnalytics.priorityDistribution.unset },
   ];
 
-  return (
-    <Card className="p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h4 className="font-medium">Priority Distribution</h4>
-        <span className="text-xs text-muted-foreground">{total} tasks</span>
-      </div>
-      <div className="space-y-3">
-        {priorityConfig.map((priority) => (
-          <div key={priority.key} className="space-y-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className={cn('h-3 w-3 rounded', priority.color)}></div>
-                <span className="text-sm">{priority.label}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">
-                  {priorityCounts[priority.key as keyof typeof priorityCounts]}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  ({priority.percentage.toFixed(0)}%)
-                </span>
-              </div>
-            </div>
-            {/* Progress bar */}
-            <div className="h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
-              <div
-                className={cn(
-                  'h-1.5 rounded-full transition-all',
-                  priority.color
-                )}
-                style={{ width: `${priority.percentage}%` }}
-              />
-            </div>
-          </div>
-        ))}
-        {total === 0 && (
-          <div className="py-4 text-center text-sm text-muted-foreground">
-            No tasks found
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-// Enhanced Team Performance & Productivity Component
-function AssigneeTimeline({
-  allTasks,
-  selectedBoard,
-}: {
-  allTasks: any[];
-  selectedBoard: string | null;
-}) {
-  const filteredTasks = useMemo(() => {
-    if (!selectedBoard) return allTasks;
-    return allTasks.filter((task) => task.boardId === selectedBoard);
-  }, [allTasks, selectedBoard]);
-
-  const assigneeStats = useMemo(() => {
-    const stats: {
-      [key: string]: {
-        total: number;
-        completed: number;
-        active: number;
-        overdue: number;
-        notStarted: number;
-        avgCompletionTime: number;
-        name: string;
-        recentActivity: number;
-      };
-    } = {};
-
-    filteredTasks.forEach((task) => {
-      const assigneeId = task.assignee_id || 'unassigned';
-      const assigneeName = task.assignee_name || 'Unassigned';
-
-      if (!stats[assigneeId]) {
-        stats[assigneeId] = {
-          total: 0,
-          completed: 0,
-          active: 0,
-          overdue: 0,
-          notStarted: 0,
-          avgCompletionTime: 0,
-          name: assigneeName,
-          recentActivity: 0,
-        };
-      }
-
-      stats[assigneeId].total += 1;
-
-      if (
-        task.listStatus === 'done' ||
-        task.listStatus === 'closed' ||
-        task.archived
-      ) {
-        stats[assigneeId].completed += 1;
-
-        // Calculate completion time if we have dates
-        if (task.created_at && task.updated_at) {
-          const completionTime =
-            new Date(task.updated_at).getTime() -
-            new Date(task.created_at).getTime();
-          const days = completionTime / (1000 * 60 * 60 * 24);
-          stats[assigneeId].avgCompletionTime =
-            (stats[assigneeId].avgCompletionTime + days) / 2;
-        }
-      } else if (task.listStatus === 'active') {
-        stats[assigneeId].active += 1;
-      } else {
-        stats[assigneeId].notStarted += 1;
-      }
-
-      // Check if overdue
-      if (
-        task.end_date &&
-        new Date(task.end_date) < new Date() &&
-        task.listStatus !== 'done' &&
-        task.listStatus !== 'closed' &&
-        !task.archived
-      ) {
-        stats[assigneeId].overdue += 1;
-      }
-
-      // Recent activity (tasks updated in last 7 days)
-      if (
-        task.updated_at &&
-        new Date(task.updated_at) >
-          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      ) {
-        stats[assigneeId].recentActivity += 1;
-      }
-    });
-
-    return Object.entries(stats)
-      .map(([id, data]) => ({
-        id,
-        ...data,
-        completionRate:
-          data.total > 0 ? (data.completed / data.total) * 100 : 0,
-        efficiency:
-          data.completed > 0
-            ? Math.max(0, 100 - (data.overdue / data.completed) * 100)
-            : 0,
-      }))
-      .sort((a, b) => b.total - a.total);
-  }, [filteredTasks]);
+  const topTaskTypes = Object.entries(taskAnalytics.typeDistribution)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 4);
 
   return (
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h4 className="font-medium">Team Performance</h4>
+        <h4 className="font-medium">Task Creation & Flow</h4>
         <span className="text-xs text-muted-foreground">
-          {assigneeStats.length} members
+          {taskAnalytics.totalTasks} total tasks
         </span>
       </div>
-      <div className="max-h-64 space-y-3 overflow-y-auto">
-        {assigneeStats.map((assignee) => (
-          <div
-            key={assignee.id}
-            className="space-y-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-purple-500 text-xs font-medium text-white">
-                  {assignee.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <div className="text-sm font-medium">{assignee.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {assignee.total} tasks •{' '}
-                    {assignee.completionRate.toFixed(0)}% completion
-                  </div>
-                </div>
+      
+      <div className="space-y-4">
+        {/* Creation Trend */}
+        <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-lg font-bold text-blue-600">
+                {taskAnalytics.thisWeekCreated}
               </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-green-600">
-                  {assignee.completed}
-                </div>
-                <div className="text-xs text-muted-foreground">completed</div>
+              <div className="text-xs text-blue-700 dark:text-blue-300">
+                Tasks created this week
               </div>
             </div>
-
-            {/* Progress bars */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span>Progress</span>
-                <span>{assignee.completionRate.toFixed(0)}%</span>
+            <div className="text-right">
+              <div className={cn(
+                "text-sm font-medium",
+                taskAnalytics.creationTrend > 0 ? "text-green-600" : 
+                taskAnalytics.creationTrend < 0 ? "text-red-600" : "text-gray-600"
+              )}>
+                {taskAnalytics.creationTrend > 0 ? '↗' : taskAnalytics.creationTrend < 0 ? '↘' : '→'} 
+                {Math.abs(taskAnalytics.creationTrend).toFixed(0)}%
               </div>
-              <div className="h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-600">
-                <div
-                  className="h-1.5 rounded-full bg-green-500 transition-all"
-                  style={{ width: `${assignee.completionRate}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Task breakdown */}
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <div className="text-center">
-                <div className="font-medium text-blue-600">
-                  {assignee.active}
-                </div>
-                <div className="text-muted-foreground">Active</div>
-              </div>
-              <div className="text-center">
-                <div className="font-medium text-red-600">
-                  {assignee.overdue}
-                </div>
-                <div className="text-muted-foreground">Overdue</div>
-              </div>
-              <div className="text-center">
-                <div className="font-medium text-purple-600">
-                  {assignee.recentActivity}
-                </div>
-                <div className="text-muted-foreground">Recent</div>
+              <div className="text-xs text-muted-foreground">
+                vs last week ({taskAnalytics.lastWeekCreated})
               </div>
             </div>
           </div>
-        ))}
-        {assigneeStats.length === 0 && (
-          <div className="py-4 text-center text-sm text-muted-foreground">
-            No team members found
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="text-center rounded-lg bg-gray-50 p-2 dark:bg-gray-800/50">
+            <div className="font-medium text-purple-600">
+              {taskAnalytics.thisMonthCreated}
+            </div>
+            <div className="text-muted-foreground">This month</div>
+          </div>
+          <div className="text-center rounded-lg bg-gray-50 p-2 dark:bg-gray-800/50">
+            <div className="font-medium text-orange-600">
+              {taskAnalytics.avgTimeToStart > 0 ? `${taskAnalytics.avgTimeToStart.toFixed(1)}d` : 'N/A'}
+            </div>
+            <div className="text-muted-foreground">Avg. time to start</div>
+          </div>
+        </div>
+
+        {/* Priority Distribution */}
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Priority Distribution</div>
+          <div className="space-y-1">
+            {priorityConfig.filter(p => p.count > 0).map((priority) => (
+              <div key={priority.key} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={cn('h-2 w-2 rounded', priority.color)}></div>
+                  <span className="text-xs">{priority.label}</span>
+                </div>
+                <span className="text-xs font-medium">{priority.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Task Types */}
+        {topTaskTypes.length > 0 && (
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Top Task Types</div>
+            <div className="space-y-1">
+              {topTaskTypes.map(([type, count]) => (
+                <div key={type} className="flex items-center justify-between">
+                  <span className="text-xs truncate flex-1">{type}</span>
+                  <span className="text-xs font-medium ml-2">{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Backlog Alert */}
+        {taskAnalytics.backlogTasks > 0 && (
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-2 dark:border-yellow-800 dark:bg-yellow-900/20">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-3 w-3 text-yellow-600" />
+                             <span className="text-xs font-medium text-yellow-700 dark:text-yellow-300">
+                 {taskAnalytics.backlogTasks} tasks in backlog (&gt;1 week old)
+               </span>
+            </div>
           </div>
         )}
       </div>
