@@ -185,9 +185,7 @@ export default function StudentList({
           <Button
             onClick={exportToCSV}
             className={`rounded-lg px-4 py-2 ${
-              currentItems.length === 0
-                ? 'cursor-not-allowed opacity-50'
-                : 'transition'
+              currentItems.length === 0 && 'opacity-50'
             }`}
             disabled={currentItems.length === 0}
           >

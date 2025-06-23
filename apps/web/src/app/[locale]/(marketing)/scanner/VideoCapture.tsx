@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@ncthub/ui/button';
+import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface VideoCaptureProps {
@@ -8,9 +9,9 @@ interface VideoCaptureProps {
 }
 
 export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [autoCapture, setAutoCapture] = useState<boolean>(false);
   const [cameraOn, setCameraOn] = useState<boolean>(false);
+  const [capturing, setCapturing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -37,23 +38,29 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
         console.error(error);
 
         setError('Can not access the webcam.');
+        setCameraOn(false);
       }
     } else {
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
+
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
+
       setCameraOn(false);
     }
   };
 
-  const toggleAutoCapture = () => {
-    if (cameraOn) {
-      setAutoCapture((prev) => !prev);
-    } else {
-      setAutoCapture(false);
+  const startCapture = () => {
+    if (cameraOn && !capturing) {
+      setCapturing(true);
+      // Pause the video to freeze the frame
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+      captureFrame();
     }
   };
 
@@ -89,6 +96,12 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
           }
         } catch {
           setError('Could not detect student information from the ID card.');
+        } finally {
+          setCapturing(false);
+          // Resume the video
+          if (videoRef.current) {
+            videoRef.current.play();
+          }
         }
       }
     }
@@ -96,19 +109,9 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
 
   useEffect(() => {
     if (!cameraOn) {
-      setAutoCapture(false);
+      setCapturing(false);
     }
   }, [cameraOn]);
-
-  useEffect(() => {
-    if (autoCapture) {
-      const intervalId = setInterval(() => {
-        captureFrame();
-      }, 1000);
-
-      return () => clearInterval(intervalId);
-    }
-  }, [autoCapture, captureFrame]);
 
   return (
     <>
@@ -130,11 +133,21 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
               transform: 'translate(-50%, -50%)',
               width: '75%',
               height: '65%',
-              pointerEvents: 'none',
             }}
           ></div>
         )}
+
+        {/* Dark overlay and loading indicator when capturing */}
+        {capturing && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
+            <div className="flex flex-col items-center gap-4">
+              <LoadingIndicator className="h-8 w-8 text-white" />
+              <span className="font-medium text-white">Processing...</span>
+            </div>
+          </div>
+        )}
       </div>
+
       <canvas ref={canvasRef} className="hidden"></canvas>
 
       <div className="my-4 flex justify-center gap-2">
@@ -146,20 +159,18 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
               : 'bg-green-500 text-white hover:bg-green-600'
           }`}
         >
-          {cameraOn ? 'Turn Off Camera' : 'Turn On Camera'}
+          {cameraOn ? 'Turn Off' : 'Turn On'}
         </Button>
         <Button
-          onClick={toggleAutoCapture}
+          onClick={startCapture}
           className={`rounded-lg px-4 py-2 font-medium ${
-            !cameraOn && 'cursor-not-allowed opacity-50'
-          } ${
-            autoCapture
-              ? `bg-red-500 ${cameraOn && 'hover:bg-red-600'} text-white`
-              : ``
-          } `}
-          disabled={!cameraOn}
+            !cameraOn || capturing
+              ? 'opacity-50'
+              : 'bg-blue-500 text-white hover:bg-blue-600'
+          }`}
+          disabled={!cameraOn || capturing}
         >
-          {autoCapture ? 'Stop Auto Capture' : 'Start Auto Capture'}
+          {capturing ? 'Capturing...' : 'Capture'}
         </Button>
       </div>
 

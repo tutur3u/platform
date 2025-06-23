@@ -209,9 +209,7 @@ export default function Page() {
         <div className="mt-4 flex justify-center gap-4">
           <Button
             className={`rounded-lg bg-red-600 px-4 py-2 text-white ${
-              students.length === 0
-                ? 'cursor-not-allowed opacity-50'
-                : 'transition hover:bg-red-700'
+              students.length === 0 && 'opacity-50'
             }`}
             disabled={students.length === 0}
             onClick={() => setShowClearDialog(true)}
@@ -220,9 +218,7 @@ export default function Page() {
           </Button>
           <Button
             className={`rounded-lg bg-green-600 px-4 py-2 text-white ${
-              students.length === 0
-                ? 'cursor-not-allowed opacity-50'
-                : 'transition hover:bg-green-700'
+              students.length === 0 && 'opacity-50'
             }`}
             disabled={students.length === 0}
             onClick={handleUpload}
