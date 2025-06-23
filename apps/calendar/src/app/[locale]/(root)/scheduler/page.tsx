@@ -31,8 +31,10 @@ import {
   CalendarIcon,
   ClockIcon,
   LockIcon,
+  PlusIcon,
   SettingsIcon,
   SparklesIcon,
+  Trash2Icon,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -211,43 +213,79 @@ function SchedulerPage() {
                 />
                 {/* Locked Events Section */}
                 <div className="mt-8">
-                  <div className="mb-2 flex items-center gap-2">
-                    <LockIcon className="h-5 w-5 text-dynamic-blue" />
-                    <span className="font-semibold">Locked Events</span>
-                    <button
-                      className="ml-auto rounded bg-dynamic-blue px-3 py-1 text-xs text-white transition hover:bg-dynamic-blue/80"
-                      onClick={() => setIsLockedEventModalOpen(true)}
-                    >
-                      Add Locked Event
-                    </button>
-                  </div>
-                  {lockedEvents.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">
-                      No locked events
-                    </div>
-                  ) : (
-                    <ul className="space-y-2">
-                      {lockedEvents.map((event) => (
-                        <li
-                          key={event.id}
-                          className="flex items-center gap-3 rounded border border-dynamic-blue/30 bg-dynamic-blue/5 px-3 py-2"
+                  <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg dark:from-blue-950/20 dark:to-indigo-950/20">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+                            <LockIcon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
+                              Locked Events
+                            </CardTitle>
+                            <CardDescription className="text-sm">
+                              Time blocks that cannot be rescheduled
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => setIsLockedEventModalOpen(true)}
+                          size="sm"
+                          className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-indigo-700"
                         >
-                          <LockIcon className="h-4 w-4 text-dynamic-blue" />
-                          <span className="font-medium">{event.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {event.range.start.format('YYYY-MM-DD HH:mm')} -{' '}
-                            {event.range.end.format('YYYY-MM-DD HH:mm')}
-                          </span>
-                          <button
-                            className="ml-auto text-xs text-destructive hover:underline"
-                            onClick={() => deleteLockedEvent(event.id)}
-                          >
-                            Remove
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                          <PlusIcon className="mr-2 h-4 w-4" />
+                          Add Locked Event
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {lockedEvents.length === 0 ? (
+                        <div className="py-8 text-center">
+                          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
+                            <LockIcon className="h-6 w-6 text-blue-500" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            No locked events. Add time blocks that should not be
+                            rescheduled.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {lockedEvents.map((event) => (
+                            <div
+                              key={event.id}
+                              className="flex items-center gap-4 rounded-lg border border-blue-200 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md dark:border-blue-800 dark:bg-gray-900"
+                            >
+                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+                                <LockIcon className="h-5 w-5" />
+                              </div>
+                              <div className="flex-1 space-y-1">
+                                <h4 className="font-semibold text-gray-900 dark:text-white">
+                                  {event.name}
+                                </h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {event.range.start.format(
+                                    'MMM D, YYYY HH:mm'
+                                  )}{' '}
+                                  -{' '}
+                                  {event.range.end.format('MMM D, YYYY HH:mm')}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteLockedEvent(event.id)}
+                                className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/20"
+                              >
+                                <Trash2Icon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
               <div>
@@ -259,12 +297,21 @@ function SchedulerPage() {
             </div>
             {/* Locked Event Modal */}
             {isLockedEventModalOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-                <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-                  <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                    <LockIcon className="h-5 w-5 text-dynamic-blue" /> Add
-                    Locked Event
-                  </h3>
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <div className="w-full max-w-md rounded-xl border-0 bg-white p-6 shadow-2xl dark:bg-gray-900">
+                  <div className="mb-6 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+                      <LockIcon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                        Add Locked Event
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Create a time block that cannot be rescheduled
+                      </p>
+                    </div>
+                  </div>
                   <LockedEventForm
                     onAdd={(event) => {
                       addLockedEvent(event);
@@ -278,7 +325,7 @@ function SchedulerPage() {
           </TabsContent>
 
           <TabsContent value="schedule" className="space-y-6">
-            <ScheduleDisplay events={events} />
+            <ScheduleDisplay events={events} tasks={tasks} />
           </TabsContent>
 
           <TabsContent value="insights" className="space-y-6">
@@ -286,26 +333,30 @@ function SchedulerPage() {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               {/* Active Hours Configuration */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ClockIcon className="h-5 w-5" />
-                    Active Hours
-                  </CardTitle>
-                  <CardDescription>
-                    Configure your available time ranges for different
-                    activities
-                  </CardDescription>
+              <Card className="border-0 bg-white shadow-lg dark:bg-gray-900">
+                <CardHeader className="pb-6">
+                  <div className="space-y-2">
+                    <CardTitle className="flex items-center gap-3 text-xl font-bold">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+                        <ClockIcon className="h-4 w-4" />
+                      </div>
+                      Active Hours
+                    </CardTitle>
+                    <CardDescription className="text-base">
+                      Configure your available time ranges for different
+                      activities
+                    </CardDescription>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {Object.entries(activeHours).map(
                     ([category, ranges]: [string, DateRange[]]) => (
-                      <div key={category} className="space-y-3">
-                        <div className="flex items-center gap-2">
+                      <div key={category} className="space-y-4">
+                        <div className="flex items-center gap-3">
                           <div
-                            className={`rounded-full px-3 py-1 text-sm font-medium ${getCategoryColor(
+                            className={`rounded-full px-4 py-2 text-sm font-bold ${getCategoryColor(
                               category as 'work' | 'personal' | 'meeting'
                             )}`}
                           >
@@ -314,9 +365,9 @@ function SchedulerPage() {
                           </div>
                         </div>
                         {ranges.map((range, index) => (
-                          <div key={index} className="grid grid-cols-2 gap-3">
+                          <div key={index} className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label className="text-sm text-muted-foreground">
+                              <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                 Start Time
                               </Label>
                               <Input
@@ -330,10 +381,11 @@ function SchedulerPage() {
                                     e.target.value
                                   )
                                 }
+                                className="border-gray-200 focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label className="text-sm text-muted-foreground">
+                              <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                 End Time
                               </Label>
                               <Input
@@ -347,6 +399,7 @@ function SchedulerPage() {
                                     e.target.value
                                   )
                                 }
+                                className="border-gray-200 focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
                               />
                             </div>
                           </div>
@@ -358,17 +411,23 @@ function SchedulerPage() {
               </Card>
 
               {/* Settings Overview */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Scheduler Settings</CardTitle>
-                  <CardDescription>
-                    Current configuration and preferences
-                  </CardDescription>
+              <Card className="border-0 bg-white shadow-lg dark:bg-gray-900">
+                <CardHeader className="pb-6">
+                  <div className="space-y-2">
+                    <CardTitle className="text-xl font-bold">
+                      Scheduler Settings
+                    </CardTitle>
+                    <CardDescription className="text-base">
+                      Current configuration and preferences
+                    </CardDescription>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <h4 className="font-medium">Time Allocation</h4>
-                    <div className="space-y-2 text-sm">
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-gray-900 dark:text-white">
+                      Time Allocation
+                    </h4>
+                    <div className="space-y-3">
                       {Object.entries(activeHours).map(([category, ranges]) => {
                         const totalHours = ranges.reduce(
                           (sum: number, range: DateRange) =>
@@ -376,9 +435,14 @@ function SchedulerPage() {
                           0
                         );
                         return (
-                          <div key={category} className="flex justify-between">
-                            <span className="capitalize">{category}</span>
-                            <span className="font-medium">
+                          <div
+                            key={category}
+                            className="flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-gray-800"
+                          >
+                            <span className="font-medium text-gray-900 capitalize dark:text-white">
+                              {category}
+                            </span>
+                            <span className="font-bold text-blue-600 dark:text-blue-400">
                               {totalHours}h/day
                             </span>
                           </div>
@@ -387,24 +451,34 @@ function SchedulerPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <h4 className="font-medium">Algorithm Features</h4>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-dynamic-green"></div>
-                        <span>Task splitting based on min/max duration</span>
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-gray-900 dark:text-white">
+                      Algorithm Features
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-950/20">
+                        <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                        <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                          Task splitting based on min/max duration
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-dynamic-blue"></div>
-                        <span>Deadline-aware prioritization</span>
+                      <div className="flex items-center gap-3 rounded-lg bg-blue-50 p-3 dark:bg-blue-950/20">
+                        <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                          Deadline-aware prioritization
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-dynamic-orange"></div>
-                        <span>Category-based time management</span>
+                      <div className="flex items-center gap-3 rounded-lg bg-orange-50 p-3 dark:bg-orange-950/20">
+                        <div className="h-3 w-3 rounded-full bg-orange-500"></div>
+                        <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                          Category-based time management
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-dynamic-purple"></div>
-                        <span>Intelligent conflict resolution</span>
+                      <div className="flex items-center gap-3 rounded-lg bg-purple-50 p-3 dark:bg-purple-950/20">
+                        <div className="h-3 w-3 rounded-full bg-purple-500"></div>
+                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                          Intelligent conflict resolution
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -465,35 +539,44 @@ function LockedEventForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label>Name</Label>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <Label className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+          Event Name
+        </Label>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Event name"
+          placeholder="Enter event name"
+          className="border-gray-200 focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
           required
         />
       </div>
+
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Date</Label>
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+            Date
+          </Label>
           <Input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
+            className="border-gray-200 focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
             required
           />
         </div>
-        <div>
-          <Label>Category</Label>
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+            Category
+          </Label>
           <Select
             value={category}
             onValueChange={(v) =>
               setCategory(v as 'work' | 'personal' | 'meeting')
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="border-gray-200 focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -504,36 +587,54 @@ function LockedEventForm({
           </Select>
         </div>
       </div>
+
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Start Time</Label>
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+            Start Time
+          </Label>
           <Input
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
+            className="border-gray-200 focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
             required
           />
         </div>
-        <div>
-          <Label>End Time</Label>
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+            End Time
+          </Label>
           <Input
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
+            className="border-gray-200 focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
             required
           />
         </div>
       </div>
-      {error && <div className="text-sm text-destructive">{error}</div>}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onCancel}>
+
+      {error && (
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/20 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
+      <div className="flex justify-end gap-3 pt-4">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          className="hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
           Cancel
         </Button>
         <Button
           type="submit"
-          className="bg-dynamic-blue text-white hover:bg-dynamic-blue/80"
+          className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-indigo-700"
         >
-          Add
+          Add Locked Event
         </Button>
       </div>
     </form>

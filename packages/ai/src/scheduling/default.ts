@@ -30,6 +30,7 @@ export const defaultTasks: Task[] = [
     minDuration: 0.25,
     maxDuration: 2,
     category: 'work',
+    priority: 'normal',
     events: [],
     allowSplit: true,
   },

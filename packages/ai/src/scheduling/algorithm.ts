@@ -6,6 +6,7 @@ import type {
   Log,
   ScheduleResult,
   Task,
+  TaskPriority,
 } from './types';
 import dayjs from 'dayjs';
 import minMax from 'dayjs/plugin/minMax';
@@ -44,6 +45,42 @@ function ensureMinimumDuration(hours: number): number {
   return Math.max(0.25, hoursToQuarterHours(hours)); // Minimum 15 minutes
 }
 
+// Helper function to calculate task priority score
+function calculatePriorityScore(task: Task): number {
+  const now = dayjs();
+  let score = 0;
+
+  // Base priority score (higher = more important)
+  const priorityScores: Record<TaskPriority, number> = {
+    critical: 1000,
+    high: 750,
+    normal: 500,
+    low: 250,
+  };
+  score += priorityScores[task.priority];
+
+  // Deadline urgency bonus
+  if (task.deadline) {
+    const hoursUntilDeadline = task.deadline.diff(now, 'hour', true);
+
+    if (hoursUntilDeadline < 0) {
+      // Overdue tasks get maximum urgency
+      score += 2000;
+    } else if (hoursUntilDeadline < 24) {
+      // Due within 24 hours
+      score += 1500;
+    } else if (hoursUntilDeadline < 72) {
+      // Due within 3 days
+      score += 1000;
+    } else if (hoursUntilDeadline < 168) {
+      // Due within a week
+      score += 500;
+    }
+  }
+
+  return score;
+}
+
 export const scheduleTasks = (
   tasks: Task[],
   activeHours: ActiveHours = defaultActiveHours,
@@ -65,7 +102,26 @@ export const scheduleTasks = (
     remaining: hoursToQuarterHours(task.duration),
     nextPart: 1,
     scheduledParts: 0,
+    priorityScore: calculatePriorityScore(task),
   }));
+
+  // Sort by priority score (highest first) and then by deadline
+  taskPool.sort((a, b) => {
+    // First sort by priority score (highest first)
+    if (a.priorityScore !== b.priorityScore) {
+      return b.priorityScore - a.priorityScore;
+    }
+
+    // If priority scores are equal, sort by deadline (earliest first)
+    if (a.deadline && b.deadline) {
+      return a.deadline.isBefore(b.deadline) ? -1 : 1;
+    }
+    if (a.deadline) return -1;
+    if (b.deadline) return 1;
+
+    // If no deadlines, sort by duration (longer tasks first)
+    return b.duration - a.duration;
+  });
 
   // Initialize available times for each category - start from now
   const now = dayjs();
@@ -74,15 +130,6 @@ export const scheduleTasks = (
     personal: getNextAvailableTime(activeHours.personal, now),
     meeting: getNextAvailableTime(activeHours.meeting, now),
   };
-
-  // Sort by deadline, earliest first (for fairness in each round)
-  taskPool.sort((a, b) => {
-    if (a.deadline && b.deadline)
-      return a.deadline.isBefore(b.deadline) ? -1 : 1;
-    if (a.deadline) return -1;
-    if (b.deadline) return 1;
-    return 0;
-  });
 
   let attempts = 0;
   const maxAttempts = 2000; // Prevent infinite loops
