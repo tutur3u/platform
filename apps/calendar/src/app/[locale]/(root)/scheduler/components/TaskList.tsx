@@ -1,6 +1,6 @@
 'use client';
 
-import type { Event, Task } from '@tuturuuu/ai/scheduling/types';
+import type { Event, Task, TaskPriority } from '@tuturuuu/ai/scheduling/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -47,13 +47,13 @@ interface TaskListProps {
 const getCategoryColor = (category: 'work' | 'personal' | 'meeting') => {
   switch (category) {
     case 'work':
-      return 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/30';
+      return 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800';
     case 'personal':
-      return 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/30';
+      return 'bg-gradient-to-r from-green-500/10 to-emerald-600/10 text-green-700 border-green-200 dark:border-green-800';
     case 'meeting':
-      return 'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/30';
+      return 'bg-gradient-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800';
     default:
-      return 'bg-dynamic-gray/10 text-dynamic-gray border-dynamic-gray/30';
+      return 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
   }
 };
 
@@ -65,6 +65,36 @@ const getCategoryIcon = (category: 'work' | 'personal' | 'meeting') => {
       return '🏠';
     case 'meeting':
       return '👥';
+    default:
+      return '📋';
+  }
+};
+
+const getPriorityColor = (priority: TaskPriority) => {
+  switch (priority) {
+    case 'critical':
+      return 'bg-gradient-to-r from-red-500/10 to-rose-600/10 text-red-700 border-red-200 dark:border-red-800';
+    case 'high':
+      return 'bg-gradient-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800';
+    case 'normal':
+      return 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800';
+    case 'low':
+      return 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
+    default:
+      return 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
+  }
+};
+
+const getPriorityIcon = (priority: TaskPriority) => {
+  switch (priority) {
+    case 'critical':
+      return '🚨';
+    case 'high':
+      return '⚡';
+    case 'normal':
+      return '📋';
+    case 'low':
+      return '📝';
     default:
       return '📋';
   }
@@ -106,6 +136,16 @@ export function TaskList({
     return progress && progress.remaining === 0;
   }).length;
 
+  const priorityStats = useMemo(() => {
+    const stats = {
+      critical: tasks.filter((t) => t.priority === 'critical').length,
+      high: tasks.filter((t) => t.priority === 'high').length,
+      normal: tasks.filter((t) => t.priority === 'normal').length,
+      low: tasks.filter((t) => t.priority === 'low').length,
+    };
+    return stats;
+  }, [tasks]);
+
   const getDeadlineStatus = (deadline?: dayjs.Dayjs) => {
     if (!deadline) return null;
 
@@ -113,74 +153,109 @@ export function TaskList({
     const hoursUntil = deadline.diff(now, 'hour', true);
 
     if (hoursUntil < 0) {
-      return { type: 'overdue', text: 'Overdue', color: 'text-destructive' };
+      return {
+        type: 'overdue',
+        text: 'Overdue',
+        color:
+          'text-red-600 bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800',
+      };
     } else if (hoursUntil < 24) {
       return {
         type: 'urgent',
         text: `${Math.round(hoursUntil)}h left`,
-        color: 'text-dynamic-orange',
+        color:
+          'text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-800',
       };
     } else if (hoursUntil < 72) {
       return {
         type: 'soon',
         text: `${Math.round(hoursUntil / 24)}d left`,
-        color: 'text-dynamic-yellow',
+        color:
+          'text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-800',
       };
     } else {
       return {
         type: 'later',
         text: deadline.format('MMM D'),
-        color: 'text-muted-foreground',
+        color: 'text-muted-foreground bg-muted/50 border-border',
       };
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header with Stats */}
-      <Card>
-        <CardHeader>
+      <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
+        <CardHeader className="pb-6">
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
+            <div className="space-y-2">
+              <CardTitle className="flex items-center gap-3 text-2xl font-bold">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+                  <CalendarIcon className="h-5 w-5" />
+                </div>
                 Task Management
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-base text-muted-foreground">
                 Organize and track your tasks with intelligent scheduling
               </CardDescription>
             </div>
-            <Button onClick={onAddTask} size="sm">
-              <PlusIcon className="mr-2 h-4 w-4" />
+            <Button
+              onClick={onAddTask}
+              size="lg"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
+            >
+              <PlusIcon className="mr-2 h-5 w-5" />
               Add Task
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-blue">
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-6">
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-3xl font-bold text-transparent">
                 {tasks.length}
               </div>
-              <div className="text-sm text-muted-foreground">Total Tasks</div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Total Tasks
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-green">
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-3xl font-bold text-transparent">
                 {completedTasks}
               </div>
-              <div className="text-sm text-muted-foreground">Completed</div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Completed
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-orange">
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text text-3xl font-bold text-transparent">
                 {totalDuration}h
               </div>
-              <div className="text-sm text-muted-foreground">Total Time</div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Total Time
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-purple">
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-red-600 to-rose-700 bg-clip-text text-3xl font-bold text-transparent">
+                {priorityStats.critical}
+              </div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Critical
+              </div>
+            </div>
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text text-3xl font-bold text-transparent">
+                {priorityStats.high}
+              </div>
+              <div className="text-sm font-medium text-muted-foreground">
+                High
+              </div>
+            </div>
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-700 bg-clip-text text-3xl font-bold text-transparent">
                 {tasks.filter((t) => t.deadline).length}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm font-medium text-muted-foreground">
                 With Deadlines
               </div>
             </div>
@@ -189,28 +264,37 @@ export function TaskList({
       </Card>
 
       {/* Tasks List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Tasks</CardTitle>
-          <CardDescription>
-            Manage task details and constraints for intelligent scheduling
-          </CardDescription>
+      <Card className="border-0 bg-white shadow-lg dark:bg-gray-900">
+        <CardHeader className="pb-6">
+          <div className="space-y-2">
+            <CardTitle className="text-xl font-bold">Your Tasks</CardTitle>
+            <CardDescription className="text-base">
+              Manage task details and constraints for intelligent scheduling
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           {tasks.length === 0 ? (
-            <div className="py-12 text-center">
-              <CalendarIcon className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" />
-              <h3 className="mb-2 text-lg font-semibold">No Tasks Yet</h3>
-              <p className="mb-4 text-muted-foreground">
-                Add some tasks or load a template to get started with scheduling
+            <div className="py-16 text-center">
+              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20">
+                <CalendarIcon className="h-10 w-10 text-blue-500" />
+              </div>
+              <h3 className="mb-3 text-xl font-semibold">No Tasks Yet</h3>
+              <p className="mx-auto mb-6 max-w-md text-muted-foreground">
+                Add some tasks or load a template to get started with
+                intelligent scheduling
               </p>
-              <Button onClick={onAddTask} size="lg">
-                <PlusIcon className="mr-2 h-4 w-4" />
+              <Button
+                onClick={onAddTask}
+                size="lg"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
+              >
+                <PlusIcon className="mr-2 h-5 w-5" />
                 Create Your First Task
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {tasks.map((task) => {
                 const progress = taskProgress.get(task.id);
                 const progressPercentage = progress
@@ -222,37 +306,47 @@ export function TaskList({
                 return (
                   <div
                     key={task.id}
-                    className={`group relative space-y-4 rounded-lg border p-6 transition-all hover:shadow-md ${
+                    className={`group relative space-y-6 rounded-xl border-2 p-6 transition-all duration-200 hover:shadow-xl ${
                       isCompleted
-                        ? 'border-dynamic-green/30 bg-dynamic-green/5'
-                        : 'hover:bg-accent/5'
+                        ? 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 dark:border-green-800 dark:from-green-950/20 dark:to-emerald-950/20'
+                        : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-gradient-to-br hover:from-blue-50/50 hover:to-purple-50/50 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700 dark:hover:from-blue-950/20 dark:hover:to-purple-950/20'
                     }`}
                   >
                     {/* Task Header */}
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg">
-                            {getCategoryIcon(task.category)}
-                          </span>
-                          <Input
-                            placeholder="Task name"
-                            value={task.name}
-                            onChange={(e) =>
-                              onUpdateTask(task.id, { name: e.target.value })
-                            }
-                            className={`h-auto border-none bg-transparent p-0 text-lg font-semibold focus-visible:ring-0 ${
+                      <div className="flex-1 space-y-4">
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`flex h-12 w-12 items-center justify-center rounded-xl text-xl shadow-lg ${
                               isCompleted
-                                ? 'text-muted-foreground line-through'
-                                : ''
+                                ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+                                : 'bg-gradient-to-br from-blue-500 to-purple-600'
                             }`}
-                          />
+                          >
+                            <span className="text-white">
+                              {getCategoryIcon(task.category)}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <Input
+                              placeholder="Task name"
+                              value={task.name}
+                              onChange={(e) =>
+                                onUpdateTask(task.id, { name: e.target.value })
+                              }
+                              className={`h-auto border-none bg-transparent p-0 text-xl font-bold focus-visible:ring-0 ${
+                                isCompleted
+                                  ? 'text-muted-foreground line-through'
+                                  : 'text-gray-900 dark:text-white'
+                              }`}
+                            />
+                          </div>
                           {/* Split Toggle Button */}
-                          <div className="ml-2 flex items-center gap-1">
+                          <div className="flex items-center gap-2">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1">
-                                  <SplitIcon className="h-4 w-4 text-primary" />
+                                <div className="flex items-center gap-2 rounded-lg bg-gray-100 p-2 dark:bg-gray-800">
+                                  <SplitIcon className="h-4 w-4 text-blue-600" />
                                   <Switch
                                     id={`split-toggle-${task.id}`}
                                     checked={task.allowSplit ?? true}
@@ -271,32 +365,43 @@ export function TaskList({
                             </Tooltip>
                           </div>
                           {isCompleted && (
-                            <CheckCircleIcon className="h-5 w-5 text-dynamic-green" />
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-white shadow-lg">
+                              <CheckCircleIcon className="h-5 w-5" />
+                            </div>
                           )}
                         </div>
 
                         {/* Progress Bar */}
                         {progress && (
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             <div className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">
+                              <span className="font-medium text-muted-foreground">
                                 Progress: {progress.completed.toFixed(1)}h /{' '}
                                 {task.duration}h
                               </span>
                               <span
-                                className={`font-medium ${isCompleted ? 'text-dynamic-green' : 'text-dynamic-blue'}`}
+                                className={`text-lg font-bold ${isCompleted ? 'text-green-600' : 'text-blue-600'}`}
                               >
                                 {Math.round(progressPercentage)}%
                               </span>
                             </div>
-                            <Progress
-                              value={progressPercentage}
-                              className="h-2"
-                            />
+                            <div className="relative">
+                              <Progress
+                                value={progressPercentage}
+                                className="h-3 bg-gray-200 dark:bg-gray-700"
+                              />
+                              <div
+                                className={`absolute inset-0 rounded-full bg-gradient-to-r ${
+                                  isCompleted
+                                    ? 'from-green-500 to-emerald-600'
+                                    : 'from-blue-500 to-purple-600'
+                                } opacity-20`}
+                              ></div>
+                            </div>
                             {progress.remaining > 0 && (
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <ClockIcon className="h-3 w-3" />
-                                <span>
+                                <ClockIcon className="h-4 w-4" />
+                                <span className="font-medium">
                                   {progress.remaining.toFixed(1)}h remaining
                                 </span>
                               </div>
@@ -305,9 +410,20 @@ export function TaskList({
                         )}
 
                         {/* Tags */}
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge className={getCategoryColor(task.category)}>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Badge
+                            className={`${getCategoryColor(task.category)} px-3 py-1 font-semibold`}
+                          >
                             {task.category}
+                          </Badge>
+
+                          <Badge
+                            className={`${getPriorityColor(task.priority)} px-3 py-1 font-semibold`}
+                          >
+                            <span className="mr-1">
+                              {getPriorityIcon(task.priority)}
+                            </span>
+                            {task.priority}
                           </Badge>
 
                           {deadlineStatus && (
@@ -315,7 +431,7 @@ export function TaskList({
                               <TooltipTrigger>
                                 <Badge
                                   variant="outline"
-                                  className={deadlineStatus.color}
+                                  className={`${deadlineStatus.color} px-3 py-1 font-semibold`}
                                 >
                                   <CalendarIcon className="mr-1 h-3 w-3" />
                                   {deadlineStatus.text}
@@ -335,7 +451,7 @@ export function TaskList({
                               <TooltipTrigger>
                                 <Badge
                                   variant="outline"
-                                  className="text-dynamic-purple"
+                                  className="border-purple-200 bg-purple-50 px-3 py-1 font-semibold text-purple-600 dark:border-purple-800 dark:bg-purple-950/20"
                                 >
                                   <ZapIcon className="mr-1 h-3 w-3" />
                                   Splittable
@@ -355,16 +471,16 @@ export function TaskList({
                         variant="ghost"
                         size="icon"
                         onClick={() => onDeleteTask(task.id)}
-                        className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                        className="text-muted-foreground opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20"
                       >
-                        <Trash2Icon className="h-4 w-4" />
+                        <Trash2Icon className="h-5 w-5" />
                       </Button>
                     </div>
 
                     {/* Task Details */}
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
                       <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">
+                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                           Duration (hours)
                         </Label>
                         <Input
@@ -377,12 +493,12 @@ export function TaskList({
                               duration: parseFloat(e.target.value),
                             })
                           }
-                          className="text-sm"
+                          className="border-gray-200 text-sm focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">
+                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                           Min Duration
                         </Label>
                         <Input
@@ -395,12 +511,12 @@ export function TaskList({
                               minDuration: parseFloat(e.target.value),
                             })
                           }
-                          className="text-sm"
+                          className="border-gray-200 text-sm focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">
+                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                           Max Duration
                         </Label>
                         <Input
@@ -413,12 +529,12 @@ export function TaskList({
                               maxDuration: parseFloat(e.target.value),
                             })
                           }
-                          className="text-sm"
+                          className="border-gray-200 text-sm focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">
+                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                           Category
                         </Label>
                         <Select
@@ -427,7 +543,7 @@ export function TaskList({
                             value: 'work' | 'personal' | 'meeting'
                           ) => onUpdateTask(task.id, { category: value })}
                         >
-                          <SelectTrigger className="text-sm">
+                          <SelectTrigger className="border-gray-200 text-sm focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -439,11 +555,35 @@ export function TaskList({
                           </SelectContent>
                         </Select>
                       </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                          Priority
+                        </Label>
+                        <Select
+                          value={task.priority}
+                          onValueChange={(value: TaskPriority) =>
+                            onUpdateTask(task.id, { priority: value })
+                          }
+                        >
+                          <SelectTrigger className="border-gray-200 text-sm focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="critical">
+                              🚨 Critical
+                            </SelectItem>
+                            <SelectItem value="high">⚡ High</SelectItem>
+                            <SelectItem value="normal">📋 Normal</SelectItem>
+                            <SelectItem value="low">📝 Low</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     {/* Deadline */}
                     <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">
+                      <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                         Deadline (Optional)
                       </Label>
                       <Input
@@ -460,7 +600,7 @@ export function TaskList({
                               : undefined,
                           })
                         }
-                        className="text-sm"
+                        className="border-gray-200 text-sm focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
                         min={dayjs().format('YYYY-MM-DDTHH:mm')}
                       />
                     </div>
@@ -476,17 +616,17 @@ export function TaskList({
             <Button
               onClick={onSchedule}
               size="lg"
-              className="w-full"
+              className="h-12 w-full bg-gradient-to-r from-blue-500 to-purple-600 text-lg font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
               disabled={isScheduling}
             >
               {isScheduling ? (
                 <>
-                  <ClockIcon className="mr-2 h-4 w-4 animate-spin" />
+                  <ClockIcon className="mr-2 h-5 w-5 animate-spin" />
                   Generating Schedule...
                 </>
               ) : (
                 <>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="mr-2 h-5 w-5" />
                   Generate Optimized Schedule
                 </>
               )}
