@@ -98,7 +98,9 @@ export default function FeatureSummary<T>({
         )}
       </div>
       {href && !form && <Link href={href}>{primaryTrigger}</Link>}
-      {secondaryHref && !form && <Link href={secondaryHref}>{secondaryTrigger}</Link>}
+      {secondaryHref && !form && (
+        <Link href={secondaryHref}>{secondaryTrigger}</Link>
+      )}
       {(form ||
         action ||
         showDefaultFormAsSecondary ||

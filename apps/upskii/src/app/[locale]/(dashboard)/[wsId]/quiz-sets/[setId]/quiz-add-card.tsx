@@ -394,7 +394,9 @@ export default function QuizAddCard({
                                 ) : (
                                   <>
                                     <Wand2 className="mr-1 h-4 w-4" />
-                                    {t('content.options.generate-explanation-button')}
+                                    {t(
+                                      'content.options.generate-explanation-button'
+                                    )}
                                   </>
                                 )}
                               </Button>

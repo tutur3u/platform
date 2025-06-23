@@ -113,14 +113,14 @@ export default function PasteConfirmModal({
               className="border-muted-foreground text-secondary-foreground hover:bg-dynamic-pink/50"
             >
               <X className="mr-2 h-4 w-4" />
-                {t('paste-confirm-modal.discard-button')}
+              {t('paste-confirm-modal.discard-button')}
             </Button>
             <Button
               onClick={confirmPaste}
               className="border border-dynamic-purple bg-dynamic-purple/30 text-dynamic-light-purple hover:bg-dynamic-purple/60 hover:text-primary"
             >
               <CheckCircle className="mr-2 h-4 w-4" />
-                {t('paste-confirm-modal.confirm-button')}
+              {t('paste-confirm-modal.confirm-button')}
             </Button>
           </div>
         </CardContent>
