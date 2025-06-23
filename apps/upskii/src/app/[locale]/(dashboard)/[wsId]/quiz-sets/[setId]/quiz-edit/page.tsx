@@ -20,7 +20,12 @@ export default async function Page({ params }: Props) {
   }
   return (
     <div>
-      <QuizForm wsId={wsId} setId={setId} data={quizData ?? undefined} isEdit={true} />
+      <QuizForm
+        wsId={wsId}
+        setId={setId}
+        data={quizData ?? undefined}
+        isEdit={true}
+      />
     </div>
   );
 }

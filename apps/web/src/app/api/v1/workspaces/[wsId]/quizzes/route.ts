@@ -89,7 +89,7 @@ export async function POST(req: Request, { params }: Params) {
       // Sync options: simplest is to delete old and re-insert
       await supabase.from('quiz_options').delete().eq('quiz_id', quizId);
       if (quiz.quiz_options.length) {
-        const optionsPayload = quiz.quiz_options.map(o => ({
+        const optionsPayload = quiz.quiz_options.map((o) => ({
           quiz_id: quizId,
           value: o.value,
           is_correct: o.is_correct,
