@@ -285,7 +285,9 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                           <TagSuggestions
                             suggestions={TAG_SUGGESTIONS}
                             selectedTags={field.value || []}
-                            onTagSelect={(tag) => field.onChange([...(field.value || []), tag])}
+                            onTagSelect={(tag) =>
+                              field.onChange([...(field.value || []), tag])
+                            }
                             maxDisplay={6}
                           />
                         </div>
