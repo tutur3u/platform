@@ -5,8 +5,23 @@ import { Card } from '@tuturuuu/ui/card';
 import { AlertTriangle } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 
+interface Task {
+  id: string;
+  name: string;
+  description?: string;
+  priority?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  end_date?: string | null;
+  boardId: string;
+  boardName: string;
+  listName: string;
+  listStatus?: string;
+  archived?: boolean;
+}
+
 interface TaskCreationAnalyticsProps {
-  allTasks: any[];
+  allTasks: Task[];
   selectedBoard: string | null;
 }
 
@@ -48,7 +63,7 @@ export function TaskCreationAnalytics({
       high: filteredTasks.filter((task) => task.priority === 2).length,
       medium: filteredTasks.filter((task) => task.priority === 3).length,
       low: filteredTasks.filter((task) => task.priority === 4).length,
-      unset: filteredTasks.filter((task) => !task.priority).length,
+      unset: filteredTasks.filter((task) => !task.priority || task.priority === null).length,
     };
 
     // Task type distribution by board lists
@@ -67,8 +82,8 @@ export function TaskCreationAnalytics({
         new Date(task.updated_at).getTime() > new Date(task.created_at).getTime()
       )
       .map((task) => {
-        const created = new Date(task.created_at);
-        const updated = new Date(task.updated_at);
+        const created = new Date(task.created_at!);
+        const updated = new Date(task.updated_at!);
         return (updated.getTime() - created.getTime()) / (1000 * 60 * 60 * 24); // days
       });
 
@@ -76,10 +91,10 @@ export function TaskCreationAnalytics({
       ? timeToStartData.reduce((sum, time) => sum + time, 0) / timeToStartData.length
       : 0;
 
-    // Task creation rate trend
-    const creationTrend = lastWeekCreated > 0 
-      ? ((thisWeekCreated - lastWeekCreated) / lastWeekCreated) * 100
-      : thisWeekCreated > 0 ? 100 : 0;
+    // Task creation rate trend - improved logic for clarity
+    const creationTrend = lastWeekCreated === 0 
+      ? (thisWeekCreated > 0 ? 100 : 0) // 100% increase if we had 0 last week but have tasks this week
+      : ((thisWeekCreated - lastWeekCreated) / lastWeekCreated) * 100;
 
     // Backlog growth (not started tasks older than 1 week)
     const backlogTasks = filteredTasks.filter((task) => 

@@ -5,8 +5,23 @@ import { Card } from '@tuturuuu/ui/card';
 import { Clock } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 
+interface Task {
+  id: string;
+  name: string;
+  description?: string;
+  priority?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  end_date?: string | null;
+  boardId: string;
+  boardName: string;
+  listName: string;
+  listStatus?: string;
+  archived?: boolean;
+}
+
 interface TaskWorkflowAnalyticsProps {
-  allTasks: any[];
+  allTasks: Task[];
   selectedBoard: string | null;
 }
 
@@ -40,8 +55,8 @@ export function TaskWorkflowAnalytics({
     const cycleTimeData = completedTasks
       .filter((task) => task.created_at && task.updated_at)
       .map((task) => {
-        const created = new Date(task.created_at);
-        const completed = new Date(task.updated_at);
+        const created = new Date(task.created_at!);
+        const completed = new Date(task.updated_at!);
         return (completed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
       });
 
@@ -53,14 +68,14 @@ export function TaskWorkflowAnalytics({
     const taskAges = filteredTasks
       .filter((task) => task.created_at)
       .map((task) => {
-        const created = new Date(task.created_at);
+        const created = new Date(task.created_at!);
         return (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
       });
 
     const newTasks = taskAges.filter((age) => age <= 3).length; // 0-3 days
     const recentTasks = taskAges.filter((age) => age > 3 && age <= 7).length; // 4-7 days
     const oldTasks = taskAges.filter((age) => age > 7 && age <= 30).length; // 1-4 weeks
-    const staleTasks = taskAges.filter((age) => age > 30).length; // >1 month
+    const staleTasks = taskAges.filter((age) => age > 30).length;
 
     // Workload distribution
     const totalTasks = filteredTasks.length;
@@ -100,6 +115,12 @@ export function TaskWorkflowAnalytics({
     { key: 'old', label: '📚 Old (1-4w)', count: workflowAnalytics.ageDistribution.old, color: 'bg-yellow-500' },
     { key: 'stale', label: '⏰ Stale (>1m)', count: workflowAnalytics.ageDistribution.stale, color: 'bg-red-500' },
   ];
+
+  // Optimize filtering for large datasets
+  const visibleAgeConfig = useMemo(() => 
+    ageConfig.filter(age => age.count > 0), 
+    [workflowAnalytics.ageDistribution]
+  );
 
   return (
     <Card className="p-4">
@@ -160,7 +181,7 @@ export function TaskWorkflowAnalytics({
         <div className="space-y-2">
           <div className="text-sm font-medium">Task Age</div>
           <div className="space-y-1">
-            {ageConfig.filter(age => age.count > 0).map((age) => (
+            {visibleAgeConfig.map((age) => (
               <div key={age.key} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className={cn('h-2 w-2 rounded', age.color)}></div>

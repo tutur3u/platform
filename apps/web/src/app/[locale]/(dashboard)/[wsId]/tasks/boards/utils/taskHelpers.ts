@@ -2,6 +2,35 @@
  * Utility functions for task management and calculations
  */
 
+interface Task {
+  id: string;
+  name: string;
+  description?: string;
+  priority?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  end_date?: string | null;
+  boardId: string;
+  boardName: string;
+  listName: string;
+  listStatus?: string;
+  archived?: boolean;
+  completed_at?: string;
+  closed_at?: string;
+  finished_at?: string;
+  done_at?: string;
+  [key: string]: any;
+}
+
+interface BoardMetrics {
+  id: string;
+  totalTasks: number;
+  completedTasks: number;
+  overdueTasks: number;
+  highPriorityTasks: number;
+  progressPercentage: number;
+}
+
 /**
  * Calculate the number of days a task is overdue
  * @param dueDate The task's due date
@@ -17,16 +46,15 @@ export function calculateOverdueDays(dueDate: string | Date): number {
  * @param task Task object with potential completion date fields
  * @returns Date object or null if no valid completion date found
  */
-export function getTaskCompletionDate(task: any): Date | null {
-  const taskData = task as any;
+export function getTaskCompletionDate(task: Task): Date | null {
   const possibleFields = ['updated_at', 'completed_at', 'closed_at', 'finished_at', 'done_at'];
   
   // First try to get explicit completion dates
   for (const field of possibleFields) {
-    const dateStr = taskData[field];
+    const dateStr = task[field];
     if (dateStr) {
       const date = new Date(dateStr);
-      if (!isNaN(date.getTime())) {
+      if (!isNaN(date.getTime()) && date.getTime() > 0) {
         return date;
       }
     }
@@ -35,9 +63,9 @@ export function getTaskCompletionDate(task: any): Date | null {
   // Fallback: if task is completed but no completion date, use updated_at or created_at as estimate
   if (task.listStatus === 'done' || task.listStatus === 'closed' || task.archived) {
     // Try updated_at first (might indicate when status was changed)
-    if (taskData.updated_at) {
-      const date = new Date(taskData.updated_at);
-      if (!isNaN(date.getTime())) {
+    if (task.updated_at) {
+      const date = new Date(task.updated_at);
+      if (!isNaN(date.getTime()) && date.getTime() > 0) {
         return date;
       }
     }
@@ -45,7 +73,7 @@ export function getTaskCompletionDate(task: any): Date | null {
     // Last resort: use creation date (not ideal but better than nothing)
     if (task.created_at) {
       const date = new Date(task.created_at);
-      if (!isNaN(date.getTime())) {
+      if (!isNaN(date.getTime()) && date.getTime() > 0) {
         return date;
       }
     }
@@ -80,10 +108,10 @@ export function getStatusColor(status: string): string {
  * @returns Filtered array of tasks
  */
 export function filterTasks(
-  tasks: any[],
+  tasks: Task[],
   boardId: string | null,
   statusFilter: 'all' | 'not_started' | 'active' | 'done' | 'closed'
-): any[] {
+): Task[] {
   let filtered = tasks;
 
   // Filter by board
@@ -107,8 +135,8 @@ export function filterTasks(
  * @param tasks Array of tasks to group
  * @returns Object with tasks grouped by status
  */
-export function groupTasksByStatus(tasks: any[]): Record<string, any[]> {
-  const groups: Record<string, any[]> = {
+export function groupTasksByStatus(tasks: Task[]): Record<string, Task[]> {
+  const groups: Record<string, Task[]> = {
     not_started: [],
     active: [],
     done: [],
@@ -136,7 +164,7 @@ export function groupTasksByStatus(tasks: any[]): Record<string, any[]> {
  * @param selectedBoard Board ID to filter by (null for all boards)
  * @returns Aggregated metrics
  */
-export function getFilteredMetrics(data: any[], selectedBoard: string | null) {
+export function getFilteredMetrics(data: BoardMetrics[], selectedBoard: string | null) {
   const filteredData = selectedBoard
     ? data.filter((board) => board.id === selectedBoard)
     : data;

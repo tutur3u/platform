@@ -44,6 +44,7 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
   const [isOpen, setIsOpen] = useState(true);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
+  // Early return after all hooks are declared
   if (count === 0) return null;
 
   const toggleTaskExpansion = (taskId: string, e: React.MouseEvent) => {
@@ -137,6 +138,8 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
                           size="sm"
                           className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                           onClick={(e) => toggleTaskExpansion(task.id, e)}
+                          title={isExpanded ? "Collapse task details" : "Expand task details"}
+                          aria-label={isExpanded ? "Collapse task details" : "Expand task details"}
                         >
                           {isExpanded ? (
                             <ChevronDown className="h-3 w-3" />
@@ -216,6 +219,8 @@ export function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupP
                       e.stopPropagation();
                       onTaskClick(task);
                     }}
+                    title="View task details"
+                    aria-label="View task details"
                   >
                     <ExternalLink className="h-4 w-4" />
                   </Button>

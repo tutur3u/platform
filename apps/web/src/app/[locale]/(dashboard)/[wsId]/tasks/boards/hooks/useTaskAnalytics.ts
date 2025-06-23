@@ -1,10 +1,52 @@
 import { useMemo } from 'react';
 import { getTaskCompletionDate } from '../utils/taskHelpers';
 
+interface Task {
+  id: string;
+  name: string;
+  description?: string;
+  priority?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  end_date?: string | null;
+  boardId: string;
+  boardName: string;
+  listName: string;
+  listStatus?: string;
+  archived?: boolean;
+}
+
+interface DurationResult {
+  days: number;
+  hours: number;
+  label: string;
+  count: number;
+  description: string;
+}
+
+interface VelocityResult {
+  thisWeek: number;
+  lastWeek: number;
+  avgPerWeek: number;
+  last4Weeks: number;
+  trend: number;
+  label: string;
+  description: string;
+}
+
+interface OnTimeRateResult {
+  rate: number;
+  onTime: number;
+  total: number;
+  late: number;
+  label: string;
+  description: string;
+}
+
 /**
  * Hook to calculate average task completion time
  */
-export function useAvgDuration(allTasks: any[], selectedBoard: string | null) {
+export function useAvgDuration(allTasks: Task[], selectedBoard: string | null): DurationResult {
   return useMemo(() => {
     const filteredTasks = selectedBoard
       ? allTasks.filter((task) => task.boardId === selectedBoard)
@@ -35,7 +77,7 @@ export function useAvgDuration(allTasks: any[], selectedBoard: string | null) {
 
     let validDurations = 0;
     const totalDurationMs = completedTasks.reduce((sum, task) => {
-      const createdDate = new Date(task.created_at);
+      const createdDate = new Date(task.created_at!);
       const completionDate = getTaskCompletionDate(task);
       
       // Validate dates
@@ -104,7 +146,7 @@ export function useAvgDuration(allTasks: any[], selectedBoard: string | null) {
 /**
  * Hook to calculate task velocity (tasks completed per week)
  */
-export function useTaskVelocity(allTasks: any[], selectedBoard: string | null) {
+export function useTaskVelocity(allTasks: Task[], selectedBoard: string | null): VelocityResult {
   return useMemo(() => {
     const filteredTasks = selectedBoard
       ? allTasks.filter((task) => task.boardId === selectedBoard)
@@ -180,7 +222,7 @@ export function useTaskVelocity(allTasks: any[], selectedBoard: string | null) {
 /**
  * Hook to calculate on-time delivery rate
  */
-export function useOnTimeRate(allTasks: any[], selectedBoard: string | null) {
+export function useOnTimeRate(allTasks: Task[], selectedBoard: string | null): OnTimeRateResult {
   return useMemo(() => {
     const filteredTasks = selectedBoard
       ? allTasks.filter((task) => task.boardId === selectedBoard)
@@ -206,6 +248,7 @@ export function useOnTimeRate(allTasks: any[], selectedBoard: string | null) {
         rate: 0, 
         onTime: 0, 
         total: 0, 
+        late: 0,
         label: 'N/A',
         description: totalCompleted > 0 
           ? `${totalCompleted} completed tasks but no due dates set`
