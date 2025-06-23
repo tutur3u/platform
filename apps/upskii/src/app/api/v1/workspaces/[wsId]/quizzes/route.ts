@@ -47,9 +47,9 @@ type BulkBody = {
 
 export async function POST(
   request: Request,
-  { params }: { params: { wsId: string } }
+  { params }: Params
 ) {
-  const { wsId } = params;
+  const { wsId } = await params;
   const sb = await createClient();
 
   let body: BulkBody;
@@ -122,9 +122,9 @@ export async function POST(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { wsId: string } }
+  { params }: Params
 ) {
-  const { wsId } = params;
+  const { wsId } = await params;
   const sb = await createClient();
 
   let body: BulkBody;
