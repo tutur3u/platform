@@ -82,6 +82,7 @@ export function ChatPanel({
   apiKey,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
+  
   const storagePath = `${id}/${chat?.id}/resources/`;
   const [showDialog, setShowDialog] = useState(false);
   const [dialogType, setDialogType] = useState<
@@ -235,7 +236,8 @@ export function ChatPanel({
                 submitLabel={t('common.upload')}
                 path={storagePath}
                 accept="*"
-              />
+            />
+            
             {/* <FileUploader
               value={files}
               onValueChange={setFiles}
@@ -244,6 +246,7 @@ export function ChatPanel({
               onUpload={onUpload}
             /> */}
           </div>
+          
         )}
 
         {dialogType === 'api' && (
