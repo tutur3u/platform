@@ -156,6 +156,7 @@ export const scheduleTasks = (
         let scheduled = false;
         let tryTime = availableTimes[task.category];
         let blockAttempts = 0;
+        let scheduledAfterDeadline = false;
         while (!scheduled && blockAttempts < 50) {
           blockAttempts++;
           const availableSlots = getAvailableSlots(
@@ -163,10 +164,26 @@ export const scheduleTasks = (
             categoryHours,
             scheduledEvents
           );
-          const slot = availableSlots.find((slot) => {
+          // Try to find a slot before the deadline first
+          let slot = availableSlots.find((slot) => {
             const slotDuration = slot.end.diff(slot.start, 'hour', true);
+            if (task.deadline) {
+              return (
+                slotDuration >= task.duration &&
+                (slot.end.isBefore(task.deadline) ||
+                  slot.end.isSame(task.deadline))
+              );
+            }
             return slotDuration >= task.duration;
           });
+          // If not found, allow after deadline
+          if (!slot) {
+            slot = availableSlots.find((slot) => {
+              const slotDuration = slot.end.diff(slot.start, 'hour', true);
+              return slotDuration >= task.duration;
+            });
+            if (slot) scheduledAfterDeadline = true;
+          }
           if (slot) {
             const partStart = roundToQuarterHour(slot.start, false);
             const partEnd = partStart.add(task.duration, 'hour');
@@ -177,11 +194,14 @@ export const scheduleTasks = (
               isPastDeadline: false,
               taskId: task.id,
             };
-            if (task.deadline && partEnd.isAfter(task.deadline)) {
+            if (
+              (task.deadline && partEnd.isAfter(task.deadline)) ||
+              scheduledAfterDeadline
+            ) {
               newEvent.isPastDeadline = true;
               logs.push({
                 type: 'warning',
-                message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline.format('YYYY-MM-DD HH:mm')}.`,
+                message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline ? task.deadline.format('YYYY-MM-DD HH:mm') : 'N/A'}.`,
               });
             }
             scheduledEvents.push(newEvent);
@@ -220,31 +240,27 @@ export const scheduleTasks = (
           categoryHours,
           scheduledEvents
         );
-        // If deadline is set, filter out slots that end after the deadline
+        // Try to find a slot before the deadline first
+        let slot;
         if (task.deadline) {
-          availableSlots = availableSlots.filter(
+          slot = availableSlots.find(
             (slot) =>
-              slot.end.isBefore(task.deadline) || slot.end.isSame(task.deadline)
+              slot.end.isSame(task.deadline) || slot.end.isBefore(task.deadline)
           );
         }
-        if (availableSlots.length === 0) {
-          // Move to next day and try again, unless deadline prevents it
-          const nextTime = tryTime.add(1, 'day').startOf('day');
-          if (task.deadline && nextTime.isAfter(task.deadline)) {
-            logs.push({
-              type: 'warning',
-              message: `No available slots before deadline for task "${task.name}". Skipping remaining duration.`,
-            });
-            task.remaining = 0;
-            break;
+        // If not found, allow after deadline
+        let scheduledAfterDeadline = false;
+        if (!slot) {
+          slot = availableSlots[0];
+          if (slot && task.deadline && slot.end.isAfter(task.deadline)) {
+            scheduledAfterDeadline = true;
           }
+        }
+        if (!slot) {
+          // Move to next day and try again
+          const nextTime = tryTime.add(1, 'day').startOf('day');
           tryTime = getNextAvailableTime(categoryHours, nextTime);
           continue;
-        }
-        const slot = availableSlots[0];
-        if (!slot) {
-          // Defensive: should not happen, but skip if no slot
-          break;
         }
         const slotDuration = slot.end.diff(slot.start, 'hour', true);
         let partDuration = Math.min(task.remaining, slotDuration);
@@ -254,7 +270,6 @@ export const scheduleTasks = (
           Math.min(task.minDuration, task.remaining)
         );
         partDuration = hoursToQuarterHours(partDuration);
-        // If the remaining duration is less than minDuration and we can't fit it
         if (
           task.remaining < task.minDuration &&
           partDuration < task.remaining
@@ -273,28 +288,6 @@ export const scheduleTasks = (
         }
         const partStart = roundToQuarterHour(slot.start, false);
         const partEnd = partStart.add(partDuration, 'hour');
-        if (partEnd.isAfter(slot.end)) {
-          const adjustedDuration = slot.end.diff(partStart, 'hour', true);
-          if (adjustedDuration < task.minDuration) {
-            logs.push({
-              type: 'error',
-              message: `Cannot fit minimum duration for task "${task.name}" part ${task.nextPart}.`,
-            });
-            task.remaining = 0;
-            break;
-          }
-          partDuration = hoursToQuarterHours(adjustedDuration);
-        }
-        const finalPartEnd = partStart.add(partDuration, 'hour');
-        // If this part would end after the deadline, skip scheduling
-        if (task.deadline && finalPartEnd.isAfter(task.deadline)) {
-          logs.push({
-            type: 'warning',
-            message: `Cannot schedule part of task "${task.name}" because it would end after the deadline (${task.deadline.format('YYYY-MM-DD HH:mm')}). Skipping remaining duration.`,
-          });
-          task.remaining = 0;
-          break;
-        }
         const totalParts = Math.ceil(task.duration / task.maxDuration);
         const newEvent: Event = {
           id: `event-${task.id}-part-${task.nextPart}`,
@@ -302,21 +295,24 @@ export const scheduleTasks = (
             totalParts > 1
               ? `${task.name} (Part ${task.nextPart}/${totalParts})`
               : task.name,
-          range: { start: partStart, end: finalPartEnd },
+          range: { start: partStart, end: partEnd },
           isPastDeadline: false,
           taskId: task.id,
           partNumber: totalParts > 1 ? task.nextPart : undefined,
           totalParts: totalParts > 1 ? totalParts : undefined,
         };
-        if (task.deadline && finalPartEnd.isAfter(task.deadline)) {
+        if (
+          (task.deadline && partEnd.isAfter(task.deadline)) ||
+          scheduledAfterDeadline
+        ) {
           newEvent.isPastDeadline = true;
           logs.push({
             type: 'warning',
-            message: `Part ${task.nextPart} of task "${task.name}" is scheduled past its deadline of ${task.deadline.format('YYYY-MM-DD HH:mm')}.`,
+            message: `Part ${task.nextPart} of task "${task.name}" is scheduled past its deadline of ${task.deadline ? task.deadline.format('YYYY-MM-DD HH:mm') : 'N/A'}.`,
           });
         }
         scheduledEvents.push(newEvent);
-        tryTime = roundToQuarterHour(finalPartEnd, true);
+        tryTime = roundToQuarterHour(partEnd, true);
         availableTimes[task.category] = tryTime;
         task.remaining -= partDuration;
         task.scheduledParts++;

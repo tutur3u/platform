@@ -166,8 +166,25 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
     );
   }
 
+  // Overdue summary alert
+  const overdueEventsList = events.filter((e) => e.isPastDeadline);
+
   return (
     <div className="space-y-8">
+      {/* Overdue Events Alert */}
+      {overdueEventsList.length > 0 && (
+        <div className="animate-pulse-slow flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 shadow-md dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+          <AlertTriangleIcon className="h-6 w-6 animate-bounce text-red-500" />
+          <span className="font-semibold">
+            {overdueEventsList.length} overdue event
+            {overdueEventsList.length > 1 ? 's' : ''} scheduled after their
+            deadline!
+          </span>
+          <span className="ml-auto text-xs text-red-500">
+            Check details below
+          </span>
+        </div>
+      )}
       {/* Schedule Overview */}
       <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
         <CardHeader className="pb-6">
@@ -423,16 +440,31 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                                         <TooltipTrigger>
                                           <Badge
                                             variant="outline"
-                                            className="border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-600 dark:border-red-800 dark:bg-red-950/20"
+                                            className="animate-pulse-slow relative border-red-300 bg-red-100 px-2 py-1 text-xs font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30"
                                           >
-                                            <AlertTriangleIcon className="mr-1 h-3 w-3" />
-                                            Overdue
+                                            <span className="absolute top-1/2 -left-2 -translate-y-1/2">
+                                              <AlertTriangleIcon className="h-4 w-4 animate-bounce text-red-500" />
+                                            </span>
+                                            <span className="ml-4">
+                                              Overdue
+                                            </span>
                                           </Badge>
                                         </TooltipTrigger>
                                         <TooltipContent>
                                           <p>
                                             This event is scheduled past its
                                             deadline
+                                            {task?.deadline ? (
+                                              <>
+                                                <br />
+                                                <span className="font-semibold">
+                                                  Missed Deadline:
+                                                </span>{' '}
+                                                {task.deadline.format(
+                                                  'YYYY-MM-DD HH:mm'
+                                                )}
+                                              </>
+                                            ) : null}
                                           </p>
                                         </TooltipContent>
                                       </Tooltip>
