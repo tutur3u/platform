@@ -170,7 +170,8 @@ export const scheduleTasks = (
             if (task.deadline) {
               return (
                 slotDuration >= task.duration &&
-                (slot.end.isBefore(task.deadline) || slot.end.isSame(task.deadline))
+                (slot.end.isBefore(task.deadline) ||
+                  slot.end.isSame(task.deadline))
               );
             }
             return slotDuration >= task.duration;
@@ -242,8 +243,9 @@ export const scheduleTasks = (
         // Try to find a slot before the deadline first
         let slot;
         if (task.deadline) {
-          slot = availableSlots.find((slot) =>
-            slot.end.isSame(task.deadline) || slot.end.isBefore(task.deadline)
+          slot = availableSlots.find(
+            (slot) =>
+              slot.end.isSame(task.deadline) || slot.end.isBefore(task.deadline)
           );
         }
         // If not found, allow after deadline
