@@ -45,4 +45,4 @@ export function GanttHeader({ productivityStats }: GanttHeaderProps) {
       </div>
     </div>
   );
-} 
+}
