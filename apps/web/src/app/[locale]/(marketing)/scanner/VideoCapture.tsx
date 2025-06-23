@@ -34,9 +34,8 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
 
         setCameraOn(true);
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error(error);
-        }
+        console.error(error);
+
         setError('Can not access the webcam.');
       }
     } else {
