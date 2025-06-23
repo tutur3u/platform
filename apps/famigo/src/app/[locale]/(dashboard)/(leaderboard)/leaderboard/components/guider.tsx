@@ -5,7 +5,7 @@ export default function Guider() {
   const t = useTranslations('nova.leaderboard-page');
 
   return (
-    <Card className="border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
+    <Card className="bg-white dark:border-slate-800 dark:bg-slate-900/80">
       <CardContent className="p-6">
         <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
           {t('tutorials.title')}

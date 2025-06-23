@@ -13,7 +13,11 @@ export interface Event {
   taskId: string;
   partNumber?: number;
   totalParts?: number;
+  locked?: boolean;
+  category?: 'work' | 'personal' | 'meeting';
 }
+
+export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
 
 export interface Task {
   id: string;
@@ -22,8 +26,10 @@ export interface Task {
   minDuration: number;
   maxDuration: number;
   category: 'work' | 'personal' | 'meeting';
+  priority: TaskPriority;
   events: Event[];
   deadline?: dayjs.Dayjs;
+  allowSplit?: boolean;
 }
 
 export interface ActiveHours {

@@ -18,8 +18,6 @@ export const TTR_URL =
     ? 'https://tuturuuu.com'
     : 'http://localhost:7803';
 
-export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
-
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';
 

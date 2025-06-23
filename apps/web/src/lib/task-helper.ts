@@ -143,13 +143,33 @@ export async function updateTask(
   return data as Task;
 }
 
+// Utility function to transform and deduplicate assignees
+export function transformAssignees(assignees: any[]): any[] {
+  return (
+    assignees
+      ?.map((a: any) => a.user)
+      .filter(
+        (user: any, index: number, self: any[]) =>
+          user?.id && self.findIndex((u: any) => u.id === user.id) === index
+      ) || []
+  );
+}
+
+// Utility function to invalidate all task-related caches consistently
+export function invalidateTaskCaches(queryClient: any, boardId?: string) {
+  if (boardId) {
+    queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+  }
+  // Always invalidate time tracker since task availability affects it
+  queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
+}
+
 export async function moveTask(
   supabase: SupabaseClient,
   taskId: string,
   newListId: string
 ) {
-  console.log('🔄 Starting moveTask:', { taskId, newListId });
-
   // First, get the target list to check its status
   const { data: targetList, error: listError } = await supabase
     .from('task_lists')
@@ -162,16 +182,11 @@ export async function moveTask(
     throw listError;
   }
 
-  console.log('✅ Target list found:', targetList);
-
-  // Determine if task should be marked as archived based on list status
+  // Determine task completion status based on list status
+  // - not_started, active: task is available for work (archived = false)
+  // - done, closed: task is completed/archived (archived = true)
   const shouldArchive =
     targetList.status === 'done' || targetList.status === 'closed';
-
-  console.log('📝 Task completion status will be:', {
-    shouldArchive,
-    reason: `List status is "${targetList.status}"`,
-  });
 
   const { data, error } = await supabase
     .from('tasks')
@@ -199,23 +214,10 @@ export async function moveTask(
     throw error;
   }
 
-  console.log('✅ Task moved successfully in database:', {
-    taskId: data.id,
-    newListId: data.list_id,
-    archived: data.archived,
-  });
-
   // Transform the nested assignees data
   const transformedTask = {
     ...data,
-    assignees: data.assignees
-      ?.map((a: any) => a.user)
-      .filter(
-        (user: any, index: number, self: any[]) =>
-          user &&
-          user.id &&
-          self.findIndex((u: any) => u.id === user.id) === index
-      ),
+    assignees: transformAssignees(data.assignees),
   };
 
   return transformedTask as Task;
@@ -484,17 +486,10 @@ export function useMoveTask(boardId: string) {
       taskId: string;
       newListId: string;
     }) => {
-      console.log('🚀 useMoveTask mutation called:', {
-        taskId,
-        newListId,
-        boardId,
-      });
       const supabase = createClient();
       return moveTask(supabase, taskId, newListId);
     },
     onMutate: async ({ taskId, newListId }) => {
-      console.log('🔄 useMoveTask onMutate:', { taskId, newListId });
-
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
@@ -514,9 +509,7 @@ export function useMoveTask(boardId: string) {
 
       return { previousTasks };
     },
-    onError: (err, variables, context) => {
-      console.error('❌ useMoveTask onError:', err, variables);
-
+    onError: (err, _variables, context) => {
       // Rollback optimistic update on error
       if (context?.previousTasks) {
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
@@ -529,9 +522,7 @@ export function useMoveTask(boardId: string) {
         variant: 'destructive',
       });
     },
-    onSuccess: (updatedTask, variables) => {
-      console.log('✅ useMoveTask onSuccess:', { updatedTask, variables });
-
+    onSuccess: (updatedTask, _variables) => {
       // Update the cache with the server response
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -543,11 +534,9 @@ export function useMoveTask(boardId: string) {
         }
       );
     },
-    onSettled: (data, error, variables) => {
-      console.log('🏁 useMoveTask onSettled:', { data, error, variables });
-
-      // Ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    onSettled: (_data, _error, _variables) => {
+      // Ensure data consistency across all task-related caches
+      invalidateTaskCaches(queryClient, boardId);
     },
   });
 }
@@ -568,7 +557,8 @@ export async function createBoardWithTemplate(
   supabase: SupabaseClient,
   wsId: string,
   name: string,
-  templateId?: string
+  templateId?: string,
+  tags?: string[]
 ) {
   const { data, error } = await supabase
     .from('workspace_boards')
@@ -576,6 +566,7 @@ export async function createBoardWithTemplate(
       ws_id: wsId,
       name,
       template_id: templateId,
+      tags: tags || [],
     })
     .select()
     .single();
@@ -693,12 +684,14 @@ export function useCreateBoardWithTemplate(wsId: string) {
     mutationFn: async ({
       name,
       templateId,
+      tags,
     }: {
       name: string;
       templateId?: string;
+      tags?: string[];
     }) => {
       const supabase = createClient();
-      return createBoardWithTemplate(supabase, wsId, name, templateId);
+      return createBoardWithTemplate(supabase, wsId, name, templateId, tags);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-boards', wsId] });

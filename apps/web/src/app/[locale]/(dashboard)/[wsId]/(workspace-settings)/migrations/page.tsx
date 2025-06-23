@@ -1,5 +1,5 @@
 import MigrationDashboard from './migration-dashboard';
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { redirect } from 'next/navigation';
 
 interface Props {

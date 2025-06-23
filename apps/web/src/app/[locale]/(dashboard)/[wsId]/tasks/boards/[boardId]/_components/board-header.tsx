@@ -68,11 +68,15 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
     const totalLists = board.lists.length;
     const completedTasks = board.tasks.filter((task) => {
       const taskList = board.lists.find((list) => list.id === task.list_id);
-      return taskList?.status === 'done' || taskList?.status === 'closed';
+      return (
+        task.archived ||
+        taskList?.status === 'done' ||
+        taskList?.status === 'closed'
+      );
     }).length;
     const activeTasks = board.tasks.filter((task) => {
       const taskList = board.lists.find((list) => list.id === task.list_id);
-      return taskList?.status === 'active';
+      return !task.archived && taskList?.status === 'active';
     }).length;
     const completionRate =
       totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;

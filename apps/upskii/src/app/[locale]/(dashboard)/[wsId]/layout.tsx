@@ -6,24 +6,36 @@ import { EducationBanner } from '@/components/request-education-banner';
 import { UserNav } from '@/components/user-nav';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import {
-  getPermissions,
-  getWorkspace,
-  verifySecret,
-} from '@/lib/workspace-helper';
-import {
   Award,
+  Blocks,
+  Bolt,
+  BookCopy,
+  BookKey,
   BookOpenText,
   BookText,
   Bot,
+  ClipboardCheck,
   Cog,
+  CopyCheck,
+  FileText,
+  FolderSync,
   Home,
+  KeyRound,
+  Library,
   ListTodo,
-  ShieldCheck,
+  ScrollText,
+  ShieldUser,
   SquareTerminal,
   UserCog,
   Users,
 } from '@tuturuuu/ui/icons';
+import {
+  getFeatureFlags,
+  isAnyEducationFeatureEnabled,
+  requireFeatureFlags,
+} from '@tuturuuu/utils/feature-flags/core';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -44,233 +56,180 @@ export default async function Layout({ children, params }: LayoutProps) {
     wsId,
   });
 
-  const ENABLE_AI_ONLY = await verifySecret({
-    forceAdmin: true,
-    wsId,
-    name: 'ENABLE_AI_ONLY',
-    value: 'true',
-  });
-
-  const ENABLE_EDUCATION = await verifySecret({
-    forceAdmin: true,
-    wsId,
-    name: 'ENABLE_EDUCATION',
-    value: 'true',
-  });
-  console.log('ENABLE_EDUCATION', ENABLE_EDUCATION);
+  const { ENABLE_AI, ENABLE_EDUCATION, ENABLE_QUIZZES, ENABLE_CHALLENGES } =
+    await requireFeatureFlags(wsId, {
+      requiredFlags: [
+        'ENABLE_AI',
+        'ENABLE_EDUCATION',
+        'ENABLE_QUIZZES',
+        'ENABLE_CHALLENGES',
+      ],
+      redirectTo: null,
+    });
 
   const navLinks: (NavLink | null)[] = [
-    // {
-    //   title: t('sidebar_tabs.education'),
-    //   href: `/${wsId}/education`,
-    //   icon: <GraduationCap className="h-4 w-4" />,
-    //   disabled:
-    //     ENABLE_AI_ONLY ||
-    //     !(await verifySecret({
-    //       forceAdmin: true,
-    //       wsId,
-    //       name: 'ENABLE_EDUCATION',
-    //       value: 'true',
-    //     })) ||
-    //     withoutPermission('ai_lab'),
-    //   shortcut: 'A',
-    //   experimental: 'beta',
-    // },
     {
       title: t('sidebar.home'),
       href: `/${wsId}/home`,
       icon: <Home className="h-4 w-4" />,
-      experimental: 'alpha',
+      matchExact: true,
       shortcut: 'H',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
-    },
-    {
-      title: t('sidebar.courses'),
-      href: `/${wsId}/courses`,
-      icon: <BookText className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'C',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
-    },
-    {
-      title: t('sidebar.quizzes'),
-      href: `/${wsId}/quizzes`,
-      icon: <ListTodo className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'Q',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
-    },
-    {
-      title: t('sidebar.quiz-sets'),
-      href: `/${wsId}/quiz-sets`,
-      icon: <ListTodo className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'S',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
-    },
-    {
-      title: t('sidebar.challenges'),
-      href: `/${wsId}/challenges`,
-      icon: <SquareTerminal className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'L',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
-    },
-    {
-      title: t('sidebar.ai_teach_studio'),
-      href: `/${wsId}/ai-teach-studio`,
-      icon: <BookOpenText className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'T',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
-    },
-    {
-      title: t('sidebar.certificates'),
-      href: `/${wsId}/certificates`,
-      icon: <Award className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'Q',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
-    },
-    {
-      title: t('sidebar.ai_chat'),
-      href: `/${wsId}/ai-chat`,
-      icon: <Bot className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'M',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+      disabled: !ENABLE_EDUCATION || withoutPermission('ai_lab'),
     },
     null,
     {
-      title: t('sidebar.roles'),
-      href: `/${wsId}/roles`,
-      // subItems: [] as { name: string; href: string }[],
-      icon: <ShieldCheck className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'R',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+      title: t('sidebar_tabs.learning'),
+      icon: <BookText className="h-4 w-4" />,
+      children: [
+        {
+          title: t('sidebar.courses'),
+          href: `/${wsId}/courses`,
+          icon: <BookCopy className="h-4 w-4" />,
+          shortcut: 'C',
+          disabled: !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+        },
+        {
+          title: t('sidebar.quizzes'),
+          href: `/${wsId}/quizzes`,
+          icon: <CopyCheck className="h-4 w-4" />,
+          shortcut: 'Q',
+          disabled: !ENABLE_QUIZZES || withoutPermission('ai_lab'),
+        },
+        {
+          title: t('sidebar.quiz-sets'),
+          href: `/${wsId}/quiz-sets`,
+          icon: <ListTodo className="h-4 w-4" />,
+          shortcut: 'S',
+          disabled: !ENABLE_QUIZZES || withoutPermission('ai_lab'),
+        },
+        {
+          title: t('sidebar.challenges'),
+          href: `/${wsId}/challenges`,
+          icon: <SquareTerminal className="h-4 w-4" />,
+          shortcut: 'L',
+          disabled: !ENABLE_CHALLENGES || withoutPermission('ai_lab'),
+        },
+        {
+          title: t('sidebar.certificates'),
+          href: `/${wsId}/certificates`,
+          icon: <Award className="h-4 w-4" />,
+          shortcut: 'Q',
+          disabled: !ENABLE_EDUCATION || withoutPermission('ai_lab'),
+        },
+      ],
     },
     {
-      title: t('sidebar.teams'),
-      href: `/${wsId}/teams`,
-      // subItems: [] as { name: string; href: string }[],
-      icon: <Users className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'T',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
+      title: t('sidebar_tabs.teaching'),
+      icon: <Library className="h-4 w-4" />,
+      children: [
+        {
+          title: t('sidebar.ai_teach_studio'),
+          href: `/${wsId}/ai-teach-studio`,
+          icon: <BookOpenText className="h-4 w-4" />,
+          shortcut: 'T',
+          disabled: !ENABLE_AI || withoutPermission('ai_lab'),
+        },
+        {
+          title: t('sidebar.ai_chat'),
+          href: `/${wsId}/ai-chat`,
+          icon: <Bot className="h-4 w-4" />,
+          shortcut: 'M',
+          disabled: !ENABLE_AI || withoutPermission('ai_lab'),
+        },
+      ],
     },
-    {
-      title: t('sidebar.users'),
-      href: `/${wsId}/users`,
-      // subItems: [] as { name: string; href: string }[],
-      icon: <UserCog className="h-4 w-4" />,
-      experimental: 'alpha',
-      shortcut: 'U',
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_EDUCATION',
-          value: 'true',
-        })) ||
-        withoutPermission('ai_lab'),
-    },
-
     null,
     {
       title: t('common.settings'),
-      href: `/${wsId}/settings`,
       icon: <Cog className="h-4 w-4" />,
       aliases: [
         `/${wsId}/members`,
         `/${wsId}/teams`,
+        `/${wsId}/roles`,
+        `/${wsId}/settings/reports`,
+        `/${wsId}/billing`,
+        `/${wsId}/api-keys`,
         `/${wsId}/secrets`,
         `/${wsId}/infrastructure`,
         `/${wsId}/migrations`,
         `/${wsId}/activities`,
+        `/${wsId}/approvals`,
       ],
       shortcut: ',',
+      children: [
+        {
+          title: t('workspace-settings-layout.workspace'),
+          href: `/${wsId}/settings`,
+          icon: <Bolt className="h-4 w-4" />,
+        },
+        {
+          title: t('workspace-settings-layout.members'),
+          href: `/${wsId}/members`,
+          icon: <Users className="h-4 w-4" />,
+          disabled: withoutPermission('manage_workspace_members'),
+        },
+        {
+          title: t('workspace-settings-layout.roles'),
+          href: `/${wsId}/roles`,
+          icon: <ShieldUser className="h-4 w-4" />,
+          disabled: withoutPermission('manage_workspace_roles'),
+        },
+        {
+          title: t('workspace-settings-layout.reports'),
+          href: `/${wsId}/settings/reports`,
+          icon: <FileText className="h-4 w-4" />,
+          disabled: withoutPermission('manage_user_report_templates'),
+        },
+        {
+          title: t('workspace-settings-layout.api_keys'),
+          href: `/${wsId}/api-keys`,
+          icon: <KeyRound className="h-4 w-4" />,
+          disabled: withoutPermission('manage_workspace_security'),
+        },
+        {
+          title: t('workspace-settings-layout.secrets'),
+          href: `/${wsId}/secrets`,
+          icon: <BookKey className="h-4 w-4" />,
+          disabled: withoutPermission('manage_workspace_secrets'),
+          requireRootMember: true,
+        },
+        {
+          title: t('workspace-settings-layout.infrastructure'),
+          href: `/${wsId}/infrastructure`,
+          icon: <Blocks className="h-4 w-4" />,
+          disabled: withoutPermission('view_infrastructure'),
+          requireRootWorkspace: true,
+        },
+        {
+          title: t('sidebar.platform_users'),
+          href: `/${wsId}/users`,
+          icon: <UserCog className="h-4 w-4" />,
+          shortcut: 'U',
+          disabled: withoutPermission('ai_lab'),
+          requireRootWorkspace: true,
+          requireRootMember: true,
+        },
+        {
+          title: t('workspace-settings-layout.migrations'),
+          href: `/${wsId}/migrations`,
+          icon: <FolderSync className="h-4 w-4" />,
+          disabled: withoutPermission('manage_external_migrations'),
+          requireRootWorkspace: true,
+        },
+        {
+          title: t('workspace-settings-layout.activities'),
+          href: `/${wsId}/activities`,
+          icon: <ScrollText className="h-4 w-4" />,
+          disabled: withoutPermission('manage_workspace_audit_logs'),
+          requireRootWorkspace: true,
+        },
+        {
+          title: 'Approvals',
+          href: `/${wsId}/approvals`,
+          icon: <ClipboardCheck className="h-4 w-4" />,
+          requireRootWorkspace: true,
+        },
+      ],
     },
   ];
 
@@ -278,13 +237,18 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const user = await getCurrentUser();
 
-  // Check if user is workspace creator for education access request
-  const isWorkspaceCreator = workspace?.role === 'OWNER';
-  const shouldShowRequestButton = isWorkspaceCreator && !ENABLE_EDUCATION;
+  // Check if user is workspace owner and education is not enabled
+  const isWorkspaceOwner = workspace?.role === 'OWNER';
+  const shouldShowBanner =
+    isWorkspaceOwner &&
+    !(await isAnyEducationFeatureEnabled(wsId)) &&
+    workspace?.name;
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
 
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
+
+  const featureFlags = await getFeatureFlags(wsId);
 
   if (!workspace) redirect('/onboarding');
   if (!workspace?.joined)
@@ -320,8 +284,14 @@ export default async function Layout({ children, params }: LayoutProps) {
         </Suspense>
       }
     >
-      {shouldShowRequestButton && workspace.name && (
-        <EducationBanner workspaceName={workspace.name} wsId={wsId} />
+      {shouldShowBanner && (
+        <div className="mb-6">
+          <EducationBanner
+            workspaceName={workspace.name}
+            wsId={wsId}
+            enabledFeatures={featureFlags}
+          />
+        </div>
       )}
       {children}
     </Structure>

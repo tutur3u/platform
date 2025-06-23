@@ -10,6 +10,7 @@ import {
   TaskList,
 } from '@tuturuuu/types/primitives/TaskBoard';
 import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 interface Props {
   initialBoard: TaskBoard;
@@ -24,6 +25,11 @@ export function BoardClient({
 }: Props) {
   const params = useParams();
   const boardId = params.boardId as string;
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Use React Query with initial data from SSR
   const { data: board = initialBoard } = useQuery({
@@ -34,6 +40,8 @@ export function BoardClient({
     },
     initialData: initialBoard,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: false, // Disable initial refetch on mount
+    enabled: isClient, // Only enable after hydration
   });
 
   const { data: tasks = initialTasks } = useQuery({
@@ -43,8 +51,10 @@ export function BoardClient({
       return getTasks(supabase, boardId);
     },
     initialData: initialTasks,
-    staleTime: 1 * 60 * 1000, // 1 minute for more frequent updates
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // Increased to 5 minutes to match other queries
+    refetchOnWindowFocus: false, // Disable to prevent hydration issues
+    refetchOnMount: false, // Disable initial refetch on mount
+    enabled: isClient, // Only enable after hydration
   });
 
   const { data: lists = initialLists } = useQuery({
@@ -55,6 +65,8 @@ export function BoardClient({
     },
     initialData: initialLists,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: false, // Disable initial refetch on mount
+    enabled: isClient, // Only enable after hydration
   });
 
   return (

@@ -2,11 +2,11 @@ import { transactionColumns } from './columns';
 import ExportDialogContent from './export-dialog-content';
 import { TransactionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

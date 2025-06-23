@@ -1,5 +1,6 @@
 'use server';
 
+import { transformAssignees } from '@/lib/task-helper';
 import {
   createAdminClient,
   createClient,
@@ -48,7 +49,38 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     .eq('ws_id', wsId)
     .eq('user_id', userId);
 
-  const tasksPromise = sbAdmin.from('tasks').select('*').limit(100);
+  const tasksPromise = sbAdmin
+    .from('tasks')
+    .select(
+      `
+      *,
+      list:task_lists!inner(
+        id,
+        name,
+        status,
+        board:workspace_boards!inner(
+          id,
+          name,
+          ws_id
+        )
+      ),
+      assignees:task_assignees(
+        user:users(
+          id,
+          display_name,
+          avatar_url,
+          user_private_details(email)
+        )
+      )
+    `
+    )
+    .eq('list.board.ws_id', wsId)
+    .eq('deleted', false)
+    .eq('archived', false)
+    .in('list.status', ['not_started', 'active']) // Only include tasks from not_started and active lists
+    .eq('list.deleted', false)
+    .order('created_at', { ascending: false })
+    .limit(100);
 
   // Stats are more complex and require processing, which we'll do after fetching
   const allSessionsPromise = sbAdmin
@@ -190,12 +222,34 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     dailyActivity,
   };
 
+  // Transform tasks to match the ExtendedWorkspaceTask interface expected by the time tracker
+  const transformedTasks = (tasks || []).map((task: any) => ({
+    ...task,
+    // Flatten nested data for easier access
+    board_id: task.list?.board?.id,
+    board_name: task.list?.board?.name,
+    list_id: task.list?.id,
+    list_name: task.list?.name,
+    list_status: task.list?.status,
+    // Transform assignees to match expected format
+    assignees: transformAssignees(task.assignees || []).map((user: any) => ({
+      ...user,
+      // Extract email from nested user_private_details
+      email: user?.user_private_details?.[0]?.email || null,
+    })),
+    // Add current user assignment flag
+    is_assigned_to_current_user:
+      task.assignees?.some((a: any) => a.user?.id === userId) || false,
+    // Ensure task is available for time tracking
+    completed: false, // Since we filtered out archived tasks, none should be completed
+  }));
+
   return {
     categories: categories || [],
     runningSession: runningSession || null,
     recentSessions: recentSessions || [],
     goals: goals || [],
-    tasks: tasks || [],
+    tasks: transformedTasks,
     stats,
   };
 };
