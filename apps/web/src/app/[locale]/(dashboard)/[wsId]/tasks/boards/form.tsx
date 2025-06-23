@@ -151,7 +151,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              name: formData.name,
+              name: formData.name.trim(),
               tags: formData.tags || [],
             }),
           }
@@ -178,7 +178,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
       } else {
         // Create new board with template
         await createBoardMutation.mutateAsync({
-          name: formData.name,
+          name: formData.name.trim(),
           templateId: formData.template_id || undefined,
           tags: formData.tags || [],
         });

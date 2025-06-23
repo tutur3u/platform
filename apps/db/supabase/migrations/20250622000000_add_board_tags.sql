@@ -93,7 +93,6 @@ CHECK (validate_board_tags(tags));
 CREATE OR REPLACE FUNCTION add_board_tags(board_id uuid, new_tags text[])
 RETURNS jsonb AS $$
 DECLARE
-  combined_tags jsonb;
   new_tags_jsonb jsonb;
   result_tags jsonb;
 BEGIN
@@ -142,13 +141,13 @@ BEGIN
   
   -- Atomic update: filter out tags using jsonb operations
   UPDATE workspace_boards 
-  SET tags = (
+  SET tags = COALESCE((
     SELECT jsonb_agg(tag_elem)
     FROM jsonb_array_elements_text(tags) AS tag_elem
     WHERE NOT (tag_elem = ANY(normalized_remove_tags))
-  )
+  ), '[]'::jsonb)
   WHERE id = board_id
-  RETURNING COALESCE(tags, '[]'::jsonb) INTO result_tags;
+  RETURNING tags INTO result_tags;
   
   -- Check if board was found and updated
   IF NOT FOUND THEN
