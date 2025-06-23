@@ -1,7 +1,7 @@
 'use client';
 
-import AddStudentDialog from '@/components/AddStudentDialog';
-import StudentList from '@/components/StudentList';
+import AddStudentDialog from '../AddStudentDialog';
+import StudentList from '../StudentList';
 import { Student } from '@ncthub/types/primitives/Student';
 import { Button } from '@ncthub/ui/button';
 import { toast } from '@ncthub/ui/hooks/use-toast';

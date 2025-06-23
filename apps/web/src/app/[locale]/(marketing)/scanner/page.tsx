@@ -1,8 +1,8 @@
 'use client';
 
-import AddStudentDialog from '@/components/AddStudentDialog';
-import StudentList from '@/components/StudentList';
-import VideoCapture from '@/components/VideoCapture';
+import AddStudentDialog from './AddStudentDialog';
+import StudentList from './StudentList';
+import VideoCapture from './VideoCapture';
 import { Student } from '@ncthub/types/primitives/Student';
 import {
   AlertDialog,
