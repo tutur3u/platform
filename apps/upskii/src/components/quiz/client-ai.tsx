@@ -52,10 +52,9 @@ export default function AIQuizzes({
         body: JSON.stringify({
           setId: quizSet.setId,
           moduleId,
-          quizzes: object.quizzes
+          quizzes: object.quizzes,
         }),
-      })
-      
+      });
 
       toast({
         title: t('common.success'),

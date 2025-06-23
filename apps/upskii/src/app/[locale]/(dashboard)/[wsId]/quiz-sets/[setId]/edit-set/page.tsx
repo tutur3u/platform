@@ -55,8 +55,8 @@ async function getQuizSetDetails(setId: string) {
     availableDate: data?.available_date
       ? data.available_date.toString().slice(0, 16)
       : '',
-      dueDate: data?.due_date ? data.due_date.toString().slice(0, 16) : '',
-      explanationMode: data?.explanation_mode ?? 0,
+    dueDate: data?.due_date ? data.due_date.toString().slice(0, 16) : '',
+    explanationMode: data?.explanation_mode ?? 0,
     instruction: data?.instruction ?? null,
     resultsReleased: data?.results_released ?? false,
     allowViewOldAttempts: data?.allow_view_old_attempts ?? true,
