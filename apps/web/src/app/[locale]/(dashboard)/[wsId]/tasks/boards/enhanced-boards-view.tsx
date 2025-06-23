@@ -2179,7 +2179,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
       {/* Task List Modal */}
       <Dialog open={taskModal.isOpen} onOpenChange={closeTaskModal}>
-        <DialogContent className="flex h-[80vh] max-w-4xl flex-col p-0">
+        <DialogContent className="flex h-[85vh] max-w-6xl flex-col p-0">
           <div className="flex h-full flex-col">
             {/* Header */}
             <div className="flex-shrink-0 border-b p-6 pb-4">
@@ -2197,8 +2197,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </DialogHeader>
 
               {/* Modal Controls */}
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <Select
                     value={taskModal.selectedBoard || 'all'}
                     onValueChange={(value) =>
@@ -2208,7 +2208,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       }))
                     }
                   >
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-full sm:w-48">
                       <SelectValue placeholder="Filter by board" />
                     </SelectTrigger>
                     <SelectContent>
@@ -2292,6 +2292,8 @@ interface TaskGroupProps {
     boardName: string;
     listName: string;
     boardHref?: string;
+    archived?: boolean;
+    listStatus?: string;
   }>;
   count: number;
   onTaskClick: (task: any) => void;
@@ -2299,8 +2301,22 @@ interface TaskGroupProps {
 
 function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupProps) {
   const [isOpen, setIsOpen] = useState(true);
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
   if (count === 0) return null;
+
+  const toggleTaskExpansion = (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -2325,66 +2341,151 @@ function TaskGroup({ title, icon, tasks, count, onTaskClick }: TaskGroupProps) {
       </CollapsibleTrigger>
 
       <CollapsibleContent className="space-y-2 pt-2">
-        {tasks.map((task) => (
-          <Card
-            key={task.id}
-            className="group cursor-pointer p-3 transition-colors hover:bg-muted/50"
-            onClick={() => onTaskClick(task)}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex items-center gap-2">
-                  <h4 className="truncate text-sm font-medium">{task.name}</h4>
-                  {task.priority === 1 && (
-                    <Badge variant="destructive" className="text-xs">
-                      Urgent
-                    </Badge>
+        {tasks.map((task) => {
+          const isExpanded = expandedTasks.has(task.id);
+          const hasLongContent = task.name.length > 60 || (task.description && task.description.length > 100);
+          
+          return (
+            <Card
+              key={task.id}
+              className="group cursor-pointer p-4 transition-all duration-200 hover:bg-muted/50 hover:shadow-sm"
+              onClick={() => onTaskClick(task)}
+            >
+              <div className="flex items-start gap-4">
+                <div className="min-w-0 flex-1 space-y-3">
+                  {/* Task Title and Priority */}
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h4 
+                        className={cn(
+                          "text-sm font-medium leading-relaxed transition-all duration-200",
+                          isExpanded ? "line-clamp-none" : "line-clamp-2"
+                        )}
+                        title={task.name}
+                      >
+                        {task.name}
+                      </h4>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {task.priority === 1 && (
+                        <Badge variant="destructive" className="text-xs whitespace-nowrap">
+                          🔥 Urgent
+                        </Badge>
+                      )}
+                      {task.priority === 2 && (
+                        <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                          ⚡ High
+                        </Badge>
+                      )}
+                      {task.priority === 3 && (
+                        <Badge variant="outline" className="text-xs whitespace-nowrap">
+                          📋 Medium
+                        </Badge>
+                      )}
+                      {task.priority === 4 && (
+                        <Badge variant="outline" className="text-xs whitespace-nowrap">
+                          📝 Low
+                        </Badge>
+                      )}
+                      
+                      {/* Expand/Collapse button for long content */}
+                      {hasLongContent && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={(e) => toggleTaskExpansion(task.id, e)}
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="h-3 w-3" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Task Description */}
+                  {task.description && (
+                    <div className="text-xs text-muted-foreground">
+                      <p 
+                        className={cn(
+                          "leading-relaxed transition-all duration-200",
+                          isExpanded ? "line-clamp-none" : "line-clamp-2"
+                        )}
+                        title={task.description}
+                      >
+                        {task.description}
+                      </p>
+                    </div>
                   )}
-                  {task.priority === 2 && (
-                    <Badge variant="secondary" className="text-xs">
-                      High
-                    </Badge>
+
+                  {/* Task Metadata */}
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1 min-w-0">
+                      <LayoutGrid className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate" title={task.boardName}>
+                        {task.boardName}
+                      </span>
+                    </span>
+                    
+                    <span className="flex items-center gap-1 min-w-0">
+                      <LayoutList className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate" title={task.listName}>
+                        {task.listName}
+                      </span>
+                    </span>
+                    
+                    {task.end_date && (
+                      <span className="flex items-center gap-1 whitespace-nowrap">
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
+                        <span>
+                          {new Date(task.end_date).toLocaleDateString()}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Overdue Warning */}
+                  {task.end_date && 
+                   new Date(task.end_date) < new Date() && 
+                   !task.archived && 
+                   task.listStatus !== 'done' && 
+                   task.listStatus !== 'closed' && (
+                    <div className="flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 dark:bg-red-900/20">
+                      <AlertTriangle className="h-3 w-3 text-red-500" />
+                      <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                        Overdue by{' '}
+                        {Math.ceil(
+                          (new Date().getTime() - new Date(task.end_date).getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )}{' '}
+                        days
+                      </span>
+                    </div>
                   )}
                 </div>
 
-                {task.description && (
-                  <p className="mb-2 line-clamp-2 text-xs text-muted-foreground">
-                    {task.description}
-                  </p>
-                )}
-
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <LayoutGrid className="h-3 w-3" />
-                    {task.boardName}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <LayoutList className="h-3 w-3" />
-                    {task.listName}
-                  </span>
-                  {task.end_date && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(task.end_date).toLocaleDateString()}
-                    </span>
-                  )}
+                {/* Action Button */}
+                <div className="flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 opacity-60 transition-opacity group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTaskClick(task);
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTaskClick(task);
-                }}
-              >
-                <ExternalLink className="h-3 w-3" />
-              </Button>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </CollapsibleContent>
     </Collapsible>
   );
