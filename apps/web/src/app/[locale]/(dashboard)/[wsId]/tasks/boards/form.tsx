@@ -100,6 +100,16 @@ const TAG_SUGGESTIONS = [
   'Client',
 ];
 
+// Utility function for error handling
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String(error.message);
+  }
+  return 'An unexpected error occurred';
+};
+
 export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -141,7 +151,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              name: formData.name.trim(),
+              name: formData.name,
               tags: formData.tags || [],
             }),
           }
@@ -168,7 +178,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
       } else {
         // Create new board with template
         await createBoardMutation.mutateAsync({
-          name: formData.name.trim(),
+          name: formData.name,
           templateId: formData.template_id || undefined,
           tags: formData.tags || [],
         });
@@ -186,20 +196,9 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
     } catch (error) {
       console.error('Error submitting form:', error);
 
-      // Handle different types of errors
-      let errorMessage = 'An unexpected error occurred';
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      } else if (error && typeof error === 'object' && 'message' in error) {
-        errorMessage = String(error.message);
-      }
-
       toast({
         title: `Failed to ${formData.id ? 'edit' : 'create'} task board`,
-        description: errorMessage,
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     }
@@ -286,9 +285,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                           <TagSuggestions
                             suggestions={TAG_SUGGESTIONS}
                             selectedTags={field.value || []}
-                            onTagSelect={(tag) => {
-                              field.onChange([...(field.value || []), tag]);
-                            }}
+                            onTagSelect={(tag) => field.onChange([...(field.value || []), tag])}
                             maxDisplay={6}
                           />
                         </div>
