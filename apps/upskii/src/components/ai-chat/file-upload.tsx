@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Check, Trash } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -20,10 +21,7 @@ import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import * as z from 'zod';
-
-
 
 interface Props {
   chatId: string;
@@ -34,7 +32,6 @@ interface Props {
   submitLabel?: string;
 }
 
-
 const ObjectFormSchema = z.object({
   files: z.custom<File[]>((value) => {
     if (value.length === 0) {
@@ -44,8 +41,6 @@ const ObjectFormSchema = z.object({
     return value;
   }),
 });
-
-
 
 export function StorageObjectForm({
   chatId,
@@ -76,50 +71,51 @@ export function StorageObjectForm({
 
   async function onSubmit(formData: z.infer<typeof ObjectFormSchema>) {
     if (loading || editingFile) return;
-  
+
     setLoading(true);
-  
+
     const unuploadedFiles = formData.files.filter(
       (file) => fileStatuses[file.name] !== 'uploaded'
     );
-  
+
     const filesToUpload = unuploadedFiles.slice(0, 10); // giới hạn tối đa 10 file
-  
+
     await Promise.all(
       filesToUpload.map(async (file) => {
         setFileStatuses((prev) => ({
           ...prev,
           [file.name]: 'uploading',
         }));
-  
+
         const finalPath = path
           ? joinPath(path, `${generateRandomUUID()}_${file.name}`)
-          : joinPath(chatId, uploadPath, `${generateRandomUUID()}_${file.name}`);
-  
+          : joinPath(
+              chatId,
+              uploadPath,
+              `${generateRandomUUID()}_${file.name}`
+            );
+
         const { error } = await supabase.storage
           .from('workspaces')
           .upload(finalPath, file);
-  
+
         setFileStatuses((prev) => ({
           ...prev,
           [file.name]: error ? 'error' : 'uploaded',
         }));
-  
+
         if (error) {
           console.error(`Upload failed for ${file.name}:`, error.message);
         }
         try {
-          const res = await fetch(
-            `/api/ai/chat/google/`, 
-            {
-              credentials: 'include',
-              method: 'POST',
-              body: JSON.stringify({
-                model: 'gemini-pro', 
-                message: `Uploaded file: ${finalPath}`, // hoặc truyền thông tin bạn muốn
-              }),
-            }
-          );
+          const res = await fetch(`/api/ai/chat/google/`, {
+            credentials: 'include',
+            method: 'POST',
+            body: JSON.stringify({
+              model: 'gemini-pro',
+              message: `Uploaded file: ${finalPath}`, // hoặc truyền thông tin bạn muốn
+            }),
+          });
 
           if (!res.ok) {
             toast({
@@ -132,20 +128,19 @@ export function StorageObjectForm({
         }
       })
     );
-  
+
     // Check if all selected (or attempted) files are uploaded successfully
     const allUploaded = filesToUpload.every(
       (file) => fileStatuses[file.name] === 'uploaded'
     );
-  
+
     if (allUploaded) {
       onComplete?.();
     }
-  
+
     router.refresh();
     setLoading(false);
   }
-  
 
   const files = form.watch('files');
 
