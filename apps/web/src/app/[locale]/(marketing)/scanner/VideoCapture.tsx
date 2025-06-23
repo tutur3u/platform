@@ -125,16 +125,7 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
         ></video>
 
         {cameraOn && (
-          <div
-            className="absolute border-4 border-red-500"
-            style={{
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '75%',
-              height: '65%',
-            }}
-          ></div>
+          <div className="absolute top-1/2 left-1/2 h-3/5 w-3/5 -translate-x-1/2 -translate-y-1/2 border-4 border-red-500"></div>
         )}
 
         {/* Dark overlay and loading indicator when capturing */}
