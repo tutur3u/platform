@@ -1,35 +1,29 @@
 'use client';
 
 import { projectColumns } from './columns';
+// Import new components
+import { GanttChart } from './components/GanttChart';
+import { StatusDistribution } from './components/StatusDistribution';
+import { TaskCreationAnalytics } from './components/TaskCreationAnalytics';
+import { TaskGroup } from './components/TaskGroup';
+import { TaskWorkflowAnalytics } from './components/TaskWorkflowAnalytics';
+// Import analytics hooks
+import {
+  useAvgDuration,
+  useOnTimeRate,
+  useTaskVelocity,
+} from './hooks/useTaskAnalytics';
+// Import helper functions
+import { getFilteredMetrics } from './utils/taskHelpers';
 import { CustomDataTable } from '@/components/custom-data-table';
 import {
   Task,
   TaskBoard,
   TaskList,
 } from '@tuturuuu/types/primitives/TaskBoard';
-// Import new components
-import { GanttChart } from './components/GanttChart';
-import { StatusDistribution } from './components/StatusDistribution';
-import { TaskWorkflowAnalytics } from './components/TaskWorkflowAnalytics';
-import { TaskCreationAnalytics } from './components/TaskCreationAnalytics';
-import { TaskGroup } from './components/TaskGroup';
-
-// Import analytics hooks
-import { 
-  useAvgDuration, 
-  useTaskVelocity, 
-  useOnTimeRate 
-} from './hooks/useTaskAnalytics';
-
-// Import helper functions
-import { 
-  getFilteredMetrics 
-} from './utils/taskHelpers';
-
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-
 import {
   Dialog,
   DialogContent,
@@ -81,7 +75,7 @@ const CARD_LAYOUT_OPTIONS = [
   { label: 'Grid (3 columns)', value: 'grid-cols-3' },
 ] as const;
 
-type CardLayout = typeof CARD_LAYOUT_OPTIONS[number]['value'];
+type CardLayout = (typeof CARD_LAYOUT_OPTIONS)[number]['value'];
 
 interface EnhancedBoardsViewProps {
   data: (TaskBoard & {
@@ -112,7 +106,7 @@ interface TaskModalState {
 export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   // Ensure data is always an array to prevent hook order issues
   const safeData = data || [];
-  
+
   // Removed unused activeTab state - tabs are controlled by Tabs component
   const [cardLayout, setCardLayout] = useState<CardLayout>('grid-cols-3');
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
@@ -121,7 +115,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showColumnSettings, setShowColumnSettings] = useState(false);
-  
+
   // Column visibility state
   const [columnVisibility, setColumnVisibility] = useState({
     boardName: true,
@@ -156,7 +150,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   });
 
   const handleLayoutChange = () => {
-    const currentIndex = CARD_LAYOUT_OPTIONS.findIndex(opt => opt.value === cardLayout);
+    const currentIndex = CARD_LAYOUT_OPTIONS.findIndex(
+      (opt) => opt.value === cardLayout
+    );
     const nextIndex = (currentIndex + 1) % CARD_LAYOUT_OPTIONS.length;
     const nextOption = CARD_LAYOUT_OPTIONS[nextIndex];
     if (nextOption) {
@@ -175,12 +171,17 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
   // Memoize the selected board data to avoid repeated find operations
   const selectedBoardData = useMemo(() => {
-    return selectedBoard ? safeData.find(b => b.id === selectedBoard) : null;
+    return selectedBoard ? safeData.find((b) => b.id === selectedBoard) : null;
   }, [safeData, selectedBoard]);
 
   // Calculate aggregate metrics for the quick stats - now responsive to board selection
-  const { totalTasks, totalCompleted, totalOverdue, totalHighPriority, avgProgress } = 
-    useMemo(() => getFilteredMetrics(safeData, null), [safeData]);
+  const {
+    totalTasks,
+    totalCompleted,
+    totalOverdue,
+    totalHighPriority,
+    avgProgress,
+  } = useMemo(() => getFilteredMetrics(safeData, null), [safeData]);
 
   // Analytics-specific metrics that respond to board selection
   const analyticsMetrics = useMemo(
@@ -206,9 +207,18 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   }, [safeData]);
 
   // Use analytics hooks instead of duplicate calculations
-  const calculateAvgDuration = useAvgDuration(allTasks, analyticsFilters.selectedBoard);
-  const calculateTaskVelocity = useTaskVelocity(allTasks, analyticsFilters.selectedBoard);
-  const calculateOnTimeRate = useOnTimeRate(allTasks, analyticsFilters.selectedBoard);
+  const calculateAvgDuration = useAvgDuration(
+    allTasks,
+    analyticsFilters.selectedBoard
+  );
+  const calculateTaskVelocity = useTaskVelocity(
+    allTasks,
+    analyticsFilters.selectedBoard
+  );
+  const calculateOnTimeRate = useOnTimeRate(
+    allTasks,
+    analyticsFilters.selectedBoard
+  );
 
   // Filter tasks based on modal state
   const filteredTasks = useMemo(() => {
@@ -274,7 +284,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     return groups;
   }, [filteredTasks]);
 
-  const handleBoardClick = (board: (typeof safeData)[0], e: React.MouseEvent) => {
+  const handleBoardClick = (
+    board: (typeof safeData)[0],
+    e: React.MouseEvent
+  ) => {
     e.preventDefault();
     setSelectedBoard(board.id);
     setSidebarOpen(true);
@@ -326,12 +339,15 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
   // Apply filters to data and check if filters are active
   const { filteredData, hasActiveFilters } = useMemo(() => {
-    const hasFilters = showAdvancedFilters || searchQuery.trim() !== '' || taskModal.filterType !== 'all';
+    const hasFilters =
+      showAdvancedFilters ||
+      searchQuery.trim() !== '' ||
+      taskModal.filterType !== 'all';
     let filtered = [...safeData];
 
     // Search filter
     if (searchQuery.trim()) {
-      filtered = filtered.filter(board =>
+      filtered = filtered.filter((board) =>
         board.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -346,7 +362,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     // Sort
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
-      
+
       switch (sortBy) {
         case 'name':
           aValue = a.name.toLowerCase();
@@ -377,7 +393,14 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     });
 
     return { filteredData: filtered, hasActiveFilters: hasFilters };
-  }, [safeData, showAdvancedFilters, searchQuery, sortBy, sortOrder, taskModal]);
+  }, [
+    safeData,
+    showAdvancedFilters,
+    searchQuery,
+    sortBy,
+    sortOrder,
+    taskModal,
+  ]);
 
   return (
     <>
@@ -516,34 +539,38 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 className="m-0 data-[state=inactive]:hidden"
               >
                 <div className="flex items-center gap-1">
-                  <Button 
-                    variant={showAdvancedFilters ? "default" : "ghost"} 
-                    size="sm" 
+                  <Button
+                    variant={showAdvancedFilters ? 'default' : 'ghost'}
+                    size="sm"
                     className="h-8 w-8 p-0"
                     onClick={handleTableFilter}
                     title="Toggle filters"
                   >
                     <Filter className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="h-8 w-8 p-0"
                     onClick={handleTableSort}
                     title={`Sort ${showAdvancedFilters ? 'descending' : 'ascending'}`}
                   >
-                    <SortAsc className={cn("h-4 w-4", showAdvancedFilters && 'rotate-180')} />
+                    <SortAsc
+                      className={cn(
+                        'h-4 w-4',
+                        showAdvancedFilters && 'rotate-180'
+                      )}
+                    />
                   </Button>
-                  <Button 
-                    variant={showColumnSettings ? "default" : "ghost"} 
-                    size="sm" 
+                  <Button
+                    variant={showColumnSettings ? 'default' : 'ghost'}
+                    size="sm"
                     className="h-8 w-8 p-0"
                     onClick={handleTableSettings}
                     title="Table settings"
                   >
                     <Settings2 className="h-4 w-4" />
                   </Button>
-
                 </div>
               </TabsContent>
 
@@ -553,27 +580,32 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 className="m-0 data-[state=inactive]:hidden"
               >
                 <div className="flex items-center gap-1">
-                  <Button 
-                    variant={showAdvancedFilters ? "default" : "ghost"} 
-                    size="sm" 
+                  <Button
+                    variant={showAdvancedFilters ? 'default' : 'ghost'}
+                    size="sm"
                     className="h-8 w-8 p-0"
                     onClick={handleTableFilter}
                     title="Filter cards"
                   >
                     <Filter className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="h-8 w-8 p-0"
                     onClick={handleTableSort}
                     title="Sort cards"
                   >
-                    <SortAsc className={cn("h-4 w-4", showAdvancedFilters && 'rotate-180')} />
+                    <SortAsc
+                      className={cn(
+                        'h-4 w-4',
+                        showAdvancedFilters && 'rotate-180'
+                      )}
+                    />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="h-8 w-8 p-0"
                     onClick={handleLayoutChange}
                     title={`Current: ${cardLayout.split('-')[2]} columns. Click to switch layout.`}
@@ -589,7 +621,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 className="m-0 data-[state=inactive]:hidden"
               >
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-muted-foreground">Analytics view</span>
+                  <span className="text-xs text-muted-foreground">
+                    Analytics view
+                  </span>
                 </div>
               </TabsContent>
 
@@ -624,7 +658,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   <label className="text-sm font-medium">Status</label>
                   <select
                     value={taskModal.filterType || 'all'}
-                    onChange={(e) => setTaskModal({ ...taskModal, filterType: e.target.value as FilterType })}
+                    onChange={(e) =>
+                      setTaskModal({
+                        ...taskModal,
+                        filterType: e.target.value as FilterType,
+                      })
+                    }
                     className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
                   >
                     <option value="all">All Boards</option>
@@ -665,7 +704,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
           {/* Column Settings Panel */}
           {showColumnSettings && (
             <div className="mt-4 rounded-lg border bg-muted/30 p-4">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-sm font-medium">Column Settings</h3>
                 <Button
                   variant="ghost"
@@ -677,98 +716,146 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 </Button>
               </div>
               <div className="space-y-3">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                   <label className="flex items-center space-x-2 text-sm">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={columnVisibility.boardName}
-                      onChange={(e) => setColumnVisibility(prev => ({...prev, boardName: e.target.checked}))}
-                      className="rounded" 
+                      onChange={(e) =>
+                        setColumnVisibility((prev) => ({
+                          ...prev,
+                          boardName: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
                     />
                     <span>Board Name</span>
                   </label>
                   <label className="flex items-center space-x-2 text-sm">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={columnVisibility.totalTasks}
-                      onChange={(e) => setColumnVisibility(prev => ({...prev, totalTasks: e.target.checked}))}
-                      className="rounded" 
+                      onChange={(e) =>
+                        setColumnVisibility((prev) => ({
+                          ...prev,
+                          totalTasks: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
                     />
                     <span>Total Tasks</span>
                   </label>
                   <label className="flex items-center space-x-2 text-sm">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={columnVisibility.progress}
-                      onChange={(e) => setColumnVisibility(prev => ({...prev, progress: e.target.checked}))}
-                      className="rounded" 
+                      onChange={(e) =>
+                        setColumnVisibility((prev) => ({
+                          ...prev,
+                          progress: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
                     />
                     <span>Progress</span>
                   </label>
                   <label className="flex items-center space-x-2 text-sm">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={columnVisibility.completedTasks}
-                      onChange={(e) => setColumnVisibility(prev => ({...prev, completedTasks: e.target.checked}))}
-                      className="rounded" 
+                      onChange={(e) =>
+                        setColumnVisibility((prev) => ({
+                          ...prev,
+                          completedTasks: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
                     />
                     <span>Completed Tasks</span>
                   </label>
                   <label className="flex items-center space-x-2 text-sm">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={columnVisibility.activeTasks}
-                      onChange={(e) => setColumnVisibility(prev => ({...prev, activeTasks: e.target.checked}))}
-                      className="rounded" 
+                      onChange={(e) =>
+                        setColumnVisibility((prev) => ({
+                          ...prev,
+                          activeTasks: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
                     />
                     <span>Active Tasks</span>
                   </label>
                   <label className="flex items-center space-x-2 text-sm">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={columnVisibility.overdueTasks}
-                      onChange={(e) => setColumnVisibility(prev => ({...prev, overdueTasks: e.target.checked}))}
-                      className="rounded" 
+                      onChange={(e) =>
+                        setColumnVisibility((prev) => ({
+                          ...prev,
+                          overdueTasks: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
                     />
                     <span>Overdue Tasks</span>
                   </label>
                   <label className="flex items-center space-x-2 text-sm">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={columnVisibility.createdDate}
-                      onChange={(e) => setColumnVisibility(prev => ({...prev, createdDate: e.target.checked}))}
-                      className="rounded" 
+                      onChange={(e) =>
+                        setColumnVisibility((prev) => ({
+                          ...prev,
+                          createdDate: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
                     />
                     <span>Created Date</span>
                   </label>
                   <label className="flex items-center space-x-2 text-sm">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={columnVisibility.lastUpdated}
-                      onChange={(e) => setColumnVisibility(prev => ({...prev, lastUpdated: e.target.checked}))}
-                      className="rounded" 
+                      onChange={(e) =>
+                        setColumnVisibility((prev) => ({
+                          ...prev,
+                          lastUpdated: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
                     />
                     <span>Last Updated</span>
                   </label>
                   <label className="flex items-center space-x-2 text-sm">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={columnVisibility.priorityDistribution}
-                      onChange={(e) => setColumnVisibility(prev => ({...prev, priorityDistribution: e.target.checked}))}
-                      className="rounded" 
+                      onChange={(e) =>
+                        setColumnVisibility((prev) => ({
+                          ...prev,
+                          priorityDistribution: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
                     />
                     <span>Priority Distribution</span>
                   </label>
                 </div>
-                <div className="flex items-center gap-2 pt-2 border-t">
-                  <Button 
-                    variant="outline" 
+                <div className="flex items-center gap-2 border-t pt-2">
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={resetColumnVisibility}
                   >
                     Reset to Default
                   </Button>
-                  <Button size="sm" onClick={() => setShowColumnSettings(false)}>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowColumnSettings(false)}
+                  >
                     Apply Changes
                   </Button>
                 </div>
@@ -795,7 +882,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
             {/* Enhanced Cards View */}
             <TabsContent value="cards" className="mt-0 space-y-4">
-              <div className={`grid grid-cols-1 gap-6 sm:${cardLayout} lg:${cardLayout}`}>
+              <div
+                className={`grid grid-cols-1 gap-6 sm:${cardLayout} lg:${cardLayout}`}
+              >
                 {filteredData.map((board) => (
                   <div
                     key={board.id}
@@ -960,10 +1049,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       Task Timeline & Performance
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {analyticsFilters.selectedBoard 
-                        ? `Metrics for ${safeData.find(b => b.id === analyticsFilters.selectedBoard)?.name || 'Selected Board'}`
-                        : 'Aggregate metrics across all boards'
-                      }
+                      {analyticsFilters.selectedBoard
+                        ? `Metrics for ${safeData.find((b) => b.id === analyticsFilters.selectedBoard)?.name || 'Selected Board'}`
+                        : 'Aggregate metrics across all boards'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1039,10 +1127,11 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     </div>
                     <span className="font-medium">Data Status:</span>
                     <span className="text-muted-foreground">
-                      {calculateAvgDuration.count > 0 || calculateTaskVelocity.thisWeek > 0 || calculateOnTimeRate.total > 0
+                      {calculateAvgDuration.count > 0 ||
+                      calculateTaskVelocity.thisWeek > 0 ||
+                      calculateOnTimeRate.total > 0
                         ? `Analyzing ${analyticsMetrics.totalTasks} tasks with completion tracking`
-                        : 'Limited data available - metrics may show N/A until tasks are completed'
-                      }
+                        : 'Limited data available - metrics may show N/A until tasks are completed'}
                     </span>
                   </div>
                 </div>
@@ -1067,7 +1156,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       %
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {analyticsMetrics.totalCompleted} of {analyticsMetrics.totalTasks} tasks completed
+                      {analyticsMetrics.totalCompleted} of{' '}
+                      {analyticsMetrics.totalTasks} tasks completed
                     </p>
                   </Card>
 
@@ -1082,7 +1172,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       {analyticsMetrics.totalTasks -
                         analyticsMetrics.totalCompleted}
                     </p>
-                    <p className="text-xs text-muted-foreground">Currently in progress</p>
+                    <p className="text-xs text-muted-foreground">
+                      Currently in progress
+                    </p>
                   </Card>
 
                   <Card className="p-4">
@@ -1199,18 +1291,21 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   </h3>
 
                   {/* Tags */}
-                  {selectedBoardData?.tags && selectedBoardData.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {selectedBoardData.tags.map((tag: string, index: number) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  {selectedBoardData?.tags &&
+                    selectedBoardData.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedBoardData.tags.map(
+                          (tag: string, index: number) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                            >
+                              {tag}
+                            </span>
+                          )
+                        )}
+                      </div>
+                    )}
                 </div>
 
                 {/* Progress Overview */}
@@ -1224,12 +1319,14 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   <div className="mb-3 h-3 w-full rounded-full bg-muted">
                     <div
                       className="h-3 rounded-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500"
-                      style={{ width: `${selectedBoardData?.progressPercentage || 0}%` }}
+                      style={{
+                        width: `${selectedBoardData?.progressPercentage || 0}%`,
+                      }}
                     />
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {selectedBoardData?.completedTasks || 0} of {selectedBoardData?.totalTasks || 0}{' '}
-                    tasks completed
+                    {selectedBoardData?.completedTasks || 0} of{' '}
+                    {selectedBoardData?.totalTasks || 0} tasks completed
                   </div>
                 </div>
 
@@ -1341,10 +1438,11 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Created</span>
                       <span>
-                        {selectedBoardData?.created_at 
-                          ? new Date(selectedBoardData.created_at).toLocaleDateString()
-                          : 'N/A'
-                        }
+                        {selectedBoardData?.created_at
+                          ? new Date(
+                              selectedBoardData.created_at
+                            ).toLocaleDateString()
+                          : 'N/A'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -1368,7 +1466,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 <div className="flex gap-2">
                   <Button
                     className="flex-1"
-                    onClick={() => (window.location.href = selectedBoardData?.href || '')}
+                    onClick={() =>
+                      (window.location.href = selectedBoardData?.href || '')
+                    }
                   >
                     <Eye className="mr-2 h-4 w-4" />
                     Open Board
@@ -1484,11 +1584,3 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     </>
   );
 }
-
-
-
-
-
-
-
-

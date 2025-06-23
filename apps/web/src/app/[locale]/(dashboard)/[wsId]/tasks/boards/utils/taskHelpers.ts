@@ -38,7 +38,9 @@ interface BoardMetrics {
  */
 export function calculateOverdueDays(dueDate: string | Date): number {
   const due = new Date(dueDate);
-  return Math.ceil((new Date().getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.ceil(
+    (new Date().getTime() - due.getTime()) / (1000 * 60 * 60 * 24)
+  );
 }
 
 /**
@@ -47,8 +49,14 @@ export function calculateOverdueDays(dueDate: string | Date): number {
  * @returns Date object or null if no valid completion date found
  */
 export function getTaskCompletionDate(task: Task): Date | null {
-  const possibleFields = ['updated_at', 'completed_at', 'closed_at', 'finished_at', 'done_at'];
-  
+  const possibleFields = [
+    'updated_at',
+    'completed_at',
+    'closed_at',
+    'finished_at',
+    'done_at',
+  ];
+
   // First try to get explicit completion dates
   for (const field of possibleFields) {
     const dateStr = task[field];
@@ -59,9 +67,13 @@ export function getTaskCompletionDate(task: Task): Date | null {
       }
     }
   }
-  
+
   // Fallback: if task is completed but no completion date, use updated_at or created_at as estimate
-  if (task.listStatus === 'done' || task.listStatus === 'closed' || task.archived) {
+  if (
+    task.listStatus === 'done' ||
+    task.listStatus === 'closed' ||
+    task.archived
+  ) {
     // Try updated_at first (might indicate when status was changed)
     if (task.updated_at) {
       const date = new Date(task.updated_at);
@@ -69,7 +81,7 @@ export function getTaskCompletionDate(task: Task): Date | null {
         return date;
       }
     }
-    
+
     // Last resort: use creation date (not ideal but better than nothing)
     if (task.created_at) {
       const date = new Date(task.created_at);
@@ -78,7 +90,7 @@ export function getTaskCompletionDate(task: Task): Date | null {
       }
     }
   }
-  
+
   return null;
 }
 
@@ -164,11 +176,14 @@ export function groupTasksByStatus(tasks: Task[]): Record<string, Task[]> {
  * @param selectedBoard Board ID to filter by (null for all boards)
  * @returns Aggregated metrics
  */
-export function getFilteredMetrics(data: BoardMetrics[], selectedBoard: string | null) {
+export function getFilteredMetrics(
+  data: BoardMetrics[],
+  selectedBoard: string | null
+) {
   const filteredData = selectedBoard
     ? data.filter((board) => board.id === selectedBoard)
     : data;
-    
+
   const totalTasks = filteredData.reduce(
     (sum, board) => sum + board.totalTasks,
     0
@@ -202,4 +217,4 @@ export function getFilteredMetrics(data: BoardMetrics[], selectedBoard: string |
     totalHighPriority,
     avgProgress,
   };
-} 
+}
