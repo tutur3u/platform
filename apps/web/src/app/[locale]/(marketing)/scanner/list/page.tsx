@@ -1,6 +1,5 @@
 'use client';
 
-import AddStudentDialog from '../AddStudentDialog';
 import StudentList from '../StudentList';
 import { Student } from '@ncthub/types/primitives/Student';
 import { Button } from '@ncthub/ui/button';
@@ -13,12 +12,6 @@ export default function Page() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [addError, setAddError] = useState<string | null>(null);
-  const [editID, setEditID] = useState<string | null>(null);
-  const [editName, setEditName] = useState<string>('');
-  const [editStudentNumber, setEditStudentNumber] = useState<string>('');
-  const [editProgram, setEditProgram] = useState<string>('');
-  const [showOpenDialog, setShowOpenDialog] = useState(false);
 
   const fetchStudents = useCallback(
     async (startDate?: Date | null, endDate?: Date | null) => {
@@ -58,9 +51,7 @@ export default function Page() {
 
         setStudents(students);
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error(error);
-        }
+        console.error(error);
         setError('Failed to fetch students');
       } finally {
         setLoading(false);
@@ -94,16 +85,11 @@ export default function Page() {
     };
   };
 
-  const handleAdd = async (
+  const handleAddStudent = async (
     name: string,
     studentNumber: string,
     program: string
   ) => {
-    if (!name || !studentNumber) {
-      setAddError('Please enter name and student number');
-      return;
-    }
-
     const newStudent = createStudentRecord({
       name,
       studentNumber,
@@ -124,13 +110,8 @@ export default function Page() {
       }
 
       setStudents([...students, newStudent]);
-
-      setAddError(null);
-      setShowOpenDialog(false);
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error(error);
-      }
+      console.error(error);
 
       toast({
         title: 'Failed to add student',
@@ -140,31 +121,9 @@ export default function Page() {
     }
   };
 
-  const handleEdit = (id: string) => {
-    const student = students.find((s) => s.id === id);
-    if (!student) return;
-
-    setEditID(id);
-    setEditName(student.name);
-    setEditStudentNumber(student.studentNumber);
-    setEditProgram(student.program);
-  };
-
-  const handleSave = async () => {
-    if (editID === null) return;
-
-    const oldStudent = students.find((s) => s.id === editID);
-    if (!oldStudent) return;
-
-    const updatedStudent = {
-      ...oldStudent,
-      name: editName,
-      studentNumber: editStudentNumber,
-      program: editProgram,
-    };
-
+  const handleUpdateStudent = async (updatedStudent: Student) => {
     try {
-      const response = await fetch(`/api/students/${editID}`, {
+      const response = await fetch(`/api/students/${updatedStudent.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -177,18 +136,11 @@ export default function Page() {
       }
 
       const updatedStudents = students.map((student) =>
-        student.id === editID ? updatedStudent : student
+        student.id === updatedStudent.id ? updatedStudent : student
       );
       setStudents(updatedStudents);
-
-      setEditID(null);
-      setEditName('');
-      setEditStudentNumber('');
-      setEditProgram('');
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error(error);
-      }
+      console.error(error);
 
       toast({
         title: 'Failed to update student',
@@ -198,7 +150,7 @@ export default function Page() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteStudent = async (id: string) => {
     try {
       const response = await fetch(`/api/students/${id}`, {
         method: 'DELETE',
@@ -216,9 +168,7 @@ export default function Page() {
         description: 'Student has been deleted successfully',
       });
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error(error);
-      }
+      console.error(error);
 
       toast({
         title: 'Failed to delete student',
@@ -240,28 +190,12 @@ export default function Page() {
     <div className="container mx-auto">
       <StudentList
         students={students}
-        editID={editID}
-        editName={editName}
-        editStudentNumber={editStudentNumber}
-        editProgram={editProgram}
-        setEditName={setEditName}
-        setEditStudentNumber={setEditStudentNumber}
-        setEditProgram={setEditProgram}
-        handleAdd={() => setShowOpenDialog(true)}
-        handleEdit={handleEdit}
-        handleSave={handleSave}
-        handleDelete={handleDelete}
+        onAdd={handleAddStudent}
+        onUpdate={handleUpdateStudent}
+        onDelete={handleDeleteStudent}
         handleDateRangeApply={handleDateRangeApply}
       />
-      <AddStudentDialog
-        isOpen={showOpenDialog}
-        onClose={() => {
-          setShowOpenDialog(false);
-          setAddError(null);
-        }}
-        onAdd={handleAdd}
-        error={addError}
-      />
+
       <div className="mt-4 flex justify-center">
         <Link href="/scanner">
           <Button className="rounded-lg px-4 py-2">Back to Capture Page</Button>

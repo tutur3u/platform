@@ -1,6 +1,5 @@
 'use client';
 
-import AddStudentDialog from './AddStudentDialog';
 import StudentList from './StudentList';
 import VideoCapture from './VideoCapture';
 import { Student } from '@ncthub/types/primitives/Student';
@@ -23,13 +22,6 @@ import { v4 as uuidv4 } from 'uuid';
 export default function Page() {
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
-  const [captureError, setCaptureError] = useState<string | null>(null);
-  const [addError, setAddError] = useState<string | null>(null);
-  const [editID, setEditID] = useState<string | null>(null);
-  const [editName, setEditName] = useState<string>('');
-  const [editStudentNumber, setEditStudentNumber] = useState<string>('');
-  const [editProgram, setEditProgram] = useState<string>('');
-  const [showOpenDialog, setShowOpenDialog] = useState(false);
   const [showClearDialog, setShowClearDialog] = useState(false);
 
   useEffect(() => {
@@ -86,13 +78,13 @@ export default function Page() {
   const createStudentRecord = (studentData: {
     name: string;
     studentNumber: string;
-    program: string;
+    program: string | null;
   }): Student => {
     return {
       id: uuidv4(),
       name: studentData.name.trim(),
       studentNumber: studentData.studentNumber.trim(),
-      program: studentData.program ? studentData.program.trim() : '',
+      program: studentData.program ? studentData.program.trim() : null,
       timestamp: new Date(),
     };
   };
@@ -113,68 +105,33 @@ export default function Page() {
           student.id === oldStudent.id ? updatedStudent : student
         )
       );
-
-      setCaptureError('');
     } else {
       const newStudent = createStudentRecord({
         name,
         studentNumber,
-        program: '',
+        program: null,
       });
       setStudents([...students, newStudent]);
-
-      setCaptureError('');
     }
   };
 
-  const handleAdd = (name: string, studentNumber: string, program: string) => {
-    if (!name || !studentNumber) {
-      setAddError('Please enter name and student number');
-      return;
-    }
-
+  const handleAddStudent = (
+    name: string,
+    studentNumber: string,
+    program: string | null
+  ) => {
     const newStudent = createStudentRecord({ name, studentNumber, program });
     setStudents([...students, newStudent]);
-
-    setAddError('');
-    setShowOpenDialog(false);
   };
 
-  const handleEdit = (id: string) => {
-    const student = students.find((s) => s.id === id);
-    if (!student) return;
-
-    setEditID(id);
-    setEditName(student.name);
-    setEditStudentNumber(student.studentNumber);
-    setEditProgram(student.program);
-  };
-
-  const handleSave = () => {
-    if (editID === null) return;
-
-    const oldStudent = students.find((s) => s.id === editID);
-    if (!oldStudent) return;
-
-    const updatedStudent = {
-      ...oldStudent,
-      name: editName,
-      studentNumber: editStudentNumber,
-      program: editProgram,
-    };
-
+  const handleUpdateStudent = (updatedStudent: Student) => {
     const updatedStudents = students.map((student) =>
-      student.id === editID ? updatedStudent : student
+      student.id === updatedStudent.id ? updatedStudent : student
     );
     setStudents(updatedStudents);
-
-    setEditID(null);
-    setEditName('');
-    setEditStudentNumber('');
-    setEditProgram('');
   };
 
-  const handleDelete = (id: string) => {
+  const handleDeleteStudent = (id: string) => {
     const updatedStudents = students.filter((s) => s.id !== id);
     setStudents(updatedStudents);
 
@@ -224,9 +181,7 @@ export default function Page() {
         });
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error(error);
-      }
+      console.error(error);
 
       toast({
         title: 'Failed to upload students to database',
@@ -239,38 +194,18 @@ export default function Page() {
   return (
     <div className="flex flex-col gap-8 md:flex-row">
       <div className="flex-1 p-2 md:w-1/2">
-        <VideoCapture
-          error={captureError}
-          setError={setCaptureError}
-          handleNewStudent={handleNewStudent}
-        />
+        <VideoCapture handleNewStudent={handleNewStudent} />
       </div>
 
       <div className="flex-1 p-2 md:w-1/2">
         <StudentList
           students={filteredStudents}
-          editID={editID}
-          editStudentNumber={editStudentNumber}
-          editName={editName}
-          editProgram={editProgram}
-          setEditName={setEditName}
-          setEditStudentNumber={setEditStudentNumber}
-          setEditProgram={setEditProgram}
-          handleAdd={() => setShowOpenDialog(true)}
-          handleEdit={handleEdit}
-          handleSave={handleSave}
-          handleDelete={handleDelete}
+          onAdd={handleAddStudent}
+          onUpdate={handleUpdateStudent}
+          onDelete={handleDeleteStudent}
           handleDateRangeApply={handleDateRangeApply}
         />
-        <AddStudentDialog
-          isOpen={showOpenDialog}
-          onClose={() => {
-            setShowOpenDialog(false);
-            setAddError(null);
-          }}
-          onAdd={handleAdd}
-          error={addError}
-        />
+
         <div className="mt-4 flex justify-center gap-4">
           <Button
             className={`rounded-lg bg-red-600 px-4 py-2 text-white ${
@@ -295,6 +230,7 @@ export default function Page() {
             Upload to Database
           </Button>
         </div>
+
         <div className="mt-4 flex justify-center">
           <Link href="/scanner/list">
             <Button className="rounded-lg px-4 py-2">View all students</Button>
@@ -313,12 +249,7 @@ export default function Page() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-background text-foreground hover:bg-background/80"
-              onClick={handleClear}
-            >
-              Clear
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleClear}>Clear</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,3 +1,4 @@
+import AddStudentDialog from './AddStudentDialog';
 import { DatePicker } from './DatePicker';
 import { Student } from '@ncthub/types/primitives/Student';
 import {
@@ -25,41 +26,67 @@ import React, { useState } from 'react';
 
 interface StudentListProps {
   students: Student[];
-  editID: string | null;
-  editName: string;
-  editStudentNumber: string;
-  editProgram: string;
-  setEditName: (name: string) => void;
-  setEditStudentNumber: (number: string) => void;
-  setEditProgram: (program: string) => void;
-  handleAdd: () => void;
-  handleEdit: (id: string) => void;
-  handleSave: () => void;
-  handleDelete: (id: string) => void;
+  onAdd: (name: string, studentNumber: string, program: string) => void;
+  onUpdate: (updatedStudent: Student) => void;
+  onDelete: (id: string) => void;
   handleDateRangeApply?: (startDate: Date | null, endDate: Date | null) => void;
 }
 
-const StudentList: React.FC<StudentListProps> = ({
+export default function StudentList({
   students,
-  editID,
-  editName,
-  editStudentNumber,
-  editProgram,
-  setEditName,
-  setEditStudentNumber,
-  setEditProgram,
-  handleAdd,
-  handleEdit,
-  handleSave,
-  handleDelete,
+  onAdd,
+  onUpdate,
+  onDelete,
   handleDateRangeApply,
-}) => {
+}: StudentListProps) {
+  const [editID, setEditID] = useState<string | null>(null);
+  const [deleteID, setDeleteID] = useState<string | null>(null);
+  const [editName, setEditName] = useState<string | null>(null);
+  const [editStudentNumber, setEditStudentNumber] = useState<string | null>(
+    null
+  );
+  const [editProgram, setEditProgram] = useState<string | null>(null);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const handleEdit = (id: string) => {
+    const student = students.find((s) => s.id === id);
+    if (!student) return;
+
+    setEditID(id);
+    setEditName(student.name);
+    setEditStudentNumber(student.studentNumber);
+    setEditProgram(student.program);
+  };
+
+  const handleSave = () => {
+    if (!editID) return;
+
+    const oldStudent = students.find((s) => s.id === editID);
+    if (!oldStudent) return;
+
+    const updatedStudent = {
+      ...oldStudent,
+      name: editName ?? '',
+      studentNumber: editStudentNumber ?? '',
+      program: editProgram ?? '',
+    };
+
+    onUpdate(updatedStudent);
+
+    setEditID(null);
+    setEditName(null);
+    setEditStudentNumber(null);
+    setEditProgram(null);
+  };
+
+  const handleDelete = (id: string | null) => {
+    if (id) onDelete(id);
+  };
 
   const filteredItems = students.filter((item) => {
     const nameMatch = item.name
@@ -146,12 +173,14 @@ const StudentList: React.FC<StudentListProps> = ({
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-primary">Student List</h2>
         <div className="flex gap-2">
-          <Button
-            onClick={handleAdd}
-            className="rounded-lg px-4 py-2 transition"
-          >
-            Add Manually
-          </Button>
+          <AddStudentDialog
+            trigger={
+              <Button className="rounded-lg px-4 py-2 transition">
+                Add Manually
+              </Button>
+            }
+            onAdd={onAdd}
+          />
 
           <Button
             onClick={exportToCSV}
@@ -186,6 +215,7 @@ const StudentList: React.FC<StudentListProps> = ({
         </div>
         <div className="flex gap-2">
           <Button
+            variant="outline"
             onClick={() => {
               setStartDate(null);
               setEndDate(null);
@@ -193,7 +223,6 @@ const StudentList: React.FC<StudentListProps> = ({
                 handleDateRangeApply(null, null);
               }
             }}
-            variant="outline"
           >
             Clear
           </Button>
@@ -214,9 +243,7 @@ const StudentList: React.FC<StudentListProps> = ({
         type="text"
         placeholder="Search by name, ID, or program..."
         value={searchTerm}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-          setSearchTerm(e.target.value)
-        }
+        onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-4 w-full rounded-lg border p-2 focus:ring-2 focus:ring-[#4896ac] focus:outline-hidden"
       />
 
@@ -253,10 +280,8 @@ const StudentList: React.FC<StudentListProps> = ({
                     {editID === item.id ? (
                       <input
                         type="text"
-                        value={editName}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setEditName(e.target.value)
-                        }
+                        value={editName ?? ''}
+                        onChange={(e) => setEditName(e.target.value)}
                         className="w-full rounded-sm border p-1"
                       />
                     ) : (
@@ -267,10 +292,8 @@ const StudentList: React.FC<StudentListProps> = ({
                     {editID === item.id ? (
                       <input
                         type="text"
-                        value={editStudentNumber}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setEditStudentNumber(e.target.value)
-                        }
+                        value={editStudentNumber ?? ''}
+                        onChange={(e) => setEditStudentNumber(e.target.value)}
                         className="w-full rounded-sm border p-1"
                       />
                     ) : (
@@ -281,10 +304,8 @@ const StudentList: React.FC<StudentListProps> = ({
                     {editID === item.id ? (
                       <input
                         type="text"
-                        value={editProgram}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setEditProgram(e.target.value)
-                        }
+                        value={editProgram ?? ''}
+                        onChange={(e) => setEditProgram(e.target.value)}
                         className="w-full rounded-sm border p-1"
                       />
                     ) : (
@@ -313,7 +334,7 @@ const StudentList: React.FC<StudentListProps> = ({
                     <Button
                       onClick={() => {
                         setShowDeleteDialog(true);
-                        setDeleteId(item.id);
+                        setDeleteID(item.id);
                       }}
                       className="text-red-500 hover:text-red-700"
                     >
@@ -364,14 +385,7 @@ const StudentList: React.FC<StudentListProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="text-white"
-              onClick={() => {
-                if (deleteId) {
-                  handleDelete(deleteId);
-                }
-              }}
-            >
+            <AlertDialogAction onClick={() => handleDelete(deleteID)}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -379,6 +393,4 @@ const StudentList: React.FC<StudentListProps> = ({
       </AlertDialog>
     </>
   );
-};
-
-export default StudentList;
+}

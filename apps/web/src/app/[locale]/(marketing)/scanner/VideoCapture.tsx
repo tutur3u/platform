@@ -4,16 +4,11 @@ import { Button } from '@ncthub/ui/button';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface VideoCaptureProps {
-  error: string | null;
-  setError: (error: string | null) => void;
   handleNewStudent: (name: string, studentNumber: string) => void;
 }
 
-const VideoCapture: React.FC<VideoCaptureProps> = ({
-  error,
-  setError,
-  handleNewStudent,
-}) => {
+export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
+  const [error, setError] = useState<string | null>(null);
   const [autoCapture, setAutoCapture] = useState<boolean>(false);
   const [cameraOn, setCameraOn] = useState<boolean>(false);
 
@@ -90,6 +85,8 @@ const VideoCapture: React.FC<VideoCaptureProps> = ({
           if (data.name && data.studentNumber) {
             handleNewStudent(data.name, data.studentNumber);
             setError(null);
+          } else {
+            setError('Could not detect student information from the ID card.');
           }
         } catch {
           setError('Could not detect student information from the ID card.');
@@ -172,6 +169,4 @@ const VideoCapture: React.FC<VideoCaptureProps> = ({
       )}
     </>
   );
-};
-
-export default VideoCapture;
+}
