@@ -1,4 +1,4 @@
-import MultiQuizzesForm from "@/components/quiz/multi-quizzes-form";
+import MultiQuizzesForm from '@/components/quiz/multi-quizzes-form';
 
 interface Props {
   params: Promise<{
