@@ -1140,6 +1140,44 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     );
   }, [data]);
 
+  // Safe utility to get completion date from various possible fields
+  const getTaskCompletionDate = (task: any): Date | null => {
+    const taskData = task as any;
+    const possibleFields = ['updated_at', 'completed_at', 'closed_at', 'finished_at', 'done_at'];
+    
+    // First try to get explicit completion dates
+    for (const field of possibleFields) {
+      const dateStr = taskData[field];
+      if (dateStr) {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+    }
+    
+    // Fallback: if task is completed but no completion date, use updated_at or created_at as estimate
+    if (task.listStatus === 'done' || task.listStatus === 'closed' || task.archived) {
+      // Try updated_at first (might indicate when status was changed)
+      if (taskData.updated_at) {
+        const date = new Date(taskData.updated_at);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+      
+      // Last resort: use creation date (not ideal but better than nothing)
+      if (task.created_at) {
+        const date = new Date(task.created_at);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+    }
+    
+    return null;
+  };
+
   // Calculate actual average task completion time
   const calculateAvgDuration = useMemo(() => {
     const filteredTasks = analyticsFilters.selectedBoard
@@ -1148,34 +1186,87 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         )
       : allTasks;
 
-    const completedTasks = filteredTasks.filter(
-      (task) =>
-        (task.listStatus === 'done' ||
-          task.listStatus === 'closed' ||
-          task.archived) &&
-        task.created_at &&
-        (task as any).updated_at
-    );
+    // Get completed tasks with proper date fields
+    const completedTasks = filteredTasks.filter((task) => {
+      const isCompleted = task.listStatus === 'done' || 
+                         task.listStatus === 'closed' || 
+                         task.archived;
+      
+      // Check for creation and completion dates using safe accessors
+      const hasCreatedAt = task.created_at;
+      const completionDate = getTaskCompletionDate(task);
+      
+      return isCompleted && hasCreatedAt && completionDate;
+    });
 
-    if (completedTasks.length === 0) return { days: 0, hours: 0, label: 'N/A' };
+    if (completedTasks.length === 0) {
+      return { 
+        days: 0, 
+        hours: 0, 
+        label: 'N/A',
+        count: 0,
+        description: 'No completed tasks with valid dates'
+      };
+    }
 
+    let validDurations = 0;
     const totalDurationMs = completedTasks.reduce((sum, task) => {
       const createdDate = new Date(task.created_at);
-      const completedDate = new Date((task as any).updated_at);
-      return sum + (completedDate.getTime() - createdDate.getTime());
+      const completionDate = getTaskCompletionDate(task);
+      
+      // Validate dates
+      if (!completionDate || isNaN(createdDate.getTime()) || isNaN(completionDate.getTime())) {
+        return sum;
+      }
+      
+      const duration = completionDate.getTime() - createdDate.getTime();
+      // Only include positive durations (completed after creation)
+      if (duration > 0) {
+        validDurations++;
+        return sum + duration;
+      }
+      return sum;
     }, 0);
 
-    const avgDurationMs = totalDurationMs / completedTasks.length;
+    if (validDurations === 0) {
+      return {
+        days: 0,
+        hours: 0,
+        label: 'N/A',
+        count: completedTasks.length,
+        description: `${completedTasks.length} completed tasks but no valid durations`
+      };
+    }
+
+    const avgDurationMs = totalDurationMs / validDurations;
     const avgDays = Math.round(avgDurationMs / (1000 * 60 * 60 * 24));
     const avgHours = Math.round(avgDurationMs / (1000 * 60 * 60));
 
     // Return appropriate format based on duration
-    if (avgDays > 0) {
-      return { days: avgDays, hours: 0, label: `${avgDays}d` };
-    } else if (avgHours > 0) {
-      return { days: 0, hours: avgHours, label: `${avgHours}h` };
+    if (avgDays >= 1) {
+      return { 
+        days: avgDays, 
+        hours: 0, 
+        label: `${avgDays}d`,
+        count: validDurations,
+        description: `Based on ${validDurations} completed tasks`
+      };
+    } else if (avgHours >= 1) {
+      return { 
+        days: 0, 
+        hours: avgHours, 
+        label: `${avgHours}h`,
+        count: validDurations,
+        description: `Based on ${validDurations} completed tasks`
+      };
     } else {
-      return { days: 0, hours: 0, label: '<1h' };
+      return { 
+        days: 0, 
+        hours: 0, 
+        label: '<1h',
+        count: validDurations,
+        description: `Based on ${validDurations} completed tasks`
+      };
     }
   }, [allTasks, analyticsFilters.selectedBoard]);
 
@@ -1191,37 +1282,55 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    const thisWeekCompleted = filteredTasks.filter(
-      (task) =>
-        (task.listStatus === 'done' ||
-          task.listStatus === 'closed' ||
-          task.archived) &&
-        (task as any).updated_at &&
-        new Date((task as any).updated_at) >= oneWeekAgo
-    ).length;
+    // Filter completed tasks with valid completion dates
+    const completedTasks = filteredTasks.filter((task) => {
+      const isCompleted = task.listStatus === 'done' || 
+                         task.listStatus === 'closed' || 
+                         task.archived;
+      const completionDate = getTaskCompletionDate(task);
+      return isCompleted && completionDate && !isNaN(completionDate.getTime());
+    });
 
-    const lastWeekCompleted = filteredTasks.filter(
-      (task) =>
-        (task.listStatus === 'done' ||
-          task.listStatus === 'closed' ||
-          task.archived) &&
-        (task as any).updated_at &&
-        new Date((task as any).updated_at) >= twoWeeksAgo &&
-        new Date((task as any).updated_at) < oneWeekAgo
-    ).length;
+    const thisWeekCompleted = completedTasks.filter((task) => {
+      const completionDate = getTaskCompletionDate(task);
+      return completionDate && completionDate >= oneWeekAgo;
+    }).length;
 
-    const trend =
-      lastWeekCompleted > 0
-        ? ((thisWeekCompleted - lastWeekCompleted) / lastWeekCompleted) * 100
-        : thisWeekCompleted > 0
-          ? 100
-          : 0;
+    const lastWeekCompleted = completedTasks.filter((task) => {
+      const completionDate = getTaskCompletionDate(task);
+      return completionDate && 
+             completionDate >= twoWeeksAgo && 
+             completionDate < oneWeekAgo;
+    }).length;
+
+    // Calculate trend
+    const trend = lastWeekCompleted > 0
+      ? ((thisWeekCompleted - lastWeekCompleted) / lastWeekCompleted) * 100
+      : thisWeekCompleted > 0
+        ? 100
+        : 0;
+
+    // Calculate average over 4 weeks for more stable metric
+    const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+    const last4WeeksCompleted = completedTasks.filter((task) => {
+      const completionDate = getTaskCompletionDate(task);
+      return completionDate && completionDate >= fourWeeksAgo;
+    }).length;
+
+    const avgPerWeek = Math.round(last4WeeksCompleted / 4);
+
+    // Create descriptive text with trend indicator
+    const trendIndicator = trend > 0 ? '↗️' : trend < 0 ? '↘️' : '→';
+    const trendText = trend !== 0 ? ` (${trendIndicator} ${Math.abs(Math.round(trend))}%)` : '';
 
     return {
       thisWeek: thisWeekCompleted,
       lastWeek: lastWeekCompleted,
+      avgPerWeek,
+      last4Weeks: last4WeeksCompleted,
       trend: Math.round(trend),
-      label: `${thisWeekCompleted}/week`,
+      label: thisWeekCompleted > 0 ? `${thisWeekCompleted}/week` : avgPerWeek > 0 ? `~${avgPerWeek}/week` : '0/week',
+      description: `This week: ${thisWeekCompleted}, Last week: ${lastWeekCompleted}${trendText}`,
     };
   }, [allTasks, analyticsFilters.selectedBoard]);
 
@@ -1233,31 +1342,51 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         )
       : allTasks;
 
-    const completedWithDueDate = filteredTasks.filter(
-      (task) =>
-        (task.listStatus === 'done' ||
-          task.listStatus === 'closed' ||
-          task.archived) &&
-        task.end_date &&
-        (task as any).updated_at
-    );
+    // Get completed tasks that have both due dates and completion dates
+    const completedWithDueDate = filteredTasks.filter((task) => {
+      const isCompleted = task.listStatus === 'done' || 
+                         task.listStatus === 'closed' || 
+                         task.archived;
+      const hasDueDate = task.end_date;
+      const completionDate = getTaskCompletionDate(task);
+      
+      return isCompleted && hasDueDate && completionDate && !isNaN(completionDate.getTime());
+    });
 
-    if (completedWithDueDate.length === 0)
-      return { rate: 0, onTime: 0, total: 0, label: 'N/A' };
+    if (completedWithDueDate.length === 0) {
+      return { 
+        rate: 0, 
+        onTime: 0, 
+        total: 0, 
+        label: 'N/A',
+        description: 'No completed tasks with due dates'
+      };
+    }
 
-    const onTimeCompleted = completedWithDueDate.filter(
-      (task) => new Date((task as any).updated_at) <= new Date(task.end_date!)
-    ).length;
+    // Count tasks completed on or before their due date
+    const onTimeCompleted = completedWithDueDate.filter((task) => {
+      const completionDate = getTaskCompletionDate(task);
+      const dueDate = new Date(task.end_date!);
+      
+      // Validate both dates
+      if (!completionDate || isNaN(completionDate.getTime()) || isNaN(dueDate.getTime())) {
+        return false;
+      }
+      
+      // Consider on-time if completed on or before due date
+      return completionDate <= dueDate;
+    }).length;
 
-    const rate = Math.round(
-      (onTimeCompleted / completedWithDueDate.length) * 100
-    );
+    const rate = Math.round((onTimeCompleted / completedWithDueDate.length) * 100);
+    const lateCount = completedWithDueDate.length - onTimeCompleted;
 
     return {
       rate,
       onTime: onTimeCompleted,
       total: completedWithDueDate.length,
+      late: lateCount,
       label: `${rate}%`,
+      description: `${onTimeCompleted} on time, ${lateCount} late (${completedWithDueDate.length} total)`,
     };
   }, [allTasks, analyticsFilters.selectedBoard]);
 
@@ -1745,8 +1874,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       Task Timeline & Performance
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Visual timeline and performance metrics for task
-                      management
+                      {analyticsFilters.selectedBoard 
+                        ? `Metrics for ${data.find(b => b.id === analyticsFilters.selectedBoard)?.name || 'Selected Board'}`
+                        : 'Aggregate metrics across all boards'
+                      }
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1814,6 +1945,22 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   </div>
                 </div>
 
+                {/* Data Quality Indicator */}
+                <div className="mb-4 rounded-lg border bg-muted/50 p-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="rounded-full bg-green-500/10 p-1">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                    </div>
+                    <span className="font-medium">Data Status:</span>
+                    <span className="text-muted-foreground">
+                      {calculateAvgDuration.count > 0 || calculateTaskVelocity.thisWeek > 0 || calculateOnTimeRate.total > 0
+                        ? `Analyzing ${analyticsMetrics.totalTasks} tasks with completion tracking`
+                        : 'Limited data available - metrics may show N/A until tasks are completed'
+                      }
+                    </span>
+                  </div>
+                </div>
+
                 {/* Productivity Metrics - Now responsive to board selection */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
                   <Card className="p-4">
@@ -1834,7 +1981,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       %
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Overall completion
+                      {analyticsMetrics.totalCompleted} of {analyticsMetrics.totalTasks} tasks completed
                     </p>
                   </Card>
 
@@ -1849,7 +1996,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       {analyticsMetrics.totalTasks -
                         analyticsMetrics.totalCompleted}
                     </p>
-                    <p className="text-xs text-muted-foreground">In progress</p>
+                    <p className="text-xs text-muted-foreground">Currently in progress</p>
                   </Card>
 
                   <Card className="p-4">
@@ -1863,25 +2010,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       {calculateAvgDuration.label}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {(() => {
-                        const filteredTasks = analyticsFilters.selectedBoard
-                          ? allTasks.filter(
-                              (task) =>
-                                task.boardId === analyticsFilters.selectedBoard
-                            )
-                          : allTasks;
-                        const completedCount = filteredTasks.filter(
-                          (task) =>
-                            (task.listStatus === 'done' ||
-                              task.listStatus === 'closed' ||
-                              task.archived) &&
-                            task.created_at &&
-                            (task as any).updated_at
-                        ).length;
-                        return completedCount > 0
-                          ? `Based on ${completedCount} completed tasks`
-                          : 'No completed tasks yet';
-                      })()}
+                      {calculateAvgDuration.description}
                     </p>
                   </Card>
 
@@ -1896,15 +2025,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       {calculateTaskVelocity.label}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {calculateTaskVelocity.trend > 0
-                        ? '↗️'
-                        : calculateTaskVelocity.trend < 0
-                          ? '↘️'
-                          : '→'}
-                      {calculateTaskVelocity.trend !== 0
-                        ? ` ${Math.abs(calculateTaskVelocity.trend)}%`
-                        : ' No change'}{' '}
-                      from last week
+                      {calculateTaskVelocity.description}
                     </p>
                   </Card>
 
@@ -1919,9 +2040,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       {calculateOnTimeRate.label}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {calculateOnTimeRate.total > 0
-                        ? `${calculateOnTimeRate.onTime}/${calculateOnTimeRate.total} tasks delivered on time`
-                        : 'No tasks with due dates yet'}
+                      {calculateOnTimeRate.description}
                     </p>
                   </Card>
                 </div>
