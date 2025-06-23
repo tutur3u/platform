@@ -207,8 +207,7 @@ export function TaskDetailCard({
             <div
               className={cn(
                 'h-1.5 rounded-full transition-all',
-                clickedTask.status === 'done' ||
-                  clickedTask.status === 'closed'
+                clickedTask.status === 'done' || clickedTask.status === 'closed'
                   ? 'bg-green-500'
                   : clickedTask.status === 'active'
                     ? 'bg-blue-500'
@@ -248,4 +247,4 @@ export function TaskDetailCard({
       </div>
     </>
   );
-} 
+}
