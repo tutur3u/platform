@@ -301,6 +301,44 @@ function GanttChart({
     setClickedTask(null);
   };
 
+  // Local utility function to get completion date
+  const getTaskCompletionDate = (task: any): Date | null => {
+    const taskData = task as any;
+    const possibleFields = ['updated_at', 'completed_at', 'closed_at', 'finished_at', 'done_at'];
+    
+    // First try to get explicit completion dates
+    for (const field of possibleFields) {
+      const dateStr = taskData[field];
+      if (dateStr) {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+    }
+    
+    // Fallback: if task is completed but no completion date, use updated_at or created_at as estimate
+    if (task.listStatus === 'done' || task.listStatus === 'closed' || task.archived) {
+      // Try updated_at first (might indicate when status was changed)
+      if (taskData.updated_at) {
+        const date = new Date(taskData.updated_at);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+      
+      // Last resort: use creation date (not ideal but better than nothing)
+      if (task.created_at) {
+        const date = new Date(task.created_at);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+    }
+    
+    return null;
+  };
+
   // Add click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -914,20 +952,62 @@ function GanttChart({
                   <div className="pl-4 font-medium">
                     {(() => {
                       try {
-                        if (clickedTask.createdDate && clickedTask.endDate) {
-                          const durationMs =
-                            clickedTask.endDate.getTime() -
-                            clickedTask.createdDate.getTime();
-                          const days = Math.ceil(
-                            durationMs / (1000 * 60 * 60 * 24)
-                          );
-                          const hours = Math.ceil(
-                            durationMs / (1000 * 60 * 60)
-                          );
-                          return days === 0 ? `${hours} hrs` : `${days} days`;
+                        const createdDate = clickedTask.created_at ? new Date(clickedTask.created_at) : null;
+                        
+                        if (!createdDate || isNaN(createdDate.getTime())) {
+                          return 'N/A';
                         }
-                        return 'N/A';
-                      } catch {
+
+                        // For completed tasks, calculate actual duration
+                        if (clickedTask.status === 'done' || clickedTask.status === 'closed') {
+                          const completionDate = getTaskCompletionDate(clickedTask);
+                          if (completionDate && !isNaN(completionDate.getTime())) {
+                            const durationMs = completionDate.getTime() - createdDate.getTime();
+                            const days = Math.floor(durationMs / (1000 * 60 * 60 * 24));
+                            const hours = Math.floor(durationMs / (1000 * 60 * 60));
+                            
+                            if (days >= 1) {
+                              return `${days} day${days !== 1 ? 's' : ''}`;
+                            } else if (hours >= 1) {
+                              return `${hours} hr${hours !== 1 ? 's' : ''}`;
+                            } else {
+                              return '<1 hr';
+                            }
+                          }
+                        }
+                        
+                        // For non-completed tasks, show planned duration or time elapsed
+                        if (clickedTask.end_date) {
+                          const dueDate = new Date(clickedTask.end_date);
+                          if (!isNaN(dueDate.getTime())) {
+                            const plannedDurationMs = dueDate.getTime() - createdDate.getTime();
+                            const days = Math.floor(plannedDurationMs / (1000 * 60 * 60 * 24));
+                            const hours = Math.floor(plannedDurationMs / (1000 * 60 * 60));
+                            
+                            if (days >= 1) {
+                              return `${days} day${days !== 1 ? 's' : ''} (planned)`;
+                            } else if (hours >= 1) {
+                              return `${hours} hr${hours !== 1 ? 's' : ''} (planned)`;
+                            } else {
+                              return '<1 hr (planned)';
+                            }
+                          }
+                        }
+                        
+                        // Fallback: show time elapsed since creation
+                        const now = new Date();
+                        const elapsedMs = now.getTime() - createdDate.getTime();
+                        const days = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor(elapsedMs / (1000 * 60 * 60));
+                        
+                        if (days >= 1) {
+                          return `${days} day${days !== 1 ? 's' : ''} (elapsed)`;
+                        } else if (hours >= 1) {
+                          return `${hours} hr${hours !== 1 ? 's' : ''} (elapsed)`;
+                        } else {
+                          return '<1 hr (elapsed)';
+                        }
+                      } catch (error) {
                         return 'N/A';
                       }
                     })()}
@@ -1421,8 +1501,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       }
       
       const duration = completionDate.getTime() - createdDate.getTime();
-      // Only include positive durations (completed after creation)
-      if (duration > 0) {
+      
+      // Only include positive durations (completed after creation) and reasonable durations (less than 1 year)
+      const maxReasonableDuration = 365 * 24 * 60 * 60 * 1000; // 1 year in ms
+      if (duration > 0 && duration < maxReasonableDuration) {
         validDurations++;
         return sum + duration;
       }
@@ -1435,20 +1517,23 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         hours: 0,
         label: 'N/A',
         count: completedTasks.length,
-        description: `${completedTasks.length} completed tasks but no valid durations`
+        description: completedTasks.length > 0 
+          ? `${completedTasks.length} completed tasks but no valid completion dates`
+          : 'No completed tasks with valid dates'
       };
     }
 
     const avgDurationMs = totalDurationMs / validDurations;
-    const avgDays = Math.round(avgDurationMs / (1000 * 60 * 60 * 24));
-    const avgHours = Math.round(avgDurationMs / (1000 * 60 * 60));
+    const avgDays = Math.floor(avgDurationMs / (1000 * 60 * 60 * 24));
+    const avgHours = Math.floor(avgDurationMs / (1000 * 60 * 60));
 
     // Return appropriate format based on duration
     if (avgDays >= 1) {
+      const remainingHours = Math.floor((avgDurationMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       return { 
         days: avgDays, 
-        hours: 0, 
-        label: `${avgDays}d`,
+        hours: remainingHours, 
+        label: remainingHours > 0 ? `${avgDays}d ${remainingHours}h` : `${avgDays}d`,
         count: validDurations,
         description: `Based on ${validDurations} completed tasks`
       };
@@ -1461,10 +1546,11 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         description: `Based on ${validDurations} completed tasks`
       };
     } else {
+      const avgMinutes = Math.floor(avgDurationMs / (1000 * 60));
       return { 
         days: 0, 
         hours: 0, 
-        label: '<1h',
+        label: avgMinutes > 0 ? `${avgMinutes}m` : '<1m',
         count: validDurations,
         description: `Based on ${validDurations} completed tasks`
       };
@@ -1518,11 +1604,19 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       return completionDate && completionDate >= fourWeeksAgo;
     }).length;
 
-    const avgPerWeek = Math.round(last4WeeksCompleted / 4);
+    const avgPerWeek = last4WeeksCompleted > 0 ? Math.round(last4WeeksCompleted / 4) : 0;
 
     // Create descriptive text with trend indicator
     const trendIndicator = trend > 0 ? '↗️' : trend < 0 ? '↘️' : '→';
     const trendText = trend !== 0 ? ` (${trendIndicator} ${Math.abs(Math.round(trend))}%)` : '';
+
+    // Determine best label to show
+    let label = '0/week';
+    if (thisWeekCompleted > 0) {
+      label = `${thisWeekCompleted}/week`;
+    } else if (avgPerWeek > 0) {
+      label = `~${avgPerWeek}/week`;
+    }
 
     return {
       thisWeek: thisWeekCompleted,
@@ -1530,8 +1624,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       avgPerWeek,
       last4Weeks: last4WeeksCompleted,
       trend: Math.round(trend),
-      label: thisWeekCompleted > 0 ? `${thisWeekCompleted}/week` : avgPerWeek > 0 ? `~${avgPerWeek}/week` : '0/week',
-      description: `This week: ${thisWeekCompleted}, Last week: ${lastWeekCompleted}${trendText}`,
+      label,
+      description: completedTasks.length > 0 
+        ? `This week: ${thisWeekCompleted}, Last week: ${lastWeekCompleted}${trendText}`
+        : 'No completed tasks yet',
     };
   }, [allTasks, analyticsFilters.selectedBoard]);
 
@@ -1555,12 +1651,18 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     });
 
     if (completedWithDueDate.length === 0) {
+      const totalCompleted = filteredTasks.filter(task => 
+        task.listStatus === 'done' || task.listStatus === 'closed' || task.archived
+      ).length;
+      
       return { 
         rate: 0, 
         onTime: 0, 
         total: 0, 
         label: 'N/A',
-        description: 'No completed tasks with due dates'
+        description: totalCompleted > 0 
+          ? `${totalCompleted} completed tasks but no due dates set`
+          : 'No completed tasks with due dates yet'
       };
     }
 
@@ -1574,11 +1676,16 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         return false;
       }
       
-      // Consider on-time if completed on or before due date
-      return completionDate <= dueDate;
+      // Consider on-time if completed on or before due date (with some tolerance for same day)
+      const timeDiff = completionDate.getTime() - dueDate.getTime();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      
+      return timeDiff <= oneDayMs; // Allow up to 1 day late to be considered "on time"
     }).length;
 
-    const rate = Math.round((onTimeCompleted / completedWithDueDate.length) * 100);
+    const rate = completedWithDueDate.length > 0 
+      ? Math.round((onTimeCompleted / completedWithDueDate.length) * 100)
+      : 0;
     const lateCount = completedWithDueDate.length - onTimeCompleted;
 
     return {
@@ -1587,7 +1694,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       total: completedWithDueDate.length,
       late: lateCount,
       label: `${rate}%`,
-      description: `${onTimeCompleted} on time, ${lateCount} late (${completedWithDueDate.length} total)`,
+      description: `${onTimeCompleted} on time, ${lateCount} late (of ${completedWithDueDate.length} with due dates)`,
     };
   }, [allTasks, analyticsFilters.selectedBoard]);
 
