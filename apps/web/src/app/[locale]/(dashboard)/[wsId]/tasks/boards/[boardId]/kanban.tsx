@@ -315,7 +315,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               const { transform } = args;
 
               // Get viewport bounds - only access window in browser environment
-              const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+              const viewportWidth =
+                typeof window !== 'undefined' ? window.innerWidth : 1200;
               const maxX = viewportWidth - 350; // Account for card width
 
               return {
