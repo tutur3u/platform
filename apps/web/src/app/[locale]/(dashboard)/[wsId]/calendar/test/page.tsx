@@ -372,7 +372,7 @@ export default function Page() {
                     <div className="space-y-2">
                       <FormLabel>End Date & Time</FormLabel>
                       <DateTimePicker
-                        date={new Date(new Date().getTime() + 60 * 60 * 1000)}
+                        date={new Date(Date.now() + 60 * 60 * 1000)}
                         setDate={(date) =>
                           console.log('End date changed:', date)
                         }

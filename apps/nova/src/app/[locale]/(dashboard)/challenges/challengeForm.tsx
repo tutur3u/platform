@@ -205,7 +205,7 @@ export default function ChallengeForm({
       }
 
       form.clearErrors('whitelistedEmails');
-    } catch (error) {
+    } catch (_error) {
       // Email validation failed
       form.setError('whitelistedEmails', {
         message: 'Invalid email address',

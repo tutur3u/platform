@@ -109,7 +109,7 @@ export const Executions = () => {
     },
   };
 
-  const t = translations['en'];
+  const t = translations.en;
 
   const getStatusIcon = (
     status: CronJob['status'] | CronExecution['status']

@@ -87,8 +87,8 @@ export function useAvgDuration(
       // Validate dates
       if (
         !completionDate ||
-        isNaN(createdDate.getTime()) ||
-        isNaN(completionDate.getTime())
+        Number.isNaN(createdDate.getTime()) ||
+        Number.isNaN(completionDate.getTime())
       ) {
         return sum;
       }
@@ -178,7 +178,9 @@ export function useTaskVelocity(
         task.listStatus === 'closed' ||
         task.archived;
       const completionDate = getTaskCompletionDate(task);
-      return isCompleted && completionDate && !isNaN(completionDate.getTime());
+      return (
+        isCompleted && completionDate && !Number.isNaN(completionDate.getTime())
+      );
     });
 
     const thisWeekCompleted = completedTasks.filter((task) => {
@@ -266,7 +268,7 @@ export function useOnTimeRate(
         isCompleted &&
         hasDueDate &&
         completionDate &&
-        !isNaN(completionDate.getTime())
+        !Number.isNaN(completionDate.getTime())
       );
     });
 
@@ -299,8 +301,8 @@ export function useOnTimeRate(
       // Validate both dates
       if (
         !completionDate ||
-        isNaN(completionDate.getTime()) ||
-        isNaN(dueDate.getTime())
+        Number.isNaN(completionDate.getTime()) ||
+        Number.isNaN(dueDate.getTime())
       ) {
         return false;
       }

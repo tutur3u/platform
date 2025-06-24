@@ -118,7 +118,9 @@ export function DataTable<TData, TValue>({
       },
     },
     pageCount:
-      count != undefined ? Math.max(Math.ceil(count / pageSize), 1) : undefined,
+      count !== undefined
+        ? Math.max(Math.ceil(count / pageSize), 1)
+        : undefined,
     enableRowSelection: true,
     autoResetPageIndex: true,
     onRowSelectionChange: setRowSelection,

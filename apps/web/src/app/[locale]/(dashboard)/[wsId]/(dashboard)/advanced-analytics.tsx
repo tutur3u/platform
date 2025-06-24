@@ -453,7 +453,7 @@ const MetricsChart = ({
               stroke={colors.axis}
               tick={{ fill: colors.axis, fontSize: 12 }}
               tickMargin={10}
-              tickFormatter={(value) => (value * 100).toFixed(0) + '%'}
+              tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
             />
             <Tooltip
               cursor={{ fill: colors.confidence }}

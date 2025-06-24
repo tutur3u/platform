@@ -122,7 +122,7 @@ export function EventModal() {
     title: '',
     description: '',
     start_at: new Date().toISOString(),
-    end_at: new Date(new Date().getTime() + 60 * 60 * 1000).toISOString(), // Default to 1 hour
+    end_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // Default to 1 hour
     color: 'BLUE',
     location: '',
     priority: 'medium',
@@ -180,7 +180,7 @@ export function EventModal() {
   });
 
   // Add this near the top of the component, after tz is defined
-  const categoriesKey = JSON.stringify(
+  const _categoriesKey = JSON.stringify(
     settings?.categoryColors?.categories ?? []
   );
 
@@ -196,14 +196,14 @@ export function EventModal() {
       // Find overlapping events for the first event
       if (processedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
         const firstEvent = processedEvents[0];
-        if (firstEvent && firstEvent.start_at && firstEvent.end_at) {
+        if (firstEvent?.start_at && firstEvent.end_at) {
           checkForOverlaps(firstEvent as Partial<CalendarEvent>);
         }
       }
 
       setActiveTab('preview');
     }
-  }, [object, isLoading, categoriesKey, tz]);
+  }, [object, isLoading, aiForm.getValues, checkForOverlaps]);
 
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
@@ -270,7 +270,11 @@ export function EventModal() {
 
     // Clear any error messages
     setDateError(null);
-  }, [activeEvent, isModalOpen, tz]);
+  }, [
+    activeEvent, // Reset AI form
+    aiForm.reset, // Check for overlapping events
+    checkForOverlaps,
+  ]);
 
   // Function to check for overlapping events
   const checkForOverlaps = (eventToCheck: Partial<CalendarEvent>) => {
@@ -822,7 +826,7 @@ export function EventModal() {
       setCurrentEventIndex(nextIndex);
       if (aiForm.getValues().smart_scheduling) {
         const nextEvent = generatedEvents[nextIndex];
-        if (nextEvent && nextEvent.start_at && nextEvent.end_at) {
+        if (nextEvent?.start_at && nextEvent.end_at) {
           checkForOverlaps(nextEvent as Partial<CalendarEvent>);
         }
       }
@@ -835,7 +839,7 @@ export function EventModal() {
       setCurrentEventIndex(prevIndex);
       if (aiForm.getValues().smart_scheduling) {
         const prevEvent = generatedEvents[prevIndex];
-        if (prevEvent && prevEvent.start_at && prevEvent.end_at) {
+        if (prevEvent?.start_at && prevEvent.end_at) {
           checkForOverlaps(prevEvent as Partial<CalendarEvent>);
         }
       }

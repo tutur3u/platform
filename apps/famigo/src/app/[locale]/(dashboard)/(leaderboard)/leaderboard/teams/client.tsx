@@ -94,7 +94,7 @@ export default function TeamsLeaderboardClient({
     }
 
     setFilteredData(filtered);
-  }, [searchQuery, data, currentTeamId]);
+  }, [searchQuery, data]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1) return;

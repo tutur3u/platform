@@ -28,7 +28,7 @@ export default function MailPosts({
     };
 
     getPosts();
-  }, [wsId, searchParams]);
+  }, [searchParams]);
 
   const selectedPost = posts.find((post) => post.id === selectedPostId);
 

@@ -1,5 +1,4 @@
 import { Receipt } from '@tuturuuu/ui/icons';
-import React from 'react';
 
 interface BillingHistoryItem {
   id: string;

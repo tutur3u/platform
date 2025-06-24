@@ -62,7 +62,7 @@ function UserCard({
 
   useEffect(() => {
     if (success) router.refresh();
-  }, [success]);
+  }, [success, router.refresh]);
 
   const supabase = createClient();
 

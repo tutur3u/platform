@@ -97,64 +97,62 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
           </>
         }
         description={
-          <>
-            <div className="grid flex-wrap gap-2 md:flex">
+          <div className="grid flex-wrap gap-2 md:flex">
+            <LinkButton
+              href={`${commonHref}`}
+              title={t('course-details-tabs.preview')}
+              icon={<Eye className="h-5 w-5" />}
+              className="border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20"
+            />
+            <LinkButton
+              href={`${commonHref}/content`}
+              title={t('course-details-tabs.module_content')}
+              icon={<Goal className="h-5 w-5" />}
+              className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
+            />
+            <LinkButton
+              href={`${commonHref}/resources`}
+              title={`${t('course-details-tabs.resources')} (${resources.length || 0})`}
+              icon={<Paperclip className="h-5 w-5" />}
+              className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
+            />
+            <LinkButton
+              href={`${commonHref}/youtube-links`}
+              title={`${t('course-details-tabs.youtube_links')} (${data.youtube_links?.length || 0})`}
+              icon={<Youtube className="h-5 w-5" />}
+              className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20"
+            />
+            {/* Only show quiz-sets button if ENABLE_QUIZZES is enabled */}
+            {ENABLE_QUIZZES && (
               <LinkButton
-                href={`${commonHref}`}
-                title={t('course-details-tabs.preview')}
-                icon={<Eye className="h-5 w-5" />}
-                className="border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20"
+                href={`${commonHref}/quiz-sets`}
+                title={`${t('ws-quiz-sets.plural')} (${quizSets || 0})`}
+                icon={<ListTodo className="h-5 w-5" />}
+                className="border-dynamic-lime/20 bg-dynamic-lime/10 text-dynamic-lime hover:bg-dynamic-lime/20"
               />
+            )}
+            {/* Only show quizzes button if ENABLE_QUIZZES is enabled */}
+            {ENABLE_QUIZZES && (
               <LinkButton
-                href={`${commonHref}/content`}
-                title={t('course-details-tabs.module_content')}
-                icon={<Goal className="h-5 w-5" />}
-                className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
+                href={`${commonHref}/quizzes`}
+                title={`${t('ws-quizzes.plural')} (${quizzes || 0})`}
+                icon={<SquareCheck className="h-5 w-5" />}
+                className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
               />
-              <LinkButton
-                href={`${commonHref}/resources`}
-                title={`${t('course-details-tabs.resources')} (${resources.length || 0})`}
-                icon={<Paperclip className="h-5 w-5" />}
-                className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
-              />
-              <LinkButton
-                href={`${commonHref}/youtube-links`}
-                title={`${t('course-details-tabs.youtube_links')} (${data.youtube_links?.length || 0})`}
-                icon={<Youtube className="h-5 w-5" />}
-                className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20"
-              />
-              {/* Only show quiz-sets button if ENABLE_QUIZZES is enabled */}
-              {ENABLE_QUIZZES && (
-                <LinkButton
-                  href={`${commonHref}/quiz-sets`}
-                  title={`${t('ws-quiz-sets.plural')} (${quizSets || 0})`}
-                  icon={<ListTodo className="h-5 w-5" />}
-                  className="border-dynamic-lime/20 bg-dynamic-lime/10 text-dynamic-lime hover:bg-dynamic-lime/20"
-                />
-              )}
-              {/* Only show quizzes button if ENABLE_QUIZZES is enabled */}
-              {ENABLE_QUIZZES && (
-                <LinkButton
-                  href={`${commonHref}/quizzes`}
-                  title={`${t('ws-quizzes.plural')} (${quizzes || 0})`}
-                  icon={<SquareCheck className="h-5 w-5" />}
-                  className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
-                />
-              )}
-              <LinkButton
-                href={`${commonHref}/flashcards`}
-                title={`${t('ws-flashcards.plural')} (${flashcards || 0})`}
-                icon={<SwatchBook className="h-5 w-5" />}
-                className="border-dynamic-sky/20 bg-dynamic-sky/10 text-dynamic-sky hover:bg-dynamic-sky/20"
-              />
-              <LinkButton
-                href={`${commonHref}/extra-content`}
-                title={t('course-details-tabs.extra_reading')}
-                icon={<BookText className="h-5 w-5" />}
-                className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20"
-              />
-            </div>
-          </>
+            )}
+            <LinkButton
+              href={`${commonHref}/flashcards`}
+              title={`${t('ws-flashcards.plural')} (${flashcards || 0})`}
+              icon={<SwatchBook className="h-5 w-5" />}
+              className="border-dynamic-sky/20 bg-dynamic-sky/10 text-dynamic-sky hover:bg-dynamic-sky/20"
+            />
+            <LinkButton
+              href={`${commonHref}/extra-content`}
+              title={t('course-details-tabs.extra_reading')}
+              icon={<BookText className="h-5 w-5" />}
+              className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20"
+            />
+          </div>
         }
       />
       <Separator className="my-4" />

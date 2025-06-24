@@ -68,7 +68,7 @@ export default function ChallengeClient({ challenge, session, wsId }: Props) {
       body: JSON.stringify({
         endTime: new Date(
           Math.min(
-            new Date().getTime(),
+            Date.now(),
             new Date(session?.start_time || '').getTime() +
               challenge.duration * 1000
           )

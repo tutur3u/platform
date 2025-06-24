@@ -71,7 +71,7 @@ export function DataTablePagination<TData>({
         className
       )}
     >
-      {count != undefined && count > 0 ? (
+      {count !== undefined && count > 0 ? (
         <div className="flex-none text-sm text-muted-foreground">
           {/* {locale === 'vi' || locale === 'vi-VN' ? t('common.selected') : null}{' '} */}
           {/* <span className="text-primary font-semibold">

@@ -357,7 +357,7 @@ export const CalendarContent = ({
 
       setDates(monthDates);
     }
-  }, [date, view]);
+  }, [date, view, setDates]);
 
   // Set initial view based on screen size
   useEffect(() => {

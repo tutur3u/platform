@@ -30,7 +30,7 @@ export const TimeIndicatorLine = ({
     const interval = setInterval(updateTime, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [tz]);
 
   // Use selected timezone
   const nowTz = tz === 'auto' ? now : now.tz(tz);

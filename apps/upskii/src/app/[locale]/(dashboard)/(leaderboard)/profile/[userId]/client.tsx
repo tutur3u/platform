@@ -143,7 +143,7 @@ export default function UserProfileClient({
       setUser({ ...rest, ...user_private_details } as WorkspaceUser);
     };
     fetchUser();
-  }, [supabase.auth]);
+  }, [supabase.auth, isCurrentUser, profile.id, supabase.from]);
 
   // Share profile functionality
   const handleShare = () => {
@@ -346,7 +346,8 @@ export default function UserProfileClient({
                 )}
                 <div className="mx-auto flex items-center text-sm text-muted-foreground md:mx-0">
                   <User className="mr-1 h-4 w-4" />
-                  {t('role')}: {role == 'Teacher' ? t('teacher') : t('student')}
+                  {t('role')}:{' '}
+                  {role === 'Teacher' ? t('teacher') : t('student')}
                 </div>
               </div>
             </div>

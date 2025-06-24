@@ -79,9 +79,7 @@ export const POST = Webhooks({
             process.env.NODE_ENV === 'development'
               ? true
               : // If the workspace is the root workspace and the sandbox is true, use sandbox
-                ws_id === ROOT_WORKSPACE_ID && sandbox
-                ? true // Enable sandbox for root workspace
-                : false, // Otherwise, use production
+                !!(ws_id === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
         });
 
         await polarClient.events.ingest({

@@ -86,7 +86,7 @@ export default function PlanLogin({
     } catch (error) {
       console.error('Failed to load saved credentials', error);
     }
-  }, [plan.id]);
+  }, [plan.id, form.setValue, onSubmit, user]);
 
   const form = useForm({
     resolver: zodResolver(formSchema),

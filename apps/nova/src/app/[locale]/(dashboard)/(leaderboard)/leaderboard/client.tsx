@@ -85,7 +85,7 @@ export default function LeaderboardClient({
     }
 
     setFilteredData(filtered);
-  }, [searchQuery, data, currentUserId]);
+  }, [searchQuery, data]);
 
   const handleChallengeChange = (challengeId: string) => {
     const params = new URLSearchParams(searchParams.toString());

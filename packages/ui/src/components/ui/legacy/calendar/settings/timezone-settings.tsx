@@ -90,11 +90,11 @@ const generateTimezoneList = (): TimezoneGroups => {
   // Sort each region's timezones by offset, then by city name
   Object.keys(regionMap).forEach((region) => {
     if (regionMap[region]) {
-      regionMap[region]!.sort(
+      regionMap[region]?.sort(
         (a, b) =>
           a.offsetMinutes - b.offsetMinutes || a.city.localeCompare(b.city)
       );
-      groups[region] = regionMap[region]!.map(({ value, label }) => ({
+      groups[region] = regionMap[region]?.map(({ value, label }) => ({
         value,
         label,
       }));
@@ -158,21 +158,21 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
   // Get all region group names (excluding 'Auto & UTC')
   const regionGroupNames = React.useMemo(
     () => Object.keys(timezoneGroups).filter((g) => g !== 'Auto & UTC'),
-    [timezoneGroups]
+    []
   );
 
   React.useEffect(() => {
     setActiveIndex(
       flatFilteredTimezones.findIndex((tz) => tz.value === value.timezone)
     );
-  }, [primaryOpen, searchQuery]);
+  }, [flatFilteredTimezones.findIndex, value.timezone]);
   React.useEffect(() => {
     setActiveSecondaryIndex(
       flatFilteredSecondaryTimezones.findIndex(
         (tz) => tz.value === value.secondaryTimezone
       )
     );
-  }, [secondaryOpen, secondarySearchQuery]);
+  }, [flatFilteredSecondaryTimezones.findIndex, value.secondaryTimezone]);
 
   // Detect user's timezone on mount
   React.useEffect(() => {
@@ -189,7 +189,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
     } catch (error) {
       console.error('Failed to detect timezone:', error);
     }
-  }, []);
+  }, [onChange, value]);
 
   const handleTimezoneChange = (timezone: string) => {
     // Update recent timezones
@@ -397,7 +397,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
                 onKeyDown={handleKeyDown}
               />
               <div className="mb-1 flex flex-wrap gap-1">
@@ -417,7 +416,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
             </div>
             <div
               className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
-              tabIndex={0}
               onKeyDown={handleKeyDown}
               role="presentation"
               style={{ touchAction: 'pan-y' }}
@@ -550,13 +548,11 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   value={secondarySearchQuery}
                   onChange={(e) => setSecondarySearchQuery(e.target.value)}
-                  autoFocus
                   onKeyDown={handleSecondaryKeyDown}
                 />
               </div>
               <div
                 className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
-                tabIndex={0}
                 onKeyDown={handleSecondaryKeyDown}
                 role="presentation"
                 style={{ touchAction: 'pan-y' }}

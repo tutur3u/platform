@@ -109,7 +109,7 @@ export function CommandPalette({
     document.addEventListener('keydown', down, { capture: true });
     return () =>
       document.removeEventListener('keydown', down, { capture: true });
-  }, [setOpen, page, open, inputValue]);
+  }, [setOpen, page, open, inputValue, handleBack]);
 
   // Navigation handlers
   const handleBack = React.useCallback(() => {

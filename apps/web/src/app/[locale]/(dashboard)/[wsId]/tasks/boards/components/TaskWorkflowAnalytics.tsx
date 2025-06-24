@@ -154,7 +154,7 @@ export function TaskWorkflowAnalytics({
   // Optimize filtering for large datasets
   const visibleAgeConfig = useMemo(
     () => ageConfig.filter((age) => age.count > 0),
-    [workflowAnalytics.ageDistribution]
+    [ageConfig.filter]
   );
 
   return (

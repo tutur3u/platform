@@ -55,12 +55,12 @@ export function ChatList({
         >
           <div
             className={`rounded-lg border bg-foreground/5 p-4 text-center text-2xl font-semibold ${
-              chatTitle == undefined && !!chatId
+              chatTitle === undefined && !!chatId
                 ? 'animate-pulse text-transparent'
                 : ''
             }`}
           >
-            {chatTitle == undefined && !!chatId ? '...' : chatTitle || '...'}
+            {chatTitle === undefined && !!chatId ? '...' : chatTitle || '...'}
 
             <div className="mt-2 flex flex-wrap items-center justify-center gap-1 text-xs">
               <span

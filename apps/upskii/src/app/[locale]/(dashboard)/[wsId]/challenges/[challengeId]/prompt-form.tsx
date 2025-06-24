@@ -66,7 +66,7 @@ export default function PromptForm({ problem, session }: Props) {
   const getSubmissions = useCallback(async () => {
     const submissions = await fetchSubmissions(problem.id);
     setSubmissions(submissions);
-  }, [problem.id, session.id]);
+  }, [problem.id]);
 
   useEffect(() => {
     getSubmissions();
@@ -251,7 +251,7 @@ export default function PromptForm({ problem, session }: Props) {
           </TabsContent>
 
           <TabsContent value="submissions" className="space-y-4">
-            {submissions && submissions.length == 0 ? (
+            {submissions && submissions.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                 <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
                 <h3 className="text-lg font-medium">No submissions yet</h3>
@@ -261,76 +261,74 @@ export default function PromptForm({ problem, session }: Props) {
                 </p>
               </div>
             ) : (
-              <>
-                <Tabs
-                  value={submissionsTab}
-                  onValueChange={setSubmissionsTab}
-                  className="w-full"
-                >
-                  <TabsList className="mb-4 grid w-full grid-cols-2">
-                    <TabsTrigger value="current" className="relative">
-                      Current Session
-                      {currentSubmissions && currentSubmissions.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                          {currentSubmissions.length}
-                        </Badge>
-                      )}
-                    </TabsTrigger>
-                    <TabsTrigger value="past" className="relative">
-                      Past Sessions
-                      {pastSubmissions && pastSubmissions.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                          {pastSubmissions.length}
-                        </Badge>
-                      )}
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="current" className="space-y-4">
-                    {currentSubmissions && currentSubmissions.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
-                        <h3 className="text-lg font-medium">
-                          No submissions in current session
-                        </h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Submit your first prompt to see results here.
-                        </p>
-                      </div>
-                    ) : (
-                      currentSubmissions?.map((submission) => (
-                        <SubmissionCard
-                          key={submission.id}
-                          submission={submission}
-                          isCurrent={true}
-                        />
-                      ))
+              <Tabs
+                value={submissionsTab}
+                onValueChange={setSubmissionsTab}
+                className="w-full"
+              >
+                <TabsList className="mb-4 grid w-full grid-cols-2">
+                  <TabsTrigger value="current" className="relative">
+                    Current Session
+                    {currentSubmissions && currentSubmissions.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {currentSubmissions.length}
+                      </Badge>
                     )}
-                  </TabsContent>
-
-                  <TabsContent value="past" className="space-y-4">
-                    {pastSubmissions && pastSubmissions.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                        <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
-                        <h3 className="text-lg font-medium">
-                          No submissions from past sessions
-                        </h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Past session submissions will appear here.
-                        </p>
-                      </div>
-                    ) : (
-                      pastSubmissions?.map((submission) => (
-                        <SubmissionCard
-                          key={submission.id}
-                          submission={submission}
-                          isCurrent={false}
-                        />
-                      ))
+                  </TabsTrigger>
+                  <TabsTrigger value="past" className="relative">
+                    Past Sessions
+                    {pastSubmissions && pastSubmissions.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {pastSubmissions.length}
+                      </Badge>
                     )}
-                  </TabsContent>
-                </Tabs>
-              </>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="current" className="space-y-4">
+                  {currentSubmissions && currentSubmissions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+                      <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
+                      <h3 className="text-lg font-medium">
+                        No submissions in current session
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Submit your first prompt to see results here.
+                      </p>
+                    </div>
+                  ) : (
+                    currentSubmissions?.map((submission) => (
+                      <SubmissionCard
+                        key={submission.id}
+                        submission={submission}
+                        isCurrent={true}
+                      />
+                    ))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="past" className="space-y-4">
+                  {pastSubmissions && pastSubmissions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+                      <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
+                      <h3 className="text-lg font-medium">
+                        No submissions from past sessions
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Past session submissions will appear here.
+                      </p>
+                    </div>
+                  ) : (
+                    pastSubmissions?.map((submission) => (
+                      <SubmissionCard
+                        key={submission.id}
+                        submission={submission}
+                        isCurrent={false}
+                      />
+                    ))
+                  )}
+                </TabsContent>
+              </Tabs>
             )}
           </TabsContent>
         </Tabs>

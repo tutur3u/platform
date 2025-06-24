@@ -157,7 +157,7 @@ export default function TasksSidebarContent({
     if (!selectedBoard) return {};
     return selectedBoard?.lists?.reduce(
       (acc, list) => {
-        if (list?.id) acc[list!.id] = list.tasks?.length ?? 0;
+        if (list?.id) acc[list?.id] = list.tasks?.length ?? 0;
         return acc;
       },
       {} as { [listId: string]: number }

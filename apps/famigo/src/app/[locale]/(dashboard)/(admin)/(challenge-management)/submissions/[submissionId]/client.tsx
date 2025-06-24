@@ -64,7 +64,11 @@ export default function SubmissionClient({ submission }: Props) {
       const startTime = new Date(submission.session.start_time).getTime();
       const endTime = new Date(submission.session.end_time).getTime();
 
-      if (isNaN(startTime) || isNaN(endTime) || endTime <= startTime) {
+      if (
+        Number.isNaN(startTime) ||
+        Number.isNaN(endTime) ||
+        endTime <= startTime
+      ) {
         return 'N/A';
       }
 
@@ -165,7 +169,7 @@ export default function SubmissionClient({ submission }: Props) {
                       size="sm"
                       className="mt-1 h-auto px-0"
                       onClick={() =>
-                        router.push(`/challenges/${submission.challenge!.id}`)
+                        router.push(`/challenges/${submission.challenge?.id}`)
                       }
                     >
                       View Challenge
@@ -186,7 +190,7 @@ export default function SubmissionClient({ submission }: Props) {
                       size="sm"
                       className="mt-1 h-auto px-0"
                       onClick={() =>
-                        router.push(`/problems/${submission.problem!.id}`)
+                        router.push(`/problems/${submission.problem?.id}`)
                       }
                     >
                       View Problem

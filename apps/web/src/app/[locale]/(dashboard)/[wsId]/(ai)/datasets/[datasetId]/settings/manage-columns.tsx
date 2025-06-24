@@ -189,24 +189,23 @@ export function ManageColumns({ wsId, datasetId }: Props) {
             </div>
           </div>
         ) : (
-          <>
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-                {columns.map((column) => (
-                  <div
-                    key={`${datasetId}-${column.name}`}
-                    className={cn(
-                      'group relative flex flex-col gap-1 rounded-lg border p-4 transition-all',
-                      'hover:border-foreground/20 hover:shadow-sm'
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="line-clamp-1 font-medium">
-                            {column.name}
-                          </span>
-                          {/* <Badge
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+              {columns.map((column) => (
+                <div
+                  key={`${datasetId}-${column.name}`}
+                  className={cn(
+                    'group relative flex flex-col gap-1 rounded-lg border p-4 transition-all',
+                    'hover:border-foreground/20 hover:shadow-sm'
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="line-clamp-1 font-medium">
+                          {column.name}
+                        </span>
+                        {/* <Badge
                             variant="secondary"
                             className={cn(
                               'px-2 py-0.5 text-xs font-normal',
@@ -215,60 +214,59 @@ export function ManageColumns({ wsId, datasetId }: Props) {
                           >
                             {column.type}
                           </Badge> */}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <Button
-                          size="xs"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingColumn(column);
-                            setIsEditDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="xs"
-                          variant="destructive"
-                          onClick={() => removeColumn(column.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
+                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingColumn(column);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="destructive"
+                        onClick={() => removeColumn(column.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                ))}
+                </div>
+              ))}
 
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'group flex h-auto flex-col items-center justify-center gap-2 p-8',
-                    'border-dashed hover:border-foreground/20'
-                  )}
-                  onClick={() => setIsAddingColumn(true)}
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 transition-colors group-hover:bg-muted">
-                    <Plus className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    Add Column
-                  </span>
-                </Button>
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={removeAllColumns}
-                  disabled={columns.length === 0}
-                >
-                  Remove All Columns
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                className={cn(
+                  'group flex h-auto flex-col items-center justify-center gap-2 p-8',
+                  'border-dashed hover:border-foreground/20'
+                )}
+                onClick={() => setIsAddingColumn(true)}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 transition-colors group-hover:bg-muted">
+                  <Plus className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  Add Column
+                </span>
+              </Button>
             </div>
-          </>
+
+            <div className="flex justify-end">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={removeAllColumns}
+                disabled={columns.length === 0}
+              >
+                Remove All Columns
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 

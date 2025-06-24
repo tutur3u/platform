@@ -194,7 +194,7 @@ export function FleetingAssistantMessage({
             },
             code({ className, children, ...props }) {
               if (children && Array.isArray(children) && children.length) {
-                if (children[0] == '▍') {
+                if (children[0] === '▍') {
                   return (
                     <span
                       className={cn(
@@ -215,7 +215,7 @@ export function FleetingAssistantMessage({
               return match ? (
                 <CodeBlock
                   key={Math.random()}
-                  language={(match && match[1]) || ''}
+                  language={match?.[1] || ''}
                   value={String(children).replace(/\n$/, '')}
                   {...props}
                 />

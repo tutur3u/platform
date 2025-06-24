@@ -87,9 +87,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           ?.map((a: any) => a.user)
           .filter(
             (user: any, index: number, self: any[]) =>
-              user &&
-              user.id &&
-              self.findIndex((u: any) => u.id === user.id) === index
+              user?.id && self.findIndex((u: any) => u.id === user.id) === index
           ),
       };
 

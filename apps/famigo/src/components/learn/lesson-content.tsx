@@ -32,7 +32,7 @@ export function LessonContent({ lesson }: LessonProps) {
           if (entry.isIntersecting) {
             const index = Number(entry.target.getAttribute('data-index'));
 
-            if (!isNaN(index)) {
+            if (!Number.isNaN(index)) {
               setActiveSection(index);
             }
           }
@@ -50,7 +50,7 @@ export function LessonContent({ lesson }: LessonProps) {
     });
 
     return () => observer.disconnect();
-  }, [lesson]);
+  }, []);
 
   // If no lesson data is provided, show a loading state
   if (!lesson) {

@@ -103,11 +103,9 @@ export function WorkspaceCourseModuleRowActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           {setId ? (
-            <>
-              <DropdownMenuItem onClick={unlinkWorkspaceCourseModule}>
-                {t('common.unlink')}
-              </DropdownMenuItem>
-            </>
+            <DropdownMenuItem onClick={unlinkWorkspaceCourseModule}>
+              {t('common.unlink')}
+            </DropdownMenuItem>
           ) : (
             <>
               <DropdownMenuItem onClick={() => setShowEditDialog(true)}>

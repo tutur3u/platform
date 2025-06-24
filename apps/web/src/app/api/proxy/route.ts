@@ -53,7 +53,7 @@ export async function GET(request: Request) {
         );
       }
       // eslint-disable-next-line no-unused-vars
-    } catch (e) {
+    } catch (_e) {
       return NextResponse.json(
         {
           error: 'Invalid URL',

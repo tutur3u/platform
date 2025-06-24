@@ -141,7 +141,7 @@ const stackSessions = (
     if (!groups[groupKey]) {
       groups[groupKey] = [];
     }
-    groups[groupKey]!.push(session);
+    groups[groupKey]?.push(session);
   });
 
   // Convert groups to stacked sessions
@@ -1050,7 +1050,11 @@ export function SessionHistory({
       filterTimeOfDay,
       filterProjectContext,
       filterSessionQuality,
-      tasks,
+      getDurationCategory,
+      getProjectContext,
+      getSessionProductivityType,
+      getSessionQuality,
+      getTimeOfDayCategory,
     ]
   );
 
@@ -1179,7 +1183,12 @@ export function SessionHistory({
       longSessions,
       sessionCount: sessionsForPeriod.length,
     };
-  }, [sessionsForPeriod]);
+  }, [
+    sessionsForPeriod,
+    calculateFocusScore,
+    getSessionProductivityType,
+    getTimeOfDayCategory,
+  ]);
 
   const groupedStackedSessions = useMemo(() => {
     const groups: { [key: string]: StackedSession[] } = {};
@@ -1206,7 +1215,7 @@ export function SessionHistory({
           key = `Week ${weekStart.format('MMM D')} - ${weekEnd.format('MMM D')}`;
         }
         if (!groups[key]) groups[key] = [];
-        groups[key]!.push(stackedSession);
+        groups[key]?.push(stackedSession);
       });
     return groups;
   }, [sessionsForPeriod, viewMode, userTimezone]);
@@ -1765,640 +1774,629 @@ export function SessionHistory({
                   : 'Try a different time period or adjusting your filters'}
               </p>
             </div>
-          ) : (
-            <>
-              {viewMode === 'month' ? (
-                // Enhanced Month View Layout
-                <div className="space-y-6">
-                  {/* Month Overview Cards */}
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 p-4 dark:from-blue-950/50 dark:to-blue-900/50">
-                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm font-medium">Total Time</span>
+          ) : viewMode === 'month' ? (
+            // Enhanced Month View Layout
+            <div className="space-y-6">
+              {/* Month Overview Cards */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 p-4 dark:from-blue-950/50 dark:to-blue-900/50">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-sm font-medium">Total Time</span>
+                  </div>
+                  <p className="mt-1 text-2xl font-bold text-blue-900 dark:text-blue-100">
+                    {formatDuration(periodStats.totalDuration)}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100 p-4 dark:from-green-950/50 dark:to-green-900/50">
+                  <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                    <Layers className="h-4 w-4" />
+                    <span className="text-sm font-medium">Activities</span>
+                  </div>
+                  <p className="mt-1 text-2xl font-bold text-green-900 dark:text-green-100">
+                    {periodStats.breakdown.length}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100 p-4 dark:from-purple-950/50 dark:to-purple-900/50">
+                  <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                    <BarChart2 className="h-4 w-4" />
+                    <span className="text-sm font-medium">Sessions</span>
+                  </div>
+                  <p className="mt-1 text-2xl font-bold text-purple-900 dark:text-purple-100">
+                    {sessionsForPeriod.length}
+                  </p>
+                </div>
+              </div>
+
+              {/* Productivity Insights */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-lg border p-4">
+                  <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
+                    <BarChart2 className="h-5 w-5" />
+                    Top Activities This Month
+                  </h3>
+                  <div className="space-y-3">
+                    {periodStats.breakdown.slice(0, 5).map((cat, index) => {
+                      const percentage =
+                        periodStats.totalDuration > 0
+                          ? (cat.duration / periodStats.totalDuration) * 100
+                          : 0;
+                      return (
+                        <div key={cat.name} className="group">
+                          <div className="mb-2 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                                {index + 1}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className={cn(
+                                    'h-3 w-3 rounded-full',
+                                    getCategoryColor(cat.color)
+                                  )}
+                                />
+                                <span className="font-medium">{cat.name}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm text-muted-foreground">
+                                {percentage.toFixed(1)}%
+                              </span>
+                              <span className="min-w-[4rem] text-right font-semibold">
+                                {formatDuration(cat.duration)}
+                              </span>
+                            </div>
+                          </div>
+                          <Progress
+                            value={percentage}
+                            className="h-2"
+                            indicatorClassName={getCategoryColor(cat.color)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
+                    <Brain className="h-5 w-5" />
+                    Productivity Insights
+                  </h3>
+                  <div className="space-y-4">
+                    {/* Focus Score */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Average Focus Score
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={cn(
+                            'h-2 w-16 rounded-full',
+                            periodStats.avgFocusScore >= 80
+                              ? 'bg-green-500 dark:bg-green-600'
+                              : periodStats.avgFocusScore >= 60
+                                ? 'bg-yellow-500 dark:bg-yellow-600'
+                                : periodStats.avgFocusScore >= 40
+                                  ? 'bg-orange-500 dark:bg-orange-600'
+                                  : 'bg-red-500 dark:bg-red-600'
+                          )}
+                        >
+                          <div
+                            className="h-2 rounded-full bg-current opacity-80"
+                            style={{
+                              width: `${periodStats.avgFocusScore}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-lg font-bold">
+                          {Math.round(periodStats.avgFocusScore)}
+                        </span>
                       </div>
-                      <p className="mt-1 text-2xl font-bold text-blue-900 dark:text-blue-100">
-                        {formatDuration(periodStats.totalDuration)}
-                      </p>
                     </div>
 
-                    <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100 p-4 dark:from-green-950/50 dark:to-green-900/50">
-                      <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
-                        <Layers className="h-4 w-4" />
-                        <span className="text-sm font-medium">Activities</span>
-                      </div>
-                      <p className="mt-1 text-2xl font-bold text-green-900 dark:text-green-100">
-                        {periodStats.breakdown.length}
-                      </p>
+                    {/* Best Time of Day */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Most Productive Time
+                      </span>
+                      <span className="font-medium">
+                        {periodStats.bestTimeOfDay === 'morning' &&
+                          '🌅 Morning'}
+                        {periodStats.bestTimeOfDay === 'afternoon' &&
+                          '☀️ Afternoon'}
+                        {periodStats.bestTimeOfDay === 'evening' &&
+                          '🌇 Evening'}
+                        {periodStats.bestTimeOfDay === 'night' && '🌙 Night'}
+                      </span>
                     </div>
 
-                    <div className="rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100 p-4 dark:from-purple-950/50 dark:to-purple-900/50">
-                      <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
-                        <BarChart2 className="h-4 w-4" />
-                        <span className="text-sm font-medium">Sessions</span>
+                    {/* Session Types Breakdown */}
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">
+                        Session Types
                       </div>
-                      <p className="mt-1 text-2xl font-bold text-purple-900 dark:text-purple-100">
-                        {sessionsForPeriod.length}
-                      </p>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div className="text-center">
+                          <div className="font-bold text-green-600">
+                            {periodStats.longSessions}
+                          </div>
+                          <div className="text-muted-foreground">
+                            Deep (2h+)
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-bold text-blue-600">
+                            {periodStats.mediumSessions}
+                          </div>
+                          <div className="text-muted-foreground">
+                            Focus (30m-2h)
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-bold text-orange-600">
+                            {periodStats.shortSessions}
+                          </div>
+                          <div className="text-muted-foreground">
+                            Quick (&lt;30m)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Longest Session Highlight */}
+                    {periodStats.longestSession && (
+                      <div className="rounded-md bg-muted/30 p-3">
+                        <div className="mb-1 text-xs text-muted-foreground">
+                          🏆 Longest Session
+                        </div>
+                        <div className="text-sm font-medium">
+                          {periodStats.longestSession.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDuration(
+                            periodStats.longestSession.duration_seconds || 0
+                          )}{' '}
+                          • Focus:{' '}
+                          {Math.round(
+                            calculateFocusScore(periodStats.longestSession)
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Productivity Pattern */}
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">
+                        Work Pattern
+                      </div>
+                      <div className="flex gap-1">
+                        {Object.entries(periodStats.productivityBreakdown).map(
+                          ([type, count]) => {
+                            const total = periodStats.sessionCount;
+                            const percentage =
+                              total > 0 ? (count / total) * 100 : 0;
+                            return percentage > 0 ? (
+                              <div
+                                key={type}
+                                className={cn(
+                                  'h-2 rounded-full',
+                                  type === 'deep-work'
+                                    ? 'bg-green-500 dark:bg-green-600'
+                                    : type === 'focused'
+                                      ? 'bg-blue-500 dark:bg-blue-600'
+                                      : type === 'standard'
+                                        ? 'bg-gray-500 dark:bg-gray-600'
+                                        : type === 'scattered'
+                                          ? 'bg-yellow-500 dark:bg-yellow-600'
+                                          : 'bg-red-500 dark:bg-red-600'
+                                )}
+                                style={{ width: `${percentage}%` }}
+                                title={`${type}: ${count} sessions (${percentage.toFixed(1)}%)`}
+                              />
+                            ) : null;
+                          }
+                        )}
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>
+                          🧠 Deep:{' '}
+                          {periodStats.productivityBreakdown['deep-work']}
+                        </span>
+                        <span>
+                          🎯 Focus: {periodStats.productivityBreakdown.focused}
+                        </span>
+                        <span>
+                          ⚡ Quick:{' '}
+                          {periodStats.productivityBreakdown.interrupted}
+                        </span>
+                      </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Productivity Insights */}
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-lg border p-4">
-                      <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
-                        <BarChart2 className="h-5 w-5" />
-                        Top Activities This Month
-                      </h3>
-                      <div className="space-y-3">
-                        {periodStats.breakdown.slice(0, 5).map((cat, index) => {
-                          const percentage =
-                            periodStats.totalDuration > 0
-                              ? (cat.duration / periodStats.totalDuration) * 100
-                              : 0;
-                          return (
-                            <div key={cat.name} className="group">
-                              <div className="mb-2 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                                    {index + 1}
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className={cn(
-                                        'h-3 w-3 rounded-full',
-                                        getCategoryColor(cat.color)
-                                      )}
-                                    />
-                                    <span className="font-medium">
-                                      {cat.name}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-sm text-muted-foreground">
-                                    {percentage.toFixed(1)}%
-                                  </span>
-                                  <span className="min-w-[4rem] text-right font-semibold">
-                                    {formatDuration(cat.duration)}
-                                  </span>
-                                </div>
-                              </div>
-                              <Progress
-                                value={percentage}
-                                className="h-2"
-                                indicatorClassName={getCategoryColor(cat.color)}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
+                {/* AI Insights Section */}
+                <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 p-4 dark:from-purple-950/20 dark:to-pink-950/20">
+                  <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-xs text-white">
+                      ✨
                     </div>
+                    AI Productivity Insights
+                  </h3>
+                  <div className="space-y-3">
+                    {(() => {
+                      const insights = [];
 
-                    <div className="rounded-lg border p-4">
-                      <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
-                        <Brain className="h-5 w-5" />
-                        Productivity Insights
-                      </h3>
-                      <div className="space-y-4">
-                        {/* Focus Score */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Average Focus Score
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={cn(
-                                'h-2 w-16 rounded-full',
-                                periodStats.avgFocusScore >= 80
-                                  ? 'bg-green-500 dark:bg-green-600'
-                                  : periodStats.avgFocusScore >= 60
-                                    ? 'bg-yellow-500 dark:bg-yellow-600'
-                                    : periodStats.avgFocusScore >= 40
-                                      ? 'bg-orange-500 dark:bg-orange-600'
-                                      : 'bg-red-500 dark:bg-red-600'
-                              )}
-                            >
-                              <div
-                                className="h-2 rounded-full bg-current opacity-80"
-                                style={{
-                                  width: `${periodStats.avgFocusScore}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-lg font-bold">
-                              {Math.round(periodStats.avgFocusScore)}
-                            </span>
-                          </div>
-                        </div>
+                      // Focus Score Analysis
+                      if (periodStats.avgFocusScore >= 80) {
+                        insights.push(
+                          "🎯 Excellent focus this month! You're maintaining deep work consistently."
+                        );
+                      } else if (periodStats.avgFocusScore >= 60) {
+                        insights.push(
+                          '👍 Good focus patterns. Consider blocking longer time chunks for deeper work.'
+                        );
+                      } else if (periodStats.avgFocusScore < 40) {
+                        insights.push(
+                          '💡 Focus opportunity: Try the 25-minute Pomodoro technique for better concentration.'
+                        );
+                      }
 
-                        {/* Best Time of Day */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Most Productive Time
-                          </span>
-                          <span className="font-medium">
-                            {periodStats.bestTimeOfDay === 'morning' &&
-                              '🌅 Morning'}
-                            {periodStats.bestTimeOfDay === 'afternoon' &&
-                              '☀️ Afternoon'}
-                            {periodStats.bestTimeOfDay === 'evening' &&
-                              '🌇 Evening'}
-                            {periodStats.bestTimeOfDay === 'night' &&
-                              '🌙 Night'}
-                          </span>
-                        </div>
+                      // Session Length Analysis
+                      const deepWorkRatio =
+                        periodStats.longSessions /
+                        Math.max(1, periodStats.sessionCount);
+                      if (deepWorkRatio > 0.3) {
+                        insights.push(
+                          "🏔️ Great job on deep work sessions! You're building strong focus habits."
+                        );
+                      } else if (
+                        periodStats.shortSessions >
+                        periodStats.longSessions + periodStats.mediumSessions
+                      ) {
+                        insights.push(
+                          '⚡ Many short sessions detected. Consider batching similar tasks for efficiency.'
+                        );
+                      }
 
-                        {/* Session Types Breakdown */}
-                        <div className="space-y-2">
-                          <div className="text-sm text-muted-foreground">
-                            Session Types
-                          </div>
-                          <div className="grid grid-cols-3 gap-2 text-xs">
-                            <div className="text-center">
-                              <div className="font-bold text-green-600">
-                                {periodStats.longSessions}
-                              </div>
-                              <div className="text-muted-foreground">
-                                Deep (2h+)
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              <div className="font-bold text-blue-600">
-                                {periodStats.mediumSessions}
-                              </div>
-                              <div className="text-muted-foreground">
-                                Focus (30m-2h)
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              <div className="font-bold text-orange-600">
-                                {periodStats.shortSessions}
-                              </div>
-                              <div className="text-muted-foreground">
-                                Quick (&lt;30m)
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                      // Time of Day Analysis
+                      if (periodStats.bestTimeOfDay === 'morning') {
+                        insights.push(
+                          "🌅 You're a morning person! Schedule your most important work before 11 AM."
+                        );
+                      } else if (periodStats.bestTimeOfDay === 'night') {
+                        insights.push(
+                          "🌙 Night owl detected! Just ensure you're getting enough rest for sustained productivity."
+                        );
+                      }
 
-                        {/* Longest Session Highlight */}
-                        {periodStats.longestSession && (
-                          <div className="rounded-md bg-muted/30 p-3">
-                            <div className="mb-1 text-xs text-muted-foreground">
-                              🏆 Longest Session
-                            </div>
-                            <div className="text-sm font-medium">
-                              {periodStats.longestSession.title}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatDuration(
-                                periodStats.longestSession.duration_seconds || 0
-                              )}{' '}
-                              • Focus:{' '}
-                              {Math.round(
-                                calculateFocusScore(periodStats.longestSession)
-                              )}
-                            </div>
-                          </div>
-                        )}
+                      // Productivity Type Analysis
+                      const interruptedRatio =
+                        periodStats.productivityBreakdown.interrupted /
+                        Math.max(1, periodStats.sessionCount);
+                      if (interruptedRatio > 0.3) {
+                        insights.push(
+                          "🔕 High interruption rate detected. Try enabling 'Do Not Disturb' mode during work blocks."
+                        );
+                      }
 
-                        {/* Productivity Pattern */}
-                        <div className="space-y-2">
-                          <div className="text-sm text-muted-foreground">
-                            Work Pattern
-                          </div>
-                          <div className="flex gap-1">
-                            {Object.entries(
-                              periodStats.productivityBreakdown
-                            ).map(([type, count]) => {
-                              const total = periodStats.sessionCount;
-                              const percentage =
-                                total > 0 ? (count / total) * 100 : 0;
-                              return percentage > 0 ? (
-                                <div
-                                  key={type}
-                                  className={cn(
-                                    'h-2 rounded-full',
-                                    type === 'deep-work'
-                                      ? 'bg-green-500 dark:bg-green-600'
-                                      : type === 'focused'
-                                        ? 'bg-blue-500 dark:bg-blue-600'
-                                        : type === 'standard'
-                                          ? 'bg-gray-500 dark:bg-gray-600'
-                                          : type === 'scattered'
-                                            ? 'bg-yellow-500 dark:bg-yellow-600'
-                                            : 'bg-red-500 dark:bg-red-600'
-                                  )}
-                                  style={{ width: `${percentage}%` }}
-                                  title={`${type}: ${count} sessions (${percentage.toFixed(1)}%)`}
-                                />
-                              ) : null;
-                            })}
-                          </div>
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>
-                              🧠 Deep:{' '}
-                              {periodStats.productivityBreakdown['deep-work']}
-                            </span>
-                            <span>
-                              🎯 Focus:{' '}
-                              {periodStats.productivityBreakdown['focused']}
-                            </span>
-                            <span>
-                              ⚡ Quick:{' '}
-                              {periodStats.productivityBreakdown['interrupted']}
-                            </span>
-                          </div>
-                        </div>
+                      const deepWorkCount =
+                        periodStats.productivityBreakdown['deep-work'];
+                      const focusedCount =
+                        periodStats.productivityBreakdown.focused;
+                      if (
+                        deepWorkCount + focusedCount >
+                        periodStats.sessionCount * 0.6
+                      ) {
+                        insights.push(
+                          "🧠 Outstanding focused work ratio! You're in the productivity zone."
+                        );
+                      }
+
+                      // Consistency Analysis
+                      const activeDays = new Set(
+                        sessionsForPeriod.map((s) =>
+                          dayjs
+                            .utc(s.start_time)
+                            .tz(userTimezone)
+                            .format('YYYY-MM-DD')
+                        )
+                      ).size;
+                      const daysInPeriod = currentDate.daysInMonth();
+                      const consistencyRatio = activeDays / daysInPeriod;
+
+                      if (consistencyRatio > 0.8) {
+                        insights.push(
+                          "🔥 Amazing consistency! You're showing up almost every day."
+                        );
+                      } else if (consistencyRatio < 0.3) {
+                        insights.push(
+                          '📅 Opportunity for more consistency. Even 15 minutes daily builds momentum.'
+                        );
+                      }
+
+                      // Duration vs Focus Correlation
+                      const avgDurationPerSession =
+                        periodStats.totalDuration /
+                        Math.max(1, periodStats.sessionCount);
+                      if (
+                        avgDurationPerSession > 7200 &&
+                        periodStats.avgFocusScore > 70
+                      ) {
+                        insights.push(
+                          "🏆 Perfect combo: Long sessions with high focus. You've mastered deep work!"
+                        );
+                      }
+
+                      return insights.slice(0, 3); // Show max 3 insights
+                    })().map((insight, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start gap-3 text-sm"
+                      >
+                        <div className="mt-0.5 h-1.5 w-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
+                        <span className="text-purple-700 dark:text-purple-300">
+                          {insight}
+                        </span>
                       </div>
-                    </div>
+                    ))}
 
-                    {/* AI Insights Section */}
-                    <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 p-4 dark:from-purple-950/20 dark:to-pink-950/20">
-                      <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-xs text-white">
-                          ✨
-                        </div>
-                        AI Productivity Insights
-                      </h3>
-                      <div className="space-y-3">
-                        {(() => {
-                          const insights = [];
-
-                          // Focus Score Analysis
-                          if (periodStats.avgFocusScore >= 80) {
-                            insights.push(
-                              "🎯 Excellent focus this month! You're maintaining deep work consistently."
-                            );
-                          } else if (periodStats.avgFocusScore >= 60) {
-                            insights.push(
-                              '👍 Good focus patterns. Consider blocking longer time chunks for deeper work.'
-                            );
-                          } else if (periodStats.avgFocusScore < 40) {
-                            insights.push(
-                              '💡 Focus opportunity: Try the 25-minute Pomodoro technique for better concentration.'
-                            );
-                          }
-
-                          // Session Length Analysis
-                          const deepWorkRatio =
-                            periodStats.longSessions /
-                            Math.max(1, periodStats.sessionCount);
-                          if (deepWorkRatio > 0.3) {
-                            insights.push(
-                              "🏔️ Great job on deep work sessions! You're building strong focus habits."
-                            );
-                          } else if (
-                            periodStats.shortSessions >
-                            periodStats.longSessions +
-                              periodStats.mediumSessions
-                          ) {
-                            insights.push(
-                              '⚡ Many short sessions detected. Consider batching similar tasks for efficiency.'
-                            );
-                          }
-
-                          // Time of Day Analysis
-                          if (periodStats.bestTimeOfDay === 'morning') {
-                            insights.push(
-                              "🌅 You're a morning person! Schedule your most important work before 11 AM."
-                            );
-                          } else if (periodStats.bestTimeOfDay === 'night') {
-                            insights.push(
-                              "🌙 Night owl detected! Just ensure you're getting enough rest for sustained productivity."
-                            );
-                          }
-
-                          // Productivity Type Analysis
-                          const interruptedRatio =
-                            periodStats.productivityBreakdown['interrupted'] /
-                            Math.max(1, periodStats.sessionCount);
-                          if (interruptedRatio > 0.3) {
-                            insights.push(
-                              "🔕 High interruption rate detected. Try enabling 'Do Not Disturb' mode during work blocks."
-                            );
-                          }
-
-                          const deepWorkCount =
-                            periodStats.productivityBreakdown['deep-work'];
-                          const focusedCount =
-                            periodStats.productivityBreakdown['focused'];
-                          if (
-                            deepWorkCount + focusedCount >
-                            periodStats.sessionCount * 0.6
-                          ) {
-                            insights.push(
-                              "🧠 Outstanding focused work ratio! You're in the productivity zone."
-                            );
-                          }
-
-                          // Consistency Analysis
-                          const activeDays = new Set(
+                    {(() => {
+                      // Predictive suggestion based on patterns
+                      const totalHours = periodStats.totalDuration / 3600;
+                      const avgHoursPerDay =
+                        totalHours /
+                        Math.max(
+                          1,
+                          new Set(
                             sessionsForPeriod.map((s) =>
                               dayjs
                                 .utc(s.start_time)
                                 .tz(userTimezone)
                                 .format('YYYY-MM-DD')
                             )
-                          ).size;
-                          const daysInPeriod = currentDate.daysInMonth();
-                          const consistencyRatio = activeDays / daysInPeriod;
-
-                          if (consistencyRatio > 0.8) {
-                            insights.push(
-                              "🔥 Amazing consistency! You're showing up almost every day."
-                            );
-                          } else if (consistencyRatio < 0.3) {
-                            insights.push(
-                              '📅 Opportunity for more consistency. Even 15 minutes daily builds momentum.'
-                            );
-                          }
-
-                          // Duration vs Focus Correlation
-                          const avgDurationPerSession =
-                            periodStats.totalDuration /
-                            Math.max(1, periodStats.sessionCount);
-                          if (
-                            avgDurationPerSession > 7200 &&
-                            periodStats.avgFocusScore > 70
-                          ) {
-                            insights.push(
-                              "🏆 Perfect combo: Long sessions with high focus. You've mastered deep work!"
-                            );
-                          }
-
-                          return insights.slice(0, 3); // Show max 3 insights
-                        })().map((insight, index) => (
-                          <div
-                            key={index}
-                            className="flex items-start gap-3 text-sm"
-                          >
-                            <div className="mt-0.5 h-1.5 w-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
-                            <span className="text-purple-700 dark:text-purple-300">
-                              {insight}
-                            </span>
-                          </div>
-                        ))}
-
-                        {(() => {
-                          // Predictive suggestion based on patterns
-                          const totalHours = periodStats.totalDuration / 3600;
-                          const avgHoursPerDay =
-                            totalHours /
-                            Math.max(
-                              1,
-                              new Set(
-                                sessionsForPeriod.map((s) =>
-                                  dayjs
-                                    .utc(s.start_time)
-                                    .tz(userTimezone)
-                                    .format('YYYY-MM-DD')
-                                )
-                              ).size
-                            );
-
-                          if (avgHoursPerDay > 6) {
-                            return (
-                              <div className="mt-4 rounded-md bg-gradient-to-r from-purple-100 to-pink-100 p-3 dark:from-purple-900/30 dark:to-pink-900/30">
-                                <div className="flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-300">
-                                  <span>🚀</span>
-                                  <span>Power User Detected!</span>
-                                </div>
-                                <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
-                                  You're averaging {avgHoursPerDay.toFixed(1)}{' '}
-                                  hours/day. Consider setting up automated time
-                                  tracking for even better insights!
-                                </p>
-                              </div>
-                            );
-                          }
-
-                          return null;
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Weekly Breakdown */}
-                  <div className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-base font-semibold">
-                      <History className="h-5 w-5" />
-                      Weekly Breakdown
-                    </h3>
-                    {Object.entries(groupedStackedSessions).map(
-                      ([groupTitle, groupSessions]) => {
-                        const groupTotalDuration = groupSessions.reduce(
-                          (sum, session) => sum + session.totalDuration,
-                          0
+                          ).size
                         );
 
+                      if (avgHoursPerDay > 6) {
                         return (
-                          <div
-                            key={groupTitle}
-                            className="rounded-lg border bg-muted/30 p-4"
-                          >
-                            <div className="mb-4 flex items-center justify-between">
-                              <h4 className="font-medium text-foreground">
-                                {groupTitle}
-                              </h4>
-                              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                <span>{groupSessions.length} activities</span>
-                                <span>•</span>
-                                <span className="font-semibold text-foreground">
-                                  {formatDuration(groupTotalDuration)}
-                                </span>
-                              </div>
+                          <div className="mt-4 rounded-md bg-gradient-to-r from-purple-100 to-pink-100 p-3 dark:from-purple-900/30 dark:to-pink-900/30">
+                            <div className="flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-300">
+                              <span>🚀</span>
+                              <span>Power User Detected!</span>
                             </div>
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                              {groupSessions.map((session) => (
-                                <div
-                                  key={session.id}
-                                  className="rounded-md border bg-background p-3 transition-all hover:shadow-sm"
-                                >
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="min-w-0 flex-1">
-                                      <h5 className="truncate text-sm font-medium">
-                                        {session.title}
-                                      </h5>
-                                      <div className="mt-1 flex items-center gap-2">
-                                        {session.category && (
-                                          <div className="flex items-center gap-1">
-                                            <div
-                                              className={cn(
-                                                'h-2 w-2 rounded-full',
-                                                getCategoryColor(
-                                                  session.category.color ||
-                                                    'BLUE'
-                                                )
-                                              )}
-                                            />
-                                            <span className="text-xs text-muted-foreground">
-                                              {session.category.name}
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <div className="text-sm font-semibold">
-                                        {formatDuration(session.totalDuration)}
-                                      </div>
-                                      {session.isStacked && (
-                                        <div className="text-xs text-muted-foreground">
-                                          {session.sessions.length} sessions
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {!readOnly && (
-                                    <div className="mt-3 flex gap-1">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 flex-1 text-xs"
-                                        onClick={() =>
-                                          resumeSession(
-                                            session.sessions[
-                                              session.sessions.length - 1
-                                            ]!
-                                          )
-                                        }
-                                      >
-                                        <RotateCcw className="mr-1 h-3 w-3" />
-                                        Resume
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 px-2"
-                                        onClick={() =>
-                                          openEditDialog(
-                                            session.sessions[
-                                              session.sessions.length - 1
-                                            ]!
-                                          )
-                                        }
-                                      >
-                                        <Edit className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
+                            <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+                              You're averaging {avgHoursPerDay.toFixed(1)}{' '}
+                              hours/day. Consider setting up automated time
+                              tracking for even better insights!
+                            </p>
                           </div>
                         );
                       }
-                    )}
+
+                      return null;
+                    })()}
                   </div>
                 </div>
-              ) : (
-                // Original Day/Week View Layout
-                <>
-                  <div className="mb-6 rounded-lg border p-4">
-                    <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                      <BarChart2 className="h-4 w-4" />
-                      {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)}{' '}
-                      Summary
-                    </h3>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="mb-1 flex justify-between text-sm">
-                          <span className="font-medium">Total Time</span>
-                          <span className="font-bold">
-                            {formatDuration(periodStats.totalDuration)}
-                          </span>
-                        </div>
-                        <Progress value={100} className="h-2" />
-                      </div>
-                      {periodStats.breakdown.map((cat) => {
-                        const percentage =
-                          periodStats.totalDuration > 0
-                            ? (cat.duration / periodStats.totalDuration) * 100
-                            : 0;
-                        return (
-                          <div key={cat.name}>
-                            <div className="mb-1 flex justify-between text-sm">
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className={cn(
-                                    'h-2 w-2 rounded-full',
-                                    getCategoryColor(cat.color)
-                                  )}
-                                />
-                                <span>{cat.name}</span>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="w-10 text-right text-xs text-muted-foreground">
-                                  {percentage.toFixed(0)}%
-                                </span>
-                                <span className="font-medium">
-                                  {formatDuration(cat.duration)}
-                                </span>
-                              </div>
-                            </div>
-                            <Progress
-                              value={percentage}
-                              className="h-2"
-                              indicatorClassName={getCategoryColor(cat.color)}
-                            />
+              </div>
+
+              {/* Weekly Breakdown */}
+              <div className="space-y-4">
+                <h3 className="flex items-center gap-2 text-base font-semibold">
+                  <History className="h-5 w-5" />
+                  Weekly Breakdown
+                </h3>
+                {Object.entries(groupedStackedSessions).map(
+                  ([groupTitle, groupSessions]) => {
+                    const groupTotalDuration = groupSessions.reduce(
+                      (sum, session) => sum + session.totalDuration,
+                      0
+                    );
+
+                    return (
+                      <div
+                        key={groupTitle}
+                        className="rounded-lg border bg-muted/30 p-4"
+                      >
+                        <div className="mb-4 flex items-center justify-between">
+                          <h4 className="font-medium text-foreground">
+                            {groupTitle}
+                          </h4>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span>{groupSessions.length} activities</span>
+                            <span>•</span>
+                            <span className="font-semibold text-foreground">
+                              {formatDuration(groupTotalDuration)}
+                            </span>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    {Object.entries(groupedStackedSessions).map(
-                      ([groupTitle, groupSessions]) => {
-                        const groupTotalDuration = groupSessions.reduce(
-                          (sum, session) => sum + session.totalDuration,
-                          0
-                        );
-
-                        return (
-                          <div key={groupTitle}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <h3 className="pr-3 text-sm font-medium text-muted-foreground">
-                                  {groupTitle}
-                                </h3>
-                                <div className="h-px flex-1 bg-border" />
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {groupSessions.map((session) => (
+                            <div
+                              key={session.id}
+                              className="rounded-md border bg-background p-3 transition-all hover:shadow-sm"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <h5 className="truncate text-sm font-medium">
+                                    {session.title}
+                                  </h5>
+                                  <div className="mt-1 flex items-center gap-2">
+                                    {session.category && (
+                                      <div className="flex items-center gap-1">
+                                        <div
+                                          className={cn(
+                                            'h-2 w-2 rounded-full',
+                                            getCategoryColor(
+                                              session.category.color || 'BLUE'
+                                            )
+                                          )}
+                                        />
+                                        <span className="text-xs text-muted-foreground">
+                                          {session.category.name}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-sm font-semibold">
+                                    {formatDuration(session.totalDuration)}
+                                  </div>
+                                  {session.isStacked && (
+                                    <div className="text-xs text-muted-foreground">
+                                      {session.sessions.length} sessions
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              {groupSessions.length > 1 && (
-                                <div className="ml-3 text-xs text-muted-foreground">
-                                  {formatDuration(groupTotalDuration)} total
+
+                              {!readOnly && (
+                                <div className="mt-3 flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 flex-1 text-xs"
+                                    onClick={() =>
+                                      resumeSession(
+                                        session.sessions[
+                                          session.sessions.length - 1
+                                        ]!
+                                      )
+                                    }
+                                  >
+                                    <RotateCcw className="mr-1 h-3 w-3" />
+                                    Resume
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2"
+                                    onClick={() =>
+                                      openEditDialog(
+                                        session.sessions[
+                                          session.sessions.length - 1
+                                        ]!
+                                      )
+                                    }
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
                                 </div>
                               )}
                             </div>
-                            <div className="mt-3 space-y-3">
-                              {groupSessions.map((session) => (
-                                <StackedSessionItem
-                                  key={session.id}
-                                  stackedSession={session}
-                                  readOnly={readOnly}
-                                  formatDuration={formatDuration}
-                                  onResume={resumeSession}
-                                  onEdit={openEditDialog}
-                                  onDelete={setSessionToDelete}
-                                  actionStates={actionStates}
-                                  tasks={tasks}
-                                  calculateFocusScore={calculateFocusScore}
-                                  getSessionProductivityType={
-                                    getSessionProductivityType
-                                  }
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      }
-                    )}
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+            </div>
+          ) : (
+            // Original Day/Week View Layout
+            <>
+              <div className="mb-6 rounded-lg border p-4">
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <BarChart2 className="h-4 w-4" />
+                  {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} Summary
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <div className="mb-1 flex justify-between text-sm">
+                      <span className="font-medium">Total Time</span>
+                      <span className="font-bold">
+                        {formatDuration(periodStats.totalDuration)}
+                      </span>
+                    </div>
+                    <Progress value={100} className="h-2" />
                   </div>
-                </>
-              )}
+                  {periodStats.breakdown.map((cat) => {
+                    const percentage =
+                      periodStats.totalDuration > 0
+                        ? (cat.duration / periodStats.totalDuration) * 100
+                        : 0;
+                    return (
+                      <div key={cat.name}>
+                        <div className="mb-1 flex justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                'h-2 w-2 rounded-full',
+                                getCategoryColor(cat.color)
+                              )}
+                            />
+                            <span>{cat.name}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="w-10 text-right text-xs text-muted-foreground">
+                              {percentage.toFixed(0)}%
+                            </span>
+                            <span className="font-medium">
+                              {formatDuration(cat.duration)}
+                            </span>
+                          </div>
+                        </div>
+                        <Progress
+                          value={percentage}
+                          className="h-2"
+                          indicatorClassName={getCategoryColor(cat.color)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {Object.entries(groupedStackedSessions).map(
+                  ([groupTitle, groupSessions]) => {
+                    const groupTotalDuration = groupSessions.reduce(
+                      (sum, session) => sum + session.totalDuration,
+                      0
+                    );
+
+                    return (
+                      <div key={groupTitle}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <h3 className="pr-3 text-sm font-medium text-muted-foreground">
+                              {groupTitle}
+                            </h3>
+                            <div className="h-px flex-1 bg-border" />
+                          </div>
+                          {groupSessions.length > 1 && (
+                            <div className="ml-3 text-xs text-muted-foreground">
+                              {formatDuration(groupTotalDuration)} total
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 space-y-3">
+                          {groupSessions.map((session) => (
+                            <StackedSessionItem
+                              key={session.id}
+                              stackedSession={session}
+                              readOnly={readOnly}
+                              formatDuration={formatDuration}
+                              onResume={resumeSession}
+                              onEdit={openEditDialog}
+                              onDelete={setSessionToDelete}
+                              actionStates={actionStates}
+                              tasks={tasks}
+                              calculateFocusScore={calculateFocusScore}
+                              getSessionProductivityType={
+                                getSessionProductivityType
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
             </>
           )}
         </CardContent>

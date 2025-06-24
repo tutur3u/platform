@@ -68,7 +68,7 @@ export function Navigation({
   useEffect(() => {
     if (urlToLoad) setUrlToLoad(undefined);
     scrollActiveLinksIntoView();
-  }, [pathname]);
+  }, [scrollActiveLinksIntoView, urlToLoad]);
 
   return (
     <div className="mb-4 scrollbar-none flex flex-none gap-1 overflow-x-auto font-semibold">

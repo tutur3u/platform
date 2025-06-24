@@ -240,7 +240,6 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange, onSubmit }) => {
         onBlur={handleBlur('day')}
         className="w-7 border-none bg-transparent p-0 text-center outline-hidden"
         placeholder="D"
-        autoFocus={false}
       />
       <span className="-mx-px opacity-20">/</span>
       <input
@@ -254,7 +253,6 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange, onSubmit }) => {
         onBlur={handleBlur('month')}
         className="w-6 border-none bg-transparent p-0 text-center outline-hidden"
         placeholder="M"
-        autoFocus={false}
       />
       <span className="-mx-px opacity-20">/</span>
       <input
@@ -268,7 +266,6 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange, onSubmit }) => {
         onBlur={handleBlur('year')}
         className="w-12 border-none bg-transparent p-0 text-center outline-hidden"
         placeholder="YYYY"
-        autoFocus={false}
       />
     </div>
   );

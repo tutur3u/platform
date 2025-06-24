@@ -196,7 +196,7 @@ export default async function UserProfilePage({
       : [];
 
     problemScores.forEach((problem) => {
-      if (problem && problem.id && typeof problem.score === 'number') {
+      if (problem?.id && typeof problem.score === 'number') {
         bestProblemScores.set(problem.id, {
           score: problem.score,
           challengeId,

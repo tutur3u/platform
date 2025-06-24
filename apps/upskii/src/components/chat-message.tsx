@@ -231,9 +231,9 @@ export function ChatMessage({
         <ChatMessageActions message={message} />
       </div>
 
-      {message.metadata?.['response_types'] && (
+      {message.metadata?.response_types && (
         <div className="mb-2 flex items-center gap-1">
-          {message.metadata?.['response_types']
+          {message.metadata?.response_types
             ?.filter((responseType) =>
               [
                 'summary',
@@ -741,7 +741,7 @@ export function ChatMessage({
             // eslint-disable-next-line no-unused-vars
             code({ node, className, children, ...props }) {
               if (children && Array.isArray(children) && children.length) {
-                if (children[0] == '▍') {
+                if (children[0] === '▍') {
                   return (
                     <span
                       className={cn(
@@ -772,7 +772,7 @@ export function ChatMessage({
               return match ? (
                 <CodeBlock
                   key={Math.random()}
-                  language={(match && match[1]) || ''}
+                  language={match?.[1] || ''}
                   value={String(children).replace(/\n$/, '')}
                   {...props}
                 />

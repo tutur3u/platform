@@ -139,7 +139,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
 
     router.refresh();
-  }, [searchParams, router]);
+  }, [searchParams, router, locale, supabase]);
 
   const loginWithPassword = async (data: {
     email: string;
@@ -465,7 +465,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
 
     checkUser();
-  }, [searchParams]);
+  }, [needsMFA, supabase.auth.getUser]);
 
   useEffect(() => {
     const processUrl = async () => {
@@ -479,7 +479,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     if (initialized) {
       processUrl();
     }
-  }, [user, initialized, requiresMFA]);
+  }, [user, initialized, requiresMFA, processNextUrl]);
 
   useEffect(() => {
     if (DEV_MODE) {
@@ -489,7 +489,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         passwordForm.setFocus('email');
       }
     }
-  }, [DEV_MODE, loginMethod]);
+  }, [loginMethod, otpForm.setFocus, passwordForm.setFocus]);
 
   useEffect(() => {
     if (resendCooldown > 0) {

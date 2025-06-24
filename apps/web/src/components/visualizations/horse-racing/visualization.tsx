@@ -173,8 +173,6 @@ export function HorseRacingVisualization() {
           }
           break;
         }
-
-        case 'uniform':
         default:
           // Uniform distribution (default)
           speed = Math.random() * 9 + 1; // Random speed between 1 and 10
@@ -197,7 +195,7 @@ export function HorseRacingVisualization() {
   // Initialize horses with the selected distribution when parameters change
   useMemo(() => {
     setHorses(generateCustomHorses(numHorses, speedDistribution));
-  }, [numHorses, speedDistribution]);
+  }, [numHorses, speedDistribution, generateCustomHorses]);
 
   // Reset the visualization and regenerate horses
   const regenerateHorses = () => {

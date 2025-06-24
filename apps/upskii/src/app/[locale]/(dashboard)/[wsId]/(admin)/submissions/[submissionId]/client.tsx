@@ -64,7 +64,11 @@ export default function SubmissionClient({ submission, wsId }: Props) {
     const startTime = new Date(submission.session.start_time).getTime();
     const endTime = new Date(submission.session.end_time).getTime();
 
-    if (isNaN(startTime) || isNaN(endTime) || endTime <= startTime) {
+    if (
+      Number.isNaN(startTime) ||
+      Number.isNaN(endTime) ||
+      endTime <= startTime
+    ) {
       return 'N/A';
     }
 

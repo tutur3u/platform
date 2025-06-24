@@ -171,7 +171,7 @@ const deleteWorkspace = async (
 
     if (options?.onSuccess) options.onSuccess();
     // eslint-disable-next-line no-unused-vars
-  } catch (e) {
+  } catch (_e) {
     if (options?.onError) options.onError();
     toast({
       title: 'Failed to delete workspace',

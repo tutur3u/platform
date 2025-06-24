@@ -555,8 +555,7 @@ export function Leaderboard({
                           <>
                             {/* Problem Score Distribution */}
                             <div className="mb-2 flex h-4 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-slate-800/50">
-                              {entry.problem_scores &&
-                              entry.problem_scores[selectedChallenge]
+                              {entry.problem_scores?.[selectedChallenge]
                                 ? // Make sure to generate unique keys based on both problem ID and index
                                   entry.problem_scores[selectedChallenge]
                                     .sort((a, b) => b.score - a.score)
@@ -640,8 +639,7 @@ export function Leaderboard({
 
                             {/* Problem Score Legend */}
                             <div className="flex flex-wrap gap-4">
-                              {entry.problem_scores &&
-                              entry.problem_scores[selectedChallenge]
+                              {entry.problem_scores?.[selectedChallenge]
                                 ? entry.problem_scores[selectedChallenge]
                                     .sort((a, b) => b.score - a.score)
                                     .map((problem, i) => {

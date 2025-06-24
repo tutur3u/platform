@@ -50,7 +50,7 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
 
   useEffect(() => {
     fetchDomains();
-  }, [wsId]);
+  }, [fetchDomains]);
 
   const refreshDomains = async () => {
     setRefreshing(true);

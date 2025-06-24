@@ -265,7 +265,7 @@ export function GanttTimeline({
                           <div
                             className="ml-auto cursor-help bg-green-400 opacity-40 transition-opacity hover:opacity-60"
                             style={{ width: '25%' }}
-                            title={`✅ ${task.status === 'done' ? 'Completed' : 'Closed'}: ${task.updated_at ? new Date(task.updated_at).toLocaleDateString() + ' at ' + new Date(task.updated_at).toLocaleTimeString() : 'Date unknown'}${task.end_date ? ` • Due was: ${new Date(task.end_date).toLocaleDateString()}` : ''}`}
+                            title={`✅ ${task.status === 'done' ? 'Completed' : 'Closed'}: ${task.updated_at ? `${new Date(task.updated_at).toLocaleDateString()} at ${new Date(task.updated_at).toLocaleTimeString()}` : 'Date unknown'}${task.end_date ? ` • Due was: ${new Date(task.end_date).toLocaleDateString()}` : ''}`}
                           />
                         )}
 

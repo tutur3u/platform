@@ -111,7 +111,7 @@ export default function TeamClient({
           const date = new Date(activeSinceDate);
 
           // Check if date is valid before formatting
-          if (isNaN(date.getTime())) {
+          if (Number.isNaN(date.getTime())) {
             return 'Unknown';
           }
 

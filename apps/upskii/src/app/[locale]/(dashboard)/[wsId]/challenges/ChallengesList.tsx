@@ -40,72 +40,72 @@ export default function ChallengesList({ isAdmin, challenges, wsId }: Props) {
       const closeAt = challenge.close_at ? new Date(challenge.close_at) : null;
 
       if (!previewableAt && !openAt && !closeAt) {
-        return filter == 'active';
+        return filter === 'active';
       }
 
       if (previewableAt && !openAt && !closeAt) {
         if (now < previewableAt) {
-          return filter == 'upcoming';
+          return filter === 'upcoming';
         } else {
-          return filter == 'preview';
+          return filter === 'preview';
         }
       }
 
       if (!previewableAt && openAt && !closeAt) {
         if (now < openAt) {
-          return filter == 'preview';
+          return filter === 'preview';
         } else {
-          return filter == 'active';
+          return filter === 'active';
         }
       }
 
       if (!previewableAt && !openAt && closeAt) {
         if (now < closeAt) {
-          return filter == 'upcoming';
+          return filter === 'upcoming';
         } else {
-          return filter == 'closed';
+          return filter === 'closed';
         }
       }
 
       if (previewableAt && openAt && !closeAt) {
         if (now < previewableAt) {
-          return filter == 'upcoming';
+          return filter === 'upcoming';
         } else if (now < openAt) {
-          return filter == 'preview';
+          return filter === 'preview';
         } else {
-          return filter == 'active';
+          return filter === 'active';
         }
       }
 
       if (previewableAt && !openAt && closeAt) {
         if (now < previewableAt) {
-          return filter == 'upcoming';
+          return filter === 'upcoming';
         } else if (now < closeAt) {
-          return filter == 'preview';
+          return filter === 'preview';
         } else {
-          return filter == 'closed';
+          return filter === 'closed';
         }
       }
 
       if (!previewableAt && openAt && closeAt) {
         if (now < openAt) {
-          return filter == 'preview';
+          return filter === 'preview';
         } else if (now < closeAt) {
-          return filter == 'active';
+          return filter === 'active';
         } else {
-          return filter == 'closed';
+          return filter === 'closed';
         }
       }
 
       if (previewableAt && openAt && closeAt) {
         if (now < previewableAt) {
-          return filter == 'upcoming';
+          return filter === 'upcoming';
         } else if (now < openAt) {
-          return filter == 'preview';
+          return filter === 'preview';
         } else if (now < closeAt) {
-          return filter == 'active';
+          return filter === 'active';
         } else {
-          return filter == 'closed';
+          return filter === 'closed';
         }
       }
     });

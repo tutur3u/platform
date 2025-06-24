@@ -75,11 +75,15 @@ export default function ChallengeHeader({
     // Only initialize once to prevent timer resets
     if (!timerConfig.current.initialized) {
       // Validate dates
-      const isEndTimeValid = !isNaN(timerConfig.current.endTime.getTime());
-      const isStartTimeValid = !isNaN(timerConfig.current.startTime.getTime());
+      const isEndTimeValid = !Number.isNaN(
+        timerConfig.current.endTime.getTime()
+      );
+      const isStartTimeValid = !Number.isNaN(
+        timerConfig.current.startTime.getTime()
+      );
       const isCloseAtValid =
         timerConfig.current.closeAt &&
-        !isNaN(timerConfig.current.closeAt.getTime());
+        !Number.isNaN(timerConfig.current.closeAt.getTime());
 
       // Use defaults if invalid
       if (!isEndTimeValid) {
@@ -163,7 +167,7 @@ export default function ChallengeHeader({
         timerId.current = null;
       }
     };
-  }, []);
+  }, [onAutoEnd]);
 
   const getTimeColor = () => {
     if (timeLeft.totalSeconds < 300) return 'text-red-500'; // Less than 5 minutes

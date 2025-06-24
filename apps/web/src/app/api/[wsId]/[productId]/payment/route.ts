@@ -71,9 +71,7 @@ export async function GET(
       process.env.NODE_ENV === 'development'
         ? true
         : // If the workspace is the root workspace and the sandbox is true, use sandbox
-          wsId === ROOT_WORKSPACE_ID && sandbox
-          ? true // Enable sandbox for root workspace
-          : false, // Otherwise, use production
+          !!(wsId === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
   });
 
   // HERE is where you add the metadata

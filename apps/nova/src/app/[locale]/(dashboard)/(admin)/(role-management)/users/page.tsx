@@ -184,7 +184,6 @@ async function getUserData({
         case 'challenge_manager':
           queryBuilder.eq('allow_challenge_management', true);
           break;
-        case 'member':
         default:
           queryBuilder
             .eq('allow_challenge_management', false)

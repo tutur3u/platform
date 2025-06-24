@@ -114,7 +114,7 @@ export default function ScoreCalculatorPage() {
     if (totalTests !== 0 && passedTests !== 0 && passedTests > totalTests) {
       form.setValue('passed_tests', totalTests);
     }
-  }, [totalTests, passedTests]); // Remove passedTests from dependency to prevent jumps
+  }, [totalTests, passedTests, form.setValue]); // Remove passedTests from dependency to prevent jumps
 
   // Add validation to ensure sum of criterion scores doesn't exceed max possible
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function ScoreCalculatorPage() {
     ) {
       form.setValue('sum_criterion_score', totalCriteria * 10);
     }
-  }, [totalCriteria, sumCriterionScore]);
+  }, [totalCriteria, sumCriterionScore, form.setValue]);
 
   // Get score color based on percentage
   const getScoreColor = (score: number) => {

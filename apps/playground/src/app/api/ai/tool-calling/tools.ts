@@ -1100,7 +1100,6 @@ export const rescheduleConflictingEvents = tool({
           ); // Later events get moved first
         case 'title_length':
           return a.title.length - b.title.length; // Shorter titles get moved first
-        case 'creation_time':
         default:
           return (
             new Date(b.created_at || b.start_at).getTime() -

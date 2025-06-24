@@ -111,7 +111,7 @@ export function ChatPanel({
   useEffect(() => {
     const chatInput = document.getElementById('chat-input');
     if (chatInput) setChatInputHeight(chatInput.clientHeight);
-  }, [input]);
+  }, []);
 
   const [files, setFiles] = useState<StatedFile[]>([]);
 

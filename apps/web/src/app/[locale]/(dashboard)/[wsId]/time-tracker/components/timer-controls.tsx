@@ -427,7 +427,12 @@ export function TimerControls({
       }
     }
     return null;
-  }, [PAUSED_SESSION_KEY, fetchSessionById, timerMode]);
+  }, [
+    PAUSED_SESSION_KEY,
+    fetchSessionById,
+    timerMode,
+    clearPausedSessionFromStorage,
+  ]);
 
   const clearPausedSessionFromStorage = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -531,7 +536,7 @@ export function TimerControls({
 
       // Restore previous session for new mode if exists
       const previousSession = timerModeSessions[newMode];
-      if (previousSession && previousSession.sessionId) {
+      if (previousSession?.sessionId) {
         // Restore the session state
         setElapsedTime(previousSession.elapsedTime);
 
@@ -661,7 +666,7 @@ export function TimerControls({
   // Save timer mode sessions when they change
   useEffect(() => {
     saveTimerModeSessionsToStorage();
-  }, [timerModeSessions, saveTimerModeSessionsToStorage]);
+  }, [saveTimerModeSessionsToStorage]);
 
   // Cleanup paused session if user changes or component unmounts
   useEffect(() => {
@@ -1129,6 +1134,7 @@ export function TimerControls({
     handlePomodoroComplete,
     showNotification,
     playNotificationSound,
+    setIsRunning,
   ]);
 
   // Enhanced stopwatch interval breaks and target monitoring
@@ -1671,7 +1677,7 @@ export function TimerControls({
       clearPausedSessionFromStorage();
 
       const pauseDuration = pauseStartTime
-        ? Math.floor((new Date().getTime() - pauseStartTime.getTime()) / 1000)
+        ? Math.floor((Date.now() - pauseStartTime.getTime()) / 1000)
         : 0;
 
       onSessionUpdate();
@@ -2041,6 +2047,9 @@ export function TimerControls({
     isDraggingTask,
     selectedTaskId,
     sessionMode,
+    filteredTasks.findIndex,
+    filteredTasks[nextIndex],
+    handleTaskSelectionChange,
   ]);
 
   return (
@@ -3261,9 +3270,7 @@ export function TimerControls({
                           • Break:{' '}
                           {formatDuration(
                             Math.floor(
-                              (new Date().getTime() -
-                                pauseStartTime.getTime()) /
-                                1000
+                              (Date.now() - pauseStartTime.getTime()) / 1000
                             )
                           )}
                         </span>

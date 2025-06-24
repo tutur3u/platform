@@ -211,7 +211,7 @@ export function WorkspaceSelect({
               </Avatar>
               <div className={cn(hideLeading ? 'hidden' : 'w-full')}>
                 <span className="line-clamp-1 w-full break-all">
-                  {workspace?.name || t('common.loading') + '...'}
+                  {workspace?.name || `${t('common.loading')}...`}
                 </span>
               </div>
               {hideLeading || (

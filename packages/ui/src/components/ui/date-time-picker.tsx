@@ -134,7 +134,7 @@ export function DateTimePicker({
     const hours = parseInt(hourStr, 10);
     const minutes = parseInt(minuteStr, 10);
 
-    if (isNaN(hours) || isNaN(minutes)) return;
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return;
 
     const newDate = new Date(selectedDate);
     newDate.setHours(hours);
@@ -167,9 +167,9 @@ export function DateTimePicker({
           const [h, m] = manualTimeInput.split(':').map(Number);
           if (
             typeof h === 'number' &&
-            !isNaN(h) &&
+            !Number.isNaN(h) &&
             typeof m === 'number' &&
-            !isNaN(m)
+            !Number.isNaN(m)
           ) {
             const newDate = new Date(date);
             newDate.setHours(h);

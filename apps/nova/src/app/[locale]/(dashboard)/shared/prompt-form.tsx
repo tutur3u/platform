@@ -109,7 +109,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
   const getSubmissions = useCallback(async () => {
     router.refresh();
-  }, [problem.id, session?.id, router]);
+  }, [router]);
 
   // Process the submission queue
   const processQueue = useCallback(async () => {
@@ -161,7 +161,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
         processQueue();
       }
     }
-  }, [submissions]);
+  }, [submissions, isAdmin]);
 
   const requestFetchSubmission = useCallback(
     (submissionId: string) => {
@@ -612,7 +612,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
           </TabsContent>
 
           <TabsContent value="submissions" className="space-y-4">
-            {submissions && submissions.length == 0 ? (
+            {submissions && submissions.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-foreground/20 bg-background/50 p-12 text-center backdrop-blur-sm">
                 <div className="relative mb-4">
                   <Clock className="mx-auto h-12 w-12 text-foreground/40" />

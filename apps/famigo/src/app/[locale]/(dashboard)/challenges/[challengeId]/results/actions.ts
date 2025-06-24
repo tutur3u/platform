@@ -116,7 +116,7 @@ export async function fetchSessionDetails(
     criteriaResults?.forEach((r) => {
       if (!resultsBySubmission.has(r.submission_id))
         resultsBySubmission.set(r.submission_id, []);
-      resultsBySubmission.get(r.submission_id)!.push(r);
+      resultsBySubmission.get(r.submission_id)?.push(r);
     });
 
     const problemsWithSubmissions = problems.map((problem) => {

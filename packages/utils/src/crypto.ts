@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 export function generateSalt() {
   return crypto.randomBytes(10).toString('hex');

@@ -103,7 +103,7 @@ export default function ContactPage() {
     };
 
     getUser();
-  }, []);
+  }, [form.setValue, supabase.auth.getUser]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);

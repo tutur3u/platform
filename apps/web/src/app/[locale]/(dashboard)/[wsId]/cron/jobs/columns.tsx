@@ -24,7 +24,7 @@ function getNextRunTime(schedule: string, lastRun?: string | null) {
     // If no last run, just get next occurrence from now
     return interval.next().toISOString();
     // eslint-disable-next-line no-unused-vars
-  } catch (err) {
+  } catch (_err) {
     return '-';
   }
 }

@@ -396,7 +396,7 @@ export const CalendarProvider = ({
         throw err;
       }
     },
-    [ws, refresh, settings.categoryColors, events]
+    [ws, refresh, events]
   );
 
   const addEmptyEvent = useCallback(
@@ -738,7 +738,7 @@ export const CalendarProvider = ({
         throw err;
       }
     },
-    [ws, refresh, pendingNewEvent]
+    [ws, refresh, pendingNewEvent, events, experimentalGoogleToken]
   );
 
   // Automatically fetch Google Calendar events
@@ -1109,7 +1109,7 @@ export const CalendarProvider = ({
         );
       }
     },
-    [googleEvents, events, ws?.id, queryClient]
+    [googleEvents, events, ws?.id, queryClient, experimentalGoogleToken]
   );
 
   // Modal management

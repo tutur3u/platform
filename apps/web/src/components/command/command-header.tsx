@@ -33,22 +33,18 @@ export function CommandHeader({
               <Loader className="relative h-4 w-4 animate-spin text-dynamic-blue" />
             </div>
           </div>
+        ) : page !== 'root' ? (
+          <button
+            className="mr-3 rounded-lg p-2 opacity-70 transition-all hover:bg-dynamic-gray/10 hover:opacity-100 focus:ring-2 focus:ring-dynamic-blue/20 focus:outline-none active:scale-95"
+            onClick={onBack}
+            disabled={isTransitioning}
+          >
+            <ArrowLeft className="h-4 w-4 text-dynamic-gray" />
+          </button>
         ) : (
-          <>
-            {page !== 'root' ? (
-              <button
-                className="mr-3 rounded-lg p-2 opacity-70 transition-all hover:bg-dynamic-gray/10 hover:opacity-100 focus:ring-2 focus:ring-dynamic-blue/20 focus:outline-none active:scale-95"
-                onClick={onBack}
-                disabled={isTransitioning}
-              >
-                <ArrowLeft className="h-4 w-4 text-dynamic-gray" />
-              </button>
-            ) : (
-              <div className="mr-3 rounded-lg bg-gradient-to-br from-dynamic-purple/10 to-dynamic-pink/10 p-2">
-                <Sparkles className="h-4 w-4 text-dynamic-purple" />
-              </div>
-            )}
-          </>
+          <div className="mr-3 rounded-lg bg-gradient-to-br from-dynamic-purple/10 to-dynamic-pink/10 p-2">
+            <Sparkles className="h-4 w-4 text-dynamic-purple" />
+          </div>
         )}
         <CommandPrimitive.Input
           autoFocus={shouldAutoFocus}

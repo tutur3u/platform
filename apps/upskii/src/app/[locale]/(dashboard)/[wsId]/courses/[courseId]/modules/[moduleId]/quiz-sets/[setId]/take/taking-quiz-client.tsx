@@ -165,7 +165,7 @@ export default function TakingQuizClient({
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const startTs = parseInt(stored, 10);
-          if (!isNaN(startTs)) {
+          if (!Number.isNaN(startTs)) {
             setHasStarted(true);
             if (totalSeconds != null) {
               const elapsed = computeElapsedSeconds(startTs);
@@ -185,7 +185,15 @@ export default function TakingQuizClient({
     return () => {
       timerRef.current && clearInterval(timerRef.current);
     };
-  }, [setId]);
+  }, [
+    setId,
+    ANSWERS_KEY,
+    STORAGE_KEY,
+    computeElapsedSeconds,
+    t,
+    totalSeconds,
+    wsId,
+  ]);
 
   // ─── TIMER LOGIC ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -211,13 +219,13 @@ export default function TakingQuizClient({
       }, 1000);
     }
     return () => void clearInterval(timerRef.current!);
-  }, [hasStarted, quizMeta]);
+  }, [hasStarted, quizMeta, handleSubmit, timeLeft, totalSeconds]);
 
   useEffect(() => {
     if (hasStarted && totalSeconds != null && timeLeft === 0) {
       handleSubmit();
     }
-  }, [timeLeft, hasStarted, totalSeconds]);
+  }, [timeLeft, hasStarted, totalSeconds, handleSubmit]);
   useEffect(() => {
     if (submitError) {
       toast(t('errors.error-type-submit'), {
@@ -228,7 +236,7 @@ export default function TakingQuizClient({
         },
       });
     }
-  }, [submitError]);
+  }, [submitError, t]);
 
   // ─── EVENT HANDLERS ─────────────────────────────────────────────────────────
   const onClickStart = () => {

@@ -127,7 +127,7 @@ async function getConfigs(wsId: string, { q }: SearchParams) {
   ];
 
   // If rawData is not empty, merge it with availableConfigs
-  if (rawData && rawData.length) {
+  if (rawData?.length) {
     rawData.forEach((config) => {
       const index = configs.findIndex((c) => c.id === config.id);
       if (index !== -1) {

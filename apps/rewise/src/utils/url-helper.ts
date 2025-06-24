@@ -15,7 +15,7 @@ export const isValidURL = (url: string): boolean => {
     ];
 
     return validProtocols.includes(parsedUrl.protocol);
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 };

@@ -54,9 +54,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
   // Deduplicate assignees by ID
   const uniqueAssignees = assignees.filter(
     (assignee, index, self) =>
-      assignee &&
-      assignee.id &&
-      self.findIndex((a) => a && a.id === assignee.id) === index
+      assignee?.id && self.findIndex((a) => a && a.id === assignee.id) === index
   );
 
   // Fetch workspace members with React Query
@@ -194,15 +192,13 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
   // Filter assigned and unassigned members with additional safety checks
   const assignedMembers = members.filter(
     (member) =>
-      member &&
-      member.id &&
+      member?.id &&
       uniqueAssignees.some((assignee) => assignee && assignee.id === member.id)
   );
 
   const unassignedMembers = members.filter(
     (member) =>
-      member &&
-      member.id &&
+      member?.id &&
       !uniqueAssignees.some((assignee) => assignee && assignee.id === member.id)
   );
 

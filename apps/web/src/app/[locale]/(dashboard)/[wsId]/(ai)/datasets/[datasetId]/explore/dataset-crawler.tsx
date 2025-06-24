@@ -110,7 +110,12 @@ export function DatasetCrawler({
       form.setValue('url', dataset.url);
       loadExcelFile();
     }
-  }, [isOpen, dataset.url]);
+  }, [
+    isOpen,
+    dataset.url, // Prefetch from URL if available
+    form.setValue,
+    loadExcelFile,
+  ]);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -285,7 +290,7 @@ export function DatasetCrawler({
       // Update sheet info with actual data
       if ('SheetNames' in data) {
         const worksheet = data.Sheets[sheetName];
-        if (worksheet && worksheet['!ref']) {
+        if (worksheet?.['!ref']) {
           const range = XLSX.utils.decode_range(worksheet['!ref']);
           setSheetInfo((prev) => ({
             ...prev,

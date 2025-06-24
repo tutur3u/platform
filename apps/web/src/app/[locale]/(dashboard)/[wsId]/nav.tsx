@@ -27,13 +27,13 @@ export function Nav({
 }: NavProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const _searchParams = useSearchParams();
 
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
   useEffect(() => {
     if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
-  }, [pathname, searchParams]);
+  }, [pathname, urlToLoad]);
 
   function hasFocus(selector: string) {
     return Array.from(document.querySelectorAll(selector)).some(
@@ -75,7 +75,7 @@ export function Nav({
       if (ENABLE_KEYBOARD_SHORTCUTS)
         document.removeEventListener('keydown', down);
     };
-  }, [links, pathname]);
+  }, [links, pathname, hasFocus, parseShortcut, router.push]);
 
   if (!links?.length) {
     return null;

@@ -16,5 +16,5 @@ export function formatBytes(bytes: number, decimals = 2): string {
   const value = bytes / k ** i;
   const unit = sizes[i];
 
-  return parseFloat(value.toFixed(dm)) + ' ' + unit;
+  return `${parseFloat(value.toFixed(dm))} ${unit}`;
 }

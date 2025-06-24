@@ -148,7 +148,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const answersToInsert = body.answers.map(({ quizId, selectedOptionId }) => {
     const info = quizMap.get(quizId);
     const isCorrect = info?.correctId === selectedOptionId;
-    const awarded = isCorrect ? info!.score : 0;
+    const awarded = isCorrect ? info?.score : 0;
     totalScore += awarded;
     return {
       quiz_id: quizId,

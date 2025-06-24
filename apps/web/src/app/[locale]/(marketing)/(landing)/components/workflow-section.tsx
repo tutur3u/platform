@@ -274,7 +274,7 @@ export function WorkflowSection() {
     return () => {
       ctx.revert();
     };
-  }, [activeStep]); // Re-run when activeStep changes
+  }, []); // Re-run when activeStep changes
 
   const currentStep = (workflowSteps.find((step) => step.id === activeStep) ||
     workflowSteps[0]) as WorkflowStep;

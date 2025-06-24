@@ -148,7 +148,7 @@ export default function DocumentDetailsPage({ params }: Props) {
           timestamp: Date.now(),
         });
         // eslint-disable-next-line no-unused-vars
-      } catch (error) {
+      } catch (_error) {
         updateSyncStatus({
           type: 'error',
           message: t('common.error_updating_visibility'),
@@ -191,7 +191,7 @@ export default function DocumentDetailsPage({ params }: Props) {
           timestamp: Date.now(),
         });
         // eslint-disable-next-line no-unused-vars
-      } catch (error) {
+      } catch (_error) {
         updateSyncStatus({
           type: 'error',
           message: t('common.error_updating_name'),

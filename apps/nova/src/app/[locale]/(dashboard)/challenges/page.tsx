@@ -99,7 +99,7 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
       });
 
     if (challengesError) {
-      throw new Error('Error fetching challenges: ' + challengesError.message);
+      throw new Error(`Error fetching challenges: ${challengesError.message}`);
     }
 
     // Convert to usable format
@@ -115,7 +115,7 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
       );
 
     if (whitelistsError) {
-      throw new Error('Error fetching whitelists: ' + whitelistsError.message);
+      throw new Error(`Error fetching whitelists: ${whitelistsError.message}`);
     }
 
     const userWhitelistedChallengeIds = new Set(
@@ -134,7 +134,7 @@ async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
         );
 
       if (criteriaError) {
-        throw new Error('Error fetching criteria: ' + criteriaError.message);
+        throw new Error(`Error fetching criteria: ${criteriaError.message}`);
       }
 
       const { data: allManagers, error: managedError } = await sbAdmin

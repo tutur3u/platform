@@ -447,7 +447,7 @@ export function ListView({ board }: Props) {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters]);
+  }, []);
 
   function formatDate(date: string) {
     const dateObj = new Date(date);

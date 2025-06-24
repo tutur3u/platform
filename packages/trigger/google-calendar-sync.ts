@@ -105,7 +105,7 @@ export const syncGoogleCalendarEvents = async () => {
           syncStartedAt,
           dayjs().toISOString(),
           'failed',
-          'Error fetching google account email: ' + error,
+          `Error fetching google account email: ${error}`,
           [],
           [],
           []
@@ -131,7 +131,7 @@ export const syncGoogleCalendarEvents = async () => {
           syncStartedAt,
           dayjs().toISOString(),
           'failed',
-          'Error fetching events before sync: ' + errorEventsBeforeSync.message,
+          `Error fetching events before sync: ${errorEventsBeforeSync.message}`,
           eventsBeforeSync || [],
           [],
           []
@@ -208,7 +208,7 @@ export const syncGoogleCalendarEvents = async () => {
             syncStartedAt,
             dayjs().toISOString(),
             'failed',
-            'Error upserting events: ' + error.message,
+            `Error upserting events: ${error.message}`,
             eventsBeforeSync || [],
             formattedEvents as WorkspaceCalendarEvent[],
             []
@@ -238,7 +238,7 @@ export const syncGoogleCalendarEvents = async () => {
             syncStartedAt,
             dayjs().toISOString(),
             'failed',
-            'Error fetching events after upsert: ' + dbError.message,
+            `Error fetching events after upsert: ${dbError.message}`,
             eventsBeforeSync || [],
             formattedEvents as WorkspaceCalendarEvent[],
             []
@@ -273,7 +273,7 @@ export const syncGoogleCalendarEvents = async () => {
             syncStartedAt,
             dayjs().toISOString(),
             'failed',
-            'Error deleting events: ' + deleteError.message,
+            `Error deleting events: ${deleteError.message}`,
             eventsBeforeSync || [],
             formattedEvents as WorkspaceCalendarEvent[],
             eventsToDelete as WorkspaceCalendarEvent[]
@@ -309,7 +309,7 @@ export const syncGoogleCalendarEvents = async () => {
           syncStartedAt,
           dayjs().toISOString(),
           'failed',
-          'Error fetching Google Calendar events: ' + error,
+          `Error fetching Google Calendar events: ${error}`,
           eventsBeforeSync || [],
           [],
           []

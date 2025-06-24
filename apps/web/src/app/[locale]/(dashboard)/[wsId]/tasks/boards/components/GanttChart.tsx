@@ -208,14 +208,14 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
         ? new Date(clickedTask.created_at)
         : null;
 
-      if (!createdDate || isNaN(createdDate.getTime())) {
+      if (!createdDate || Number.isNaN(createdDate.getTime())) {
         return 'N/A';
       }
 
       // For completed tasks, calculate actual duration
       if (clickedTask.status === 'done' || clickedTask.status === 'closed') {
         const completionDate = getTaskCompletionDate(clickedTask);
-        if (completionDate && !isNaN(completionDate.getTime())) {
+        if (completionDate && !Number.isNaN(completionDate.getTime())) {
           const durationMs = completionDate.getTime() - createdDate.getTime();
           const days = Math.floor(durationMs / (1000 * 60 * 60 * 24));
           const hours = Math.floor(durationMs / (1000 * 60 * 60));
@@ -233,7 +233,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
       // For non-completed tasks, show planned duration or time elapsed
       if (clickedTask.end_date) {
         const dueDate = new Date(clickedTask.end_date);
-        if (!isNaN(dueDate.getTime())) {
+        if (!Number.isNaN(dueDate.getTime())) {
           const plannedDurationMs = dueDate.getTime() - createdDate.getTime();
           const days = Math.floor(plannedDurationMs / (1000 * 60 * 60 * 24));
           const hours = Math.floor(plannedDurationMs / (1000 * 60 * 60));
@@ -269,7 +269,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.selectedBoard, filters.statusFilter, searchQuery]);
+  }, []);
 
   // Add the click handlers to the GanttChart component
   const handleTaskClick = (e: React.MouseEvent, task: any) => {
@@ -333,7 +333,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
         ganttContainer.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [clickCardVisible]);
+  }, [clickCardVisible, handleCloseClick]);
 
   return (
     <>

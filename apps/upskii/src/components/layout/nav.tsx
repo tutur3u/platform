@@ -35,7 +35,7 @@ export function Nav({
 }: NavProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const _searchParams = useSearchParams();
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
   const [urlToLoad, setUrlToLoad] = useState<string>();
@@ -43,7 +43,7 @@ export function Nav({
 
   useEffect(() => {
     if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
-  }, [pathname, searchParams]);
+  }, [pathname, urlToLoad]);
 
   function hasFocus(selector: string) {
     return Array.from(document.querySelectorAll(selector)).some(
@@ -163,18 +163,18 @@ export function Nav({
       if (ENABLE_KEYBOARD_SHORTCUTS)
         document.removeEventListener('keydown', down);
     };
-  }, [allLinks, pathname]);
+  }, [allLinks, pathname, hasFocus, parseShortcut, router.push]);
 
   // Auto-expand groups with active children
   useEffect(() => {
     const newOpenGroups = new Set<string>();
     links.forEach((link, idx) => {
-      if (link && link.children && isLinkActive(link)) {
+      if (link?.children && isLinkActive(link)) {
         newOpenGroups.add(`group-${idx}`);
       }
     });
     setOpenGroups(newOpenGroups);
-  }, [pathname, links]);
+  }, [links, isLinkActive]);
 
   function toggleGroup(groupKey: string) {
     const newOpenGroups = new Set(openGroups);

@@ -31,7 +31,7 @@ export async function GET() {
       })),
     });
     // eslint-disable-next-line no-unused-vars
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { message: 'Error fetching forecast data' },
       { status: 500 }

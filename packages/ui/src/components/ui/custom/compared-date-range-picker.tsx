@@ -283,7 +283,7 @@ export const ComparedDateRangePicker = ({
 
   useEffect(() => {
     checkPreset();
-  }, [range]);
+  }, [checkPreset]);
 
   const PresetButton = ({
     preset,
@@ -301,12 +301,10 @@ export const ComparedDateRangePicker = ({
         setPreset(preset);
       }}
     >
-      <>
-        <span className={cn('pr-2 opacity-0', isSelected && 'opacity-70')}>
-          <Check width={18} height={18} />
-        </span>
-        {label}
-      </>
+      <span className={cn('pr-2 opacity-0', isSelected && 'opacity-70')}>
+        <Check width={18} height={18} />
+      </span>
+      {label}
     </Button>
   );
 
@@ -324,7 +322,7 @@ export const ComparedDateRangePicker = ({
       openedRangeRef.current = range;
       openedRangeCompareRef.current = rangeCompare;
     }
-  }, [isOpen]);
+  }, [isOpen, range, rangeCompare]);
 
   return (
     <Popover
@@ -342,17 +340,15 @@ export const ComparedDateRangePicker = ({
           <div className="text-right">
             <div className="py-1">
               <div>{`${formatDate(range.from, locale)}${
-                range.to != null ? ' - ' + formatDate(range.to, locale) : ''
+                range.to != null ? ` - ${formatDate(range.to, locale)}` : ''
               }`}</div>
             </div>
             {rangeCompare != null && (
               <div className="-mt-1 text-xs opacity-60">
-                <>
-                  vs. {formatDate(rangeCompare.from, locale)}
-                  {rangeCompare.to != null
-                    ? ` - ${formatDate(rangeCompare.to, locale)}`
-                    : ''}
-                </>
+                vs. {formatDate(rangeCompare.from, locale)}
+                {rangeCompare.to != null
+                  ? ` - ${formatDate(rangeCompare.to, locale)}`
+                  : ''}
               </div>
             )}
           </div>
@@ -459,7 +455,7 @@ export const ComparedDateRangePicker = ({
                       <DateInput
                         value={rangeCompare?.to}
                         onChange={(date) => {
-                          if (rangeCompare && rangeCompare.from) {
+                          if (rangeCompare?.from) {
                             const compareFromDate =
                               date < rangeCompare.from
                                 ? date

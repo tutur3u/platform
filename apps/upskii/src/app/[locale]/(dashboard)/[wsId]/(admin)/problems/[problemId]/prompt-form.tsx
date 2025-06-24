@@ -356,7 +356,7 @@ export default function PromptForm({ problem }: Props) {
       </TabsContent>
 
       <TabsContent value="submissions" className="space-y-4">
-        {submissions.length == 0 ? (
+        {submissions.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
             <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
             <h3 className="text-lg font-medium">No submissions yet</h3>

@@ -70,7 +70,7 @@ export class CsvCrawler extends BaseCrawler {
         // Try to preserve numbers, but only if they're purely numeric
         if (/^\d+(\.\d+)?$/.test(trimmed)) {
           const num = Number(trimmed);
-          if (!isNaN(num)) {
+          if (!Number.isNaN(num)) {
             return num;
           }
         }
@@ -107,7 +107,7 @@ export class CsvCrawler extends BaseCrawler {
         // Try to preserve numbers, but only if they're purely numeric
         if (/^\d+(\.\d+)?$/.test(trimmed)) {
           const num = Number(trimmed);
-          if (!isNaN(num)) {
+          if (!Number.isNaN(num)) {
             return num;
           }
         }
@@ -118,7 +118,7 @@ export class CsvCrawler extends BaseCrawler {
 
     if (parsedData.errors?.length > 0 && parsedData.errors[0]?.message) {
       throw new Error(
-        'Error parsing CSV file: ' + parsedData.errors[0].message
+        `Error parsing CSV file: ${parsedData.errors[0].message}`
       );
     }
 
@@ -225,7 +225,7 @@ export class CsvCrawler extends BaseCrawler {
           // Try to preserve numbers, but only if they're purely numeric
           if (/^\d+(\.\d+)?$/.test(trimmed)) {
             const num = Number(trimmed);
-            if (!isNaN(num)) {
+            if (!Number.isNaN(num)) {
               return num;
             }
           }
@@ -236,7 +236,7 @@ export class CsvCrawler extends BaseCrawler {
 
       if (parsedData.errors?.length > 0 && parsedData.errors[0]?.message) {
         throw new Error(
-          'Error parsing CSV file: ' + parsedData.errors[0].message
+          `Error parsing CSV file: ${parsedData.errors[0].message}`
         );
       }
 

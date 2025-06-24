@@ -38,9 +38,7 @@ interface BoardMetrics {
  */
 export function calculateOverdueDays(dueDate: string | Date): number {
   const due = new Date(dueDate);
-  return Math.ceil(
-    (new Date().getTime() - due.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  return Math.ceil((Date.now() - due.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 /**
@@ -62,7 +60,7 @@ export function getTaskCompletionDate(task: Task): Date | null {
     const dateStr = task[field];
     if (dateStr) {
       const date = new Date(dateStr);
-      if (!isNaN(date.getTime()) && date.getTime() > 0) {
+      if (!Number.isNaN(date.getTime()) && date.getTime() > 0) {
         return date;
       }
     }
@@ -77,7 +75,7 @@ export function getTaskCompletionDate(task: Task): Date | null {
     // Try updated_at first (might indicate when status was changed)
     if (task.updated_at) {
       const date = new Date(task.updated_at);
-      if (!isNaN(date.getTime()) && date.getTime() > 0) {
+      if (!Number.isNaN(date.getTime()) && date.getTime() > 0) {
         return date;
       }
     }
@@ -85,7 +83,7 @@ export function getTaskCompletionDate(task: Task): Date | null {
     // Last resort: use creation date (not ideal but better than nothing)
     if (task.created_at) {
       const date = new Date(task.created_at);
-      if (!isNaN(date.getTime()) && date.getTime() > 0) {
+      if (!Number.isNaN(date.getTime()) && date.getTime() > 0) {
         return date;
       }
     }
@@ -106,7 +104,6 @@ export function getStatusColor(status: string): string {
       return 'bg-green-500';
     case 'active':
       return 'bg-blue-500';
-    case 'not_started':
     default:
       return 'bg-gray-400';
   }

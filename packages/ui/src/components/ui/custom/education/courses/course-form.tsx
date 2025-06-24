@@ -83,7 +83,7 @@ export function CourseForm({
 
   useEffect(() => {
     setImageError(false);
-  }, [certTemplate, locale]);
+  }, []);
 
   const isDirty = form.formState.isDirty;
   const isValid = form.formState.isValid;

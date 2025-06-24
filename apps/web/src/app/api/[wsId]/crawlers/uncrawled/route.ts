@@ -81,7 +81,7 @@ export async function GET(req: Request) {
     // Create a set of existing URLs for faster lookup
     const existingUrlSet = new Set(
       existingUrls.map((url) =>
-        url.url.trim().endsWith('/') ? url.url.trim() : url.url.trim() + '/'
+        url.url.trim().endsWith('/') ? url.url.trim() : `${url.url.trim()}/`
       )
     );
 
@@ -90,7 +90,7 @@ export async function GET(req: Request) {
       (nextUrl) => {
         const normalizedUrl = nextUrl.url.trim().endsWith('/')
           ? nextUrl.url.trim()
-          : nextUrl.url.trim() + '/';
+          : `${nextUrl.url.trim()}/`;
         return !existingUrlSet.has(normalizedUrl);
       }
     );

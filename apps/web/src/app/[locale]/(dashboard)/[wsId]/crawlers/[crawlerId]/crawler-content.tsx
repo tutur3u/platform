@@ -261,7 +261,7 @@ export function CrawlerContent({
                                   <span className="text-xs text-blue-500">
                                     Crawled{' '}
                                     {formatDistance(
-                                      new Date(crawledData!.created_at),
+                                      new Date(crawledData?.created_at),
                                       new Date(),
                                       { addSuffix: true }
                                     )}

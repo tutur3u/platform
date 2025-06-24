@@ -37,7 +37,7 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
     <>
       <div className="font-semibold tracking-wide">
         {hasActor ? (
-          actor && actor?.display_name ? (
+          actor?.display_name ? (
             <span className="text-zinc-900 dark:text-zinc-200">
               {actor.display_name}
             </span>

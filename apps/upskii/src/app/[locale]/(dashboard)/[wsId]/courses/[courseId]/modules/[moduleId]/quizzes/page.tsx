@@ -166,7 +166,7 @@ const getQuizzes = async (moduleId: string) => {
       });
     }
 
-    grouped.get(setId)!.quizzes.push({
+    grouped.get(setId)?.quizzes.push({
       id: quiz.id,
       question: quiz.question,
       quiz_options: quiz.quiz_options,

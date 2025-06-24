@@ -182,7 +182,7 @@ export default function TOTPDialog() {
       setFriendlyName('');
       setVerificationCode('');
     }
-  }, [isOpen]);
+  }, [isOpen, fetchFactors]);
 
   const renderFactorsList = () => (
     <div className="space-y-4">

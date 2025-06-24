@@ -49,6 +49,8 @@ export function LiveScoresDisplay({
   }, [
     evaluationPreview.testCaseScores?.percentage,
     evaluationPreview.criteriaScores?.percentage,
+    evaluationPreview.criteriaScores,
+    evaluationPreview.testCaseScores,
   ]);
 
   // Don't show anything if there's no meaningful data yet
@@ -286,7 +288,7 @@ export function LiveResultsPreview({
                                 : false;
                               const isProcessing =
                                 !hasMatchData &&
-                                index < evaluationPreview.testCaseScores!.total;
+                                index < evaluationPreview.testCaseScores?.total;
                               const isGenerating =
                                 evaluationPreview.generationPhase;
 
@@ -319,11 +321,11 @@ export function LiveResultsPreview({
                             }
                           )}
                           {/* Show additional pending indicators if total > current results */}
-                          {evaluationPreview.testCaseScores!.total >
+                          {evaluationPreview.testCaseScores?.total >
                             evaluationPreview.testCaseResults.length &&
                             Array.from({
                               length:
-                                evaluationPreview.testCaseScores!.total -
+                                evaluationPreview.testCaseScores?.total -
                                 evaluationPreview.testCaseResults.length,
                             }).map((_, index) => (
                               <div

@@ -19,14 +19,13 @@ export default function LogList({ logs }: Props) {
       onValueChange={setSelectedLogs}
       className="grid gap-2"
     >
-      {logs &&
-        logs?.map((log) => (
-          <AuditLogCard
-            data={log}
-            key={`log-${log.id}`}
-            isExpanded={selectedLogs?.includes(`log-${log.id}`) || false}
-          />
-        ))}
+      {logs?.map((log) => (
+        <AuditLogCard
+          data={log}
+          key={`log-${log.id}`}
+          isExpanded={selectedLogs?.includes(`log-${log.id}`) || false}
+        />
+      ))}
     </Accordion>
   );
 }

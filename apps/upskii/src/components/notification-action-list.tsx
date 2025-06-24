@@ -39,9 +39,9 @@ export default function NotificationActionList({ actions }: Props) {
           }}
           onSuccess={() => {
             setProcessingAction(undefined);
-            if (action.type == 'WORKSPACE_INVITE_DECLINE') {
+            if (action.type === 'WORKSPACE_INVITE_DECLINE') {
               toast.success('You declined workspace invite...');
-            } else if (action.type == 'WORKSPACE_INVITE_ACCEPT') {
+            } else if (action.type === 'WORKSPACE_INVITE_ACCEPT') {
               toast.success('You accepted workspace invite...');
             }
           }}

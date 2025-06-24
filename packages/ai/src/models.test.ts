@@ -67,7 +67,7 @@ describe('models', () => {
       const allProviders = models.map((model) => model.provider);
       const sortedEnabledModels = enabledModels.map((model) => model.provider);
       expect(allProviders.indexOf(sortedEnabledModels[0]!)).toBeLessThan(
-        allProviders.indexOf(disabledModels[0]!.provider)
+        allProviders.indexOf(disabledModels[0]?.provider)
       );
     }
   });

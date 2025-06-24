@@ -109,7 +109,7 @@ export default function SideBySideDiff({
     }
 
     setDiffData({ leftLines, rightLines });
-  }, [left, right]);
+  }, [left, right, findInlineDiff]);
 
   // Function to find inline character differences between two strings
   function findInlineDiff(str1: string = '', str2: string = '') {
@@ -176,7 +176,7 @@ export default function SideBySideDiff({
           }
         } else {
           if (dp?.[i]?.[j] !== undefined) {
-            dp[i]![j] = Math.max(dp[i - 1]![j] || 0, dp[i]![j - 1] || 0);
+            dp[i]![j] = Math.max(dp[i - 1]?.[j] || 0, dp[i]?.[j - 1] || 0);
           }
         }
       }
@@ -192,7 +192,7 @@ export default function SideBySideDiff({
         lcs = str1[i - 1] + lcs;
         i--;
         j--;
-      } else if (dp[i - 1]![j]! > dp[i]![j - 1]!) {
+      } else if (dp[i - 1]?.[j]! > dp[i]?.[j - 1]!) {
         i--;
       } else {
         j--;

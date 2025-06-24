@@ -145,7 +145,7 @@ export const EventDescriptionInput = ({
     } else {
       setIsExpanded(true); // Always expanded if <= 60 words
     }
-  }, [mode, value, showToggle]);
+  }, [showToggle]);
 
   // Handle show more/less toggle
   const handleToggleExpand = () => {
@@ -210,7 +210,7 @@ export const EventDescriptionInput = ({
     if (!isExpanded) {
       setHeight(100);
     }
-  }, [value, isExpanded]);
+  }, [isExpanded]);
 
   // Handle resize
   const handleMouseDown = (e: MouseEvent | React.MouseEvent | TouchEvent) => {

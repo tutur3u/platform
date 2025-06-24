@@ -42,7 +42,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
+            ((data?.record?.name || '') !== (data?.old_record?.name || '') ? (
               <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -97,7 +97,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
+            ((data?.record?.name || '') !== (data?.old_record?.name || '') ? (
               <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -118,7 +118,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             ))}
 
           {data.op === 'UPDATE' &&
-            data?.record?.is_expense != data?.old_record?.is_expense && (
+            data?.record?.is_expense !== data?.old_record?.is_expense && (
               <div>
                 • {t('change_expense_type_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -166,7 +166,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
+            ((data?.record?.name || '') !== (data?.old_record?.name || '') ? (
               <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -187,7 +187,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             ))}
 
           {data.op === 'UPDATE' &&
-            data?.record?.unit != data?.old_record?.unit && (
+            data?.record?.unit !== data?.old_record?.unit && (
               <div>
                 • {t('change_unit_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -253,7 +253,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
+            ((data?.record?.name || '') !== (data?.old_record?.name || '') ? (
               <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -274,7 +274,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             ))}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.manufacturer || '') !=
+            (data?.record?.manufacturer || '') !==
               (data?.old_record?.manufacturer || '') && (
               <div>
                 • {t('change_manufacturer_from')}{' '}
@@ -289,7 +289,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.usage || '') != (data?.old_record?.usage || '') && (
+            (data?.record?.usage || '') !== (data?.old_record?.usage || '') && (
               <div>
                 • {t('change_usage_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -303,7 +303,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.description || '') !=
+            (data?.record?.description || '') !==
               (data?.old_record?.description || '') && (
               <div>
                 • {t('change_description_from')}{' '}
@@ -364,7 +364,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
+            ((data?.record?.name || '') !== (data?.old_record?.name || '') ? (
               <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -385,7 +385,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             ))}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.note || '') != (data?.old_record?.note || '') && (
+            (data?.record?.note || '') !== (data?.old_record?.note || '') && (
               <div>
                 • {t('change_note_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -399,7 +399,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.description || '') !=
+            (data?.record?.description || '') !==
               (data?.old_record?.description || '') && (
               <div>
                 • {t('change_description_from')}{' '}
@@ -532,7 +532,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            ((data?.record?.name || '') != (data?.old_record?.name || '') ? (
+            ((data?.record?.name || '') !== (data?.old_record?.name || '') ? (
               <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -553,7 +553,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             ))}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.note || '') != (data?.old_record?.note || '') && (
+            (data?.record?.note || '') !== (data?.old_record?.note || '') && (
               <div>
                 • {t('change_note_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -567,7 +567,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.email != data?.old_record?.email && (
+            data?.record?.email !== data?.old_record?.email && (
               <div>
                 • {t('change_email_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -581,7 +581,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.phone != data?.old_record?.phone && (
+            data?.record?.phone !== data?.old_record?.phone && (
               <div>
                 • {t('change_phone_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -595,7 +595,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.gender != data?.old_record?.gender && (
+            data?.record?.gender !== data?.old_record?.gender && (
               <div>
                 • {t('change_gender_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -609,7 +609,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.address != data?.old_record?.address && (
+            data?.record?.address !== data?.old_record?.address && (
               <div>
                 • {t('change_address_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -623,7 +623,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.balance != data?.old_record?.balance && (
+            data?.record?.balance !== data?.old_record?.balance && (
               <div>
                 • {t('change_balance_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -643,7 +643,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.birthday != data?.old_record?.birthday && (
+            data?.record?.birthday !== data?.old_record?.birthday && (
               <div>
                 • {t('change_birthday_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -657,7 +657,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.guardian != data?.old_record?.guardian && (
+            data?.record?.guardian !== data?.old_record?.guardian && (
               <div>
                 • {t('change_guardian_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -671,7 +671,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.ethnicity != data?.old_record?.ethnicity && (
+            data?.record?.ethnicity !== data?.old_record?.ethnicity && (
               <div>
                 • {t('change_ethnicity_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -685,7 +685,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
             )}
 
           {data.op === 'UPDATE' &&
-            data?.record?.national_id != data?.old_record?.national_id && (
+            data?.record?.national_id !== data?.old_record?.national_id && (
               <div>
                 • {t('change_national_id_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -758,7 +758,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
         {data.op === 'UPDATE' && (
           <>
-            {(data?.record?.name || '') != (data?.old_record?.name || '') ? (
+            {(data?.record?.name || '') !== (data?.old_record?.name || '') ? (
               <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -778,7 +778,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
               </div>
             )}
 
-            {data?.record?.type != data?.old_record?.type && (
+            {data?.record?.type !== data?.old_record?.type && (
               <div>
                 • {t('change_type_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -791,7 +791,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
               </div>
             )}
 
-            {data?.record?.currency != data?.old_record?.currency && (
+            {data?.record?.currency !== data?.old_record?.currency && (
               <div>
                 • {t('change_currency_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -804,7 +804,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
               </div>
             )}
 
-            {data?.record?.balance != data?.old_record?.balance && (
+            {data?.record?.balance !== data?.old_record?.balance && (
               <div>
                 • {t('change_balance_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -855,7 +855,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
           )}
 
           {data.op === 'UPDATE' &&
-            (data?.record?.name || '') != (data?.old_record?.name || '') && (
+            (data?.record?.name || '') !== (data?.old_record?.name || '') && (
               <div>
                 • {t('rename_from')}{' '}
                 <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -913,7 +913,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
               {data.op === 'UPDATE' && (
                 <>
-                  {data?.record?.role != data?.old_record?.role && (
+                  {data?.record?.role !== data?.old_record?.role && (
                     <div>
                       • {t('change_role_from')}{' '}
                       <span className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -932,7 +932,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                     </div>
                   )}
 
-                  {data?.record?.role_title != data?.old_record?.role_title &&
+                  {data?.record?.role_title !== data?.old_record?.role_title &&
                     data?.record?.role_title != null && (
                       <div>
                         • {t('change_role_title_from')}{' '}

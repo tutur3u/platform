@@ -143,7 +143,7 @@ export function QuickTimeTracker({
 
     const updateElapsed = () => {
       const startTime = new Date(runningSession.start_time).getTime();
-      const now = new Date().getTime();
+      const now = Date.now();
       const elapsed = Math.floor((now - startTime) / 1000);
       setElapsedTime(elapsed);
     };

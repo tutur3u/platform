@@ -153,7 +153,7 @@ export default function SessionsCard() {
 
   useEffect(() => {
     fetchSessions();
-  }, []);
+  }, [fetchSessions]);
 
   const revokeSession = async (
     sessionId: string,

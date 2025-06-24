@@ -226,7 +226,7 @@ export default function BeforeTakingQuizWhole({
             </Alert>
           ) : (
             !quizData.resultsReleased &&
-            (isPastDue || attemptsRemaining == 0) && (
+            (isPastDue || attemptsRemaining === 0) && (
               <Alert
                 variant="destructive"
                 className="mt-4 bg-dynamic-light-pink/30 font-bold text-dynamic-red"

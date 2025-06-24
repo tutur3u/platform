@@ -879,10 +879,9 @@ export default function ContributorsClient({
                     <GitCommit className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="mb-2 text-2xl font-bold">
-                    {githubData.contributors &&
-                      githubData.contributors
-                        .reduce((acc, curr) => acc + curr.contributions, 0)
-                        .toLocaleString()}
+                    {githubData.contributors
+                      ?.reduce((acc, curr) => acc + curr.contributions, 0)
+                      .toLocaleString()}
                     +
                   </h3>
                   <p className="text-muted-foreground">Total Commits</p>

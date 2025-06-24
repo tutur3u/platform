@@ -99,7 +99,7 @@ const Chat = ({
   useEffect(() => {
     setSummary(chat?.summary || '');
     setSummarizing(false);
-  }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
+  }, [chat?.summary]);
 
   useEffect(() => {
     if (!chat || isLoading) return;
@@ -167,7 +167,7 @@ const Chat = ({
     return () => {
       clearTimeout(reloadTimeout);
     };
-  }, [summary, chat, isLoading, messages, reload]);
+  }, [summary, chat, isLoading, messages, reload, model, summarizing, t]);
 
   const [initialScroll, setInitialScroll] = useState(true);
 
@@ -205,14 +205,23 @@ const Chat = ({
       router.replace('/');
       router.refresh();
     }
-  }, [chat?.id, searchParams, router, setInput, chats, count, initialScroll]);
+  }, [
+    chat?.id,
+    searchParams,
+    router,
+    setInput,
+    chats,
+    count,
+    initialScroll,
+    clearChat,
+  ]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
-  }, [input, inputRef]);
+  }, []);
 
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 

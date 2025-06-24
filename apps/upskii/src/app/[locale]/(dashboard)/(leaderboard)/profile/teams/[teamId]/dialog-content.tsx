@@ -63,7 +63,7 @@ export function TeamActionDialog({
         description: 'Team information updated successfully',
       });
       onClose();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to update team information',

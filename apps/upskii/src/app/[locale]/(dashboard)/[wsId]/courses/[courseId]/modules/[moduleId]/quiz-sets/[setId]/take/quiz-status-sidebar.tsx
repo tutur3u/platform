@@ -2,7 +2,7 @@
 
 import { CheckIcon, Circle } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 
 export type Question = {
   quizId: string;

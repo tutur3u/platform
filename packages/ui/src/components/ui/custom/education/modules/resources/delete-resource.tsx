@@ -12,7 +12,7 @@ export function DeleteResourceButton({ path }: { path: string }) {
 
   useEffect(() => {
     setLoading(false);
-  }, [path]);
+  }, []);
 
   const deleteResource = async (path: string) => {
     setLoading(true);

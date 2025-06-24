@@ -64,7 +64,7 @@ export function Combobox({
     if (selected) return;
     if (useFirstValueAsDefault && options.length > 0)
       onChange?.(options?.[0]?.value ?? '');
-  }, [onChange, selected, options]);
+  }, [onChange, selected, options, useFirstValueAsDefault]);
 
   const selectedLabel =
     mode === 'single'

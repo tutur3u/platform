@@ -86,7 +86,7 @@ export async function detectDuplicates(datasetId: string) {
     // Filter out invalid rows and cast to RowData
     const validRows = rows.filter((row): row is RowData => {
       const isValid = Boolean(
-        row && row.row_id && row.dataset_id && row.created_at && row.cells
+        row?.row_id && row.dataset_id && row.created_at && row.cells
       );
       if (!isValid) {
         console.warn(`Skipping invalid row: ${row?.row_id}`);

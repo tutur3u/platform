@@ -44,7 +44,7 @@ export default async function SecuritySettingsCard({
   const hasPassword = true; // Assuming user has password - you might want to check this
 
   // Get account age
-  const accountAge = new Date().getTime() - new Date(user.created_at).getTime();
+  const accountAge = Date.now() - new Date(user.created_at).getTime();
   const accountAgeDays = Math.floor(accountAge / (1000 * 60 * 60 * 24));
 
   // Get user's sessions count (you might want to implement this)

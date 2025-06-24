@@ -235,8 +235,7 @@ export function TaskDetailCard({
                 <span className="text-xs font-medium text-red-600 dark:text-red-400">
                   Overdue by{' '}
                   {Math.ceil(
-                    (new Date().getTime() -
-                      new Date(clickedTask.end_date).getTime()) /
+                    (Date.now() - new Date(clickedTask.end_date).getTime()) /
                       (1000 * 60 * 60 * 24)
                   )}{' '}
                   days

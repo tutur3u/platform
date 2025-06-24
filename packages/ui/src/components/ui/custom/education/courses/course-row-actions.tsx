@@ -51,7 +51,7 @@ export function WorkspaceCourseRowActions({
           description: data.message,
         });
       }
-    } catch (err) {
+    } catch (_err) {
       toast({
         title: 'Error',
         description: 'There was an error while deleting the course.',

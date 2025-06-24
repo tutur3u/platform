@@ -75,9 +75,7 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
       ?.map((a: any) => a.user)
       .filter(
         (user: any, index: number, self: any[]) =>
-          user &&
-          user.id &&
-          self.findIndex((u: any) => u.id === user.id) === index
+          user?.id && self.findIndex((u: any) => u.id === user.id) === index
       ),
   }));
 

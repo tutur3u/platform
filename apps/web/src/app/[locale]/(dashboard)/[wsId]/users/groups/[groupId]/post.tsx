@@ -66,7 +66,7 @@ export function PostEmailStatus({
     }
 
     fetchData();
-  }, [supabase, inViewport, postId]);
+  }, [supabase, inViewport, postId, data, groupId, loading]);
 
   return (
     <div className="flex flex-wrap items-center gap-1">

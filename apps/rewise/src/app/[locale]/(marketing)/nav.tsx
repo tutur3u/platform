@@ -52,10 +52,10 @@ function groupLinksByDate(
 ): GroupedLinks {
   return links.reduce((acc: GroupedLinks, link) => {
     if (configs.showFavorites && link.pinned) {
-      if (!acc['Favorites']) {
-        acc['Favorites'] = [];
+      if (!acc.Favorites) {
+        acc.Favorites = [];
       }
-      acc['Favorites'].push(link);
+      acc.Favorites.push(link);
     } else if (link.createdAt) {
       const dateTag = getDateTag(locale, t, new Date(link.createdAt));
       if (!acc[dateTag]) {
@@ -91,7 +91,7 @@ export function Nav({
 
   useEffect(() => {
     if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
-  }, [pathname, searchParams]);
+  }, [pathname, urlToLoad]);
 
   const renderLink = (
     link: NavLink,

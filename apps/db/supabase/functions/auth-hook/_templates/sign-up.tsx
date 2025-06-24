@@ -9,7 +9,6 @@ import {
   Section,
   Text,
 } from 'npm:@react-email/components@0.0.34';
-import * as React from 'npm:react@18.3.1';
 
 interface SignUpEmailProps {
   locale: string;
@@ -24,7 +23,7 @@ interface SignUpEmailProps {
 /** Translations of the text for English */
 const translationsEn = {
   confirm_email_address: 'Confirm your email address',
-  h1: (username: string) => `Welcome to Tuturuuu! Confirm your email address`,
+  h1: (_username: string) => `Welcome to Tuturuuu! Confirm your email address`,
   your_confirmation_code:
     'Thank you for signing up for Tuturuuu. Please complete the email confirmation for full access.',
   click_here: 'Click here to confirm your email address',
@@ -41,7 +40,7 @@ const translationsEn = {
 /** Translations of the text for Vietnamese */
 const translationsVi = {
   confirm_email_address: 'Xác nhận địa chỉ email của bạn',
-  h1: (username: string) =>
+  h1: (_username: string) =>
     `Chào mừng đến với Tuturuuu! Vui lòng xác nhận địa chỉ email của bạn`,
   your_confirmation_code:
     'Cảm ơn bạn đã đăng ký Tuturuuu. Vui lòng hoàn tất xác nhận email để truy cập đầy đủ.',
@@ -58,7 +57,7 @@ const translationsVi = {
 
 const translationsAiseaEn = {
   confirm_email_address: 'Confirm your email address',
-  h1: (username: string) => `Welcome to AISEA! Confirm your email address`,
+  h1: (_username: string) => `Welcome to AISEA! Confirm your email address`,
   your_confirmation_code:
     'Thank you for signing up for AISEA. Please complete the email confirmation for full access.',
   click_here: 'Click here to confirm your email address',
@@ -74,7 +73,7 @@ const translationsAiseaEn = {
 
 const translationsAiseaVi = {
   confirm_email_address: 'Xác nhận địa chỉ email của bạn',
-  h1: (username: string) =>
+  h1: (_username: string) =>
     `Chào mừng đến với AISEA! Vui lòng xác nhận địa chỉ email của bạn`,
   your_confirmation_code:
     'Cảm ơn bạn đã đăng ký AISEA. Vui lòng hoàn tất xác nhận email để truy cập đầy đủ.',
@@ -166,7 +165,7 @@ const footerLink = {
   textDecoration: 'underline',
 };
 
-const footerLogos = {
+const _footerLogos = {
   marginBottom: '32px',
   paddingLeft: '8px',
   paddingRight: '8px',
@@ -185,7 +184,7 @@ const container = {
   padding: '0px 20px',
 };
 
-const logoContainer = {
+const _logoContainer = {
   marginTop: '32px',
 };
 

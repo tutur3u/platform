@@ -373,7 +373,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     id,
     startDate,
     duration,
-    level,
     dates,
     _isMultiDay,
     _dayPosition,
@@ -381,6 +380,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     endHours,
     overlapCount,
     overlapGroup,
+    endDate.isBefore,
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
@@ -569,6 +569,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     event._originalId,
     startHours,
     locked,
+    endDate.clone, // Schedule the update
+    scheduleUpdate,
+    showStatusFeedback, // Update visual state
+    updateVisualState,
   ]);
 
   // Event dragging - only enable for non-multi-day events
@@ -818,7 +822,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     openModal,
     _isMultiDay,
     event._originalId,
-    locked,
+    locked, // Schedule update
+    scheduleUpdate,
+    showStatusFeedback, // Update visual state for immediate feedback
+    updateVisualState,
   ]);
 
   // Color styles based on event color

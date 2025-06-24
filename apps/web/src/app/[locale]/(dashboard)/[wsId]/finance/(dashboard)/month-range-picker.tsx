@@ -20,7 +20,7 @@ export function MonthRangePicker({
     if (startMonth && endMonth && startMonth > endMonth) {
       setEndMonth(startMonth);
     }
-  }, [startMonth, endMonth]);
+  }, [startMonth, endMonth, setEndMonth]);
 
   return (
     <div className={className}>

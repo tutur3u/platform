@@ -215,7 +215,7 @@ export default function ResultClient({
         'Some score calculations appear to be incorrect. This may be due to a temporary issue with our scoring system.'
       );
     }
-  }, [stats, error, isValidScore]);
+  }, [error, isValidScore]);
 
   return (
     <div className="min-h-screen from-background to-muted/20 px-4 py-8 sm:px-6">
@@ -442,7 +442,7 @@ export default function ResultClient({
                               possible {stats.maxScore} points
                             </>
                           ) : (
-                            <>No problems attempted yet</>
+                            'No problems attempted yet'
                           )}
                         </div>
                       </div>

@@ -58,7 +58,7 @@ export default function ContactPage() {
           .string()
           .min(10, { message: t('form.fields.message.error') }),
       }),
-    []
+    [t]
   );
 
   const form = useForm<z.infer<typeof contactFormSchema>>({
@@ -367,7 +367,7 @@ export default function ContactPage() {
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? (
-                        <>{t('form.buttons.submitting')}</>
+                        t('form.buttons.submitting')
                       ) : (
                         <>
                           {t('form.buttons.submit')}

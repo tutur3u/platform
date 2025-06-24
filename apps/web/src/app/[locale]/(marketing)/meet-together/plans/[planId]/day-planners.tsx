@@ -43,7 +43,7 @@ export default function DayPlanners({
       scrollableDiv?.removeEventListener('wheel', preventScroll);
       scrollableDiv?.removeEventListener('touchmove', preventScroll);
     };
-  }, [editing.enabled]);
+  }, [editing.enabled, preventScroll]);
 
   return (
     <div

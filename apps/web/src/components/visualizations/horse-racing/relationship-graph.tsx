@@ -27,7 +27,7 @@ export function RelationshipGraph({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showAllRelationships, setShowAllRelationships] = useState(true);
   const [hoveredHorse, setHoveredHorse] = useState<number | null>(null);
-  const [graphSize, setGraphSize] = useState({ width: 0, height: 0 });
+  const [_graphSize, setGraphSize] = useState({ width: 0, height: 0 });
 
   // Current known positions based on finished races
   const knownPositions = finalRanking.slice(
@@ -62,20 +62,12 @@ export function RelationshipGraph({
     return () => {
       resizeObserver.disconnect();
     };
-  }, []);
+  }, [drawGraph]);
 
   // Redraw the graph when data changes
   useEffect(() => {
     drawGraph();
-  }, [
-    horses,
-    fasterThanRelationships,
-    slowerThanRelationships,
-    knownPositions,
-    showAllRelationships,
-    hoveredHorse,
-    graphSize,
-  ]);
+  }, [drawGraph]);
 
   const drawGraph = () => {
     const canvas = canvasRef.current;

@@ -180,7 +180,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
       }
       router.refresh();
       // eslint-disable-next-line no-unused-vars
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: t('ws-members.error'),
         description: 'Failed to update member',

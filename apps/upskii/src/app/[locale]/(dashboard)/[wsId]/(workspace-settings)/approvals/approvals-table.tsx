@@ -112,7 +112,7 @@ export function ApprovalsTable() {
   // Fetch data when dependencies change
   useEffect(() => {
     fetchApprovals();
-  }, [status, feature, q, page, pageSize]);
+  }, [fetchApprovals]);
 
   // Handle manual refresh
   const handleRefresh = () => {

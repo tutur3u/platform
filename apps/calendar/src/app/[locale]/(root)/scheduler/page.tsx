@@ -365,7 +365,10 @@ function SchedulerPage() {
                           </div>
                         </div>
                         {ranges.map((range, index) => (
-                          <div key={index} className="grid grid-cols-2 gap-4">
+                          <div
+                            key={range.start.toISOString()}
+                            className="grid grid-cols-2 gap-4"
+                          >
                             <div className="space-y-2">
                               <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                 Start Time

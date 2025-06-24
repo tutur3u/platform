@@ -136,7 +136,7 @@ export function FileUploader(props: FileUploaderProps) {
         });
       }
     },
-    [files, maxFileCount, multiple, onUpload, setFiles]
+    [files, maxFileCount, multiple, setFiles]
   );
 
   function onRemove(index: number) {

@@ -16,7 +16,7 @@ export function TimeProgress({ startTime, endTime, className }: Props) {
 
   useEffect(() => {
     const calculateProgress = () => {
-      const now = new Date().getTime();
+      const now = Date.now();
 
       const start = startTime.getTime();
       const end = endTime.getTime();

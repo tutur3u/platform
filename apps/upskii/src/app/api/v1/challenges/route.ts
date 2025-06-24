@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
   try {
     body = await request.json();
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 

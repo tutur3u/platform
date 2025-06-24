@@ -86,7 +86,7 @@ export const DynamicIsland = () => {
       setStartAt(null);
       setTime(0);
     }
-  }, [endAt, events, firstEventEnd]);
+  }, [endAt, firstEventEnd]);
 
   const startTimer = () => {
     if (startAt) {

@@ -41,14 +41,14 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
   // Update currDate when date prop changes
   useEffect(() => {
     setCurrDate(date);
-  }, [date, tz]);
+  }, [date]);
 
   // Get first day of week from settings
   const firstDayOfWeek = useMemo(() => {
     const settingValue = settings?.appearance?.firstDayOfWeek;
     console.log('Month calendar first day setting:', settingValue);
     return settingValue === 'sunday' ? 0 : settingValue === 'saturday' ? 6 : 1; // 0 = Sunday, 1 = Monday, 6 = Saturday
-  }, [settings?.appearance?.firstDayOfWeek, tz]);
+  }, [settings?.appearance?.firstDayOfWeek]);
 
   // Get weekday labels based on first day of week
   const weekdayLabels = useMemo(() => {
@@ -65,7 +65,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
     console.log('Reordered days:', reorderedDays);
 
     return reorderedDays;
-  }, [firstDayOfWeek, tz]);
+  }, [firstDayOfWeek]);
 
   // Get days in month
   const monthStart = startOfMonth(currDate);
@@ -131,7 +131,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
       const start = new Date(event.start_at);
       const end = new Date(event.end_at);
       return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
-    } catch (e) {
+    } catch (_e) {
       return '';
     }
   };

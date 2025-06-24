@@ -78,7 +78,7 @@ export function datesToTimeMatrix(dates?: Date[] | null): {
 }
 
 export function durationToTimeblocks(dates: Date[]): Timeblock[] {
-  if (dates.length != 2) return [];
+  if (dates.length !== 2) return [];
   const timeblocks: Timeblock[] = [];
 
   const { soonest: soonestTime, latest: latestTime } = datesToTimeMatrix(dates);

@@ -258,7 +258,7 @@ export default function LinkedIdentitiesCard({
       // Reload identities after linking
       setTimeout(() => loadIdentities(), 1000);
     }
-  }, []);
+  }, [loadIdentities, t]);
 
   // Loading State
   if (loading) {

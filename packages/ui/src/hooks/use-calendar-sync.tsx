@@ -138,7 +138,7 @@ export const CalendarSyncProvider = ({
     if (!dateRange || dateRange.length === 0) {
       return '';
     }
-    return `${dateRange[0]!.toISOString()}-${dateRange[dateRange.length - 1]!.toISOString()}`;
+    return `${dateRange[0]?.toISOString()}-${dateRange[dateRange.length - 1]?.toISOString()}`;
   };
 
   // Helper to check if a date range includes today (current week issue)
@@ -600,7 +600,12 @@ export const CalendarSyncProvider = ({
         setIsSyncing(false);
       }
     },
-    [wsId, dates, queryClient, isActiveSyncOn]
+    [
+      wsId,
+      dates,
+      isActiveSyncOn, // Refresh the cache to trigger queryClient to refetch the data from database
+      refresh,
+    ]
   );
 
   // Sync to Tuturuuu database when google data changes for current view
@@ -622,7 +627,7 @@ export const CalendarSyncProvider = ({
       // Update refs with current values
       prevGoogleDataRef.current = currentGoogleDataStr;
     }
-  }, [fetchedGoogleData, syncToTuturuuu]);
+  }, [fetchedGoogleData, syncToTuturuuu, experimentalGoogleToken?.ws_id, wsId]);
 
   // Trigger sync when isActiveSyncOn becomes true
   useEffect(() => {
@@ -688,6 +693,8 @@ export const CalendarSyncProvider = ({
     experimentalGoogleToken?.ws_id,
     calendarCache,
     includesCurrentWeek,
+    areDatesEqual,
+    getCacheKey,
   ]);
 
   /*
@@ -700,7 +707,7 @@ export const CalendarSyncProvider = ({
   };
 
   // Detect and remove duplicate events
-  const removeDuplicateEvents = useCallback(
+  const _removeDuplicateEvents = useCallback(
     async (eventsData: CalendarEvent[]) => {
       if (!wsId || !eventsData || eventsData.length === 0) return eventsData;
 
@@ -712,7 +719,7 @@ export const CalendarSyncProvider = ({
         if (!eventGroups.has(signature)) {
           eventGroups.set(signature, []);
         }
-        eventGroups.get(signature)!.push(event);
+        eventGroups.get(signature)?.push(event);
       });
 
       // Find duplicates that need to be removed
@@ -785,7 +792,7 @@ export const CalendarSyncProvider = ({
       // Return the filtered list without duplicates
       return eventsData.filter((event) => !eventsToDelete.includes(event.id));
     },
-    [wsId, queryClient]
+    [wsId, queryClient, createEventSignature]
   );
 
   // Process events to remove duplicates, then memoize the result
@@ -796,7 +803,7 @@ export const CalendarSyncProvider = ({
     }
     // If we're still loading, return empty array
     return [];
-  }, [fetchedData, removeDuplicateEvents]);
+  }, [fetchedData]);
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
@@ -828,7 +835,7 @@ export const CalendarSyncProvider = ({
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
     });
-  }, [queryClient, wsId, calendarCache, dates, updateCache]);
+  }, [queryClient, wsId, calendarCache, dates, updateCache, getCacheKey]);
 
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
@@ -867,7 +874,7 @@ export const CalendarSyncProvider = ({
   // Effect to reset the processed flag when dates change
   useEffect(() => {
     hasProcessedInitialData.current = false;
-  }, [dates]);
+  }, []);
 
   const syncToGoogle = async () => {};
 

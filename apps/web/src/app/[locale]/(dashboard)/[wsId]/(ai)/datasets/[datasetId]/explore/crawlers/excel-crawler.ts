@@ -98,7 +98,7 @@ export class ExcelCrawler extends BaseCrawler {
     try {
       workbook = XLSX.read(arrayBuffer);
       // eslint-disable-next-line no-unused-vars
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Unsupported Excel file');
     }
     const sheetName = this.findRelevantSheet(workbook);
@@ -238,7 +238,7 @@ export class ExcelCrawler extends BaseCrawler {
       try {
         workbook = XLSX.read(arrayBuffer);
         // eslint-disable-next-line no-unused-vars
-      } catch (error) {
+      } catch (_error) {
         throw new Error('Unsupported Excel file');
       }
       const sheetName = this.findRelevantSheet(workbook);

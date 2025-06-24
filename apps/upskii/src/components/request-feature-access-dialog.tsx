@@ -272,24 +272,22 @@ export function RequestFeatureAccessDialog({
           </div>
 
           {selectedFeatureConfig && (
-            <>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="message">{t('reason-label')}</Label>
-                <Textarea
-                  id="message"
-                  placeholder={t('reason-placeholder', {
-                    feature: selectedFeatureConfig.name.toLowerCase(),
-                  })}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={4}
-                  className="resize-none focus:border-dynamic-blue/60 focus:ring-dynamic-blue/20"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t('reason-description')}
-                </p>
-              </div>
-            </>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="message">{t('reason-label')}</Label>
+              <Textarea
+                id="message"
+                placeholder={t('reason-placeholder', {
+                  feature: selectedFeatureConfig.name.toLowerCase(),
+                })}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+                className="resize-none focus:border-dynamic-blue/60 focus:ring-dynamic-blue/20"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('reason-description')}
+              </p>
+            </div>
           )}
 
           {requestsToShow.length > 0 && (

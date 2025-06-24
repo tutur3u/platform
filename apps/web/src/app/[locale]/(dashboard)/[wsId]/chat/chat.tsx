@@ -91,7 +91,7 @@ const Chat = ({
   useEffect(() => {
     setSummary(chat?.summary || '');
     setSummarizing(false);
-  }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
+  }, [chat?.summary]);
 
   useEffect(() => {
     if (!chat || !hasKeys || isLoading) return;
@@ -160,7 +160,18 @@ const Chat = ({
     return () => {
       clearTimeout(reloadTimeout);
     };
-  }, [wsId, summary, chat, hasKeys, isLoading, messages, reload]);
+  }, [
+    wsId,
+    summary,
+    chat,
+    hasKeys,
+    isLoading,
+    messages,
+    reload,
+    model,
+    summarizing,
+    t,
+  ]);
 
   const [initialScroll, setInitialScroll] = useState(true);
 
@@ -209,6 +220,9 @@ const Chat = ({
     chats,
     count,
     initialScroll,
+    clearChat,
+    disableScrollToBottom,
+    disableScrollToTop,
   ]);
 
   const [collapsed, setCollapsed] = useState(true);
@@ -216,7 +230,7 @@ const Chat = ({
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
-  }, [input, inputRef]);
+  }, []);
 
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
@@ -301,7 +315,7 @@ const Chat = ({
     if (!pathname.includes('/chat/') && messages.length === 1) {
       window.history.replaceState({}, '', `/${wsId}/chat/${chat?.id}`);
     }
-  }, [chat?.id, pathname, messages]);
+  }, [chat?.id, pathname, messages, wsId]);
 
   return (
     <div className="@container relative h-full">

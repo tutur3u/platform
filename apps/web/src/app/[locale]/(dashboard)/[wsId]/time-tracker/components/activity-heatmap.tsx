@@ -960,7 +960,7 @@ export function ActivityHeatmap({
         },
       };
     },
-    [monthlyData]
+    []
   );
 
   // Card components
@@ -1099,7 +1099,7 @@ export function ActivityHeatmap({
         <div className="mb-2">
           <div className="grid grid-cols-7 gap-px">
             {Array.from({ length: 7 * 4 }, (_, i) => {
-              const monthStart = dayjs(monthKey + '-01');
+              const monthStart = dayjs(`${monthKey}-01`);
               const dayOffset = i - monthStart.day();
               const currentDay = monthStart.add(dayOffset, 'day');
 
@@ -1435,7 +1435,7 @@ export function ActivityHeatmap({
 
       return allCards;
     },
-    [calculateMonthlyStats]
+    []
   );
 
   // Rename and lift hooks into a proper React component

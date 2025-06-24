@@ -10,7 +10,6 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { CheckCircle, X, XCircle } from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
-import React from 'react';
 
 export default function PasteConfirmModal({
   pastedQuizzes,

@@ -258,8 +258,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
         setCurrentSession(runningRes.session);
         setIsRunning(true);
         const elapsed = Math.floor(
-          (new Date().getTime() -
-            new Date(runningRes.session.start_time).getTime()) /
+          (Date.now() - new Date(runningRes.session.start_time).getTime()) /
             1000
         );
         setElapsedTime(elapsed);
@@ -281,9 +280,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     if (isRunning && currentSession) {
       interval = setInterval(() => {
         const elapsed = Math.floor(
-          (new Date().getTime() -
-            new Date(currentSession.start_time).getTime()) /
-            1000
+          (Date.now() - new Date(currentSession.start_time).getTime()) / 1000
         );
         setElapsedTime(elapsed);
       }, 1000);

@@ -62,7 +62,7 @@ export function UserSelector({
 
   useEffect(() => {
     fetchUsers({ wsId });
-  }, [wsId]);
+  }, [wsId, fetchUsers]);
 
   const selectedUser = selectedUserId
     ? users.find((user) => user.id === selectedUserId)

@@ -130,13 +130,13 @@ export default async function WorkspaceUserDetailsPage({
         <div className="grid gap-4">
           <div className="h-full rounded-lg border p-4">
             <div
-              className={`h-full gap-2 ${groups && groups.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
+              className={`h-full gap-2 ${groups?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
             >
               <div className="text-lg font-semibold">
                 {t('joined_groups')} ({groupCount})
               </div>
               <Separator />
-              {groups && groups.length ? (
+              {groups?.length ? (
                 <div className="grid h-full gap-2 2xl:grid-cols-2">
                   {groups.map((group) => (
                     <Link
@@ -163,13 +163,13 @@ export default async function WorkspaceUserDetailsPage({
 
           <div className="h-full rounded-lg border p-4">
             <div
-              className={`h-full gap-2 ${reports && reports.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
+              className={`h-full gap-2 ${reports?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
             >
               <div className="text-lg font-semibold">
                 {t('reports')} ({reportCount})
               </div>
               <Separator />
-              {reports && reports.length ? (
+              {reports?.length ? (
                 <div className="grid h-full gap-2 2xl:grid-cols-2">
                   {reports.map((group) => (
                     <Link
@@ -196,13 +196,13 @@ export default async function WorkspaceUserDetailsPage({
 
           <div className="h-full rounded-lg border p-4">
             <div
-              className={`h-full gap-2 ${groups && groups.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
+              className={`h-full gap-2 ${groups?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
             >
               <div className="text-lg font-semibold">
                 {t('coupons')} ({couponCount})
               </div>
               <Separator />
-              {coupons && coupons.length ? (
+              {coupons?.length ? (
                 <div className="grid h-full gap-2 2xl:grid-cols-2">
                   {coupons.map((coupon) => (
                     <Link

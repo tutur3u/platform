@@ -59,7 +59,7 @@ export async function PATCH(
       const endTime = new Date().toISOString();
       const startTime = new Date(session.start_time);
       const durationSeconds = Math.floor(
-        (new Date().getTime() - startTime.getTime()) / 1000
+        (Date.now() - startTime.getTime()) / 1000
       );
 
       const { data, error } = await sbAdmin
@@ -89,7 +89,7 @@ export async function PATCH(
       const endTime = new Date().toISOString();
       const startTime = new Date(session.start_time);
       const durationSeconds = Math.floor(
-        (new Date().getTime() - startTime.getTime()) / 1000
+        (Date.now() - startTime.getTime()) / 1000
       );
 
       const { data, error } = await sbAdmin

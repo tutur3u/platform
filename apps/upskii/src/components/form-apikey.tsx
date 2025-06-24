@@ -117,7 +117,7 @@ export default function ApiKeyInput({
       });
       setValidated(true);
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: t('api-key-invalid-title'),
         description: t('api-key-invalid-desc'),
@@ -147,7 +147,7 @@ export default function ApiKeyInput({
       });
 
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: t('api-key-invalid-title'),
         description: t('api-key-invalid-desc'),

@@ -86,9 +86,7 @@ export function usePresence(chatId?: string) {
   }, [chatId]);
 
   // Get all online users
-  const onlineUsers = Object.values(presenceState).flatMap(
-    (presence) => presence
-  );
+  const onlineUsers = Object.values(presenceState).flat();
 
   // Get unique user IDs
   const uniqueUserIds = new Set(

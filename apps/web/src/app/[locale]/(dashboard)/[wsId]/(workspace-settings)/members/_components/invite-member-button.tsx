@@ -112,52 +112,51 @@ export default function InviteMemberButton({
         </DialogHeader>
 
         {currentUser?.role !== 'MEMBER' ? (
-          <>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(inviteMember)}
-                className="space-y-3"
-              >
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="username@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(inviteMember)}
+              className="space-y-3"
+            >
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="username@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <Separator />
+              <Separator />
 
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Workspace Role</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Graphic Designer, Marketing Manager, etc."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      <FormDescription>
-                        The role of the member in the workspace is only for
-                        display purposes and does not affect workspace
-                        permissions.
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                  disabled={currentUser?.role === 'ADMIN'}
-                />
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Workspace Role</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Graphic Designer, Marketing Manager, etc."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <FormDescription>
+                      The role of the member in the workspace is only for
+                      display purposes and does not affect workspace
+                      permissions.
+                    </FormDescription>
+                  </FormItem>
+                )}
+                disabled={currentUser?.role === 'ADMIN'}
+              />
 
-                {/* <Separator />
+              {/* <Separator />
 
                 <FormField
                   control={form.control}
@@ -199,12 +198,11 @@ export default function InviteMemberButton({
                   )}
                 /> */}
 
-                <Button type="submit" className="w-full">
-                  Invite Member
-                </Button>
-              </form>
-            </Form>
-          </>
+              <Button type="submit" className="w-full">
+                Invite Member
+              </Button>
+            </form>
+          </Form>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
             <p className="text-center text-muted-foreground">

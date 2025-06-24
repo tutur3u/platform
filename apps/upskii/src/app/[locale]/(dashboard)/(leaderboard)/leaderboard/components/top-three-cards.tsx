@@ -191,37 +191,32 @@ export function TopThreeCards({
               </div>
 
               {/* Floating particles */}
-              {!prefersReducedMotion && (
-                <>
-                  {randomValues.map((value, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-70"
-                      style={{
-                        width: value.width,
-                        height: value.height,
-                        background:
-                          styles.particleColors[
-                            i % styles.particleColors.length
-                          ],
-                        left: value.left,
-                        top: value.top,
-                      }}
-                      animate={{
-                        y: [0, -20, 0],
-                        x: [0, value.xOffset, 0],
-                        scale: [1, Math.random() * 0.5 + 0.8, 1],
-                      }}
-                      transition={{
-                        duration: value.duration,
-                        repeat: Infinity,
-                        delay: value.delay,
-                        ease: 'easeInOut',
-                      }}
-                    />
-                  ))}
-                </>
-              )}
+              {!prefersReducedMotion &&
+                randomValues.map((value, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-70"
+                    style={{
+                      width: value.width,
+                      height: value.height,
+                      background:
+                        styles.particleColors[i % styles.particleColors.length],
+                      left: value.left,
+                      top: value.top,
+                    }}
+                    animate={{
+                      y: [0, -20, 0],
+                      x: [0, value.xOffset, 0],
+                      scale: [1, Math.random() * 0.5 + 0.8, 1],
+                    }}
+                    transition={{
+                      duration: value.duration,
+                      repeat: Infinity,
+                      delay: value.delay,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                ))}
 
               {/* Glowing border */}
               <motion.div

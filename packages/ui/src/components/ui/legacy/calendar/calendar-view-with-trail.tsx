@@ -23,7 +23,7 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
       calendarViewRef.current.scrollTop = scrollY - 100;
       setInitialized(true);
     }
-  }, [dates, initialized, tz]);
+  }, [initialized, tz]);
 
   return (
     <div

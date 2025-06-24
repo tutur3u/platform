@@ -24,7 +24,7 @@ export default async function Page({ params }: Props) {
 
   if (
     challenge.password_hash &&
-    (!token || challenge.password_hash != token.value)
+    (!token || challenge.password_hash !== token.value)
   )
     redirect('/challenges');
 

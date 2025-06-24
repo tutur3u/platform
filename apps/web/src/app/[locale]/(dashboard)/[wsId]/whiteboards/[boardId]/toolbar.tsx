@@ -132,7 +132,15 @@ export default function Toolbar({
         variant: 'destructive',
       });
     }
-  }, [editor, boardId, supabase, toast, wsId]);
+  }, [
+    editor,
+    boardId,
+    supabase,
+    toast,
+    wsId,
+    generateFileName,
+    generateThumbnail,
+  ]);
 
   return (
     <div className="pointer-events-auto flex gap-4 p-4">

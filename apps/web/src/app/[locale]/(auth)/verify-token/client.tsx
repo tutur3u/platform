@@ -16,7 +16,7 @@ export function BasicTokenVerifier() {
       return;
     };
     handleUser();
-  }, [searchParams]);
+  }, [searchParams, router.push]);
 
   return (
     <div className="fixed inset-0 flex h-screen w-screen flex-col items-center justify-center gap-2">

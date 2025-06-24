@@ -31,7 +31,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import React, { Fragment, useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { FieldArrayWithId } from 'react-hook-form';
 
 type FormReturnType = UseFormReturn<

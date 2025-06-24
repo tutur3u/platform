@@ -40,7 +40,7 @@ export default function AIQuizzes({
       const quizSetRes = await fetch(`/api/v1/workspaces/${wsId}/quiz-sets`, {
         method: 'POST',
         body: JSON.stringify({
-          name: 'Quizzes For ' + moduleName,
+          name: `Quizzes For ${moduleName}`,
           moduleId,
         }),
       });

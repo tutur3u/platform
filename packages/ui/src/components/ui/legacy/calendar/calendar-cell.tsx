@@ -165,7 +165,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
   // Format time for display - only show when hovering
   const formatTime = (hour: number, minute: number = 0) => {
-    const base = dayjs(date + 'T00:00:00');
+    const base = dayjs(`${date}T00:00:00`);
     const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
     return dateTz
       .hour(hour)
@@ -175,7 +175,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
   // Helper to get a Date object for a given hour/minute, timezone-aware
   const getCellDate = (hour: number, minute: number = 0) => {
-    const base = dayjs(date + 'T00:00:00');
+    const base = dayjs(`${date}T00:00:00`);
     const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
     return dateTz.hour(hour).minute(minute).second(0).millisecond(0).toDate();
   };
@@ -273,7 +273,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       document.body.style.cursor = 'ns-resize';
       document.body.classList.add('select-none');
     },
-    [yToTime, getCellDate, setIsDragging]
+    [yToTime, getCellDate, setIsDragging, roundToNearest15Minutes]
   );
 
   // Enhanced mouse move for Google Calendar-like drag
@@ -324,7 +324,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         isReversed,
       });
     },
-    [isDragging, yToTime, getCellDate, autoScroll]
+    [isDragging, getCellDate, autoScroll, hour, roundToNearest15Minutes]
   );
 
   // Setup scroll container ref on mount
@@ -450,6 +450,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       addEmptyEvent,
       addEmptyEventWithDuration,
       setIsDragging,
+      hour,
+      roundToNearest15Minutes,
     ]
   );
 
@@ -687,7 +689,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       window.removeEventListener('blur', cancelDrag);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [setIsDragging]);
 
   return (
     <div

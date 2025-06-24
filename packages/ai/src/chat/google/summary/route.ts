@@ -92,7 +92,7 @@ export function createPATCH(
       const { error } = await supabase
         .from('ai_chats')
         .update({
-          latest_summarized_message_id: messages[messages.length - 1]!.id,
+          latest_summarized_message_id: messages[messages.length - 1]?.id,
           summary: completion,
         })
         .eq('id', id);

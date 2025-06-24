@@ -50,7 +50,7 @@ export function RichTextEditor({
       onChange?.(newContent);
       setHasChanges(false);
     }, 500),
-    [onChange]
+    []
   );
 
   useEffect(() => {

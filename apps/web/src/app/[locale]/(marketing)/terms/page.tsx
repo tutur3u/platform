@@ -214,7 +214,7 @@ Response Time: Within 2 business days
       if (typeof window !== 'undefined')
         window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [handleScroll]);
 
   return (
     <main className="relative container space-y-16 py-24">
@@ -384,10 +384,10 @@ Response Time: Within 2 business days
                     </span>
                     {index < sections.length - 1 && (
                       <a
-                        href={`#${sections[index + 1]!.title.toLowerCase().replace(/\s+/g, '-')}`}
+                        href={`#${sections[index + 1]?.title.toLowerCase().replace(/\s+/g, '-')}`}
                         className="flex items-center hover:text-primary"
                       >
-                        Next: {sections[index + 1]!.title}
+                        Next: {sections[index + 1]?.title}
                         <ChevronRight className="ml-1 h-3 w-3" />
                       </a>
                     )}

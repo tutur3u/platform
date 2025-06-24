@@ -47,22 +47,20 @@ export default async function QuizSetDetailsLayout({
           </>
         }
         description={
-          <>
-            <div className="grid flex-wrap gap-2 md:flex">
-              <LinkButton
-                href={`${commonHref}`}
-                title={`${t('ws-quizzes.plural')} (${linkedQuizzes || 0})`}
-                icon={<Eye className="h-5 w-5" />}
-                className="border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20"
-              />
-              <LinkButton
-                href={`${commonHref}/linked-modules`}
-                title={`${t('quiz-set-data-table.linked_modules')} (${linkedModules || 0})`}
-                icon={<Paperclip className="h-5 w-5" />}
-                className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
-              />
-            </div>
-          </>
+          <div className="grid flex-wrap gap-2 md:flex">
+            <LinkButton
+              href={`${commonHref}`}
+              title={`${t('ws-quizzes.plural')} (${linkedQuizzes || 0})`}
+              icon={<Eye className="h-5 w-5" />}
+              className="border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20"
+            />
+            <LinkButton
+              href={`${commonHref}/linked-modules`}
+              title={`${t('quiz-set-data-table.linked_modules')} (${linkedModules || 0})`}
+              icon={<Paperclip className="h-5 w-5" />}
+              className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
+            />
+          </div>
         }
       />
       <Separator className="my-4" />

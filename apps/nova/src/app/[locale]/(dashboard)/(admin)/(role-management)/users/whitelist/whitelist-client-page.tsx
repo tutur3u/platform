@@ -27,7 +27,7 @@ export default function WhitelistEmailClient({ wsId, onFinish }: Props) {
       onFinish?.();
       router.refresh();
       // eslint-disable-next-line no-unused-vars
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: t('common.error'),
         description: t('common.error_adding_email'),

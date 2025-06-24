@@ -180,8 +180,8 @@ describe('aggregateByChallenge', () => {
       problemChallengeMap
     );
 
-    expect(challengeScores['c1']).toBe(12); // 5 + 7
-    expect(challengeScores['c2']).toBe(3);
+    expect(challengeScores.c1).toBe(12); // 5 + 7
+    expect(challengeScores.c2).toBe(3);
   });
 
   it('should ignore problems that are not in the challenge map', () => {
@@ -201,8 +201,8 @@ describe('aggregateByChallenge', () => {
       problemChallengeMap
     );
 
-    expect(challengeScores['c1']).toBe(5);
-    expect(challengeScores['c2']).toBe(3);
+    expect(challengeScores.c1).toBe(5);
+    expect(challengeScores.c2).toBe(3);
     expect(Object.keys(challengeScores).length).toBe(2);
   });
 

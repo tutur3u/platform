@@ -123,7 +123,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
     };
 
     fetchUncrawledUrls();
-  }, [wsId, searchParams]);
+  }, [wsId, searchParams, groupUrlsByOrigin]);
 
   const createQueryString = (params: Record<string, string | null>) => {
     const newSearchParams = new URLSearchParams(searchParams);

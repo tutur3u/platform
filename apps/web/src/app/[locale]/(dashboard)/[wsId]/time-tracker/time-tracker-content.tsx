@@ -118,7 +118,7 @@ export default function TimeTrackerContent({
         const elapsed = Math.max(
           0,
           Math.floor(
-            (new Date().getTime() -
+            (Date.now() -
               new Date(runningSessionFromQuery.start_time).getTime()) /
               1000
           )
@@ -134,8 +134,7 @@ export default function TimeTrackerContent({
   const [elapsedTime, setElapsedTime] = useState(() => {
     if (!initialData.runningSession) return 0;
     const elapsed = Math.floor(
-      (new Date().getTime() -
-        new Date(initialData.runningSession.start_time).getTime()) /
+      (Date.now() - new Date(initialData.runningSession.start_time).getTime()) /
         1000
     );
     return Math.max(0, elapsed); // Ensure non-negative
@@ -350,7 +349,7 @@ export default function TimeTrackerContent({
       setAvailableTasks([]);
       setNextTaskPreview(null);
     }
-  }, [wsId]);
+  }, [wsId, apiCall]);
 
   // Fetch next task preview on mount
   useEffect(() => {
@@ -544,7 +543,7 @@ export default function TimeTrackerContent({
             const elapsed = Math.max(
               0,
               Math.floor(
-                (new Date().getTime() -
+                (Date.now() -
                   new Date(runningRes.session.start_time).getTime()) /
                   1000
               )
@@ -605,7 +604,7 @@ export default function TimeTrackerContent({
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [isLoading, retryCount]); // Remove fetchData dependency
+  }, [isLoading, retryCount, fetchData]); // Remove fetchData dependency
 
   // Timer effect with better cleanup
   useEffect(() => {
@@ -615,8 +614,7 @@ export default function TimeTrackerContent({
           const elapsed = Math.max(
             0,
             Math.floor(
-              (new Date().getTime() -
-                new Date(currentSession.start_time).getTime()) /
+              (Date.now() - new Date(currentSession.start_time).getTime()) /
                 1000
             )
           );
@@ -636,7 +634,7 @@ export default function TimeTrackerContent({
   // Load data on mount and when dependencies change
   useEffect(() => {
     fetchData();
-  }, [wsId, currentUserId, selectedUserId]); // Only depend on actual values, not the function
+  }, [fetchData]); // Only depend on actual values, not the function
 
   // Online/offline detection
   useEffect(() => {
@@ -655,7 +653,7 @@ export default function TimeTrackerContent({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [retryCount]); // Remove fetchData dependency
+  }, [retryCount, fetchData]); // Remove fetchData dependency
 
   // Cleanup on unmount
   useEffect(() => {
@@ -684,7 +682,7 @@ export default function TimeTrackerContent({
   // Retry function with exponential backoff
   const handleRetry = useCallback(() => {
     fetchData(true, true);
-  }, []); // Remove fetchData dependency
+  }, [fetchData]); // Remove fetchData dependency
 
   // Sidebar View Switching
   const [sidebarView, setSidebarView] = useState<

@@ -110,7 +110,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
         onBenchmarksUpdated(combined);
       }
     }
-  }, [userBenchmarks, onBenchmarksUpdated]);
+  }, [userBenchmarks, onBenchmarksUpdated, allBenchmarks]);
 
   // Run the standard benchmark suite
   const handleRunStandardBenchmarks = async () => {
@@ -688,13 +688,11 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
               }
               disabled={customBenchmarkRunning || customRaceSize > customHorses}
             >
-              {customBenchmarkRunning ? (
-                <>Running...</>
-              ) : customBenchmarkResult ? (
-                <>Add to Benchmarks</>
-              ) : (
-                <>Run Benchmark</>
-              )}
+              {customBenchmarkRunning
+                ? 'Running...'
+                : customBenchmarkResult
+                  ? 'Add to Benchmarks'
+                  : 'Run Benchmark'}
             </Button>
           </DialogFooter>
         </DialogContent>

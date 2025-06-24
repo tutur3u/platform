@@ -79,13 +79,13 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Attempt fetch error' }, { status: 500 });
 
   const results = await Promise.all(
-    aData!.map(async (att) => {
+    aData?.map(async (att) => {
       const { data: ansRows } = await sb
         .from('workspace_quiz_attempt_answers')
         .select('quiz_id,selected_option_id,is_correct,score_awarded')
         .eq('attempt_id', att.id);
 
-      const ansMap = new Map(ansRows!.map((r) => [r.quiz_id, r]));
+      const ansMap = new Map(ansRows?.map((r) => [r.quiz_id, r]));
       const answers = info.map(async (qi) => {
         const ar = ansMap.get(qi.quizId);
         return {

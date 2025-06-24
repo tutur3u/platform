@@ -129,14 +129,14 @@ export default function FleetingAssistant({
     if (messagesRef.current) {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
-  }, [messagesRef, currentMessages]);
+  }, []);
 
   useEffect(() => {
     // only set focus when device is not mobile
     if (window.innerWidth > 768) {
       form.setFocus('prompt');
     }
-  }, [form, chat?.id]);
+  }, [form]);
 
   return (
     <div className="flex h-full flex-col">

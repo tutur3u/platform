@@ -20,9 +20,7 @@ export default async function NavbarActions({
     <div className="relative">
       <div className="flex items-center gap-1">
         {sbUser ? (
-          <>
-            <UserNavWrapper hideMetadata={hideMetadata} />
-          </>
+          <UserNavWrapper hideMetadata={hideMetadata} />
         ) : (
           <>
             <GetStartedButton text={t('home.get-started')} href="/home" />
