@@ -113,13 +113,15 @@ export function createPOST(
         console.log('User message saved to database');
       }
 
+     
+
       // Instantiate Model with provided API key
       const google = createGoogleGenerativeAI({
         apiKey: apiKey,
       });
 
-      const result = streamText({
-        experimental_transform: smoothStream(),
+      
+      const result = await generateText({
         model: google(model, {
           safetySettings: [
             {
@@ -142,37 +144,33 @@ export function createPOST(
         }),
         messages,
         system: systemInstruction,
-        onFinish: async (response) => {
-          console.log('AI Response:', response);
-
-          if (!response.text) {
-            console.log('No content found');
-            throw new Error('No content found');
-          }
-
-          const { error } = await sbAdmin.from('ai_chat_messages').insert({
-            chat_id: chatId,
-            creator_id: user.id,
-            content: response.text,
-            role: 'ASSISTANT',
-            model: model.toLowerCase(),
-            finish_reason: response.finishReason,
-            prompt_tokens: response.usage.promptTokens,
-            completion_tokens: response.usage.completionTokens,
-            metadata: { source: 'Rewise' },
-          });
-
-          if (error) {
-            console.log('ERROR ORIGIN: ROOT COMPLETION');
-            console.log(error);
-            throw new Error(error.message);
-          }
-
-          console.log('AI Response saved to database');
-        },
       });
-
-      return result.toDataStreamResponse();
+      
+      console.log('AI Response:', result);
+      
+      if (!result.text) {
+        throw new Error('No content found');
+      }
+      
+      // Save response to DB
+      const { error } = await sbAdmin.from('ai_chat_messages').insert({
+        chat_id: chatId,
+        creator_id: user.id,
+        content: result.text,
+        role: 'ASSISTANT',
+        model: model.toLowerCase(),
+        finish_reason: result.finishReason,
+        prompt_tokens: result.usage?.promptTokens,
+        completion_tokens: result.usage?.completionTokens,
+        metadata: { source: 'Rewise' },
+      });
+      
+      if (error) {
+        console.error('ERROR ORIGIN: GENERATETEXT COMPLETION', error);
+        throw new Error(error.message);
+      }
+      
+      return NextResponse.json({ text: result.text });
     } catch (error: any) {
       console.log(error);
       return NextResponse.json(
