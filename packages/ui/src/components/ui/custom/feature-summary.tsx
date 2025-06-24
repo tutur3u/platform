@@ -2,6 +2,7 @@ import { Button } from '../button';
 import ModifiableDialogTrigger from './modifiable-dialog-trigger';
 import { cn } from '@tuturuuu/utils/format';
 import { Cog, Plus } from 'lucide-react';
+import Link from 'next/link';
 import { type ReactElement, ReactNode } from 'react';
 
 interface FormProps<T> {
@@ -17,6 +18,7 @@ interface Props<T> {
   trigger?: ReactNode;
   form?: ReactElement<FormProps<T>>;
   href?: string;
+  secondaryHref?: string;
   title?: ReactNode;
   pluralTitle?: string;
   singularTitle?: string;
@@ -46,6 +48,7 @@ export default function FeatureSummary<T>({
   defaultData,
   form,
   href,
+  secondaryHref,
   title,
   pluralTitle,
   singularTitle,
@@ -94,6 +97,10 @@ export default function FeatureSummary<T>({
           </div>
         )}
       </div>
+      {href && !form && <Link href={href}>{primaryTrigger}</Link>}
+      {secondaryHref && !form && (
+        <Link href={secondaryHref}>{secondaryTrigger}</Link>
+      )}
       {(form ||
         action ||
         showDefaultFormAsSecondary ||

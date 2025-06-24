@@ -1,6 +1,6 @@
 'use client';
 
-import QuizSetRowActionsForm from './form';
+import QuizSetRowActionsForm from '../../../../../../../../../components/quiz/quiz-set-form';
 import { Row } from '@tanstack/react-table';
 import type { WorkspaceQuizSet } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -20,12 +20,14 @@ import { useState } from 'react';
 
 interface QuizSetRowActionsProps {
   wsId: string;
+  courseId: string;
   moduleId: string;
   row: Row<WorkspaceQuizSet>;
 }
 
 export function QuizSetRowActions({
   wsId,
+  courseId,
   moduleId,
   row,
 }: QuizSetRowActionsProps) {
@@ -76,7 +78,14 @@ export function QuizSetRowActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+          {/* <DropdownMenuItem onClick={() => setShowEditDialog(true)}> */}
+          <DropdownMenuItem
+            onClick={() => {
+              router.push(
+                `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${data.id}/edit`
+              );
+            }}
+          >
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
