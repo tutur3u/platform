@@ -10,11 +10,12 @@ node_modules
 coverage
 
 # next.js
-.next/
-out/
+.next
+out
+target
 build
 dist
-.swc/
+.swc
 .vercel
 .zshrc
 
@@ -44,4 +45,4 @@ next-env.d.ts
 .env.*.local
 
 # Trigger.dev
-.trigger/
+.trigger
