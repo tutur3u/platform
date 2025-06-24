@@ -48,7 +48,8 @@
     "sb:up": "cd apps/db && bun sb:up",
     "sb:typegen": "cd apps/db && bun sb:typegen",
     "ui:add": "bun --filter ui ui:add",
-    "ui:diff": "bun --filter ui ui:diff"
+    "ui:diff": "bun --filter ui ui:diff",
+    "update-all": "(cd apps && for dir in */; do echo \"Updating apps/$dir...\" && cd \"$dir\" && bun update && cd ..; done) && (cd packages && for dir in */; do echo \"Updating packages/$dir...\" && cd \"$dir\" && bun update && cd ..; done)"
   },
   "dependencies": {
     "cookies-next": "^6.0.0",
