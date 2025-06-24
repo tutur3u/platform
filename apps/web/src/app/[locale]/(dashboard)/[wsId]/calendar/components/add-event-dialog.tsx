@@ -58,11 +58,16 @@ export default function AddEventModal({
         data: { user },
         error,
       } = await supabase.auth.getUser();
-      if (!error && user) {
+      if (error) {
+        console.error('Error fetching user:', error);
+        setErrors({
+          submit: 'Failed to fetch user information. Please try again.',
+        });
+      } else if (user) {
         setUser(user);
       }
     };
-
+    setIsLoading(false);
     getUser();
   }, [supabase]);
 
@@ -96,8 +101,16 @@ export default function AddEventModal({
       }
     }
 
-    if (formData.end_date && dayjs(formData.end_date).isBefore(dayjs())) {
-      newErrors.end_date = 'End date cannot be in the past';
+    if (formData.end_date) {
+      const endDate = dayjs(formData.end_date);
+      if (endDate.isBefore(dayjs())) {
+        newErrors.end_date = 'End date cannot be in the past';
+      } else if (
+        formData.start_date &&
+        endDate.isBefore(dayjs(formData.start_date))
+      ) {
+        newErrors.end_date = 'End date cannot be before start date';
+      }
     }
 
     setErrors(newErrors);

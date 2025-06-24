@@ -5,8 +5,8 @@ create type "public"."priority_status" as enum ('low', 'medium', 'high', 'critic
 create table "public"."workspace_calendar_tasks" (
     "id" uuid not null default gen_random_uuid(),
     "created_at" timestamp with time zone not null default now(),
-    "ws_id" uuid,
-    "creator_id" uuid,
+    "ws_id" uuid not null,
+    "creator_id" uuid not null,
     "updated_at" timestamp with time zone,
     "is_splittable" boolean,
     "name" text,

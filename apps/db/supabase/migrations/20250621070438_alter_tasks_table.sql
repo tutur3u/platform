@@ -151,13 +151,13 @@ CREATE UNIQUE INDEX workspace_calendar_taskss_pkey ON public.workspace_calendar_
 
 alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_taskss_pkey" PRIMARY KEY using index "workspace_calendar_taskss_pkey";
 
-alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_taskss_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE not valid;
+alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_tasks_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE not valid;
 
-alter table "public"."workspace_calendar_tasks" validate constraint "workspace_calendar_taskss_creator_id_fkey";
+alter table "public"."workspace_calendar_tasks" validate constraint "workspace_calendar_tasks_creator_id_fkey";
 
-alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_taskss_ws_id_fkey" FOREIGN KEY (ws_id) REFERENCES workspaces(id) ON DELETE CASCADE not valid;
+alter table "public"."workspace_calendar_tasks" add constraint "workspace_calendar_tasks_ws_id_fkey" FOREIGN KEY (ws_id) REFERENCES workspaces(id) ON DELETE CASCADE not valid;
 
-alter table "public"."workspace_calendar_tasks" validate constraint "workspace_calendar_taskss_ws_id_fkey";
+alter table "public"."workspace_calendar_tasks" validate constraint "workspace_calendar_tasks_ws_id_fkey";
 
 create or replace view "public"."time_tracking_session_analytics" as  SELECT tts.id,
     tts.ws_id,
