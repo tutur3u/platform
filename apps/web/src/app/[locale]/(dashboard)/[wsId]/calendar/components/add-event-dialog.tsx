@@ -40,9 +40,9 @@ export default function AddEventModal({
     description: '',
     total_duration: 1,
     is_splittable: true,
-    min_split_duration_hours: 0.5,
-    max_split_duration_hours: 2,
-    calendar_hours: 'working_hours',
+    min_split_duration_minutes: 30,
+    max_split_duration_minutes: 60,
+    calendar_hours: 'work_hours',
     start_date: '',
     end_date: '',
   });
@@ -83,20 +83,21 @@ export default function AddEventModal({
     }
 
     if (formData.is_splittable) {
-      if (formData.min_split_duration_hours <= 0) {
-        newErrors.min_split_duration_hours =
+      if (formData.min_split_duration_minutes <= 0) {
+        newErrors.min_split_duration_minutes =
           'Minimum duration must be greater than 0';
       }
 
-      if (formData.max_split_duration_hours <= 0) {
-        newErrors.max_split_duration_hours =
+      if (formData.max_split_duration_minutes <= 0) {
+        newErrors.max_split_duration_minutes =
           'Maximum duration must be greater than 0';
       }
 
       if (
-        formData.min_split_duration_hours > formData.max_split_duration_hours
+        formData.min_split_duration_minutes >
+        formData.max_split_duration_minutes
       ) {
-        newErrors.min_split_duration_hours =
+        newErrors.min_split_duration_minutes =
           'Minimum duration cannot be greater than maximum';
       }
     }
@@ -143,15 +144,16 @@ export default function AddEventModal({
         description: formData.description.trim() || null,
         total_duration: formData.total_duration,
         is_splittable: formData.is_splittable,
-        min_split_duration_hours: formData.is_splittable
-          ? formData.min_split_duration_hours
+        min_split_duration_minutes: formData.is_splittable
+          ? formData.min_split_duration_minutes
           : null,
-        max_split_duration_hours: formData.is_splittable
-          ? formData.max_split_duration_hours
+        max_split_duration_minutes: formData.is_splittable
+          ? formData.max_split_duration_minutes
           : null,
         calendar_hours: formData.calendar_hours as
-          | 'working_hours'
-          | 'personal_hours',
+          | 'work_hours'
+          | 'personal_hours'
+          | 'meeting_hours',
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
         ws_id: wsId,
@@ -163,7 +165,7 @@ export default function AddEventModal({
 
       const { data, error } = await supabase
         .from('tasks')
-        .insert([taskData])
+        .insert(taskData)
         .select();
 
       if (error) {
@@ -202,9 +204,9 @@ export default function AddEventModal({
       description: '',
       total_duration: 1,
       is_splittable: true,
-      min_split_duration_hours: 0.5,
-      max_split_duration_hours: 2,
-      calendar_hours: 'working_hours',
+      min_split_duration_minutes: 30,
+      max_split_duration_minutes: 60,
+      calendar_hours: 'work_hours',
       start_date: '',
       end_date: '',
     });
@@ -328,22 +330,22 @@ export default function AddEventModal({
                       type="number"
                       step="0.25"
                       min="0.25"
-                      value={formData.min_split_duration_hours}
+                      value={formData.min_split_duration_minutes}
                       onChange={(e) =>
                         updateFormData(
-                          'min_split_duration_hours',
+                          'min_split_duration_minutes',
                           parseFloat(e.target.value)
                         )
                       }
                       className={
-                        errors.min_split_duration_hours
+                        errors.min_split_duration_minutes
                           ? 'border-destructive'
                           : ''
                       }
                     />
-                    {errors.min_split_duration_hours && (
+                    {errors.min_split_duration_minutes && (
                       <p className="text-xs text-destructive">
-                        {errors.min_split_duration_hours}
+                        {errors.min_split_duration_minutes}
                       </p>
                     )}
                   </div>
@@ -358,22 +360,22 @@ export default function AddEventModal({
                       type="number"
                       step="0.25"
                       min="0.25"
-                      value={formData.max_split_duration_hours}
+                      value={formData.max_split_duration_minutes}
                       onChange={(e) =>
                         updateFormData(
-                          'max_split_duration_hours',
+                          'max_split_duration_minutes',
                           parseFloat(e.target.value)
                         )
                       }
                       className={
-                        errors.max_split_duration_hours
+                        errors.max_split_duration_minutes
                           ? 'border-destructive'
                           : ''
                       }
                     />
-                    {errors.max_split_duration_hours && (
+                    {errors.max_split_duration_minutes && (
                       <p className="text-xs text-destructive">
-                        {errors.max_split_duration_hours}
+                        {errors.max_split_duration_minutes}
                       </p>
                     )}
                   </div>
