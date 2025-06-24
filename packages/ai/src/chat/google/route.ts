@@ -4,15 +4,15 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { CoreMessage, smoothStream, streamText } from 'ai';
+import { Buffer } from 'buffer';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
-import { Buffer } from 'buffer';
+
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
-
 
 async function getAllChatFiles(
   supabase: any,
@@ -29,7 +29,7 @@ async function getAllChatFiles(
       .like('name', `${wsId}/chats/ai/resources/${chatId}/`)
       .not('owner', 'is', null)
       .order('created_at', { ascending: true });
-    
+
     console.log(`Listed files for chat ${chatId}. ${wsId}:`, files);
 
     if (listError) {
@@ -42,7 +42,11 @@ async function getAllChatFiles(
       return [];
     }
 
-    const fileContents: Array<{ fileName: string; content: string; mimeType: string }> = [];
+    const fileContents: Array<{
+      fileName: string;
+      content: string;
+      mimeType: string;
+    }> = [];
 
     // Process each file
     for (const file of files) {
@@ -86,7 +90,7 @@ async function getAllChatFiles(
       fileContents.push({
         fileName,
         content,
-        mimeType
+        mimeType,
       });
     }
 
@@ -106,7 +110,7 @@ async function processMessagesWithFiles(
 ): Promise<CoreMessage[]> {
   // Get ALL files from the chat directory first
   const chatFiles = await getAllChatFiles(supabase, wsId, chatId);
-  
+
   if (chatFiles.length === 0) {
     // No files to process, return original messages
     return messages;
@@ -117,12 +121,15 @@ async function processMessagesWithFiles(
   for (const message of messages) {
     if (typeof message.content === 'string') {
       // Simple text message - add file context if this is the last user message
-      if (message.role === 'user' && messages.indexOf(message) === messages.length - 1) {
+      if (
+        message.role === 'user' &&
+        messages.indexOf(message) === messages.length - 1
+      ) {
         // Add file context to the last user message
         const fileContext = createFileContext(chatFiles);
         processedMessages.push({
           ...message,
-          content: `${message.content}\n\n${fileContext}`
+          content: `${message.content}\n\n${fileContext}`,
         });
       } else {
         processedMessages.push(message);
@@ -130,11 +137,12 @@ async function processMessagesWithFiles(
     } else if (Array.isArray(message.content)) {
       // Complex message content - process and add files
       const processedContent = await processComplexMessageContent(
-        message.content, 
+        message.content,
         chatFiles,
-        message.role === 'user' && messages.indexOf(message) === messages.length - 1
+        message.role === 'user' &&
+          messages.indexOf(message) === messages.length - 1
       );
-      
+
       if (message.role === 'tool') {
         processedMessages.push({
           ...message,
@@ -143,7 +151,7 @@ async function processMessagesWithFiles(
       } else {
         processedMessages.push({
           ...message,
-          content: processedContent
+          content: processedContent,
         });
       }
     } else {
@@ -153,7 +161,10 @@ async function processMessagesWithFiles(
       } else {
         processedMessages.push({
           ...message,
-          content: typeof message.content === 'string' ? message.content : 'Complex message content',
+          content:
+            typeof message.content === 'string'
+              ? message.content
+              : 'Complex message content',
         });
       }
     }
@@ -163,15 +174,20 @@ async function processMessagesWithFiles(
 }
 
 // Helper function to create file context for Gemini
-function createFileContext(files: Array<{ fileName: string; content: string; mimeType: string }>): string {
+function createFileContext(
+  files: Array<{ fileName: string; content: string; mimeType: string }>
+): string {
   if (files.length === 0) return '';
 
   let context = '\n--- Attached Files ---\n';
-  
+
   for (const file of files) {
     context += `\n**File: ${file.fileName}** (${file.mimeType})\n`;
-    
-    if (file.mimeType.startsWith('text/') || file.mimeType === 'application/json') {
+
+    if (
+      file.mimeType.startsWith('text/') ||
+      file.mimeType === 'application/json'
+    ) {
       // Include text content directly
       context += '```\n' + file.content + '\n```\n';
     } else if (file.mimeType.startsWith('image/')) {
@@ -185,7 +201,7 @@ function createFileContext(files: Array<{ fileName: string; content: string; mim
       context += `[Binary file attached - ${file.mimeType}]\n`;
     }
   }
-  
+
   return context;
 }
 
@@ -231,7 +247,6 @@ export function createPOST(
 ) {
   // Higher-order function that returns the actual request handler
   return async function handler(req: NextRequest) {
-
     const sbAdmin = await createAdminClient();
 
     const {
@@ -299,9 +314,10 @@ export function createPOST(
       }
 
       // Process messages and handle file attachments
-      const processedMessages = wsId && chatId
-        ? await processMessagesWithFiles(messages, supabase, wsId, chatId)
-        : messages
+      const processedMessages =
+        wsId && chatId
+          ? await processMessagesWithFiles(messages, supabase, wsId, chatId)
+          : messages;
 
       if (processedMessages.length !== 1) {
         const userMessages = processedMessages.filter(
@@ -316,8 +332,8 @@ export function createPOST(
         } else if (Array.isArray(lastMessage?.content)) {
           // Extract text content from complex message structure
           messageContent = lastMessage.content
-            .filter(part => part.type === 'text')
-            .map(part => part.text)
+            .filter((part) => part.type === 'text')
+            .map((part) => part.text)
             .join('\n');
         } else {
           messageContent = 'Message with attachments';
@@ -352,7 +368,6 @@ export function createPOST(
       });
 
       const result = streamText({
-        
         experimental_transform: smoothStream(),
         model: google(model, {
           safetySettings: [

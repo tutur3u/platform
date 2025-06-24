@@ -52,7 +52,6 @@ const Chat = ({
 
   const currentUserId = user.id;
 
-  
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(inputModel);
 
@@ -232,7 +231,6 @@ const Chat = ({
         body: JSON.stringify({
           model: model.value,
           message: input,
-          
         }),
       }
     );

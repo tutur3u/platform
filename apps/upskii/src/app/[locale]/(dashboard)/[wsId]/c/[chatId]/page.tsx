@@ -7,8 +7,8 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { AIChat } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { notFound, redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -22,7 +22,7 @@ interface Props {
 
 export default async function AIPage({ params, searchParams }: Props) {
   const chatId = (await params).chatId;
-  const { wsId } =  await params;
+  const { wsId } = await params;
   if (!chatId) notFound();
 
   const { lang: locale } = await searchParams;

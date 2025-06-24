@@ -230,7 +230,6 @@ export function ChatPanel({
 
         {dialogType === 'files' && (
           <div className="grid gap-4">
-
             <FileUploader
               value={files}
               onValueChange={setFiles}
@@ -286,7 +285,10 @@ export async function uploadFile(
     .select('*')
     .eq('bucket_id', 'workspaces')
     .not('owner', 'is', null)
-    .ilike('name', `${wsId}/chats/ai/resources/${id}/${baseName}(%).${fileExtension}`)
+    .ilike(
+      'name',
+      `${wsId}/chats/ai/resources/${id}/${baseName}(%).${fileExtension}`
+    )
     .order('name', { ascending: true });
 
   if (existingFileName && existingFileName.length > 0) {
