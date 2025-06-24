@@ -149,6 +149,7 @@
     "reset_chat": "Đặt lại",
     "creating_chat": "Đang tạo cuộc trò chuyện...",
     "default_chat": "Mặc định",
+    "api_key_required": "Vui lòng cung cấp khóa API của bạn để sử dụng AI.",
     "regenerate_response": "Tạo lại câu trả lời",
     "stop_generating": "Dừng trả lời",
     "something_went_wrong": "Có lỗi xảy ra.",

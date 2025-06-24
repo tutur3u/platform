@@ -7742,7 +7742,7 @@ export type Database = {
         Returns: Json;
       };
       calculate_productivity_score: {
-        Args: { category_color: string; duration_seconds: number };
+        Args: { duration_seconds: number; category_color: string };
         Returns: number;
       };
       check_ws_creator: {
@@ -7759,6 +7759,7 @@ export type Database = {
       };
       count_search_users: {
         Args:
+          | { search_query: string }
           | {
               enabled_filter?: boolean;
               role_filter?: string;
@@ -7849,10 +7850,10 @@ export type Database = {
       };
       get_inventory_products: {
         Args: {
-          _has_unit?: boolean;
-          _warehouse_ids?: string[];
-          _ws_id?: string;
           _category_ids?: string[];
+          _ws_id?: string;
+          _warehouse_ids?: string[];
+          _has_unit?: boolean;
         };
         Returns: {
           amount: number;
@@ -7884,7 +7885,7 @@ export type Database = {
         Returns: number;
       };
       get_monthly_income_expense: {
-        Args: { past_months?: number; _ws_id: string };
+        Args: { _ws_id: string; past_months?: number };
         Returns: {
           total_expense: number;
           total_income: number;
@@ -7977,6 +7978,7 @@ export type Database = {
       get_user_session_stats: {
         Args: { user_id: string };
         Returns: {
+
           active_sessions: number;
           total_sessions: number;
           current_session_age: unknown;
@@ -8133,7 +8135,7 @@ export type Database = {
         Returns: boolean;
       };
       is_org_member: {
-        Args: { _org_id: string; _user_id: string };
+        Args: { _user_id: string; _org_id: string };
         Returns: boolean;
       };
       is_project_member: {

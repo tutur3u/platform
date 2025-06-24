@@ -27,6 +27,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   disabled?: boolean;
   initialApiKey?: string | null;
   user: WorkspaceUser;
+  wsId: string;
 }
 
 const Chat = ({
@@ -41,6 +42,7 @@ const Chat = ({
   disabled,
   initialApiKey,
   user,
+  wsId,
 }: ChatProps) => {
   const t = useTranslations();
 
@@ -367,6 +369,7 @@ const Chat = ({
         disabled={disabled}
         currentUserId={currentUserId}
         apiKey={initialApiKey ?? undefined}
+        wsId={wsId}
       />
     </div>
   );

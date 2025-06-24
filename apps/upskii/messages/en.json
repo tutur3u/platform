@@ -147,6 +147,7 @@
     "no_chats": "Start a new chat by sending a prompt.",
     "new_chat": "New chat",
     "reset_chat": "Reset chat",
+    "api_key_required": "API Key required",
     "creating_chat": "Creating chat...",
     "default_chat": "Default chat",
     "regenerate_response": "Regenerate response",

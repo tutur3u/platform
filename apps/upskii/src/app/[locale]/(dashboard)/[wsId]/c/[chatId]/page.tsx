@@ -8,9 +8,11 @@ import {
 import { AIChat } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { notFound, redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 interface Props {
   params: Promise<{
+    wsId: string;
     chatId?: string;
   }>;
   searchParams: Promise<{
@@ -20,6 +22,7 @@ interface Props {
 
 export default async function AIPage({ params, searchParams }: Props) {
   const chatId = (await params).chatId;
+  const { wsId } =  await params;
   if (!chatId) notFound();
 
   const { lang: locale } = await searchParams;
@@ -27,6 +30,9 @@ export default async function AIPage({ params, searchParams }: Props) {
   // Check if user is whitelisted
   const user = await getCurrentUser();
   if (!user) redirect('/login');
+
+  const cookieStore = await cookies();
+  const apiKey = cookieStore.get('google_api_key')?.value;
 
   // Get chat data
   const chat = await getChat(chatId);
@@ -42,6 +48,8 @@ export default async function AIPage({ params, searchParams }: Props) {
         count={count}
         locale={locale}
         user={user}
+        initialApiKey={apiKey}
+        wsId={wsId}
       />
     </div>
   );

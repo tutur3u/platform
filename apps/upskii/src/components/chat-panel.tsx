@@ -19,7 +19,7 @@ import {
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React, { useState } from 'react';
-import { StorageObjectForm } from './ai-chat/file-upload';
+
 
 interface PresenceUser {
   id: string;
@@ -63,6 +63,7 @@ export interface ChatPanelProps
   currentUserId?: string;
   apiKey?: string;
   apiKeyProvided?: boolean;
+  wsId: string;
 }
 
 export function ChatPanel({
@@ -80,10 +81,10 @@ export function ChatPanel({
   disabled,
   currentUserId,
   apiKey,
+  wsId,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
-  
-  const storagePath = `${id}/chats/ai/resources/${chat?.id}/`;
+
   const [showDialog, setShowDialog] = useState(false);
   const [dialogType, setDialogType] = useState<
     'files' | 'visibility' | 'api'
@@ -105,7 +106,7 @@ export function ChatPanel({
           )
         );
 
-        const { error } = await uploadFile(file, id);
+        const { error } = await uploadFile(file, id, wsId);
 
         if (error) {
           console.error('File upload error:', error);
@@ -230,21 +231,21 @@ export function ChatPanel({
 
         {dialogType === 'files' && (
           <div className="grid gap-4">
-            
+{/*             
               <StorageObjectForm
                 chatId={chat?.id || ''}
                 submitLabel={t('common.upload')}
                 path={storagePath}
                 accept="*"
-            />
+            /> */}
             
-            {/* <FileUploader
+            <FileUploader
               value={files}
               onValueChange={setFiles}
               maxFileCount={10}
               maxSize={50 * 1024 * 1024}
               onUpload={onUpload}
-            /> */}
+            />
           </div>
           
         )}
@@ -261,7 +262,8 @@ export function ChatPanel({
 
 export async function uploadFile(
   file: StatedFile,
-  id?: string
+  id?: string,
+  wsId?: string
 ): Promise<{ data: any; error: any }> {
   if (!id) return { data: null, error: 'No chat id provided' };
 
@@ -284,7 +286,7 @@ export async function uploadFile(
     .select('*')
     .eq('bucket_id', 'workspaces')
     .not('owner', 'is', null)
-    .eq('name', `test/chat/${id}/${fileName}`)
+    .eq('name', `${wsId}/chats/ai/resources/${id}/${fileName}`)
     .order('name', { ascending: true });
 
   const { data: existingFileNames } = await supabase
@@ -293,7 +295,7 @@ export async function uploadFile(
     .select('*')
     .eq('bucket_id', 'workspaces')
     .not('owner', 'is', null)
-    .ilike('name', `test/chat/${id}/${baseName}(%).${fileExtension}`)
+    .ilike('name', `${wsId}/chats/ai/resources/${id}/${baseName}(%).${fileExtension}`)
     .order('name', { ascending: true });
 
   if (existingFileName && existingFileName.length > 0) {
@@ -313,7 +315,7 @@ export async function uploadFile(
 
   const { data, error } = await supabase.storage
     .from('workspaces')
-    .upload(`test/chat/${id}/${newFileName}`, file.rawFile);
+    .upload(`${wsId}/chats/ai/resources/${id}/${newFileName}`, file.rawFile);
 
   return { data, error };
 }
