@@ -60,8 +60,10 @@ export async function POST(req: Request, { params }: Params) {
   } else {
     const existingNames = quizSetName.map((d) => d.name);
     const baseName = formattedName;
-    let suffix = 2;
-    let newName = `${baseName} ${suffix}`;
+    let suffix = 1;
+    let newName = baseName;
+
+    // Keep incrementing suffix until we find a unique name
     while (existingNames.includes(newName)) {
       suffix++;
       newName = `${baseName} ${suffix}`;

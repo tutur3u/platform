@@ -94,7 +94,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
       const res = await fetch(
         data.id
           ? `/api/v1/workspaces/${wsId}/quizzes/${data.id}`
-          : `/api/v1/workspaces/${wsId}/quizzes`,
+          : `/api/v1/workspaces/${wsId}/quizzes/single`,
         {
           method: data.id ? 'PUT' : 'POST',
           body: JSON.stringify(data),

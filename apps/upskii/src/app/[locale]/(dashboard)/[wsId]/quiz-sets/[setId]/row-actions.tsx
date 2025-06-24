@@ -1,6 +1,6 @@
 'use client';
 
-import WorkspaceQuizForm from './form';
+import WorkspaceQuizForm from './single-form';
 import { Row } from '@tanstack/react-table';
 import { WorkspaceQuiz } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';

@@ -1,5 +1,5 @@
+import ClientQuizzes from '../../../../../../../../components/quiz/client-quizzes';
 import ClientFlashcards from './flashcards/client-flashcards';
-import ClientQuizzes from './quizzes/client-quizzes';
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,

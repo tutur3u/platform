@@ -47,19 +47,14 @@ export default function AIQuizzes({
       if (!quizSetRes.ok) throw new Error('Failed to create quiz set');
       const quizSet = await quizSetRes.json();
 
-      const promises = object.quizzes.map((quiz) =>
-        fetch(`/api/v1/workspaces/${wsId}/quizzes`, {
-          method: 'POST',
-          body: JSON.stringify({
-            setId: quizSet.setId,
-            moduleId,
-            question: quiz?.question,
-            quiz_options: quiz?.quiz_options,
-          }),
-        })
-      );
-
-      await Promise.all(promises);
+      await fetch(`/api/v1/workspaces/${wsId}/quizzes`, {
+        method: 'POST',
+        body: JSON.stringify({
+          setId: quizSet.setId,
+          moduleId,
+          quizzes: object.quizzes,
+        }),
+      });
 
       toast({
         title: t('common.success'),
