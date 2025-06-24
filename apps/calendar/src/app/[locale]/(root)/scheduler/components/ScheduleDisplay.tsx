@@ -1,6 +1,6 @@
 'use client';
 
-import type { Event } from '@tuturuuu/ai/scheduling/types';
+import type { Event, Task, TaskPriority } from '@tuturuuu/ai/scheduling/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -13,6 +13,7 @@ import {
   AlertTriangleIcon,
   CalendarIcon,
   ClockIcon,
+  LockIcon,
   SparklesIcon,
   TrendingUpIcon,
 } from '@tuturuuu/ui/icons';
@@ -25,6 +26,7 @@ dayjs.extend(relativeTime);
 
 interface ScheduleDisplayProps {
   events: Event[];
+  tasks: Task[];
 }
 
 const getCategoryColor = (taskId: string) => {
@@ -35,17 +37,47 @@ const getCategoryColor = (taskId: string) => {
   }, 0);
 
   const colors = [
-    'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/30',
-    'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/30',
-    'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/30',
-    'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/30',
-    'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/30',
+    'bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800',
+    'bg-gradient-to-r from-green-500/10 to-emerald-600/10 text-green-700 border-green-200 dark:border-green-800',
+    'bg-gradient-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800',
+    'bg-gradient-to-r from-purple-500/10 to-pink-600/10 text-purple-700 border-purple-200 dark:border-purple-800',
+    'bg-gradient-to-r from-red-500/10 to-rose-600/10 text-red-700 border-red-200 dark:border-red-800',
   ];
 
   return colors[Math.abs(hash) % colors.length];
 };
 
-export function ScheduleDisplay({ events }: ScheduleDisplayProps) {
+const getPriorityColor = (priority: TaskPriority) => {
+  switch (priority) {
+    case 'critical':
+      return 'bg-gradient-to-r from-red-500/10 to-rose-600/10 text-red-700 border-red-200 dark:border-red-800';
+    case 'high':
+      return 'bg-gradient-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800';
+    case 'normal':
+      return 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800';
+    case 'low':
+      return 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
+    default:
+      return 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
+  }
+};
+
+const getPriorityIcon = (priority: TaskPriority) => {
+  switch (priority) {
+    case 'critical':
+      return '🚨';
+    case 'high':
+      return '⚡';
+    case 'normal':
+      return '��';
+    case 'low':
+      return '📝';
+    default:
+      return '📋';
+  }
+};
+
+export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
   const groupedEvents = useMemo(() => {
     return events.reduce(
       (acc, event) => {
@@ -75,35 +107,56 @@ export function ScheduleDisplay({ events }: ScheduleDisplayProps) {
     ).size;
 
     const overdueEvents = events.filter((e) => e.isPastDeadline).length;
+    const lockedEvents = events.filter((e) => e.locked).length;
+
+    // Priority statistics
+    const priorityStats = events.reduce(
+      (acc, event) => {
+        const task = tasks.find((t) => t.id === event.taskId);
+        if (task) {
+          acc[task.priority] = (acc[task.priority] || 0) + 1;
+        }
+        return acc;
+      },
+      {} as Record<TaskPriority, number>
+    );
 
     return {
       totalDuration,
       uniqueTasks,
       splitTasks,
       overdueEvents,
+      lockedEvents,
       daysSpanned: Object.keys(groupedEvents).length,
+      priorityStats,
     };
-  }, [events, groupedEvents]);
+  }, [events, groupedEvents, tasks]);
 
   if (events.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            Your Schedule
-          </CardTitle>
-          <CardDescription>
-            Optimized task schedule with intelligent splitting
-          </CardDescription>
+      <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
+        <CardHeader className="pb-6">
+          <div className="space-y-2">
+            <CardTitle className="flex items-center gap-3 text-2xl font-bold">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+                <CalendarIcon className="h-5 w-5" />
+              </div>
+              Your Schedule
+            </CardTitle>
+            <CardDescription className="text-base text-muted-foreground">
+              Optimized task schedule with intelligent splitting
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="py-12 text-center">
-            <SparklesIcon className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" />
-            <h3 className="mb-2 text-lg font-semibold">
+          <div className="py-16 text-center">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20">
+              <SparklesIcon className="h-10 w-10 text-blue-500" />
+            </div>
+            <h3 className="mb-3 text-xl font-semibold">
               No Schedule Generated
             </h3>
-            <p className="text-muted-foreground">
+            <p className="mx-auto max-w-md text-muted-foreground">
               Add tasks and click &quot;Generate Schedule&quot; to see your
               optimized timeline
             </p>
@@ -113,184 +166,335 @@ export function ScheduleDisplay({ events }: ScheduleDisplayProps) {
     );
   }
 
+  // Overdue summary alert
+  const overdueEventsList = events.filter((e) => e.isPastDeadline);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Overdue Events Alert */}
+      {overdueEventsList.length > 0 && (
+        <div className="animate-pulse-slow flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 shadow-md dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+          <AlertTriangleIcon className="h-6 w-6 animate-bounce text-red-500" />
+          <span className="font-semibold">
+            {overdueEventsList.length} overdue event
+            {overdueEventsList.length > 1 ? 's' : ''} scheduled after their
+            deadline!
+          </span>
+          <span className="ml-auto text-xs text-red-500">
+            Check details below
+          </span>
+        </div>
+      )}
       {/* Schedule Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUpIcon className="h-5 w-5" />
-            Schedule Overview
-          </CardTitle>
-          <CardDescription>Summary of your optimized schedule</CardDescription>
+      <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
+        <CardHeader className="pb-6">
+          <div className="space-y-2">
+            <CardTitle className="flex items-center gap-3 text-2xl font-bold">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg">
+                <TrendingUpIcon className="h-5 w-5" />
+              </div>
+              Schedule Overview
+            </CardTitle>
+            <CardDescription className="text-base text-muted-foreground">
+              Summary of your optimized schedule
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-blue">
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-8">
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-3xl font-bold text-transparent">
                 {events.length}
               </div>
-              <div className="text-sm text-muted-foreground">Events</div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Events
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-green">
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.uniqueTasks}
               </div>
-              <div className="text-sm text-muted-foreground">Tasks</div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Tasks
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-orange">
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.totalDuration.toFixed(1)}h
               </div>
-              <div className="text-sm text-muted-foreground">Total Time</div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Total Time
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-purple">
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.splitTasks}
               </div>
-              <div className="text-sm text-muted-foreground">Split Tasks</div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Split Tasks
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-pink">
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-red-600 to-rose-700 bg-clip-text text-3xl font-bold text-transparent">
+                {scheduleStats.priorityStats.critical || 0}
+              </div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Critical
+              </div>
+            </div>
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text text-3xl font-bold text-transparent">
+                {scheduleStats.priorityStats.high || 0}
+              </div>
+              <div className="text-sm font-medium text-muted-foreground">
+                High
+              </div>
+            </div>
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-indigo-600 to-blue-700 bg-clip-text text-3xl font-bold text-transparent">
+                {scheduleStats.lockedEvents}
+              </div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Locked
+              </div>
+            </div>
+            <div className="space-y-2 text-center">
+              <div className="bg-gradient-to-r from-rose-600 to-pink-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.daysSpanned}
               </div>
-              <div className="text-sm text-muted-foreground">Days</div>
+              <div className="text-sm font-medium text-muted-foreground">
+                Days
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Schedule Timeline */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            Schedule Timeline
-          </CardTitle>
-          <CardDescription>
-            Your tasks organized by day and time
-          </CardDescription>
+      <Card className="border-0 bg-white shadow-lg dark:bg-gray-900">
+        <CardHeader className="pb-6">
+          <div className="space-y-2">
+            <CardTitle className="flex items-center gap-3 text-xl font-bold">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+                <CalendarIcon className="h-4 w-4" />
+              </div>
+              Schedule Timeline
+            </CardTitle>
+            <CardDescription className="text-base">
+              Your optimized schedule organized by day
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
+          <div className="space-y-8">
             {Object.entries(groupedEvents)
               .sort(([a], [b]) => a.localeCompare(b))
-              .map(([date, dailyEvents]) => {
-                const sortedEvents = dailyEvents.sort((a, b) =>
-                  a.range.start.diff(b.range.start)
-                );
-
-                const dayDuration = dailyEvents.reduce(
-                  (sum, event) =>
-                    sum + event.range.end.diff(event.range.start, 'hour', true),
-                  0
-                );
+              .map(([date, dayEvents]) => {
+                const dayDate = dayjs(date);
+                const isToday = dayDate.isSame(dayjs(), 'day');
+                const isTomorrow = dayDate.isSame(dayjs().add(1, 'day'), 'day');
 
                 return (
-                  <div key={date} className="space-y-4">
+                  <div
+                    key={date}
+                    className={`space-y-4 rounded-xl border-2 p-6 transition-all duration-200 ${
+                      isToday
+                        ? 'border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50 dark:border-blue-800 dark:from-blue-950/20 dark:to-purple-950/20'
+                        : isTomorrow
+                          ? 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 dark:border-green-800 dark:from-green-950/20 dark:to-emerald-950/20'
+                          : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
+                    }`}
+                  >
                     {/* Day Header */}
-                    <div className="flex items-center justify-between border-b pb-2">
-                      <div>
-                        <h3 className="text-lg font-semibold">
-                          {dayjs(date).format('dddd, MMMM D')}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {dailyEvents.length} events • {dayDuration.toFixed(1)}{' '}
-                          hours
-                        </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-lg ${
+                            isToday
+                              ? 'bg-gradient-to-br from-blue-500 to-purple-600'
+                              : isTomorrow
+                                ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+                                : 'bg-gradient-to-br from-gray-500 to-gray-600'
+                          }`}
+                        >
+                          <CalendarIcon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold">
+                            {dayDate.format('dddd, MMMM D')}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {isToday
+                              ? 'Today'
+                              : isTomorrow
+                                ? 'Tomorrow'
+                                : dayDate.fromNow()}
+                          </p>
+                        </div>
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        {dayjs(date).fromNow()}
-                      </Badge>
+                      <div className="text-right">
+                        <div className="text-lg font-bold">
+                          {dayEvents.length} event
+                          {dayEvents.length !== 1 ? 's' : ''}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {dayEvents
+                            .reduce(
+                              (sum, event) =>
+                                sum +
+                                event.range.end.diff(
+                                  event.range.start,
+                                  'hour',
+                                  true
+                                ),
+                              0
+                            )
+                            .toFixed(1)}{' '}
+                          hours
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Events Timeline */}
+                    {/* Events */}
                     <div className="space-y-3">
-                      {sortedEvents.map((event, eventIndex) => {
-                        const duration = event.range.end.diff(
-                          event.range.start,
-                          'hour',
-                          true
-                        );
-                        const nextEvent = sortedEvents[eventIndex + 1];
-                        const gap = nextEvent
-                          ? nextEvent.range.start.diff(
-                              event.range.end,
-                              'minute'
-                            )
-                          : 0;
+                      {dayEvents
+                        .sort((a, b) => a.range.start.diff(b.range.start))
+                        .map((event) => {
+                          const task = tasks.find((t) => t.id === event.taskId);
+                          const duration = event.range.end.diff(
+                            event.range.start,
+                            'hour',
+                            true
+                          );
 
-                        return (
-                          <div key={event.id} className="space-y-2">
-                            {/* Event Card */}
+                          return (
                             <div
-                              className={`group relative rounded-lg border p-4 transition-all hover:shadow-sm ${
-                                event.isPastDeadline
-                                  ? 'border-destructive/30 bg-destructive/5'
-                                  : 'hover:bg-accent/5'
+                              key={event.id}
+                              className={`group relative rounded-lg border-2 p-4 transition-all duration-200 hover:shadow-lg ${
+                                event.locked
+                                  ? 'border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 dark:border-purple-800 dark:from-purple-950/20 dark:to-pink-950/20'
+                                  : event.isPastDeadline
+                                    ? 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50 dark:border-red-800 dark:from-red-950/20 dark:to-rose-950/20'
+                                    : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700 dark:hover:from-blue-950/20 dark:hover:to-purple-950/20'
                               }`}
                             >
                               <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 space-y-2">
-                                  {/* Event Header */}
+                                <div className="flex-1 space-y-3">
                                   <div className="flex items-center gap-3">
-                                    {event.isPastDeadline && (
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+                                      <ClockIcon className="h-4 w-4" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <h4 className="font-semibold">
+                                        {event.name}
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground">
+                                        {event.range.start.format('HH:mm')} -{' '}
+                                        {event.range.end.format('HH:mm')} (
+                                        {duration.toFixed(1)}h)
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Tags */}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Badge
+                                      className={`${getCategoryColor(event.taskId)} px-2 py-1 text-xs font-semibold`}
+                                    >
+                                      {task?.category || 'Unknown'}
+                                    </Badge>
+
+                                    {task && (
+                                      <Badge
+                                        className={`${getPriorityColor(task.priority)} px-2 py-1 text-xs font-semibold`}
+                                      >
+                                        <span className="mr-1">
+                                          {getPriorityIcon(task.priority)}
+                                        </span>
+                                        {task.priority}
+                                      </Badge>
+                                    )}
+
+                                    {event.locked && (
                                       <Tooltip>
                                         <TooltipTrigger>
-                                          <AlertTriangleIcon className="h-5 w-5 shrink-0 text-destructive" />
+                                          <Badge
+                                            variant="outline"
+                                            className="border-purple-200 bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-600 dark:border-purple-800 dark:bg-purple-950/20"
+                                          >
+                                            <LockIcon className="mr-1 h-3 w-3" />
+                                            Locked
+                                          </Badge>
                                         </TooltipTrigger>
                                         <TooltipContent>
                                           <p>
-                                            This task is scheduled past its
-                                            deadline
+                                            This event is locked and cannot be
+                                            moved
                                           </p>
                                         </TooltipContent>
                                       </Tooltip>
                                     )}
-                                    <h4 className="flex-1 font-medium">
-                                      {event.name}
-                                    </h4>
-                                    {event.partNumber && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs"
-                                      >
-                                        Part {event.partNumber}/
-                                        {event.totalParts}
-                                      </Badge>
-                                    )}
-                                  </div>
 
-                                  {/* Event Details */}
-                                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                    <span className="flex items-center gap-1">
-                                      <ClockIcon className="h-3 w-3" />
-                                      {event.range.start.format('HH:mm')} -{' '}
-                                      {event.range.end.format('HH:mm')}
-                                    </span>
-                                    <span>{duration.toFixed(1)}h</span>
-                                    <Badge
-                                      className={getCategoryColor(event.taskId)}
-                                    >
-                                      {event.taskId.split('-')[0]}
-                                    </Badge>
+                                    {event.isPastDeadline && (
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Badge
+                                            variant="outline"
+                                            className="animate-pulse-slow relative border-red-300 bg-red-100 px-2 py-1 text-xs font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30"
+                                          >
+                                            <span className="absolute top-1/2 -left-2 -translate-y-1/2">
+                                              <AlertTriangleIcon className="h-4 w-4 animate-bounce text-red-500" />
+                                            </span>
+                                            <span className="ml-4">
+                                              Overdue
+                                            </span>
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>
+                                            This event is scheduled past its
+                                            deadline
+                                            {task?.deadline ? (
+                                              <>
+                                                <br />
+                                                <span className="font-semibold">
+                                                  Missed Deadline:
+                                                </span>{' '}
+                                                {task.deadline.format(
+                                                  'YYYY-MM-DD HH:mm'
+                                                )}
+                                              </>
+                                            ) : null}
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    )}
+
+                                    {event.partNumber && event.totalParts && (
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Badge
+                                            variant="outline"
+                                            className="border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 dark:border-blue-800 dark:bg-blue-950/20"
+                                          >
+                                            Part {event.partNumber}/
+                                            {event.totalParts}
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>
+                                            This is part {event.partNumber} of{' '}
+                                            {event.totalParts} for this task
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    )}
                                   </div>
                                 </div>
                               </div>
                             </div>
-
-                            {/* Gap Indicator */}
-                            {gap > 0 && (
-                              <div className="flex items-center justify-center py-2">
-                                <div className="flex items-center gap-2 rounded-full bg-accent/30 px-3 py-1 text-xs text-muted-foreground">
-                                  <ClockIcon className="h-3 w-3" />
-                                  <span>{gap} minute break</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   </div>
                 );

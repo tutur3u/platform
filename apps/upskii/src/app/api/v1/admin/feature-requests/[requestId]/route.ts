@@ -65,7 +65,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     // Get the current request to check if it exists and get workspace info
     const { data: currentRequest, error: fetchError } = await sbAdmin
       .from('workspace_education_access_requests')
-      .select('id, ws_id, workspace_name, status')
+      .select('id, ws_id, workspace_name, status, feature')
       .eq('id', requestId)
       .single();
 
@@ -96,14 +96,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
         throw new Error('Failed to update request status');
       }
 
-      // If approved, enable education features for the workspace
+      // If approved, enable the requested feature for the workspace
       if (status === 'approved') {
-        // Check if ENABLE_EDUCATION secret already exists
+        const featureFlag = currentRequest.feature;
+
+        // Check if the feature secret already exists
         const { data: existingSecret } = await sbAdmin
           .from('workspace_secrets')
           .select('id')
           .eq('ws_id', currentRequest.ws_id)
-          .eq('name', 'ENABLE_EDUCATION')
+          .eq('name', featureFlag)
           .single();
 
         if (existingSecret) {
@@ -115,7 +117,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
           if (secretUpdateError) {
             console.error(
-              'Failed to update education secret:',
+              `Failed to update ${featureFlag} secret:`,
               secretUpdateError
             );
             // Don't fail the whole operation, just log the error
@@ -126,13 +128,13 @@ export async function PUT(req: NextRequest, { params }: Params) {
             .from('workspace_secrets')
             .insert({
               ws_id: currentRequest.ws_id,
-              name: 'ENABLE_EDUCATION',
+              name: featureFlag,
               value: 'true',
             });
 
           if (secretCreateError) {
             console.error(
-              'Failed to create education secret:',
+              `Failed to create ${featureFlag} secret:`,
               secretCreateError
             );
             // Don't fail the whole operation, just log the error
@@ -140,17 +142,18 @@ export async function PUT(req: NextRequest, { params }: Params) {
         }
       }
 
-      // If rejected and was previously approved, disable education features
+      // If rejected and was previously approved, disable the feature
       if (status === 'rejected') {
+        const featureFlag = currentRequest.feature;
         const { error: secretDeleteError } = await sbAdmin
           .from('workspace_secrets')
           .delete()
           .eq('ws_id', currentRequest.ws_id)
-          .eq('name', 'ENABLE_EDUCATION');
+          .eq('name', featureFlag);
 
         if (secretDeleteError) {
           console.error(
-            'Failed to remove education secret:',
+            `Failed to remove ${featureFlag} secret:`,
             secretDeleteError
           );
           // Don't fail the whole operation, just log the error
@@ -168,6 +171,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
           creator_id,
           message,
           status,
+          feature,
           admin_notes,
           reviewed_by,
           reviewed_at,
@@ -204,7 +208,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
                 updatedRequest.users?.display_name ||
                 updatedRequest.users?.email ||
                 'Unknown User',
-              feature_requested: 'Education Features',
+              feature_requested: updatedRequest.feature,
               request_message: updatedRequest.message,
               status: updatedRequest.status,
               admin_notes: updatedRequest.admin_notes,

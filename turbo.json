@@ -37,6 +37,7 @@
     "ANALYZE",
     "NODE_ENV",
     "TRIGGER_SECRET_KEY",
+    "POLAR_ACCESS_TOKEN",
     "POLAR_WEBHOOK_SECRET"
   ],
   "tasks": {

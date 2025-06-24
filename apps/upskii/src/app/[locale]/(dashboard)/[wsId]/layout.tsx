@@ -29,7 +29,11 @@ import {
   UserCog,
   Users,
 } from '@tuturuuu/ui/icons';
-import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
+import {
+  getFeatureFlags,
+  isAnyEducationFeatureEnabled,
+  requireFeatureFlags,
+} from '@tuturuuu/utils/feature-flags/core';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -235,12 +239,16 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   // Check if user is workspace owner and education is not enabled
   const isWorkspaceOwner = workspace?.role === 'OWNER';
-  const shouldShowEducationBanner =
-    isWorkspaceOwner && !ENABLE_EDUCATION && workspace?.name;
+  const shouldShowBanner =
+    isWorkspaceOwner &&
+    !(await isAnyEducationFeatureEnabled(wsId)) &&
+    workspace?.name;
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
 
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
+
+  const featureFlags = await getFeatureFlags(wsId);
 
   if (!workspace) redirect('/onboarding');
   if (!workspace?.joined)
@@ -276,9 +284,13 @@ export default async function Layout({ children, params }: LayoutProps) {
         </Suspense>
       }
     >
-      {shouldShowEducationBanner && (
+      {shouldShowBanner && (
         <div className="mb-6">
-          <EducationBanner workspaceName={workspace.name} wsId={wsId} />
+          <EducationBanner
+            workspaceName={workspace.name}
+            wsId={wsId}
+            enabledFeatures={featureFlags}
+          />
         </div>
       )}
       {children}

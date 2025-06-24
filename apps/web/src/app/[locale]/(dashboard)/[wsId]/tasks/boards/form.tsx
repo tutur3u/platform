@@ -7,7 +7,16 @@ import {
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
+import { TagSuggestions, TagsInput } from '@tuturuuu/ui/board-tags-input';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
@@ -29,19 +38,25 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import React from 'react';
 import * as z from 'zod';
 
 interface Props {
   wsId: string;
   data?: TaskBoard;
+  children?: React.ReactNode;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1),
+  name: z
+    .string()
+    .min(1, 'Board name is required')
+    .refine((val) => val.trim().length > 0, 'Board name cannot be empty'),
   template_id: z.string().optional(),
+  tags: z.array(z.string()).max(8, 'Maximum 8 tags allowed').optional(),
 });
 
 const templateIcons = {
@@ -65,11 +80,36 @@ const colorClasses: Record<SupportedColor, string> = {
   CYAN: 'bg-dynamic-cyan/30 border-dynamic-cyan/50',
 };
 
-export function TaskBoardForm({ wsId, data, onFinish }: Props) {
+// Common tag suggestions for task boards
+const TAG_SUGGESTIONS = [
+  'Development',
+  'Design',
+  'Marketing',
+  'Sales',
+  'Research',
+  'Planning',
+  'Testing',
+  'Documentation',
+  'Bug Fixes',
+  'Feature',
+  'Urgent',
+  'Personal',
+  'Work',
+  'Project',
+  'Team',
+  'Client',
+];
+
+export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
   const t = useTranslations();
   const router = useRouter();
+  const [open, setOpen] = React.useState(false);
 
-  const { data: templates, isLoading: templatesLoading } = useStatusTemplates();
+  const {
+    data: templates,
+    isLoading: templatesLoading,
+    error: templatesError,
+  } = useStatusTemplates();
   const createBoardMutation = useCreateBoardWithTemplate(wsId);
 
   const form = useForm({
@@ -78,6 +118,7 @@ export function TaskBoardForm({ wsId, data, onFinish }: Props) {
       id: data?.id,
       name: data?.name || '',
       template_id: '',
+      tags: data?.tags || [],
     },
   });
 
@@ -96,36 +137,69 @@ export function TaskBoardForm({ wsId, data, onFinish }: Props) {
           `/api/v1/workspaces/${wsId}/task-boards/${formData.id}`,
           {
             method: 'PUT',
-            body: JSON.stringify({ name: formData.name }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: formData.name.trim(),
+              tags: formData.tags || [],
+            }),
           }
         );
 
         if (res.ok) {
+          toast({
+            title: 'Success',
+            description: 'Task board updated successfully',
+          });
           onFinish?.(formData);
+          setOpen(false);
           router.refresh();
         } else {
-          const errorData = await res.json();
+          const errorData = await res
+            .json()
+            .catch(() => ({ message: 'Unknown error occurred' }));
           toast({
             title: 'Failed to edit task board',
-            description: errorData.message,
+            description: errorData.message || 'An unexpected error occurred',
             variant: 'destructive',
           });
         }
       } else {
         // Create new board with template
         await createBoardMutation.mutateAsync({
-          name: formData.name,
+          name: formData.name.trim(),
           templateId: formData.template_id || undefined,
+          tags: formData.tags || [],
         });
+
+        toast({
+          title: 'Success',
+          description: 'Task board created successfully',
+        });
+
         onFinish?.(formData);
+        setOpen(false);
         router.refresh();
         form.reset();
       }
     } catch (error) {
       console.error('Error submitting form:', error);
+
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred';
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        errorMessage = String(error.message);
+      }
+
       toast({
         title: `Failed to ${formData.id ? 'edit' : 'create'} task board`,
-        description: error instanceof Error ? error.message : String(error),
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -137,8 +211,8 @@ export function TaskBoardForm({ wsId, data, onFinish }: Props) {
 
   const isEditMode = !!data?.id;
 
-  return (
-    <div className="@container flex h-full max-h-[min(85vh,800px)] flex-col overflow-hidden">
+  const formContent = (
+    <div className="flex h-full max-h-[min(85vh,800px)] w-full flex-col overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 border-b bg-background px-4 py-4 sm:px-6 sm:py-6">
         <div className="text-center">
@@ -185,6 +259,45 @@ export function TaskBoardForm({ wsId, data, onFinish }: Props) {
                   )}
                 />
 
+                {/* Tags Input */}
+                <FormField
+                  control={form.control}
+                  name="tags"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium sm:text-base">
+                        Tags
+                      </FormLabel>
+                      <FormControl>
+                        <TagsInput
+                          value={field.value || []}
+                          onChange={field.onChange}
+                          placeholder="Add tags to categorize your board..."
+                          maxTags={8}
+                          validateTag={(tag) => tag.length <= 20}
+                          className="text-sm sm:text-base"
+                        />
+                      </FormControl>
+                      <div className="mt-2">
+                        <Label className="text-xs text-muted-foreground">
+                          Suggestions:
+                        </Label>
+                        <div className="mt-1">
+                          <TagSuggestions
+                            suggestions={TAG_SUGGESTIONS}
+                            selectedTags={field.value || []}
+                            onTagSelect={(tag) => {
+                              field.onChange([...(field.value || []), tag]);
+                            }}
+                            maxDisplay={6}
+                          />
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {/* Template Selection (only for new boards) */}
                 {!isEditMode && (
                   <>
@@ -201,8 +314,18 @@ export function TaskBoardForm({ wsId, data, onFinish }: Props) {
                         </p>
                       </div>
 
+                      {/* Error State */}
+                      {templatesError && (
+                        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center dark:border-red-800 dark:bg-red-950/30">
+                          <p className="text-sm text-red-700 dark:text-red-300">
+                            Failed to load templates. You can still create a
+                            blank board.
+                          </p>
+                        </div>
+                      )}
+
                       {templatesLoading ? (
-                        <div className="grid grid-cols-1 gap-4 @md:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           {[1, 2, 3, 4].map((i) => (
                             <Skeleton key={i} className="h-20 w-full sm:h-24" />
                           ))}
@@ -217,7 +340,7 @@ export function TaskBoardForm({ wsId, data, onFinish }: Props) {
                                 <RadioGroup
                                   onValueChange={field.onChange}
                                   value={field.value}
-                                  className="grid grid-cols-1 gap-4 @md:grid-cols-2"
+                                  className="grid grid-cols-1 gap-4 md:grid-cols-2"
                                 >
                                   {/* Blank Template Option */}
                                   <div className="col-span-full">
@@ -431,4 +554,35 @@ export function TaskBoardForm({ wsId, data, onFinish }: Props) {
       </div>
     </div>
   );
+
+  // If children are provided, wrap in dialog
+  if (children) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>{children}</DialogTrigger>
+        <DialogContent
+          className="p-0"
+          style={{
+            maxWidth: '1200px',
+            width: '85vw',
+          }}
+        >
+          <DialogHeader className="sr-only">
+            <DialogTitle>
+              {isEditMode ? 'Edit Task Board' : 'Create New Task Board'}
+            </DialogTitle>
+            <DialogDescription>
+              {isEditMode
+                ? 'Update your task board name'
+                : 'Choose a template and create your project board'}
+            </DialogDescription>
+          </DialogHeader>
+          {formContent}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Otherwise return form content directly
+  return formContent;
 }

@@ -27,16 +27,22 @@ export function LanguageDropdownItem({ label, locale, selected }: Props) {
 
   return (
     <DropdownMenuItem
-      className="cursor-pointer"
+      className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
       onClick={useLocale}
       disabled={selected}
     >
-      {selected ? (
-        <Check className="mr-2 h-4 w-4" />
-      ) : (
-        <Hexagon className="mr-2 h-4 w-4" />
-      )}
-      {label}
+      <div className="flex items-center gap-3">
+        {selected ? (
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white">
+            <Check className="h-3 w-3" />
+          </div>
+        ) : (
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+            <Hexagon className="h-3 w-3" />
+          </div>
+        )}
+        <span>{label}</span>
+      </div>
     </DropdownMenuItem>
   );
 }

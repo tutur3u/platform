@@ -1,6 +1,6 @@
 'use client';
 
-import type { Task } from '@tuturuuu/ai/scheduling/types';
+import type { Task, TaskPriority } from '@tuturuuu/ai/scheduling/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -10,7 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { CalendarIcon, ClockIcon, PlusIcon, TagIcon } from '@tuturuuu/ui/icons';
+import { PlusIcon } from '@tuturuuu/ui/icons';
+import { SplitIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -20,15 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
 interface TaskModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onAddTask: (task: Omit<Task, 'id' | 'events'>) => void;
+  onCloseAction: () => void;
+  onAddTaskAction: (task: Omit<Task, 'id' | 'events'>) => void;
 }
 
 const categoryOptions = [
@@ -52,7 +53,42 @@ const categoryOptions = [
   },
 ] as const;
 
-export function TaskModal({ isOpen, onClose, onAddTask }: TaskModalProps) {
+const priorityOptions = [
+  {
+    value: 'critical' as TaskPriority,
+    label: 'Critical',
+    icon: '🚨',
+    description: 'Urgent tasks that must be completed immediately',
+    color: 'text-red-600',
+  },
+  {
+    value: 'high' as TaskPriority,
+    label: 'High',
+    icon: '⚡',
+    description: 'Important tasks with tight deadlines',
+    color: 'text-orange-600',
+  },
+  {
+    value: 'normal' as TaskPriority,
+    label: 'Normal',
+    icon: '📋',
+    description: 'Standard priority tasks',
+    color: 'text-blue-600',
+  },
+  {
+    value: 'low' as TaskPriority,
+    label: 'Low',
+    icon: '📝',
+    description: 'Tasks that can be done when time permits',
+    color: 'text-gray-600',
+  },
+] as const;
+
+export function TaskModal({
+  isOpen,
+  onCloseAction,
+  onAddTaskAction,
+}: TaskModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -60,8 +96,9 @@ export function TaskModal({ isOpen, onClose, onAddTask }: TaskModalProps) {
     minDuration: 0.5,
     maxDuration: 2,
     category: 'work' as 'work' | 'personal' | 'meeting',
+    priority: 'normal' as TaskPriority,
     deadline: '',
-    priority: 'medium' as 'low' | 'medium' | 'high',
+    allowSplit: true,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -114,10 +151,12 @@ export function TaskModal({ isOpen, onClose, onAddTask }: TaskModalProps) {
       minDuration: formData.minDuration,
       maxDuration: formData.maxDuration,
       category: formData.category,
+      priority: formData.priority,
       deadline: formData.deadline ? dayjs(formData.deadline) : undefined,
+      allowSplit: formData.allowSplit,
     };
 
-    onAddTask(newTask);
+    onAddTaskAction(newTask);
     handleClose();
   };
 
@@ -129,14 +168,15 @@ export function TaskModal({ isOpen, onClose, onAddTask }: TaskModalProps) {
       minDuration: 0.5,
       maxDuration: 2,
       category: 'work',
+      priority: 'normal',
       deadline: '',
-      priority: 'medium',
+      allowSplit: true,
     });
     setErrors({});
-    onClose();
+    onCloseAction();
   };
 
-  const updateFormData = (field: string, value: string | number) => {
+  const updateFormData = (field: string, value: string | number | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: '' }));
@@ -145,7 +185,7 @@ export function TaskModal({ isOpen, onClose, onAddTask }: TaskModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-full max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PlusIcon className="h-5 w-5" />
@@ -156,195 +196,257 @@ export function TaskModal({ isOpen, onClose, onAddTask }: TaskModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="task-name">
-                Task Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="task-name"
-                placeholder="e.g., Design homepage wireframes"
-                value={formData.name}
-                onChange={(e) => updateFormData('name', e.target.value)}
-                className={errors.name ? 'border-destructive' : ''}
-              />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="task-description">Description (Optional)</Label>
-              <Textarea
-                id="task-description"
-                placeholder="Add any additional details about this task..."
-                value={formData.description}
-                onChange={(e) => updateFormData('description', e.target.value)}
-                rows={2}
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Duration Settings */}
-          <div className="space-y-4">
-            <div className="mb-3 flex items-center gap-2">
-              <ClockIcon className="h-4 w-4 text-muted-foreground" />
-              <Label className="text-sm font-medium">Duration Settings</Label>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          {/* Basic Information, Duration, Category, Deadline in horizontal layout */}
+          <div className="flex flex-row gap-6">
+            {/* Left column: Basic info and description */}
+            <div className="flex min-w-[220px] flex-1 flex-col gap-4">
               <div className="space-y-2">
-                <Label htmlFor="duration" className="text-sm">
-                  Total Duration (h) <span className="text-destructive">*</span>
+                <Label htmlFor="task-name">
+                  Name <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  id="duration"
-                  type="number"
-                  step="0.25"
-                  min="0.25"
-                  value={formData.duration}
-                  onChange={(e) =>
-                    updateFormData('duration', parseFloat(e.target.value))
-                  }
-                  className={errors.duration ? 'border-destructive' : ''}
+                  id="task-name"
+                  placeholder="e.g., Design homepage wireframes"
+                  value={formData.name}
+                  onChange={(e) => updateFormData('name', e.target.value)}
+                  className={errors.name ? 'border-destructive' : ''}
                 />
-                {errors.duration && (
-                  <p className="text-xs text-destructive">{errors.duration}</p>
+                {errors.name && (
+                  <p className="text-sm text-destructive">{errors.name}</p>
                 )}
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="min-duration" className="text-sm">
-                  Min Duration (h) <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="min-duration"
-                  type="number"
-                  step="0.25"
-                  min="0.25"
-                  value={formData.minDuration}
+                <Label htmlFor="task-description">Description</Label>
+                <Textarea
+                  id="task-description"
+                  placeholder="Add any additional details about this task..."
+                  value={formData.description}
                   onChange={(e) =>
-                    updateFormData('minDuration', parseFloat(e.target.value))
+                    updateFormData('description', e.target.value)
                   }
-                  className={errors.minDuration ? 'border-destructive' : ''}
+                  rows={3}
                 />
-                {errors.minDuration && (
-                  <p className="text-xs text-destructive">
-                    {errors.minDuration}
-                  </p>
-                )}
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="max-duration" className="text-sm">
-                  Max Duration (h) <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="max-duration"
-                  type="number"
-                  step="0.25"
-                  min="0.25"
-                  value={formData.maxDuration}
-                  onChange={(e) =>
-                    updateFormData('maxDuration', parseFloat(e.target.value))
-                  }
-                  className={errors.maxDuration ? 'border-destructive' : ''}
-                />
-                {errors.maxDuration && (
-                  <p className="text-xs text-destructive">
-                    {errors.maxDuration}
-                  </p>
-                )}
+                <div className="mb-2 flex items-center gap-2">
+                  <SplitIcon className="h-4 w-4 text-blue-600" />
+                  <Label htmlFor="allow-split" className="text-sm font-medium">
+                    Allow task splitting
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="allow-split"
+                    checked={formData.allowSplit}
+                    onCheckedChange={(checked) =>
+                      updateFormData('allowSplit', checked)
+                    }
+                  />
+                  <Label
+                    htmlFor="allow-split"
+                    className="text-sm text-muted-foreground"
+                  >
+                    Split this task into smaller sessions if needed
+                  </Label>
+                </div>
               </div>
             </div>
 
-            <div className="rounded-lg bg-accent/50 p-3 text-xs text-muted-foreground">
-              <strong>Duration Guidelines:</strong>
-              <ul className="mt-1 space-y-1">
-                <li>
-                  • <strong>Total:</strong> How long this task should take
-                  overall
-                </li>
-                <li>
-                  • <strong>Min:</strong> Minimum time block needed for
-                  meaningful progress
-                </li>
-                <li>
-                  • <strong>Max:</strong> Maximum time to work on this task at
-                  once
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Category and Deadline */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="mb-2 flex items-center gap-2">
-                <TagIcon className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-sm font-medium">Category</Label>
+            {/* Right column: Duration, Category, Priority, Deadline */}
+            <div className="flex min-w-[220px] flex-1 flex-col gap-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="duration">
+                    Duration <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    step="0.25"
+                    min="0.25"
+                    placeholder="1.0"
+                    value={formData.duration}
+                    onChange={(e) =>
+                      updateFormData('duration', parseFloat(e.target.value))
+                    }
+                    className={errors.duration ? 'border-destructive' : ''}
+                  />
+                  {errors.duration && (
+                    <p className="text-xs text-destructive">
+                      {errors.duration}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="min-duration">Min Duration</Label>
+                  <Input
+                    id="min-duration"
+                    type="number"
+                    step="0.25"
+                    min="0.25"
+                    placeholder="0.5"
+                    value={formData.minDuration}
+                    onChange={(e) =>
+                      updateFormData('minDuration', parseFloat(e.target.value))
+                    }
+                    className={errors.minDuration ? 'border-destructive' : ''}
+                  />
+                  {errors.minDuration && (
+                    <p className="text-xs text-destructive">
+                      {errors.minDuration}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max-duration">Max Duration</Label>
+                  <Input
+                    id="max-duration"
+                    type="number"
+                    step="0.25"
+                    min="0.25"
+                    placeholder="2.0"
+                    value={formData.maxDuration}
+                    onChange={(e) =>
+                      updateFormData('maxDuration', parseFloat(e.target.value))
+                    }
+                    className={errors.maxDuration ? 'border-destructive' : ''}
+                  />
+                  {errors.maxDuration && (
+                    <p className="text-xs text-destructive">
+                      {errors.maxDuration}
+                    </p>
+                  )}
+                </div>
               </div>
-              <Select
-                value={formData.category}
-                onValueChange={(value: 'work' | 'personal' | 'meeting') =>
-                  updateFormData('category', value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex items-center gap-2">
-                        <span>{option.icon}</span>
-                        <div>
-                          <div className="font-medium">{option.label}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {option.description}
-                          </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">
+                  Category <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value: 'work' | 'personal' | 'meeting') =>
+                    updateFormData('category', value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center gap-2">
+                          <span>{option.icon}</span>
+                          <span>{option.label}</span>
                         </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="deadline" className="text-sm font-medium">
-                  Deadline (Optional)
-                </Label>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Input
-                id="deadline"
-                type="datetime-local"
-                value={formData.deadline}
-                onChange={(e) => updateFormData('deadline', e.target.value)}
-                min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                className={errors.deadline ? 'border-destructive' : ''}
-              />
-              {errors.deadline && (
-                <p className="text-sm text-destructive">{errors.deadline}</p>
-              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="priority">
+                  Priority <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.priority}
+                  onValueChange={(value: TaskPriority) =>
+                    updateFormData('priority', value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorityOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center gap-2">
+                          <span>{option.icon}</span>
+                          <span className={option.color}>{option.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deadline">Deadline (Optional)</Label>
+                <Input
+                  id="deadline"
+                  type="datetime-local"
+                  value={formData.deadline}
+                  onChange={(e) => updateFormData('deadline', e.target.value)}
+                  className={errors.deadline ? 'border-destructive' : ''}
+                  min={dayjs().format('YYYY-MM-DDTHH:mm')}
+                />
+                {errors.deadline && (
+                  <p className="text-xs text-destructive">{errors.deadline}</p>
+                )}
+              </div>
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          {/* Priority and Category Descriptions */}
+          <div className="rounded-lg bg-muted/50 p-4">
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <h4 className="mb-2 text-sm font-semibold">
+                  Selected Category
+                </h4>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>
+                    {
+                      categoryOptions.find(
+                        (opt) => opt.value === formData.category
+                      )?.icon
+                    }
+                  </span>
+                  <span>
+                    {
+                      categoryOptions.find(
+                        (opt) => opt.value === formData.category
+                      )?.description
+                    }
+                  </span>
+                </div>
+              </div>
+              <div>
+                <h4 className="mb-2 text-sm font-semibold">
+                  Selected Priority
+                </h4>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>
+                    {
+                      priorityOptions.find(
+                        (opt) => opt.value === formData.priority
+                      )?.icon
+                    }
+                  </span>
+                  <span>
+                    {
+                      priorityOptions.find(
+                        (opt) => opt.value === formData.priority
+                      )?.description
+                    }
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit">
+            <Button
+              type="submit"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
+            >
               <PlusIcon className="mr-2 h-4 w-4" />
-              Add Task
+              Create Task
             </Button>
           </DialogFooter>
         </form>
