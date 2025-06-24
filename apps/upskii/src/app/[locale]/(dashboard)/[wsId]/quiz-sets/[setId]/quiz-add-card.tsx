@@ -346,19 +346,19 @@ export default function QuizAddCard({
                         />
 
                         {/* Remove Option Button */}
-                        {options.length > 2 && (
-                          <Button
+                        <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() =>
                               removeQuizOption(quizIndex, optionIndex)
                             }
+                            disabled={
+                              options.length <= 2}
                             className="mt-1 text-red-500 hover:bg-dynamic-light-pink/70 hover:text-red-700"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        )}
                       </div>
 
                       {/* Explanation */}
