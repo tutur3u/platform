@@ -1,11 +1,7 @@
 'use client';
 
-import {
-  useCreateBoardWithTemplate,
-  useStatusTemplates,
-} from '@/lib/task-helper';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { TagSuggestions, TagsInput } from '@tuturuuu/ui/board-tags-input';
 import { Button } from '@tuturuuu/ui/button';
@@ -36,10 +32,14 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 import * as z from 'zod';
+import {
+  useCreateBoardWithTemplate,
+  useStatusTemplates,
+} from '@/lib/task-helper';
 
 interface Props {
   wsId: string;

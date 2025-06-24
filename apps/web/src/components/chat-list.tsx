@@ -1,10 +1,10 @@
-import { ChatMessage } from '@/components/chat-message';
-import { type Message } from '@tuturuuu/ai/types';
+import type { Message } from '@tuturuuu/ai/types';
 import { Box, Globe, Lock, Sparkle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
+import { ChatMessage } from '@/components/chat-message';
 
 export interface ChatList {
   chatId?: string | null;

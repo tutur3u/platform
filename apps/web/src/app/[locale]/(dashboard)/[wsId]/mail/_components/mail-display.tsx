@@ -1,4 +1,3 @@
-import { Mail } from '../data';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -21,6 +20,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { format } from 'date-fns';
+import type { Mail } from '../data';
 
 interface MailDisplayProps {
   mail: Mail | null;

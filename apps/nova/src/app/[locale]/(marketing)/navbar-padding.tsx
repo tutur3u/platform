@@ -1,5 +1,5 @@
 import { cn } from '@tuturuuu/utils/format';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface Props {
   onlyOnMobile?: boolean;

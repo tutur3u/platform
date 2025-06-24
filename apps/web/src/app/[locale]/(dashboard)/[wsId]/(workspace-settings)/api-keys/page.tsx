@@ -1,14 +1,14 @@
-import { apiKeyColumns } from './columns';
-import ApiKeyEditDialog from './edit-dialog';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { apiKeyColumns } from './columns';
+import ApiKeyEditDialog from './edit-dialog';
 
 interface Props {
   params: Promise<{

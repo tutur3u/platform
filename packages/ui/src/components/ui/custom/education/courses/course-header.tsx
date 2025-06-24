@@ -1,8 +1,8 @@
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { GraduationCap } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export function CourseHeader({
   href,

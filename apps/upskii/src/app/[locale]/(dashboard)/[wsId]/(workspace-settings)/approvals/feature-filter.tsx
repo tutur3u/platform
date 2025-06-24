@@ -11,8 +11,8 @@ import {
   getRequestableFeature,
   getRequestableFeatureKeys,
 } from '@tuturuuu/utils/feature-flags/requestable-features';
-import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface FeatureFilterProps {
   currentFeature?: string;

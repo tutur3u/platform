@@ -1,11 +1,11 @@
-import WhitelistEmailClient from './client-page';
-import { getNovaRoleColumns } from './columns';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import WhitelistEmailClient from './client-page';
+import { getNovaRoleColumns } from './columns';
 
 interface SearchParams {
   q?: string;

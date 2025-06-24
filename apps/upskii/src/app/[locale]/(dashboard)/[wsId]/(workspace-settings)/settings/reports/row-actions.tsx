@@ -1,8 +1,7 @@
 'use client';
 
-import ConfigEditDialog from './edit-dialog';
-import { Row } from '@tanstack/react-table';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type { Row } from '@tanstack/react-table';
+import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -14,6 +13,7 @@ import {
 import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import ConfigEditDialog from './edit-dialog';
 
 interface ConfigRowActionsProps {
   row: Row<WorkspaceConfig>;

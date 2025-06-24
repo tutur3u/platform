@@ -1,12 +1,12 @@
-import { maxTimetz, minTimetz } from './date-helper';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import dayjs, { Dayjs } from 'dayjs';
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import dayjs, { type Dayjs } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import minMax from 'dayjs/plugin/minMax';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { maxTimetz, minTimetz } from './date-helper';
 
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
@@ -97,8 +97,8 @@ export function durationToTimeblocks(dates: Date[]): Timeblock[] {
   while (start.isBefore(end)) {
     const date = start.format('YYYY-MM-DD');
 
-    let startTime = dayjs(soonestTime);
-    let endTime = dayjs(latestTime).add(15, 'minutes');
+    const startTime = dayjs(soonestTime);
+    const endTime = dayjs(latestTime).add(15, 'minutes');
 
     timeblocks.push({
       date,
@@ -127,7 +127,7 @@ export function _experimentalAddTimeblocks(
     return aTime.diff(bTime);
   });
 
-  let nextTBs: Timeblock[] = [];
+  const nextTBs: Timeblock[] = [];
 
   for (let i = 0; i < sortedTimeblocks.length; i++) {
     const lastTB = nextTBs[nextTBs.length - 1];
@@ -299,7 +299,6 @@ export function _experimentalRemoveTimeblocks(
         .format('HH:mm:ssZ');
 
       filteredTimeblocks.push(newTimeblock);
-      continue;
     }
   }
 
@@ -322,7 +321,7 @@ export function addTimeblocks(
     return aTime.diff(bTime);
   });
 
-  let nextTBs: Timeblock[] = [];
+  const nextTBs: Timeblock[] = [];
 
   for (let i = 0; i < sortedTimeblocks.length; i++) {
     const lastTB = nextTBs[nextTBs.length - 1];

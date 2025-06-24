@@ -1,4 +1,4 @@
-import { NovaChallengeCriteria } from '@tuturuuu/types/db';
+import type { NovaChallengeCriteria } from '@tuturuuu/types/db';
 import {
   Dialog,
   DialogContent,

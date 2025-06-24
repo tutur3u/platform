@@ -1,7 +1,7 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { WorkspaceCourseModuleRowActions } from '@tuturuuu/ui/custom/education/modules/course-module-row-actions';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';

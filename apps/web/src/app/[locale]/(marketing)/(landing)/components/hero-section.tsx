@@ -1,9 +1,9 @@
 'use client';
 
-import { MainDemo } from './main-demo';
-import { MainTitle } from './main-title';
 import { gsap } from '@tuturuuu/ui/gsap';
 import { useEffect, useRef } from 'react';
+import { MainDemo } from './main-demo';
+import { MainTitle } from './main-title';
 
 export function HeroSection() {
   const sectionRef = useRef<HTMLDivElement>(null);

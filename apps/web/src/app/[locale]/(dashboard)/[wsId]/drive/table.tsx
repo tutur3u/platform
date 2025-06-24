@@ -1,10 +1,10 @@
 'use client';
 
-import { storageObjectsColumns } from './columns';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
+import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { useState } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { storageObjectsColumns } from './columns';
 
 interface Props {
   wsId: string;

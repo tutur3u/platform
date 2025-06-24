@@ -1,8 +1,6 @@
 'use client';
 
-import { NavLink } from '@/components/navigation';
-import { ENABLE_KEYBOARD_SHORTCUTS, PROD_MODE } from '@/constants/common';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@tuturuuu/ui/button';
 import {
   Collapsible,
@@ -17,6 +15,8 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { ENABLE_KEYBOARD_SHORTCUTS, PROD_MODE } from '@/constants/common';
 
 interface NavProps {
   wsId: string;
@@ -46,9 +46,9 @@ export function Nav({
   }, [pathname, searchParams]);
 
   function hasFocus(selector: string) {
-    return Array.from(document.querySelectorAll(selector)).some(function (el) {
-      return el === document.activeElement;
-    });
+    return Array.from(document.querySelectorAll(selector)).some(
+      (el) => el === document.activeElement
+    );
   }
 
   function parseShortcut(shortcut: string) {

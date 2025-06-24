@@ -1,7 +1,7 @@
 'use client';
 
 import { buttonVariants } from '@tuturuuu/ui/button';
-import { LucideIcon } from '@tuturuuu/ui/icons';
+import type { LucideIcon } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';

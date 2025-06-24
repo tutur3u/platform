@@ -1,13 +1,13 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { CalendarColumn } from './calendar-column';
-import { DAY_HEIGHT, MAX_LEVEL } from './config';
-import { EventCard } from './event-card';
-import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { useParams } from 'next/navigation';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { CalendarColumn } from './calendar-column';
+import { DAY_HEIGHT, MAX_LEVEL } from './config';
+import { EventCard } from './event-card';
 
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);

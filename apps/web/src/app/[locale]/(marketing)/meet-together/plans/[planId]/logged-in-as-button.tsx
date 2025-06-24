@@ -1,9 +1,9 @@
-import AccountBadge from './account-badge';
-import { useTimeBlocking } from './time-blocking-provider';
-import { User as PlatformUser } from '@tuturuuu/types/primitives/User';
+import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
+import AccountBadge from './account-badge';
+import { useTimeBlocking } from './time-blocking-provider';
 
 export default function LoggedInAsButton({
   platformUser,
@@ -35,7 +35,7 @@ export default function LoggedInAsButton({
           type={
             user?.is_guest === true
               ? 'GUEST'
-              : !!platformUser?.id
+              : platformUser?.id
                 ? 'PLATFORM'
                 : 'GUEST'
           }

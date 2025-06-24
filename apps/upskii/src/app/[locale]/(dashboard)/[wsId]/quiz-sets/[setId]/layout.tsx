@@ -1,15 +1,14 @@
-import LinkButton from '@/app/[locale]/(dashboard)/_components/link-button';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { type WorkspaceQuizSet } from '@tuturuuu/types/db';
+import type { WorkspaceQuizSet } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Box, Eye, Paperclip } from '@tuturuuu/ui/icons';
-import { BarChart3 } from '@tuturuuu/ui/icons';
+import { BarChart3, Box, Eye, Paperclip } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ReactNode } from 'react';
+import { getTranslations } from 'next-intl/server';
+import type { ReactNode } from 'react';
+import LinkButton from '@/app/[locale]/(dashboard)/_components/link-button';
 
 interface Props {
   children: ReactNode;

@@ -2,7 +2,7 @@
 
 import { cn } from '@tuturuuu/utils/format';
 import { GripVerticalIcon } from 'lucide-react';
-import * as React from 'react';
+import type * as React from 'react';
 import * as ResizablePrimitive from 'react-resizable-panels';
 
 function ResizablePanelGroup({

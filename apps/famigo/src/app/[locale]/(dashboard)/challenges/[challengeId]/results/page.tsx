@@ -1,4 +1,3 @@
-import ResultClient from './client';
 import {
   createAdminClient,
   createClient,
@@ -6,6 +5,7 @@ import {
 import { calculatePercentage } from '@tuturuuu/utils/nova/scores/calculate';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
+import ResultClient from './client';
 
 interface Props {
   params: Promise<{ challengeId: string }>;

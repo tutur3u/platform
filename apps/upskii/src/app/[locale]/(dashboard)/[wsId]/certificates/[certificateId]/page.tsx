@@ -1,14 +1,14 @@
-import { ElegantCertificateDocument } from '@/app/api/v1/certificates/templates/elegant-certificate';
-import { ModernCertificateDocument } from '@/app/api/v1/certificates/templates/modern-certificate';
-import { OGCertificateDocument } from '@/app/api/v1/certificates/templates/og-certificate';
-import { getCertificateDetails } from '@/lib/certificate-helper';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { CertificateTemplate } from '@tuturuuu/types/db';
 import { CertificateViewer } from '@tuturuuu/ui/custom/education/certificates/certificate-viewer';
 import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
-import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { ElegantCertificateDocument } from '@/app/api/v1/certificates/templates/elegant-certificate';
+import { ModernCertificateDocument } from '@/app/api/v1/certificates/templates/modern-certificate';
+import { OGCertificateDocument } from '@/app/api/v1/certificates/templates/og-certificate';
+import { getCertificateDetails } from '@/lib/certificate-helper';
 
 interface PageProps {
   params: Promise<{

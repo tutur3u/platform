@@ -1,9 +1,8 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
@@ -24,11 +23,12 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
+import { DEV_MODE } from '@/constants/common';
 
 // Constants
 const COOLDOWN_DURATION = 60;
@@ -300,7 +300,6 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
           lastError = verifyError;
         } catch (error) {
           lastError = error;
-          continue;
         }
       }
 

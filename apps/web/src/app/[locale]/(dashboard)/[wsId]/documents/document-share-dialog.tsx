@@ -1,4 +1,3 @@
-import { BASE_URL } from '@/constants/common';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -17,7 +16,9 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { QRCodeCanvas } from 'qrcode.react';
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
+import { BASE_URL } from '@/constants/common';
 
 interface DocumentShareDialogProps {
   isOpen: boolean;

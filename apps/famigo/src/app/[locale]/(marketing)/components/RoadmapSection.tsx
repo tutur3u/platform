@@ -1,9 +1,9 @@
 'use client';
 
-import RoadmapItem from './RoadmapItem';
 import { Badge } from '@tuturuuu/ui/badge';
 import { BrainCircuit, RocketIcon, UserPlus, Users } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
+import RoadmapItem from './RoadmapItem';
 
 const RoadmapSection = () => {
   return (

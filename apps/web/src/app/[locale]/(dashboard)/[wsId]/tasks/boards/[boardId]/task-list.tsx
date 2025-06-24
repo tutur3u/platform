@@ -1,11 +1,7 @@
-import { ListActions } from './list-actions';
-import { statusIcons } from './status-section';
-import { Task, TaskCard } from './task';
-import { TaskForm } from './task-form';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { TaskList } from '@tuturuuu/types/primitives/TaskBoard';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -36,6 +32,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ListActions } from './list-actions';
+import { statusIcons } from './status-section';
+import { type Task, TaskCard } from './task';
+import { TaskForm } from './task-form';
 
 export interface Column extends TaskList {
   // This extends TaskList to include color, status, position
@@ -160,7 +160,7 @@ export function BoardColumn({
 
   // Filter and sort tasks for this column
   const filteredAndSortedTasks = useMemo(() => {
-    let filtered = tasks.filter((task) => {
+    const filtered = tasks.filter((task) => {
       // Search filter
       if (filters.search) {
         const query = filters.search.toLowerCase();

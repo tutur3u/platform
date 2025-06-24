@@ -1,5 +1,3 @@
-import { getWorkspaceQuizColumns } from './columns';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceQuiz, WorkspaceQuizSet } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -23,8 +21,10 @@ import {
   Timer,
   XCircle,
 } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getWorkspaceQuizColumns } from './columns';
 
 interface SearchParams {
   q?: string;

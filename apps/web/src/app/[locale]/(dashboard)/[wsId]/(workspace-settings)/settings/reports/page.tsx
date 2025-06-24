@@ -1,14 +1,14 @@
-import { configColumns } from './columns';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { availableConfigs } from '@/constants/configs/reports';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { getLocale, getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { ReactNode } from 'react';
+import { getLocale, getTranslations } from 'next-intl/server';
+import type { ReactNode } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { availableConfigs } from '@/constants/configs/reports';
+import { configColumns } from './columns';
 
 interface SearchParams {
   q?: string;
@@ -119,7 +119,7 @@ async function getConfigs(wsId: string, { q }: SearchParams) {
   if (error) throw error;
 
   // Create a copy of availableConfigs to include in the response
-  let configs = [
+  const configs = [
     ...availableConfigs.map(({ defaultValue, ...rest }) => ({
       ...rest,
       value: defaultValue,

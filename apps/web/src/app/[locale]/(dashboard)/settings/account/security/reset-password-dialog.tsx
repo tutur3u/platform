@@ -1,12 +1,5 @@
 'use client';
 
-import ReauthenticateForm, {
-  type ReauthenticateFormData,
-} from './reauthenticate-form';
-import ResetPasswordForm, {
-  type ResetPasswordFormData,
-} from './reset-password-form';
-import { DEV_MODE } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -19,6 +12,13 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { DEV_MODE } from '@/constants/common';
+import ReauthenticateForm, {
+  type ReauthenticateFormData,
+} from './reauthenticate-form';
+import ResetPasswordForm, {
+  type ResetPasswordFormData,
+} from './reset-password-form';
 
 export default function ResetPasswordDialog() {
   const t = useTranslations();

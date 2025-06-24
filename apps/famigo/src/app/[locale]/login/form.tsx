@@ -1,6 +1,5 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,11 +26,12 @@ import { Mail } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
+import { DEV_MODE } from '@/constants/common';
 
 const FormSchema = z.object({
   email: z.string().email(),

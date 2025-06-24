@@ -1,18 +1,21 @@
 'use client';
 
-import AddEventButton from './components/add-event-button';
-import AddEventModal from './components/add-event-dialog';
-import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
-import TestEventGeneratorButton from './components/test-event-generator-button';
-import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Sparkles } from '@tuturuuu/ui/icons';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { DEV_MODE } from '@/constants/common';
+import AddEventButton from './components/add-event-button';
+import AddEventModal from './components/add-event-dialog';
+import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
+import TestEventGeneratorButton from './components/test-event-generator-button';
 
 export default function CalendarClientPage({
   experimentalGoogleToken,

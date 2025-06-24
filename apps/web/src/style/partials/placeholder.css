@@ -7,28 +7,28 @@
   &.ProseMirror-focused {
     /* Slashmenu Placeholder */
     > p.has-focus.is-empty::before {
-      content: 'Type  /  to browse options';
+      content: "Type  /  to browse options";
     }
 
-    > [data-type='columns']
-      > [data-type='column']
+    > [data-type="columns"]
+      > [data-type="column"]
       > p.is-empty.has-focus::before {
-      content: 'Type  /  to browse options';
+      content: "Type  /  to browse options";
     }
   }
 
   /* Default Placeholder */
   & > .is-editor-empty::before {
-    content: 'Click here to start writing …';
+    content: "Click here to start writing …";
   }
 
   /* Blockquote Placeholder */
   blockquote .is-empty:not(.is-editor-empty):first-child:last-child::before {
-    content: 'Enter a quote';
+    content: "Enter a quote";
   }
 
   blockquote + figcaption.is-empty:not(.is-editor-empty)::before {
-    content: 'Author';
+    content: "Author";
   }
 
   [data-placeholder][data-suggestion]::before,
@@ -37,15 +37,15 @@
   }
 
   /* Details Placeholder */
-  [data-type='details'].is-editor-empty::before {
+  [data-type="details"].is-editor-empty::before {
     content: none !important;
   }
 
-  [data-type='details'] summary.is-empty::before {
-    content: 'Enter a summary';
+  [data-type="details"] summary.is-empty::before {
+    content: "Enter a summary";
   }
 
-  [data-type='detailsContent'] .is-empty::before {
-    content: 'Enter details';
+  [data-type="detailsContent"] .is-empty::before {
+    content: "Enter details";
   }
 }

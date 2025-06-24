@@ -1,9 +1,9 @@
-import SparkClientPage from './client-page';
-import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
+import SparkClientPage from './client-page';
 
 export default async function SparkPage({
   params,

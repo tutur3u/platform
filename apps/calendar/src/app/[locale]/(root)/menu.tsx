@@ -1,9 +1,7 @@
 'use client';
 
-import { AuthButton } from './auth-button';
-import { NavItem, useNavigation } from './shared/navigation-config';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
@@ -19,10 +17,12 @@ import {
   SheetTrigger,
 } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { AuthButton } from './auth-button';
+import { type NavItem, useNavigation } from './shared/navigation-config';
 
 interface MenuProps {
   sbUser: SupabaseUser | null;

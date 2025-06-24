@@ -1,8 +1,6 @@
 'use client';
 
-import { ExtendedNovaSubmission, fetchSubmissions } from './actions';
-import ScoreBadge from '@/components/common/ScoreBadge';
-import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
+import type { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -18,7 +16,10 @@ import { CheckCircle2, Clock, PlayCircle, XCircle } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import React, { useCallback, useEffect, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import { type ExtendedNovaSubmission, fetchSubmissions } from './actions';
 
 type TestResult = {
   input: string;

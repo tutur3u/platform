@@ -1,13 +1,13 @@
-import { ElegantCertificateDocument } from '../../templates/elegant-certificate';
-import { ModernCertificateDocument } from '../../templates/modern-certificate';
-import { OGCertificateDocument } from '../../templates/og-certificate';
-import { getCertificateDetails } from '@/lib/certificate-helper';
 import { renderToStream } from '@react-pdf/renderer';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { CertificateTemplate } from '@tuturuuu/types/db';
-import { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
+import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
+import type { NextRequest } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import { NextRequest } from 'next/server';
+import { getCertificateDetails } from '@/lib/certificate-helper';
+import { ElegantCertificateDocument } from '../../templates/elegant-certificate';
+import { ModernCertificateDocument } from '../../templates/modern-certificate';
+import { OGCertificateDocument } from '../../templates/og-certificate';
 
 export async function POST(
   req: NextRequest,

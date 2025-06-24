@@ -1,7 +1,11 @@
 'use client';
 
-import { Invoice, InvoiceProduct, InvoicePromotion } from '@tuturuuu/types/db';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type {
+  Invoice,
+  InvoiceProduct,
+  InvoicePromotion,
+} from '@tuturuuu/types/db';
+import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Button } from '@tuturuuu/ui/button';
 import { ImageIcon, PrinterIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';

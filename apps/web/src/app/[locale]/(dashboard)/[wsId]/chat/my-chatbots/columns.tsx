@@ -1,12 +1,12 @@
 'use client';
 
-import { GroupTagRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
+import { GroupTagRowActions } from './row-actions';
 
 export const groupTagColumns = (
   t: any,

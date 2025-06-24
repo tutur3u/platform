@@ -11,8 +11,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { HelpCircle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function FAQPage() {
   const t = useTranslations('boarding-pages.faq');

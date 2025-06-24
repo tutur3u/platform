@@ -1,11 +1,8 @@
-import InviteMemberButton from './_components/invite-member-button';
-import MemberList from './_components/member-list';
-import MemberTabs from './_components/member-tabs';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { User } from '@tuturuuu/types/primitives/User';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
@@ -13,8 +10,11 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import InviteMemberButton from './_components/invite-member-button';
+import MemberList from './_components/member-list';
+import MemberTabs from './_components/member-tabs';
 
 interface Props {
   params: Promise<{

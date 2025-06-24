@@ -1,10 +1,3 @@
-import InvitationCard from '@/app/[locale]/(dashboard)/_components/invitation-card';
-import { Structure } from '@/components/layout/structure';
-import NavbarActions from '@/components/navbar-actions';
-import type { NavLink } from '@/components/navigation';
-import { EducationBanner } from '@/components/request-education-banner';
-import { UserNav } from '@/components/user-nav';
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import {
   Award,
   Blocks,
@@ -36,10 +29,17 @@ import {
 } from '@tuturuuu/utils/feature-flags/core';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { ReactNode, Suspense } from 'react';
+import { getTranslations } from 'next-intl/server';
+import { type ReactNode, Suspense } from 'react';
+import InvitationCard from '@/app/[locale]/(dashboard)/_components/invitation-card';
+import { Structure } from '@/components/layout/structure';
+import NavbarActions from '@/components/navbar-actions';
+import type { NavLink } from '@/components/navigation';
+import { EducationBanner } from '@/components/request-education-banner';
+import { UserNav } from '@/components/user-nav';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 
 interface LayoutProps {
   params: Promise<{

@@ -1,6 +1,5 @@
 'use client';
 
-import InstructionEditor from '../../app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/instruction-editor';
 import type { WorkspaceQuizSet } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -40,9 +39,10 @@ import {
   RotateCcw,
   Settings,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import * as z from 'zod';
+import InstructionEditor from '../../app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/instruction-editor';
 
 interface Props {
   wsId: string;

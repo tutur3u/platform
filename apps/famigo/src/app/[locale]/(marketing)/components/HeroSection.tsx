@@ -1,11 +1,11 @@
 'use client';
 
-import GradientHeadline from '../../gradient-headline';
 import { Badge } from '@tuturuuu/ui/badge';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { Heart } from '@tuturuuu/ui/icons';
-import { type Variants, motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import Image from 'next/image';
+import GradientHeadline from '../../gradient-headline';
 
 const HeroSection = () => {
   // Enhanced floating effect variants with reduced movement for better performance

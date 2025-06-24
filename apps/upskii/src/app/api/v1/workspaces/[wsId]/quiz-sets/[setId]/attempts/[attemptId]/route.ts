@@ -1,6 +1,6 @@
 // app/api/quiz-sets/[setId]/attempts/[attemptId]/route.ts
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{

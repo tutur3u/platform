@@ -1,18 +1,18 @@
 'use client';
 
-import { AIWhitelistEmailRowActions } from './row-actions';
 import {
   useIsFetching,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
-import { AIWhitelistEmail } from '@tuturuuu/types/db';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { AIWhitelistEmail } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Loader2 } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
+import { AIWhitelistEmailRowActions } from './row-actions';
 
 export const getAIWhitelistEmailColumns = (
   t: any

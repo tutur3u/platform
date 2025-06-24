@@ -1,7 +1,7 @@
-import UserNavClient from '../app/[locale]/(dashboard)/_components/user-nav-client';
-import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { cookies as c } from 'next/headers';
+import { LOCALE_COOKIE_NAME } from '@/constants/common';
+import UserNavClient from '../app/[locale]/(dashboard)/_components/user-nav-client';
 
 export async function UserNav({
   hideMetadata = false,

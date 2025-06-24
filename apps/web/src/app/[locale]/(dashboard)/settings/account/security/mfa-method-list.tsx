@@ -1,11 +1,11 @@
 'use client';
 
-import TOTPDialog from './totp-dialog';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { FileText, KeyRound, Phone, Smartphone } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import TOTPDialog from './totp-dialog';
 
 type MFAStatus = 'enabled' | 'disabled' | 'coming-soon';
 

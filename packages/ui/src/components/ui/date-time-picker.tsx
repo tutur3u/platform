@@ -136,7 +136,7 @@ export function DateTimePicker({
 
     if (isNaN(hours) || isNaN(minutes)) return;
 
-    let newDate = new Date(selectedDate);
+    const newDate = new Date(selectedDate);
     newDate.setHours(hours);
     newDate.setMinutes(minutes);
 
@@ -198,7 +198,7 @@ export function DateTimePicker({
   };
 
   // Generate time options in 15-minute increments
-  let timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
+  const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
     const hour = Math.floor(i / 4);
     const minute = (i % 4) * 15;
     const formattedHour = hour.toString().padStart(2, '0');

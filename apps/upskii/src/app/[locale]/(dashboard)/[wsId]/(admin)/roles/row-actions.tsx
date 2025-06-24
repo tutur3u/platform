@@ -1,9 +1,8 @@
 'use client';
 
-import { RoleForm } from './form';
-import { Row } from '@tanstack/react-table';
+import type { Row } from '@tanstack/react-table';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { WorkspaceRole } from '@tuturuuu/types/db';
+import type { WorkspaceRole } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
@@ -14,9 +13,10 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Pencil } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { RoleForm } from './form';
 
 interface RoleRowActionsProps {
   row: Row<WorkspaceRole>;

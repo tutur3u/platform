@@ -1,11 +1,6 @@
 'use client';
 
-import BeforeTakingQuizWhole, {
-  AttemptSummary,
-} from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
-import QuizStatusSidebar from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/quiz-status-sidebar';
-import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/time-elapsed-status';
-import { Json } from '@tuturuuu/types/supabase';
+import type { Json } from '@tuturuuu/types/supabase';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -14,9 +9,14 @@ import { ListCheck, TriangleAlert } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import BeforeTakingQuizWhole, {
+  type AttemptSummary,
+} from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
+import QuizStatusSidebar from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/quiz-status-sidebar';
+import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/time-elapsed-status';
 
 type TakeResponse = {
   setId: string;
@@ -105,14 +105,12 @@ export default function TakingQuizClient({
     Math.floor((Date.now() - startTs) / 1000);
 
   const buildSubmissionPayload = () => ({
-    answers: Object.entries(selectedAnswers)
-      .map(([quizId, val]) => {
-        if (Array.isArray(val)) {
-          return val.map((v) => ({ quizId, selectedOptionId: v }));
-        }
-        return { quizId, selectedOptionId: val };
-      })
-      .flat(),
+    answers: Object.entries(selectedAnswers).flatMap(([quizId, val]) => {
+      if (Array.isArray(val)) {
+        return val.map((v) => ({ quizId, selectedOptionId: v }));
+      }
+      return { quizId, selectedOptionId: val };
+    }),
     durationSeconds: computeElapsedSeconds(
       Number(localStorage.getItem(STORAGE_KEY))
     ),

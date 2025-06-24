@@ -1,9 +1,9 @@
 'use client';
 
-import FeatureCard from './FeatureCard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Clock, MessageCircle, Users } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
+import FeatureCard from './FeatureCard';
 
 const ProblemSection = () => {
   return (

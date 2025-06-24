@@ -9,8 +9,8 @@ import {
   X,
   Zap,
 } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 
 export function PricingSection() {

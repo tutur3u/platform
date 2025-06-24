@@ -1,4 +1,4 @@
-import { Active, Over } from '@dnd-kit/core';
+import type { Active, Over } from '@dnd-kit/core';
 
 interface DraggableData {
   type: 'Task' | 'Column';

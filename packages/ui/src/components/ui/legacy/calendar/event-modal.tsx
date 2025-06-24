@@ -1,28 +1,13 @@
 'use client';
 
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { Alert, AlertDescription, AlertTitle } from '../../alert';
-import { AutosizeTextarea } from '../../custom/autosize-textarea';
-import {
-  COLOR_OPTIONS,
-  DateError,
-  EventColorPicker,
-  EventDateTimePicker,
-  EventDescriptionInput,
-  EventLocationInput,
-  EventPriorityPicker,
-  EventTitleInput,
-  EventToggleSwitch,
-  OverlapWarning,
-} from './event-form-components';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import {
+import type {
   CalendarEvent,
   EventPriority,
 } from '@tuturuuu/types/primitives/calendar-event';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
   Accordion,
   AccordionContent,
@@ -81,6 +66,21 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { Alert, AlertDescription, AlertTitle } from '../../alert';
+import { AutosizeTextarea } from '../../custom/autosize-textarea';
+import {
+  COLOR_OPTIONS,
+  DateError,
+  EventColorPicker,
+  EventDateTimePicker,
+  EventDescriptionInput,
+  EventLocationInput,
+  EventPriorityPicker,
+  EventTitleInput,
+  EventToggleSwitch,
+  OverlapWarning,
+} from './event-form-components';
 
 dayjs.extend(ts);
 dayjs.extend(utc);
@@ -502,8 +502,8 @@ export function EventModal() {
     if (!date) return;
 
     setEvent((prev) => {
-      let newStartDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
-      let endDate =
+      const newStartDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
+      const endDate =
         tz === 'auto'
           ? dayjs(prev.end_at || '')
           : dayjs(prev.end_at || '').tz(tz);
@@ -550,7 +550,7 @@ export function EventModal() {
 
     setEvent((prev) => {
       let newEndDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
-      let startDate =
+      const startDate =
         tz === 'auto'
           ? dayjs(prev.start_at || '')
           : dayjs(prev.start_at || '').tz(tz);
@@ -588,7 +588,7 @@ export function EventModal() {
   // Handle all-day toggle
   const handleAllDayChange = (checked: boolean) => {
     setEvent((prev) => {
-      let startDate =
+      const startDate =
         tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
       // Backup previous times before updating
       const timedBackup = prevTimes.timed;
@@ -610,7 +610,7 @@ export function EventModal() {
           tz === 'auto'
             ? startDate.startOf('day')
             : startDate.tz(tz).startOf('day');
-        let newEnd = newStart.add(1, 'day');
+        const newEnd = newStart.add(1, 'day');
         return {
           ...prev,
           start_at: newStart.toISOString(),
@@ -629,11 +629,11 @@ export function EventModal() {
             end_at: timedBackup.end,
           };
         }
-        let newStart =
+        const newStart =
           tz === 'auto'
             ? dayjs().startOf('hour')
             : dayjs().startOf('hour').tz(tz);
-        let newEnd = newStart.add(1, 'hour');
+        const newEnd = newStart.add(1, 'hour');
         return {
           ...prev,
           start_at: newStart.toISOString(),

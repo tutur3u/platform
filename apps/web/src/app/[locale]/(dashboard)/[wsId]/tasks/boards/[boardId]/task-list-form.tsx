@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';

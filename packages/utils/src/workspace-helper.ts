@@ -1,16 +1,16 @@
-import { permissions as rolePermissions } from '../../../apps/web/src/lib/permissions';
-import { ROOT_WORKSPACE_ID } from './constants';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import {
+import type {
   PermissionId,
   Workspace,
-  type WorkspaceUserRole,
+  WorkspaceUserRole,
 } from '@tuturuuu/types/db';
-import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
+import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
+import { permissions as rolePermissions } from '../../../apps/web/src/lib/permissions';
+import { ROOT_WORKSPACE_ID } from './constants';
 
 export async function getWorkspace(id: string, requireUserRole = false) {
   const supabase = await createClient();

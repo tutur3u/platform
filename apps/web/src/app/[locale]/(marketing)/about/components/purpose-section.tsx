@@ -2,7 +2,7 @@
 
 import { Brain, Globe, Heart } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface ItemProps {
   icon: ReactNode;

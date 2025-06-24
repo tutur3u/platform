@@ -1,7 +1,6 @@
 'use client';
 
-import ApiKeyForm, { ApiConfigFormSchema } from './form';
-import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
 import {
   Dialog,
   DialogContent,
@@ -12,10 +11,12 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
-import * as z from 'zod';
+import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useState } from 'react';
+import type * as z from 'zod';
+import ApiKeyForm, { type ApiConfigFormSchema } from './form';
 
 interface Props {
   data: WorkspaceApiKey;

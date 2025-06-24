@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Clock, ExternalLink, Users } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export function WaitlistScreen() {
   const t = useTranslations('onboarding.waitlist');

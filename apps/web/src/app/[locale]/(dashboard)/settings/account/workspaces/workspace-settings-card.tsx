@@ -1,4 +1,3 @@
-import DefaultWorkspaceSetting from './default-workspace-setting';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,
@@ -11,6 +10,7 @@ import { Building } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import DefaultWorkspaceSetting from './default-workspace-setting';
 
 interface WorkspaceSettingsCardProps {
   user: WorkspaceUser | null;

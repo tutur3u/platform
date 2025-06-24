@@ -1,4 +1,4 @@
-import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,

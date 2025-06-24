@@ -141,7 +141,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
     const low = sortedValues[0];
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
     const volatility = Math.sqrt(
-      values.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / values.length
+      values.reduce((a, b) => a + (b - avg) ** 2, 0) / values.length
     );
 
     const trend = values[values.length - 1] - values[0];

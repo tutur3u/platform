@@ -1,6 +1,3 @@
-import { SectionProps } from './index';
-import RolePermission from './role-permission';
-import { permissionGroups } from '@/lib/permissions';
 import {
   Accordion,
   AccordionContent,
@@ -12,6 +9,9 @@ import { ShieldCheck } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
+import { permissionGroups } from '@/lib/permissions';
+import type { SectionProps } from './index';
+import RolePermission from './role-permission';
 
 export default function RoleFormPermissionsSection({
   wsId,

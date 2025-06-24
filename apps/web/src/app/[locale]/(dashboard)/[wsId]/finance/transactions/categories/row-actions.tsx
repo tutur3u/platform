@@ -1,8 +1,7 @@
 'use client';
 
-import { TransactionCategoryForm } from './form';
-import { Row } from '@tanstack/react-table';
-import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import type { Row } from '@tanstack/react-table';
+import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
@@ -14,9 +13,10 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { TransactionCategoryForm } from './form';
 
 interface Props {
   row: Row<TransactionCategory>;

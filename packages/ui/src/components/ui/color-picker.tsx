@@ -1,13 +1,13 @@
 'use client';
 
+import { useTheme } from 'next-themes';
+import { forwardRef, useMemo, useState } from 'react';
+import { HexColorPicker } from 'react-colorful';
 import { useForwardedRef } from '../../hooks/use-forwarded-ref';
 import type { ButtonProps } from './button';
 import { Button } from './button';
 import { Input } from './input';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
-import { useTheme } from 'next-themes';
-import { forwardRef, useMemo, useState } from 'react';
-import { HexColorPicker } from 'react-colorful';
 
 interface ColorPickerProps {
   text?: string;
@@ -93,7 +93,7 @@ export function ensureVisibleColor(
   const getLuminance = (r: number, g: number, b: number) => {
     const a = [r, g, b].map((v) => {
       v /= 255;
-      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
     });
     return 0.2126 * a[0]! + 0.7152 * a[1]! + 0.0722 * a[2]!;
   };

@@ -4,7 +4,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { ChevronsLeft, ChevronsRight, Menu, X } from 'lucide-react';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface StructureProps {
   isCollapsed: boolean;

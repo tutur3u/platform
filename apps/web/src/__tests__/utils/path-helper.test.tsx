@@ -1,5 +1,5 @@
-import { joinPath, popPath } from '@/utils/path-helper';
 import { describe, expect, it } from 'vitest';
+import { joinPath, popPath } from '@/utils/path-helper';
 
 describe('joinPath', () => {
   it('should join path without duplicate separator', () => {

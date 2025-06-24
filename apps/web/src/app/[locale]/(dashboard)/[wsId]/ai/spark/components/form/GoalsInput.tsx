@@ -1,6 +1,5 @@
 'use client';
 
-import { PlanRequest, SkillLevel, TimeOfDay } from '../../types';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -34,6 +33,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TagInput } from '@tuturuuu/ui/tag-input';
 import { useState } from 'react';
+import type { PlanRequest, SkillLevel, TimeOfDay } from '../../types';
 
 type AdvancedSettings = Omit<PlanRequest, 'wsId' | 'goals'>;
 

@@ -1,6 +1,5 @@
 'use client';
 
-import GradientHeadline from '../../gradient-headline';
 import {
   Accordion,
   AccordionContent,
@@ -28,8 +27,9 @@ import {
   Utensils,
   Wallet,
 } from '@tuturuuu/ui/icons';
-import { type Variants, motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
+import GradientHeadline from '../../gradient-headline';
 
 export default function RestaurantsPage() {
   const features = [

@@ -1,5 +1,3 @@
-import { CertificatePagination } from './certificate-pagination';
-import { getAllCertificatesForUser } from '@/lib/certificate-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -16,9 +14,11 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Award, Calendar, Eye } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { getAllCertificatesForUser } from '@/lib/certificate-helper';
+import { CertificatePagination } from './certificate-pagination';
 
 interface SearchParams {
   page?: string;

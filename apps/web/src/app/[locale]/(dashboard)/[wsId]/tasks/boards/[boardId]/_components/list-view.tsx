@@ -1,7 +1,5 @@
-import { TaskActions } from '../task-actions';
-import { getTasks } from '@/lib/task-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { Task } from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -70,6 +68,8 @@ import {
   isWithinInterval,
 } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
+import { getTasks } from '@/lib/task-helper';
+import { TaskActions } from '../task-actions';
 
 interface Props {
   board: { id: string; tasks: Task[] };
@@ -232,7 +232,7 @@ export function ListView({ board }: Props) {
 
   // Apply filters and sorting
   const filteredAndSortedTasks = useMemo(() => {
-    let filtered = tasks.filter((task) => {
+    const filtered = tasks.filter((task) => {
       // Search filter
       if (filters.search) {
         const query = filters.search.toLowerCase();
@@ -288,7 +288,7 @@ export function ListView({ board }: Props) {
               return false;
             }
             break;
-          case 'this_week':
+          case 'this_week': {
             if (!task.end_date) return false;
             const weekEnd = addDays(now, 7);
             if (
@@ -300,6 +300,7 @@ export function ListView({ board }: Props) {
               return false;
             }
             break;
+          }
           case 'no_date':
             if (task.end_date) return false;
             break;

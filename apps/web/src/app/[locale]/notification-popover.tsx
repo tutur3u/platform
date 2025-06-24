@@ -1,6 +1,3 @@
-import NotificationActionList, {
-  NotificationAction,
-} from './notification-action-list';
 import { Button } from '@tuturuuu/ui/button';
 import { Bell } from '@tuturuuu/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -8,6 +5,9 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspaceInvites } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
+import NotificationActionList, {
+  type NotificationAction,
+} from './notification-action-list';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { getLocale, getTranslations } from 'next-intl/server';

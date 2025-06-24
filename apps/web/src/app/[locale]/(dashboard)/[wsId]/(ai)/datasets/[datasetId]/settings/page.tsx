@@ -1,6 +1,3 @@
-import { ClearDataDialog } from './clear-data-dialog';
-import { DeleteDatasetDialog } from './delete-dataset-dialog';
-import { ManageColumns } from './manage-columns';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Alert, AlertTitle } from '@tuturuuu/ui/alert';
 import {
@@ -13,6 +10,9 @@ import {
 import { AlertCircle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { notFound } from 'next/navigation';
+import { ClearDataDialog } from './clear-data-dialog';
+import { DeleteDatasetDialog } from './delete-dataset-dialog';
+import { ManageColumns } from './manage-columns';
 
 interface Props {
   params: Promise<{

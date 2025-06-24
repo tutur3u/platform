@@ -1,5 +1,4 @@
-import { ExtendedNovaSubmission } from '../types';
-import { NovaProblem, NovaSession } from '@tuturuuu/types/db';
+import type { NovaProblem, NovaSession } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -23,6 +22,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
+import type { ExtendedNovaSubmission } from '../types';
 
 // Maximum score constant - each problem is worth 10 points
 const MAX_SCORE_PER_PROBLEM = 10;

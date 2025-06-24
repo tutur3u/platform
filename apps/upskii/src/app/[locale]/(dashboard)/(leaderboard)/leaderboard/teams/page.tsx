@@ -1,12 +1,15 @@
-import { BasicInformation } from '../components/basic-information-component';
-import { LeaderboardEntry, UserInterface } from '../components/leaderboard';
-import LeaderboardClient from './client';
-import TeamsLeaderboardFallback from './fallback';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { Suspense } from 'react';
+import type { BasicInformation } from '../components/basic-information-component';
+import type {
+  LeaderboardEntry,
+  UserInterface,
+} from '../components/leaderboard';
+import LeaderboardClient from './client';
+import TeamsLeaderboardFallback from './fallback';
 
 export const revalidate = 60;
 
@@ -93,9 +96,9 @@ async function fetchLeaderboard(page: number = 1) {
   const sbAdmin = await createAdminClient();
 
   // 1. Get all team members + their teams
-  const { data: teamData, error: teamError } = await sbAdmin.from(
-    'nova_team_members'
-  ).select(`
+  const { data: teamData, error: teamError } = await sbAdmin
+    .from('nova_team_members')
+    .select(`
     team_id,
     user_id,
     nova_teams (
@@ -114,9 +117,9 @@ async function fetchLeaderboard(page: number = 1) {
   }
 
   // 2. Get all scores with detail for proper calculation
-  const { data: submissionsData, error: submissionsError } = await sbAdmin.from(
-    'nova_submissions_with_scores'
-  ).select(`
+  const { data: submissionsData, error: submissionsError } = await sbAdmin
+    .from('nova_submissions_with_scores')
+    .select(`
     id,
     user_id,
     problem_id,

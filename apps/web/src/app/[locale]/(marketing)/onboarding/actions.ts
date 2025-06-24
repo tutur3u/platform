@@ -1,13 +1,13 @@
 'use server';
 
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { redirect } from 'next/navigation';
 import type {
   OnboardingProgress,
   OnboardingStep,
   WhitelistStatus,
 } from './types';
 import { ONBOARDING_STEPS } from './types';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { redirect } from 'next/navigation';
 
 /**
  * Check if a user is whitelisted to access the platform

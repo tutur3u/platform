@@ -1,11 +1,11 @@
-import AIQuizzes from '../../../../../../../../../components/quiz/client-ai';
-import ClientQuizzes from '../../../../../../../../../components/quiz/client-quizzes';
-import QuizForm from '../../../../../quizzes/form';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ListTodo } from '@tuturuuu/ui/icons';
 import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
+import AIQuizzes from '../../../../../../../../../components/quiz/client-ai';
+import ClientQuizzes from '../../../../../../../../../components/quiz/client-quizzes';
+import QuizForm from '../../../../../quizzes/form';
 
 interface Props {
   params: Promise<{

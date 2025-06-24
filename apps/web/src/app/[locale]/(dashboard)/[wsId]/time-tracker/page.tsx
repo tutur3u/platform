@@ -1,9 +1,9 @@
-import TimeTrackerContent from './time-tracker-content';
-import type { TimeTrackerData } from './types';
-import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
+import { getTimeTrackingData } from '@/lib/time-tracking-helper';
+import TimeTrackerContent from './time-tracker-content';
+import type { TimeTrackerData } from './types';
 
 interface Props {
   params: Promise<{

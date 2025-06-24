@@ -1,5 +1,5 @@
+import type { Metadata } from 'next';
 import { HorseRacingVisualization } from '@/components/visualizations/horse-racing/visualization';
-import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Horse Racing Algorithm Visualization',

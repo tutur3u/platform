@@ -1,4 +1,4 @@
-import { SupportedColor } from './SupportedColors';
+import type { SupportedColor } from './SupportedColors';
 
 // Task Board Status - Used for organizing tasks into workflow stages
 // NOTE: This is different from AI module TaskStatus which has different values

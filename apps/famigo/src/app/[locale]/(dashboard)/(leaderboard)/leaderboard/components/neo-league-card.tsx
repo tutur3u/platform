@@ -8,8 +8,8 @@ import {
   Trophy,
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 const NEO_LEAGUE_ROUND_1_ID = '8d5e4c63-eccb-4a34-964b-c5018c0094da';
 

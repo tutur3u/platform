@@ -1,17 +1,12 @@
 'use client';
 
-import ProblemComponent from '../../../../shared/problem-component';
-import PromptComponent from '../../../../shared/prompt-component';
-import TestCaseComponent from '../../../../shared/test-case-component';
-import ChallengeHeader from './challengeHeader';
-import PromptForm from './prompt-form';
-import {
+import type {
   NovaChallenge,
   NovaChallengeCriteria,
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
-  type NovaSubmissionWithScores,
+  NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -28,6 +23,11 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ProblemComponent from '../../../../shared/problem-component';
+import PromptComponent from '../../../../shared/prompt-component';
+import TestCaseComponent from '../../../../shared/test-case-component';
+import ChallengeHeader from './challengeHeader';
+import PromptForm from './prompt-form';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];

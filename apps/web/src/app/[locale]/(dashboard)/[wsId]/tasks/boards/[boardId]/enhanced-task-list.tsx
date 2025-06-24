@@ -1,7 +1,5 @@
 'use client';
 
-import { TaskCard } from './task';
-import { TaskForm } from './task-form';
 import { useDroppable } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -11,8 +9,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -36,6 +34,8 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { TaskCard } from './task';
+import { TaskForm } from './task-form';
 
 interface Props {
   list: TaskList;

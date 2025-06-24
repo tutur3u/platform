@@ -1,6 +1,6 @@
 'use client';
 
-import { WorkspaceDocument } from '@tuturuuu/types/db';
+import type { WorkspaceDocument } from '@tuturuuu/types/db';
 import { Globe2, Loader2 } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 
