@@ -83,7 +83,7 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
   
-  const storagePath = `${id}/${chat?.id}/resources/`;
+  const storagePath = `${id}/chats/ai/resources/${chat?.id}/`;
   const [showDialog, setShowDialog] = useState(false);
   const [dialogType, setDialogType] = useState<
     'files' | 'visibility' | 'api'
