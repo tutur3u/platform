@@ -1,6 +1,6 @@
-import QuizForm from '../../../../../quizzes/form';
 import AIQuizzes from '../../../../../../../../../components/quiz/client-ai';
 import ClientQuizzes from '../../../../../../../../../components/quiz/client-quizzes';
+import QuizForm from '../../../../../quizzes/form';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ListTodo } from '@tuturuuu/ui/icons';

@@ -1,4 +1,4 @@
-import QuizSetForm from "@/components/quiz/quiz-set-form";
+import QuizSetForm from '@/components/quiz/quiz-set-form';
 
 interface Props {
   params: Promise<{
