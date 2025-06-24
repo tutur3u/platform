@@ -21,7 +21,7 @@ export default async function NavbarActions({
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         {sbUser ? (
           <>
             <UserNavWrapper hideMetadata={hideMetadata} />
@@ -32,12 +32,14 @@ export default async function NavbarActions({
               text={t('common.get-started')}
               href="/onboarding"
             />
-            <LanguageWrapper
-              cookieName={LOCALE_COOKIE_NAME}
-              defaultLocale={defaultLocale}
-              supportedLocales={supportedLocales}
-            />
-            <ThemeToggle />
+            <div className="flex items-center gap-1">
+              <LanguageWrapper
+                cookieName={LOCALE_COOKIE_NAME}
+                defaultLocale={defaultLocale}
+                supportedLocales={supportedLocales}
+              />
+              <ThemeToggle />
+            </div>
           </>
         )}
       </div>

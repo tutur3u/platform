@@ -1,184 +1,121 @@
+// app/api/quiz-sets/[setId]/results/route.ts
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-type AttemptAnswer = {
-  quizId: string;
-  question: string;
-  selectedOption: string | null;
-  correctOption: string;
-  isCorrect: boolean;
-  scoreAwarded: number;
-};
-type AttemptDTO = {
-  attemptId: string;
-  attemptNumber: number;
-  totalScore: number;
-  maxPossibleScore: number;
-  startedAt: string;
-  completedAt: string | null;
-  answers: AttemptAnswer[];
-};
+interface Params {
+  params: Promise<{
+    setId: string;
+  }>;
+}
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ setId: string }> }
-) {
+export async function GET(_req: NextRequest, { params }: Params) {
   const { setId } = await params;
-  const supabase = await createClient();
+  const sb = await createClient();
 
-  // 1) Auth
+  // Auth
   const {
     data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-  if (userErr || !user) {
+    error: uErr,
+  } = await sb.auth.getUser();
+  if (uErr || !user)
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
-  const userId = user.id;
+  const uid = user.id;
 
-  // 2) Always allow if they have any attempts—and if allow_view_results is true
-  const { data: setRow, error: setErr } = await supabase
+  // Check allow_view_results
+  const { data: s, error: sErr } = await sb
     .from('workspace_quiz_sets')
     .select('allow_view_results')
     .eq('id', setId)
     .maybeSingle();
-
-  if (setErr || !setRow) {
-    return NextResponse.json({ error: 'Quiz set not found' }, { status: 404 });
-  }
-  if (!setRow.allow_view_results) {
-    return NextResponse.json(
-      { error: 'Viewing results is disabled' },
-      { status: 403 }
-    );
+  if (sErr || !s)
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!s.allow_view_results) {
+    return NextResponse.json({ error: 'Viewing disabled' }, { status: 403 });
   }
 
-  // 3) Fetch question info (correct answers + weight)
-  const { data: questionsRaw, error: qErr } = await supabase
+  // Fetch correct answers & weight
+  const { data: qRaw, error: qErr } = await sb
     .from('quiz_set_quizzes')
     .select(
       `
       quiz_id,
-      workspace_quizzes (
-        question,
-        score
-      ),
-      quiz_options!inner (
-        value
-      )
+      workspace_quizzes(score),
+      quiz_options!inner(value)  -- only correct by join filter
     `
     )
     .eq('set_id', setId)
     .eq('quiz_options.is_correct', true);
+  if (qErr)
+    return NextResponse.json({ error: 'Q fetch error' }, { status: 500 });
 
-  if (qErr) {
-    return NextResponse.json(
-      { error: 'Error fetching questions' },
-      { status: 500 }
-    );
-  }
-
-  const questionInfo = (questionsRaw || []).map((row: any) => ({
-    quizId: row.quiz_id,
-    question: row.workspace_quizzes.question,
-    scoreWeight: row.workspace_quizzes.score,
-    correctOptionValue: row.quiz_options.value,
+  type Q = {
+    quiz_id: string;
+    workspace_quizzes: { score: number };
+    quiz_options: { value: string };
+  };
+  const info = (qRaw as unknown as Q[]).map((r) => ({
+    quizId: r.quiz_id,
+    weight: r.workspace_quizzes.score,
+    correct: r.quiz_options.value,
   }));
-  const maxPossibleScore = questionInfo.reduce((s, q) => s + q.scoreWeight, 0);
+  const maxScore = info.reduce((a, c) => a + c.weight, 0);
 
-  // 4) Fetch all attempts by user
-  const { data: attemptsData, error: attemptsErr } = await supabase
+  // Fetch attempts
+  const { data: aData, error: aErr } = await sb
     .from('workspace_quiz_attempts')
     .select(
       `
       id,
       attempt_number,
       total_score,
-      started_at,
-      completed_at
+      submitted_at,
+      duration_seconds
     `
     )
-    .eq('user_id', userId)
+    .eq('user_id', uid)
     .eq('set_id', setId)
     .order('attempt_number', { ascending: false });
+  if (aErr)
+    return NextResponse.json({ error: 'Attempt fetch error' }, { status: 500 });
 
-  if (attemptsErr) {
-    return NextResponse.json(
-      { error: 'Error fetching attempts' },
-      { status: 500 }
-    );
-  }
-  const attempts = attemptsData || [];
-  if (!attempts.length) {
-    return NextResponse.json({ error: 'No attempts found' }, { status: 404 });
-  }
+  const results = await Promise.all(
+    aData!.map(async (att) => {
+      const { data: ansRows } = await sb
+        .from('workspace_quiz_attempt_answers')
+        .select('quiz_id,selected_option_id,is_correct,score_awarded')
+        .eq('attempt_id', att.id);
 
-  // 5) For each attempt, fetch its answers
-  const resultDTOs: AttemptDTO[] = [];
+      const ansMap = new Map(ansRows!.map((r) => [r.quiz_id, r]));
+      const answers = info.map(async (qi) => {
+        const ar = ansMap.get(qi.quizId);
+        return {
+          quizId: qi.quizId,
+          correctOption: qi.correct,
+          selectedOption: ar
+            ? await (() =>
+                sb
+                  .from('quiz_options')
+                  .select('value')
+                  .eq('id', ar.selected_option_id)
+                  .maybeSingle()
+                  .then((r) => r.data?.value || null))()
+            : null,
+          isCorrect: ar?.is_correct ?? false,
+          scoreAwarded: ar?.score_awarded ?? 0,
+        };
+      });
 
-  for (const att of attempts) {
-    const { data: answerRows, error: ansErr } = await supabase
-      .from('workspace_quiz_attempt_answers')
-      .select(
-        `
-        quiz_id,
-        selected_option_id,
-        is_correct,
-        score_awarded
-      `
-      )
-      .eq('attempt_id', att.id);
+      return {
+        attemptId: att.id,
+        attemptNumber: att.attempt_number,
+        totalScore: att.total_score ?? 0,
+        maxPossibleScore: maxScore,
+        submittedAt: att.submitted_at,
+        durationSeconds: att.duration_seconds,
+        answers,
+      };
+    })
+  );
 
-    if (ansErr) {
-      return NextResponse.json(
-        { error: 'Error fetching attempt answers' },
-        { status: 500 }
-      );
-    }
-
-    const aMap = new Map(answerRows!.map((a: any) => [a.quiz_id, a]));
-
-    const answers = await Promise.all(
-      questionInfo.map(async (qi) => {
-        const a = aMap.get(qi.quizId);
-        if (a) {
-          const { data: selOpt, error: selErr } = await supabase
-            .from('quiz_options')
-            .select('value')
-            .eq('id', a.selected_option_id)
-            .maybeSingle();
-
-          return {
-            quizId: qi.quizId,
-            question: qi.question,
-            selectedOption: selErr || !selOpt ? null : selOpt.value,
-            correctOption: qi.correctOptionValue,
-            isCorrect: a.is_correct,
-            scoreAwarded: a.score_awarded,
-          };
-        } else {
-          return {
-            quizId: qi.quizId,
-            question: qi.question,
-            selectedOption: null,
-            correctOption: qi.correctOptionValue,
-            isCorrect: false,
-            scoreAwarded: 0,
-          };
-        }
-      })
-    );
-
-    resultDTOs.push({
-      attemptId: att.id,
-      attemptNumber: att.attempt_number,
-      totalScore: att.total_score ?? 0,
-      maxPossibleScore,
-      startedAt: att.started_at,
-      completedAt: att.completed_at,
-      answers,
-    });
-  }
-
-  return NextResponse.json({ attempts: resultDTOs });
+  return NextResponse.json({ attempts: results });
 }

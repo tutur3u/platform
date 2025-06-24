@@ -1,0 +1,23 @@
+{
+  "name": "@tuturuuu/trigger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "trigger:dev": "bunx trigger.dev@latest dev",
+    "trigger:deploy": "bunx trigger.dev@latest deploy"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.0",
+    "@trigger.dev/sdk": "^3.3.17",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "dayjs": "^1.11.13",
+    "google-auth-library": "^10.1.0",
+    "googleapis": "^150.0.1"
+  },
+  "devDependencies": {
+    "@trigger.dev/build": "^3.3.17"
+  }
+}

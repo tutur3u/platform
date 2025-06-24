@@ -99,9 +99,9 @@ export async function PATCH(
     }
 
     // Use admin client for update
-    const adminSupabase = await createAdminClient();
+    const sbAdmin = await createAdminClient();
 
-    const { data, error } = await adminSupabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_goals')
       .update(updateData)
       .eq('id', goalId)
@@ -172,8 +172,8 @@ export async function DELETE(
     }
 
     // Delete the goal
-    const adminSupabase = await createAdminClient();
-    const { error } = await adminSupabase
+    const sbAdmin = await createAdminClient();
+    const { error } = await sbAdmin
       .from('time_tracking_goals')
       .delete()
       .eq('id', goalId);

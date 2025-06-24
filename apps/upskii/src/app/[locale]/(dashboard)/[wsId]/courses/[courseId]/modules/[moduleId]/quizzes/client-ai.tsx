@@ -12,10 +12,12 @@ import { useState } from 'react';
 
 export default function AIQuizzes({
   wsId,
+  courseId,
   moduleId,
   moduleName,
 }: {
   wsId: string;
+  courseId: string;
   moduleId: string;
   moduleName: string;
 }) {
@@ -105,6 +107,7 @@ export default function AIQuizzes({
           <div className="grid gap-4 md:grid-cols-2">
             <ClientQuizzes
               wsId={wsId}
+              courseId={courseId}
               moduleId="ai-generated"
               quizzes={object.quizzes}
               previewMode

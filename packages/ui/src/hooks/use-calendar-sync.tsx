@@ -7,6 +7,10 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import {
+  canProceedWithSync,
+  updateLastUpsert,
+} from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
 import {
   createContext,
@@ -38,9 +42,11 @@ const CalendarSyncContext = createContext<{
     }) => void
   ) => Promise<void>;
 
+  isActiveSyncOn: boolean;
+
   // Events-related operations
   events: CalendarEvent[];
-
+  setIsActiveSyncOn: (isActive: boolean) => void;
   // Show data from database to Tuturuuu
   eventsWithoutAllDays: CalendarEvent[];
   allDayEvents: CalendarEvent[];
@@ -60,7 +66,8 @@ const CalendarSyncContext = createContext<{
   currentView: 'day',
   setCurrentView: () => {},
   syncToTuturuuu: async () => {},
-
+  isActiveSyncOn: false,
+  setIsActiveSyncOn: () => {},
   // Events-related operations
   events: [],
 
@@ -119,6 +126,7 @@ export const CalendarSyncProvider = ({
   const [currentView, setCurrentView] = useState<
     'day' | '4-day' | 'week' | 'month'
   >('day');
+  const [isActiveSyncOn, setIsActiveSyncOn] = useState(false);
   const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const prevGoogleDataRef = useRef<string>('');
@@ -333,8 +341,20 @@ export const CalendarSyncProvider = ({
         changesMade: boolean;
       }) => void
     ) => {
+      if (!isActiveSyncOn) {
+        console.log('Sync blocked due to isActiveSyncOn is false');
+        return;
+      }
+
       setIsSyncing(true);
       try {
+        // Check if we can proceed with sync
+        const canProceed = await canProceedWithSync(wsId);
+        if (!canProceed) {
+          console.log('Sync blocked due to 30-second cooldown');
+          return;
+        }
+
         const supabase = createClient();
 
         // Use the exact range from dates array
@@ -559,6 +579,9 @@ export const CalendarSyncProvider = ({
         } else {
           setError(null);
           console.log('Upsert status: Finished');
+
+          // Update lastUpsert timestamp after successful upsert
+          await updateLastUpsert(wsId);
         }
 
         // Refresh the cache to trigger queryClient to refetch the data from database
@@ -577,7 +600,7 @@ export const CalendarSyncProvider = ({
         setIsSyncing(false);
       }
     },
-    [wsId, dates, queryClient]
+    [wsId, dates, queryClient, isActiveSyncOn]
   );
 
   // Sync to Tuturuuu database when google data changes for current view
@@ -600,6 +623,28 @@ export const CalendarSyncProvider = ({
       prevGoogleDataRef.current = currentGoogleDataStr;
     }
   }, [fetchedGoogleData, syncToTuturuuu]);
+
+  // Trigger sync when isActiveSyncOn becomes true
+  useEffect(() => {
+    // If have not connected to google, don't sync
+    if (experimentalGoogleToken?.ws_id !== wsId) {
+      return;
+    }
+
+    // Only sync when isActiveSyncOn becomes true and we have Google data
+    if (isActiveSyncOn && fetchedGoogleData && fetchedGoogleData.length > 0) {
+      console.log(
+        'useEffect - isActiveSyncOn changed to true, triggering sync'
+      );
+      syncToTuturuuu();
+    }
+  }, [
+    isActiveSyncOn,
+    fetchedGoogleData,
+    syncToTuturuuu,
+    wsId,
+    experimentalGoogleToken?.ws_id,
+  ]);
 
   // Trigger refetch from DB and Google when changing views AND there are changes in Google data
   // This will trigger syncToTuturuuu()
@@ -836,7 +881,8 @@ export const CalendarSyncProvider = ({
     setCurrentView,
     syncToTuturuuu,
     syncToGoogle,
-
+    isActiveSyncOn,
+    setIsActiveSyncOn,
     // Events-related operations
     events,
 

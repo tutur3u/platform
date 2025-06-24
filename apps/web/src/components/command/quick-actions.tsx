@@ -1,7 +1,21 @@
 'use client';
 
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
-import { Calendar, Clock, PlusCircle, Timer } from 'lucide-react';
+import {
+  Brain,
+  Calendar,
+  Clock,
+  PlusCircle,
+  Timer,
+  TrendingUp,
+} from '@tuturuuu/ui/icons';
+import { useMemo } from 'react';
+
+// Peak productivity hours configuration
+const PEAK_HOURS = {
+  morning: { start: 9, end: 11 },
+  afternoon: { start: 14, end: 16 },
+} as const;
 
 interface QuickActionsProps {
   onAddTask: () => void;
@@ -16,6 +30,17 @@ export function QuickActions({
   onQuickTimeTracker,
   onCalendar,
 }: QuickActionsProps) {
+  // Calculate current hour for productivity suggestions with memoization
+  const isPeakHour = useMemo(() => {
+    const currentHour = new Date().getHours();
+    return (
+      (currentHour >= PEAK_HOURS.morning.start &&
+        currentHour <= PEAK_HOURS.morning.end) ||
+      (currentHour >= PEAK_HOURS.afternoon.start &&
+        currentHour <= PEAK_HOURS.afternoon.end)
+    );
+  }, []);
+
   return (
     <CommandGroup heading="⚡ Quick Actions">
       <CommandItem
@@ -55,11 +80,23 @@ export function QuickActions({
             </div>
           </div>
           <div className="flex flex-1 flex-col">
-            <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-purple">
-              Quick timer
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-purple">
+                Quick timer
+              </span>
+              {isPeakHour && (
+                <div className="flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 dark:bg-amber-900/30">
+                  <Brain className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                    Peak Time
+                  </span>
+                </div>
+              )}
+            </div>
             <span className="text-xs text-muted-foreground">
-              Start tracking time instantly
+              {isPeakHour
+                ? 'Perfect timing for deep focus work'
+                : 'Start tracking time instantly'}
             </span>
           </div>
           <div className="text-xs text-dynamic-purple/60 opacity-0 transition-opacity group-hover:opacity-100">
@@ -80,11 +117,19 @@ export function QuickActions({
             </div>
           </div>
           <div className="flex flex-1 flex-col">
-            <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-blue">
-              Time Tracker
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-blue">
+                Time Tracker
+              </span>
+              <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
+                <TrendingUp className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                  Analytics
+                </span>
+              </div>
+            </div>
             <span className="text-xs text-muted-foreground">
-              Advanced time tracking and analytics
+              Advanced time tracking with focus scores & insights
             </span>
           </div>
           <div className="text-xs text-dynamic-blue/60 opacity-0 transition-opacity group-hover:opacity-100">

@@ -1,7 +1,8 @@
 'use client';
 
-import { DEV_MODE, PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
+import { DEV_MODE, PROD_MODE } from '@/constants/common';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
@@ -10,7 +11,7 @@ export interface NavLink {
   title: string;
   trailing?: string;
   icon?: ReactNode;
-  href: string;
+  href?: string;
   newTab?: boolean;
   matchExact?: boolean;
   aliases?: string[];
@@ -21,7 +22,7 @@ export interface NavLink {
   allowedRoles?: string[];
   disabledRoles?: string[];
   shortcut?: string;
-  experimental?: 'alpha' | 'beta';
+  children?: NavLink[];
 }
 
 interface Props {
@@ -105,9 +106,11 @@ export function Navigation({
         const isActive =
           links
             .map((href) =>
-              matchExact
-                ? pathname === href
-                : (pathname?.startsWith(href) ?? false)
+              href
+                ? matchExact
+                  ? pathname === href
+                  : (pathname?.startsWith(href) ?? false)
+                : false
             )
             .filter(Boolean).length > 0;
 
@@ -142,7 +145,7 @@ export function Navigation({
               setUrlToLoad(link.href);
               if (isActive) scrollActiveLinksIntoView();
             }}
-            href={link.href}
+            href={link.href || '#'}
           >
             {link.title}
           </Link>

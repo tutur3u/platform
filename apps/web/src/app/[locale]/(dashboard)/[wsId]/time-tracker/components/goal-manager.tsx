@@ -1,6 +1,6 @@
 'use client';
 
-import type { TimeTrackingGoal } from '../time-tracker-content';
+import type { TimeTrackingGoal, TimerStats } from '../types';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -55,18 +55,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
-
-interface TimerStats {
-  todayTime: number;
-  weekTime: number;
-  monthTime: number;
-  streak: number;
-  categoryBreakdown?: {
-    today: Record<string, number>;
-    week: Record<string, number>;
-    month: Record<string, number>;
-  };
-}
 
 interface GoalManagerProps {
   wsId: string;

@@ -58,10 +58,10 @@ export async function POST(
     }
 
     // Use service role client for secure operations
-    const adminSupabase = await createAdminClient();
+    const sbAdmin = await createAdminClient();
 
     // Stop any existing running sessions
-    await adminSupabase
+    await sbAdmin
       .from('time_tracking_sessions')
       .update({
         end_time: new Date().toISOString(),
@@ -73,7 +73,7 @@ export async function POST(
       .eq('is_running', true);
 
     // Create new session with server timestamp
-    const { data, error } = await adminSupabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_sessions')
       .insert({
         ws_id: wsId,

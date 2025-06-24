@@ -1,7 +1,8 @@
-import TimeTrackerContent, { TimeTrackerData } from './time-tracker-content';
+import TimeTrackerContent from './time-tracker-content';
+import type { TimeTrackerData } from './types';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
-import { getWorkspace, verifySecret } from '@/lib/workspace-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 
 interface Props {
@@ -33,14 +34,7 @@ export default async function TimeTrackerPage({ params }: Props) {
     const rawData = await getTimeTrackingData(wsId, user.id);
 
     // Transform data to match expected types
-    const initialData: TimeTrackerData = {
-      categories: rawData.categories,
-      runningSession: rawData.runningSession,
-      recentSessions: rawData.recentSessions,
-      goals: rawData.goals,
-      tasks: rawData.tasks,
-      stats: rawData.stats,
-    };
+    const initialData: TimeTrackerData = { ...rawData };
 
     return <TimeTrackerContent wsId={wsId} initialData={initialData} />;
   } catch (error) {

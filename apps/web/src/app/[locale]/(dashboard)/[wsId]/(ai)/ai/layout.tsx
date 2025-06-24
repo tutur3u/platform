@@ -1,4 +1,4 @@
-import { getPermissions } from '@/lib/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import React from 'react';
 

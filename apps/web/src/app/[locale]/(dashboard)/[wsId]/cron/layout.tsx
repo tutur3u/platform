@@ -1,6 +1,6 @@
 import { NavLink, Navigation } from '@/components/navigation';
-import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import React from 'react';

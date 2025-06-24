@@ -2,6 +2,7 @@
 
 import Chat from '../../chat/chat';
 import { TaskBoardForm } from '../../tasks/boards/form';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import QuickTaskTimer from './quick-task-timer';
 import { TaskForm } from './task-form';
 import { TaskListForm } from './task-list-form';
@@ -186,11 +187,59 @@ export default function TasksSidebarContent({
 
   // Get all tasks from all boards for time tracker
   const allTasks = useMemo(() => {
-    const tasks: Partial<WorkspaceTask>[] = [];
+    const tasks: ExtendedWorkspaceTask[] = [];
     initialTaskBoards.forEach((board) => {
       board.lists?.forEach((list) => {
         if (list.tasks) {
-          tasks.push(...list.tasks);
+          // Transform Partial<WorkspaceTask> to ExtendedWorkspaceTask
+          interface TaskWithAssigneeMeta extends Partial<WorkspaceTask> {
+            assignee_name?: string;
+            assignee_avatar?: string;
+            is_assigned_to_current_user?: boolean;
+            assignees?: ExtendedWorkspaceTask['assignees'];
+          }
+
+          const extendedTasks = list.tasks.map(
+            (task): ExtendedWorkspaceTask => {
+              const taskMeta = task as TaskWithAssigneeMeta;
+
+              // Type-safe conversion from Partial<WorkspaceTask> to ExtendedWorkspaceTask
+              // Convert undefined values to null to match the expected type constraints
+              const extendedTask: ExtendedWorkspaceTask = {
+                // Required fields (these should always be present)
+                id: task.id!,
+                name: task.name!,
+                list_id: task.list_id!,
+
+                // Optional fields with proper null conversion
+                description: task.description ?? null,
+                priority: task.priority ?? null,
+                start_date: task.start_date ?? null,
+                end_date: task.end_date ?? null,
+                created_at: task.created_at ?? null,
+                creator_id: task.creator_id ?? null,
+
+                // Boolean fields that should be boolean | null (not undefined)
+                archived: task.archived ?? null,
+                completed: task.completed ?? null,
+                deleted: task.deleted ?? null,
+
+                // Extended fields for context
+                board_name: board.name ?? undefined,
+                list_name: list.name ?? undefined,
+
+                // Keep existing assignee metadata if present
+                assignee_name: taskMeta.assignee_name || undefined,
+                assignee_avatar: taskMeta.assignee_avatar || undefined,
+                is_assigned_to_current_user:
+                  taskMeta.is_assigned_to_current_user || undefined,
+                assignees: taskMeta.assignees || undefined,
+              };
+
+              return extendedTask;
+            }
+          );
+          tasks.push(...extendedTasks);
         }
       });
     });

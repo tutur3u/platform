@@ -288,7 +288,10 @@
     "whats_the_title": "Tiêu đề là gì?",
     "write_something": "Hãy viết gì đó...",
     "error_saving_content": "Lỗi khi lưu nội dung của bạn",
-    "not_completed": "Chưa hoàn thành"
+    "not_completed": "Chưa hoàn thành",
+    "whiteboards": "Bảng trắng",
+    "whiteboards_description": "Hợp tác và minh họa ý tưởng với đội của bạn",
+    "new_whiteboard": "Bảng trắng mới"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -349,7 +352,126 @@
     "change-theme": "Chuyển đổi giữa giao diện sáng và tối",
     "change-language": "Thay đổi ngôn ngữ hiển thị",
     "sign-out": "Đăng xuất",
-    "sign-out-desc": "Đăng xuất khỏi phiên đăng nhập hiện tại"
+    "sign-out-desc": "Đăng xuất khỏi phiên đăng nhập hiện tại",
+    "waitlist": {
+      "title": "Bạn đang trong danh sách chờ",
+      "description": "Cảm ơn bạn đã quan tâm! Hiện tại bạn đang trong danh sách chờ. Chúng tôi sẽ thông báo cho bạn ngay khi có quyền truy cập.",
+      "email-notification": "Chúng tôi sẽ gửi email cho bạn khi quyền truy cập đã sẵn sàng",
+      "estimated-time": "Thời gian chờ ước tính",
+      "contact-support": "Có câu hỏi? Liên hệ hỗ trợ",
+      "logout": "Đăng xuất",
+      "status": "Trạng thái danh sách chờ",
+      "position": "Vị trí trong hàng đợi",
+      "join-community": "Tham gia cộng đồng của chúng tôi",
+      "follow-updates": "Theo dõi để nhận cập nhật",
+      "get-in-touch": "Liên hệ với chúng tôi"
+    },
+    "welcome": {
+      "title": "Chào mừng đến với Tuturuuu!",
+      "subtitle": "Hãy thiết lập mọi thứ chỉ trong vài bước",
+      "description": "Chúng tôi sẽ giúp bạn tạo không gian làm việc và chuẩn bị mọi thứ để đội ngũ của bạn có thể cộng tác.",
+      "get-started": "Bắt đầu ngay",
+      "step-indicator": "Bước {current} trên {total}",
+      "features": {
+        "team-collaboration": {
+          "title": "Cộng tác nhóm",
+          "description": "Làm việc cùng nhau một cách liền mạch với đội ngũ của bạn trong thời gian thực trên tất cả các dự án"
+        },
+        "powerful-tools": {
+          "title": "Công cụ mạnh mẽ",
+          "description": "Truy cập các tính năng nâng cao và công cụ hỗ trợ AI để tăng năng suất của bạn"
+        },
+        "easy-setup": {
+          "title": "Thiết lập dễ dàng",
+          "description": "Bắt đầu hoạt động trong vài phút với quy trình thiết lập hướng dẫn trực quan của chúng tôi"
+        }
+      },
+      "ready-to-start": "Sẵn sàng bắt đầu?",
+      "setup-steps": "Đây là những gì chúng ta sẽ thiết lập cùng nhau:",
+      "steps": {
+        "create-workspace": "Tạo không gian làm việc",
+        "setup-profile": "Thiết lập hồ sơ",
+        "configure-settings": "Cấu hình cài đặt",
+        "start-collaborating": "Bắt đầu cộng tác"
+      },
+      "completion-time": "Mất ít hơn 2 phút để hoàn thành"
+    },
+    "workspace-setup": {
+      "title": "Tạo không gian làm việc của bạn",
+      "subtitle": "Thiết lập căn cứ của đội ngũ bạn",
+      "workspace-name": "Tên không gian làm việc",
+      "workspace-name-placeholder": "Công ty của tôi",
+      "workspace-description": "Mô tả (Tùy chọn)",
+      "workspace-description-placeholder": "Hãy cho chúng tôi biết về không gian làm việc của bạn...",
+      "workspace-avatar": "Ảnh đại diện không gian làm việc",
+      "workspace-details": "Chi tiết không gian làm việc",
+      "upload-avatar": "Tải ảnh lên",
+      "continue": "Tiếp tục",
+      "back": "Quay lại",
+      "creating-workspace": "Đang tạo không gian làm việc...",
+      "tips": {
+        "title": "💡 Mẹo cho việc chọn tên không gian làm việc:",
+        "tip1": "• Chọn tên phản ánh đội ngũ hoặc dự án của bạn",
+        "tip2": "• Giữ cho ngắn gọn và dễ nhớ",
+        "tip3": "• Bạn luôn có thể thay đổi điều này sau"
+      }
+    },
+    "profile-completion": {
+      "title": "Hoàn thiện hồ sơ của bạn",
+      "subtitle": "Giúp đội ngũ của bạn nhận ra bạn",
+      "display-name": "Tên hiển thị",
+      "display-name-placeholder": "Tên của bạn",
+      "bio": "Tiểu sử",
+      "bio-optional": "(tùy chọn)",
+      "bio-placeholder": "Hãy cho chúng tôi biết về bạn...",
+      "avatar": "Ảnh đại diện hồ sơ",
+      "profile-details": "Chi tiết hồ sơ",
+      "continue": "Hoàn thiện hồ sơ",
+      "back": "Quay lại",
+      "updating": "Đang cập nhật...",
+      "profile-tip": "💡 Hồ sơ của bạn giúp đồng đội nhận ra và kết nối với bạn trên toàn bộ nền tảng.",
+      "finish": "Hoàn tất & Tiếp tục"
+    },
+    "feature-tour": {
+      "title": "Tour nhanh",
+      "subtitle": "Hãy khám phá những gì bạn có thể làm",
+      "skip-tour": "Bỏ qua Tour",
+      "start-tour": "Bắt đầu Tour",
+      "next": "Tiếp theo",
+      "previous": "Trước đó",
+      "finish": "Hoàn thành Tour",
+      "features": {
+        "dashboard": {
+          "title": "Bảng điều khiển",
+          "description": "Trung tâm của bạn cho tất cả hoạt động và thông tin chi tiết của không gian làm việc."
+        },
+        "projects": {
+          "title": "Dự án",
+          "description": "Tổ chức và quản lý công việc của đội ngũ với các công cụ dự án mạnh mẽ."
+        },
+        "collaboration": {
+          "title": "Cộng tác",
+          "description": "Trò chuyện, chia sẻ tệp và làm việc cùng nhau một cách liền mạch."
+        },
+        "settings": {
+          "title": "Cài đặt",
+          "description": "Tùy chỉnh không gian làm việc và quản lý quyền của đội ngũ."
+        }
+      }
+    },
+    "completion": {
+      "title": "Đã thiết lập xong!",
+      "subtitle": "Không gian làm việc của bạn đã sẵn sàng",
+      "description": "Chúc mừng! Bạn đã thiết lập thành công không gian làm việc của mình. Giờ bạn có thể mời thành viên trong đội và bắt đầu cộng tác.",
+      "go-to-dashboard": "Đi đến Bảng điều khiển",
+      "invite-team": "Mời thành viên đội ngũ"
+    },
+    "errors": {
+      "title": "Lỗi",
+      "save-progress": "Không thể lưu tiến trình. Vui lòng thử lại.",
+      "create-workspace": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
+      "update-profile": "Không thể cập nhật hồ sơ. Vui lòng thử lại."
+    }
   },
   "meet-together": {
     "headline-p1": "Tìm khung giờ tốt nhất cho mọi người,",
@@ -565,6 +687,7 @@
     "migrations": "Chuyển dữ liệu",
     "notifications": "Thông báo",
     "new-ws": "Tạo tổ chức mới",
+    "billing": "Thanh toán",
     "new-team": "Tạo nhóm mới",
     "new-task": "Tạo công việc mới",
     "new-note": "Tạo ghi chú mới",

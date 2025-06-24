@@ -58,12 +58,14 @@ type QuizzesListType = Array<
 export default function ClientQuizzes({
   wsId,
   moduleId,
+  courseId,
   quizSets,
   quizzes = [],
   previewMode = false,
 }: {
   wsId: string;
   moduleId: string;
+  courseId: string;
   quizSets?: RenderedQuizzesSets[];
   quizzes?: QuizzesListType;
   previewMode?: boolean;
@@ -87,6 +89,12 @@ export default function ClientQuizzes({
     router.refresh();
   };
 
+  const navigateQuizTake = (setId: string) => {
+    router.push(
+      `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${setId}/take`
+    );
+  };
+
   if (quizSets) {
     return (
       <>
@@ -95,11 +103,18 @@ export default function ClientQuizzes({
             key={set.setId}
             className="col-span-full flex w-full flex-col gap-4"
           >
-            <h3 className="text-lg font-bold">
-              <LucideBubbles className="mr-2 inline h-5 w-5" />
-              {set.setName}
-            </h3>
             <div className="grid gap-4 md:grid-cols-2">
+              <h3 className="text-lg font-bold">
+                <LucideBubbles className="mr-2 inline h-5 w-5" />
+                {set.setName}
+              </h3>
+              <Button
+                variant="outline"
+                className="w-32 self-end justify-self-end"
+                onClick={() => navigateQuizTake(set.setId)}
+              >
+                Take Quiz
+              </Button>
               <QuizzesList
                 quizzes={set.quizzes}
                 previewMode={previewMode}

@@ -52,7 +52,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    const adminSupabase = await createAdminClient();
+    const sbAdmin = await createAdminClient();
 
     if (action === 'stop') {
       // Stop the running session
@@ -62,7 +62,7 @@ export async function PATCH(
         (new Date().getTime() - startTime.getTime()) / 1000
       );
 
-      const { data, error } = await adminSupabase
+      const { data, error } = await sbAdmin
         .from('time_tracking_sessions')
         .update({
           end_time: endTime,
@@ -92,7 +92,7 @@ export async function PATCH(
         (new Date().getTime() - startTime.getTime()) / 1000
       );
 
-      const { data, error } = await adminSupabase
+      const { data, error } = await sbAdmin
         .from('time_tracking_sessions')
         .update({
           end_time: endTime,
@@ -115,8 +115,8 @@ export async function PATCH(
     }
 
     if (action === 'resume') {
-      // Create a new session with the same details
-      const { data, error } = await adminSupabase
+      // Create a new session with the same details, marking it as resumed
+      const { data, error } = await sbAdmin
         .from('time_tracking_sessions')
         .insert({
           ws_id: wsId,
@@ -127,6 +127,7 @@ export async function PATCH(
           task_id: session.task_id,
           start_time: new Date().toISOString(),
           is_running: true,
+          was_resumed: true, // Mark this session as resumed
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
@@ -175,7 +176,7 @@ export async function PATCH(
         }
       }
 
-      const { data, error } = await adminSupabase
+      const { data, error } = await sbAdmin
         .from('time_tracking_sessions')
         .update(updateData)
         .eq('id', sessionId)
@@ -248,8 +249,8 @@ export async function DELETE(
     }
 
     // Delete the session
-    const adminSupabase = await createAdminClient();
-    const { error } = await adminSupabase
+    const sbAdmin = await createAdminClient();
+    const { error } = await sbAdmin
       .from('time_tracking_sessions')
       .delete()
       .eq('id', sessionId);

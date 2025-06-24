@@ -4,6 +4,7 @@ import ClientQuizzes from './client-quizzes';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ListTodo } from '@tuturuuu/ui/icons';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -40,11 +41,16 @@ export interface RenderedQuizzesSets {
 }
 
 export default async function ModuleQuizzesPage({ params }: Props) {
-  const { wsId, moduleId } = await params;
+  const { wsId, courseId, moduleId } = await params;
   const t = await getTranslations();
   const quizSets = await getQuizzes(moduleId);
-  console.log('Quiz Sets:', quizSets);
   const moduleName = await getModuleName(moduleId);
+
+  const { ENABLE_AI } = await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_AI'],
+    redirectTo: null,
+  });
+
   return (
     <div className="grid gap-4">
       <FeatureSummary
@@ -64,10 +70,22 @@ export default async function ModuleQuizzesPage({ params }: Props) {
       />
 
       <div className="hello-quizzz flex flex-col gap-4">
-        <ClientQuizzes wsId={wsId} moduleId={moduleId} quizSets={quizSets} />
-        <div className="col-span-full">
-          <AIQuizzes wsId={wsId} moduleId={moduleId} moduleName={moduleName} />
-        </div>
+        <ClientQuizzes
+          wsId={wsId}
+          moduleId={moduleId}
+          quizSets={quizSets}
+          courseId={courseId}
+        />
+        {ENABLE_AI ? (
+          <div className="col-span-full">
+            <AIQuizzes
+              wsId={wsId}
+              moduleId={moduleId}
+              courseId={courseId}
+              moduleName={moduleName}
+            />
+          </div>
+        ) : undefined}
       </div>
       {/* <div className="grid gap-4 md:grid-cols-2">
         {quizSets && quizSets.length > 0 && (
@@ -82,7 +100,7 @@ export default async function ModuleQuizzesPage({ params }: Props) {
         )}
 
         <div className="col-span-full">
-          <AIQuizzes wsId={wsId} moduleId={moduleId} moduleName={moduleName} />
+          <AIQuizzes wsId={wsId} moduleId={moduleId} courseId={courseId} moduleName={moduleName} />
         </div>
       </div> */}
     </div>
