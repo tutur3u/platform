@@ -86,6 +86,7 @@ export const getQuizSetColumns = (
       <QuizSetRowActions
         row={row}
         wsId={extraData.wsId}
+        courseId={extraData.courseId}
         moduleId={extraData.moduleId}
       />
     ),
